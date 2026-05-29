@@ -1,0 +1,53 @@
+# Node / frontend
+node_modules/
+**/node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+
+# Java / Maven
+target/
+**/target/
+*.jar
+*.war
+*.class
+.mvn/
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+
+# OS scratch
+nul
+*.log
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+**/application-local.yml
+**/application-dev.yml
+**/application-prod.yml
+**/*-secrets.yml
+**/credentials.json
+
+# Claude scratch
+.claude/cache/
+.claude/sessions/
+
+# Python scratch
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Large generated artefacts
+*.tar
+*.tar.gz
+*.zip
+*.dump.tmp

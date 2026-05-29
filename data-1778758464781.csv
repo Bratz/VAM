@@ -1,0 +1,8 @@
+"account_number","account_name","bank_name","entity_code","currency_code","corporate_id","corporate_name","corporate_code","physical_id","va_pointing_back","va_category"
+"PA-AED-003","ECOM UAE AED Account","Emirates NBD",NULL,"AED","22222222-2222-2222-2222-222222222222","Test E-Commerce Ltd","TEST-ECOM-001","cccccccc-cccc-cccc-cccc-cccccccccc02",NULL,NULL
+"PA-EUR-001","ECOM EUR Operating Account","Emirates NBD",NULL,"EUR","22222222-2222-2222-2222-222222222222","Test E-Commerce Ltd","TEST-ECOM-001","cccccccc-cccc-cccc-cccc-cccccccccccc",NULL,NULL
+"PA-GBP-001","Fintech GBP Operating Account","Emirates NBD",NULL,"GBP","33333333-3333-3333-3333-333333333333","Test Fintech Solutions","TEST-FIN-001","dddddddd-dddd-dddd-dddd-dddddddddddd",NULL,NULL
+"PA-AED-001","MNC AED Operating Account","Emirates NBD",NULL,"AED","11111111-1111-1111-1111-111111111111","Test Multinational Corp","TEST-MNC-001","aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",NULL,NULL
+"PA-GBP-002","MNC UK GBP Account","HSBC",NULL,"GBP","11111111-1111-1111-1111-111111111111","Test Multinational Corp","TEST-MNC-001","aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaa03",NULL,NULL
+"PA-USD-001","MNC USD Operating Account","Emirates NBD",NULL,"USD","11111111-1111-1111-1111-111111111111","Test Multinational Corp","TEST-MNC-001","bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",NULL,NULL
+"PA-ESCROW-001","RE Escrow Account","Emirates NBD",NULL,"AED","44444444-4444-4444-4444-444444444444","Test Real Estate Group","TEST-RE-001","eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",NULL,NULL

@@ -1,0 +1,1535 @@
+/* Distinctive type pair — Bricolage Grotesque (variable, opinionated sans) +
+   Fraunces (variable serif for display) + JetBrains Mono (numerals & code).
+   Replaces Inter for body and headlines. See CLAUDE.md "Frontend Aesthetics". */
+/* Display + body type pair, plus mono for identifiers.
+ *  - IBM Plex Sans     → stat values, numeric display, body
+ *  - Fraunces          → page titles only (brand-moment serif)
+ *  - JetBrains Mono    → identifiers (VA numbers, IBANs, references)
+ *  - Bricolage Grotesque kept loaded during transition; Tier 3 evaluates
+ *    full replacement of body sans. For now Bricolage remains the body
+ *    family via `--font-sans` and IBM Plex Sans is loaded specifically as
+ *    `--font-display` (replacing Fraunces in that slot for numerics).
+ *
+ * Phase 11 Tier 1 (2026-05-17): added IBM Plex Sans; narrowed the Fraunces
+ * axis to `9..144,500..600` (was `0,9..144,300..700;1,...` incl. italic) —
+ * only 500/600 weights are used on titles now, no italic. ~30KB saved. */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Design tokens — single source of truth for color, shadow, radius, type,
+   spacing, duration, easing, z-index. Imported BEFORE @tailwind so the
+   :root variables are visible to subsequent @layer-base rules. */
+@import '../design-system/variables.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   APERTURE — Premium-Glass Design System
+   ============================================================================
+   This file owns: utility classes, component layer styles, base element
+   styling, body atmospherics, and section-theming CSS variables that are
+   applied at the body / [data-section] level.
+
+   Design tokens (colors, shadows, radii, spacing, type scale, durations,
+   easings, z-indices, safe areas, touch targets) live in a single source:
+       frontend/src/design-system/variables.css
+   Look there for every `:root` CSS variable. Do not redeclare tokens here.
+
+   The previous arrangement had three competing :root blocks
+   (variables.css + index.css + the now-deleted swiss-minimalism.css) with
+   contradicting values for --radius-*, --duration-*, --font-sans, etc.
+   Phase 1 of the Design System Unification (tasks/design-system-unification.md)
+   collapsed that into one source — variables.css. */
+
+/* ============================================================================
+   BASE STYLES - Premium Foundation
+   ============================================================================ */
+@layer base {
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Phase 11 Tier 1 (2026-05-17): removed a dead `font-feature-settings`
+     * line that requested four Inter-specific character variants (the
+     * alt single-story a / alt g / alt l / alt 1 set). Bricolage Grotesque,
+     * IBM Plex Sans, Fraunces and JetBrains Mono all ignore those Inter
+     * variants — leftover from when body was Inter. Removal has zero visual
+     * effect on the current type stack and clears confusing dead config.
+     * (Literal feature tags intentionally not quoted here so they don't
+     * linger in a grep of the stylesheet.) */
+  }
+
+  body {
+    @apply font-sans text-primary-900;
+    /* Phase 11 Tier 1 (2026-05-17): was -0.011em. Negative tracking on
+     * 14–16px sans body causes character collision and reading fatigue
+     * over long sessions — treasury users live in this app all day. */
+    letter-spacing: 0;
+    overflow-x: hidden;
+    /* Atmospheric background — layered radial accents on off-white.
+       Drives section theming via --section-accent (F4 + Phase 7 navigation
+       config). Phase 8 Design System Unification dropped the 56px hairline
+       navy grid overlay that previously sat on top: at 1.8% opacity it was
+       barely perceptible but cost two extra gradient layers in the paint
+       budget on every viewport repaint. The radial atmosphere alone
+       carries the depth signal. */
+    --section-accent: 16 42 67;      /* default: primary-900 (navy) */
+    --section-accent-warm: 245 158 11; /* default: accent-500 (gold) */
+    background:
+      radial-gradient(at 8% 0%, rgba(var(--section-accent-warm) / 0.05) 0%, transparent 45%),
+      radial-gradient(at 92% 100%, rgba(var(--section-accent) / 0.05) 0%, transparent 50%),
+      #fafafa;
+    background-attachment: fixed;
+  }
+
+  [data-theme="dark"] body {
+    background:
+      radial-gradient(at 8% 0%, rgba(var(--section-accent-warm) / 0.10) 0%, transparent 45%),
+      radial-gradient(at 92% 100%, rgba(99, 125, 152, 0.10) 0%, transparent 50%),
+      #0a1929;
+    background-attachment: fixed;
+  }
+
+  /* Focus ring — canonical, on-brand.
+     Phase 4 Design System Unification: collapsed three different focus
+     declarations into one token-driven rule. Every focusable element
+     (button, link, input, select, textarea, arbitrary tabindex) reads
+     from `--shadow-focus-offset` in variables.css. That token resolves
+     to a 2px page-bg inner ring + 4px gold outer ring, so the focus
+     state is unmistakably Aperture (gold) rather than generic navy. */
+  *:focus-visible {
+    @apply outline-none;
+    box-shadow: var(--shadow-focus-offset);
+  }
+
+  /* F4: Section themes — set --section-accent / --section-accent-warm based on
+     the area of the app the user is in. Body radial gradients, top accent strip,
+     and page-title underline all pick these up automatically.
+     `data-section` is set on <html> by App.tsx whenever the route changes. */
+  [data-section="treasury"]     { --section-accent: 16 42 67;   --section-accent-warm: 59 130 246; }   /* navy + electric blue */
+  [data-section="finance"]      { --section-accent: 16 42 67;   --section-accent-warm: 245 158 11; }   /* navy + gold (default) */
+  [data-section="compliance"]   { --section-accent: 36 59 83;   --section-accent-warm: 16 185 129; }   /* navy + sage */
+  [data-section="baas"]         { --section-accent: 16 42 67;   --section-accent-warm: 168 85 247; }   /* navy + violet */
+  [data-section="intercompany"] { --section-accent: 16 42 67;   --section-accent-warm: 244 114 182; }  /* navy + rose */
+  [data-section="admin"]        { --section-accent: 38 38 38;   --section-accent-warm: 163 163 163; }  /* graphite + steel */
+  [data-section="payments"]     { --section-accent: 16 42 67;   --section-accent-warm: 6 182 212; }    /* navy + cyan */
+
+  /* F2: Top accent strip — 3px navy→gold gradient pinned to the very top.
+     Reinforces brand dominance on every page without touching component code. */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--section-accent)) 0%,
+      rgb(var(--section-accent-warm)) 50%,
+      rgb(var(--section-accent)) 100%
+    );
+    z-index: 60;
+    pointer-events: none;
+  }
+
+  /* Atmospheric page-body depth. Two soft radials anchored at opposite corners
+     give the page a "light from upper-right" ambient quality instead of the
+     flat navy wash it had before. The warm anchor pulls from
+     --section-accent-warm so the tint shifts subtly per route (gold for
+     finance/admin, blue for treasury, cyan for payments, etc.). Sits behind
+     all content; pointer-events disabled so it never intercepts clicks. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(
+        ellipse 60% 55% at 95% 0%,
+        rgb(var(--section-accent-warm) / 0.07) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 55% 50% at 5% 100%,
+        rgb(var(--section-accent) / 0.05) 0%,
+        transparent 65%
+      );
+  }
+  /* Dark mode: bump the ambient layers so they read against the navy body
+     (otherwise they'd disappear under the dark surface). */
+  .dark body::after {
+    background:
+      radial-gradient(
+        ellipse 60% 55% at 95% 0%,
+        rgb(var(--section-accent-warm) / 0.10) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 55% 50% at 5% 100%,
+        rgb(var(--section-accent) / 0.20) 0%,
+        transparent 65%
+      );
+  }
+
+  /* F2: Display headings — apply Fraunces serif at display sizes for gravitas.
+     Targets the existing typography classes; per-component opt-in via .font-display still works. */
+  .text-display-xl,
+  .text-display-lg,
+  .text-display-md,
+  .text-display-sm {
+    font-family: var(--font-title);
+    font-feature-settings: "ss01", "ss02";  /* Fraunces stylistic sets — sharper terminals */
+  }
+
+  /* F2: Page-title accent — used by Layout header.
+     `.page-title-display` renders the page title in Fraunces with a thin gold underline. */
+  .page-title-display {
+    font-family: var(--font-title);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    position: relative;
+    padding-bottom: 2px;
+  }
+  /* Post-review (2026-05-13): underline width unified to 32px (was 24px
+     on `.page-title-display`, 32px on `.page-title`). One canonical
+     motif width across the page-title family. */
+  .page-title-display::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -3px;
+    width: 32px;
+    height: 2px;
+    background: rgb(var(--section-accent-warm));
+    border-radius: 1px;
+  }
+
+  /* Typography sweep (post-F1 follow-up) — single source of truth so every
+     page renders its hero heading and big numbers consistently in the chosen
+     fonts (Fraunces serif). Replaces a sprawl of text-{xl,2xl,3xl} +
+     font-{semibold,bold} + text-primary-900 inline class soup. */
+
+  /* Page hero heading. Apply on <h1> inside every page body. */
+  .page-title {
+    @apply text-3xl text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-title);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    position: relative;
+    padding-bottom: 4px;
+  }
+  .page-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 32px;
+    height: 2px;
+    background: rgb(var(--section-accent-warm));
+    border-radius: 1px;
+  }
+  /* Section heading — one notch down from page-title. */
+  .section-title {
+    @apply text-xl text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-title);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Big numeric display — for stat cards and hero balance figures.
+     Fraunces with tabular-nums and tight tracking for banking-grade weight. */
+  .stat-value {
+    @apply text-4xl text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "ss01";
+    /* Tier 1 (2026-05-17): was -0.025em (tightened for Fraunces). Loosened
+     * for IBM Plex Sans — better digit separation in long monetary values
+     * like 12,485,392.50. */
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+  .stat-value-sm {
+    @apply text-2xl text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+
+  /* Secondary stat value — smaller than .stat-value-sm. For dense cards
+     where a single tile holds multiple metrics, or for inline metrics
+     inside a row that already has a dominant figure. Fraunces 20px/600
+     tabular-nums. Phase 9.1 (2026-05-13). */
+  .stat-value-xs {
+    @apply text-xl text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: 0; /* Tier 1: was -0.015em (Fraunces) */
+    line-height: 1.15;
+  }
+
+  /* Inverse variant — for the small set of surfaces that intentionally
+     paint dark in BOTH themes (Currency Mirrors signature banner,
+     Treasury Hierarchy bank-account strip). Previously these surfaces
+     used `.stat-value-sm !text-white` to defeat the utility's
+     `text-primary-900` default — an `!important` smell. Use this
+     variant instead. Both modes render white. */
+  .stat-value-inverse {
+    @apply text-2xl text-white;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+  /* Hero-sized inverse (matches `.stat-value` scale for full-bleed dark heroes). */
+  .stat-value-inverse-lg {
+    @apply text-4xl text-white;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "ss01";
+    letter-spacing: -0.01em; /* Tier 1: was -0.025em (Fraunces) */
+    line-height: 1.05;
+  }
+
+  /* Tone variants — semantic state-coloured stat values (success/warning/
+     error/info). Stat values across the platform use these to communicate
+     state: green for "Active" counts, warning for "Pending", error for
+     "Failed", info for "POBO Volume" etc.
+     Previously ~40 sites authored these inline as
+       `text-2xl font-bold text-success-600 dark:text-success-300`
+     which both bypassed the display tier (Fraunces + tabular-nums) and
+     duplicated the styling. These variants share the same typographic
+     treatment as `.stat-value-sm` but with semantic text colour.
+     Final carry-over post-Tier-8 (2026-05-13). */
+  .stat-value-success {
+    @apply text-2xl text-success-600 dark:text-success-300;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+  .stat-value-warning {
+    @apply text-2xl text-warning-600 dark:text-warning-300;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+  .stat-value-error {
+    @apply text-2xl text-error-600 dark:text-error-300;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+  .stat-value-info {
+    @apply text-2xl text-info-600 dark:text-info-300;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces) */
+    line-height: 1.1;
+  }
+
+  /* ----------------------------------------------------------------------
+     Phase 5 Design System Unification: typography utility set completion.
+
+     The display tier (.page-title, .section-title, .stat-value, .stat-value-sm)
+     was added in earlier work. This phase adds the *body* tier — the
+     workhorses every page uses dozens of times. The goal is to retire the
+     raw `text-sm font-medium text-primary-900 dark:text-neutral-50` Tailwind
+     soup that's currently sprinkled across pages and replace it with a
+     single semantic class.
+
+     Migration is gradual: new code uses the utility, existing pages
+     migrate when next touched. Both authoring styles work simultaneously.
+     ---------------------------------------------------------------------- */
+
+  /* Default body copy — primary text. Use this for most paragraphs,
+     descriptions, and inline labels that aren't form controls. */
+  .body {
+    @apply text-base text-primary-900 dark:text-neutral-100;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  /* Large body copy — for loading-state primary messages, empty-state
+     headings, intro paragraphs. One step above `.body`; doesn't compete
+     with `.section-title`. Phase 9.1 (2026-05-13). */
+  .body-lg {
+    @apply text-lg text-primary-900 dark:text-neutral-100;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  /* Secondary body copy — for supporting / muted text. Pairs with `.body`
+     in two-line patterns (e.g. account name above + account number below). */
+  .body-sm {
+    @apply text-sm text-neutral-600 dark:text-neutral-400;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  /* Form label / eyebrow. Uppercase, tracked. Used as stat-tile eyebrow,
+     table column header, above-input section pre-title. Distinct from
+     `.field-label` (non-uppercase) which is for the inline form-input
+     label convention. */
+  .label {
+    @apply text-xs font-semibold text-neutral-600 dark:text-neutral-300;
+    font-family: var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+  }
+
+  /* Form-field label — non-uppercase, paired with form inputs. Replaces
+     the sprawling `text-sm font-medium text-neutral-700 dark:text-neutral-200`
+     pattern used on every <label> across forms. Distinct from `.label`
+     (uppercase eyebrow). Phase 9 Design System Unification (2026-05-13). */
+  .field-label {
+    @apply text-sm font-medium text-neutral-700 dark:text-neutral-200;
+    font-family: var(--font-sans);
+    line-height: 1.4;
+  }
+
+  /* Microlabel — non-uppercase. For badge counts, "Beta" pills, micro-meta
+     where uppercase wouldn't fit (table column counts, status indicators
+     that include lowercase tokens). `.overline` remains the uppercase
+     variant for section eyebrows; this is the cased sibling. */
+  .label-cased {
+    @apply text-[10px] font-medium text-neutral-500 dark:text-neutral-400;
+    font-family: var(--font-sans);
+    line-height: 1.3;
+  }
+
+  /* Section eyebrow / pre-title. Smaller and wider tracked than `.label`,
+     used above page-title / section-title for context (e.g. "ACCOUNTS &
+     STRUCTURE" above "Bank Accounts"). */
+  .overline {
+    @apply text-[10px] font-semibold text-neutral-500 dark:text-neutral-400;
+    font-family: var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    line-height: 1.2;
+  }
+
+  /* Caption — supporting text under form inputs, chart axes, footnotes.
+     Smaller than `.body-sm` but not uppercase. */
+  .caption {
+    @apply text-xs text-neutral-500 dark:text-neutral-400;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  /* Inline code / numeric reference. Mono so account numbers, VA codes,
+     transaction IDs read cleanly with tabular-nums. */
+  .code {
+    @apply text-[0.8125rem] text-neutral-700 dark:text-neutral-300;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: 0;
+  }
+
+  /* Identifier as visual hero — VIBANs, IBANs, transaction references
+     shown as the primary value of a panel. JetBrains Mono with semibold
+     weight and wide tracking for readability at display size. Use
+     sparingly — most identifiers in body context should use `.code`.
+     Phase 9.1 (2026-05-13). */
+  .code-display {
+    @apply text-lg text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: 0.025em;
+    line-height: 1.3;
+  }
+
+  /* Interactive element focus — intentionally NO override.
+     Phase 4 Design System Unification removed the previous
+     `button:focus-visible, a:focus-visible, …` block (Tailwind ring +
+     `--shadow-primary` halo) so every focusable element inherits the
+     canonical `*:focus-visible` rule above. One ring everywhere, gold,
+     consistent with the brand. If a specific control needs a richer
+     treatment (e.g. .form-input below), it composes on top of the
+     canonical ring rather than replacing it. */
+
+  /* Remove default button styles */
+  button {
+    @apply cursor-pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Better table styles */
+  table {
+    @apply border-collapse w-full;
+  }
+
+  /* Premium Input placeholder */
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-neutral-400;
+    opacity: 1;
+  }
+
+  /* Selection colors - On brand */
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
+  }
+
+  /* Scrollbar styling for webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 rounded-full;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-neutral-400;
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d4 transparent;
+  }
+
+  /* Prevent text selection on interactive elements */
+  button, a, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth image rendering */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* ============================================================================
+   COMPONENT STYLES - Premium Polish
+   ============================================================================ */
+@layer components {
+  /* ========== CARD SYSTEM ========== */
+  .card-base {
+    @apply bg-white rounded-xl border border-neutral-200/80;
+    @apply dark:bg-primary-900 dark:border-primary-800/60;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo),
+                border-color var(--duration-fast);
+  }
+  [data-theme="dark"] .card-base,
+  .dark .card-base {
+    box-shadow: none;
+  }
+
+  .card-hover {
+    @apply card-base;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    @apply border-neutral-300/80 dark:border-primary-700/80;
+  }
+
+  .card-interactive {
+    @apply card-hover cursor-pointer;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .card-interactive:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ========== PREMIUM DATA TABLE ========== */
+  .data-table {
+    @apply w-full;
+  }
+
+  .data-table th {
+    @apply text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider;
+    @apply px-4 py-3.5 bg-neutral-50/80 border-b border-neutral-200;
+    @apply dark:text-neutral-400 dark:bg-primary-950/50 dark:border-primary-800;
+    letter-spacing: 0.05em;
+  }
+
+  .data-table td {
+    @apply px-4 py-4 text-sm text-primary-900 border-b border-neutral-100;
+    @apply dark:text-neutral-100 dark:border-primary-800/60;
+    transition: background-color var(--duration-fast);
+  }
+
+  .data-table tbody tr {
+    transition: background-color var(--duration-fast);
+  }
+
+  .data-table tbody tr:hover td {
+    @apply bg-primary-50/50 dark:bg-primary-800/40;
+  }
+
+  .data-table tbody tr:active td {
+    @apply bg-primary-100/50 dark:bg-primary-800/60;
+  }
+
+  /* Sticky header support */
+  .data-table-sticky thead {
+    @apply sticky top-0 z-10;
+  }
+
+  .data-table-sticky thead th {
+    @apply bg-white/95 backdrop-blur-sm;
+  }
+
+  /* ========== STATUS INDICATORS ========== */
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full relative;
+  }
+
+  .status-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full;
+    animation: status-pulse 2s ease-in-out infinite;
+  }
+
+  .status-dot-active {
+    @apply bg-success-500;
+  }
+
+  .status-dot-active::after {
+    @apply bg-success-500;
+  }
+
+  .status-dot-pending {
+    @apply bg-warning-500;
+  }
+
+  .status-dot-pending::after {
+    @apply bg-warning-500;
+  }
+
+  .status-dot-inactive {
+    @apply bg-neutral-400;
+  }
+
+  .status-dot-inactive::after {
+    animation: none;
+  }
+
+  @keyframes status-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* ========== AMOUNT DISPLAYS ========== */
+  .amount-positive {
+    @apply text-success-600 font-medium;
+  }
+
+  .amount-negative {
+    @apply text-error-600 font-medium;
+  }
+
+  .amount-neutral {
+    @apply text-primary-900 font-medium;
+  }
+
+  /* Currency formatting */
+  .currency-value {
+    @apply font-semibold tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* ========== SKELETON LOADING ==========
+     Phase 8 Design System Unification: dark-mode shimmer retuned from
+     brand-tinted navy (primary-800/700) to neutral greys (neutral-700/600).
+     A skeleton is a momentary "this is loading" placeholder, not a brand
+     surface — so the shimmer reads as a generic loading band rather than
+     a navy element competing with the surrounding chrome. Light mode was
+     already neutral and is unchanged. */
+  .skeleton {
+    @apply bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded;
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  }
+  [data-theme="dark"] .skeleton,
+  .dark .skeleton {
+    @apply from-neutral-700 via-neutral-600 to-neutral-700;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 rounded;
+  }
+
+  .skeleton-heading {
+    @apply skeleton h-6 rounded;
+  }
+
+  .skeleton-avatar {
+    @apply skeleton rounded-full;
+  }
+
+  .skeleton-card {
+    @apply skeleton rounded-xl;
+  }
+
+  /* ========== FORM ELEMENTS - Premium ========== */
+  .form-label {
+    @apply block text-sm font-medium text-primary-900 mb-2;
+    letter-spacing: -0.01em;
+  }
+
+  .form-input {
+    @apply w-full px-4 py-3 border border-neutral-300 rounded-xl text-base text-primary-900;
+    @apply bg-white placeholder:text-neutral-400;
+    box-shadow: var(--shadow-inner);
+    transition: border-color var(--duration-fast),
+                box-shadow var(--duration-fast),
+                background-color var(--duration-fast);
+  }
+
+  .form-input:hover:not(:focus):not(:disabled) {
+    @apply border-neutral-400;
+  }
+
+  .form-input:focus {
+    /* Phase 4 unification: focus ring (gold) comes from the canonical
+       `*:focus-visible` rule. We layer the existing inset shadow on top
+       so text inputs keep their slight inner-shadow depth, and tint the
+       border to the brand accent so the input visually agrees with the
+       gold ring around it. */
+    @apply outline-none border-accent-500 bg-white;
+    box-shadow: var(--shadow-focus-offset), var(--shadow-inner);
+  }
+
+  .form-input:disabled {
+    @apply bg-neutral-100 text-neutral-500 cursor-not-allowed;
+  }
+
+  .form-input-error {
+    @apply border-error-500;
+    box-shadow: var(--shadow-error), var(--shadow-inner);
+  }
+
+  .form-input-success {
+    @apply border-success-500;
+    box-shadow: var(--shadow-success), var(--shadow-inner);
+  }
+
+  .form-helper {
+    @apply mt-2 text-sm text-neutral-500 flex items-center gap-1.5;
+  }
+
+  .form-error {
+    @apply mt-2 text-sm text-error-600 flex items-center gap-1.5;
+  }
+
+  /* ========== PREMIUM BADGES ========== */
+  .badge {
+    @apply inline-flex items-center font-medium rounded-full;
+    transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  }
+
+  .badge-sm {
+    @apply px-2 py-0.5 text-xs gap-1;
+  }
+
+  .badge-md {
+    @apply px-2.5 py-1 text-sm gap-1.5;
+  }
+
+  .badge-lg {
+    @apply px-3 py-1.5 text-sm gap-2;
+  }
+
+  /* Badge with subtle border for depth */
+  .badge-outlined {
+    @apply border;
+  }
+
+  /* ========== MOBILE TOUCH TARGETS ========== */
+  @media (pointer: coarse) {
+    .touch-target {
+      min-height: var(--touch-target-min);
+      min-width: var(--touch-target-min);
+    }
+
+    .touch-target-comfortable {
+      min-height: var(--touch-target-comfortable);
+      min-width: var(--touch-target-comfortable);
+    }
+  }
+
+  /* ========== MOBILE CARD VIEW (for tables) ========== */
+  .mobile-card {
+    @apply card-base p-4 mb-3;
+  }
+
+  .mobile-card-row {
+    @apply flex justify-between items-center py-2;
+  }
+
+  .mobile-card-row:not(:last-child) {
+    @apply border-b border-neutral-100;
+  }
+
+  .mobile-card-label {
+    @apply text-xs font-medium text-neutral-500 uppercase tracking-wide;
+  }
+
+  .mobile-card-value {
+    @apply text-sm font-medium text-primary-900;
+  }
+
+  /* ========== BOTTOM SHEET (Mobile) ========== */
+  .bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-3xl;
+    box-shadow: 0 -10px 40px rgba(16, 42, 67, 0.15);
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+
+  .bottom-sheet-handle {
+    @apply w-10 h-1 bg-neutral-300 rounded-full mx-auto my-3;
+  }
+
+  /* ========== FLOATING ACTION BUTTON (Mobile) ========== */
+  .fab {
+    @apply fixed bottom-6 right-6 w-14 h-14 rounded-full;
+    @apply bg-primary-600 text-white flex items-center justify-center;
+    box-shadow: var(--shadow-xl);
+    transition: transform var(--duration-fast) var(--ease-out-back),
+                box-shadow var(--duration-fast);
+    z-index: var(--z-fixed);
+  }
+
+  .fab:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-2xl);
+  }
+
+  .fab:active {
+    transform: scale(0.95);
+  }
+
+  @media (min-width: 1024px) {
+    .fab {
+      @apply hidden;
+    }
+  }
+
+  /* ========== BOTTOM NAVIGATION (Mobile) ========== */
+  .bottom-nav {
+    @apply fixed inset-x-0 bottom-0 bg-white border-t border-neutral-200;
+    @apply flex items-center justify-around;
+    padding-bottom: var(--safe-area-inset-bottom);
+    z-index: var(--z-fixed);
+    box-shadow: 0 -4px 20px rgba(16, 42, 67, 0.08);
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-4 min-w-[64px];
+    @apply text-neutral-500 transition-colors;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bottom-nav-item-active {
+    @apply text-primary-600;
+  }
+
+  .bottom-nav-icon {
+    @apply w-6 h-6 mb-0.5;
+  }
+
+  .bottom-nav-label {
+    @apply text-[10px] font-medium;
+  }
+
+  @media (min-width: 1024px) {
+    .bottom-nav {
+      @apply hidden;
+    }
+  }
+
+  /* ========== PULL TO REFRESH INDICATOR ========== */
+  .pull-to-refresh {
+    @apply flex items-center justify-center py-4 text-neutral-500;
+    transition: transform var(--duration-normal);
+  }
+
+  .pull-to-refresh-spinner {
+    @apply w-6 h-6 animate-spin;
+  }
+}
+
+/* ============================================================================
+   UTILITY STYLES - Swiss Precision
+   ============================================================================ */
+@layer utilities {
+  /* ========== SCROLLBAR UTILITIES ========== */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d4 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #d4d4d4;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #a3a3a3;
+  }
+
+  /* ========== TEXT UTILITIES ========== */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Tabular numbers for data */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* ========== GLASS & BLUR EFFECTS ========== */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+
+  .glass-subtle {
+    @apply bg-white/60 backdrop-blur-sm;
+  }
+
+  .glass-strong {
+    @apply bg-white/95 backdrop-blur-lg;
+  }
+
+  .glass-dark {
+    @apply bg-primary-900/80 backdrop-blur-md;
+  }
+
+  /* ========== GRADIENT UTILITIES ========== */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-900 to-primary-600 bg-clip-text text-transparent;
+  }
+
+  .gradient-accent {
+    @apply bg-gradient-to-r from-accent-500 to-accent-600;
+  }
+
+  .gradient-surface {
+    @apply bg-gradient-to-br from-white to-neutral-50;
+  }
+
+  .gradient-surface-warm {
+    @apply bg-gradient-to-br from-accent-50/50 via-white to-primary-50/30;
+  }
+
+  /* ========== SHADOW UTILITIES ========== */
+  .shadow-premium {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-inset {
+    box-shadow: var(--shadow-inner);
+  }
+
+  /* ========== TRANSITION UTILITIES ========== */
+  .transition-premium {
+    transition-timing-function: var(--ease-out-expo);
+    transition-duration: var(--duration-normal);
+  }
+
+  .transition-spring {
+    transition-timing-function: var(--ease-spring);
+    transition-duration: var(--duration-normal);
+  }
+
+  /* ========== SAFE AREA UTILITIES (Mobile) ========== */
+  .safe-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: var(--safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: var(--safe-area-inset-right);
+  }
+
+  .safe-x {
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+
+  .safe-y {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+
+  /* ========== INTERACTION STATES ========== */
+  .hover-lift {
+    transition: transform var(--duration-fast) var(--ease-out-expo),
+                box-shadow var(--duration-fast) var(--ease-out-expo);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hover-lift:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hover-scale {
+    transition: transform var(--duration-fast) var(--ease-out-back);
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .hover-scale:active {
+    transform: scale(0.98);
+  }
+
+  /* ========== RESPONSIVE HIDE/SHOW ========== */
+  .mobile-only {
+    @apply block lg:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+
+  .tablet-up {
+    @apply hidden md:block;
+  }
+
+  .mobile-tablet {
+    @apply block md:hidden;
+  }
+
+  /* ========== ASPECT RATIOS ========== */
+  .aspect-card {
+    aspect-ratio: 16 / 9;
+  }
+
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .aspect-portrait {
+    aspect-ratio: 3 / 4;
+  }
+}
+
+/* ============================================================================
+   PREMIUM ANIMATIONS - Smooth & Delightful
+   ============================================================================ */
+
+/* Fade Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Slide Animations */
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Scale Animations */
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes scaleOut {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.9); opacity: 0; }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Spring Bounce */
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Shake for errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Pulse for attention */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+/* Spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Ripple effect */
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* Success checkmark */
+@keyframes checkmark {
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Loading dots */
+@keyframes loadingDot {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* Page transition */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile bottom sheet */
+@keyframes bottomSheetEnter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes bottomSheetExit {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+/* Backdrop */
+@keyframes backdropEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Animation utility classes */
+.animate-fade-in { animation: fadeIn var(--duration-normal) var(--ease-out-expo); }
+.animate-fade-out { animation: fadeOut var(--duration-normal) var(--ease-out-expo); }
+.animate-slide-up { animation: slideUp var(--duration-normal) var(--ease-out-expo); }
+.animate-slide-down { animation: slideDown var(--duration-normal) var(--ease-out-expo); }
+.animate-slide-in-right { animation: slideInRight var(--duration-slow) var(--ease-out-expo); }
+.animate-slide-in-left { animation: slideInLeft var(--duration-slow) var(--ease-out-expo); }
+.animate-slide-in-up { animation: slideInUp var(--duration-slow) var(--ease-out-expo); }
+.animate-scale-in { animation: scaleIn var(--duration-normal) var(--ease-out-expo); }
+.animate-pop-in { animation: popIn var(--duration-slow) var(--ease-spring); }
+.animate-bounce-in { animation: bounceIn var(--duration-slow) var(--ease-spring); }
+.animate-shake { animation: shake 0.5s ease-in-out; }
+.animate-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
+.animate-page-enter { animation: pageEnter var(--duration-slow) var(--ease-out-expo); }
+
+/* Stagger children animation */
+.stagger-children > * {
+  animation: slideUp var(--duration-normal) var(--ease-out-expo) backwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ============================================================================
+   RESPONSIVE DESIGN - Desktop & Mobile Optimization
+   ============================================================================ */
+
+/* Desktop-specific enhancements */
+@media (min-width: 1024px) {
+  /* Larger touch targets not needed on desktop */
+  .desktop-compact {
+    @apply py-2 px-3;
+  }
+
+  /* Enable hover effects only on desktop */
+  .desktop-hover:hover {
+    @apply bg-primary-50;
+  }
+
+  /* Wider containers on desktop */
+  .container-desktop {
+    @apply max-w-7xl mx-auto px-8;
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-grid {
+    @apply grid-cols-2;
+  }
+
+  .tablet-stack {
+    @apply flex-col;
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 767px) {
+  /* Larger touch targets on mobile */
+  .mobile-touch {
+    min-height: 44px;
+    @apply py-3;
+  }
+
+  /* Full-width buttons on mobile */
+  .mobile-full {
+    @apply w-full;
+  }
+
+  /* Stack elements on mobile */
+  .mobile-stack {
+    @apply flex-col space-x-0 space-y-3;
+  }
+
+  /* Hide less important elements on mobile */
+  .mobile-hide {
+    @apply hidden;
+  }
+
+  /* Simplified padding on mobile */
+  .mobile-compact {
+    @apply p-4;
+  }
+
+  /* Full-bleed cards on mobile */
+  .mobile-bleed {
+    @apply -mx-4 rounded-none;
+  }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+  /* Increase tap targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Remove hover states that don't work well on touch */
+  .touch-no-hover:hover {
+    @apply bg-transparent;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    @apply text-black bg-white;
+  }
+
+  .shadow-soft,
+  .shadow-medium,
+  .shadow-strong,
+  .shadow-premium {
+    box-shadow: none !important;
+  }
+
+  .card-base,
+  .card-hover,
+  .card-interactive {
+    @apply border border-neutral-300 shadow-none;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* ============================================================================
+   TREASURY COPILOT — drawer prose styling
+   ============================================================================
+   Scoped markdown styling so assistant replies render with proper hierarchy
+   (headings, tables, code, blockquotes) without dragging Tailwind Typography
+   in. Light + dark variants. */
+
+.copilot-prose h3 {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 1rem 0 0.5rem 0;
+  color: rgb(16, 42, 67);
+}
+
+.dark .copilot-prose h3 {
+  color: rgb(245, 245, 245);
+}
+
+.copilot-prose p {
+  margin: 0.5rem 0;
+}
+
+.copilot-prose p:first-child { margin-top: 0; }
+.copilot-prose p:last-child { margin-bottom: 0; }
+
+.copilot-prose strong {
+  font-weight: 600;
+  color: rgb(16, 42, 67);
+}
+
+.dark .copilot-prose strong {
+  color: rgb(245, 245, 245);
+}
+
+.copilot-prose em {
+  font-style: italic;
+  color: rgb(82, 95, 117);
+}
+
+.dark .copilot-prose em {
+  color: rgb(180, 190, 210);
+}
+
+.copilot-prose code {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.85em;
+  background: rgba(16, 42, 67, 0.06);
+  padding: 0.1em 0.4em;
+  border-radius: 0.25em;
+  color: rgb(16, 42, 67);
+}
+
+.dark .copilot-prose code {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgb(220, 230, 250);
+}
+
+.copilot-prose blockquote {
+  border-left: 3px solid rgb(245, 158, 11);
+  background: rgba(245, 158, 11, 0.06);
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-size: 0.95em;
+  color: rgb(82, 95, 117);
+}
+
+.dark .copilot-prose blockquote {
+  background: rgba(245, 158, 11, 0.1);
+  color: rgb(220, 230, 250);
+}
+
+.copilot-prose ul, .copilot-prose ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.copilot-prose li {
+  margin: 0.25rem 0;
+}
+
+.copilot-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.copilot-prose th, .copilot-prose td {
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+  border-bottom: 1px solid rgb(231, 235, 240);
+}
+
+.copilot-prose th {
+  background: rgba(16, 42, 67, 0.04);
+  font-weight: 600;
+  color: rgb(16, 42, 67);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.copilot-prose td:nth-child(n+3) {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 0.8rem;
+}
+
+.dark .copilot-prose th, .dark .copilot-prose td {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark .copilot-prose th {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgb(220, 230, 250);
+}
+
+.copilot-prose hr {
+  border: none;
+  border-top: 1px solid rgb(231, 235, 240);
+  margin: 1rem 0;
+}
+
+.dark .copilot-prose hr {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Drawer wrapper — gives us a hook for further per-app theming if needed. */
+.copilot-drawer { font-family: var(--font-sans, system-ui, sans-serif); }

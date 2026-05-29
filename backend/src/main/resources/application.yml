@@ -1,0 +1,152 @@
+spring:
+  application:
+    # Aperture is the user-facing product brand; vam-service remains the
+    # internal/operational name (logs, metrics, deployment artefacts).
+    name: aperture-service
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/vam_db
+    username: vam_user
+    password: ${DB_PASSWORD:vam_user123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Disable Flyway for now (use JPA auto-create)
+  flyway:
+    enabled: false
+
+  # Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# Server
+server:
+  port: 8053
+
+# ============================================================================
+# VAM Application Configuration
+# ============================================================================
+vam:
+  # Active market profile — switches default currency / country / locale / timezone
+  # / base-rate type / weekend / home bank across the platform. One of
+  # UAE | KSA | UK | EU | US | SG. Individual fields below can override.
+  market:
+    profile: ${VAM_MARKET_PROFILE:UAE}
+    # default-currency, default-country-code, default-locale, default-timezone,
+    # default-base-rate-type, weekend, home-bank-bic, home-bank-name,
+    # iban-country-code, suggested-currencies — uncomment to override.
+  # Home Bank — used to distinguish home-bank-held mirror VAs (pool-eligible)
+  # from external-bank shadows (sweep sources only). Single system-wide config.
+  #
+  # Canonical bank identifier = the full SWIFT/BIC (e.g. EBILAEADXXX),
+  # matching physical_accounts.bank_code / virtual_accounts.bank_swift.
+  # Default = Emirates NBD (EBILAEADXXX) so the UAE demo lights up out of the
+  # box; any other bank shows as External. For per-geography prospect demos,
+  # boot with VAM_HOME_BANK_BIC = the home bank's full SWIFT:
+  #   EU=DEUTDEFFXXX  KSA=RJHISARIXXX  UK=LOYDGB2LXXX
+  #   US=CHASUS33XXX  AE=EBILAEADXXX  SG=SCBLSGSGXXX
+  # NOTE: MarketProfile.homeBankBic is display-only (via /market-profile) and
+  # uses truncated BICs — it is NOT the pool/activation home-bank check, which
+  # reads HomeBankProperties (vam.home-bank.bic) only. Separate cleanup.
+  #
+  # Only the BIC is configured. The home-bank DISPLAY NAME is resolved from
+  # the actual account data by this BIC (always consistent with the BIC);
+  # there is intentionally no vam.home-bank.name — a static name field used
+  # to render a stale wrong name when only the BIC was overridden for a
+  # per-geography demo.
+  home-bank:
+    bic: ${VAM_HOME_BANK_BIC:EBILAEADXXX}
+  # Multi-bank liquidity defaults
+  multi-bank:
+    # Default freshness threshold for shadow balance staleness checks
+    default-freshness-threshold-minutes: 60
+    # Scheduled refresh cadence for shadow balances (minutes)
+    refresh-cadence-minutes: 15
+  # Treasury Copilot — stub-only AI prototype (no LLM connection)
+  ai:
+    copilot:
+      enabled: ${VAM_AI_COPILOT_ENABLED:true}
+      # Delay between SSE token chunks. Drives the "live typing" illusion.
+      stream-token-delay-ms: 30
+      # TTL for unconfirmed action proposals (PauseSweepRule, SetBalanceAlert)
+      action-proposal-ttl-minutes: 10
+      conversation:
+        # 0 = keep forever (prototype). Cleanup job comes before v1.
+        retention-days: 0
+        # Reserved for future LLM swap; stub treats each turn independently.
+        message-history-window: 20
+
+# ============================================================================
+# LOGGING CONFIGURATION - File + Console
+# ============================================================================
+logging:
+  # Log file location
+  file:
+    name: logs/vam-service.log
+  
+  # Log file rotation settings
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 100MB
+  
+  # Log patterns
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %clr(%-5level) %clr([%15.15thread]){faint} %clr(%-40.40logger{39}){cyan} : %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
+  
+  # Log levels by package
+  level:
+    # Root level
+    root: INFO
+    
+    # Spring Framework
+    org.springframework: INFO
+    org.springframework.web: INFO
+    org.springframework.transaction: DEBUG
+    org.springframework.orm.jpa: WARN
+    
+    # Hibernate - Show SQL and parameters
+    org.hibernate: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.engine.transaction: DEBUG
+    
+    # Application packages - DEBUG for troubleshooting
+    com.bank.vam: DEBUG
+    com.bank.vam.service: DEBUG
+    com.bank.vam.service.hierarchy: DEBUG
+    com.bank.vam.controller: DEBUG
+    com.bank.vam.exception: DEBUG
+    com.bank.vam.repository: DEBUG
+
+# Springdoc OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Management
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
