@@ -24,12 +24,18 @@ RUN mvn clean package -DskipTests -B
 # ---- Stage 2: runtime ------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
 
-RUN addgroup -g 1001 -S appgroup && \
+# psql for the optional first-boot seeding (see docker-entrypoint.sh)
+RUN apk add --no-cache postgresql-client && \
+    addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-RUN chown appuser:appgroup app.jar
+# Demo-data dump baked into the image so the container can seed a fresh
+# platform database itself (set SEED_ON_START=true; idempotent).
+COPY database/dump/vam_db_full.sql.gz /app/seed/vam_db_full.sql.gz
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chown -R appuser:appgroup /app && chmod +x /app/docker-entrypoint.sh
 USER appuser
 
 # App default is 8053; most PaaS inject PORT and route to it — honored in the
@@ -41,4 +47,4 @@ EXPOSE 8053
 # OOM at startup or thrash.
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --server.port=${PORT:-8053}"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
