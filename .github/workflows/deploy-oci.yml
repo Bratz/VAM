@@ -1,0 +1,37 @@
+# ============================================================================
+# Auto-deploy to the OCI VM on every push to main — the "push to deploy"
+# feature managed platforms give you for free, rebuilt for self-hosting.
+#
+# Repository secrets required (Settings → Secrets and variables → Actions):
+#   VM_HOST      the VM's public IP
+#   VM_USER      ubuntu
+#   VM_SSH_KEY   the PRIVATE key matching the VM's authorized key
+#
+# The VM must already have the repo cloned at ~/VAM and deploy/oci/.env
+# created (see docs/DEPLOYMENT.md).
+# ============================================================================
+name: Deploy to OCI VM
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into VM and redeploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            set -e
+            cd ~/VAM
+            git pull origin main
+            cd deploy/oci
+            sudo docker compose up -d --build
+            sudo docker image prune -f

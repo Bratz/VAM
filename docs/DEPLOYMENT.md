@@ -22,7 +22,15 @@ cert, and no CORS config** to start with.
 - OCI Console → Compute → Instances → Create.
 - Shape: **Ampere A1 Flex** (Always Free: up to 4 OCPU / 24 GB — take at
   least 1 OCPU / 6 GB; this app wants ~1 GB heap plus Postgres).
-- Image: **Ubuntu 22.04/24.04 (aarch64)**. Add your SSH public key.
+  **Regional reality check**: free A1 capacity is scarce in popular regions;
+  you may only be offered the AMD `VM.Standard.E2.1.Micro` (1 GB RAM). That
+  works too — see *"1GB fallback"* below before deploying.
+- Image: **Ubuntu 22.04/24.04**. Add your SSH public key.
+- Networking: let the wizard **create a new VCN with a public subnet** — that
+  auto-creates the Internet Gateway and the route table sending `0.0.0.0/0`
+  through it. If you build the VCN by hand, verify all three exist (public
+  subnet, internet gateway, route rule) — without the route rule the VM has
+  no path to the internet and every later step fails silently.
 - Note the **public IP**.
 
 ### 2. Open port 8053 — BOTH firewalls (the classic OCI gotcha)
@@ -42,12 +50,31 @@ sudo netfilter-persistent save
 ### 3. Install Docker & deploy
 ```bash
 sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
-git clone https://github.com/Bratz/VAM.git && cd VAM/deploy/oci
-# Edit docker-compose.yml: replace BOTH occurrences of
-# 'change-me-strong-password' with a real password.
+git clone https://github.com/Bratz/VAM.git ~/VAM && cd ~/VAM/deploy/oci
+echo 'VAM_DB_PASSWORD=<pick-a-strong-password>' > .env   # untracked; compose reads it
 sudo docker compose up -d --build
 sudo docker compose logs -f backend   # watch for "[seed] Dump loaded." then the Spring banner
 ```
+(The password lives only in `deploy/oci/.env` on the VM — the tracked compose
+file stays clean, so auto-deploy `git pull` never conflicts.)
+
+### 1GB fallback (AMD E2.1.Micro regions)
+This Spring context wants ~1 GB by itself, so on a 1 GB VM two things are
+mandatory:
+1. **Swap** (absorbs startup spikes; slow but survives):
+   ```bash
+   sudo fallocate -l 4G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+2. **Cap the JVM** — uncomment the `JAVA_OPTS` line in
+   `deploy/oci/docker-compose.yml` (640m heap, serial GC).
+
+Expect multi-minute startups and sluggish first requests. Alternative:
+Always Free allows **two** E2.1.Micro VMs — put Postgres on one and the
+backend on the other (change `SPRING_DATASOURCE_URL` to the DB VM's private
+IP, open 5432 between them in the security list). And keep retrying for A1
+capacity; you can rebuild there in minutes since everything is in the repo.
 
 First boot: the container seeds Postgres from the repo's dump
 (`SEED_ON_START=true`, idempotent — later restarts skip it).
@@ -74,6 +101,25 @@ down but the API serves; `/api/v1/...` endpoints are what matter.)
      `frontend/src/services/api.ts`).
 3. Deploy. The app is served at `https://<project>.vercel.app`, and every
    `/api/*` call is proxied server-side to the OCI VM.
+
+---
+
+## Part 3 — Auto-deploy (push-to-deploy, self-hosted edition)
+
+Managed platforms redeploy on push; a bare VM serves the old build until
+someone SSHes in. [`.github/workflows/deploy-oci.yml`](../.github/workflows/deploy-oci.yml)
+rebuilds that feature: every push to `main` SSHes into the VM, `git pull`s,
+and `docker compose up -d --build`s.
+
+One-time setup — repo → Settings → Secrets and variables → Actions:
+
+| Secret | Value |
+|---|---|
+| `VM_HOST` | the VM's public IP |
+| `VM_USER` | `ubuntu` |
+| `VM_SSH_KEY` | the **private** key matching the VM's authorized key (generate a dedicated deploy keypair; don't reuse your personal key) |
+
+The Vercel side already auto-deploys on push natively.
 
 ---
 

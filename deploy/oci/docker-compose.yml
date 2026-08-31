@@ -9,6 +9,12 @@
 # server-side rewrite (see docs/DEPLOYMENT.md).
 # ============================================================================
 
+# Secrets come from an untracked `.env` file NEXT TO THIS FILE on the VM
+# (compose reads it automatically). Keeping the tracked file clean means
+# `git pull` during auto-deploy never conflicts:
+#
+#   echo 'VAM_DB_PASSWORD=<strong-password>' > deploy/oci/.env
+#
 services:
   db:
     image: postgres:16-alpine
@@ -16,8 +22,7 @@ services:
     environment:
       POSTGRES_DB: vam_db
       POSTGRES_USER: vam_user
-      # Change this and mirror it in backend.DB_PASSWORD below.
-      POSTGRES_PASSWORD: change-me-strong-password
+      POSTGRES_PASSWORD: ${VAM_DB_PASSWORD:?create deploy/oci/.env with VAM_DB_PASSWORD=...}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -37,10 +42,13 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/vam_db
       SPRING_DATASOURCE_USERNAME: vam_user
-      DB_PASSWORD: change-me-strong-password
+      DB_PASSWORD: ${VAM_DB_PASSWORD:?create deploy/oci/.env with VAM_DB_PASSWORD=...}
       SEED_ON_START: "true"   # idempotent — safe to leave on
       VAM_MARKET_PROFILE: UK
       VAM_HOME_BANK_BIC: HBUKGB4BXXX
+      # On a 1GB AMD micro (see DEPLOYMENT.md "1GB fallback"), uncomment to
+      # cap the heap below the container-percentage default:
+      # JAVA_OPTS: "-Xmx640m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC"
     ports:
       - "8053:8053"
 
