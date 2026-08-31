@@ -1,0 +1,48 @@
+# ============================================================================
+# vam-portal on an Oracle Cloud Always-Free VM (Ampere A1, Ubuntu).
+#
+#   sudo docker compose up -d --build
+#
+# Runs Postgres + the self-seeding backend (root Dockerfile). First boot with
+# SEED_ON_START=true loads the repo's demo dump into the fresh database.
+# The frontend is NOT here — it deploys to Vercel and reaches this VM via a
+# server-side rewrite (see docs/DEPLOYMENT.md).
+# ============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vam_db
+      POSTGRES_USER: vam_user
+      # Change this and mirror it in backend.DB_PASSWORD below.
+      POSTGRES_PASSWORD: change-me-strong-password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vam_user -d vam_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      # Repo root is the build context — uses the root Dockerfile.
+      context: ../..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/vam_db
+      SPRING_DATASOURCE_USERNAME: vam_user
+      DB_PASSWORD: change-me-strong-password
+      SEED_ON_START: "true"   # idempotent — safe to leave on
+      VAM_MARKET_PROFILE: UK
+      VAM_HOME_BANK_BIC: HBUKGB4BXXX
+    ports:
+      - "8053:8053"
+
+volumes:
+  pgdata:
