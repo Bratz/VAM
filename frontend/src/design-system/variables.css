@@ -1,0 +1,538 @@
+/**
+ * VAM Portal Design System - CSS Custom Properties
+ * 
+ * Auto-generated from design tokens.
+ * Do not edit directly - modify tokens.json instead.
+ * 
+ * @generated
+ */
+
+:root {
+  /* ==================== Color Primitives ==================== */
+  
+  /* Navy (Primary Brand) */
+  --color-navy-50: #f0f4f8;
+  --color-navy-100: #d9e2ec;
+  --color-navy-200: #bcccdc;
+  --color-navy-300: #9fb3c8;
+  --color-navy-400: #829ab1;
+  --color-navy-500: #627d98;
+  --color-navy-600: #486581;
+  --color-navy-700: #334e68;
+  --color-navy-800: #243b53;
+  --color-navy-900: #102a43;
+  --color-navy-950: #0a1929;
+
+  /* Gold (Accent) */
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #f59e0b;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
+
+  /* Neutral */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* Green (Success) — full scale post-Tier 2 (2026-05-13). Adding 300/400/
+     800/900 stops so the semantic `success-*` palette can be fully scaled
+     in tailwind.config without creating undefined classes. Hex values mirror
+     Tailwind's built-in green so pages migrating from `bg-green-*` →
+     `bg-success-*` are pixel-identical. */
+  --color-green-50:  #ecfdf5;
+  --color-green-100: #d1fae5;
+  --color-green-200: #a7f3d0;
+  --color-green-300: #6ee7b7;
+  --color-green-400: #34d399;
+  --color-green-500: #10b981;
+  --color-green-600: #059669;
+  --color-green-700: #047857;
+  --color-green-800: #065f46;
+  --color-green-900: #064e3b;
+
+  /* Amber (Warning) — Phase 2 Design System Unification: repalettised from
+     the Tailwind amber family (which shared hex values with gold/accent at
+     every step — making warnings indistinguishable from brand accents) to
+     the Tailwind orange family. Warnings are now genuinely warm-orange,
+     visibly separated from the gold accent scale. */
+  --color-amber-50:  #fff7ed;
+  --color-amber-100: #ffedd5;
+  --color-amber-200: #fed7aa;
+  --color-amber-300: #fdba74;
+  --color-amber-400: #fb923c;
+  --color-amber-500: #f97316;
+  --color-amber-600: #ea580c;
+  --color-amber-700: #c2410c;
+
+  /* Red (Error) — full scale post-Tier 2 (2026-05-13). Same expansion
+     rationale as green above. */
+  --color-red-50:  #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+
+  /* Blue (Info) — full scale post-Tier 2 (2026-05-13). */
+  --color-blue-50:  #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+
+  /* Categorical palette — for typed-but-not-semantic data (account types,
+   * hierarchy levels, agreement types, currency identity). 8 hues, each
+   * with subtle bg / strong text pairs for light + dark. NOT for status —
+   * status stays success/warning/error/info. Phase 12 (2026-06-12). */
+  --cat-1: #4338ca;  --cat-1-soft: #eef2ff;   /* indigo  */
+  --cat-2: #7e22ce;  --cat-2-soft: #faf5ff;   /* purple  */
+  --cat-3: #0f766e;  --cat-3-soft: #f0fdfa;   /* teal    */
+  --cat-4: #be185d;  --cat-4-soft: #fdf2f8;   /* pink    */
+  --cat-5: #047857;  --cat-5-soft: #ecfdf5;   /* emerald */
+  --cat-6: #b45309;  --cat-6-soft: #fffbeb;   /* bronze  */
+  --cat-7: #1d4ed8;  --cat-7-soft: #eff6ff;   /* blue    */
+  --cat-8: #525252;  --cat-8-soft: #fafafa;   /* slate   */
+
+  /* ==================== Semantic Colors ==================== */
+
+  /* Brand */
+  --color-brand-primary: var(--color-navy-900);
+  --color-brand-primary-hover: var(--color-navy-800);
+  --color-brand-primary-active: var(--color-navy-950);
+  --color-brand-primary-subtle: var(--color-navy-100);
+  --color-brand-accent: var(--color-gold-500);
+  --color-brand-accent-hover: var(--color-gold-600);
+  --color-brand-accent-subtle: var(--color-gold-100);
+
+  /* Text */
+  --color-text-primary: var(--color-navy-900);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-tertiary: var(--color-neutral-400);
+  --color-text-inverse: var(--color-neutral-0);
+  --color-text-disabled: var(--color-neutral-400);
+  --color-text-link: var(--color-navy-700);
+  --color-text-link-hover: var(--color-navy-900);
+
+  /* Background */
+  --color-bg-primary: var(--color-neutral-0);
+  --color-bg-secondary: var(--color-neutral-50);
+  --color-bg-tertiary: var(--color-neutral-100);
+  --color-bg-inverse: var(--color-navy-950);
+  --color-bg-overlay: rgba(10, 25, 41, 0.6);
+  --color-bg-hover: var(--color-neutral-50);
+  --color-bg-selected: var(--color-navy-50);
+
+  /* Border */
+  --color-border-default: var(--color-neutral-200);
+  --color-border-subtle: var(--color-neutral-100);
+  --color-border-strong: var(--color-neutral-300);
+  --color-border-focus: var(--color-navy-500);
+  --color-border-inverse: var(--color-navy-800);
+
+  /* Status - Success */
+  --color-status-success: var(--color-green-500);
+  --color-status-success-subtle: var(--color-green-50);
+  --color-status-success-border: var(--color-green-200);
+  --color-status-success-text: var(--color-green-700);
+
+  /* Status - Warning */
+  --color-status-warning: var(--color-amber-500);
+  --color-status-warning-subtle: var(--color-amber-50);
+  --color-status-warning-border: var(--color-amber-200);
+  --color-status-warning-text: var(--color-amber-700);
+
+  /* Status - Error */
+  --color-status-error: var(--color-red-500);
+  --color-status-error-subtle: var(--color-red-50);
+  --color-status-error-border: var(--color-red-200);
+  --color-status-error-text: var(--color-red-700);
+
+  /* Status - Info */
+  --color-status-info: var(--color-blue-500);
+  --color-status-info-subtle: var(--color-blue-50);
+  --color-status-info-border: var(--color-blue-200);
+  --color-status-info-text: var(--color-blue-700);
+
+  /* Chart */
+  --color-chart-primary: var(--color-navy-900);
+  --color-chart-secondary: var(--color-green-500);
+  --color-chart-tertiary: var(--color-blue-500);
+  --color-chart-quaternary: var(--color-amber-500);
+  --color-chart-quinary: var(--color-red-500);
+  --color-chart-grid: var(--color-neutral-200);
+  --color-chart-axis: var(--color-neutral-500);
+
+  /* ==================== Typography ==================== */
+
+  /* Font Family — distinctive pair, see CLAUDE.md "Frontend Aesthetics" */
+
+  /* Body / UI sans. Tier 3 (2026-06-12): Open Sans replaces Bricolage
+   * Grotesque — category-standard neutral; large x-height and open
+   * apertures outperform Bricolage at 12.5–14px table sizes. */
+  --font-sans: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Identifier mono (VA numbers, IBANs, references, transaction IDs).
+   * NOT used for monetary amounts — Tier 2 introduces .amount for those. */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+
+  /* Numeric display — stat values, amounts at hero scale.
+   *
+   * Was Fraunces (display serif). Phase 11 Tier 1 (2026-05-17): swapped to
+   * IBM Plex Sans because Fraunces' soft curves and optical-size variation
+   * read as editorial rather than audit-grade. Tier 3 (2026-06-12):
+   * consolidated onto Open Sans (was IBM Plex Sans). Weight 600 +
+   * tabular-nums (applied by stat utilities) carries the display role.
+   * The serif is preserved on page titles (--font-title) as a brand moment. */
+  --font-numeric: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Brand-moment serif — used on page titles only. Fraunces at weights 500
+   * and 600. Single line of typography per page; precision burden zero. */
+  --font-title: 'Fraunces', Georgia, ui-serif, serif;
+
+  /* `--font-display` alias retired in Phase 12 Tier 3 (2026-06-12) — all
+   * references migrated to `--font-numeric` directly. */
+
+  /* Font Size */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 4rem;
+
+  /* Font Weight */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Height */
+  --line-height-none: 1;
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.2;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.5;
+  --line-height-loose: 1.6;
+
+  /* Letter Spacing */
+  --letter-spacing-tighter: -0.02em;
+  --letter-spacing-tight: -0.01em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+
+  /* ==================== Spacing ==================== */
+
+  --spacing-0: 0;
+  --spacing-px: 1px;
+  --spacing-0-5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-1-5: 0.375rem;
+  --spacing-2: 0.5rem;
+  --spacing-2-5: 0.625rem;
+  --spacing-3: 0.75rem;
+  --spacing-3-5: 0.875rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-7: 1.75rem;
+  --spacing-8: 2rem;
+  --spacing-9: 2.25rem;
+  --spacing-10: 2.5rem;
+  --spacing-11: 2.75rem;
+  --spacing-12: 3rem;
+  --spacing-14: 3.5rem;
+  --spacing-16: 4rem;
+  --spacing-18: 4.5rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+  --spacing-28: 7rem;
+  --spacing-32: 8rem;
+  --spacing-36: 9rem;
+  --spacing-40: 10rem;
+  --spacing-44: 11rem;
+  --spacing-48: 12rem;
+  --spacing-52: 13rem;
+  --spacing-56: 14rem;
+  --spacing-60: 15rem;
+  --spacing-64: 16rem;
+  --spacing-72: 18rem;
+  --spacing-80: 20rem;
+  --spacing-96: 24rem;
+
+  /* Semantic Spacing */
+  --spacing-page-x: var(--spacing-8);
+  --spacing-page-y: var(--spacing-8);
+  --spacing-page-gap: var(--spacing-6);
+  --spacing-card-sm: var(--spacing-4);
+  --spacing-card-md: var(--spacing-6);
+  --spacing-card-lg: var(--spacing-8);
+  --spacing-form-gap: var(--spacing-4);
+  --spacing-form-label: var(--spacing-1-5);
+
+  /* ==================== Sizing ==================== */
+
+  --size-icon-xs: 0.75rem;
+  --size-icon-sm: 1rem;
+  --size-icon-md: 1.25rem;
+  --size-icon-lg: 1.5rem;
+  --size-icon-xl: 2rem;
+
+  --size-avatar-xs: 1.5rem;
+  --size-avatar-sm: 2rem;
+  --size-avatar-md: 2.5rem;
+  --size-avatar-lg: 3rem;
+  --size-avatar-xl: 4rem;
+
+  --size-touch-target: 2.75rem;
+  --size-input-height: 2.75rem;
+  --size-header-height: 4rem;
+  --size-sidebar-width: 16rem;
+
+  /* Modal max-width sizes. Phase 8 Design System Unification: these were
+     previously duplicated as inline Tailwind utility class names in
+     `components/ui/enhanced.tsx` (max-w-md / max-w-lg / max-w-2xl /
+     max-w-4xl). Same values, two declaration sites — fragile when one
+     changes and the other doesn't. Now declared once here; the Modal
+     component reads via `max-w-[var(--modal-width-md)]`. tokens.json
+     `component.modal.sizes` mirrors these. */
+  --modal-width-sm:  28rem;   /* small dialogs, confirm prompts */
+  --modal-width-md:  32rem;   /* default — most forms */
+  --modal-width-lg:  42rem;   /* wider forms, two-column layouts */
+  --modal-width-xl:  56rem;   /* wizards, multi-step flows */
+  --modal-width-full: 90vw;   /* near-fullscreen for table editors */
+
+  /* ==================== Border Radius ==================== */
+  /* Phase 3 Design System Unification: collapsed from 8 radii into 4
+     canonical values. Old names alias to the canonical 4 so existing
+     callers don't break. New code should use only the canonical names.
+
+     Pick by surface intent:
+       sm   (4px)  — badges, pills, chips, micro-tags
+       md   (8px)  — buttons, inputs, dropdowns
+       lg   (12px) — cards, modals, popovers, hero banners
+       full        — circles, fully rounded elements
+     The previous `xl` (16px) and `2xl` (24px) values are gone — that 4–12px
+     spread on cards never carried meaning, just inconsistency. Everything
+     formerly `rounded-xl` or `rounded-2xl` now reads as `lg` (12px). The
+     Tailwind config matches so Tailwind utility callers also collapse. */
+
+  --radius-none: 0;
+  --radius-sm:   0.25rem;  /* 4px  — badges, pills */
+  --radius-md:   0.5rem;   /* 8px  — buttons, inputs */
+  --radius-lg:   0.75rem;  /* 12px — cards, modals */
+  --radius-full: 9999px;
+
+  /* LEGACY ALIASES — kept so existing callers (incl. Tailwind `rounded-default`,
+     `rounded-xl`, `rounded-2xl` and direct CSS `var(--radius-xl)`) stay green. */
+  --radius-default: var(--radius-md);   /* was: 6px */
+  --radius-xl:      var(--radius-lg);   /* was: 16px → maps to 12px */
+  --radius-2xl:     var(--radius-lg);   /* was: 24px → maps to 12px */
+
+  /* ==================== Shadows ==================== */
+  /* Phase 3 Design System Unification: collapsed from 14 sprawling tokens
+     into 5 canonical depth tokens + a coloured-halo set for state rings.
+     Old names are kept alive as aliases of the canonical 5 so existing
+     callers don't break. New code should use only the canonical names. */
+
+  --shadow-none: none;
+
+  /* CANONICAL DEPTH SCALE — 5 tokens. Pick one based on intent:
+       rest    — base depth on a surface at rest (cards, inputs)
+       hover   — elevated state, raised z-feel (card hover, primary buttons)
+       popover — floating UI off the page plane (tooltips, dropdowns)
+       modal   — modal dialog drop-shadow, deepest depth
+       focus   — keyboard focus ring (gold, see Set "Focus" below)
+     Every shadow on the platform should resolve to one of these. */
+  --shadow-rest:    0 1px 3px rgba(16, 42, 67, 0.06), 0 1px 2px rgba(16, 42, 67, 0.04);
+  --shadow-hover:   0 4px 6px -1px rgba(16, 42, 67, 0.07), 0 2px 4px -1px rgba(16, 42, 67, 0.04);
+  --shadow-popover: 0 10px 15px -3px rgba(16, 42, 67, 0.08), 0 4px 6px -2px rgba(16, 42, 67, 0.04);
+  --shadow-modal:   0 25px 50px -12px rgba(16, 42, 67, 0.20);
+
+  /* LEGACY ALIASES — old depth-shadow names mapped to the canonical 5.
+     Kept alive so existing `var(--shadow-sm)` etc. callers don't break.
+     Future page work can switch to canonical names organically. Do NOT
+     introduce new callers of these names. */
+  --shadow-xs:          var(--shadow-rest);   /* was: 1px navy-tint   → maps to rest */
+  --shadow-sm:          var(--shadow-rest);   /* was: 3px navy-tint   → maps to rest */
+  --shadow-inner:       inset 0 2px 4px 0 rgba(16, 42, 67, 0.04);  /* inset variant kept as-is */
+  --shadow-md:          var(--shadow-hover);  /* was: 6px navy-tint   → maps to hover */
+  --shadow-lg:          var(--shadow-popover); /* was: 15px navy-tint → maps to popover */
+  --shadow-xl:          var(--shadow-popover); /* was: 25px navy-tint → maps to popover */
+  --shadow-2xl:         var(--shadow-modal);  /* was: 50px navy-tint  → maps to modal */
+  --shadow-glow:        var(--shadow-popover); /* was: 20px navy glow → maps to popover */
+  --shadow-soft:        var(--shadow-rest);   /* was: 8/16px neutral  → maps to rest */
+  --shadow-medium:      var(--shadow-hover);  /* was: 12/24px neutral → maps to hover */
+  --shadow-strong:      var(--shadow-modal);  /* was: 24/48px neutral, used for modal drop-shadows in enhanced.tsx → maps to modal (50px) not popover (15px). Reviewer caught the mis-alias. */
+  --shadow-inner-soft:  var(--shadow-inner);
+
+  /* COLOURED RING SET — these are NOT depth shadows. They are 3px coloured
+     halos used to highlight semantic state (input validation, focus accent
+     glow). Renamed to `--ring-*` in spirit; old `--shadow-*` aliases retained
+     so callers stay green. */
+  --ring-accent:  0 0 0 3px rgba(245, 158, 11, 0.15);
+  --ring-primary: 0 0 0 3px rgba(16, 42, 67, 0.10);
+  --ring-success: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  --ring-error:   0 0 0 3px rgba(247, 115, 22, 0.18);  /* Phase 2: orange-tinted to match new amber/warning hue */
+  --shadow-accent:  var(--ring-accent);
+  --shadow-primary: var(--ring-primary);
+  --shadow-success: var(--ring-success);
+  --shadow-error:   var(--ring-error);
+
+  /* FOCUS RING — canonical, used by every interactive element. Phase 4
+     update: gold (brand accent) instead of navy. `--shadow-focus-offset` is
+     the only focus token; everything routes through it. */
+  --shadow-focus: 0 0 0 2px var(--color-brand-accent);
+  --shadow-focus-offset: 0 0 0 2px var(--color-bg-primary), 0 0 0 4px var(--color-brand-accent);
+
+  /* ==================== Z-Index ==================== */
+
+  --z-hide: -1;
+  --z-base: 0;
+  --z-raised: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-header: 30;
+  --z-sidebar: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-toast: 70;
+  --z-max: 9999;
+
+  /* ==================== Animation ==================== */
+
+  --duration-instant: 0ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  /* Easings — two naming conventions intentionally live side-by-side:
+       --easing-* (formal: linear, ease-in, ease-out, ease-in-out, spring)
+       --ease-*   (premium curves: out-expo, out-back, in-out-circ, spring)
+     Both are consumed by existing component classes in index.css and by
+     ThemeProvider.tsx. Keep both alive until Phase 3 collapses to a single
+     "premium easing set" with one naming convention. */
+  --easing-linear: linear;
+  --easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back:    cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-circ: cubic-bezier(0.85, 0, 0.15, 1);
+  --ease-spring:      cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* ==================== Transitions ==================== */
+
+  --transition-default: all var(--duration-normal) var(--easing-ease-out);
+  --transition-fast: all var(--duration-fast) var(--easing-ease-out);
+  --transition-slow: all var(--duration-slow) var(--easing-ease-out);
+
+  /* ==================== Opacity ==================== */
+
+  --opacity-disabled: 0.5;
+  --opacity-overlay: 0.6;
+
+  /* ==================== Mobile / Safe Area ==================== */
+  /* iOS notch / Android gesture bar respect. Used by mobile-bottom-nav and
+     any fixed bottom UI. */
+  --safe-area-inset-top:    env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left:   env(safe-area-inset-left, 0px);
+  --safe-area-inset-right:  env(safe-area-inset-right, 0px);
+
+  /* Minimum touch-target sizes (WCAG 2.5.5 / Apple HIG / Material).
+     Aliased to `--size-touch-target` for legacy callers. */
+  --touch-target-min:         44px;
+  --touch-target-comfortable: 48px;
+}
+
+/* ==================== Dark Mode ==================== */
+
+.dark,
+[data-theme="dark"] {
+  /* Text */
+  --color-text-primary: var(--color-neutral-50);
+  --color-text-secondary: var(--color-neutral-400);
+  --color-text-tertiary: var(--color-neutral-500);
+
+  /* Background */
+  --color-bg-primary: var(--color-navy-900);
+  --color-bg-secondary: var(--color-navy-950);
+  --color-bg-tertiary: var(--color-navy-800);
+  --color-bg-hover: var(--color-navy-800);
+  --color-bg-selected: var(--color-navy-700);
+
+  /* Border */
+  --color-border-default: var(--color-navy-700);
+  --color-border-subtle: var(--color-navy-800);
+  --color-border-strong: var(--color-navy-600);
+
+  /* No dark-mode shadow overrides.
+     Post-Phase-3 review: the previous override block redefined the legacy
+     `--shadow-soft / -medium / -strong` names (which are now aliases of
+     the canonical `--shadow-rest / -hover / -popover / -modal` set). Doing
+     so partially defeated the consolidation — and worse, on dark surfaces
+     (cards = navy-900, panels = navy-950) the explicit drop shadow rarely
+     reads anyway; the brightness step between the two navys carries the
+     depth signal more cleanly than any shadow. Cards already explicitly
+     null their shadow via `[data-theme="dark"] .card-base { box-shadow:
+     none }` in index.css, so dropping these overrides is a no-op for the
+     surfaces that intentionally suppressed them, and for anything else it
+     just lets the canonical-set shadows apply uniformly across themes. */
+}
+
+/* ==================== Reduced Motion ==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==================== High Contrast Mode ==================== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --color-border-default: var(--color-neutral-400);
+    --color-border-subtle: var(--color-neutral-300);
+    --color-text-secondary: var(--color-neutral-700);
+  }
+}

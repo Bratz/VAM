@@ -1,0 +1,39 @@
+# ==========================================
+# VAM Portal Backend — slim runtime-only image
+# ==========================================
+# Packages a jar you already built on the host (no in-container Maven):
+#
+#   mvn clean package -DskipTests
+#   docker build -f Dockerfile.slim -t vam-service:slim .
+#
+# Use the main Dockerfile when you want the fully reproducible
+# multi-stage build instead.
+#
+# NOTE: Java 21, not 17 — the jar targets class-file version 65 and will
+# fail on a 17 JRE with UnsupportedClassVersionError.
+FROM eclipse-temurin:21-jre-alpine
+
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY target/vam-service-*.jar app.jar
+RUN chown appuser:appgroup app.jar
+USER appuser
+
+# application.yml defaults the port to 8053 (override with -e SERVER_PORT=…).
+# There is NO servlet context path — controllers hardcode /api/v1/** in their
+# mappings, so actuator lives at the root: /actuator/health.
+EXPOSE 8053
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8053/actuator/health || exit 1
+
+# Container-aware memory: 75% of the container's RAM limit rather than a
+# hardcoded -Xmx, so the same image works on any tier. Realistic floor for
+# this service is ~1GB container RAM — the Spring context is large and a
+# 512MB free tier (-Xmx350m style) will OOM at startup or thrash.
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

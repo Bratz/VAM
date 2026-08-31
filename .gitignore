@@ -1,0 +1,41 @@
+# ============================================================================
+# vam-portal — strictly-source repository.
+# Everything regenerable (builds, logs, screenshots, rendered PDFs) stays out;
+# the pipelines that produce them are tracked instead.
+# ============================================================================
+
+# --- Build output ---
+**/target/
+**/node_modules/
+**/dist/
+
+# --- Runtime logs & JVM crash artifacts ---
+*.log
+**/logs/
+hs_err_pid*.log
+replay_pid*.log
+
+# --- Secrets (only .env.example is tracked) ---
+.env
+.env.local
+.env.*.local
+
+# --- Generated documentation artifacts (rebuild: docs/manual/capture.mjs +
+#     md2html.py + headless-Chrome print; see docs/USER_MANUAL.md footer) ---
+docs/manual/img/
+docs/manual/img_jpg/
+docs/manual/manifest.json
+docs/manual/*.html
+docs/*.pdf
+*.pptx
+
+# --- IDE / OS noise ---
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Misc local scratch ---
+*.tmp
+*.bak

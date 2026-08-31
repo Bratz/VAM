@@ -1,0 +1,1206 @@
+openapi: 3.0.3
+info:
+  title: ISO 20022 Statement API
+  description: |
+    REST API for ISO 20022 compliant account statements:
+    - camt.053 (Bank-to-Customer Statement)
+    - camt.054 (Bank-to-Customer Debit/Credit Notification)
+    - Aggregated statements with child account consolidation
+
+    ## Features
+    - XML and JSON output formats
+    - Pagination for large statements
+    - Async generation for large date ranges
+    - Statement storage and retrieval
+    - Hierarchy-aware aggregation
+
+    ## ISO 20022 Compliance
+    - camt.053.001.08 - End-of-day account statements
+    - camt.054.001.08 - Real-time credit/debit notifications
+  version: 1.0.0
+  contact:
+    name: VAM Portal Team
+    email: vam-support@bank.com
+
+servers:
+  - url: /api/v1/iso20022
+    description: ISO 20022 Statement API
+
+tags:
+  - name: camt.053
+    description: Bank-to-Customer Statement operations
+  - name: camt.054
+    description: Bank-to-Customer Debit/Credit Notification operations
+  - name: Aggregated
+    description: Aggregated statement operations across account hierarchy
+  - name: History
+    description: Statement history and retrieval operations
+  - name: Async Jobs
+    description: Async job management for large statement generation
+
+paths:
+  # ============================================================================
+  # CAMT.053 - BANK TO CUSTOMER STATEMENT
+  # ============================================================================
+
+  /camt053/generate:
+    post:
+      tags:
+        - camt.053
+      summary: Generate camt.053 statement
+      description: |
+        Generate ISO 20022 camt.053 Bank-to-Customer Statement for a virtual account.
+
+        For date ranges > 90 days or > 10,000 transactions, processing is async.
+        Returns job ID for status tracking.
+      operationId: generateCamt053Statement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Camt053GenerateRequest'
+            examples:
+              basic:
+                summary: Basic statement request
+                value:
+                  vaId: "550e8400-e29b-41d4-a716-446655440000"
+                  fromDate: "2024-01-01"
+                  toDate: "2024-01-31"
+                  format: "XML"
+              withChildren:
+                summary: Include child accounts
+                value:
+                  vaId: "550e8400-e29b-41d4-a716-446655440000"
+                  fromDate: "2024-01-01"
+                  toDate: "2024-01-31"
+                  format: "JSON"
+                  includeChildren: true
+                  includePending: false
+      responses:
+        '200':
+          description: Statement generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCamt053'
+        '202':
+          description: Statement generation started (async)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAsyncJob'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: Virtual account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /camt053/va/{vaId}:
+    get:
+      tags:
+        - camt.053
+      summary: Get camt.053 statement for VA
+      description: Retrieve ISO 20022 camt.053 statement using path parameters
+      operationId: getCamt053Statement
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Virtual Account ID
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Statement period start date
+        - name: toDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Statement period end date
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [XML, JSON]
+            default: JSON
+          description: Output format
+        - name: includeChildren
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include child accounts
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Page number (0-based)
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 100
+          description: Page size
+      responses:
+        '200':
+          description: Statement retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCamt053'
+
+  /camt053/va/{vaId}/xml:
+    get:
+      tags:
+        - camt.053
+      summary: Download camt.053 XML statement
+      description: Generate and download ISO 20022 camt.053 statement as XML file
+      operationId: downloadCamt053Xml
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: includeChildren
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: XML file download
+          content:
+            application/xml:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="camt053_VA123456_2024-01-01_2024-01-31.xml"
+
+  # ============================================================================
+  # CAMT.054 - DEBIT/CREDIT NOTIFICATION
+  # ============================================================================
+
+  /camt054/generate:
+    post:
+      tags:
+        - camt.054
+      summary: Generate camt.054 notification
+      description: Generate ISO 20022 camt.054 Bank-to-Customer Debit/Credit Notification
+      operationId: generateCamt054Notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Camt054GenerateRequest'
+            examples:
+              allNotifications:
+                summary: All notifications for period
+                value:
+                  vaId: "550e8400-e29b-41d4-a716-446655440000"
+                  fromDate: "2024-01-15"
+                  toDate: "2024-01-15"
+                  format: "XML"
+              creditsOnly:
+                summary: Credits only
+                value:
+                  vaId: "550e8400-e29b-41d4-a716-446655440000"
+                  fromDate: "2024-01-15"
+                  toDate: "2024-01-15"
+                  creditsOnly: true
+      responses:
+        '200':
+          description: Notification generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCamt054'
+
+  /camt054/va/{vaId}:
+    get:
+      tags:
+        - camt.054
+      summary: Get camt.054 notifications for VA
+      description: Retrieve debit/credit notifications for a virtual account
+      operationId: getCamt054Notifications
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: creditsOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: debitsOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCamt054'
+
+  /camt054/va/{vaId}/xml:
+    get:
+      tags:
+        - camt.054
+      summary: Download camt.054 XML notification
+      operationId: downloadCamt054Xml
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: XML file download
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  # ============================================================================
+  # AGGREGATED STATEMENT
+  # ============================================================================
+
+  /camt053/va/{vaId}/aggregated:
+    get:
+      tags:
+        - Aggregated
+      summary: Get aggregated statement
+      description: |
+        Generate aggregated statement across account hierarchy.
+        Consolidates balances and transactions from child accounts.
+      operationId: getAggregatedStatement
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Parent Virtual Account ID
+        - name: fromDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: toDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: includeChildren
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Include child accounts in aggregation
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            default: -1
+          description: Hierarchy depth (-1 for unlimited)
+        - name: groupByCurrency
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Group summaries by currency
+        - name: includeDetails
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include detailed transaction entries
+      responses:
+        '200':
+          description: Aggregated statement generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAggregated'
+
+  /camt053/aggregated/generate:
+    post:
+      tags:
+        - Aggregated
+      summary: Generate aggregated statement (POST)
+      operationId: generateAggregatedStatement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AggregatedStatementRequest'
+      responses:
+        '200':
+          description: Aggregated statement generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAggregated'
+
+  # ============================================================================
+  # STATEMENT HISTORY
+  # ============================================================================
+
+  /statements/va/{vaId}/history:
+    get:
+      tags:
+        - History
+      summary: Get statement history for VA
+      operationId: getStatementHistoryByVa
+      parameters:
+        - name: vaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatementType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/GenerationStatus'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: generatedAt
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Statement history retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHistory'
+
+  /statements/corporate/{corporateId}/history:
+    get:
+      tags:
+        - History
+      summary: Get statement history for corporate
+      operationId: getStatementHistoryByCorporate
+      parameters:
+        - name: corporateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatementType'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/GenerationStatus'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Statement history retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseHistory'
+
+  /statements/{statementId}:
+    get:
+      tags:
+        - History
+      summary: Get statement details
+      operationId: getStatementById
+      parameters:
+        - name: statementId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: includeEntries
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Statement details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseStatementDetail'
+        '404':
+          description: Statement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /statements/{statementId}/download:
+    get:
+      tags:
+        - History
+      summary: Download statement file
+      operationId: downloadStatement
+      parameters:
+        - name: statementId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            $ref: '#/components/schemas/OutputFormat'
+      responses:
+        '200':
+          description: Statement file download
+          content:
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+            text/csv:
+              schema:
+                type: string
+
+  /statements/{statementId}/xml:
+    get:
+      tags:
+        - History
+      summary: Download statement as XML
+      operationId: downloadStatementXml
+      parameters:
+        - name: statementId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: XML file download
+          content:
+            application/xml:
+              schema:
+                type: string
+
+  # ============================================================================
+  # ASYNC JOB MANAGEMENT
+  # ============================================================================
+
+  /statements/jobs/{jobId}:
+    get:
+      tags:
+        - Async Jobs
+      summary: Get async job status
+      operationId: getAsyncJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAsyncJobStatus'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    delete:
+      tags:
+        - Async Jobs
+      summary: Cancel async job
+      operationId: cancelAsyncJob
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseVoid'
+
+components:
+  schemas:
+    # ============================================================================
+    # ENUMS
+    # ============================================================================
+
+    OutputFormat:
+      type: string
+      enum: [XML, JSON, PDF, CSV]
+      description: Statement output format
+
+    StatementType:
+      type: string
+      enum: [CAMT053, CAMT052, CAMT054]
+      description: ISO 20022 statement type
+
+    GenerationStatus:
+      type: string
+      enum: [PENDING, PROCESSING, COMPLETED, FAILED, EXPIRED]
+      description: Statement generation status
+
+    # ============================================================================
+    # REQUEST SCHEMAS
+    # ============================================================================
+
+    Camt053GenerateRequest:
+      type: object
+      required:
+        - vaId
+        - fromDate
+        - toDate
+      properties:
+        vaId:
+          type: string
+          format: uuid
+          description: Virtual Account ID
+        vaNumber:
+          type: string
+          description: Virtual Account Number (alternative to vaId)
+        fromDate:
+          type: string
+          format: date
+          description: Statement period start date
+        toDate:
+          type: string
+          format: date
+          description: Statement period end date
+        format:
+          $ref: '#/components/schemas/OutputFormat'
+        includeChildren:
+          type: boolean
+          default: false
+          description: Include child accounts
+        includePending:
+          type: boolean
+          default: false
+          description: Include pending transactions
+        maxEntries:
+          type: integer
+          description: Maximum entries per page
+        page:
+          type: integer
+          description: Page number (0-based)
+        callbackUrl:
+          type: string
+          format: uri
+          description: Callback URL for async notification
+        requestId:
+          type: string
+          description: Request correlation ID
+
+    Camt054GenerateRequest:
+      type: object
+      required:
+        - vaId
+      properties:
+        vaId:
+          type: string
+          format: uuid
+        vaNumber:
+          type: string
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        format:
+          $ref: '#/components/schemas/OutputFormat'
+        creditsOnly:
+          type: boolean
+          default: false
+        debitsOnly:
+          type: boolean
+          default: false
+        transactionId:
+          type: string
+          format: uuid
+        minAmount:
+          type: number
+        maxAmount:
+          type: number
+        requestId:
+          type: string
+
+    AggregatedStatementRequest:
+      type: object
+      required:
+        - vaId
+        - fromDate
+        - toDate
+      properties:
+        vaId:
+          type: string
+          format: uuid
+          description: Parent Virtual Account ID
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        includeChildren:
+          type: boolean
+          default: true
+        depth:
+          type: integer
+          default: -1
+          description: Hierarchy depth (-1 for unlimited)
+        format:
+          $ref: '#/components/schemas/OutputFormat'
+        groupByCurrency:
+          type: boolean
+          default: true
+        includeDetails:
+          type: boolean
+          default: false
+        requestId:
+          type: string
+
+    # ============================================================================
+    # RESPONSE SCHEMAS
+    # ============================================================================
+
+    StatementSummary:
+      type: object
+      properties:
+        openingBalance:
+          type: number
+          description: Opening balance at period start
+        closingBalance:
+          type: number
+          description: Closing balance at period end
+        availableBalance:
+          type: number
+        currency:
+          type: string
+        entryCount:
+          type: integer
+        creditCount:
+          type: integer
+        creditTotal:
+          type: number
+        debitCount:
+          type: integer
+        debitTotal:
+          type: number
+        netMovement:
+          type: number
+
+    StatementEntry:
+      type: object
+      properties:
+        sequenceNumber:
+          type: integer
+        transactionId:
+          type: string
+          format: uuid
+        entryReference:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        creditDebitIndicator:
+          type: string
+          enum: [CRDT, DBIT]
+        reversal:
+          type: boolean
+        status:
+          type: string
+        bookingDate:
+          type: string
+          format: date
+        valueDate:
+          type: string
+          format: date
+        endToEndId:
+          type: string
+        remittanceInfo:
+          type: string
+        balanceAfter:
+          type: number
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrevious:
+          type: boolean
+
+    Camt053Response:
+      type: object
+      properties:
+        statementId:
+          type: string
+        messageId:
+          type: string
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        vaId:
+          type: string
+          format: uuid
+        vaNumber:
+          type: string
+        accountIban:
+          type: string
+        currency:
+          type: string
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          $ref: '#/components/schemas/StatementSummary'
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementEntry'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+        downloadUrl:
+          type: string
+        camt053Xml:
+          type: string
+          description: XML content (when format=XML)
+        expiresAt:
+          type: string
+          format: date-time
+        processingTimeMs:
+          type: integer
+          format: int64
+
+    Camt054Response:
+      type: object
+      properties:
+        notificationId:
+          type: string
+        messageId:
+          type: string
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        vaId:
+          type: string
+          format: uuid
+        vaNumber:
+          type: string
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          type: object
+          properties:
+            totalCount:
+              type: integer
+            creditCount:
+              type: integer
+            creditTotal:
+              type: number
+            debitCount:
+              type: integer
+            debitTotal:
+              type: number
+        entries:
+          type: array
+          items:
+            type: object
+        camt054Xml:
+          type: string
+        downloadUrl:
+          type: string
+
+    AggregatedStatementResponse:
+      type: object
+      properties:
+        statementId:
+          type: string
+        vaId:
+          type: string
+          format: uuid
+        vaNumber:
+          type: string
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        generatedAt:
+          type: string
+          format: date-time
+        accountCount:
+          type: integer
+        currencySummaries:
+          type: array
+          items:
+            type: object
+            properties:
+              currency:
+                type: string
+              accountCount:
+                type: integer
+              summary:
+                $ref: '#/components/schemas/StatementSummary'
+        totalSummary:
+          $ref: '#/components/schemas/StatementSummary'
+        accountStatements:
+          type: array
+          items:
+            type: object
+        downloadUrl:
+          type: string
+        processingTimeMs:
+          type: integer
+          format: int64
+
+    StatementHistoryEntry:
+      type: object
+      properties:
+        statementId:
+          type: string
+        type:
+          $ref: '#/components/schemas/StatementType'
+        vaId:
+          type: string
+          format: uuid
+        vaNumber:
+          type: string
+        fromDate:
+          type: string
+          format: date
+        toDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        format:
+          $ref: '#/components/schemas/OutputFormat'
+        generatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        entryCount:
+          type: integer
+        downloadUrl:
+          type: string
+        includesChildren:
+          type: boolean
+
+    AsyncJobStatus:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statementId:
+          type: string
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        progressPercent:
+          type: integer
+        currentStep:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        estimatedCompletion:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        downloadUrl:
+          type: string
+        errorMessage:
+          type: string
+
+    AsyncJobResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        message:
+          type: string
+        statusUrl:
+          type: string
+        estimatedCompletion:
+          type: string
+          format: date-time
+
+    # ============================================================================
+    # API WRAPPER SCHEMAS
+    # ============================================================================
+
+    ApiResponseCamt053:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Camt053Response'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseCamt054:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Camt054Response'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseAggregated:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AggregatedStatementResponse'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseHistory:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            statements:
+              type: array
+              items:
+                $ref: '#/components/schemas/StatementHistoryEntry'
+            pagination:
+              $ref: '#/components/schemas/PaginationInfo'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseStatementDetail:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseAsyncJob:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AsyncJobResponse'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseAsyncJobStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/AsyncJobStatus'
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiResponseVoid:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ApiError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        timestamp:
+          type: string
+          format: date-time

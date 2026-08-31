@@ -1,0 +1,183 @@
+{
+  "mappings": [
+    {
+      "name": "BaNCS Health Check",
+      "request": {
+        "method": "GET",
+        "url": "/bancs-stub/health"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "status": "UP",
+          "service": "BaNCS Stub",
+          "timestamp": "{{now}}"
+        }
+      }
+    },
+    {
+      "name": "BaNCS Customer Inquiry",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/customer/inquiry"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "00",
+          "responseMessage": "Success",
+          "customer": {
+            "customerId": "BANCS-CUST-001",
+            "customerName": "Desert Oasis E-Commerce LLC",
+            "customerType": "CORPORATE",
+            "status": "ACTIVE",
+            "kycStatus": "VERIFIED"
+          }
+        }
+      }
+    },
+    {
+      "name": "BaNCS Account Balance",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/account/balance"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "00",
+          "responseMessage": "Success",
+          "account": {
+            "accountNumber": "0011234567890",
+            "accountName": "Desert Oasis Main Operating",
+            "currency": "AED",
+            "currentBalance": 15750000.00,
+            "availableBalance": 15250000.00,
+            "status": "ACTIVE"
+          }
+        }
+      }
+    },
+    {
+      "name": "BaNCS Fund Transfer",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/transfer/execute"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "00",
+          "responseMessage": "Transfer Successful",
+          "transactionRef": "BANCS-{{randomValue length=10 type='ALPHANUMERIC'}}",
+          "status": "COMPLETED",
+          "timestamp": "{{now}}"
+        }
+      }
+    },
+    {
+      "name": "BaNCS Transaction History",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/account/transactions"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "00",
+          "responseMessage": "Success",
+          "transactions": [
+            {
+              "transactionId": "TXN001",
+              "date": "2024-01-15",
+              "type": "CREDIT",
+              "amount": 50000.00,
+              "currency": "AED",
+              "description": "Customer Payment",
+              "reference": "INV-2024-001"
+            },
+            {
+              "transactionId": "TXN002",
+              "date": "2024-01-14",
+              "type": "DEBIT",
+              "amount": 25000.00,
+              "currency": "AED",
+              "description": "Supplier Payment",
+              "reference": "PO-2024-001"
+            }
+          ],
+          "pagination": {
+            "page": 1,
+            "pageSize": 10,
+            "totalRecords": 2,
+            "totalPages": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "BaNCS Account Statement",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/account/statement"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "00",
+          "responseMessage": "Success",
+          "statement": {
+            "accountNumber": "0011234567890",
+            "fromDate": "2024-01-01",
+            "toDate": "2024-01-31",
+            "openingBalance": 15000000.00,
+            "closingBalance": 15750000.00,
+            "totalCredits": 1250000.00,
+            "totalDebits": 500000.00
+          }
+        }
+      }
+    },
+    {
+      "name": "BaNCS Error - Invalid Account",
+      "request": {
+        "method": "POST",
+        "url": "/bancs-stub/api/v1/account/balance",
+        "bodyPatterns": [
+          {
+            "contains": "INVALID"
+          }
+        ]
+      },
+      "response": {
+        "status": 400,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "responseCode": "E001",
+          "responseMessage": "Invalid Account Number",
+          "errorDetails": "The specified account does not exist"
+        }
+      }
+    }
+  ]
+}
