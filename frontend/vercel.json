@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "http://REPLACE_WITH_OCI_PUBLIC_IP:8053/api/:path*"
+      "destination": "http://161.33.9.182:8053/api/:path*"
     }
   ]
 }
