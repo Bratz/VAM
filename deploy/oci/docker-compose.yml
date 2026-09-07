@@ -92,8 +92,19 @@ services:
       # Public-facing — must match what external clients actually reach (see
       # the .env note above). Internal calls to the backend use the docker
       # network instead, never this URL.
-      GATEWAY_ISSUER: ${GATEWAY_PUBLIC_BASE_URL:?create deploy/oci/.env with GATEWAY_PUBLIC_BASE_URL=http://<PUBLIC_IP>:9443}
-      GATEWAY_DEMO_REDIRECT_URI: ${GATEWAY_PUBLIC_BASE_URL:?create deploy/oci/.env with GATEWAY_PUBLIC_BASE_URL=http://<PUBLIC_IP>:9443}/authorized
+      #
+      # NOT `:?required` — Compose interpolates every service's `environment:`
+      # block while parsing the file, before `profiles:` decides what actually
+      # starts. A required-and-missing var here would abort `docker compose up`
+      # for EVERY service (db, backend included), even on a plain, unprofiled
+      # deploy that never touches this one — which is exactly how this broke
+      # the routine auto-deploy the first time. Falling back to localhost is
+      # safe: with the `mcp` profile inactive this container never starts, and
+      # if someone runs `--profile mcp` without setting the real value, the
+      # gateway comes up but is unusable externally — a visible, non-fatal
+      # misconfiguration instead of a stack-wide outage.
+      GATEWAY_ISSUER: ${GATEWAY_PUBLIC_BASE_URL:-http://localhost:9443}
+      GATEWAY_DEMO_REDIRECT_URI: ${GATEWAY_PUBLIC_BASE_URL:-http://localhost:9443}/authorized
       BACKEND_MCP_URL: http://backend:8053/mcp
     ports:
       - "9443:9443"
