@@ -50,6 +50,7 @@ public class IhbSettlementService {
     private final IhbLoanRepository loanRepository;
     private final VirtualAccountRepository virtualAccountRepository;
     private final SweepExecutionRepository sweepExecutionRepository;
+    private final com.bank.vam.config.HomeBankProperties homeBankProperties;
 
     // ========================================================================
     // DATA CLASSES
@@ -401,14 +402,18 @@ public class IhbSettlementService {
         if (netMovement.compareTo(BigDecimal.ZERO) > 0) {
             // Net outflow from entity to treasury (more deposits than returns)
             entityVa.settleOutflow(netMovement);
+            mirrorIfHomeBankShadow(entityVa, netMovement.negate());
             treasuryVa.credit(netMovement);
+            mirrorIfHomeBankShadow(treasuryVa, netMovement);
             transactionType = "NET_DEPOSIT";
             position.deposits().forEach(d -> positionIds.add(d.getId()));
         } else {
             // Net inflow to entity from treasury (more returns/loans than deposits)
             BigDecimal absAmount = netMovement.abs();
             treasuryVa.debit(absAmount);
+            mirrorIfHomeBankShadow(treasuryVa, absAmount.negate());
             entityVa.settleInflow(absAmount);
+            mirrorIfHomeBankShadow(entityVa, absAmount);
             transactionType = "NET_LOAN_OR_RETURN";
             position.loans().forEach(l -> positionIds.add(l.getId()));
             position.maturingDeposits().forEach(d -> positionIds.add(d.getId()));
@@ -433,6 +438,20 @@ public class IhbSettlementService {
             transactionType,
             positionIds
         );
+    }
+
+    /**
+     * If {@code va} is a home-bank-held shadow (PHYSICAL_MIRROR), mirror the same delta
+     * that was just applied to its ledger balance into {@code bankBalance} — otherwise
+     * the CBS-mirrored balance silently drifts from what the ledger says moved.
+     * No-op for ordinary operational VAs and for external/other-bank shadows (those
+     * require a mandated rail instruction, not a same-process ledger mirror — see
+     * ExternalMandate).
+     */
+    private void mirrorIfHomeBankShadow(VirtualAccount va, BigDecimal delta) {
+        if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
+            va.mirrorBankBalance(delta);
+        }
     }
 
     // ========================================================================

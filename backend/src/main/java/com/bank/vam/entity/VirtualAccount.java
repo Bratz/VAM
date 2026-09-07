@@ -1248,6 +1248,33 @@ public class VirtualAccount extends BaseEntity {
         this.bankBalanceAt = LocalDateTime.now();
     }
 
+    /**
+     * Apply a signed movement (positive = credit, negative = debit) to a shadow account,
+     * keeping currentBalance/availableBalance and the CBS-mirrored bankBalance in lockstep.
+     * This is the CBS-triggering posting used by outbound/inbound payment legs
+     * (see TransactionService.makePayment/makePoboPayment/processCollection) and by
+     * shadow-account sweep legs.
+     */
+    public void applyShadowMovement(BigDecimal delta) {
+        this.currentBalance = this.currentBalance.add(delta);
+        this.availableBalance = this.currentBalance;
+        mirrorBankBalance(delta);
+    }
+
+    /**
+     * Mirror a balance delta into the CBS-tracked {@code bankBalance}, if this account
+     * has one (PHYSICAL_MIRROR/EXTERNAL_MIRROR). No-op for accounts with no bank balance
+     * of their own. Used alongside the normal ledger mutators ({@code credit}/{@code debit}/
+     * {@code settleOutflow}/{@code settleInflow}) when those are applied to a shadow account,
+     * so the real bank-held balance stays in sync with whatever moved the ledger balance.
+     */
+    public void mirrorBankBalance(BigDecimal delta) {
+        if (this.bankBalance != null) {
+            this.bankBalance = this.bankBalance.add(delta);
+            this.bankBalanceAt = LocalDateTime.now();
+        }
+    }
+
     // ========================================================================
     // UNIFIED ARCHITECTURE: CREDIT LIMIT OPERATIONS (NEW)
     // ========================================================================

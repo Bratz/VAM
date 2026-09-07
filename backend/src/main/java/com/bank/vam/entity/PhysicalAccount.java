@@ -725,4 +725,44 @@ public class PhysicalAccount extends BaseEntity {
         this.sweepRole = null;
         this.sweepRuleId = null;
     }
+
+    /**
+     * Mirror real pool membership onto this account, bypassing {@link #isPoolingEligible()}.
+     *
+     * {@code poolingEligible} is a separate, unrelated onboarding flag (set by account setup
+     * methods like {@link #configureAsInternal}) — it has nothing to do with the actual
+     * pooling gate (the account's shadow VA being a home-bank-held PHYSICAL_MIRROR), which
+     * NotionalPoolService has already enforced by the time it calls this. Requiring both
+     * would let this flag veto an enrollment the real check already approved.
+     */
+    public void markPoolMember(UUID poolId, String poolReference) {
+        this.poolingEnabled = true;
+        this.poolId = poolId;
+        this.poolReference = poolReference;
+    }
+
+    /** Clear pool-membership mirroring — counterpart to {@link #markPoolMember}. */
+    public void clearPoolMember() {
+        this.poolingEnabled = false;
+        this.poolId = null;
+        this.poolReference = null;
+    }
+
+    /**
+     * Mirror real sweep participation onto this account, bypassing {@link #isSweepEligible()}
+     * for the same reason as {@link #markPoolMember} — SweepService has already applied its
+     * own eligibility rules by the time it calls this.
+     */
+    public void markSweepParticipant(UUID sweepRuleId, SweepRole role) {
+        this.sweepEnabled = true;
+        this.sweepRole = role;
+        this.sweepRuleId = sweepRuleId;
+    }
+
+    /** Clear sweep-participation mirroring — counterpart to {@link #markSweepParticipant}. */
+    public void clearSweepParticipant() {
+        this.sweepEnabled = false;
+        this.sweepRole = null;
+        this.sweepRuleId = null;
+    }
 }

@@ -185,9 +185,21 @@ public class SettlementVaController {
                 .body(ApiResponse.error("Program ID is required"));
         }
         
-        log.info("Creating Settlement VA for program {} at node {}", 
+        log.info("Creating Settlement VA for program {} at node {}",
             request.getProgramId(), request.getParentNodeId());
-        
+
+        // No parent node given: the program has no hierarchy_nodes tree to attach to (several
+        // demo corporates are flat — standalone shadow VAs with no ROOT/hierarchy at all).
+        // provisionSettlementVa is the resolver's own "explicit provisioning" entrypoint
+        // (SettlementVaResolverService.java) — it already builds a parentless, purely-virtual
+        // SETTLEMENT VA exactly like the EXCEPTION-VA auto-creation fallback does, and is
+        // reused (not duplicated) by the sibling/program/corporate lookup chain either way.
+        if (request.getParentNodeId() == null) {
+            VirtualAccount standaloneSettlementVa = settlementVaResolver.provisionSettlementVa(
+                request.getProgramId(), request.getCurrency());
+            return ResponseEntity.ok(ApiResponse.success(toSettlementVaResponse(standaloneSettlementVa)));
+        }
+
         VirtualAccount settlementVa = hierarchyService.createSettlementVa(
             request.getProgramId(),
             request.getParentNodeId(),

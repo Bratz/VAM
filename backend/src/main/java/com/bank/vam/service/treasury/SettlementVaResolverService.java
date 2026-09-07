@@ -647,14 +647,23 @@ public class SettlementVaResolverService {
             // Note: ExceptionTransaction doesn't have corporateId - tracked via programId
             .exceptionVaId(exceptionVa.getId())
             .originalVaId(sourceVa.getId())
-            .originalTransactionId(transactionId)
+            // Deliberately NOT originalTransactionId(transactionId): every caller of
+            // resolveSettlementVaWithResult evaluates this BEFORE creating any debit/credit
+            // Transaction (it's a pre-check), so `transactionId` here is either null or a
+            // caller-supplied correlation/reference id — never a persisted va_movements row.
+            // Writing it into this FK-to-va_movements column deterministically violates the
+            // constraint whenever it happens to look like a real UUID, aborting the whole
+            // surrounding @Transactional call instead of gracefully parking the exception
+            // (its entire purpose). The reference is preserved below in free-text remitterInfo
+            // instead, where it doesn't need to resolve to a real row.
             .amount(amount != null ? amount : BigDecimal.ZERO)
             .currencyCode(sourceVa.getCurrencyCode())
             .description(description)
             .remitterInfo("Program: " + getProgramCode(sourceVa.getProgramId()) +
                          ", Currency: " + sourceVa.getCurrencyCode() +
                          ", Source VA: " + sourceVa.getVaNumber() +
-                         ", Corporate: " + sourceVa.getCorporateId())
+                         ", Corporate: " + sourceVa.getCorporateId() +
+                         (transactionId != null ? ", Reference: " + transactionId : ""))
             .build();
 
         exception = exceptionRepository.save(exception);
@@ -979,6 +988,23 @@ public class SettlementVaResolverService {
      * @return The created Settlement VA
      * @throws BusinessException if Settlement VA already exists
      */
+    /**
+     * Provision Settlement VA during program setup (by program + currency only).
+     * Resolves the owning corporate from the program itself — convenience overload for
+     * callers (e.g. a controller) that don't have the corporate id on hand.
+     *
+     * @param programId Program ID
+     * @param currencyCode Currency code
+     * @return The created (or, if one already exists, the existing) Settlement VA
+     */
+    @Transactional
+    public VirtualAccount provisionSettlementVa(UUID programId, String currencyCode) {
+        UUID corporateId = programRepository.findById(programId)
+                .map(Program::getCorporateId)
+                .orElse(null);
+        return provisionSettlementVa(programId, currencyCode, corporateId);
+    }
+
     @Transactional
     public VirtualAccount provisionSettlementVa(UUID programId, String currencyCode, UUID corporateId) {
         log.info("Provisioning Settlement VA for program {} currency {} (explicit request)",

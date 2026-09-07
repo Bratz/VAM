@@ -912,12 +912,7 @@ public class TransactionService {
         // ENTRY 4: DEBIT Shadow VA (triggers CBS - money leaves physical account)
         // Shadow VA balance DECREASES to reflect that physical account has less money
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
-        shadowVa.setCurrentBalance(shadowBalanceBefore.subtract(request.getAmount()));
-        shadowVa.setAvailableBalance(shadowVa.getCurrentBalance());
-        if (shadowVa.getBankBalance() != null) {
-            shadowVa.setBankBalance(shadowVa.getBankBalance().subtract(request.getAmount()));
-            shadowVa.setBankBalanceAt(LocalDateTime.now());
-        }
+        shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
 
         Transaction txn4 = Transaction.builder()
@@ -1143,12 +1138,7 @@ public class TransactionService {
         // ENTRY 4: POBO_DEBIT Shadow VA (CBS trigger - money leaves physical account)
         // Shadow VA mirrors the physical account, so when money goes out, Shadow VA balance DECREASES
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
-        shadowVa.setCurrentBalance(shadowBalanceBefore.subtract(request.getAmount()));
-        shadowVa.setAvailableBalance(shadowVa.getCurrentBalance());
-        if (shadowVa.getBankBalance() != null) {
-            shadowVa.setBankBalance(shadowVa.getBankBalance().subtract(request.getAmount()));
-            shadowVa.setBankBalanceAt(LocalDateTime.now());
-        }
+        shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
 
         Transaction txn4_shadowOut = Transaction.builder()
@@ -1491,12 +1481,7 @@ public class TransactionService {
 
         // LEG 6: DEBIT Shadow VA (CBS trigger - money leaves physical account)
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
-        shadowVa.setCurrentBalance(shadowBalanceBefore.subtract(request.getAmount()));
-        shadowVa.setAvailableBalance(shadowVa.getCurrentBalance());
-        if (shadowVa.getBankBalance() != null) {
-            shadowVa.setBankBalance(shadowVa.getBankBalance().subtract(request.getAmount()));
-            shadowVa.setBankBalanceAt(LocalDateTime.now());
-        }
+        shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
 
         // Also debit Treasury Settlement VA for the external payment
@@ -1848,12 +1833,7 @@ public class TransactionService {
         // Shadow VA balance INCREASES to reflect that the physical account has more money.
         // This balance stays increased - Shadow VA mirrors the CBS physical account balance.
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
-        shadowVa.setCurrentBalance(shadowBalanceBefore.add(request.getAmount()));
-        shadowVa.setAvailableBalance(shadowVa.getCurrentBalance());
-        if (shadowVa.getBankBalance() != null) {
-            shadowVa.setBankBalance(shadowVa.getBankBalance().add(request.getAmount()));
-            shadowVa.setBankBalanceAt(LocalDateTime.now());
-        }
+        shadowVa.applyShadowMovement(request.getAmount());
         virtualAccountRepository.save(shadowVa);
 
         Transaction txn1_shadowIn = Transaction.builder()
