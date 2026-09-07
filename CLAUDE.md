@@ -134,16 +134,15 @@ Flyway runs migrations automatically on backend startup.
 ```
 cd backend
 mvn clean install -DskipTests
-mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\Temp -DVAM_MARKET_PROFILE=UK -DVAM_HOME_BANK_BIC=HBUKGB4BXXX"
 ```
+(No `dev` profile — there is no `application-dev.yml` in the repo, so `-Dspring-boot.run.profiles=dev` was always a no-op. The command above is also what the OCI deployment's env vars mirror, just as JVM `-D` flags instead of container env vars — see `deploy/oci/docker-compose.yml`.)
 
 > **JDK 21 on Windows / AVD / RDP — Tomcat "Unable to establish loopback connection".**
 > After the Java 17→21 upgrade, on locked-down Windows sessions (Azure Virtual Desktop, RDP) where AF_UNIX sockets are disabled, the backend fails at startup with
 > `java.io.IOException: Unable to establish loopback connection … UnixDomainSockets.connect0: Invalid argument`.
-> JDK 21's Tomcat NIO selector opens an AF_UNIX loopback pipe under `java.io.tmpdir`; pointing that at a short, writable path fixes it. Add the JVM arg:
+> JDK 21's Tomcat NIO selector opens an AF_UNIX loopback pipe under `java.io.tmpdir`; pointing that at a short, writable path fixes it — already included in the command above via `-Djdk.net.unixdomain.tmpdir=C:\Temp`. Equivalent when running the built jar:
 > ```
-> mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\Temp"
-> # or when running the built jar:
 > java -Djdk.net.unixdomain.tmpdir=C:\Temp -jar target/vam-service-1.0.0-SNAPSHOT.jar
 > ```
 > (Create `C:\Temp` first. Java 17 was unaffected — it used a TCP loopback pipe.)

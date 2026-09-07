@@ -1,6 +1,6 @@
 # Aperture
 
-> **See every flow, every account, every entity.**
+> **See every flow, every account, every entity, every time.**
 
 A comprehensive Corporate Digital Banking platform built on a Virtual Account Management core, with **multi-bank liquidity**, **in-house bank**, **notional pooling & cash concentration**, **POBO/COBO intercompany**, **ISO 20022 payments**, **Digital Escrow**, **KYCC**, **Wallet Programs**, **BaNCS Fallback**, and an embedded **Treasury Copilot** AI assistant.
 

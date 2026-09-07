@@ -39,3 +39,4 @@ Thumbs.db
 # --- Misc local scratch ---
 *.tmp
 *.bak
+.claude/worktrees/
