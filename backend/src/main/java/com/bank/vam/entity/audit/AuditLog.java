@@ -42,6 +42,15 @@ public class AuditLog extends BaseEntity {
     @Column(name = "entity_id")
     private UUID entityId;
 
+    /**
+     * Owning corporate, when the event has one (nullable — several existing
+     * call sites, e.g. copilot action execution, don't resolve one yet).
+     * Added for MCP tool scoping: {@code get_audit_trail} must not leak one
+     * corporate's governance events to a caller entitled to another.
+     */
+    @Column(name = "corporate_id")
+    private UUID corporateId;
+
     /** User or system actor that triggered the event. */
     @Column(name = "actor", length = 100)
     private String actor;

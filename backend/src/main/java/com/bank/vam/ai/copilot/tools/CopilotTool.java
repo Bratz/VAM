@@ -1,5 +1,7 @@
 package com.bank.vam.ai.copilot.tools;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +43,49 @@ public interface CopilotTool {
     /** Whether this tool mutates state. Read tools return false. */
     default boolean isMutating() {
         return false;
+    }
+
+    /**
+     * MCP-shaped JSON Schema for this tool's input, derived from {@link
+     * #parameterSchema()}: {@code {"type":"object","properties":{...},"required":[...]}}.
+     * A tool's {@code parameterSchema()} value map may include a boolean
+     * {@code "required"} entry (documented there, historically unused by any
+     * tool) — this is where it finally gets honoured, so populate it on a tool
+     * as it's reviewed for MCP exposure rather than changing the source shape.
+     * Default method: no existing tool needs to change to keep compiling.
+     */
+    default Map<String, Object> inputSchema() {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        List<String> required = new ArrayList<>();
+        for (Map.Entry<String, Map<String, Object>> entry : parameterSchema().entrySet()) {
+            Map<String, Object> descriptor = entry.getValue();
+            Map<String, Object> property = new LinkedHashMap<>();
+            property.put("type", descriptor.getOrDefault("type", "string"));
+            if (descriptor.containsKey("description")) {
+                property.put("description", descriptor.get("description"));
+            }
+            properties.put(entry.getKey(), property);
+            if (Boolean.TRUE.equals(descriptor.get("required"))) {
+                required.add(entry.getKey());
+            }
+        }
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("properties", properties);
+        schema.put("required", required);
+        return schema;
+    }
+
+    /**
+     * Optional ChatGPT Apps SDK UI component descriptor for this tool's result.
+     * {@code null} (the default) means: no rich card, the client renders the
+     * text summary / structuredContent generically. Only tools explicitly
+     * curated for a card (see Phase 4 of {@code docs/mcp-architecture.md})
+     * override this. Exact descriptor shape is Apps SDK-versioned — confirm
+     * against current OpenAI docs at implementation time, don't assume.
+     */
+    default Map<String, Object> uiComponent() {
+        return null;
     }
 
     /**

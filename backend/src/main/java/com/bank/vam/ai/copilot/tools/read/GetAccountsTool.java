@@ -1,6 +1,7 @@
 package com.bank.vam.ai.copilot.tools.read;
 
 import com.bank.vam.ai.copilot.tools.CopilotTool;
+import com.bank.vam.ai.copilot.tools.McpUiDescriptors;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
 import com.bank.vam.entity.VirtualAccount;
@@ -66,6 +67,11 @@ public class GetAccountsTool implements CopilotTool {
                 "status", Map.of("type", "string", "description", "VaStatus: ACTIVE, INACTIVE, SUSPENDED, CLOSED, BLOCKED, PENDING_ACTIVATION, EXPIRED"),
                 "limit", Map.of("type", "integer", "description", "Max rows to return (default 25, cap 200)")
         );
+    }
+
+    @Override
+    public Map<String, Object> uiComponent() {
+        return McpUiDescriptors.widget(McpUiDescriptors.ACCOUNT_LIST, "Listing accounts…", "Accounts ready");
     }
 
     @Override

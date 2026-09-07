@@ -111,6 +111,29 @@ vam:
         retention-days: 0
         # Reserved for future LLM swap; stub treats each turn independently.
         message-history-window: 20
+  # MCP server (Phase 1: no auth yet — vam.mcp.require-signed-context flips on in
+  # Phase 3 once the gateway exists). Exposes the enquiry-only CopilotTool registry
+  # over MCP protocol 2026-07-28 (stateless: no initialize handshake, no session).
+  # See docs/mcp-architecture.md.
+  mcp:
+    enabled: ${VAM_MCP_ENABLED:false}
+    protocol-version: "2026-07-28"
+    # Set true once the gateway is actually deployed and reachable — until then
+    # every caller runs with no corporate scope and no entitlement narrowing (same
+    # as an in-app copilot call with no auth), so keep this disabled by default.
+    # A *present* signed context is always verified regardless of this flag; it
+    # only controls whether a call with none at all is rejected or let through
+    # unscoped.
+    require-signed-context: false
+    # mcp-gateway's ContextJwksController — verifies the per-call signed context
+    # minted by ContextJwtService there. Separate from any OAuth access-token JWKS.
+    gateway-signed-context-jwks-uri: ${VAM_MCP_GATEWAY_JWKS_URI:http://localhost:9443/context-jwks}
+    rate-limit:
+      # Per-tool-name limiter (Phase 1: no caller identity to key on yet).
+      # Phase 3 upgrades this to per-caller once the signed context exists.
+      limit-for-period: 30
+      limit-refresh-period-seconds: 60
+      timeout-millis: 0
 
 # ============================================================================
 # LOGGING CONFIGURATION - File + Console

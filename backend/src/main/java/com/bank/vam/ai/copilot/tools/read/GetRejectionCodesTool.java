@@ -1,6 +1,7 @@
 package com.bank.vam.ai.copilot.tools.read;
 
 import com.bank.vam.ai.copilot.tools.CopilotTool;
+import com.bank.vam.ai.copilot.tools.McpUiDescriptors;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
 import com.bank.vam.entity.treasury.RejectionCodeConfig;
@@ -70,6 +71,11 @@ public class GetRejectionCodesTool implements CopilotTool {
                 "category", Map.of("type", "string",
                         "description", "List codes in category: RECOVERABLE or UNRECOVERABLE")
         );
+    }
+
+    @Override
+    public Map<String, Object> uiComponent() {
+        return McpUiDescriptors.widget(McpUiDescriptors.EXCEPTION_LIST, "Looking up rejection codes…", "Rejection codes ready");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.bank.vam.ai.copilot.tools.read;
 
 import com.bank.vam.ai.copilot.tools.CopilotTool;
+import com.bank.vam.ai.copilot.tools.McpUiDescriptors;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
 import com.bank.vam.config.HomeBankProperties;
@@ -64,6 +65,11 @@ public class GetPositionTool implements CopilotTool {
                 "groupBy", Map.of("type", "string",
                         "description", "Breakdown axis: 'entity' (default) or 'bank'")
         );
+    }
+
+    @Override
+    public Map<String, Object> uiComponent() {
+        return McpUiDescriptors.widget(McpUiDescriptors.POSITION_SUMMARY, "Calculating position…", "Position ready");
     }
 
     @Override

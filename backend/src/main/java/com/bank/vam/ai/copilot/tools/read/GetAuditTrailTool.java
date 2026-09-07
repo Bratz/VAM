@@ -84,12 +84,25 @@ public class GetAuditTrailTool implements CopilotTool {
 
             UUID entityId = parseUuid(entityIdParam);
 
-            // Pick the most specific finder available.
+            // Pick the most specific finder available. Corporate-scoped whenever the
+            // caller has a scope — a scoped caller must never see another corporate's
+            // governance events, including rows with no corporateId recorded at all.
             Page<AuditLog> page;
             PageRequest pageable = PageRequest.of(0, limit,
                     Sort.by(Sort.Direction.DESC, "createdAt"));
 
-            if (entityType != null && entityId != null) {
+            if (context.hasCorporateScope()) {
+                UUID corporateId = context.corporateId();
+                if (entityType != null && entityId != null) {
+                    page = auditLogRepository.findByCorporateIdAndEntityTypeAndEntityIdOrderByCreatedAtDesc(
+                            corporateId, entityType, entityId, pageable);
+                } else if (eventType != null) {
+                    page = auditLogRepository.findByCorporateIdAndEventTypeOrderByCreatedAtDesc(
+                            corporateId, eventType, pageable);
+                } else {
+                    page = auditLogRepository.findByCorporateIdOrderByCreatedAtDesc(corporateId, pageable);
+                }
+            } else if (entityType != null && entityId != null) {
                 page = auditLogRepository.findByEntityTypeAndEntityIdOrderByCreatedAtDesc(
                         entityType, entityId, pageable);
             } else if (eventType != null) {

@@ -3,8 +3,10 @@ package com.bank.vam.ai.copilot.tools.read;
 import com.bank.vam.ai.copilot.tools.CopilotTool;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
+import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.treasury.SweepInstruction;
 import com.bank.vam.entity.treasury.SweepInstruction.InstructionStatus;
+import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.treasury.SweepInstructionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,7 @@ public class GetSweepInstructionsTool implements CopilotTool {
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
     private final SweepInstructionRepository instructionRepository;
+    private final VirtualAccountRepository virtualAccountRepository;
 
     @Override
     public String name() {
@@ -79,7 +82,7 @@ public class GetSweepInstructionsTool implements CopilotTool {
         try {
             String idParam = paramString(params, "id", null);
             if (idParam != null) {
-                return lookupById(idParam);
+                return lookupById(idParam, context);
             }
 
             String statusParam = paramString(params, "status", null);
@@ -101,7 +104,16 @@ public class GetSweepInstructionsTool implements CopilotTool {
                                 InstructionStatus.ACK_RECEIVED));
             }
 
-            List<SweepInstruction> filtered = candidate.stream()
+            // Corporate scope BEFORE limiting — SweepInstruction has no corporateId of
+            // its own, so resolve it via the source/target VA (batch-fetched once, not
+            // per-row) and drop anything outside the caller's corporate first, otherwise
+            // a scoped caller could see fewer than `limit` rows even when more of theirs
+            // exist further down the unfiltered list.
+            List<SweepInstruction> corporateScoped = context.hasCorporateScope()
+                    ? filterByCorporate(candidate, context.corporateId())
+                    : candidate;
+
+            List<SweepInstruction> filtered = corporateScoped.stream()
                     .filter(i -> sinceCutoff == null
                             || (i.getCreatedAt() != null && i.getCreatedAt().isAfter(sinceCutoff)))
                     .sorted(Comparator.comparing(
@@ -135,7 +147,7 @@ public class GetSweepInstructionsTool implements CopilotTool {
         }
     }
 
-    private ToolResult lookupById(String idParam) {
+    private ToolResult lookupById(String idParam, ToolContext context) {
         Optional<SweepInstruction> found = Optional.empty();
         if (UUID_PATTERN.matcher(idParam).matches()) {
             try {
@@ -149,6 +161,13 @@ public class GetSweepInstructionsTool implements CopilotTool {
         }
         if (found.isEmpty()) {
             found = instructionRepository.findByExternalReference(idParam);
+        }
+        // A direct-id lookup must not leak a row outside the caller's corporate —
+        // report it as "not found" exactly like a genuine miss, not a 403, so a
+        // scoped caller can't use this to probe which ids exist elsewhere.
+        if (found.isPresent() && context.hasCorporateScope()
+                && filterByCorporate(List.of(found.get()), context.corporateId()).isEmpty()) {
+            found = Optional.empty();
         }
         if (found.isEmpty()) {
             Map<String, Object> data = new LinkedHashMap<>();
@@ -171,6 +190,29 @@ public class GetSweepInstructionsTool implements CopilotTool {
                 i.getStatus(),
                 i.getRejectionCode() != null ? " (rejection " + i.getRejectionCode() + ")" : "");
         return ToolResult.ok(name(), summary, data);
+    }
+
+    /**
+     * SweepInstruction carries no corporateId of its own — it belongs to a corporate
+     * only via its source/target VA. Batch-resolves every distinct VA id referenced
+     * by {@code instructions} in one query (not per-row) and keeps only rows whose
+     * source or target VA belongs to {@code corporateId}.
+     */
+    private List<SweepInstruction> filterByCorporate(List<SweepInstruction> instructions, UUID corporateId) {
+        Set<UUID> vaIds = new HashSet<>();
+        for (SweepInstruction i : instructions) {
+            if (i.getSourceShadowVaId() != null) vaIds.add(i.getSourceShadowVaId());
+            if (i.getTargetVaId() != null) vaIds.add(i.getTargetVaId());
+        }
+        if (vaIds.isEmpty()) {
+            return List.of();
+        }
+        Map<UUID, UUID> vaIdToCorporateId = virtualAccountRepository.findAllById(vaIds).stream()
+                .collect(Collectors.toMap(VirtualAccount::getId, VirtualAccount::getCorporateId));
+        return instructions.stream()
+                .filter(i -> corporateId.equals(vaIdToCorporateId.get(i.getSourceShadowVaId()))
+                        || corporateId.equals(vaIdToCorporateId.get(i.getTargetVaId())))
+                .toList();
     }
 
     private InstructionStatus parseStatus(String s) {

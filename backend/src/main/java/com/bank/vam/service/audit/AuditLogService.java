@@ -29,11 +29,23 @@ public class AuditLogService {
 
     @Transactional
     public void record(String eventType, String entityType, UUID entityId, String summary, Map<String, Object> payload) {
+        record(eventType, entityType, entityId, null, summary, payload);
+    }
+
+    /**
+     * Same as {@link #record(String, String, UUID, String, Map)}, plus the owning
+     * corporate — pass it whenever it's available so {@code get_audit_trail} can
+     * scope by corporate instead of leaking every corporate's events.
+     */
+    @Transactional
+    public void record(String eventType, String entityType, UUID entityId, UUID corporateId,
+                        String summary, Map<String, Object> payload) {
         try {
             AuditLog log = AuditLog.builder()
                     .eventType(eventType)
                     .entityType(entityType)
                     .entityId(entityId)
+                    .corporateId(corporateId)
                     .actor(currentActor())
                     .summary(summary)
                     .payload(payload != null ? toJson(payload) : null)

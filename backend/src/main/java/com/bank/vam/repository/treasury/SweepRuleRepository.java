@@ -17,6 +17,10 @@ public interface SweepRuleRepository extends JpaRepository<SweepRule, UUID> {
 
     boolean existsByRuleReference(String ruleReference);
 
+    /** Corporate-scoped listing — used by get_sweep_status so a scoped MCP caller
+     *  only ever sees their own corporate's rules. */
+    List<SweepRule> findByCorporateId(UUID corporateId);
+
     @Query("SELECT r FROM SweepRule r LEFT JOIN FETCH r.sourceAccounts WHERE r.id = :id")
     Optional<SweepRule> findByIdWithSources(@Param("id") UUID id);
     

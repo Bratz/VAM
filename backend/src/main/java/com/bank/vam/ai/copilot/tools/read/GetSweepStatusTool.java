@@ -1,6 +1,7 @@
 package com.bank.vam.ai.copilot.tools.read;
 
 import com.bank.vam.ai.copilot.tools.CopilotTool;
+import com.bank.vam.ai.copilot.tools.McpUiDescriptors;
 import com.bank.vam.ai.copilot.tools.ToolContext;
 import com.bank.vam.ai.copilot.tools.ToolResult;
 import com.bank.vam.entity.treasury.SweepRule;
@@ -68,6 +69,11 @@ public class GetSweepStatusTool implements CopilotTool {
     }
 
     @Override
+    public Map<String, Object> uiComponent() {
+        return McpUiDescriptors.widget(McpUiDescriptors.SWEEP_STATUS, "Checking sweep status…", "Sweep status ready");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ToolResult execute(ToolContext context, Map<String, Object> params) {
         try {
@@ -76,7 +82,11 @@ public class GetSweepStatusTool implements CopilotTool {
 
             SweepRule.SweepStatus statusFilter = parseStatus(statusParam);
 
-            List<SweepRule> all = sweepRuleRepository.findAll();
+            // Corporate-scoped whenever the caller has a scope — otherwise a linked
+            // MCP account would see every corporate's sweep rules through this tool.
+            List<SweepRule> all = context.hasCorporateScope()
+                    ? sweepRuleRepository.findByCorporateId(context.corporateId())
+                    : sweepRuleRepository.findAll();
 
             // Status histogram (always all rules, not filtered).
             int active = 0, paused = 0, disabled = 0;

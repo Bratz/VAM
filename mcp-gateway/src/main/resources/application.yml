@@ -1,0 +1,44 @@
+server:
+  port: ${GATEWAY_PORT:9443}
+
+spring:
+  application:
+    name: aperture-mcp-gateway
+  datasource:
+    # Same Postgres as the backend — reads users/user_account_access directly
+    # (see docs/mcp-architecture.md: "own container, same OCI box, same Postgres").
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/vam_db}
+    username: ${SPRING_DATASOURCE_USERNAME:vam_user}
+    password: ${DB_PASSWORD:vam_user123}
+  jpa:
+    # Read-only from this module's side — the backend owns these tables'
+    # schema (ddl-auto: update there). Never create/alter from here.
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: ${GATEWAY_ISSUER:http://localhost:9443}
+
+gateway:
+  # The one pre-registered demo client for this phase. Real ChatGPT/Claude
+  # connector registration (Client ID Metadata Documents, per current MCP
+  # authorization spec — Dynamic Client Registration is deprecated) is Phase
+  # 4's job, not this one; verify against the live spec then, don't assume
+  # this shape still applies.
+  demo-client:
+    client-id: ${GATEWAY_DEMO_CLIENT_ID:aperture-demo-client}
+    client-secret: ${GATEWAY_DEMO_CLIENT_SECRET:demo-client-secret-2026}
+    redirect-uri: ${GATEWAY_DEMO_REDIRECT_URI:http://localhost:9443/authorized}
+  # Where the backend's real MCP server lives — this gateway proxies to it.
+  backend-mcp-url: ${BACKEND_MCP_URL:http://localhost:8053/mcp}
+  # Per-call signed context TTL — short and single-use on purpose (see
+  # ContextJwtService javadoc): this is not the OAuth access token's lifetime,
+  # it's a fresh, narrowly-scoped assertion minted for exactly one tool call.
+  signed-context-ttl-seconds: 60
+
+logging:
+  level:
+    com.bank.mcpgateway: DEBUG
+    org.springframework.security.oauth2: INFO

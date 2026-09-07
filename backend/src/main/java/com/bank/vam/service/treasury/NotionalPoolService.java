@@ -177,7 +177,7 @@ public class NotionalPoolService {
             postPoolMembershipFee(pool, member);
         }
 
-        auditLog.record("POOL_CREATED", "NotionalPool", pool.getId(),
+        auditLog.record("POOL_CREATED", "NotionalPool", pool.getId(), pool.getCorporateId(),
                 "Created pool " + pool.getPoolReference() + " (" + pool.getAllocationMethod() + ")",
                 Map.of(
                         "poolReference", pool.getPoolReference(),
@@ -207,7 +207,7 @@ public class NotionalPoolService {
 
         pool = poolRepository.save(pool);
 
-        auditLog.record("POOL_UPDATED", "NotionalPool", pool.getId(),
+        auditLog.record("POOL_UPDATED", "NotionalPool", pool.getId(), pool.getCorporateId(),
                 "Updated pool " + pool.getPoolReference(),
                 Map.of(
                         "poolReference", pool.getPoolReference(),
@@ -256,7 +256,7 @@ public class NotionalPoolService {
         mirrorPoolMembership(vaRepository.findById(request.getAccountId()).orElse(null),
                 pool.getId(), pool.getPoolReference());
 
-        auditLog.record("POOL_MEMBER_ADDED", "NotionalPool", pool.getId(),
+        auditLog.record("POOL_MEMBER_ADDED", "NotionalPool", pool.getId(), pool.getCorporateId(),
                 "Added member " + request.getAccountNumber() + " to pool " + pool.getPoolReference(),
                 Map.of(
                         "poolReference", pool.getPoolReference(),
@@ -357,7 +357,7 @@ public class NotionalPoolService {
             }
         }
 
-        auditLog.record("POOL_MEMBERS_BULK_ADDED", "NotionalPool", pool.getId(),
+        auditLog.record("POOL_MEMBERS_BULK_ADDED", "NotionalPool", pool.getId(), pool.getCorporateId(),
                 "Bulk-added " + newMembers.size() + " of " + requestedIds.size() + " requested members to pool " + pool.getPoolReference(),
                 Map.of(
                         "poolReference", pool.getPoolReference(),
@@ -392,7 +392,7 @@ public class NotionalPoolService {
             clearPoolMembershipMirror(removedAccountId);
         }
 
-        auditLog.record("POOL_MEMBER_REMOVED", "NotionalPool", pool.getId(),
+        auditLog.record("POOL_MEMBER_REMOVED", "NotionalPool", pool.getId(), pool.getCorporateId(),
                 "Removed member " + memberId + " from pool " + pool.getPoolReference(),
                 Map.of(
                         "poolReference", pool.getPoolReference(),
