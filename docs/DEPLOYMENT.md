@@ -88,6 +88,55 @@ down but the API serves; `/api/v1/...` endpoints are what matter.)
 
 ---
 
+## Part 1.5 — MCP gateway (optional)
+
+Puts the Aperture MCP server (see [`docs/mcp-architecture.md`](mcp-architecture.md))
+behind a real OAuth 2.1 trust boundary reachable from ChatGPT/Claude, instead
+of only `localhost:9443` on a dev machine. Entirely opt-in — skip this
+section and the VM behaves exactly as Part 1 describes.
+
+### 1. Open port 9443 — same two firewalls as step 2 above
+**a) Cloud:** VCN → Security List → Add Ingress Rule: source `0.0.0.0/0`,
+protocol TCP, destination port `9443`.
+
+**b) VM:**
+```bash
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 9443 -j ACCEPT
+sudo netfilter-persistent save
+```
+
+### 2. Configure and deploy
+```bash
+cd ~/VAM/deploy/oci
+echo 'VAM_MCP_ENABLED=true' >> .env
+echo "GATEWAY_PUBLIC_BASE_URL=http://<PUBLIC_IP>:9443" >> .env
+sudo docker compose --profile mcp up -d --build
+```
+`GATEWAY_PUBLIC_BASE_URL` becomes the OAuth issuer and redirect URI — it
+**must** be the address a browser/ChatGPT/Claude actually reaches, not
+`localhost`. `VAM_MCP_ENABLED=true` flips the backend's `/mcp` endpoint on
+*and* requires every call to carry a gateway-signed context (see
+`deploy/oci/docker-compose.yml`'s comments) — the backend and gateway
+containers pick this up on their next restart, so re-run the `up -d --build`
+above if you only edited `.env`.
+
+The routine `docker compose up -d --build` that `deploy-oci.yml` runs on
+every push to `main` does **not** include `--profile mcp`, so a normal
+auto-deploy never starts or restarts the gateway unexpectedly — re-run the
+profiled command by hand (or SSH in) whenever the gateway itself needs to
+pick up a change.
+
+### 3. Verify
+```bash
+curl http://<PUBLIC_IP>:9443/.well-known/oauth-authorization-server
+curl http://<PUBLIC_IP>:9443/context-jwks
+```
+Both should return JSON (metadata, then a JWK Set) — if either times out,
+recheck both firewalls; if either 404s, recheck `--profile mcp` was included.
+Full OAuth-code+PKCE-to-tools/call walkthrough: see `docs/mcp-architecture.md`.
+
+---
+
 ## Part 2 — Vercel frontend
 
 1. Edit [`frontend/vercel.json`](../frontend/vercel.json): replace
