@@ -4,11 +4,12 @@
 #   sudo docker compose up -d --build
 #
 # Runs Postgres + the self-seeding backend (root Dockerfile) + the MCP
-# gateway (mcp-gateway/Dockerfile) — the OAuth 2.1 trust boundary in front of
-# the backend's /mcp endpoint (see docs/mcp-architecture.md). First boot with
-# SEED_ON_START=true loads the repo's demo dump into the fresh database.
-# The frontend is NOT here — it deploys to Vercel and reaches this VM via a
-# server-side rewrite (see docs/DEPLOYMENT.md).
+# gateway (mcp-gateway/Dockerfile) + Caddy, terminating real HTTPS in front of
+# the gateway (see deploy/oci/Caddyfile) — the OAuth 2.1 trust boundary in
+# front of the backend's /mcp endpoint (see docs/mcp-architecture.md). First
+# boot with SEED_ON_START=true loads the repo's demo dump into the fresh
+# database. The frontend is NOT here — it deploys to Vercel and reaches this
+# VM via a server-side rewrite (see docs/DEPLOYMENT.md).
 # ============================================================================
 
 # Secrets come from an untracked `.env` file NEXT TO THIS FILE on the VM
@@ -21,14 +22,17 @@
 # starts it and never touches the backend's MCP endpoint. To turn it on:
 #
 #   echo 'VAM_MCP_ENABLED=true' >> deploy/oci/.env
-#   echo 'GATEWAY_PUBLIC_BASE_URL=http://<PUBLIC_IP>:9443' >> deploy/oci/.env
+#   echo 'GATEWAY_PUBLIC_BASE_URL=https://<ip-with-dashes>.sslip.io' >> deploy/oci/.env
 #   sudo docker compose --profile mcp up -d --build
 #
-# GATEWAY_PUBLIC_BASE_URL must be the address ChatGPT/Claude/a browser will
-# actually hit — Spring Authorization Server's OIDC discovery embeds this as
-# the issuer, so a mismatch (e.g. leaving it at localhost) breaks every
-# external client's token validation, not just the demo. See docs/DEPLOYMENT.md
-# "Part 1.5 — MCP gateway" for the two-firewall port-9443 step this also needs.
+# GATEWAY_PUBLIC_BASE_URL must be real HTTPS reachable from the outside —
+# Claude's connector flow is a browser redirect from https://claude.ai and
+# won't complete against plain HTTP or localhost. sslip.io's free wildcard
+# DNS (e.g. https://161-33-9-182.sslip.io for that literal IP) needs no
+# registration; Caddy then gets it a real Let's Encrypt cert automatically.
+# The gateway itself is no longer directly published (no more "9443:9443"
+# below) — Caddy on 80/443 is the only public entry point now. See
+# docs/DEPLOYMENT.md "Part 1.5 — MCP gateway" for the firewall steps.
 #
 services:
   db:
@@ -106,8 +110,29 @@ services:
       GATEWAY_ISSUER: ${GATEWAY_PUBLIC_BASE_URL:-http://localhost:9443}
       GATEWAY_DEMO_REDIRECT_URI: ${GATEWAY_PUBLIC_BASE_URL:-http://localhost:9443}/authorized
       BACKEND_MCP_URL: http://backend:8053/mcp
+    # No public port mapping — Caddy is the only external entry point now
+    # (see the caddy service below). Still reachable from other containers
+    # on the compose network at mcp-gateway:9443 (the backend's
+    # VAM_MCP_GATEWAY_JWKS_URI above, and Caddy's reverse_proxy target, both
+    # rely on that).
+    expose:
+      - "9443"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["mcp"]   # only meaningful once the gateway itself is enabled
+    depends_on:
+      - mcp-gateway
     ports:
-      - "9443:9443"
+      - "80:80"    # Let's Encrypt HTTP-01 challenge + HTTP->HTTPS redirect
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # persists the issued cert — don't lose this, or
+      - caddy_config:/config   # every restart re-requests one (rate limits)
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

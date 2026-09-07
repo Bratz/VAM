@@ -1,0 +1,15 @@
+# ============================================================================
+# Fronts the MCP gateway with real HTTPS — Claude's connector flow is a
+# browser redirect from https://claude.ai and won't complete against plain
+# HTTP; the gateway itself stays on plain HTTP internally (server.forward-
+# headers-strategy: framework in mcp-gateway's application.yml handles the
+# scheme correctly from Caddy's X-Forwarded-* headers).
+#
+# Domain: sslip.io's free wildcard DNS resolves <ip-with-dashes>.sslip.io to
+# that literal IP with zero registration. If the VM's IP ever changes, this
+# hostname (and GATEWAY_PUBLIC_BASE_URL in .env) both need updating to match.
+# ============================================================================
+
+161-33-9-182.sslip.io {
+	reverse_proxy mcp-gateway:9443
+}

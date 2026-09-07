@@ -1,5 +1,12 @@
 server:
   port: ${GATEWAY_PORT:9443}
+  # Required once a reverse proxy (Caddy) sits in front terminating TLS:
+  # without this, Spring only ever sees the proxy's plain-HTTP internal hop
+  # and can misjudge scheme/host when building redirect and cookie behavior,
+  # even though `spring.security.oauth2.authorizationserver.issuer` below is
+  # a fixed value and unaffected. Caddy's reverse_proxy sets the standard
+  # X-Forwarded-* headers by default — nothing extra needed on that side.
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -22,11 +29,10 @@ spring:
         issuer: ${GATEWAY_ISSUER:http://localhost:9443}
 
 gateway:
-  # The one pre-registered demo client for this phase. Real ChatGPT/Claude
-  # connector registration (Client ID Metadata Documents, per current MCP
-  # authorization spec — Dynamic Client Registration is deprecated) is Phase
-  # 4's job, not this one; verify against the live spec then, don't assume
-  # this shape still applies.
+  # The one pre-registered client both Claude and ChatGPT connect through —
+  # confirmed against each platform's current connector docs (Phase 4) that
+  # this is a fully supported registration path, no DCR/CIMD needed. See
+  # AuthorizationServerConfig for the registered redirect URIs.
   demo-client:
     client-id: ${GATEWAY_DEMO_CLIENT_ID:aperture-demo-client}
     client-secret: ${GATEWAY_DEMO_CLIENT_SECRET:demo-client-secret-2026}

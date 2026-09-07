@@ -95,13 +95,32 @@ behind a real OAuth 2.1 trust boundary reachable from ChatGPT/Claude, instead
 of only `localhost:9443` on a dev machine. Entirely opt-in — skip this
 section and the VM behaves exactly as Part 1 describes.
 
-### 1. Open port 9443 — same two firewalls as step 2 above
-**a) Cloud:** VCN → Security List → Add Ingress Rule: source `0.0.0.0/0`,
-protocol TCP, destination port `9443`.
+**Real HTTPS is required**, not optional — Claude's connector flow is a
+browser redirect from `https://claude.ai` and won't complete against plain
+HTTP, and OpenAI's docs state MCP servers "must be hosted behind a stable
+HTTPS endpoint." `deploy/oci/docker-compose.yml`'s `caddy` service handles
+this: automatic Let's Encrypt HTTPS in front of the gateway, using
+[sslip.io](https://sslip.io)'s free wildcard DNS so no domain purchase or
+registration is needed — `<ip-with-dashes>.sslip.io` (e.g.
+`161-33-9-182.sslip.io` for that literal IP) just resolves to the IP itself.
+The one downside: if the VM's IP ever changes, this hostname changes with
+it — worth a real domain later if the deployment becomes long-lived.
+
+### 1. Open ports 80 and 443 — same two firewalls as step 2 above
+Caddy needs 80 for the Let's Encrypt HTTP-01 challenge (and the HTTP→HTTPS
+redirect) and 443 for HTTPS itself. The gateway's own port 9443 no longer
+needs a public firewall rule at all — it's not published outside the
+compose network anymore (Caddy is the sole public entry point); leaving an
+old 9443 rule in place is harmless, since nothing will be listening on the
+host's 9443 to answer it.
+
+**a) Cloud:** VCN → Security List → Add Ingress Rule for each: source
+`0.0.0.0/0`, protocol TCP, destination port `80`; repeat for `443`.
 
 **b) VM:**
 ```bash
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 9443 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
@@ -109,31 +128,35 @@ sudo netfilter-persistent save
 ```bash
 cd ~/VAM/deploy/oci
 echo 'VAM_MCP_ENABLED=true' >> .env
-echo "GATEWAY_PUBLIC_BASE_URL=http://<PUBLIC_IP>:9443" >> .env
+echo "GATEWAY_PUBLIC_BASE_URL=https://<ip-with-dashes>.sslip.io" >> .env
 sudo docker compose --profile mcp up -d --build
 ```
 `GATEWAY_PUBLIC_BASE_URL` becomes the OAuth issuer and redirect URI — it
-**must** be the address a browser/ChatGPT/Claude actually reaches, not
-`localhost`. `VAM_MCP_ENABLED=true` flips the backend's `/mcp` endpoint on
-*and* requires every call to carry a gateway-signed context (see
+**must** be the real HTTPS hostname a browser/ChatGPT/Claude actually
+reaches. `VAM_MCP_ENABLED=true` flips the backend's `/mcp` endpoint on *and*
+requires every call to carry a gateway-signed context (see
 `deploy/oci/docker-compose.yml`'s comments) — the backend and gateway
 containers pick this up on their next restart, so re-run the `up -d --build`
 above if you only edited `.env`.
 
 The routine `docker compose up -d --build` that `deploy-oci.yml` runs on
 every push to `main` does **not** include `--profile mcp`, so a normal
-auto-deploy never starts or restarts the gateway unexpectedly — re-run the
-profiled command by hand (or SSH in) whenever the gateway itself needs to
-pick up a change.
+auto-deploy never starts or restarts the gateway (or Caddy) unexpectedly —
+re-run the profiled command by hand (or SSH in) whenever they need to pick
+up a change.
 
 ### 3. Verify
 ```bash
-curl http://<PUBLIC_IP>:9443/.well-known/oauth-authorization-server
-curl http://<PUBLIC_IP>:9443/context-jwks
+curl https://<ip-with-dashes>.sslip.io/.well-known/oauth-authorization-server
+curl https://<ip-with-dashes>.sslip.io/.well-known/oauth-protected-resource
+curl https://<ip-with-dashes>.sslip.io/context-jwks
 ```
-Both should return JSON (metadata, then a JWK Set) — if either times out,
-recheck both firewalls; if either 404s, recheck `--profile mcp` was included.
-Full OAuth-code+PKCE-to-tools/call walkthrough: see `docs/mcp-architecture.md`.
+All three should return JSON over a real HTTPS connection (check for a valid
+cert, not just a 200) — if any times out, recheck both firewalls; a
+certificate error usually means Caddy hasn't finished obtaining one yet
+(`docker compose logs -f caddy` shows progress); a 404 means recheck
+`--profile mcp` was included. Full OAuth-code+PKCE-to-tools/call walkthrough:
+see `docs/mcp-architecture.md`.
 
 ---
 
