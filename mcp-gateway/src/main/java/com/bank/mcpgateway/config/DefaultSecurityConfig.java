@@ -21,7 +21,9 @@ import org.springframework.security.web.SecurityFilterChain;
  * differently (the {@code /mcp} proxy validates its own Bearer token inline;
  * {@code /context-jwks} is deliberately public — it's a public key set;
  * {@code /authorized} is this demo's stand-in redirect_uri, see
- * AuthorizedController).
+ * AuthorizedController; {@code /.well-known/oauth-protected-resource} is the
+ * RFC 9728 document a real connector fetches before it has any credentials
+ * at all, see ProtectedResourceMetadataController).
  */
 @Configuration
 @RequiredArgsConstructor
@@ -33,7 +35,8 @@ public class DefaultSecurityConfig {
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/mcp", "/context-jwks", "/authorized").permitAll()
+                        .requestMatchers("/mcp", "/context-jwks", "/authorized",
+                                "/.well-known/oauth-protected-resource").permitAll()
                         .anyRequest().authenticated())
                 // /mcp is a stateless bearer-token API, not a browser form post — it
                 // carries no session/CSRF token, and the default anonymous-user

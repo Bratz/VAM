@@ -44,15 +44,17 @@ import java.util.UUID;
  * and a separate keypair from {@code ContextJwtService}'s per-call signed
  * context; see that class's javadoc for why they're kept apart).
  *
- * <p>Client registration is a real MCP-spec concern this deliberately doesn't
- * fully solve: the current authorization spec prefers Client ID Metadata
- * Documents over the now-deprecated Dynamic Client Registration, for a
- * server that needs to onboard arbitrary self-registering clients (real
- * ChatGPT/Claude connectors). That's Phase 4's job — verify against the live
- * spec then. This phase proves the trust-boundary mechanism end-to-end with
- * one statically-registered client, which is a fully valid MCP client
- * registration mechanism on its own (see "pre-registered client" as one of
- * the three options the spec names).
+ * <p>Client registration deliberately stays with a single pre-registered
+ * client rather than adding Dynamic Client Registration or Client ID
+ * Metadata Document support — confirmed against both platforms' current
+ * connector docs during Phase 4: Claude's authentication guide recommends a
+ * pre-registered client over DCR precisely for this shape of server ("a good
+ * option when you want a stable OAuth client per organization... avoids
+ * dynamic client registration entirely"), and a manually-configured OAuth
+ * client is an equally supported path for a ChatGPT custom connector. Two
+ * redirect URIs are registered on the one client below: this repo's own
+ * {@code demoRedirectUri} for manual curl/browser testing, and each
+ * platform's fixed connector callback.
  */
 @Configuration
 @EnableWebSecurity
@@ -66,6 +68,15 @@ public class AuthorizationServerConfig {
 
     @Value("${gateway.demo-client.redirect-uri}")
     private String demoRedirectUri;
+
+    /**
+     * ChatGPT's fixed callback for a manually-registered (non-CIMD) custom
+     * connector — confirmed against OpenAI's current connector docs while
+     * wiring up real registration; distinct from {@code demoRedirectUri},
+     * which only our own manual curl/browser testing uses.
+     */
+    @Value("${gateway.chatgpt-redirect-uri:https://chatgpt.com/connector_platform_oauth_redirect}")
+    private String chatgptRedirectUri;
 
     @Bean
     @Order(1)
@@ -91,6 +102,7 @@ public class AuthorizationServerConfig {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUri(demoRedirectUri)
+                .redirectUri(chatgptRedirectUri)
                 .scope(OidcScopes.OPENID)
                 .scope("mcp:tools")
                 .clientSettings(ClientSettings.builder()

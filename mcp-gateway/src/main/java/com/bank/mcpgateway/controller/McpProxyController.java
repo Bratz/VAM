@@ -70,6 +70,12 @@ public class McpProxyController {
     @Value("${gateway.backend-mcp-url}")
     private String backendMcpUrl;
 
+    /** Same value Spring AS uses as its own issuer — this gateway is its own
+     *  authorization server, so the protected-resource-metadata document lives
+     *  right next to it. See {@link ProtectedResourceMetadataController}. */
+    @Value("${spring.security.oauth2.authorizationserver.issuer}")
+    private String issuer;
+
     private RestClient restClient;
 
     @PostConstruct
@@ -195,9 +201,18 @@ public class McpProxyController {
         return authorizationHeader.substring(7).trim();
     }
 
+    /**
+     * The {@code resource_metadata} parameter is what lets Claude/ChatGPT find
+     * our RFC 9728 document from nothing but this {@code /mcp} URL — without
+     * it, a client that only knows this endpoint has no path to discovering
+     * that this same host is also the authorization server (see
+     * {@link ProtectedResourceMetadataController}).
+     */
     private ResponseEntity<Object> unauthorized(Object requestId, String message) {
+        String resourceMetadataUrl = issuer + "/.well-known/oauth-protected-resource";
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"invalid_token\"")
+                .header(HttpHeaders.WWW_AUTHENTICATE,
+                        "Bearer error=\"invalid_token\", resource_metadata=\"" + resourceMetadataUrl + "\"")
                 .body(errorBody(requestId, -32001, message));
     }
 
