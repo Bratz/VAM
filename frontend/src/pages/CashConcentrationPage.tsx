@@ -89,7 +89,6 @@ const CashConcentrationPage: React.FC = () => {
     updateRule,
     deleteRule,
     toggleRule,
-    runSweeps
   } = useSweeping();
 
   // UI State
@@ -218,10 +217,6 @@ const CashConcentrationPage: React.FC = () => {
         console.error('Failed to delete rule:', err);
       }
     }
-  };
-
-  const handleRunSweeps = async (ruleIds?: string[]) => {
-    return await runSweeps(ruleIds);
   };
 
   // Filter rules by corporate/program
@@ -438,7 +433,7 @@ const CashConcentrationPage: React.FC = () => {
         isOpen={showRunModal}
         onClose={() => setShowRunModal(false)}
         rules={rules}
-        onRun={handleRunSweeps}
+        onComplete={() => { fetchRules(); fetchHistory(); }}
       />
 
       <ViewExecutionModal

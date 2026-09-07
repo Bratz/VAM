@@ -5,6 +5,7 @@ import { Modal } from '../ui/enhanced';
 import { formatCompactCurrency, formatRelativeTime } from '../../utils';
 import { SweepRule } from '../../services/api';
 import { SWEEP_TYPES } from './constants';
+import { VirtualizedAccountList } from '../va/VirtualizedAccountList';
 
 // ============================================================================
 // VIEW RULE DETAILS MODAL
@@ -72,34 +73,23 @@ export const ViewRuleModal: React.FC<ViewRuleModalProps> = ({ isOpen, onClose, r
           </div>
         </Card>
 
-        {/* Source Accounts */}
+        {/* Source Accounts — virtualized: a rule can have ~2000 sources */}
         {rule.sourceAccounts && rule.sourceAccounts.length > 0 && (
           <Card className="border-warning-200/60 dark:border-warning-500/30 bg-warning-50/30 dark:bg-warning-500/10">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Source Accounts</p>
               <Badge variant="warning" size="sm">{rule.sourceAccounts.length} account(s)</Badge>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {rule.sourceAccounts.map((source) => (
-                <div key={source.id} className="flex items-center gap-3 p-3 bg-white/60 dark:bg-primary-900/60 rounded-xl border border-neutral-100 dark:border-primary-800/60">
-                  <div className="w-9 h-9 rounded-lg bg-warning-100 dark:bg-warning-500/20 flex items-center justify-center flex-shrink-0">
-                    <Building2 className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-primary-900 dark:text-neutral-50 truncate">{source.entityName || source.entityCode}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">{source.accountNumber}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <Badge variant="neutral" size="xs">{source.currencyCode || 'AED'}</Badge>
-                    {source.balance !== undefined && (
-                      <p className="text-xs font-medium text-neutral-700 dark:text-neutral-200 mt-1">
-                        {formatCompactCurrency(source.balance, source.currencyCode || 'AED')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <VirtualizedAccountList
+              items={rule.sourceAccounts.map((source) => ({
+                id: source.id,
+                vaNumber: source.accountNumber,
+                vaName: source.entityName || source.entityCode,
+                currencyCode: source.currencyCode || 'AED',
+                balance: source.balance,
+              }))}
+              height={280}
+            />
           </Card>
         )}
 

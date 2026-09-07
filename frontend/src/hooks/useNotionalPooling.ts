@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { poolingApi, NotionalPool, CreatePoolRequest, AddMemberRequest, CalculateInterestResponse } from '../services/api';
+import { poolingApi, NotionalPool, CreatePoolRequest, AddMemberRequest, CalculateInterestResponse, BulkAddMembersResponse } from '../services/api';
 
 export const useNotionalPooling = () => {
   const [pools, setPools] = useState<NotionalPool[]>([]);
@@ -81,6 +81,14 @@ export const useNotionalPooling = () => {
     throw new Error('Failed to add member');
   }, [selectedPool]);
 
+  const addMembersBulk = useCallback(async (poolId: string, accountIds: string[]): Promise<BulkAddMembersResponse> => {
+    const response = await poolingApi.addMembersBulk(poolId, accountIds);
+    // Bulk response doesn't include the full pool, so refresh it explicitly.
+    await fetchPoolById(poolId);
+    if (response.success) return response.data;
+    throw new Error(response.message || 'Failed to add members');
+  }, [fetchPoolById]);
+
   const removeMember = useCallback(async (poolId: string, memberId: string) => {
     await poolingApi.removeMember(poolId, memberId);
     // Refresh pool to get updated member list
@@ -122,6 +130,7 @@ export const useNotionalPooling = () => {
     updatePool,
     deletePool,
     addMember,
+    addMembersBulk,
     removeMember,
     calculateInterest
   };

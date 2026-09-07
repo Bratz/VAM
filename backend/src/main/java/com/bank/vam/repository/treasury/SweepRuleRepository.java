@@ -22,6 +22,16 @@ public interface SweepRuleRepository extends JpaRepository<SweepRule, UUID> {
     
     @Query("SELECT r FROM SweepRule r LEFT JOIN FETCH r.sourceAccounts WHERE r.status = 'ACTIVE'")
     List<SweepRule> findAllActiveWithSources();
+
+    /**
+     * Same eager-fetch shape as {@link #findAllActiveWithSources()} but for
+     * an explicit id list — used by {@code runSweeps}/{@code runDeficitFunding}
+     * when the caller targets specific rules. Needed so the async sweep path
+     * (running on a plain executor thread, no Open-Session-In-View) can
+     * iterate {@code sourceAccounts} without a LazyInitializationException.
+     */
+    @Query("SELECT r FROM SweepRule r LEFT JOIN FETCH r.sourceAccounts WHERE r.id IN :ids")
+    List<SweepRule> findAllByIdWithSources(@Param("ids") List<UUID> ids);
     
     List<SweepRule> findByStatus(SweepRule.SweepStatus status);
     

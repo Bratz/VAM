@@ -2,6 +2,8 @@ package com.bank.vam.controller.treasury;
 
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.SweepRuleDto;
+import com.bank.vam.dto.treasury.SweepRunDto;
+import com.bank.vam.entity.treasury.SweepRun;
 import com.bank.vam.service.treasury.SweepService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -92,6 +95,34 @@ public class SweepController {
         }
         SweepRuleDto.RunSweepsResponse result = sweepService.runSweeps(request);
         return ResponseEntity.ok(ApiResponse.success(result, "Sweep execution completed"));
+    }
+
+    @PostMapping("/execute-async")
+    @Operation(summary = "Run sweeps asynchronously",
+               description = "Kicks off sweep execution on a background thread (the sweepExecutor pool) and " +
+                             "returns a pollable runId immediately, without waiting for completion. Use " +
+                             "GET /runs/{runId} to poll status/progress. Intended for rules with large source-account " +
+                             "counts (~2000) where the synchronous POST /execute would time out.")
+    public ResponseEntity<ApiResponse<Map<String, UUID>>> runSweepsAsync(
+            @RequestBody(required = false) SweepRuleDto.RunSweepsRequest request) {
+        if (request == null) {
+            request = new SweepRuleDto.RunSweepsRequest();
+        }
+        // Two separate calls into the SweepService bean (not one method
+        // chaining internally) — required so @Async on runSweepsAsync goes
+        // through Spring's proxy instead of being silently ignored by
+        // self-invocation. See SweepRunBootstrap's javadoc for the same caveat.
+        SweepRun run = sweepService.createSweepRunHeader(request, "API");
+        sweepService.runSweepsAsync(run.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("runId", run.getId()), "Sweep run started"));
+    }
+
+    @GetMapping("/runs/{runId}")
+    @Operation(summary = "Poll an async sweep run",
+               description = "Status/progress for a run started via POST /execute-async.")
+    public ResponseEntity<ApiResponse<SweepRunDto>> getRun(@PathVariable UUID runId) {
+        SweepRunDto run = sweepService.getSweepRun(runId);
+        return ResponseEntity.ok(ApiResponse.success(run));
     }
 
     @GetMapping("/history")

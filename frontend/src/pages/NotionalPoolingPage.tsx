@@ -113,6 +113,7 @@ const NotionalPoolingPage: React.FC = () => {
     fetchPoolById,
     createPool,
     addMember,
+    addMembersBulk,
     removeMember,
     calculateInterest
   } = useNotionalPooling();
@@ -380,6 +381,7 @@ const NotionalPoolingPage: React.FC = () => {
             onClose={() => { setShowAddMemberModal(false); setSelectedPool(null); }}
             pool={selectedPool}
             onAddMember={addMember}
+            onAddMembersBulk={addMembersBulk}
             corporateId={selectedCorporateId}
           />
         </>

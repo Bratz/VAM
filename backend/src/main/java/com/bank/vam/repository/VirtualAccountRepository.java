@@ -50,7 +50,9 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     // ========================================================================
     
     Optional<VirtualAccount> findByVaNumber(String vaNumber);
-    
+
+    List<VirtualAccount> findByVaNumberIn(List<String> vaNumbers);
+
     Optional<VirtualAccount> findByViban(String viban);
     
     boolean existsByViban(String viban);

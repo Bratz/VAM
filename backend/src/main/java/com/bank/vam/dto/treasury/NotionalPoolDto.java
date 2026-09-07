@@ -75,6 +75,31 @@ public class NotionalPoolDto {
     }
 
     @Data
+    public static class BulkAddMembersRequest {
+        private List<UUID> accountIds;
+    }
+
+    @Data
+    public static class BulkAddMembersResponse {
+        private int added;
+        private List<SkippedMember> skipped;
+    }
+
+    @Data
+    public static class SkippedMember {
+        private UUID accountId;
+        private String reason;
+
+        public SkippedMember() {
+        }
+
+        public SkippedMember(UUID accountId, String reason) {
+            this.accountId = accountId;
+            this.reason = reason;
+        }
+    }
+
+    @Data
     public static class UpdateRequest {
         private String poolName;
         private BigDecimal targetBalance;

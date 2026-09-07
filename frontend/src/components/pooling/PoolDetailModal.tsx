@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Layers,
   Loader2,
   Calculator,
-  Building2,
   UserPlus,
-  Users,
   Trash2,
   Calendar,
   Percent,
 } from 'lucide-react';
-import { Button, Badge, StatusIconBadge } from '../ui';
+import { Button, Badge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
 import { NotionalPool, CalculateInterestResponse } from '../../services/api';
 import toast from 'react-hot-toast';
+import { VirtualizedAccountList, VirtualizedAccountRow } from '../va/VirtualizedAccountList';
 
 // ============================================================================
 // POOL DETAIL MODAL - VIEW AND MANAGE POOL
@@ -37,8 +36,23 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
   onAddMember
 }) => {
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [removeTargetId, setRemoveTargetId] = useState('');
   const [calculating, setCalculating] = useState(false);
   const [interestResult, setInterestResult] = useState<CalculateInterestResponse | null>(null);
+
+  // PoolMember -> VirtualizedAccountRow: field names differ (accountNumber/
+  // entityName vs. vaNumber/vaName), and members don't carry their own
+  // currency, so the pool's currency is used for every row.
+  const memberRows: VirtualizedAccountRow[] = useMemo(
+    () => (pool.members || []).map(m => ({
+      id: m.id,
+      vaNumber: m.accountNumber,
+      vaName: m.entityName,
+      currencyCode: pool.poolCurrency,
+      balance: m.currentBalance,
+    })),
+    [pool.members, pool.poolCurrency]
+  );
 
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('Remove this member from the pool?')) return;
@@ -47,6 +61,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
     try {
       await onRemoveMember(pool.id, memberId);
       toast.success('Member removed from pool');
+      setRemoveTargetId('');
     } catch (err: any) {
       toast.error(err.message || 'Failed to remove member');
     } finally {
@@ -170,57 +185,38 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
         </Button>
       </div>
 
-      {pool.members && pool.members.length > 0 ? (
-        <div className="space-y-2 max-h-80 overflow-y-auto">
-          {pool.members.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                <StatusIconBadge tone="primary" icon={Building2} rounded="lg" />
-                <div>
-                  <p className="font-medium text-primary-900 dark:text-neutral-50">{member.entityName}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{member.accountNumber}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-medium text-primary-900 dark:text-neutral-50">
-                    {formatCurrency(member.currentBalance || 0, pool.poolCurrency)}
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {member.contributionPercent?.toFixed(1)}% contribution
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Interest Allocated</p>
-                  <p className="font-medium text-success-600 dark:text-success-300">
-                    {formatCurrency(member.interestAllocation || 0, pool.poolCurrency)}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100 text-error-600 dark:text-error-300 hover:bg-error-50 dark:hover:bg-error-500/10"
-                  onClick={() => handleRemoveMember(member.id)}
-                  disabled={removingMemberId === member.id}
-                >
-                  {removingMemberId === member.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-          <Users className="w-10 h-10 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
-          <p className="text-sm">No members in this pool</p>
-          <p className="text-xs">Add accounts to start notional pooling</p>
+      <VirtualizedAccountList items={memberRows} selectable={false} height={320} />
+
+      {/* Per-member removal lives outside the (read-only) virtualized list —
+          a trash icon per row doesn't scale to thousands of members, so this
+          is a deliberate select-then-remove control instead. */}
+      {pool.members && pool.members.length > 0 && (
+        <div className="flex items-center gap-2 mt-3">
+          <select
+            value={removeTargetId}
+            onChange={(e) => setRemoveTargetId(e.target.value)}
+            className="flex-1 h-9 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-sm px-2 text-neutral-700 dark:text-neutral-200"
+          >
+            <option value="">Select a member to remove…</option>
+            {pool.members.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.entityName} — {member.accountNumber}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-error-600 dark:text-error-300 hover:bg-error-50 dark:hover:bg-error-500/10"
+            onClick={() => removeTargetId && handleRemoveMember(removeTargetId)}
+            disabled={!removeTargetId || removingMemberId === removeTargetId}
+          >
+            {removingMemberId && removingMemberId === removeTargetId ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+          </Button>
         </div>
       )}
 

@@ -2,14 +2,18 @@ package com.bank.vam.service.treasury;
 
 import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.dto.treasury.SweepRuleDto;
+import com.bank.vam.dto.treasury.SweepRunDto;
+import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.entity.treasury.ExternalMandate;
 import com.bank.vam.entity.treasury.IhbDeposit;
 import com.bank.vam.entity.treasury.IhbLoan;
 import com.bank.vam.entity.treasury.SweepExecution;
 import com.bank.vam.entity.treasury.SweepRule;
 import com.bank.vam.entity.treasury.SweepRuleSource;
+import com.bank.vam.entity.treasury.SweepRun;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.TransactionRepository;
@@ -20,11 +24,13 @@ import com.bank.vam.repository.treasury.IhbLoanRepository;
 import com.bank.vam.repository.treasury.SweepExecutionRepository;
 import com.bank.vam.repository.treasury.SweepRuleRepository;
 import com.bank.vam.repository.treasury.SweepRuleSourceRepository;
+import com.bank.vam.repository.treasury.SweepRunRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -37,8 +43,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -73,6 +84,11 @@ public class SweepService {
     private final IhbFxService fxService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final PlatformTransactionManager transactionManager;
+    private final SweepRunBootstrap sweepRunBootstrap;
+    private final SweepRunRepository sweepRunRepository;
+    private final com.bank.vam.config.HomeBankProperties homeBankProperties;
+    private final com.bank.vam.repository.treasury.ExternalMandateRepository externalMandateRepository;
+    private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
 
     /**
      * Per-source transaction boundary used by {@link #runSweeps}. Each source's
@@ -205,8 +221,28 @@ public class SweepService {
         rule.setCurrencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : marketProfile.getDefaultCurrency());
         rule.setStatus(SweepRule.SweepStatus.ACTIVE);
 
-        // Add source accounts
+        // Add source accounts — validated up front via one batch lookup
+        // rather than trusting the request body blindly (was previously
+        // never checked against the DB at all). The same batch also drives
+        // shadow-account classification below (no extra query).
+        boolean hasShadowLeg = false;
+        List<VirtualAccount> sourceVasForMirroring = new ArrayList<>();
         if (request.getSourceAccounts() != null) {
+            List<UUID> requestedIds = request.getSourceAccounts().stream()
+                    .map(SweepRuleDto.SourceAccountRequest::getAccountId)
+                    .collect(Collectors.toList());
+            final Map<UUID, VirtualAccount> vaById = requestedIds.isEmpty() ? Map.of() :
+                    virtualAccountRepository.findAllById(requestedIds).stream()
+                            .collect(Collectors.toMap(VirtualAccount::getId, Function.identity()));
+            if (!requestedIds.isEmpty()) {
+                List<UUID> missingIds = requestedIds.stream()
+                        .filter(id -> !vaById.containsKey(id))
+                        .distinct()
+                        .collect(Collectors.toList());
+                if (!missingIds.isEmpty()) {
+                    throw new BusinessException("Source account(s) not found: " + missingIds);
+                }
+            }
             for (SweepRuleDto.SourceAccountRequest sourceReq : request.getSourceAccounts()) {
                 SweepRuleSource source = new SweepRuleSource();
                 source.setRule(rule);
@@ -217,11 +253,30 @@ public class SweepService {
                 source.setCurrencyCode(sourceReq.getCurrencyCode());
                 source.setBankName(sourceReq.getBankName());
                 rule.getSourceAccounts().add(source);
+
+                VirtualAccount va = vaById.get(sourceReq.getAccountId());
+                if (va != null) {
+                    hasShadowLeg |= assertShadowLegEligible(va, sourceReq.getAccountNumber(), rule.getRail());
+                    sourceVasForMirroring.add(va);
+                }
             }
+        }
+        VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId()).orElse(null);
+        if (targetVa != null) {
+            hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
+        }
+        // v2 multi-bank field, previously never populated (default NOTIONAL) — a rule
+        // touching at least one shadow account now actually gets REAL execution wired
+        // in executeRules/executeTransfer via mirrorIfHomeBankShadow, so reflect that here.
+        if (hasShadowLeg) {
+            rule.setExecutionMode(SweepRule.ExecutionMode.REAL);
         }
 
         rule = ruleRepository.save(rule);
         log.info("Created sweep rule: {} - {}", rule.getRuleReference(), rule.getRuleName());
+
+        mirrorSweepParticipation(sourceVasForMirroring, targetVa, rule.getId());
+
         return toResponse(rule);
     }
 
@@ -249,8 +304,17 @@ public class SweepService {
     public void deleteRule(UUID id) {
         SweepRule rule = ruleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sweep rule not found: " + id));
+
+        List<UUID> involvedAccountIds = new ArrayList<>(
+                rule.getSourceAccounts().stream().map(SweepRuleSource::getAccountId).collect(Collectors.toList()));
+        if (rule.getTargetAccountId() != null) {
+            involvedAccountIds.add(rule.getTargetAccountId());
+        }
+
         ruleRepository.delete(rule);
         log.info("Deleted sweep rule: {}", rule.getRuleReference());
+
+        clearSweepParticipationMirror(involvedAccountIds, id);
     }
 
     @Transactional
@@ -288,37 +352,144 @@ public class SweepService {
     }
 
     /**
+     * Resolve the rule set for a run request, sources eagerly fetched (see
+     * {@code SweepRuleRepository.findAllByIdWithSources} /
+     * {@code findAllActiveWithSources}). Eagerly fetching matters here
+     * specifically because {@link #runSweepsAsync} iterates the result on a
+     * plain {@code sweepExecutor} thread with no HTTP request and therefore
+     * no Open-Session-In-View — a lazy {@code sourceAccounts} access there
+     * would throw {@code LazyInitializationException}.
+     *
+     * <p>Note: safety here comes from the repository's {@code JOIN FETCH},
+     * not a transaction boundary on this method — every caller (sync, async,
+     * and {@code createSweepRunHeader}) invokes this via plain self-invocation,
+     * which Spring's proxy-based {@code @Transactional} can't intercept
+     * anyway. {@code JOIN FETCH} loads {@code sourceAccounts} inside the
+     * repository call itself, so the collection is already materialised by
+     * the time this method returns regardless of transaction demarcation.
+     */
+    public List<SweepRule> resolveRulesForRun(SweepRuleDto.RunSweepsRequest request) {
+        if (request.getRuleIds() != null && !request.getRuleIds().isEmpty()) {
+            return ruleRepository.findAllByIdWithSources(request.getRuleIds()).stream()
+                    .filter(r -> r.getStatus() == SweepRule.SweepStatus.ACTIVE)
+                    .collect(Collectors.toList());
+        }
+        return ruleRepository.findAllActiveWithSources();
+    }
+
+    /**
+     * Callback invoked after each source finishes, so the async execution
+     * path can persist live progress counters for pollers. {@code null} for
+     * the plain synchronous call.
+     */
+    private interface ProgressCallback {
+        void onProgress(int sourcesProcessed, int successCount, int failedCount);
+    }
+
+    /**
+     * Synchronous entry point (existing {@code POST /execute} behaviour) —
+     * unchanged aggregation semantics, now delegating to {@link #executeRules}.
+     */
+    public SweepRuleDto.RunSweepsResponse runSweeps(SweepRuleDto.RunSweepsRequest request) {
+        return executeRules(resolveRulesForRun(request), null);
+    }
+
+    /**
+     * Create the {@code RUNNING} header row for an async run (Part A) in its
+     * own committed transaction via {@link SweepRunBootstrap}, so a poller
+     * hitting {@code GET /runs/{runId}} immediately after the {@code POST}
+     * response sees the row even though the real work hasn't started yet.
+     */
+    @Transactional(readOnly = true)
+    public SweepRun createSweepRunHeader(SweepRuleDto.RunSweepsRequest request, String createdBy) {
+        List<SweepRule> rules = resolveRulesForRun(request);
+        int sourcesTotal = rules.stream().mapToInt(r -> r.getSourceAccounts().size()).sum();
+        return sweepRunBootstrap.createRunningRow(createdBy, request.getRuleIds(), sourcesTotal);
+    }
+
+    @Transactional(readOnly = true)
+    public SweepRunDto getSweepRun(UUID runId) {
+        SweepRun run = sweepRunRepository.findById(runId)
+                .orElseThrow(() -> new ResourceNotFoundException("No sweep run exists with id " + runId));
+        return SweepRunDto.from(run);
+    }
+
+    /**
+     * Background worker for {@code POST /execute-async}. MUST be called from
+     * a different bean (the controller) than the one initiating it — Spring's
+     * proxy-based {@code @Async} interception ignores self-invocation, same
+     * caveat as {@link SweepRunBootstrap}'s {@code REQUIRES_NEW} methods.
+     */
+    @Async("sweepExecutor")
+    public void runSweepsAsync(UUID runId, SweepRuleDto.RunSweepsRequest request) {
+        try {
+            List<SweepRule> rules = resolveRulesForRun(request);
+            SweepRuleDto.RunSweepsResponse response = executeRules(rules,
+                    (processed, success, failed) -> sweepRunBootstrap.updateProgress(runId, processed, success, failed));
+            int total = response.getSuccessCount() + response.getFailedCount() + response.getSkippedCount();
+            sweepRunBootstrap.markCompleted(runId, total, response.getSuccessCount(), response.getFailedCount());
+            log.info("Async sweep run {} completed: {} success, {} failed, {} skipped",
+                    runId, response.getSuccessCount(), response.getFailedCount(), response.getSkippedCount());
+        } catch (Exception ex) {
+            log.error("Async sweep run {} failed: {}", runId, ex.getMessage(), ex);
+            sweepRunBootstrap.markFailed(runId, ex.getMessage());
+        }
+    }
+
+    /**
      * Iterate sweep rules and execute each source under its own
      * {@code REQUIRES_NEW} transaction (see {@link #perSourceTx}). Deliberately
      * NOT annotated {@code @Transactional} at the method level: a single outer
      * transaction would let one source's SQL failure cascade into a
      * PostgreSQL {@code 25P02} state that breaks every subsequent source in
      * the loop. Per-source transaction boundaries contain the damage.
+     *
+     * <p><b>N+1 fix:</b> {@code executeSweep}/{@code createCommittedIhbDeposit}
+     * used to re-run {@code findById} on the source VA, the target VA, and
+     * both legal entities on EVERY source iteration — for a rule with 2000
+     * sources that's up to ~10,000 individual lookups where the target VA and
+     * both entities are identical every time. Batch-fetch once per rule
+     * instead (source VAs via {@code findAllById}, the single target VA, then
+     * every distinct owning-entity id via one more {@code findAllById}) and
+     * pass the resulting maps into the per-source closure.
      */
-    public SweepRuleDto.RunSweepsResponse runSweeps(SweepRuleDto.RunSweepsRequest request) {
-        List<SweepRule> rules;
-        if (request.getRuleIds() != null && !request.getRuleIds().isEmpty()) {
-            rules = ruleRepository.findAllById(request.getRuleIds()).stream()
-                    .filter(r -> r.getStatus() == SweepRule.SweepStatus.ACTIVE)
-                    .collect(Collectors.toList());
-        } else {
-            rules = ruleRepository.findAllActiveWithSources();
-        }
-
+    private SweepRuleDto.RunSweepsResponse executeRules(List<SweepRule> rules, ProgressCallback progressCallback) {
         int successCount = 0;
         int failedCount = 0;
         int skippedCount = 0;
+        int processedCount = 0;
         BigDecimal totalSwept = BigDecimal.ZERO;
         List<SweepRuleDto.ExecutionResponse> executions = new ArrayList<>();
 
         for (SweepRule rule : rules) {
+            // ---- batch-fetch once per rule (was: per source) ----
+            List<UUID> sourceAccountIds = rule.getSourceAccounts().stream()
+                    .map(SweepRuleSource::getAccountId)
+                    .collect(Collectors.toList());
+            Map<UUID, VirtualAccount> sourceVaById = sourceAccountIds.isEmpty() ? Map.of() :
+                    virtualAccountRepository.findAllById(sourceAccountIds).stream()
+                            .collect(Collectors.toMap(VirtualAccount::getId, Function.identity()));
+            VirtualAccount targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
+
+            Set<UUID> entityIds = new HashSet<>();
+            sourceVaById.values().forEach(va -> {
+                if (va.getOwningEntityId() != null) entityIds.add(va.getOwningEntityId());
+            });
+            if (targetVa != null && targetVa.getOwningEntityId() != null) {
+                entityIds.add(targetVa.getOwningEntityId());
+            }
+            Map<UUID, LegalEntity> legalEntityById = entityIds.isEmpty() ? Map.of() :
+                    legalEntityRepository.findAllById(entityIds).stream()
+                            .collect(Collectors.toMap(LegalEntity::getId, Function.identity()));
+
             for (SweepRuleSource source : rule.getSourceAccounts()) {
                 SweepExecution execution;
                 try {
                     // Per-source REQUIRES_NEW transaction. Any SQL failure
                     // here rolls back ONLY this source's work — the loop
                     // continues with a fresh transaction on the next source.
-                    execution = perSourceTx.execute(status -> executeSweep(rule, source));
+                    execution = perSourceTx.execute(status ->
+                            executeSweep(rule, source, sourceVaById, targetVa, legalEntityById));
                 } catch (Exception ex) {
                     log.error("Sweep iteration failed for source {} of rule '{}': {}",
                             source.getAccountNumber(), rule.getRuleName(), ex.getMessage(), ex);
@@ -333,6 +504,7 @@ public class SweepService {
                     execution.setErrorMessage("Sweep iteration failed: " + ex.getMessage());
                 }
                 executions.add(toExecutionResponse(execution));
+                processedCount++;
 
                 if (execution.getStatus() == SweepExecution.ExecutionStatus.SUCCESS) {
                     successCount++;
@@ -341,6 +513,10 @@ public class SweepService {
                     failedCount++;
                 } else {
                     skippedCount++;
+                }
+
+                if (progressCallback != null) {
+                    progressCallback.onProgress(processedCount, successCount, failedCount);
                 }
             }
 
@@ -384,7 +560,10 @@ public class SweepService {
      * - Single source of truth: IHB position is the record
      * - True IHB model: Positions drive interest, not VA balances
      */
-    private SweepExecution executeSweep(SweepRule rule, SweepRuleSource source) {
+    private SweepExecution executeSweep(SweepRule rule, SweepRuleSource source,
+                                         Map<UUID, VirtualAccount> sourceVaById,
+                                         VirtualAccount targetVa,
+                                         Map<UUID, LegalEntity> legalEntityById) {
         SweepExecution execution = new SweepExecution();
         execution.setExecutionReference(generateExecutionReference());
         execution.setRule(rule);
@@ -398,8 +577,10 @@ public class SweepService {
         execution.setCurrencyCode(rule.getCurrencyCode());
 
         try {
-            // Get source VA - gracefully handle missing/deleted VAs
-            VirtualAccount sourceVa = virtualAccountRepository.findById(source.getAccountId()).orElse(null);
+            // Get source VA - gracefully handle missing/deleted VAs.
+            // Pre-fetched once per rule by the caller (N+1 fix) instead of a
+            // fresh findById on every source.
+            VirtualAccount sourceVa = sourceVaById.get(source.getAccountId());
 
             if (sourceVa == null) {
                 // VA was deleted - mark source as orphaned and skip
@@ -458,7 +639,8 @@ public class SweepService {
                     virtualAccountRepository.save(sourceVa);
 
                     // 2. Create IHB Deposit position with COMMITTED status
-                    IhbDeposit deposit = createCommittedIhbDeposit(source, rule, sweepAmount, execution);
+                    IhbDeposit deposit = createCommittedIhbDeposit(source, rule, sweepAmount, execution,
+                            sourceVa, targetVa, legalEntityById);
 
                     // 3. Update execution
                     execution.setSweepAmount(sweepAmount);
@@ -498,25 +680,26 @@ public class SweepService {
      * - Interest accrues from value date (= position date by default)
      */
     private IhbDeposit createCommittedIhbDeposit(SweepRuleSource source, SweepRule rule,
-                                                  BigDecimal amount, SweepExecution execution) {
+                                                  BigDecimal amount, SweepExecution execution,
+                                                  VirtualAccount sourceVa, VirtualAccount targetVa,
+                                                  Map<UUID, LegalEntity> legalEntityById) {
         try {
-            // Get source VA to find owning entity
-            VirtualAccount sourceVa = virtualAccountRepository.findById(source.getAccountId()).orElse(null);
+            // Source/target VA and owning entities are pre-fetched once per
+            // rule by the caller (N+1 fix) — this used to re-run findById on
+            // the source VA (again), the target VA, and both entities on
+            // EVERY source iteration of the same rule.
             if (sourceVa == null || sourceVa.getOwningEntityId() == null) {
                 log.debug("Source VA has no owning entity - skipping IHB position creation");
                 return null;
             }
 
-            // Get target VA to find treasury entity
-            VirtualAccount targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
             if (targetVa == null || targetVa.getOwningEntityId() == null) {
                 log.debug("Target VA has no owning entity - skipping IHB position creation");
                 return null;
             }
 
-            // Get entities
-            LegalEntity sourceEntity = legalEntityRepository.findById(sourceVa.getOwningEntityId()).orElse(null);
-            LegalEntity targetEntity = legalEntityRepository.findById(targetVa.getOwningEntityId()).orElse(null);
+            LegalEntity sourceEntity = legalEntityById.get(sourceVa.getOwningEntityId());
+            LegalEntity targetEntity = legalEntityById.get(targetVa.getOwningEntityId());
 
             if (sourceEntity == null || targetEntity == null) {
                 log.debug("Could not resolve entities - skipping IHB position creation");
@@ -842,7 +1025,7 @@ public class SweepService {
     public SweepRuleDto.DeficitFundingResponse runDeficitFunding(SweepRuleDto.DeficitFundingRequest request) {
         List<SweepRule> rules;
         if (request.getRuleIds() != null && !request.getRuleIds().isEmpty()) {
-            rules = ruleRepository.findAllById(request.getRuleIds()).stream()
+            rules = ruleRepository.findAllByIdWithSources(request.getRuleIds()).stream()
                     .filter(r -> r.getStatus() == SweepRule.SweepStatus.ACTIVE)
                     .filter(r -> r.getSweepType() == SweepRule.SweepType.TARGET_BALANCE)
                     .collect(Collectors.toList());
@@ -859,8 +1042,32 @@ public class SweepService {
         List<SweepRuleDto.DeficitFundingResult> results = new ArrayList<>();
 
         for (SweepRule rule : rules) {
+            // ---- N+1 fix: same batch-fetch-once-per-rule treatment as
+            // executeRules/executeSweep — was previously re-fetching the
+            // source VA, target VA, and both legal entities individually on
+            // every source (target VA/entity are identical across the rule).
+            List<UUID> sourceAccountIds = rule.getSourceAccounts().stream()
+                    .map(SweepRuleSource::getAccountId)
+                    .collect(Collectors.toList());
+            Map<UUID, VirtualAccount> sourceVaById = sourceAccountIds.isEmpty() ? Map.of() :
+                    virtualAccountRepository.findAllById(sourceAccountIds).stream()
+                            .collect(Collectors.toMap(VirtualAccount::getId, Function.identity()));
+            VirtualAccount targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
+
+            Set<UUID> entityIds = new HashSet<>();
+            sourceVaById.values().forEach(va -> {
+                if (va.getOwningEntityId() != null) entityIds.add(va.getOwningEntityId());
+            });
+            if (targetVa != null && targetVa.getOwningEntityId() != null) {
+                entityIds.add(targetVa.getOwningEntityId());
+            }
+            Map<UUID, LegalEntity> legalEntityById = entityIds.isEmpty() ? Map.of() :
+                    legalEntityRepository.findAllById(entityIds).stream()
+                            .collect(Collectors.toMap(LegalEntity::getId, Function.identity()));
+
             for (SweepRuleSource source : rule.getSourceAccounts()) {
-                SweepRuleDto.DeficitFundingResult result = executeDeficitFunding(rule, source);
+                SweepRuleDto.DeficitFundingResult result =
+                        executeDeficitFunding(rule, source, sourceVaById, targetVa, legalEntityById);
                 results.add(result);
 
                 if (result.isFunded()) {
@@ -886,7 +1093,10 @@ public class SweepService {
     /**
      * Execute deficit funding for a single source account.
      */
-    private SweepRuleDto.DeficitFundingResult executeDeficitFunding(SweepRule rule, SweepRuleSource source) {
+    private SweepRuleDto.DeficitFundingResult executeDeficitFunding(SweepRule rule, SweepRuleSource source,
+                                                                      Map<UUID, VirtualAccount> sourceVaById,
+                                                                      VirtualAccount targetVa,
+                                                                      Map<UUID, LegalEntity> legalEntityById) {
         SweepRuleDto.DeficitFundingResult result = new SweepRuleDto.DeficitFundingResult();
         result.setSourceAccountNumber(source.getAccountNumber());
         result.setSourceEntityCode(source.getEntityCode());
@@ -900,8 +1110,16 @@ public class SweepService {
                 return result;
             }
 
+            // Source/target VA pre-fetched once per rule by the caller (N+1
+            // fix) instead of a fresh findById per source.
+            VirtualAccount sourceVa = sourceVaById.get(source.getAccountId());
+            if (sourceVa == null || targetVa == null) {
+                result.setMessage("Source or target VA not found");
+                return result;
+            }
+
             BigDecimal targetBalance = rule.getTargetAmount() != null ? rule.getTargetAmount() : BigDecimal.ZERO;
-            BigDecimal currentBalance = getAccountBalance(source.getAccountId());
+            BigDecimal currentBalance = effectiveBalance(sourceVa);
             result.setBalanceBefore(currentBalance);
 
             // Check if below target (deficit)
@@ -912,20 +1130,11 @@ public class SweepService {
                 return result;
             }
 
-            // Get source and target VAs
-            VirtualAccount sourceVa = virtualAccountRepository.findById(source.getAccountId()).orElse(null);
-            VirtualAccount targetVa = virtualAccountRepository.findById(rule.getTargetAccountId()).orElse(null);
-
-            if (sourceVa == null || targetVa == null) {
-                result.setMessage("Source or target VA not found");
-                return result;
-            }
-
             // Check if entities are IHB-enabled
             LegalEntity sourceEntity = sourceVa.getOwningEntityId() != null ?
-                    legalEntityRepository.findById(sourceVa.getOwningEntityId()).orElse(null) : null;
+                    legalEntityById.get(sourceVa.getOwningEntityId()) : null;
             LegalEntity treasuryEntity = targetVa.getOwningEntityId() != null ?
-                    legalEntityRepository.findById(targetVa.getOwningEntityId()).orElse(null) : null;
+                    legalEntityById.get(targetVa.getOwningEntityId()) : null;
 
             if (sourceEntity == null || treasuryEntity == null) {
                 result.setMessage("Cannot resolve entities for IHB");
@@ -944,7 +1153,7 @@ public class SweepService {
             }
 
             // Check Treasury has sufficient balance
-            BigDecimal treasuryBalance = getAccountBalance(rule.getTargetAccountId());
+            BigDecimal treasuryBalance = effectiveBalance(targetVa);
             if (treasuryBalance.compareTo(deficit) < 0) {
                 result.setMessage("Treasury has insufficient funds for deficit funding");
                 return result;
@@ -953,8 +1162,8 @@ public class SweepService {
             // Execute the reverse transfer: Treasury → Source (deficit account)
             String executionRef = generateExecutionReference();
             boolean transferSuccess = executeTransfer(
-                    rule.getTargetAccountId(),  // FROM Treasury
-                    source.getAccountId(),       // TO deficit account
+                    targetVa,   // FROM Treasury
+                    sourceVa,   // TO deficit account
                     deficit,
                     rule.getCurrencyCode(),
                     executionRef,
@@ -1074,49 +1283,128 @@ public class SweepService {
     // ========================================================================
 
     /**
-     * Get actual account balance from VirtualAccount.
+     * Available-else-current balance for a VA already in hand. Replaces the
+     * old {@code getAccountBalance(UUID)} which re-fetched the VA by id —
+     * the deficit-funding path now passes in the VA it already batch-fetched
+     * once per rule (N+1 fix), so no repository call belongs here.
      */
-    private BigDecimal getAccountBalance(UUID accountId) {
-        if (accountId == null) {
-            log.warn("Cannot get balance - accountId is null");
-            return BigDecimal.ZERO;
-        }
-        
-        try {
-            return virtualAccountRepository.findById(accountId)
-                .map(va -> {
-                    BigDecimal balance = va.getAvailableBalance();
-                    if (balance == null) {
-                        balance = va.getCurrentBalance();
-                    }
-                    log.debug("Retrieved balance {} for VA {} ({})", 
-                        balance, va.getVaNumber(), va.getVaName());
-                    return balance != null ? balance : BigDecimal.ZERO;
-                })
-                .orElseGet(() -> {
-                    log.warn("VA not found for balance lookup: {}", accountId);
-                    return BigDecimal.ZERO;
-                });
-        } catch (Exception e) {
-            log.error("Error retrieving balance for account {}: {}", accountId, e.getMessage());
-            return BigDecimal.ZERO;
+    private BigDecimal effectiveBalance(VirtualAccount va) {
+        BigDecimal balance = va.getAvailableBalance();
+        return balance != null ? balance : (va.getCurrentBalance() != null ? va.getCurrentBalance() : BigDecimal.ZERO);
+    }
+
+    /**
+     * Execute the actual fund transfer between two already-fetched accounts
+     * (was: re-{@code findById} both by id — redundant, since deficit funding's
+     * only caller had just fetched the same two VAs from its per-rule batch).
+     */
+    /**
+     * If {@code va} is a home-bank-held shadow (PHYSICAL_MIRROR), mirror the same delta
+     * just applied to its ledger balance into {@code bankBalance} — otherwise the
+     * CBS-mirrored balance silently drifts from what the ledger says moved. No-op for
+     * ordinary operational VAs and for external/other-bank shadows (those require a
+     * mandated rail instruction, not a same-process ledger mirror — see ExternalMandate).
+     */
+    private void mirrorIfHomeBankShadow(VirtualAccount va, BigDecimal delta) {
+        if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
+            va.mirrorBankBalance(delta);
         }
     }
 
     /**
-     * Execute the actual fund transfer between accounts.
+     * Classify one leg (source or target) of a rule as shadow-eligible, throwing if
+     * it's a mirror account with no valid path to real settlement.
+     *
+     * - PHYSICAL_MIRROR, home-bank-held: eligible via the in-process CBS mirror
+     *   (see {@link #mirrorIfHomeBankShadow}) — no mandate needed, it's the bank's
+     *   own account.
+     * - EXTERNAL_MIRROR, or a PHYSICAL_MIRROR at another bank: eligible only with an
+     *   ACTIVE {@link ExternalMandate} for this shadow that supports the rule's rail
+     *   — real money at another bank can't move without one.
+     * - Anything else (operational/aggregation/etc.): not a shadow leg — returns
+     *   false, the sweep continues on today's plain ledger path, unchanged.
+     *
+     * @return true iff this leg is a shadow account (whether or not it required a mandate)
      */
-    private boolean executeTransfer(UUID sourceAccountId, UUID targetAccountId, 
+    private boolean assertShadowLegEligible(VirtualAccount va, String accountNumberForError, SweepRule.Rail rail) {
+        if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
+            return true;
+        }
+        if (va.isPhysicalMirror() || va.isExternalMirror()) {
+            // rail==AUTO means "pick at execution time" (per SweepRule.Rail javadoc), so at
+            // creation time any active mandate on this shadow is sufficient; a specific rail
+            // must be explicitly supported by the mandate.
+            boolean mandated = externalMandateRepository
+                    .findByShadowVaIdAndStatus(va.getId(), ExternalMandate.MandateStatus.ACTIVE).stream()
+                    .anyMatch(m -> m.isActive(LocalDate.now())
+                            && (rail == SweepRule.Rail.AUTO || m.supportsRail(rail)));
+            if (!mandated) {
+                throw new BusinessException(
+                        "Account " + accountNumberForError + " mirrors an external/non-home-bank account (BIC "
+                        + va.getBankSwift() + "). Real movement requires an ACTIVE ExternalMandate for rail "
+                        + rail + " — add one first, or remove this account from the rule.");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Mirror real sweep participation onto each involved account's PhysicalAccount row
+     * (if it has one). PhysicalAccountController exposes its own independent
+     * sweepEnabled/sweepRuleId bookkeeping (own dashboard stat tile, own filter query
+     * param) that this service never otherwise touches — without this, that display
+     * drifts from the SweepRuleSource rows that are the actual source of truth.
+     */
+    private void mirrorSweepParticipation(List<VirtualAccount> sourceVas, VirtualAccount targetVa, UUID ruleId) {
+        List<UUID> physicalAccountIds = new ArrayList<>();
+        sourceVas.stream().map(VirtualAccount::getPhysicalAccountId).filter(Objects::nonNull)
+                .forEach(physicalAccountIds::add);
+        if (targetVa != null && targetVa.getPhysicalAccountId() != null) {
+            physicalAccountIds.add(targetVa.getPhysicalAccountId());
+        }
+        if (physicalAccountIds.isEmpty()) {
+            return;
+        }
+        UUID targetPhysicalAccountId = targetVa != null ? targetVa.getPhysicalAccountId() : null;
+        List<PhysicalAccount> accounts = physicalAccountRepository.findAllById(physicalAccountIds.stream().distinct().collect(Collectors.toList()));
+        for (PhysicalAccount pa : accounts) {
+            boolean isTarget = pa.getId().equals(targetPhysicalAccountId);
+            pa.markSweepParticipant(ruleId, isTarget ? PhysicalAccount.SweepRole.HEADER : PhysicalAccount.SweepRole.PARTICIPANT);
+        }
+        physicalAccountRepository.saveAll(accounts);
+    }
+
+    /**
+     * Counterpart to {@link #mirrorSweepParticipation}, called on rule deletion. Only
+     * clears an account whose sweepRuleId still points at this rule — an account already
+     * reassigned to a different rule (or re-added to another one) must not be clobbered.
+     */
+    private void clearSweepParticipationMirror(List<UUID> accountIds, UUID ruleId) {
+        if (accountIds.isEmpty()) {
+            return;
+        }
+        List<UUID> physicalAccountIds = virtualAccountRepository.findAllById(accountIds).stream()
+                .map(VirtualAccount::getPhysicalAccountId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (physicalAccountIds.isEmpty()) {
+            return;
+        }
+        List<PhysicalAccount> accounts = physicalAccountRepository.findAllById(physicalAccountIds).stream()
+                .filter(pa -> ruleId.equals(pa.getSweepRuleId()))
+                .collect(Collectors.toList());
+        accounts.forEach(PhysicalAccount::clearSweepParticipant);
+        physicalAccountRepository.saveAll(accounts);
+    }
+
+    private boolean executeTransfer(VirtualAccount sourceVa, VirtualAccount targetVa,
                                     BigDecimal amount, String currency,
                                     String executionReference, String description) {
         try {
-            VirtualAccount sourceVa = virtualAccountRepository.findById(sourceAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Source VA not found: " + sourceAccountId));
-            VirtualAccount targetVa = virtualAccountRepository.findById(targetAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Target VA not found: " + targetAccountId));
-            
-            BigDecimal sourceAvailable = sourceVa.getAvailableBalance() != null 
-                ? sourceVa.getAvailableBalance() 
+            BigDecimal sourceAvailable = sourceVa.getAvailableBalance() != null
+                ? sourceVa.getAvailableBalance()
                 : sourceVa.getCurrentBalance();
                 
             if (sourceAvailable == null || sourceAvailable.compareTo(amount) < 0) {
@@ -1133,13 +1421,15 @@ public class SweepService {
             if (sourceVa.getAvailableBalance() != null) {
                 sourceVa.setAvailableBalance(sourceVa.getAvailableBalance().subtract(amount));
             }
-            
+            mirrorIfHomeBankShadow(sourceVa, amount.negate());
+
             // Credit target
             targetVa.setCurrentBalance(targetVa.getCurrentBalance().add(amount));
             if (targetVa.getAvailableBalance() != null) {
                 targetVa.setAvailableBalance(targetVa.getAvailableBalance().add(amount));
             }
-            
+            mirrorIfHomeBankShadow(targetVa, amount);
+
             virtualAccountRepository.save(sourceVa);
             virtualAccountRepository.save(targetVa);
             

@@ -11,6 +11,7 @@ import {
   virtualAccountsApi,
 } from '../../services/api';
 import type { CreateRuleFormData } from './createRule/types';
+import type { VirtualizedAccountRow } from '../va/VirtualizedAccountList';
 import { Step1Setup } from './createRule/Step1Setup';
 import { Step2Accounts } from './createRule/Step2Accounts';
 import { Step3Config } from './createRule/Step3Config';
@@ -170,6 +171,26 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
     }
   };
 
+  // Folds a scope/CSV-resolved candidate set into sourceAccounts, matching
+  // the SourceAccountItem shape (and the existing manual-toggle convention
+  // of using vaName for entityCode/entityName — no distinct entity code is
+  // available off a resolved VA summary). Excludes the target account and
+  // anything already selected.
+  const addSourceAccounts = (resolved: VirtualizedAccountRow[]) => {
+    setFormData(prev => {
+      const existingIds = new Set(prev.sourceAccounts.map(a => a.accountId));
+      const additions = resolved
+        .filter(r => r.id !== prev.targetAccountId && !existingIds.has(r.id))
+        .map(r => ({
+          accountId: r.id,
+          accountNumber: r.vaNumber || '',
+          entityCode: r.vaName || '',
+          entityName: r.vaName || '',
+        }));
+      return additions.length === 0 ? prev : { ...prev, sourceAccounts: [...prev.sourceAccounts, ...additions] };
+    });
+  };
+
   const handleSubmit = async () => {
     setSaving(true);
     try {
@@ -237,6 +258,7 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
           loadingAccounts={loadingAccounts}
           onTargetAccountChange={handleTargetAccountChange}
           onToggleSourceAccount={toggleSourceAccount}
+          onAddSourceAccounts={addSourceAccounts}
         />
       )}
 

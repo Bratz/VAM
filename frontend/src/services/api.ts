@@ -1389,6 +1389,16 @@ export interface SweepExecution {
   ihbInterestRate?: number;
 }
 
+export interface SweepRunStatus {
+  runId: string;
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+  startedAt?: string;
+  sourcesTotal: number;
+  sourcesProcessed: number;
+  successCount: number;
+  failedCount: number;
+}
+
 export const sweepingApi = {
   getAllRules: () => apiClient.get<ApiResponse<SweepRule[]>>('/sweeping/rules').then(r => r.data),
   getActiveRules: () => apiClient.get<ApiResponse<SweepRule[]>>('/sweeping/rules/active').then(r => r.data),
@@ -1398,6 +1408,8 @@ export const sweepingApi = {
   deleteRule: (id: string) => apiClient.delete<ApiResponse<void>>(`/sweeping/rules/${id}`).then(r => r.data),
   toggleRule: (id: string) => apiClient.post<ApiResponse<SweepRule>>(`/sweeping/rules/${id}/toggle`).then(r => r.data),
   execute: (ruleIds?: string[]) => apiClient.post<ApiResponse<any>>('/sweeping/execute', { ruleIds }).then(r => r.data),
+  executeAsync: (ruleIds?: string[]) => apiClient.post<ApiResponse<{ runId: string }>>('/sweeping/execute-async', { ruleIds }).then(r => r.data),
+  getRunStatus: (runId: string) => apiClient.get<ApiResponse<SweepRunStatus>>(`/sweeping/runs/${runId}`).then(r => r.data),
   getHistory: (ruleId?: string) => apiClient.get<ApiResponse<SweepExecution[]>>('/sweeping/history', { params: { ruleId } }).then(r => r.data),
 };
 
@@ -1479,6 +1491,16 @@ export interface AddMemberRequest {
   entityName: string;
 }
 
+export interface BulkAddMembersSkip {
+  accountId: string;
+  reason: string;
+}
+
+export interface BulkAddMembersResponse {
+  added: number;
+  skipped: BulkAddMembersSkip[];
+}
+
 export const poolingApi = {
   getAllPools: () => apiClient.get<ApiResponse<NotionalPool[]>>('/pooling').then(r => r.data),
   getActivePools: () => apiClient.get<ApiResponse<NotionalPool[]>>('/pooling/active').then(r => r.data),
@@ -1487,6 +1509,7 @@ export const poolingApi = {
   updatePool: (id: string, data: Partial<CreatePoolRequest>) => apiClient.put<ApiResponse<NotionalPool>>(`/pooling/${id}`, data).then(r => r.data),
   deletePool: (id: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${id}`).then(r => r.data),
   addMember: (poolId: string, data: AddMemberRequest) => apiClient.post<ApiResponse<NotionalPool>>(`/pooling/${poolId}/members`, data).then(r => r.data),
+  addMembersBulk: (poolId: string, accountIds: string[]) => apiClient.post<ApiResponse<BulkAddMembersResponse>>(`/pooling/${poolId}/members/bulk`, { accountIds }).then(r => r.data),
   removeMember: (poolId: string, memberId: string) => apiClient.delete<ApiResponse<void>>(`/pooling/${poolId}/members/${memberId}`).then(r => r.data),
   calculateInterest: (poolId: string) => apiClient.post<ApiResponse<CalculateInterestResponse>>(`/pooling/${poolId}/calculate`).then(r => r.data),
 };

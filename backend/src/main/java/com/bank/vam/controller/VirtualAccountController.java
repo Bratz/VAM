@@ -8,11 +8,13 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.AccountType;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
+import com.bank.vam.entity.hierarchy.HierarchyNode;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.ProgramRepository;
 import com.bank.vam.service.VirtualAccountService;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,6 +68,7 @@ public class VirtualAccountController {
     private final VirtualAccountService virtualAccountService;
     private final VirtualAccountRepository virtualAccountRepository;
     private final ProgramRepository programRepository;
+    private final HierarchyNodeRepository hierarchyNodeRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     // ========================================================================
@@ -147,6 +150,79 @@ public class VirtualAccountController {
             @PathVariable String vaNumber) {
         VirtualAccount va = virtualAccountService.getByVaNumber(vaNumber);
         return ResponseEntity.ok(ApiResponse.success(virtualAccountService.toResponse(va)));
+    }
+
+    /**
+     * Resolve virtual accounts by scope - all VAs under a hierarchy node (including
+     * descendants) or all VAs owned by a legal entity. Used for bulk enrollment
+     * (notional pool / sweep rule setup) instead of one-by-one account picking.
+     * GET /api/v1/virtual-accounts/by-scope?hierarchyNodeId={id}
+     * GET /api/v1/virtual-accounts/by-scope?ownerEntityId={id}
+     */
+    @GetMapping("/by-scope")
+    @Operation(summary = "Resolve virtual accounts by scope",
+               description = "Returns the full matching list of VAs under a hierarchy node (descendant-inclusive) " +
+                       "or owned by a legal entity. Exactly one of hierarchyNodeId/ownerEntityId is required. " +
+                       "Not paginated - callers need the complete set for bulk enrollment.")
+    public ResponseEntity<ApiResponse<List<VirtualAccountDto.Summary>>> getByScope(
+            @Parameter(description = "Hierarchy node ID - resolves to all VAs under this node, including descendants")
+            @RequestParam(required = false) UUID hierarchyNodeId,
+            @Parameter(description = "Legal entity ID - resolves to all VAs owned by this entity")
+            @RequestParam(required = false) UUID ownerEntityId) {
+
+        if ((hierarchyNodeId == null) == (ownerEntityId == null)) {
+            throw new BusinessException("Exactly one of hierarchyNodeId or ownerEntityId is required");
+        }
+
+        List<VirtualAccount> accounts;
+        if (hierarchyNodeId != null) {
+            HierarchyNode node = hierarchyNodeRepository.findById(hierarchyNodeId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Hierarchy node not found: " + hierarchyNodeId));
+            accounts = virtualAccountRepository.findByHierarchyPathPrefix(node.getMaterializedPath());
+        } else {
+            accounts = virtualAccountRepository.findByOwningEntityId(ownerEntityId);
+        }
+
+        List<VirtualAccountDto.Summary> summaries = accounts.stream()
+                .map(virtualAccountService::toSummary)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.success(summaries));
+    }
+
+    /**
+     * Resolve virtual accounts by VA number - bulk lookup for CSV-based enrollment.
+     * POST /api/v1/virtual-accounts/resolve-by-numbers
+     */
+    @PostMapping("/resolve-by-numbers")
+    @Operation(summary = "Resolve virtual accounts by VA number",
+               description = "Bulk-resolves a list of VA numbers to their accounts for CSV-based enrollment. " +
+                       "Returns matched summaries plus any input numbers that could not be found.")
+    public ResponseEntity<ApiResponse<ResolveByNumbersResponse>> resolveByNumbers(
+            @Valid @RequestBody ResolveByNumbersRequest request) {
+
+        List<VirtualAccount> matched = virtualAccountRepository.findByVaNumberIn(request.getAccountNumbers());
+
+        // ponytail: exact match against matched.vaNumber only - a CSV entry that differs by
+        // case/whitespace from the stored vaNumber is reported unmatched, not fuzzy-resolved.
+        java.util.Set<String> matchedNumbers = matched.stream()
+                .map(VirtualAccount::getVaNumber)
+                .collect(Collectors.toSet());
+
+        List<String> unmatched = request.getAccountNumbers().stream()
+                .filter(number -> !matchedNumbers.contains(number))
+                .collect(Collectors.toList());
+
+        List<VirtualAccountDto.Summary> summaries = matched.stream()
+                .map(virtualAccountService::toSummary)
+                .collect(Collectors.toList());
+
+        ResolveByNumbersResponse response = ResolveByNumbersResponse.builder()
+                .matched(summaries)
+                .unmatched(unmatched)
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     /**
@@ -1365,6 +1441,19 @@ public class VirtualAccountController {
     // ========================================================================
     // REQUEST/RESPONSE DTOs
     // ========================================================================
+
+    @Data
+    public static class ResolveByNumbersRequest {
+        @NotNull(message = "accountNumbers is required")
+        private List<String> accountNumbers;
+    }
+
+    @Data
+    @Builder
+    public static class ResolveByNumbersResponse {
+        private List<VirtualAccountDto.Summary> matched;
+        private List<String> unmatched;
+    }
 
     @Data
     public static class CreateVaWithHierarchyRequest {

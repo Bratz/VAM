@@ -59,6 +59,13 @@ public class NotionalPoolController {
         return ResponseEntity.ok(ApiResponse.success(poolService.addMember(id, request), "Member added"));
     }
 
+    @PostMapping("/{id}/members/bulk")
+    @Operation(summary = "Bulk-add members to pool")
+    public ResponseEntity<ApiResponse<NotionalPoolDto.BulkAddMembersResponse>> addMembersBulk(
+            @PathVariable UUID id, @RequestBody NotionalPoolDto.BulkAddMembersRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(poolService.addMembersBulk(id, request), "Members processed"));
+    }
+
     @DeleteMapping("/{poolId}/members/{memberId}")
     @Operation(summary = "Remove member from pool")
     public ResponseEntity<ApiResponse<Void>> removeMember(

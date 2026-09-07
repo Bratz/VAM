@@ -2,6 +2,7 @@ package com.bank.vam.service.treasury;
 
 import com.bank.vam.config.HomeBankProperties;
 import com.bank.vam.dto.treasury.NotionalPoolDto;
+import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.treasury.*;
 import com.bank.vam.exception.BusinessException;
@@ -32,6 +33,7 @@ public class NotionalPoolService {
     private final NotionalPoolRepository poolRepository;
     private final PoolMemberRepository memberRepository;
     private final VirtualAccountRepository vaRepository;  // For fetching account balances
+    private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
     private final FeePostingService feePostingService;  // Fee posting integration
     private final HomeBankProperties homeBankProperties;
     private final AllocationStrategyRegistry allocationStrategies;
@@ -79,9 +81,17 @@ public class NotionalPoolService {
             return;
         }
 
+        // Batch-fetch all member accounts in one query instead of one findById per member (N+1).
+        List<UUID> accountIds = pool.getMembers().stream()
+                .map(PoolMember::getAccountId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        Map<UUID, VirtualAccount> accountsById = vaRepository.findAllById(accountIds).stream()
+                .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
+
         BigDecimal totalBalance = BigDecimal.ZERO;
         for (PoolMember member : pool.getMembers()) {
-            BigDecimal balance = fetchAccountBalance(member.getAccountId());
+            BigDecimal balance = resolveAccountBalance(accountsById.get(member.getAccountId()));
             member.setCurrentBalance(balance);
             totalBalance = totalBalance.add(balance);
         }
@@ -125,9 +135,19 @@ public class NotionalPoolService {
         // Add members and fetch their current balances
         BigDecimal totalBalance = BigDecimal.ZERO;
         if (request.getMembers() != null) {
+            // Batch-fetch all candidate accounts in one query instead of one findById
+            // per member (N+1) — used for both eligibility checks and balance lookup.
+            List<UUID> accountIds = request.getMembers().stream()
+                    .map(NotionalPoolDto.MemberRequest::getAccountId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            Map<UUID, VirtualAccount> accountsById = vaRepository.findAllById(accountIds).stream()
+                    .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
+
             for (NotionalPoolDto.MemberRequest memberReq : request.getMembers()) {
                 // v1 eligibility: must be a home-bank-held PHYSICAL_MIRROR
-                assertPoolEligible(memberReq.getAccountId(), memberReq.getAccountNumber());
+                VirtualAccount va = requireAccountForPool(memberReq.getAccountId(), memberReq.getAccountNumber(), accountsById);
+                assertPoolEligible(va, memberReq.getAccountNumber());
 
                 PoolMember member = new PoolMember();
                 member.setPool(pool);
@@ -140,7 +160,7 @@ public class NotionalPoolService {
                 member.setWeight(memberReq.getWeight() != null ? memberReq.getWeight() : BigDecimal.ONE);
 
                 // Fetch actual account balance (bankBalance for mirrors)
-                BigDecimal accountBalance = fetchAccountBalance(memberReq.getAccountId());
+                BigDecimal accountBalance = resolveAccountBalance(va);
                 member.setCurrentBalance(accountBalance);
                 totalBalance = totalBalance.add(accountBalance);
 
@@ -233,6 +253,9 @@ public class NotionalPoolService {
         // Post membership fee for new member
         postPoolMembershipFee(pool, member);
 
+        mirrorPoolMembership(vaRepository.findById(request.getAccountId()).orElse(null),
+                pool.getId(), pool.getPoolReference());
+
         auditLog.record("POOL_MEMBER_ADDED", "NotionalPool", pool.getId(),
                 "Added member " + request.getAccountNumber() + " to pool " + pool.getPoolReference(),
                 Map.of(
@@ -246,14 +269,128 @@ public class NotionalPoolService {
         return toResponse(pool);
     }
 
+    /**
+     * Bulk-add members to a pool in O(1) queries instead of one sequential
+     * {@code addMember} call per member (which is untenable at ~2000 members/pool).
+     *
+     * Batch-fetches every candidate account once, applies the same eligibility rules as
+     * {@link #addMember}, then persists all new members with a single {@code saveAll}.
+     * Every requested accountId is accounted for in the response: either added, or skipped
+     * with a reason — nothing is silently dropped.
+     */
+    @Transactional
+    public NotionalPoolDto.BulkAddMembersResponse addMembersBulk(UUID poolId, NotionalPoolDto.BulkAddMembersRequest request) {
+        NotionalPool pool = poolRepository.findByIdWithMembers(poolId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notional pool not found: " + poolId));
+
+        List<UUID> requestedIds = request.getAccountIds() != null ? request.getAccountIds() : List.of();
+        List<NotionalPoolDto.SkippedMember> skipped = new ArrayList<>();
+        List<PoolMember> newMembers = new ArrayList<>();
+
+        if (!requestedIds.isEmpty()) {
+            // Single batch fetch for every candidate account — never a per-id findById loop.
+            Map<UUID, VirtualAccount> accountsById = vaRepository.findAllById(requestedIds).stream()
+                    .collect(Collectors.toMap(VirtualAccount::getId, va -> va));
+
+            Set<UUID> existingMemberAccountIds = pool.getMembers().stream()
+                    .map(PoolMember::getAccountId)
+                    .collect(Collectors.toSet());
+            Set<UUID> seenInRequest = new HashSet<>();
+            BigDecimal addedBalance = BigDecimal.ZERO;
+
+            for (UUID accountId : requestedIds) {
+                if (!seenInRequest.add(accountId)) {
+                    skipped.add(new NotionalPoolDto.SkippedMember(accountId, "Duplicate accountId in request"));
+                    continue;
+                }
+                if (existingMemberAccountIds.contains(accountId)) {
+                    skipped.add(new NotionalPoolDto.SkippedMember(accountId, "Account is already a member of this pool"));
+                    continue;
+                }
+                VirtualAccount va = accountsById.get(accountId);
+                if (va == null) {
+                    skipped.add(new NotionalPoolDto.SkippedMember(accountId, "Account not found: " + accountId));
+                    continue;
+                }
+                // Same v1 eligibility rule as addMember: home-bank-held PHYSICAL_MIRROR only.
+                if (!va.isPhysicalMirror()) {
+                    skipped.add(new NotionalPoolDto.SkippedMember(accountId,
+                            "Pool members must be PHYSICAL_MIRROR VAs; account is " + va.getAccountCategory()));
+                    continue;
+                }
+                if (!va.isHomeBankHeld(homeBankProperties.getBic())) {
+                    skipped.add(new NotionalPoolDto.SkippedMember(accountId,
+                            "Pool members must be home-bank-held (BIC " + homeBankProperties.getBic()
+                            + "); account mirrors external bank (BIC " + va.getBankSwift() + ")"));
+                    continue;
+                }
+
+                PoolMember member = new PoolMember();
+                member.setPool(pool);
+                member.setAccountId(va.getId());
+                member.setAccountNumber(va.getVaNumber());
+                member.setEntityCode(va.getOwningEntityCode());
+                member.setJoinedDate(LocalDate.now());
+                member.setStatus(PoolMember.MemberStatus.ACTIVE);
+                member.setWeight(BigDecimal.ONE);
+
+                BigDecimal accountBalance = resolveAccountBalance(va);
+                member.setCurrentBalance(accountBalance);
+                addedBalance = addedBalance.add(accountBalance);
+
+                newMembers.add(member);
+            }
+
+            if (!newMembers.isEmpty()) {
+                memberRepository.saveAll(newMembers);
+                pool.getMembers().addAll(newMembers);
+                pool.setMemberCount(pool.getMembers().size());
+                BigDecimal currentTotalBalance = pool.getTotalBalance() != null ? pool.getTotalBalance() : BigDecimal.ZERO;
+                pool.setTotalBalance(currentTotalBalance.add(addedBalance));
+                poolRepository.save(pool);
+
+                for (PoolMember member : newMembers) {
+                    postPoolMembershipFee(pool, member);
+                }
+
+                mirrorPoolMembershipBulk(newMembers, accountsById, pool.getId(), pool.getPoolReference());
+            }
+        }
+
+        auditLog.record("POOL_MEMBERS_BULK_ADDED", "NotionalPool", pool.getId(),
+                "Bulk-added " + newMembers.size() + " of " + requestedIds.size() + " requested members to pool " + pool.getPoolReference(),
+                Map.of(
+                        "poolReference", pool.getPoolReference(),
+                        "requested", requestedIds.size(),
+                        "added", newMembers.size(),
+                        "skipped", skipped.size()));
+
+        log.info("Bulk-added {} of {} requested members to pool {} ({} skipped)",
+                newMembers.size(), requestedIds.size(), pool.getPoolReference(), skipped.size());
+
+        NotionalPoolDto.BulkAddMembersResponse response = new NotionalPoolDto.BulkAddMembersResponse();
+        response.setAdded(newMembers.size());
+        response.setSkipped(skipped);
+        return response;
+    }
+
     @Transactional
     public void removeMember(UUID poolId, UUID memberId) {
         NotionalPool pool = poolRepository.findByIdWithMembers(poolId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notional pool not found: " + poolId));
 
+        UUID removedAccountId = pool.getMembers().stream()
+                .filter(m -> m.getId().equals(memberId))
+                .map(PoolMember::getAccountId)
+                .findFirst().orElse(null);
+
         pool.getMembers().removeIf(m -> m.getId().equals(memberId));
         pool.setMemberCount(pool.getMembers().size());
         poolRepository.save(pool);
+
+        if (removedAccountId != null) {
+            clearPoolMembershipMirror(removedAccountId);
+        }
 
         auditLog.record("POOL_MEMBER_REMOVED", "NotionalPool", pool.getId(),
                 "Removed member " + memberId + " from pool " + pool.getPoolReference(),
@@ -262,6 +399,53 @@ public class NotionalPoolService {
                         "memberId", memberId));
 
         log.info("Removed member {} from pool {}", memberId, pool.getPoolReference());
+    }
+
+    /**
+     * Mirror real pool membership onto the account's PhysicalAccount row (if it has one).
+     * PhysicalAccountController exposes its own independent poolingEnabled/poolId
+     * bookkeeping (own dashboard stat tile, own filter query param) that this service
+     * never otherwise touches — without this, that display drifts from the PoolMember
+     * rows that are the actual source of truth.
+     */
+    private void mirrorPoolMembership(VirtualAccount va, UUID poolId, String poolReference) {
+        if (va == null || va.getPhysicalAccountId() == null) {
+            return;
+        }
+        physicalAccountRepository.findById(va.getPhysicalAccountId()).ifPresent(pa -> {
+            pa.markPoolMember(poolId, poolReference);
+            physicalAccountRepository.save(pa);
+        });
+    }
+
+    /** Batch counterpart to {@link #mirrorPoolMembership} for {@link #addMembersBulk}. */
+    private void mirrorPoolMembershipBulk(List<PoolMember> newMembers, Map<UUID, VirtualAccount> accountsById,
+                                           UUID poolId, String poolReference) {
+        List<UUID> physicalAccountIds = newMembers.stream()
+                .map(m -> accountsById.get(m.getAccountId()))
+                .filter(Objects::nonNull)
+                .map(VirtualAccount::getPhysicalAccountId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (physicalAccountIds.isEmpty()) {
+            return;
+        }
+        List<PhysicalAccount> accounts = physicalAccountRepository.findAllById(physicalAccountIds);
+        accounts.forEach(pa -> pa.markPoolMember(poolId, poolReference));
+        physicalAccountRepository.saveAll(accounts);
+    }
+
+    /** Counterpart to {@link #mirrorPoolMembership} for {@link #removeMember}. */
+    private void clearPoolMembershipMirror(UUID accountId) {
+        VirtualAccount va = vaRepository.findById(accountId).orElse(null);
+        if (va == null || va.getPhysicalAccountId() == null) {
+            return;
+        }
+        physicalAccountRepository.findById(va.getPhysicalAccountId()).ifPresent(pa -> {
+            pa.clearPoolMember();
+            physicalAccountRepository.save(pa);
+        });
     }
 
     @Transactional
@@ -471,17 +655,26 @@ public class NotionalPoolService {
         }
         try {
             VirtualAccount account = vaRepository.findById(accountId).orElse(null);
-            if (account == null) {
-                return BigDecimal.ZERO;
-            }
-            if (account.isPhysicalMirror()) {
-                return account.getBankBalance() != null ? account.getBankBalance() : BigDecimal.ZERO;
-            }
-            return account.getCurrentBalance() != null ? account.getCurrentBalance() : BigDecimal.ZERO;
+            return resolveAccountBalance(account);
         } catch (Exception e) {
             log.warn("Failed to fetch balance for account {}: {}", accountId, e.getMessage());
         }
         return BigDecimal.ZERO;
+    }
+
+    /**
+     * Same balance resolution as {@link #fetchAccountBalance(UUID)}, but operates on an
+     * already-fetched {@link VirtualAccount} so callers that batch-fetch accounts (avoiding
+     * N+1 lookups) can reuse it.
+     */
+    private BigDecimal resolveAccountBalance(VirtualAccount account) {
+        if (account == null) {
+            return BigDecimal.ZERO;
+        }
+        if (account.isPhysicalMirror()) {
+            return account.getBankBalance() != null ? account.getBankBalance() : BigDecimal.ZERO;
+        }
+        return account.getCurrentBalance() != null ? account.getCurrentBalance() : BigDecimal.ZERO;
     }
 
     /**
@@ -500,6 +693,16 @@ public class NotionalPoolService {
         VirtualAccount va = vaRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Pool member VA not found: " + accountId));
+        assertPoolEligible(va, accountNumberForError);
+    }
+
+    /**
+     * Same eligibility checks as {@link #assertPoolEligible(UUID, String)}, but operates on an
+     * already-fetched {@link VirtualAccount} so callers validating many members at once can
+     * batch-fetch the accounts (one {@code findAllById}) instead of looking each one up
+     * individually (N+1).
+     */
+    private void assertPoolEligible(VirtualAccount va, String accountNumberForError) {
         if (!va.isPhysicalMirror()) {
             throw new BusinessException(
                     "Pool members must be PHYSICAL_MIRROR VAs. " + accountNumberForError
@@ -511,6 +714,23 @@ public class NotionalPoolService {
                     + "). " + accountNumberForError + " mirrors an external bank (BIC "
                     + va.getBankSwift() + ") — use a cross-bank sweep rule instead.");
         }
+    }
+
+    /**
+     * Looks up a member candidate's account from a batch-fetched map, preserving the same
+     * null/not-found errors {@link #assertPoolEligible(UUID, String)} raises for an individual
+     * lookup.
+     */
+    private VirtualAccount requireAccountForPool(UUID accountId, String accountNumberForError,
+                                                   Map<UUID, VirtualAccount> accountsById) {
+        if (accountId == null) {
+            throw new BusinessException("Pool member accountId is required");
+        }
+        VirtualAccount va = accountsById.get(accountId);
+        if (va == null) {
+            throw new ResourceNotFoundException("Pool member VA not found: " + accountId);
+        }
+        return va;
     }
 
     private NotionalPoolDto.Response toResponse(NotionalPool pool) {
