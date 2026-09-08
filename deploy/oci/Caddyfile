@@ -12,4 +12,13 @@
 
 161-33-9-182.sslip.io {
 	reverse_proxy mcp-gateway:9443
+
+	# No access logging by default — without this, `docker compose logs caddy`
+	# only ever shows startup/ACME events, never per-request traffic, which
+	# makes "nothing in the logs" impossible to tell apart from "no request
+	# arrived" (learned this diagnosing a real ChatGPT/Claude connector issue).
+	log {
+		output stdout
+		format console
+	}
 }
