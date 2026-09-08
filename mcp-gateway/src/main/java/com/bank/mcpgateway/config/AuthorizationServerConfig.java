@@ -107,6 +107,12 @@ public class AuthorizationServerConfig {
                 .clientId(demoClientId)
                 .clientSecret(passwordEncoder.encode(demoClientSecret))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                // Claude's custom-connector UI is a plain Client ID + Client Secret text
+                // field pair, and its token-exchange request puts both in the POST body
+                // rather than an HTTP Basic Auth header (confirmed live: a real token
+                // request arrived with no Authorization header at all and got a 401 for
+                // it) — register both so either mechanism authenticates successfully.
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUri(demoRedirectUri)
