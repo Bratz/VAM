@@ -1,18 +1,21 @@
 package com.bank.vam.mcp;
 
 /**
- * Static Apps SDK widget HTML for this server's {@code ui://widget/*}
- * resources. Each document is fully self-contained (inline CSS/JS, no
- * external requests) so no {@code _meta.ui.csp} allow-list entries are
- * needed — the widget's own script reads {@code window.openai.toolOutput}
- * at render time and renders client-side, the same pattern every sample in
- * {@code openai/openai-apps-sdk-examples} uses.
+ * Static Apps SDK / MCP Apps widget HTML for this server's {@code
+ * ui://widget/*} resources. Each document is fully self-contained (inline
+ * CSS/JS, no external requests) so no {@code _meta.ui.csp} allow-list
+ * entries are needed.
  *
- * <p>Generic MCP clients (Claude, MCP Inspector) never fetch these — they
- * ignore {@code _meta} entirely and render the tool's text summary plus
- * {@code structuredContent} instead. Only a host that recognises {@code
- * ui.resourceUri} / {@code openai/outputTemplate} (ChatGPT's Apps SDK today)
- * calls {@code resources/read} for one of these.
+ * <p>Speaks two independent bridges, since real-world hosts don't agree on
+ * one: ChatGPT's {@code window.openai.toolOutput} global (the
+ * openai-apps-sdk-examples pattern), and the actual cross-host MCP Apps
+ * standard — a JSON-RPC-over-postMessage handshake ({@code ui/initialize} →
+ * {@code ui/notifications/initialized} → {@code
+ * ui/notifications/tool-result}) that Claude Desktop, VS Code, and other
+ * MCP-Apps-compliant hosts use instead. Confirmed live: Claude fetches these
+ * resources (contrary to an earlier assumption that only ChatGPT would), but
+ * a widget speaking only {@code window.openai} sits on "Loading…" forever
+ * under Claude and the host times out with a generic connector error.
  */
 final class McpWidgetHtml {
 
@@ -44,9 +47,33 @@ final class McpWidgetHtml {
         return "<!doctype html>\n<meta charset=\"utf-8\">\n<style>" + STYLE + "</style>\n"
                 + "<div class=\"card\" id=\"root\">Loading…</div>\n<script>\n"
                 + renderFn
-                + "\nfunction boot(){ try { render(window.openai && window.openai.toolOutput); } catch (e) { document.getElementById('root').textContent = 'Unable to render.'; } }\n"
-                + "if (window.openai) { boot(); } else { window.addEventListener('openai:set_globals', boot); }\n"
-                + "document.addEventListener('DOMContentLoaded', boot);\n</script>\n";
+                + "\nfunction __renderOnce(d){ if (window.__apertureRendered) return; window.__apertureRendered = true; try { render(d); } catch (e) { document.getElementById('root').textContent = 'Unable to render.'; } }\n"
+                // ChatGPT Apps SDK bridge.
+                + "function __bootOpenAi(){ if (window.openai) { __renderOnce(window.openai.toolOutput); } }\n"
+                + "if (window.openai) { __bootOpenAi(); } else { window.addEventListener('openai:set_globals', __bootOpenAi); }\n"
+                // MCP Apps postMessage bridge (Claude Desktop, VS Code, and other
+                // ui/initialize-speaking hosts) — see McpWidgetHtml's class javadoc.
+                + "(function(){\n"
+                + "  window.addEventListener('message', function(event){\n"
+                + "    var msg = event.data;\n"
+                + "    if (!msg) return;\n"
+                + "    if (msg.id === 1 && msg.result) {\n"
+                + "      window.parent.postMessage({ jsonrpc: '2.0', method: 'ui/notifications/initialized', params: {} }, '*');\n"
+                + "    } else if (msg.method === 'ui/notifications/tool-result') {\n"
+                + "      __renderOnce(msg.params && msg.params.structuredContent);\n"
+                + "    }\n"
+                + "  });\n"
+                + "  try {\n"
+                + "    window.parent.postMessage({\n"
+                + "      jsonrpc: '2.0', id: 1, method: 'ui/initialize',\n"
+                + "      params: {\n"
+                + "        appCapabilities: { availableDisplayModes: ['inline'] },\n"
+                + "        clientInfo: { name: 'aperture-widget', version: '0.1.0' },\n"
+                + "        protocolVersion: '2026-01-26'\n"
+                + "      }\n"
+                + "    }, '*');\n"
+                + "  } catch (e) {}\n"
+                + "})();\n</script>\n";
     }
 
     static String positionSummary() {
