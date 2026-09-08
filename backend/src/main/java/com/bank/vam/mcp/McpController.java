@@ -238,6 +238,15 @@ public class McpController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("resultType", "complete");
         result.put("contents", List.of(content));
+        // Same CacheableResult fields as resources/list and tools/list — missing
+        // here specifically broke a live Claude Desktop session with a client-side
+        // schema validation error ("expected number, received undefined" on
+        // ttlMs), since Claude's MCP client validates resources/read results
+        // against the same CacheableResult shape, not just list endpoints. The
+        // widget HTML is compiled into the jar and never changes at runtime, so
+        // the same long TTL / public scope as resources/list applies.
+        result.put("ttlMs", 3_600_000);
+        result.put("cacheScope", "public");
         result.put("_meta", serverInfoMeta());
         return result;
     }
