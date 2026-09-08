@@ -63,4 +63,21 @@ public class AuditLog extends BaseEntity {
     @Column(name = "payload", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private String payload;
+
+    /**
+     * SHA-256 hex of {@code previousHash + canonical(this entry)} — see
+     * {@code AuditLogService.record()}. Null only if hashing itself somehow
+     * failed (the write is never blocked on it).
+     */
+    @Column(name = "entry_hash", length = 64)
+    private String entryHash;
+
+    /**
+     * {@code entryHash} of the row immediately preceding this one at write
+     * time, or {@code "GENESIS"} for the first row ever written. Makes the
+     * audit trail tamper-evident: altering or deleting a row breaks the chain
+     * for every row after it.
+     */
+    @Column(name = "previous_hash", length = 64)
+    private String previousHash;
 }

@@ -119,6 +119,14 @@ public interface CopilotTool {
         }
     }
 
+    default boolean paramBoolean(Map<String, Object> params, String key, boolean defaultValue) {
+        if (params == null) return defaultValue;
+        Object v = params.get(key);
+        if (v == null) return defaultValue;
+        if (v instanceof Boolean b) return b;
+        return Boolean.parseBoolean(String.valueOf(v).trim());
+    }
+
     default List<String> paramList(Map<String, Object> params, String key) {
         if (params == null) return List.of();
         Object v = params.get(key);

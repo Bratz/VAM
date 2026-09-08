@@ -6,12 +6,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
     Page<AuditLog> findByEntityTypeAndEntityIdOrderByCreatedAtDesc(String entityType, UUID entityId, Pageable pageable);
     Page<AuditLog> findByEventTypeOrderByCreatedAtDesc(String eventType, Pageable pageable);
+
+    /** The single most recent row across the whole table — the tip of the hash chain. */
+    Optional<AuditLog> findTopByOrderByCreatedAtDesc();
 
     // Corporate-scoped variants — used by get_audit_trail when the caller has a
     // corporate scope, so one corporate's governance events are never returned

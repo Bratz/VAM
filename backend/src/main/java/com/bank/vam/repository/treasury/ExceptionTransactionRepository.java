@@ -315,4 +315,26 @@ public interface ExceptionTransactionRepository extends JpaRepository<ExceptionT
         @Param("type") ExceptionType type,
         @Param("currency") String currency,
         Pageable pageable);
+
+    /**
+     * Corporate-scoped equivalent of {@link #findWithFilters} — {@code
+     * ExceptionTransaction} has no {@code corporateId} column, only reachable
+     * via {@code exceptionVaId -> VirtualAccount.corporateId}. Added for
+     * get_exceptions (MCP tool): a caller entitled to one corporate must never
+     * see another's exceptions, and the existing programId-based filter can't
+     * express that.
+     */
+    @Query("SELECT e FROM ExceptionTransaction e " +
+           "JOIN VirtualAccount v ON e.exceptionVaId = v.id " +
+           "WHERE v.corporateId = :corporateId " +
+           "AND (:status IS NULL OR e.status = :status) " +
+           "AND (:type IS NULL OR e.exceptionType = :type) " +
+           "AND (:currency IS NULL OR e.currencyCode = :currency) " +
+           "ORDER BY e.createdAt DESC")
+    Page<ExceptionTransaction> findWithFiltersByCorporate(
+        @Param("corporateId") UUID corporateId,
+        @Param("status") ExceptionStatus status,
+        @Param("type") ExceptionType type,
+        @Param("currency") String currency,
+        Pageable pageable);
 }

@@ -5,10 +5,8 @@ import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.forecast.api.dto.ForecastLineDto;
 import com.bank.vam.forecast.api.dto.ForecastRunDto;
 import com.bank.vam.forecast.api.dto.ForecastSummaryDto;
-import com.bank.vam.forecast.api.dto.ForecastWeeklyBucketDto;
 import com.bank.vam.forecast.domain.ForecastLine;
 import com.bank.vam.forecast.domain.ForecastRun;
-import com.bank.vam.forecast.domain.enums.ForecastDirection;
 import com.bank.vam.forecast.domain.enums.RunStatus;
 import com.bank.vam.forecast.orchestration.ForecastScheduler;
 import com.bank.vam.forecast.repository.ForecastLineRepository;
@@ -22,14 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -110,7 +101,7 @@ public class ForecastController {
         List<Object[]> rows = lineRepository.aggregateWeeklyByCurrencyDirection(
                 run.getId(), from, to);
 
-        ForecastSummaryDto summary = buildSummary(run, rows, currency);
+        ForecastSummaryDto summary = ForecastSummaryAssembler.assemble(run, rows, currency);
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
 
@@ -191,103 +182,5 @@ public class ForecastController {
         log.info("POST /v1/forecasts/run requested for corporate {}", corporateId);
         ForecastRun run = scheduler.triggerOnDemand(corporateId);
         return ResponseEntity.ok(ApiResponse.success(ForecastRunDto.from(run)));
-    }
-
-    // ------------------------------------------------------------------------
-    // Internal — summary assembly
-    // ------------------------------------------------------------------------
-
-    /**
-     * Roll up the native aggregate ({@code [week_start, currency, direction, sum_amount_mid]})
-     * into a {@link ForecastSummaryDto}. Anchored at opening balance = 0 — see
-     * the class javadoc for the Sprint 2 follow-up.
-     */
-    private ForecastSummaryDto buildSummary(ForecastRun run, List<Object[]> rows, String currencyFilter) {
-        // Bucket by week (ISO Monday). The native query returns one row per
-        // (week_start, currency, direction) so a single calendar week can
-        // contribute up to 2 rows (IN + OUT) per currency.
-        java.util.Map<LocalDate, BigDecimal> netByWeek = new java.util.TreeMap<>();
-        String resolvedCurrency = currencyFilter;
-
-        for (Object[] row : rows) {
-            LocalDate weekStart = toLocalDate(row[0]);
-            String currency = (String) row[1];
-            String directionRaw = (String) row[2];
-            BigDecimal sum = (BigDecimal) row[3];
-
-            if (currencyFilter != null && !currencyFilter.equalsIgnoreCase(currency)) {
-                continue;
-            }
-            if (resolvedCurrency == null) {
-                resolvedCurrency = currency; // First seen — used for summary label only.
-            }
-
-            ForecastDirection direction = ForecastDirection.valueOf(directionRaw);
-            BigDecimal signed = direction == ForecastDirection.IN ? sum : sum.negate();
-            netByWeek.merge(weekStart, signed, BigDecimal::add);
-        }
-
-        BigDecimal openingBalance = BigDecimal.ZERO; // TODO Sprint 2: BalanceAggregationService.
-        BigDecimal running = openingBalance;
-        List<ForecastWeeklyBucketDto> buckets = new ArrayList<>(netByWeek.size());
-
-        for (var entry : netByWeek.entrySet()) {
-            LocalDate weekStart = entry.getKey().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-            LocalDate weekEnd = weekStart.plusDays(6);
-            BigDecimal net = entry.getValue();
-            running = running.add(net);
-            buckets.add(new ForecastWeeklyBucketDto(weekStart, weekEnd, net, running));
-        }
-
-        BigDecimal closingBalance = running;
-        ForecastWeeklyBucketDto trough = buckets.stream()
-                .min(Comparator.comparing(ForecastWeeklyBucketDto::closingBalance))
-                .orElse(null);
-
-        return new ForecastSummaryDto(
-                run.getId(),
-                run.getRunAt(),
-                run.getHorizonEnd(),
-                resolvedCurrency,
-                openingBalance,
-                closingBalance,
-                trough,
-                buckets
-        );
-    }
-
-    /**
-     * The native aggregate query returns {@code week_start} as the JDBC
-     * driver's native temporal type — most commonly {@code java.sql.Date} or
-     * {@code java.sql.Timestamp} depending on PG version + Hibernate flavour.
-     * Normalise to {@link LocalDate} here so the summary layer above doesn't
-     * have to care.
-     */
-    private static LocalDate toLocalDate(Object raw) {
-        if (raw == null) {
-            return null;
-        }
-        if (raw instanceof LocalDate ld) {
-            return ld;
-        }
-        if (raw instanceof Date sqlDate) {
-            return sqlDate.toLocalDate();
-        }
-        if (raw instanceof Timestamp ts) {
-            return ts.toLocalDateTime().toLocalDate();
-        }
-        if (raw instanceof java.time.LocalDateTime ldt) {
-            return ldt.toLocalDate();
-        }
-        if (raw instanceof java.time.OffsetDateTime odt) {
-            return odt.toLocalDate();
-        }
-        if (raw instanceof java.time.Instant inst) {
-            // Hibernate 6 + Postgres JDBC will surface a TIMESTAMPTZ aggregate
-            // (e.g. date_trunc without a ::date cast) as Instant. Anchor at UTC
-            // since value_date is a zoneless DATE — the conversion can't drift.
-            return inst.atZone(java.time.ZoneOffset.UTC).toLocalDate();
-        }
-        throw new IllegalStateException("Unexpected week_start type " + raw.getClass() + " from native query");
     }
 }
