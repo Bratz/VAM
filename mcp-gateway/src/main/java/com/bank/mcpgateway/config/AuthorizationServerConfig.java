@@ -51,7 +51,7 @@ import java.util.UUID;
  * pre-registered client over DCR precisely for this shape of server ("a good
  * option when you want a stable OAuth client per organization... avoids
  * dynamic client registration entirely"), and a manually-configured OAuth
- * client is an equally supported path for a ChatGPT custom connector. Two
+ * client is an equally supported path for a ChatGPT custom connector. Three
  * redirect URIs are registered on the one client below: this repo's own
  * {@code demoRedirectUri} for manual curl/browser testing, and each
  * platform's fixed connector callback.
@@ -78,6 +78,14 @@ public class AuthorizationServerConfig {
     @Value("${gateway.chatgpt-redirect-uri:https://chatgpt.com/connector_platform_oauth_redirect}")
     private String chatgptRedirectUri;
 
+    /**
+     * Claude's fixed callback for the hosted surfaces (Claude.ai web, Desktop,
+     * mobile, Cowork) — confirmed against Claude's current connector-building
+     * docs (claude.com/docs/connectors/building/authentication).
+     */
+    @Value("${gateway.claude-redirect-uri:https://claude.ai/api/mcp/auth_callback}")
+    private String claudeRedirectUri;
+
     @Bean
     @Order(1)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -103,6 +111,7 @@ public class AuthorizationServerConfig {
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUri(demoRedirectUri)
                 .redirectUri(chatgptRedirectUri)
+                .redirectUri(claudeRedirectUri)
                 .scope(OidcScopes.OPENID)
                 .scope("mcp:tools")
                 .clientSettings(ClientSettings.builder()
