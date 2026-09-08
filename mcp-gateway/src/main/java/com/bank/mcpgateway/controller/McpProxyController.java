@@ -135,9 +135,16 @@ public class McpProxyController {
             ResponseEntity<String> backendResponse = restClient.post()
                     .uri(backendMcpUrl)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("MCP-Protocol-Version", protocolVersionHeader)
-                    .header("Mcp-Method", mcpMethodHeader)
-                    .header("Mcp-Name", mcpNameHeader == null ? "" : mcpNameHeader)
+                    .headers(headers -> {
+                        // required=false request headers are null when the caller omits
+                        // them (true for every client that doesn't send these two custom
+                        // headers) — the JDK HttpClient under RestClient throws
+                        // NullPointerException on a null header value, so only forward
+                        // what was actually sent.
+                        if (protocolVersionHeader != null) headers.set("MCP-Protocol-Version", protocolVersionHeader);
+                        if (mcpMethodHeader != null) headers.set("Mcp-Method", mcpMethodHeader);
+                        if (mcpNameHeader != null) headers.set("Mcp-Name", mcpNameHeader);
+                    })
                     .body(objectMapper.writeValueAsString(outgoingBody))
                     .retrieve()
                     .onStatus(status -> true, (req, res) -> {}) // don't throw on 4xx/5xx — relay them
