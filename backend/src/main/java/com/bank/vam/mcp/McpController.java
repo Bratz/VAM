@@ -47,7 +47,11 @@ import java.util.Map;
 public class McpController {
 
     private static final String SERVER_NAME = "aperture-mcp-server";
-    private static final String SERVER_VERSION = "0.1.0";
+    // Bump whenever the tool catalogue changes — this server is stateless and
+    // has no notifications/tools/list_changed to push, so serverInfo.version
+    // is the only signal a caching client has that a previously-fetched
+    // tools/list is stale (Phase 5: 7 tools -> 22 tools, masking, audit chain).
+    private static final String SERVER_VERSION = "0.2.0";
 
     private static final String SIGNED_CONTEXT_META_KEY = "com.aperture.gateway/signedContext";
 
