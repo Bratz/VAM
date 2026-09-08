@@ -30,7 +30,7 @@ class McpUiResourceRegistryTest {
     @Test
     void everyResource_isSelfContainedHtml() {
         registry.all().forEach(resource -> {
-            assertThat(resource.mimeType()).isEqualTo("text/html");
+            assertThat(resource.mimeType()).isEqualTo("text/html;profile=mcp-app");
             assertThat(resource.html()).contains("<!doctype html>", "window.openai");
             // No external network calls — every resource must be renderable with
             // no CSP allow-list entries.
