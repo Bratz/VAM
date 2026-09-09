@@ -26,6 +26,7 @@ import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer } from
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
+import { TileAmount } from '../components/TileAmount';
 import { VaCreateModal } from '../pages/VaCreateModal';
 import { formatCurrency, formatDate, cn, copyToClipboard } from '../utils';
 import { isCredit, isDebit } from '../utils/transactionUtils';
@@ -1657,14 +1658,14 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
       <HeroMetricCard
         primary={{
           label: 'Total Balance',
-          value: formatCurrency(stats.totalBalance),
+          value: <TileAmount value={stats.totalBalance} />,
           trend: '+8.2%',
           trendTone: 'success',
           sub: 'Sum of current balances across programs and currencies',
         }}
         secondary={{
           label: 'Available',
-          value: formatCurrency(stats.availableBalance),
+          value: <TileAmount value={stats.availableBalance} />,
           sub: 'Spendable today (includes credit headroom)',
         }}
         icon={<Banknote className="w-7 h-7 text-accent-600 dark:text-accent-300" />}

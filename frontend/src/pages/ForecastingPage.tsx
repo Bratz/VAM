@@ -8,7 +8,11 @@
  *
  * Sprint 1 deliverables:
  *   - Headline strip with horizon toggle, currency picker, "Run forecast" CTA
- *   - Three HeroMetricCard tiles (Opening / Closing / Trough)
+ *   - Three equal-weight StatTile metrics (Opening / Closing / Trough) — was
+ *     three separate HeroMetricCard instances, which contradicts that
+ *     component's own "single dominant figure per page" design intent
+ *     (tokens.json); switched to StatTile since these three are meant to
+ *     read as co-equal, not competing "heroes".
  *   - recharts ComposedChart — bars = weekly net cashflow, line = closing balance
  *   - Category breakdown table aggregated client-side from the raw lines
  *     endpoint (backend groupBy lands Sprint 2)
@@ -52,8 +56,9 @@ import {
 import toast from 'react-hot-toast';
 
 import { Page } from '../components/layout/Page';
-import { Card, Button, Skeleton, Badge, Drawer } from '../components/ui';
-import { HeroMetricCard } from '../components/ui/HeroMetricCard';
+import { Card, Button, Skeleton, Badge, Drawer, StatTile } from '../components/ui';
+import { StatStrip } from '../components/layout/StatStrip';
+import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../design-system/ThemeProvider';
@@ -64,7 +69,7 @@ import {
   ForecastSource,
   ForecastWeeklyBucket,
 } from '../services/api';
-import { formatCompactCurrency, formatCurrency, cn } from '../utils';
+import { formatCurrency, formatAmountForTile, cn } from '../utils';
 
 // ============================================================================
 // Constants
@@ -95,15 +100,15 @@ function useChartColors() {
   const isDark = resolvedMode === 'dark';
   return useMemo(() => ({
     isDark,
-    grid:          isDark ? '#1f3a52' : '#e2e8f0',
-    axisLine:      isDark ? '#1f3a52' : '#cbd5e1',
-    tickFill:      isDark ? '#94a3b8' : '#64748b',
-    inflowBar:     isDark ? '#34d399' : '#10b981',  // success-500
-    outflowBar:    isDark ? '#fb7185' : '#ef4444',  // error-500
+    grid:          isDark ? '#4c5c68' : '#dcdcdd',  // primary-800 / neutral-200
+    axisLine:      isDark ? '#595b5e' : '#dcdcdd',  // primary-700 / neutral-200
+    tickFill:      isDark ? '#b5b6b7' : '#5d6165',  // primary-300 / neutral-500
+    inflowBar:     isDark ? '#7da698' : '#578b7a',  // success-400 / success-500
+    outflowBar:    isDark ? '#cb8f8a' : '#bb6d67',  // error-400 / error-500
     balanceLine:   isDark ? '#81bccb' : '#177891',  // accent-400 / accent-600
-    shortfallArea: isDark ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.07)',
-    tooltipBg:     isDark ? '#0f1f30' : '#ffffff',
-    tooltipText:   isDark ? '#f1f5f9' : '#46494c',
+    shortfallArea: isDark ? 'rgba(187,109,103,0.14)' : 'rgba(187,109,103,0.08)', // error-500
+    tooltipBg:     isDark ? '#343638' : '#ffffff',  // neutral-800
+    tooltipText:   isDark ? '#f2f2f3' : '#46494c',  // neutral-50 / primary-900
     tooltipShadow: '0 4px 12px rgba(70,73,76,0.15)',
   }), [isDark]);
 }
@@ -117,6 +122,13 @@ const ISO_WEEK_FMT = (iso: string) =>
 
 const FULL_DATE_FMT = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+/** K/M/B axis tick, currency code stripped (the currency picker already scopes the whole chart). */
+const formatAxisAmount = (v: number, currency: string) => {
+  const compact = formatAmountForTile(v, currency);
+  const spaceIdx = compact.indexOf(' ');
+  return spaceIdx >= 0 ? compact.slice(spaceIdx + 1) : compact;
+};
 
 /** Tries to surface the most useful error blurb from an axios error envelope. */
 function errorMessage(err: unknown, fallback: string): string {
@@ -302,7 +314,7 @@ const ForecastingPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-accent-500" />
-              Treasury Forecast · Sprint 1 preview
+              Cash Forecast
             </div>
             <p className="body-sm text-neutral-600 dark:text-neutral-300 max-w-xl">
               {summary
@@ -380,7 +392,7 @@ const ForecastingPage: React.FC = () => {
         <EmptyState onRun={handleRunForecast} running={running} />
       ) : (
         <>
-          <MetricStrip summary={summary} currency={ccyForFormat} />
+          <MetricStrip summary={summary} currency={ccyForFormat} horizon={horizon} />
 
           <Card padding="md">
             <div className="flex items-center justify-between mb-3">
@@ -422,59 +434,50 @@ const ForecastingPage: React.FC = () => {
 export default ForecastingPage;
 
 // ============================================================================
-// MetricStrip — three HeroMetricCard tiles
+// MetricStrip — three equal-weight StatTile metrics
 // ============================================================================
 
-const MetricStrip: React.FC<{ summary: ForecastSummary; currency: string }> = ({ summary, currency }) => {
+const MetricStrip: React.FC<{ summary: ForecastSummary; currency: string; horizon: Horizon }> = ({ summary, currency, horizon }) => {
   const closing = Number(summary.closingBalance ?? 0);
-  const closingTone: 'success' | 'error' | 'neutral' =
-    closing < 0 ? 'error' : closing < 1_000_000 ? 'neutral' : 'success';
+  // Kept the same three-way read on the closing balance the old trend chip
+  // used, now driving the number's own colour via valueTone instead of a
+  // separate (barely-visible) chip next to a value that stayed neutral.
+  const closingValueTone: 'success' | 'danger' | 'neutral' =
+    closing < 0 ? 'danger' : closing < 1_000_000 ? 'neutral' : 'success';
 
   const trough = summary.troughWeek;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <HeroMetricCard
-        animationDelay={0.05}
-        icon={<Wallet className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
-        primary={{
-          label: 'Opening balance',
-          value: formatCompactCurrency(Number(summary.openingBalance ?? 0), currency),
-          sub: (
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              Anchored at 0 in Sprint 1 — Sprint 2 wires live balance aggregation
-            </span>
-          ),
-        }}
+    <StatStrip>
+      <StatTile
+        tone="accent"
+        icon={<Wallet className="w-5 h-5" />}
+        label="Opening balance"
+        value={<TileAmount value={Number(summary.openingBalance ?? 0)} currency={currency} />}
+        sub="Starting point for this projection"
+        delay="0.05s"
       />
 
-      <HeroMetricCard
-        animationDelay={0.10}
-        icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
-        primary={{
-          label: `Closing (${HORIZON_OPTIONS.find(o => o.value === 91)?.label ?? '13w'})`,
-          value: formatCompactCurrency(closing, currency),
-          trend: closing < 0 ? 'shortfall' : undefined,
-          trendTone: closingTone,
-        }}
+      <StatTile
+        tone="accent"
+        valueTone={closingValueTone}
+        icon={<TrendingUp className="w-5 h-5" />}
+        label={`Closing (${HORIZON_OPTIONS.find(o => o.value === horizon)?.label ?? '13w'})`}
+        value={<TileAmount value={closing} currency={currency} />}
+        sub={closing < 0 ? 'Shortfall projected' : undefined}
+        delay="0.10s"
       />
 
-      <HeroMetricCard
-        animationDelay={0.15}
-        icon={<ArrowDownRight className="w-7 h-7 text-error-500" />}
-        primary={{
-          label: 'Trough week',
-          value: trough
-            ? formatCompactCurrency(Number(trough.closingBalance ?? 0), currency)
-            : '—',
-          sub: trough ? (
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-              w/c {FULL_DATE_FMT(trough.weekStart)}
-            </span>
-          ) : null,
-        }}
+      <StatTile
+        tone="danger"
+        valueTone="neutral"
+        icon={<ArrowDownRight className="w-5 h-5" />}
+        label="Trough week"
+        value={trough ? <TileAmount value={Number(trough.closingBalance ?? 0)} currency={currency} /> : '—'}
+        sub={trough ? `w/c ${FULL_DATE_FMT(trough.weekStart)}` : undefined}
+        delay="0.15s"
       />
-    </div>
+    </StatStrip>
   );
 };
 
@@ -517,7 +520,7 @@ const ChartBlock: React.FC<ChartBlockProps> = ({ data, shortfallSpans, colors, c
             tick={{ fontSize: 11, fill: colors.tickFill }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v: number) => formatCompactCurrency(v, currency)}
+            tickFormatter={(v: number) => formatAxisAmount(v, currency)}
             width={70}
           />
           <YAxis
@@ -526,7 +529,7 @@ const ChartBlock: React.FC<ChartBlockProps> = ({ data, shortfallSpans, colors, c
             tick={{ fontSize: 11, fill: colors.tickFill }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v: number) => formatCompactCurrency(v, currency)}
+            tickFormatter={(v: number) => formatAxisAmount(v, currency)}
             width={70}
           />
           <Tooltip
@@ -565,6 +568,7 @@ const ChartBlock: React.FC<ChartBlockProps> = ({ data, shortfallSpans, colors, c
             yAxisId="left"
             dataKey="net"
             name="Net cashflow"
+            fill={colors.inflowBar}
             radius={[4, 4, 0, 0]}
             onClick={(d: any) => d?.bucket && onSelectBucket(d.bucket as ForecastWeeklyBucket)}
             cursor="pointer"
@@ -651,8 +655,12 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
           total: 0,
         };
       }
-      grid[key].cells[idx] += Number(l.amountMid ?? 0);
-      grid[key].total += Number(l.amountMid ?? 0);
+      // amountMid is always a positive magnitude (category.direction carries
+      // sign) — sign it here so OUT categories aggregate and colour as
+      // outflows instead of every category reading as a green inflow.
+      const signed = l.direction === 'OUT' ? -Number(l.amountMid ?? 0) : Number(l.amountMid ?? 0);
+      grid[key].cells[idx] += signed;
+      grid[key].total += signed;
     }
     const rows = Object.entries(grid).map(([code, v]) => ({ code, ...v }));
     rows.sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
@@ -664,7 +672,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
       <div className="flex items-center justify-between mb-3">
         <h2 className="section-title">Category breakdown</h2>
         <span className="body-xs text-neutral-500 dark:text-neutral-400">
-          Aggregated from {lines?.length ?? 0} line(s) · sprint-1 client-side roll-up
+          Aggregated from {lines?.length ?? 0} line{(lines?.length ?? 0) === 1 ? '' : 's'}
         </span>
       </div>
       {loading ? (
@@ -709,7 +717,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
                         : v > 0 ? 'text-success-600 dark:text-success-300'
                         : 'text-error-600 dark:text-error-300'
                     )}>
-                      {v === 0 ? '—' : formatCompactCurrency(v, currency)}
+                      {v === 0 ? '—' : <TileAmount value={v} currency={currency} />}
                     </td>
                   ))}
                   <td className={cn(
@@ -718,7 +726,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
                       : row.total < 0 ? 'text-error-700 dark:text-error-200'
                       : 'text-neutral-500'
                   )}>
-                    {formatCompactCurrency(row.total, currency)}
+                    <TileAmount value={row.total} currency={currency} />
                   </td>
                 </tr>
               ))}
@@ -800,9 +808,9 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                     <div className="text-right shrink-0">
                       <span className={cn(
                         'inline-flex items-center gap-1 amount text-sm font-semibold',
-                        line.amountMid >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
+                        line.direction === 'OUT' ? 'text-error-600 dark:text-error-300' : 'text-success-600 dark:text-success-300'
                       )}>
-                        {line.amountMid >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                        {line.direction === 'OUT' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
                         {formatCurrency(Math.abs(Number(line.amountMid ?? 0)), line.currency || currency)}
                       </span>
                       {line.confidence != null && (
@@ -837,7 +845,7 @@ const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, 
         No forecast yet
       </h2>
       <p className="body text-neutral-500 dark:text-neutral-400 mt-3 max-w-md mx-auto">
-        Fire your first run to see a 13-week cash position projected from open AR, recurring payables, and treasurer adjustments.
+        Run your first forecast to see a 13-week cash position projected from open AR, recurring payables, and treasurer adjustments.
       </p>
       <Button
         variant="primary"

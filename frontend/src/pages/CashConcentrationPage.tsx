@@ -9,6 +9,7 @@ import {
   Building2,
   AlertCircle,
   Filter,
+  History,
 } from 'lucide-react';
 import { Card, Button, Select, StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -249,8 +250,8 @@ const CashConcentrationPage: React.FC = () => {
     .reduce((sum, exec) => sum + ((exec as any).sweepAmount || (exec as any).amountSwept || 0), 0);
 
   const tabs = [
-    { id: 'rules', label: 'Sweep Rules', count: filteredRules.length },
-    { id: 'history', label: 'Execution History', count: filteredExecutions.length },
+    { id: 'rules', label: 'Sweep Rules', icon: Layers, count: filteredRules.length },
+    { id: 'history', label: 'Execution History', icon: History, count: filteredExecutions.length },
   ];
 
   // Loading state
@@ -329,21 +330,26 @@ const CashConcentrationPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Tabs with Filter */}
+      {/* Tabs with Filter — icon + pill-count style matches Intercompany Dashboard's tab row. */}
       <div className="flex items-center justify-between border-b border-neutral-200 dark:border-primary-800 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as 'rules' | 'history')}
               className={cn(
-                'px-4 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-all duration-200',
                 activeTab === tab.id
-                  ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                  ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
+                  : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
               )}
             >
-              {tab.label} ({tab.count})
+              <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-primary-600 dark:text-primary-200' : '')} />
+              {tab.label}
+              <span className={cn(
+                'px-1.5 py-0.5 text-xs rounded-full font-medium',
+                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+              )}>{tab.count}</span>
             </button>
           ))}
         </div>

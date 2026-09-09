@@ -202,13 +202,17 @@ public class CurrencyMirrorController {
      */
     @GetMapping("/breakdown/{corporateId}/list")
     @Operation(summary = "Get currency breakdown as list",
-               description = "Get balance breakdown by currency as a list for table display")
+               description = "Get balance breakdown by currency as a list for table display. " +
+                           "Omit baseCurrency to see each currency converted at its mirror's own " +
+                           "configured base; pass one to re-convert every figure into it.")
     public ResponseEntity<ApiResponse<List<CurrencyBreakdownResponse>>> getCurrencyBreakdownList(
-            @PathVariable UUID corporateId) {
-        
-        log.info("GET /api/v1/treasury/currency-mirrors/breakdown/{}/list", corporateId);
-        
-        Map<String, CurrencyBreakdown> breakdown = currencyMirrorService.getCurrencyBreakdown(corporateId);
+            @PathVariable UUID corporateId,
+            @Parameter(description = "Optional base currency to convert every entry into")
+            @RequestParam(required = false) String baseCurrency) {
+
+        log.info("GET /api/v1/treasury/currency-mirrors/breakdown/{}/list - base: {}", corporateId, baseCurrency);
+
+        Map<String, CurrencyBreakdown> breakdown = currencyMirrorService.getCurrencyBreakdown(corporateId, baseCurrency);
         
         List<CurrencyBreakdownResponse> list = breakdown.values().stream()
             .map(cb -> CurrencyBreakdownResponse.builder()
@@ -240,7 +244,12 @@ public class CurrencyMirrorController {
         log.info("GET /api/v1/treasury/currency-mirrors/consolidated/{} - base: {}",
                  corporateId, baseCurrency);
 
-        Map<String, CurrencyBreakdown> breakdown = currencyMirrorService.getCurrencyBreakdown(corporateId);
+        // Actually convert into the requested base — previously this fetched
+        // each mirror's balance already converted to ITS OWN configured base
+        // and just relabelled the sum with whatever baseCurrency was asked
+        // for, silently wrong for any request that didn't match the mirrors'
+        // real base currency.
+        Map<String, CurrencyBreakdown> breakdown = currencyMirrorService.getCurrencyBreakdown(corporateId, baseCurrency);
 
         BigDecimal totalInBase = breakdown.values().stream()
             .map(CurrencyBreakdown::getConvertedBalance)
@@ -318,18 +327,17 @@ public class CurrencyMirrorController {
             @PathVariable UUID programId,
             @Parameter(description = "Hierarchy level (0=ROOT for total, 1+=AGGREGATION levels). " +
                                    "Omit to get all levels (may double count).")
-            @RequestParam(required = false) Integer level) {
+            @RequestParam(required = false) Integer level,
+            @Parameter(description = "Optional base currency to convert every entry into")
+            @RequestParam(required = false) String baseCurrency) {
 
-        log.info("GET /api/v1/treasury/currency-mirrors/breakdown/program/{}/list?level={}",
-            programId, level);
+        log.info("GET /api/v1/treasury/currency-mirrors/breakdown/program/{}/list?level={}&base={}",
+            programId, level, baseCurrency);
 
-        Map<String, CurrencyBreakdown> breakdown;
-        if (level != null) {
-            breakdown = currencyMirrorService.getCurrencyBreakdownByProgramAndLevel(programId, level);
-        } else {
-            // Default to ROOT level (0) to avoid double counting
-            breakdown = currencyMirrorService.getCurrencyBreakdownByProgramAndLevel(programId, 0);
-        }
+        // Default to ROOT level (0) to avoid double counting
+        int effectiveLevel = level != null ? level : 0;
+        Map<String, CurrencyBreakdown> breakdown =
+            currencyMirrorService.getCurrencyBreakdownByProgramAndLevel(programId, effectiveLevel, baseCurrency);
 
         List<CurrencyBreakdownResponse> list = breakdown.values().stream()
             .map(cb -> CurrencyBreakdownResponse.builder()
@@ -427,15 +435,22 @@ public class CurrencyMirrorController {
         log.info("GET /api/v1/treasury/currency-mirrors/consolidated/program/{} - base: {}",
                  programId, baseCurrency);
 
-        Map<String, CurrencyBreakdown> breakdown = currencyMirrorService.getCurrencyBreakdownByProgram(programId);
+        Map<String, CurrencyBreakdown> nativeBreakdown = currencyMirrorService.getCurrencyBreakdownByProgram(programId);
 
         // Determine base currency - use provided or derive from first breakdown entry
         String effectiveBaseCurrency = baseCurrency != null ? baseCurrency.toUpperCase() :
-            breakdown.values().stream()
+            nativeBreakdown.values().stream()
                 .map(CurrencyBreakdown::getBaseCurrency)
                 .filter(bc -> bc != null)
                 .findFirst()
                 .orElse("AED");
+
+        // Actually convert into effectiveBaseCurrency — previously this summed
+        // each mirror's balance already converted to ITS OWN configured base
+        // and just relabelled the total, silently wrong for any base that
+        // didn't match the mirrors' real base currency.
+        Map<String, CurrencyBreakdown> breakdown =
+            currencyMirrorService.getCurrencyBreakdownByProgram(programId, effectiveBaseCurrency);
 
         BigDecimal totalInBase = breakdown.values().stream()
             .map(CurrencyBreakdown::getConvertedBalance)

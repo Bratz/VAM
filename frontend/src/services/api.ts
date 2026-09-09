@@ -5722,16 +5722,21 @@ export const currencyMirrorApi = {
   getBreakdown: (corporateId: string) =>
     apiClient.get<ApiResponse<Record<string, CurrencyBreakdown>>>(`/treasury/currency-mirrors/breakdown/${corporateId}`).then(r => r.data),
 
-  getBreakdownList: (corporateId: string) =>
-    apiClient.get<ApiResponse<CurrencyBreakdown[]>>(`/treasury/currency-mirrors/breakdown/${corporateId}/list`).then(r => r.data),
+  // baseCurrency re-converts every entry into that currency server-side;
+  // omit it to see each currency at its mirror's own configured base.
+  getBreakdownList: (corporateId: string, baseCurrency?: string) =>
+    apiClient.get<ApiResponse<CurrencyBreakdown[]>>(
+      `/treasury/currency-mirrors/breakdown/${corporateId}/list`,
+      { params: baseCurrency ? { baseCurrency } : {} }
+    ).then(r => r.data),
 
   // Program-based breakdown list (preferred for multi-program corporates)
   // v5.7.1: Added level parameter for level-based breakdown
   // level=0 for ROOT (total), level=1+ for specific AGGREGATION levels
-  getBreakdownListByProgram: (programId: string, level?: number) =>
+  getBreakdownListByProgram: (programId: string, level?: number, baseCurrency?: string) =>
     apiClient.get<ApiResponse<CurrencyBreakdown[]>>(
       `/treasury/currency-mirrors/breakdown/program/${programId}/list`,
-      { params: level !== undefined ? { level } : {} }
+      { params: { ...(level !== undefined ? { level } : {}), ...(baseCurrency ? { baseCurrency } : {}) } }
     ).then(r => r.data),
 
   // v5.7.2: Node-specific breakdown (preferred when clicking on a specific AGGREGATION node)
@@ -8290,6 +8295,7 @@ export interface ForecastLine {
   currency: string;
   categoryCode: string;
   categoryLabel: string;
+  direction: ForecastDirection;
   amountMid: number;
   source: ForecastSource;
   sourceRef: string | null;

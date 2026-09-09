@@ -328,41 +328,49 @@
      duplicated the styling. These variants share the same typographic
      treatment as `.stat-value-sm` but with semantic text colour.
      Final carry-over post-Tier-8 (2026-05-13). */
+  /* Fixed 2026-09-09: these were `text-2xl` (24px) — 4px smaller than
+     `.stat-value-sm` (28px) despite this file's own comment above saying
+     they "share the same typographic treatment as .stat-value-sm" (and
+     tokens.json documents the same claim). Confirmed live: a StatTile row
+     mixing a neutral/primary tile with a success/warning/error/info tile
+     rendered two different headline-number sizes side by side. Now sized
+     and spaced identically to .stat-value-sm — colour is the only thing
+     that should vary by tone. */
   .stat-value-success {
-    @apply text-2xl text-success-600 dark:text-success-300;
+    @apply text-[28px] text-success-600 dark:text-success-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
-    line-height: 1.1;
+    letter-spacing: -0.005em;
+    line-height: 1;
   }
   .stat-value-warning {
-    @apply text-2xl text-warning-600 dark:text-warning-300;
+    @apply text-[28px] text-warning-600 dark:text-warning-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
-    line-height: 1.1;
+    letter-spacing: -0.005em;
+    line-height: 1;
   }
   .stat-value-error {
-    @apply text-2xl text-error-600 dark:text-error-300;
+    @apply text-[28px] text-error-600 dark:text-error-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
-    line-height: 1.1;
+    letter-spacing: -0.005em;
+    line-height: 1;
   }
   .stat-value-info {
-    @apply text-2xl text-info-600 dark:text-info-300;
+    @apply text-[28px] text-info-600 dark:text-info-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
-    line-height: 1.1;
+    letter-spacing: -0.005em;
+    line-height: 1;
   }
 
   /* ----------------------------------------------------------------------

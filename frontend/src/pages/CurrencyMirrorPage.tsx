@@ -13,14 +13,17 @@ import {
   Globe, RefreshCw, ArrowRightLeft,
   DollarSign, Euro, PoundSterling, Coins, BarChart3,
   Clock, AlertTriangle, CheckCircle2, Settings,
-  Loader2, AlertCircle, ChevronRight, Eye,
+  Loader2, AlertCircle, Eye,
   Calculator, Building, X,
 } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
+import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { StatStrip } from '../components/layout/StatStrip';
 import { 
   currencyMirrorApi, 
   fxRateApi, 
@@ -153,6 +156,14 @@ const CurrencyIcon: React.FC<{ currency: string; className?: string }> = ({ curr
   return <Icon className={className} />;
 };
 
+/** A mirror's rate is stale once it's more than an hour old. Shared by the
+    per-card badge and the page-level "Stale Rates" stat. */
+const isStaleRate = (fxRateAt: string | null | undefined): boolean => {
+  if (!fxRateAt) return false;
+  const ageMinutes = (Date.now() - new Date(fxRateAt).getTime()) / (1000 * 60);
+  return ageMinutes > 60;
+};
+
 // ============================================================================
 // CURRENCY BREAKDOWN CARD
 // ============================================================================
@@ -170,7 +181,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
   const rateAge = breakdown.fxRateAt
     ? Math.floor((Date.now() - new Date(breakdown.fxRateAt).getTime()) / (1000 * 60))
     : null;
-  const isStale = rateAge !== null && rateAge > 60;
+  const isStale = isStaleRate(breakdown.fxRateAt);
 
   return (
     <div className={cn(
@@ -198,7 +209,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
         <div>
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Original Balance</p>
           <p className="stat-value-sm">
-            {formatCurrency(breakdown.originalBalance, breakdown.currency)}
+            <TileAmount value={breakdown.originalBalance} currency={breakdown.currency} />
           </p>
         </div>
 
@@ -221,7 +232,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
               `text-xl font-bold` hand-roll (matches the sibling figure's
               .stat-value-sm display tier). */}
           <p className="stat-value-success">
-            {formatCurrency(breakdown.convertedBalance, baseCurrency)}
+            <TileAmount value={breakdown.convertedBalance} currency={baseCurrency} />
           </p>
         </div>
       </div>
@@ -427,10 +438,10 @@ const CurrencyMirrorPage: React.FC = () => {
         let breakdownResponse;
         if (selectedProgramId && uuidRegex.test(selectedProgramId)) {
           // Use program-based API (preferred for multi-program corporates)
-          breakdownResponse = await currencyMirrorApi.getBreakdownListByProgram(selectedProgramId);
+          breakdownResponse = await currencyMirrorApi.getBreakdownListByProgram(selectedProgramId, undefined, baseCurrency);
         } else {
           // Fallback to corporate-based API
-          breakdownResponse = await currencyMirrorApi.getBreakdownList(selectedCorporateId);
+          breakdownResponse = await currencyMirrorApi.getBreakdownList(selectedCorporateId, baseCurrency);
         }
         const data = extractData(breakdownResponse);
         breakdownData = Array.isArray(data) ? data.map(d => ({ ...d })) : [];
@@ -607,6 +618,8 @@ const CurrencyMirrorPage: React.FC = () => {
     [recalculating]
   );
 
+  const staleCount = breakdowns.filter(b => isStaleRate(b.fxRateAt)).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -625,33 +638,6 @@ const CurrencyMirrorPage: React.FC = () => {
         title="Currency Mirrors"
         description="Multi-currency exposure across program-scoped currency mirror VAs. Base-currency view re-denominates the breakdown for FX-honest reporting."
       />
-
-      {/* Base-currency selector — page-level filter that scopes the
-          breakdown view below. Kept inline because it's a single
-          per-page control that doesn't fit the ScopeSelector contract. */}
-      <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg">
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
-          <CurrencyPicker
-            value={baseCurrency}
-            onChange={(c) => setBaseCurrency(c)}
-            className="bg-transparent text-sm font-medium text-primary-900 dark:text-neutral-50 outline-none cursor-pointer"
-          />
-        </div>
-      </div>
-
-      {/* Demo Mode Banner */}
-      {isDemo && (
-        <Card className="bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} />
-            <div>
-              <span className="font-semibold text-warning-800 dark:text-warning-300">Demo Mode:</span>
-              <span className="text-warning-700 dark:text-warning-300 ml-1">Showing sample data. Select a valid corporate with currency mirrors to view real data.</span>
-            </div>
-          </div>
-        </Card>
-      )}
 
       {/* Corporate / Program picker — shared `<ScopeSelector>` primitive.
           The base-currency side-effect on Program change is preserved at
@@ -680,6 +666,33 @@ const CurrencyMirrorPage: React.FC = () => {
         disableChildUntilParent
       />
 
+      {/* Base-currency selector — secondary display filter, kept inline
+          because it's a single per-page control that doesn't fit the
+          ScopeSelector contract. */}
+      <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg">
+          <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
+          <CurrencyPicker
+            value={baseCurrency}
+            onChange={(c) => setBaseCurrency(c)}
+            className="bg-transparent text-sm font-medium text-primary-900 dark:text-neutral-50 outline-none cursor-pointer"
+          />
+        </div>
+      </div>
+
+      {/* Demo Mode Banner */}
+      {isDemo && (
+        <Card className="bg-warning-50 dark:bg-warning-500/10 border-warning-200 dark:border-warning-500/30 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div className="flex items-center gap-3 p-4">
+            <StatusIconBadge tone="warning" icon={AlertTriangle} />
+            <div>
+              <span className="font-semibold text-warning-800 dark:text-warning-300">Demo Mode:</span>
+              <span className="text-warning-700 dark:text-warning-300 ml-1">Showing sample data. Select a valid corporate with currency mirrors to view real data.</span>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Error Banner */}
       {error && (
         <Card className="bg-error-50 dark:bg-error-500/10 border-error-200 dark:border-error-500/30 animate-fade-in">
@@ -695,75 +708,40 @@ const CurrencyMirrorPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Consolidated Summary — hero card.
-          The big number uses `!text-white` because the parent's `text-white`
-          would otherwise lose to `.stat-value`'s baked-in `text-primary-900`
-          (same specificity, later-declared utility wins → dark navy on dark
-          navy = invisible). The `!` forces it. */}
-      <div className="bg-gradient-to-r from-primary-900 to-primary-800 text-white rounded-xl p-6 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-primary-200 uppercase tracking-wider">Total Consolidated Position</p>
-            {/* Hero-sized inverse variant — no `!important` override needed.
-                Was previously `stat-value !text-white` to defeat the
-                utility's text-primary-900 default on this intentionally-dark
-                hero. Added `.stat-value-inverse-lg` to index.css for this. */}
-            <p className="stat-value-inverse-lg mt-1">
-              {formatCurrency(stats.totalInBase, baseCurrency)}
-            </p>
-            <p className="text-primary-300 text-sm mt-2">
-              Across {stats.currencyCount} currencies
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="flex items-center gap-2 text-primary-200 mb-2">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">
-                Last updated: {stats.lastRecalculated ? new Date(stats.lastRecalculated).toLocaleTimeString() : 'Never'}
-              </span>
-            </div>
-            <Badge variant="success" className="bg-white/20 text-white">
-              <CheckCircle2 className="w-3 h-3 mr-1" />
-              All Rates Current
-            </Badge>
-          </div>
-        </div>
+      {/* Headline figure — Total Consolidated Position. Matches the
+          hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN
+          Management) — replaces the page's previous bespoke dark-gradient
+          hero (distribution bar dropped: each currency's own share already
+          shows on its card below, in the grid). */}
+      <HeroMetricCard
+        primary={{
+          label: 'Total Consolidated Position',
+          value: <TileAmount value={stats.totalInBase} currency={baseCurrency} />,
+          sub: `Across ${stats.currencyCount} ${stats.currencyCount === 1 ? 'currency' : 'currencies'} · last recalculated ${stats.lastRecalculated ? new Date(stats.lastRecalculated).toLocaleTimeString() : 'never'}`,
+        }}
+        icon={<Globe className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
 
-        {/* Currency Distribution Bar — uses the `solid` palette variant
-            (saturated 400-shade colours) so each segment reads against the
-            navy hero background. The pale `bg-{ccy}-50` / `dark:bg-{ccy}-500/10`
-            used elsewhere washes out here. */}
-        {breakdowns.length > 0 && (
-          <div className="mt-6">
-            <div className="flex rounded-lg overflow-hidden h-4 ring-1 ring-white/10">
-              {breakdowns.map((b) => {
-                const style = getCurrencyStyle(b.currency);
-                return (
-                  <div
-                    key={b.currency}
-                    className={cn('h-full', style.solid)}
-                    style={{ width: `${b.percentOfTotal}%` }}
-                    title={`${b.currency}: ${b.percentOfTotal?.toFixed(1)}%`}
-                  />
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap gap-4 mt-3">
-              {breakdowns.map(b => {
-                const style = getCurrencyStyle(b.currency);
-                return (
-                  <div key={b.currency} className="flex items-center gap-2">
-                    <div className={cn('w-3 h-3 rounded-sm', style.solid)} />
-                    <span className="text-sm text-primary-200">
-                      {b.currency}: {b.percentOfTotal?.toFixed(1)}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
+        <StatTile
+          layout="row"
+          tone="info"
+          label="Currencies"
+          value={stats.currencyCount}
+          icon={<Globe className="w-5 h-5" />}
+          delay="0.15s"
+        />
+        <StatTile
+          layout="row"
+          tone={staleCount > 0 ? 'warning' : 'success'}
+          valueTone={staleCount > 0 ? 'warning' : 'success'}
+          label="Stale Rates"
+          value={staleCount}
+          icon={staleCount > 0 ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+          delay="0.2s"
+        />
+      </StatStrip>
 
       {/* Info Banner */}
       <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 dark:from-info-500/10 dark:via-primary-900 dark:to-primary-800/40 border-info-200/60 dark:border-info-500/30 animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -802,34 +780,6 @@ const CurrencyMirrorPage: React.FC = () => {
           <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
         </Card>
       )}
-
-      {/* FX Rates Quick View */}
-      <Card hover className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-        <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <StatusIconBadge tone="accent" icon={BarChart3} />
-              <h2 className="section-title">Active FX Rates</h2>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setShowFxRateModal(true)}>
-              View All <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-        <div className="p-4 space-y-2">
-          {fxRates.length > 0 ? (
-            fxRates.slice(0, 3).map(rate => (
-              <FxRateRow
-                key={rate.id}
-                rate={rate}
-                onEdit={() => console.log('Edit rate:', rate.id)}
-              />
-            ))
-          ) : (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">No FX rates available</p>
-          )}
-        </div>
-      </Card>
 
       {/* Detail Modal */}
       <Modal

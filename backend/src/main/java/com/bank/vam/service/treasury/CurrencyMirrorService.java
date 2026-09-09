@@ -657,11 +657,22 @@ public class CurrencyMirrorService {
      * Required by CurrencyMirrorController.getCurrencyBreakdown().
      *
      * Returns a map of currency -> CurrencyBreakdown with aggregated balances.
+     *
+     * ROOT-level mirrors only (level 0), summed across every program the
+     * corporate has. Mirrors below ROOT already roll up into it, so summing
+     * every level together — as this used to do — double counts the same
+     * money (see buildCurrencyBreakdown's own double-counting warning). A
+     * corporate can span multiple programs, each with its own ROOT mirror
+     * per currency, which is why this still sums (unlike the single-program
+     * getCurrencyBreakdownByProgram below, where ROOT already is the total).
      */
     @Transactional(readOnly = true)
     public Map<String, CurrencyBreakdown> getCurrencyBreakdown(UUID corporateId) {
         List<VirtualAccount> mirrors = getMirrorsByCorporate(corporateId);
-        return buildCurrencyBreakdown(mirrors);
+        List<VirtualAccount> rootLevelMirrors = mirrors.stream()
+            .filter(m -> isMirrorAtLevel(m, 0))
+            .collect(Collectors.toList());
+        return buildCurrencyBreakdown(rootLevelMirrors);
     }
 
     /**
@@ -676,8 +687,82 @@ public class CurrencyMirrorService {
      */
     @Transactional(readOnly = true)
     public Map<String, CurrencyBreakdown> getCurrencyBreakdownByProgram(UUID programId) {
-        List<VirtualAccount> mirrors = getMirrorsForProgram(programId);
-        return buildCurrencyBreakdown(mirrors);
+        // Delegate to the level-aware method at ROOT (0) — a single program
+        // has exactly one hierarchy, so ROOT already is the program's total.
+        // This used to sum every level's mirrors together (double counting,
+        // the same bug getCurrencyBreakdownByProgramAndLevel's own default
+        // already avoids).
+        return getCurrencyBreakdownByProgramAndLevel(programId, 0);
+    }
+
+    /**
+     * Corporate-wide breakdown re-projected into an arbitrary target base
+     * currency. {@code null}/blank falls back to each mirror's own
+     * configured base (existing behaviour) — see {@link #reprojectToBase}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, CurrencyBreakdown> getCurrencyBreakdown(UUID corporateId, String targetBaseCurrency) {
+        Map<String, CurrencyBreakdown> breakdown = getCurrencyBreakdown(corporateId);
+        return reprojectToBase(breakdown, targetBaseCurrency);
+    }
+
+    /**
+     * Program breakdown re-projected into an arbitrary target base currency.
+     * See {@link #reprojectToBase}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, CurrencyBreakdown> getCurrencyBreakdownByProgram(UUID programId, String targetBaseCurrency) {
+        Map<String, CurrencyBreakdown> breakdown = getCurrencyBreakdownByProgram(programId);
+        return reprojectToBase(breakdown, targetBaseCurrency);
+    }
+
+    /**
+     * Program breakdown at a specific level, re-projected into an arbitrary
+     * target base currency. See {@link #reprojectToBase}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, CurrencyBreakdown> getCurrencyBreakdownByProgramAndLevel(UUID programId, Integer level, String targetBaseCurrency) {
+        Map<String, CurrencyBreakdown> breakdown = getCurrencyBreakdownByProgramAndLevel(programId, level);
+        return reprojectToBase(breakdown, targetBaseCurrency);
+    }
+
+    /**
+     * Re-project a breakdown map's converted figures into an arbitrary
+     * target base currency. {@code originalBalance} (native to each
+     * currency) never changes; {@code convertedBalance}/{@code fxRate}/
+     * {@code baseCurrency} get recomputed against the requested currency
+     * instead of whatever base each mirror happens to be configured with.
+     * Without this, picking a different "Base" currency in the UI only
+     * relabelled the mirror's native conversion instead of actually
+     * converting — e.g. showing "1 AED = 1.0000 GBP" (the real AED→AED
+     * rate) just because the label said GBP.
+     *
+     * {@code null}/blank target returns the breakdown unchanged.
+     */
+    private Map<String, CurrencyBreakdown> reprojectToBase(Map<String, CurrencyBreakdown> breakdown, String targetBaseCurrency) {
+        if (targetBaseCurrency == null || targetBaseCurrency.isBlank()) {
+            return breakdown;
+        }
+        String target = targetBaseCurrency.toUpperCase();
+        Map<String, CurrencyBreakdown> result = new HashMap<>();
+        for (Map.Entry<String, CurrencyBreakdown> entry : breakdown.entrySet()) {
+            CurrencyBreakdown cb = entry.getValue();
+            BigDecimal original = cb.getOriginalBalance() != null ? cb.getOriginalBalance() : BigDecimal.ZERO;
+            BigDecimal rate = calculateFxRate(cb.getCurrency(), target);
+            BigDecimal converted = original.multiply(rate).setScale(4, RoundingMode.HALF_UP);
+            result.put(entry.getKey(), CurrencyBreakdown.builder()
+                .currency(cb.getCurrency())
+                .baseCurrency(target)
+                .originalBalance(original)
+                .fxRate(rate)
+                .fxRateAt(LocalDateTime.now())
+                .convertedBalance(converted)
+                .mirrorVaId(cb.getMirrorVaId())
+                .mirrorVaNumber(cb.getMirrorVaNumber())
+                .level(cb.getLevel())
+                .build());
+        }
+        return result;
     }
 
     /**
@@ -715,32 +800,7 @@ public class CurrencyMirrorService {
 
         // Filter mirrors by their parent's hierarchy level
         List<VirtualAccount> filteredMirrors = mirrors.stream()
-            .filter(mirror -> {
-                UUID parentId = mirror.getParentAccountId();
-                if (parentId == null) {
-                    log.debug("Mirror {} has no parent - skipping", mirror.getVaNumber());
-                    return false;
-                }
-                // Get parent to check its level
-                VirtualAccount parent = vaRepository.findById(parentId).orElse(null);
-                if (parent == null) {
-                    log.debug("Parent {} not found for mirror {}", parentId, mirror.getVaNumber());
-                    return false;
-                }
-                // Get parent's hierarchy level, defaulting to 0 for ROOT accounts (which may have null)
-                Integer parentLevel = parent.getHierarchyLevel();
-                AccountCategory parentCategory = parent.getAccountCategory();
-                if (parentLevel == null) {
-                    // Treat ROOT accounts (which might have null hierarchyLevel) as level 0
-                    parentLevel = (parentCategory == AccountCategory.ROOT) ? 0 : null;
-                    log.debug("Parent {} has null hierarchyLevel, category={}, computed level={}",
-                        parent.getVaNumber(), parentCategory, parentLevel);
-                }
-                boolean matches = parentLevel != null && parentLevel.equals(level);
-                log.debug("Mirror {} - parent {} (level={}, category={}) - matches level {}? {}",
-                    mirror.getVaNumber(), parent.getVaNumber(), parentLevel, parentCategory, level, matches);
-                return matches;
-            })
+            .filter(mirror -> isMirrorAtLevel(mirror, level))
             .collect(java.util.stream.Collectors.toList());
 
         log.info("Filtered {} mirrors at level {} from {} total mirrors",
@@ -850,6 +910,32 @@ public class CurrencyMirrorService {
     @Transactional(readOnly = true)
     public List<VirtualAccount> getMirrorsByProgram(UUID programId) {
         return getMirrorsForProgram(programId);
+    }
+
+    /**
+     * True when `mirror`'s parent sits at the given hierarchy level (a ROOT
+     * parent with a null hierarchyLevel counts as level 0). Shared by every
+     * breakdown path that needs "this mirror's own level" — ROOT accounts
+     * don't always have hierarchyLevel populated, so the null-defaulting
+     * logic has to be applied consistently everywhere this is checked.
+     */
+    private boolean isMirrorAtLevel(VirtualAccount mirror, int level) {
+        UUID parentId = mirror.getParentAccountId();
+        if (parentId == null) {
+            log.debug("Mirror {} has no parent - skipping", mirror.getVaNumber());
+            return false;
+        }
+        VirtualAccount parent = vaRepository.findById(parentId).orElse(null);
+        if (parent == null) {
+            log.debug("Parent {} not found for mirror {}", parentId, mirror.getVaNumber());
+            return false;
+        }
+        Integer parentLevel = parent.getHierarchyLevel();
+        if (parentLevel == null) {
+            // Treat ROOT accounts (which might have null hierarchyLevel) as level 0
+            parentLevel = (parent.getAccountCategory() == AccountCategory.ROOT) ? 0 : null;
+        }
+        return parentLevel != null && parentLevel == level;
     }
 
     /**

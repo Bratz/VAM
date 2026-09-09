@@ -13,6 +13,7 @@ import { Card, Button, Badge, Skeleton, EmptyState, StatusIconBadge } from '../c
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
+import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -1151,7 +1152,7 @@ const PhysicalAccountsPage: React.FC = () => {
           <HeroMetricCard
             primary={{
               label: 'Total Balance',
-              value: formatCurrency(dominantTotal, dominantCurrency),
+              value: <TileAmount value={dominantTotal} currency={dominantCurrency} />,
               sub: (
                 <>
                   Across{' '}
@@ -1165,9 +1166,8 @@ const PhysicalAccountsPage: React.FC = () => {
                         <span
                           key={ccy}
                           className="font-mono text-xs px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
-                          title={`${ccy} ${amt.toLocaleString()}`}
                         >
-                          {ccy} {formatCurrency(amt, ccy)}
+                          {ccy} <TileAmount value={amt} currency={ccy} showCurrency={false} />
                         </span>
                       ))}
                     </span>

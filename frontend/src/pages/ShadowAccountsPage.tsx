@@ -9,14 +9,17 @@ import {
   GitBranch, Check, Info, Users, UserPlus, Unlink,
   Shield, FileCheck, User,
 } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
+import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
 import { physicalAccountsApi, corporatesApi, shadowAccountApi, balanceStructureApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import axios from 'axios';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8053/api/v1';
@@ -1509,53 +1512,46 @@ const ShadowAccountsPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Total Shadows</p>
-                <p className="stat-value-sm mt-1">{stats.totalShadows}</p>
-              </div>
-              <StatusIconBadge tone="info" icon={Layers} />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Total Balance</p>
-                <p className="stat-value-sm mt-1 text-success-600 dark:text-success-300">{formatCurrency(stats.totalBalance, 'AED')}</p>
-              </div>
-              <StatusIconBadge tone="success" icon={Banknote} />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Stale Balances</p>
-                <p className="stat-value-warning mt-1">{stats.staleShadows}</p>
-              </div>
-              <StatusIconBadge tone="warning" icon={Clock} />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Failed Syncs</p>
-                <p className="stat-value-error mt-1">{stats.failedSyncs}</p>
-              </div>
-              <StatusIconBadge tone="error" icon={AlertTriangle} />
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Headline figure — Total Balance across shadow accounts. Matches the
+          hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN
+          Management); the four metrics here previously competed as an
+          equal-weight strip with no visual hierarchy. */}
+      <HeroMetricCard
+        primary={{
+          label: 'Total Balance',
+          value: <TileAmount value={stats.totalBalance} currency="AED" />,
+          sub: `Across ${stats.totalShadows} shadow ${stats.totalShadows === 1 ? 'account' : 'accounts'}`,
+        }}
+        icon={<Banknote className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
+
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
+        <StatTile
+          layout="row"
+          tone="info"
+          label="Total Shadows"
+          value={stats.totalShadows}
+          icon={<Layers className="w-5 h-5" />}
+          delay="0.15s"
+        />
+        <StatTile
+          layout="row"
+          tone="warning"
+          label="Stale Balances"
+          value={stats.staleShadows}
+          icon={<Clock className="w-5 h-5" />}
+          delay="0.2s"
+        />
+        <StatTile
+          layout="row"
+          tone="danger"
+          label="Failed Syncs"
+          value={stats.failedSyncs}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          delay="0.25s"
+        />
+      </StatStrip>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">

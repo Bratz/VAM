@@ -9,6 +9,8 @@ import {
   GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles,
 } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
+import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { Modal } from '../components/ui/enhanced';
@@ -45,6 +47,7 @@ import { HierarchyLevelConfigModal } from '../components/HierarchyLevelConfigMod
 import type { HierarchyLevelConfig } from '../components/HierarchyLevelConfigModal';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -3977,28 +3980,50 @@ const TreasuryHierarchyPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Summary Stats — Phase 12 Task E: hand-rolled stat cards replaced by
-          the shared <StatTile layout="row"> (components/ui/StatTile); tone
-          drives both the icon medallion and the .stat-value-* headline. */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {[
-          { label: 'Consolidated', value: formatCurrency(displaySummary.consolidatedBalance, reportingCurrency), icon: DollarSign, tone: 'primary', delay: 0.2 },
-          { label: 'Net Position', value: formatCurrency(displaySummary.netPosition, reportingCurrency), icon: TrendingUp, tone: 'success', delay: 0.25 },
-          { label: 'IC Positions', value: formatCurrency(displaySummary.totalIntercompanyReceivable, reportingCurrency), icon: ArrowLeftRight, tone: 'info', delay: 0.3 },
-          { label: 'Pool Rate', value: `${displaySummary.poolRate}%`, icon: Percent, tone: 'accent', delay: 0.35 },
-          { label: 'Monthly Interest', value: `+${formatCurrency(displaySummary.monthlyInterestAllocation, reportingCurrency)}`, icon: Banknote, tone: 'warning', delay: 0.4 },
-        ].map((stat) => (
-          <StatTile
-            key={stat.label}
-            layout="row"
-            tone={stat.tone}
-            label={stat.label}
-            value={stat.value}
-            icon={<stat.icon className="w-5 h-5" />}
-            delay={`${stat.delay}s`}
-          />
-        ))}
-      </div>
+      {/* Headline figures — Consolidated + Net Position. Matches the
+          hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN
+          Management); these five metrics previously competed as an
+          equal-weight strip with no visual hierarchy. */}
+      <HeroMetricCard
+        primary={{
+          label: 'Consolidated',
+          value: <TileAmount value={displaySummary.consolidatedBalance} currency={reportingCurrency} />,
+          sub: 'Aggregate balance across the VA tree',
+        }}
+        secondary={{
+          label: 'Net Position',
+          value: <TileAmount value={displaySummary.netPosition} currency={reportingCurrency} />,
+        }}
+        icon={<DollarSign className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
+
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
+        <StatTile
+          layout="row"
+          tone="info"
+          label="IC Positions"
+          value={<TileAmount value={displaySummary.totalIntercompanyReceivable} currency={reportingCurrency} />}
+          icon={<ArrowLeftRight className="w-5 h-5" />}
+          delay="0.2s"
+        />
+        <StatTile
+          layout="row"
+          tone="accent"
+          label="Pool Rate"
+          value={`${displaySummary.poolRate}%`}
+          icon={<Percent className="w-5 h-5" />}
+          delay="0.25s"
+        />
+        <StatTile
+          layout="row"
+          tone="warning"
+          label="Monthly Interest"
+          value={<>+<TileAmount value={displaySummary.monthlyInterestAllocation} currency={reportingCurrency} /></>}
+          icon={<Banknote className="w-5 h-5" />}
+          delay="0.3s"
+        />
+      </StatStrip>
 
       {/* Physical Account Banner. Note: the gradient stays navy in BOTH light
           and dark modes (intentional — this strip wants the heavy banking-vault

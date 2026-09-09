@@ -5,13 +5,17 @@ import {
   ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash,
   GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings,
 } from 'lucide-react';
-import { Card, Badge, Button , StatusIconBadge } from '../components/ui';
+import { Card, Badge, Button , StatusIconBadge, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
+import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { HIERARCHY_TEMPLATES, getTemplatesForProgramType, getRecommendedTemplate, HierarchyLevelConfig } from '../config/templateHierarchy';
+import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -549,7 +553,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Balance</p>
           </div>
           <div className="text-center">
-            <p className="page-title text-neutral-700 dark:text-neutral-200">{program.maxVirtualAccounts || 'âˆž'}</p>
+            <p className="stat-value-sm">{program.maxVirtualAccounts || '∞'}</p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">Max VAs</p>
           </div>
         </div>
@@ -3778,6 +3782,22 @@ const ProgramsPage: React.FC = () => {
     return matchesSearch && (typeFilter === 'ALL' || p.programType === typeFilter) && (statusFilter === 'ALL' || p.status === statusFilter);
   });
 
+  // Toolbar actions in the Aperture Layout header — same pattern as the
+  // rest of Aperture's conformed pages (removes the floating in-page row).
+  usePageHeaderActions(
+    () => (
+      <>
+        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
+          <span className="hidden sm:inline">Export</span>
+        </Button>
+        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateModal(true)}>
+          New Program
+        </Button>
+      </>
+    ),
+    []
+  );
+
   // Show loading only on initial load, not on filter changes
   if (loading && programs.length === 0 && !corporatesLoading) {
     return (
@@ -3790,22 +3810,12 @@ const ProgramsPage: React.FC = () => {
   return (
     <Page>
       {/* In-body identity (Phase 10) — aligns with the rest of Aperture's
-          conformed pages. Quick Actions stay inline for now (Phase 7
-          lift to usePageHeaderActions is a follow-up). */}
+          conformed pages. Export / New Program CTAs live in the Aperture
+          Layout header via usePageHeaderActions above. */}
       <PageHeader
         title="Programs"
         description="Manage program definitions across pooling, in-house bank, escrow, and other product types. Each program is corporate-scoped with its own currency and lifecycle."
       />
-
-      {/* Quick Actions */}
-      <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
-          <span className="hidden sm:inline">Export</span>
-        </Button>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateModal(true)}>
-          New Program
-        </Button>
-      </div>
 
       {/* Corporate Context Selector — uses the shared ScopeSelector
           primitive in `corporate-only` mode. Replaces the inline
@@ -3819,45 +3829,24 @@ const ProgramsPage: React.FC = () => {
         loading={corporatesLoading}
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card padding="md">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="primary" icon={Layers} rounded="lg" className="dark:bg-primary-700" />
-            <div>
-              <p className="stat-value-sm">{displayStats.totalPrograms}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Programs</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="success" icon={CheckCircle} rounded="lg" className="dark:bg-success-500/20" />
-            <div>
-              <p className="stat-value-success">{displayStats.activePrograms}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Active</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="info" icon={CreditCard} rounded="lg" className="dark:bg-info-500/20" />
-            <div>
-              <p className="stat-value-sm">{displayStats.totalVirtualAccounts}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Virtual Accounts</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="md">
-          <div className="flex items-center gap-3">
-            <StatusIconBadge tone="accent" icon={TrendingUp} rounded="lg" className="dark:bg-accent-500/20" />
-            <div>
-              <p className="stat-value-sm">{formatCurrency(displayStats.totalBalance, 'AED')}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Balance</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* Headline figure — Total Balance across all programs. Matches the
+          hero+strip hierarchy used elsewhere; these four metrics previously
+          competed as an equal-weight strip with no visual hierarchy. */}
+      <HeroMetricCard
+        primary={{
+          label: 'Total Balance',
+          value: <TileAmount value={displayStats.totalBalance} currency="AED" />,
+          sub: `${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active`,
+        }}
+        icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
+
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
+        <StatTile layout="row" tone="primary" label="Total Programs" value={displayStats.totalPrograms} icon={<Layers className="w-5 h-5" />} delay="0.15s" />
+        <StatTile layout="row" tone="success" label="Active" value={displayStats.activePrograms} icon={<CheckCircle className="w-5 h-5" />} delay="0.2s" />
+        <StatTile layout="row" tone="info" label="Virtual Accounts" value={displayStats.totalVirtualAccounts} icon={<CreditCard className="w-5 h-5" />} delay="0.25s" />
+      </StatStrip>
 
       {/* Type Filter Tabs */}
       <div className="grid grid-cols-4 md:grid-cols-7 gap-2">

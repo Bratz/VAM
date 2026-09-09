@@ -1302,52 +1302,18 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             </Button>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <Card hover className="bg-gradient-to-br from-primary-50/50 via-white to-primary-50/50 border-primary-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Total POBO</p>
-                    <p className="stat-value-sm mt-1">{stats?.totalPoboTransactions || 0}</p>
-                  </div>
-                  <StatusIconBadge tone="primary" icon={CreditCard} className="dark:bg-primary-700" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">POBO Volume</p>
-                    <p className="stat-value-sm mt-1 text-success-600 dark:text-success-300">{formatCompactCurrency(stats?.totalPoboVolume || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Pending Recharges</p>
-                    <p className="stat-value-warning mt-1">{positionSummary?.pendingRecharges || 0}</p>
-                  </div>
-                  <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Outstanding</p>
-                    <p className="stat-value-sm mt-1 text-error-600 dark:text-error-300">{formatCompactCurrency(positionSummary?.totalOutstandingPayables || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
-                </div>
-              </div>
-            </Card>
-          </div>
+          {/* Was 4 hand-rolled <Card> tiles (one with a one-off gradient
+              tint the other 3 didn't have) using formatCompactCurrency
+              (full precision despite the name) instead of the compact
+              TileAmount treatment the Overview tab's equivalent row
+              already uses — same page, two different tile styles and two
+              different amount formats. Matched to Overview's StatTile row. */}
+          <StatStrip>
+            <StatTile tone="primary" icon={<CreditCard className="w-5 h-5" />} label="Total POBO" value={stats?.totalPoboTransactions || 0} />
+            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="POBO Volume" value={<TileAmount value={stats?.totalPoboVolume || 0} currency="AED" />} />
+            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Recharges" value={positionSummary?.pendingRecharges || 0} />
+            <StatTile tone="danger" icon={<AlertCircle className="w-5 h-5" />} label="Outstanding" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
+          </StatStrip>
 
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
@@ -1455,52 +1421,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             </Button>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <Card hover className="bg-gradient-to-br from-info-50/50 via-white to-info-50/50 border-info-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Total COBO</p>
-                    <p className="stat-value-info mt-1">{stats?.totalCoboTransactions || 0}</p>
-                  </div>
-                  <StatusIconBadge tone="info" icon={Wallet} className="dark:bg-info-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">COBO Volume</p>
-                    <p className="stat-value-sm mt-1 text-accent-600 dark:text-accent-300">{formatCompactCurrency(stats?.totalCoboVolume || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="accent" icon={Activity} className="dark:bg-accent-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Pending Distribution</p>
-                    <p className="stat-value-warning mt-1">{stats?.pendingSettlement || 0}</p>
-                  </div>
-                  <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Outstanding to Subsidiaries</p>
-                    <p className="stat-value-sm mt-1 text-success-600 dark:text-success-300">{formatCompactCurrency(positionSummary?.totalOutstandingReceivables || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
-                </div>
-              </div>
-            </Card>
-          </div>
+          {/* Same StatTile/TileAmount consistency fix as the POBO tab above. */}
+          <StatStrip>
+            <StatTile tone="info" icon={<Wallet className="w-5 h-5" />} label="Total COBO" value={stats?.totalCoboTransactions || 0} />
+            <StatTile tone="accent" icon={<Activity className="w-5 h-5" />} label="COBO Volume" value={<TileAmount value={stats?.totalCoboVolume || 0} currency="AED" />} />
+            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Distribution" value={stats?.pendingSettlement || 0} />
+            <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Outstanding to Subsidiaries" value={<TileAmount value={positionSummary?.totalOutstandingReceivables || 0} currency="AED" />} />
+          </StatStrip>
 
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
@@ -1601,52 +1528,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             </Button>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Pending Settlement</p>
-                    <p className="stat-value-warning mt-1">{stats?.pendingSettlement || 0}</p>
-                  </div>
-                  <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Total Payables</p>
-                    <p className="stat-value-sm mt-1 text-error-600 dark:text-error-300">{formatCompactCurrency(positionSummary?.totalOutstandingPayables || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="error" icon={ArrowLeft} className="dark:bg-error-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Total Receivables</p>
-                    <p className="stat-value-sm mt-1 text-success-600 dark:text-success-300">{formatCompactCurrency(positionSummary?.totalOutstandingReceivables || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="success" icon={ArrowRight} className="dark:bg-success-500/20" />
-                </div>
-              </div>
-            </Card>
-            <Card hover className="bg-gradient-to-br from-primary-50/50 via-white to-primary-50/50 border-primary-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
-              <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="label">Net Position</p>
-                    <p className="stat-value-sm mt-1">{formatCompactCurrency(positionSummary?.netPosition || 0, 'AED')}</p>
-                  </div>
-                  <StatusIconBadge tone="primary" icon={Scale} className="dark:bg-primary-700" />
-                </div>
-              </div>
-            </Card>
-          </div>
+          {/* Same StatTile/TileAmount consistency fix as the POBO/COBO tabs. */}
+          <StatStrip>
+            <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Settlement" value={stats?.pendingSettlement || 0} />
+            <StatTile tone="danger" icon={<ArrowLeft className="w-5 h-5" />} label="Total Payables" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
+            <StatTile tone="success" icon={<ArrowRight className="w-5 h-5" />} label="Total Receivables" value={<TileAmount value={positionSummary?.totalOutstandingReceivables || 0} currency="AED" />} />
+            <StatTile tone="primary" icon={<Scale className="w-5 h-5" />} label="Net Position" value={<TileAmount value={positionSummary?.netPosition || 0} currency="AED" />} />
+          </StatStrip>
 
           {/* Entity Pairs for Settlement */}
           <Card hover>
@@ -1844,39 +1732,14 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       {/* Recharges Tab */}
       {activeTab === 'recharges' && (
         <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card hover>
-              <div className="p-4">
-                <p className="label">Total Recharges</p>
-                <p className="stat-value-sm mt-1">{pendingRecharges.length}</p>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <p className="label">Pending Approval</p>
-                <p className="stat-value-warning mt-1">
-                  {pendingRecharges.filter(r => r.status === 'PENDING').length}
-                </p>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <p className="label">Total Amount</p>
-                <p className="stat-value-sm mt-1">
-                  {formatCompactCurrency(pendingRecharges.reduce((sum, r) => sum + (r.totalRecharge || 0), 0))}
-                </p>
-              </div>
-            </Card>
-            <Card hover>
-              <div className="p-4">
-                <p className="label">Approved</p>
-                <p className="stat-value-success mt-1">
-                  {pendingRecharges.filter(r => r.status === 'APPROVED').length}
-                </p>
-              </div>
-            </Card>
-          </div>
+          {/* Stats Cards — same StatTile/TileAmount consistency fix as the
+              POBO/COBO/Settlement tabs above. */}
+          <StatStrip>
+            <StatTile tone="neutral" label="Total Recharges" value={pendingRecharges.length} />
+            <StatTile tone="warning" label="Pending Approval" value={pendingRecharges.filter(r => r.status === 'PENDING').length} />
+            <StatTile tone="neutral" label="Total Amount" value={<TileAmount value={pendingRecharges.reduce((sum, r) => sum + (r.totalRecharge || 0), 0)} />} />
+            <StatTile tone="success" label="Approved" value={pendingRecharges.filter(r => r.status === 'APPROVED').length} />
+          </StatStrip>
 
           {/* Pending Recharges Table */}
           <Card hover>
@@ -2098,11 +1961,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Limit</p>
-                      <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50">{formatCompactCurrency(entity.creditLimit || 0, 'AED')}</p>
+                      <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency="AED" /></p>
                     </div>
                     <div className="p-3 bg-success-50 rounded-xl dark:bg-success-500/10">
                       <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Available</p>
-                      <p className="font-semibold text-success-600 mt-1 dark:text-success-300">{formatCompactCurrency(entity.availableLimit || 0, 'AED')}</p>
+                      <p className="font-semibold text-success-600 mt-1 dark:text-success-300"><TileAmount value={entity.availableLimit || 0} currency="AED" /></p>
                     </div>
                   </div>
                 </div>

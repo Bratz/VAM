@@ -72,7 +72,20 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
         }}
       />
 
-      <div className="relative flex flex-wrap items-end justify-between gap-6">
+      {/* Anchored to the card's own corner (matches the glow above) rather
+          than flex-aligned against the metric block below — it used to be
+          an `items-end` flex sibling of the (variable-height) text block,
+          so its vertical position drifted with however long each card's
+          `sub` text happened to be, visibly misaligning the icon across a
+          row of these cards (confirmed live on Cash Forecast: icons at
+          three different heights despite the cards being the same size). */}
+      {icon && (
+        <div className="absolute top-6 right-6 shrink-0 w-14 h-14 rounded-2xl bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center">
+          {icon}
+        </div>
+      )}
+
+      <div className={cn('relative flex flex-wrap items-end gap-6', icon && 'pr-16')}>
         <div className="flex items-end gap-8 flex-wrap min-w-0">
           <MetricBlock metric={primary} dominant />
           {secondary && (
@@ -82,12 +95,6 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
             </>
           )}
         </div>
-
-        {icon && (
-          <div className="shrink-0 w-14 h-14 rounded-2xl bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center">
-            {icon}
-          </div>
-        )}
       </div>
     </div>
   );

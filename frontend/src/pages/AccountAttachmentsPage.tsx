@@ -7,11 +7,12 @@ import {
   ChevronDown, Wallet, Globe, MapPin,
 } from 'lucide-react';
 import { Card, Button, Badge, Input, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
-import { 
-  legalEntityApi, 
-  accountAttachmentApi, 
+import {
+  legalEntityApi,
+  accountAttachmentApi,
   balanceStructureApi,
   virtualAccountsApi,
   LegalEntity,
@@ -19,8 +20,10 @@ import {
   AccountAttachmentStatistics,
   BalanceHierarchyNode,
 } from '../services/api';
+import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -518,27 +521,33 @@ const AccountAttachmentsPage: React.FC = () => {
     expiringIn30Days: 0,
   };
 
-  if (entitiesLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>;
-
-  return (
-    <Page>
-      {/* In-body identity (Phase 10) — aligns with the rest of Aperture's
-          conformed pages. */}
-      <PageHeader
-        title="Account Linking"
-        description="Manage VA-to-legal-entity attachments. Link physical and virtual accounts to entities with relationship roles (owner / authorized / collateral)."
-      />
-
-      {/* Quick Actions — kept inline for now (Phase 7 lift to
-          usePageHeaderActions is a follow-up). */}
-      <div className="flex items-center justify-end gap-2">
+  // Toolbar actions in the Aperture Layout header — same pattern as the
+  // rest of Aperture's conformed pages (removes the floating in-page row).
+  usePageHeaderActions(
+    () => (
+      <>
         <Button variant="outline" size="sm" onClick={() => loadAttachments()} disabled={loading}>
           <RefreshCw className={cn("w-4 h-4 mr-1", loading && "animate-spin")} />Refresh
         </Button>
         <Button size="sm" onClick={() => { setCreateForm({ ...INITIAL_FORM, legalEntityId: selectedEntityId }); setShowCreateModal(true); }}>
           <Plus className="w-4 h-4 mr-1" />New Attachment
         </Button>
-      </div>
+      </>
+    ),
+    [loading, selectedEntityId]
+  );
+
+  if (entitiesLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>;
+
+  return (
+    <Page>
+      {/* In-body identity (Phase 10) — aligns with the rest of Aperture's
+          conformed pages. Refresh / New Attachment CTAs live in the Aperture
+          Layout header via usePageHeaderActions below. */}
+      <PageHeader
+        title="Account Linking"
+        description="Manage VA-to-legal-entity attachments. Link physical and virtual accounts to entities with relationship roles (owner / authorized / collateral)."
+      />
 
       {/* Entity-only picker — uses the shared ScopeSelector primitive
           in `entity-only` mode. Legal-entity scope is the only filter
@@ -560,17 +569,29 @@ const AccountAttachmentsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Statistics — Phase 12 Task E: hand-rolled stat cards replaced by the
-          shared <StatTile layout="row"> (components/ui/StatTile); tone drives
-          both the icon medallion and the .stat-value-* headline colour. */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Headline figures — Total + Active attachments. Matches the
+          hero+strip hierarchy used elsewhere; these six metrics previously
+          competed as an equal-weight strip with no visual hierarchy. */}
+      <HeroMetricCard
+        primary={{
+          label: 'Total Attachments',
+          value: displayStats.totalAttachments,
+        }}
+        secondary={{
+          label: 'Active',
+          value: displayStats.activeAttachments,
+          sub: `${displayStats.pendingApproval} pending approval`,
+        }}
+        icon={<Link2 className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
+
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
         {[
-          { label: 'Total', value: displayStats.totalAttachments, icon: Link2, tone: 'primary' },
-          { label: 'Active', value: displayStats.activeAttachments, icon: CheckCircle2, tone: 'success' },
-          { label: 'Pending', value: displayStats.pendingApproval, icon: Clock, tone: 'warning' },
-          { label: 'Owner', value: displayStats.ownerRelationships, icon: Key, tone: 'info' },
-          { label: 'Authorized', value: displayStats.authorizedRelationships, icon: UserCheck, tone: 'accent' },
-          { label: 'Collateral', value: displayStats.collateralRelationships, icon: Lock, tone: 'danger' },
+          { label: 'Pending', value: displayStats.pendingApproval, icon: Clock, tone: 'warning' as const },
+          { label: 'Owner', value: displayStats.ownerRelationships, icon: Key, tone: 'info' as const },
+          { label: 'Authorized', value: displayStats.authorizedRelationships, icon: UserCheck, tone: 'accent' as const },
+          { label: 'Collateral', value: displayStats.collateralRelationships, icon: Lock, tone: 'danger' as const },
         ].map((stat, idx) => (
           <StatTile
             key={stat.label}
@@ -579,10 +600,10 @@ const AccountAttachmentsPage: React.FC = () => {
             label={stat.label}
             value={stat.value}
             icon={<stat.icon className="w-5 h-5" />}
-            delay={`${0.1 + idx * 0.05}s`}
+            delay={`${0.15 + idx * 0.05}s`}
           />
         ))}
-      </div>
+      </StatStrip>
 
       {/* Filters */}
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>

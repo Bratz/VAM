@@ -2758,43 +2758,28 @@ const InHouseBankPage: React.FC = () => {
             </div>
 
             {/* Position Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 bg-success-50 rounded-lg border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
-                <p className="text-xs text-success-600 font-medium dark:text-success-300">Total Lent Out</p>
-                <p className="stat-value-sm text-success-700 dark:text-success-300">
-                  {formatCurrency(selectedEntity.totalLentOut ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                </p>
-              </div>
-              <div className="p-3 bg-info-50 rounded-lg border border-info-100 dark:bg-info-500/10 dark:border-info-500/30">
-                <p className="text-xs text-info-600 font-medium dark:text-info-300">Total Deposited</p>
-                <p className="stat-value-sm text-info-700 dark:text-info-300">
-                  {formatCurrency(selectedEntity.totalDeposited ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                </p>
-              </div>
-              <div className="p-3 bg-error-50 rounded-lg border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
-                <p className="text-xs text-error-600 font-medium dark:text-error-300">Current Exposure</p>
-                <p className="stat-value-sm text-error-700 dark:text-error-300">
-                  {formatCurrency(selectedEntity.ihbCurrentExposure ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                </p>
-              </div>
-              <div className={cn(
-                "p-3 rounded-lg border",
-                (selectedEntity.netIhbPosition ?? 0) >= 0
-                  ? "bg-success-50 border-success-100 dark:bg-success-500/10 dark:border-success-500/30"
-                  : "bg-error-50 border-error-100 dark:bg-error-500/10 dark:border-error-500/30"
-              )}>
-                <p className={cn(
-                  "text-xs font-medium",
-                  (selectedEntity.netIhbPosition ?? 0) >= 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300"
-                )}>Net IHB Position</p>
-                <p className={cn(
-                  "stat-value-sm",
-                  (selectedEntity.netIhbPosition ?? 0) >= 0 ? "text-success-700 dark:text-success-300" : "text-error-700 dark:text-error-300"
-                )}>
-                  {formatCurrency(selectedEntity.netIhbPosition ?? 0, selectedEntity.ihbCurrency || 'AED')}
-                </p>
-              </div>
-            </div>
+            <StatStrip>
+              <StatTile
+                tone="success"
+                label="Total Lent Out"
+                value={<TileAmount value={selectedEntity.totalLentOut ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
+              />
+              <StatTile
+                tone="info"
+                label="Total Deposited"
+                value={<TileAmount value={selectedEntity.totalDeposited ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
+              />
+              <StatTile
+                tone="danger"
+                label="Current Exposure"
+                value={<TileAmount value={selectedEntity.ihbCurrentExposure ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
+              />
+              <StatTile
+                tone={(selectedEntity.netIhbPosition ?? 0) >= 0 ? 'success' : 'danger'}
+                label="Net IHB Position"
+                value={<TileAmount value={selectedEntity.netIhbPosition ?? 0} currency={selectedEntity.ihbCurrency || 'AED'} />}
+              />
+            </StatStrip>
 
             {/* Credit Limit Section (for borrowers) */}
             {selectedEntity.canBorrow && (

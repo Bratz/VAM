@@ -7,15 +7,16 @@ import {
   DollarSign,
   RefreshCw,
   Building2,
-  PiggyBank,
   AlertCircle,
 } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatusIconBadge, StatTile } from '../components/ui';
+import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
 import { NotionalPool, corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import toast from 'react-hot-toast';
 import { CreatePoolModal } from '../components/pooling/CreatePoolModal';
@@ -287,8 +288,28 @@ const NotionalPoolingPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Headline figures — Total Pooled (aggregate balance under pooling)
+          alongside Total Savings (the interest benefit it earns). Treasurer's
+          first read, matching the hero+strip hierarchy used by Cash
+          Concentration (Total Swept) and Intercompany Dashboard (POBO
+          Volume) — this page previously rendered all five metrics as an
+          equal-weight strip with no visual hierarchy. Counts demoted below. */}
+      <HeroMetricCard
+        primary={{
+          label: 'Total Pooled',
+          value: <TileAmount value={filteredStats.totalBalance} currency="AED" />,
+          sub: 'Aggregate balance across all pools',
+        }}
+        secondary={{
+          label: 'Total Savings',
+          value: <TileAmount value={filteredStats.totalSavings} currency="AED" />,
+          sub: 'Interest benefit from pooling',
+        }}
+        icon={<DollarSign className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+      />
+
+      {/* Operational metrics — secondary strip below the hero. */}
+      <StatStrip>
         <StatTile
           layout="row"
           tone="primary"
@@ -310,34 +331,14 @@ const NotionalPoolingPage: React.FC = () => {
         />
         <StatTile
           layout="row"
-          tone="info"
-          valueTone="neutral"
-          label="Total Pooled"
-          value={<TileAmount value={filteredStats.totalBalance} currency="AED" />}
-          icon={<DollarSign className="w-5 h-5" />}
-          loading={loading}
-          delay="0.3s"
-        />
-        <StatTile
-          layout="row"
-          tone="warning"
-          valueTone="success"
-          label="Total Savings"
-          value={<TileAmount value={filteredStats.totalSavings} currency="AED" />}
-          icon={<PiggyBank className="w-5 h-5" />}
-          loading={loading}
-          delay="0.35s"
-        />
-        <StatTile
-          layout="row"
           tone="accent"
           label="Total Members"
           value={filteredStats.totalMembers}
           icon={<Users className="w-5 h-5" />}
           loading={loading}
-          delay="0.4s"
+          delay="0.3s"
         />
-      </div>
+      </StatStrip>
 
       {/* Pools Grid */}
       {filteredPools.length === 0 ? (

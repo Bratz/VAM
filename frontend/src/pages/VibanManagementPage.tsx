@@ -5,7 +5,7 @@ import {
   Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart,
   Timer, X, TrendingUp
 } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
@@ -13,6 +13,7 @@ import type { BulkVibanAssignItem, BulkVibanAssignResponse, VibanAssignResponse 
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { formatCurrency } from '../utils';
 
@@ -982,10 +983,6 @@ const OverviewTab: React.FC<{
   // Threshold-driven trend tone (replaces always-green / always-amber decorations)
   const utilTone: 'success' | 'error' | 'neutral' =
     utilPct >= 95 ? 'error' : utilPct >= 50 ? 'success' : 'neutral';
-  // Phase 12 Task E: tone now resolves to a .stat-value-* utility (matching
-  // the sibling tiles' stat-value-sm) instead of a raw colour + font hand-roll.
-  const reservedTone = stats.reserved > 0 ? 'stat-value-warning' : 'stat-value-sm';
-
   return (
     <div className="space-y-6">
       {/* Hero — Inventory + Utilisation. Tone of the utilisation pill reflects
@@ -1014,41 +1011,33 @@ const OverviewTab: React.FC<{
       {/* Operational strip — neutral by default; only Reserved goes amber when
           there's actually something reserved (was always-amber before, which
           read as a warning even when the value was 0). */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-info-100 flex items-center justify-center dark:bg-info-500/20 shrink-0">
-              <Database className="w-5 h-5 text-info-600 dark:text-info-300" />
-            </div>
-            <div className="min-w-0">
-              <p className="stat-value-sm">{formatNumber(stats.available)}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${stats.reserved > 0 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-neutral-100 dark:bg-primary-800/60'}`}>
-              <Timer className={`w-5 h-5 ${stats.reserved > 0 ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-500 dark:text-neutral-400'}`} />
-            </div>
-            <div className="min-w-0">
-              <p className={reservedTone}>{formatNumber(stats.reserved)}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Reserved</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-accent-100 dark:bg-accent-500/20 flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5 text-accent-600 dark:text-accent-300" />
-            </div>
-            <div className="min-w-0">
-              <p className="stat-value-sm">{stats.totalPools}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Pools</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+      <StatStrip>
+        <StatTile
+          layout="row"
+          tone="info"
+          label="Available"
+          value={formatNumber(stats.available)}
+          icon={<Database className="w-5 h-5" />}
+          delay="0.15s"
+        />
+        <StatTile
+          layout="row"
+          tone={stats.reserved > 0 ? 'warning' : 'neutral'}
+          valueTone={stats.reserved > 0 ? 'warning' : 'neutral'}
+          label="Reserved"
+          value={formatNumber(stats.reserved)}
+          icon={<Timer className="w-5 h-5" />}
+          delay="0.2s"
+        />
+        <StatTile
+          layout="row"
+          tone="accent"
+          label="Total Pools"
+          value={stats.totalPools}
+          icon={<Layers className="w-5 h-5" />}
+          delay="0.25s"
+        />
+      </StatStrip>
 
       {/* Payment Stats */}
       <div className="grid grid-cols-2 gap-4">

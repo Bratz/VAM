@@ -1,6 +1,7 @@
 package com.bank.vam.forecast.api.dto;
 
 import com.bank.vam.forecast.domain.ForecastLine;
+import com.bank.vam.forecast.domain.enums.ForecastDirection;
 import com.bank.vam.forecast.domain.enums.ForecastSource;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public record ForecastLineDto(
         String currency,
         String categoryCode,
         String categoryLabel,
+        ForecastDirection direction,
         BigDecimal amountMid,
         ForecastSource source,
         String sourceRef,
@@ -39,6 +41,7 @@ public record ForecastLineDto(
                 line.getCurrency(),
                 line.getCategory() != null ? line.getCategory().getCode() : null,
                 line.getCategory() != null ? line.getCategory().getLabel() : null,
+                line.getCategory() != null ? line.getCategory().getDirection() : null,
                 line.getAmountMid(),
                 line.getSource(),
                 line.getSourceRef(),
