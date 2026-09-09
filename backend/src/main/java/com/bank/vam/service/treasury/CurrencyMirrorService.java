@@ -869,11 +869,11 @@ public class CurrencyMirrorService {
             VirtualAccount parent = vaRepository.findById(parentId).orElse(null);
             if (parent == null) continue;
 
-            // Get parent's hierarchy level, defaulting to 0 for ROOT accounts (which may have null)
-            Integer parentLevel = parent.getHierarchyLevel();
-            if (parentLevel == null) {
-                parentLevel = (parent.getAccountCategory() == AccountCategory.ROOT) ? 0 : null;
-            }
+            // ROOT is always level 0 regardless of the stored hierarchyLevel
+            // (inconsistently seeded across programs — see isMirrorAtLevel).
+            Integer parentLevel = parent.getAccountCategory() == AccountCategory.ROOT
+                ? 0
+                : parent.getHierarchyLevel();
             if (parentLevel == null) continue;
 
             if (!levelNames.containsKey(parentLevel)) {
@@ -930,11 +930,15 @@ public class CurrencyMirrorService {
             log.debug("Parent {} not found for mirror {}", parentId, mirror.getVaNumber());
             return false;
         }
-        Integer parentLevel = parent.getHierarchyLevel();
-        if (parentLevel == null) {
-            // Treat ROOT accounts (which might have null hierarchyLevel) as level 0
-            parentLevel = (parent.getAccountCategory() == AccountCategory.ROOT) ? 0 : null;
-        }
+        // ROOT is always level 0 by definition, regardless of what's stored in
+        // hierarchyLevel — confirmed via live data that this column is
+        // inconsistently seeded across programs (one corporate's two program
+        // ROOTs had hierarchyLevel 0 and 1 respectively), which silently
+        // dropped an entire program's mirrors from "ROOT-only" corporate
+        // totals instead of just failing to filter out double-counting.
+        Integer parentLevel = parent.getAccountCategory() == AccountCategory.ROOT
+            ? 0
+            : parent.getHierarchyLevel();
         return parentLevel != null && parentLevel == level;
     }
 

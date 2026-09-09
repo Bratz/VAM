@@ -739,7 +739,18 @@ public class HierarchyService {
                 .hierarchyNodeId(rootNode.getId())
                 .hierarchyPath(materializedPath)
                 .hierarchyPathVa("/ROOT")
-                .hierarchyLevel(1)
+                // The VA's own hierarchyLevel is 0-indexed (ROOT=0, first
+                // AGGREGATION below it=1, ...) — this is what
+                // CurrencyMirrorService's level-based breakdown queries and
+                // isMirrorAtLevel() expect. Do not confuse this with
+                // HierarchyNode.levelNumber above (a separate field on a
+                // separate entity, 1-indexed by that system's own
+                // convention — ROOT there is level 1). Setting this to 1
+                // previously left every descendant of this ROOT shifted by
+                // one level too, which silently dropped this program's
+                // mirrors from corporate-wide "ROOT-only" totals instead of
+                // just failing to prevent double counting.
+                .hierarchyLevel(0)
                 .accountType(VirtualAccount.AccountType.VIRTUAL)
                 .accountCategory(VirtualAccount.AccountCategory.ROOT)
                 .baseCurrency(baseCurrency)
@@ -920,7 +931,11 @@ public class HierarchyService {
             // Simple hierarchy path
             String hierarchyPath = "/M-" + currency;
             
-            // Default level = 1 (same as ROOT)
+            // This mirror is always created as a direct child of ROOT (see
+            // callers), and ROOT itself is hierarchyLevel 0 — so a direct
+            // child is 1. (Previously commented "same as ROOT", which was
+            // the same off-by-one mistake ROOT's own creation had — see the
+            // note on rootVa.hierarchyLevel above.)
             int level = 1;
             
             // Get FX rate
