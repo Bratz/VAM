@@ -7,6 +7,16 @@
       "runtimeArgs": ["--prefix", "frontend", "run", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": [
+        "-f", "backend/pom.xml",
+        "spring-boot:run",
+        "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\\Temp -DVAM_MARKET_PROFILE=UK -DVAM_HOME_BANK_BIC=HBUKGB4BXXX"
+      ],
+      "port": 8053
     }
   ]
 }
