@@ -9,6 +9,7 @@ import {
 import { Card, CardHeader, Button, Badge, Input, EmptyState } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
+import { PageHeader } from '../components/layout/PageHeader';
 
 // ============================================================================
 // API Service - Enhanced with ALL backend endpoints
@@ -1108,18 +1109,18 @@ const WalletPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="page-title">Wallet Programs</h1>
-          <p className="text-base text-neutral-500 dark:text-neutral-400 mt-1">BaaS wallet management for fintech partners and prepaid programs</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} onClick={() => fetchData()} disabled={loading}>Refresh</Button>
-          <Button variant="outline" leftIcon={<Upload className="w-4 h-4" />} onClick={() => setShowBulkLoadModal(true)}>Bulk Load</Button>
-          <Button variant="outline" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateProgramModal(true)}>New Program</Button>
-          <Button leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowIssueModal(true)}>Issue Wallet</Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Wallet Programs"
+        description="BaaS wallet management for fintech partners and prepaid programs"
+        actions={
+          <>
+            <Button variant="outline" leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} onClick={() => fetchData()} disabled={loading}>Refresh</Button>
+            <Button variant="outline" leftIcon={<Upload className="w-4 h-4" />} onClick={() => setShowBulkLoadModal(true)}>Bulk Load</Button>
+            <Button variant="outline" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateProgramModal(true)}>New Program</Button>
+            <Button leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowIssueModal(true)}>Issue Wallet</Button>
+          </>
+        }
+      />
 
       {/* Partner Filter (BaaS) */}
       <Card padding="sm" className="bg-gradient-to-r from-primary-50 to-accent-50 border-primary-200 dark:border-primary-700 dark:from-primary-500/15 dark:to-accent-500/15">

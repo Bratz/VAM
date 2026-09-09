@@ -246,7 +246,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                       {bank.bankName ?? bank.bankBic}
                     </h2>
                     {bank.homeBank && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
+                      <span className="text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
                         Home bank
                       </span>
                     )}

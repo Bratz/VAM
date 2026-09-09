@@ -1,4 +1,5 @@
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 /**
  * Settlement VA Management Page - FIXED: Proper hierarchy tree display in modal
  */
@@ -547,7 +548,7 @@ const SettlementVaPage: React.FC<Props> = ({ programId: propProgramId, onBack })
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           {onBack && <Button variant="ghost" size="sm" onClick={onBack} leftIcon={<ArrowLeft className="w-4 h-4" />}>Back</Button>}
-          <div><h1 className="page-title">Settlement VA Management</h1></div>
+          <PageHeader title="Settlement VA Management" />
         </div>
         <EmptyState icon={<Building2 className="w-8 h-8" />} title="No Programs Found" description="Create a program first to manage Settlement VAs" />
       </div>

@@ -76,59 +76,30 @@ export function formatCurrency(
   return `${currency} ${formatted}`;
 }
 
-// Format currency in compact form (K, M, B)
+// formatCompactCurrency/formatCurrencyAuto/formatCompactAmount used to
+// abbreviate (K/M/B) — the product rule is now full precision everywhere,
+// no abbreviated notation anywhere. Rather than migrate the ~17 files that
+// call these (a much larger blast radius than the density-pass's own
+// direct callers), kept as full-precision wrappers: same signatures, zero
+// call-site churn, abbreviation genuinely gone. New code should reach for
+// <Amount /> (components/Amount.tsx) instead of these directly.
 export function formatCompactCurrency(
   amount: number,
   currency: string = activeMarket.currency
 ): string {
-  const absAmount = Math.abs(amount);
-  const sign = amount < 0 ? '-' : '';
-
-  if (absAmount >= 1_000_000_000) {
-    return `${sign}${currency} ${(absAmount / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (absAmount >= 1_000_000) {
-    return `${sign}${currency} ${(absAmount / 1_000_000).toFixed(1)}M`;
-  }
-  if (absAmount >= 100_000) {
-    return `${sign}${currency} ${(absAmount / 1_000).toFixed(0)}K`;
-  }
-  if (absAmount >= 1_000) {
-    return `${sign}${currency} ${(absAmount / 1_000).toFixed(1)}K`;
-  }
-  return `${sign}${currency} ${absAmount.toFixed(0)}`;
+  return formatCurrency(amount, currency);
 }
 
-// Smart format currency - auto-compact for large values
 export function formatCurrencyAuto(
   amount: number | null | undefined,
   currency: string = activeMarket.currency,
-  options?: { compact?: boolean; threshold?: number }
+  _options?: { compact?: boolean; threshold?: number }
 ): string {
-  const value = amount ?? 0;
-  const threshold = options?.threshold ?? 100_000;
-  const forceCompact = options?.compact ?? false;
-
-  if (forceCompact || Math.abs(value) >= threshold) {
-    return formatCompactCurrency(value, currency);
-  }
-  return formatCurrency(value, currency);
+  return formatCurrency(amount ?? 0, currency);
 }
 
-// Format amount only (no currency symbol) in compact form
 export function formatCompactAmount(amount: number): string {
-  const absAmount = Math.abs(amount);
-  
-  if (absAmount >= 1_000_000_000) {
-    return `${(amount / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (absAmount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(1)}M`;
-  }
-  if (absAmount >= 1_000) {
-    return `${(amount / 1_000).toFixed(0)}K`;
-  }
-  return amount.toFixed(0);
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount);
 }
 
 // Format date

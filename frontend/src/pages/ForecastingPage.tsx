@@ -100,11 +100,11 @@ function useChartColors() {
     tickFill:      isDark ? '#94a3b8' : '#64748b',
     inflowBar:     isDark ? '#34d399' : '#10b981',  // success-500
     outflowBar:    isDark ? '#fb7185' : '#ef4444',  // error-500
-    balanceLine:   isDark ? '#fbbf24' : '#d97706',  // accent-500
+    balanceLine:   isDark ? '#81bccb' : '#177891',  // accent-400 / accent-600
     shortfallArea: isDark ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.07)',
     tooltipBg:     isDark ? '#0f1f30' : '#ffffff',
-    tooltipText:   isDark ? '#f1f5f9' : '#102a43',
-    tooltipShadow: '0 4px 12px rgba(16,42,67,0.15)',
+    tooltipText:   isDark ? '#f1f5f9' : '#46494c',
+    tooltipShadow: '0 4px 12px rgba(70,73,76,0.15)',
   }), [isDark]);
 }
 
@@ -300,7 +300,7 @@ const ForecastingPage: React.FC = () => {
       <Card padding="md">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400 mb-1">
+            <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-accent-500" />
               Treasury Forecast · Sprint 1 preview
             </div>
@@ -530,7 +530,7 @@ const ChartBlock: React.FC<ChartBlockProps> = ({ data, shortfallSpans, colors, c
             width={70}
           />
           <Tooltip
-            cursor={{ fill: colors.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(16,42,67,0.04)' }}
+            cursor={{ fill: colors.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(70,73,76,0.04)' }}
             contentStyle={{
               backgroundColor: colors.tooltipBg,
               border: 'none',
@@ -751,7 +751,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
       size="md"
       title={(
         <>
-          <span className="block text-[10px] uppercase tracking-[0.18em] font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+          <span className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
             Week of {FULL_DATE_FMT(bucket.weekStart)}
           </span>
           Net {formatCurrency(Number(bucket.netCashflow ?? 0), currency)}
@@ -782,7 +782,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                           {line.categoryLabel || line.categoryCode || 'Uncategorised'}
                         </span>
                         <span className={cn(
-                          'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
+                          'text-xs font-semibold px-1.5 py-0 leading-4 rounded-full',
                           SOURCE_LABELS[line.source]?.tone ?? 'bg-neutral-100 text-neutral-600'
                         )}>
                           {SOURCE_LABELS[line.source]?.label ?? line.source}
@@ -792,7 +792,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                         {FULL_DATE_FMT(line.valueDate)} · {line.currency}
                       </p>
                       {line.sourceRef && (
-                        <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
+                        <p className="text-xs font-mono text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
                           {line.sourceRef}
                         </p>
                       )}

@@ -113,7 +113,7 @@ const MetricBlock: React.FC<{ metric: HeroMetric; dominant?: boolean }> = ({
 
   return (
     <div className="min-w-0">
-      <p className="text-[10px] uppercase tracking-[0.18em] font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
+      <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
         {metric.label}
       </p>
       <p

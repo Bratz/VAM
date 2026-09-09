@@ -26,6 +26,7 @@ import {
 } from '../components/credit/EntityAllocationModal';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { formatCurrency } from '../utils';
+import { Amount } from '../components/Amount';
 
 // ============================================================================
 // UTILITIES
@@ -40,48 +41,8 @@ const safeNumber = (value: number | undefined | null, defaultValue: number = 0):
 // formatCurrency now comes from the shared util (Phase 12 Task D3) — the local
 // 0-dp Intl clone was deleted; nullable call sites wrap args in safeNumber().
 
-// Compact format for large numbers (K, M, B)
-const formatCompactCurrency = (amount: number | undefined | null, currency: string = 'AED'): string => {
-  const value = safeNumber(amount);
-  const absValue = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  const curr = currency || 'AED';
-
-  if (absValue >= 1_000_000_000) {
-    return `${sign}${curr} ${(absValue / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (absValue >= 1_000_000) {
-    return `${sign}${curr} ${(absValue / 1_000_000).toFixed(1)}M`;
-  }
-  if (absValue >= 100_000) {
-    return `${sign}${curr} ${(absValue / 1_000).toFixed(0)}K`;
-  }
-  if (absValue >= 1_000) {
-    return `${sign}${curr} ${(absValue / 1_000).toFixed(1)}K`;
-  }
-  return formatCurrency(value, curr);
-};
-
-// Compact format without currency prefix (for use when currency is shown separately)
-const formatCompactAmount = (amount: number | undefined | null): string => {
-  const value = safeNumber(amount);
-  const absValue = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-
-  if (absValue >= 1_000_000_000) {
-    return `${sign}${(absValue / 1_000_000_000).toFixed(1)}B`;
-  }
-  if (absValue >= 1_000_000) {
-    return `${sign}${(absValue / 1_000_000).toFixed(1)}M`;
-  }
-  if (absValue >= 100_000) {
-    return `${sign}${(absValue / 1_000).toFixed(0)}K`;
-  }
-  if (absValue >= 1_000) {
-    return `${sign}${(absValue / 1_000).toFixed(1)}K`;
-  }
-  return value.toLocaleString();
-};
+// Compact (K/M/B) formatters removed — full precision everywhere via
+// <Amount />, no abbreviated output anywhere in the product.
 
 const safePercent = (numerator: number | undefined | null, denominator: number | undefined | null): number => {
   const num = safeNumber(numerator);
@@ -505,7 +466,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
               )}
             >
               <span className={cn("font-bold", config.color)}>{currency}</span>
-              <span className="text-neutral-600 dark:text-neutral-300" title={formatCurrency(safeNumber(limit?.limitAmount), currency)}>{formatCompactAmount(limit?.limitAmount)}</span>
+              <span className="text-neutral-600 dark:text-neutral-300"><Amount value={safeNumber(limit?.limitAmount)} currency={currency} showCurrency={false} /></span>
               {utilizationPct > 80 && <AlertTriangle className={cn("w-3.5 h-3.5", utilizationPct > 95 ? "text-error-500" : "text-warning-500")} />}
             </button>
           );
@@ -518,8 +479,8 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
           <div className="bg-white/80 rounded-xl p-4 mb-4 dark:bg-primary-900/80">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className={cn("text-xl font-bold", currencyConfig[selectedCurrency!]?.color || 'text-neutral-900 dark:text-neutral-50')} title={formatCurrency(limitAmount, selectedCurrency!)}>
-                  {formatCompactCurrency(limitAmount, selectedCurrency!)}
+                <span className={cn("text-xl font-bold", currencyConfig[selectedCurrency!]?.color || 'text-neutral-900 dark:text-neutral-50')}>
+                  <Amount value={limitAmount} currency={selectedCurrency!} />
                 </span>
                 {selectedLimit.isHardLimit ? (
                   <span className="px-2 py-0.5 rounded-full text-xs bg-error-50 text-error-700 flex items-center gap-1 dark:bg-error-500/10 dark:text-error-300"><Lock className="w-3 h-3" /> Hard</span>
@@ -535,8 +496,8 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
                 <div className={cn("h-3 rounded-full", allocationPct > 95 ? "bg-error-500" : allocationPct > 80 ? "bg-warning-500" : "bg-primary-600")} style={{ width: `${allocationPct}%` }} />
               </div>
               <div className="flex justify-between text-xs mt-1">
-                <span className="text-primary-700 font-medium dark:text-neutral-200" title={formatCurrency(allocated, selectedCurrency!)}>{formatCompactCurrency(allocated, selectedCurrency!)} allocated ({allocationPct.toFixed(0)}%)</span>
-                <span className="text-success-700 font-medium dark:text-success-300" title={formatCurrency(unallocated, selectedCurrency!)}>{formatCompactCurrency(unallocated, selectedCurrency!)} avail.</span>
+                <span className="text-primary-700 font-medium dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /> allocated ({allocationPct.toFixed(0)}%)</span>
+                <span className="text-success-700 font-medium dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /> avail.</span>
               </div>
             </div>
           </div>
@@ -544,19 +505,19 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
           <div className="grid grid-cols-4 gap-2">
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Allocated</p>
-              <p className="text-sm font-bold text-primary-700 truncate dark:text-neutral-200" title={formatCurrency(allocated, selectedCurrency!)}>{formatCompactCurrency(allocated, selectedCurrency!)}</p>
+              <p className="text-sm font-bold text-primary-700 truncate dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Unallocated</p>
-              <p className="text-sm font-bold text-success-700 truncate dark:text-success-300" title={formatCurrency(unallocated, selectedCurrency!)}>{formatCompactCurrency(unallocated, selectedCurrency!)}</p>
+              <p className="text-sm font-bold text-success-700 truncate dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Utilized</p>
-              <p className="text-sm font-bold text-warning-700 truncate dark:text-warning-300" title={formatCurrency(utilized, selectedCurrency!)}>{formatCompactCurrency(utilized, selectedCurrency!)}</p>
+              <p className="text-sm font-bold text-warning-700 truncate dark:text-warning-300"><Amount value={utilized} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
               <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-              <p className="text-sm font-bold text-info-700 truncate dark:text-info-300" title={formatCurrency(available, selectedCurrency!)}>{formatCompactCurrency(available, selectedCurrency!)}</p>
+              <p className="text-sm font-bold text-info-700 truncate dark:text-info-300"><Amount value={available} currency={selectedCurrency!} /></p>
             </div>
           </div>
         </>

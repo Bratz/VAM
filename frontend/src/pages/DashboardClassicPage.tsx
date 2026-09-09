@@ -777,12 +777,12 @@ const BalanceChart: React.FC<{
   const isDark = resolvedMode === 'dark';
   // Theme-aware chart palette
   const chartColors = {
-    grid: isDark ? '#243b53' : '#e5e7eb',          // primary-800 / neutral-200
-    axisLine: isDark ? '#334e68' : '#e5e7eb',      // primary-700
-    tickFill: isDark ? '#9fb3c8' : '#6b7280',      // primary-300 / neutral-500
-    tooltipBg: isDark ? 'rgba(16, 42, 67, 0.97)' : 'rgba(255, 255, 255, 0.98)',
+    grid: isDark ? '#4c5c68' : '#e5e7eb',          // primary-800 / neutral-200
+    axisLine: isDark ? '#595b5e' : '#e5e7eb',      // primary-700
+    tickFill: isDark ? '#b5b6b7' : '#6b7280',      // primary-300 / neutral-500
+    tooltipBg: isDark ? 'rgba(70, 73, 76, 0.97)' : 'rgba(255, 255, 255, 0.98)',
     tooltipShadow: isDark ? '0 10px 40px -5px rgba(0, 0, 0, 0.5)' : '0 10px 40px -5px rgba(0, 0, 0, 0.15)',
-    tooltipText: isDark ? '#f5f5f5' : '#102a43',
+    tooltipText: isDark ? '#f5f5f5' : '#46494c',
     balanceLine: isDark ? '#38bdf8' : '#0ea5e9',   // sky-400 / sky-500
     availableLine: isDark ? '#4ade80' : '#22c55e', // green-400 / green-500
   };

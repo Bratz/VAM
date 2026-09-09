@@ -9,8 +9,12 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
-import { cn, formatCurrency, formatCompactAmount } from '../utils';
+import { cn, formatCurrency } from '../utils';
+import { Amount } from '../components/Amount';
+import { PositionStrip } from '../components/PositionStrip';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { useEligibleCampaign } from '../hooks/useEligibleCampaign';
+import { CampaignBanner } from '../components/CampaignBanner';
 import {
   multiBankLiquidityApi,
   MultiBankLiquiditySummary,
@@ -127,6 +131,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { open: openCopilot } = useCopilot();
+  const [campaign, dismissCampaign] = useEligibleCampaign();
 
   const nav = (page?: string) => { if (page) onNavigate?.(page); };
 
@@ -352,56 +357,83 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
         }
       />
 
-      {/* In-page tab strip → deep-links into existing routes (not global chrome) */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-neutral-200 dark:border-primary-800 -mt-1">
-        {TABS.map((t, i) => {
-          const active = i === 0;
-          return (
-            <button
-              key={t.label}
-              type="button"
-              disabled={t.disabled || active}
-              onClick={() => nav(t.page)}
-              title={t.disabled ? 'Treasury Performance workbook — coming soon' : undefined}
-              className={cn(
-                'px-3 py-2 text-sm border-b-2 -mb-px transition-colors',
-                active
-                  ? 'border-accent-500 text-primary-900 dark:text-neutral-50 font-medium'
-                  : t.disabled
-                    ? 'border-transparent text-neutral-300 dark:text-neutral-600 cursor-not-allowed'
-                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-primary-800 dark:hover:text-neutral-100',
-              )}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Context bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-[260px]">
-          <ScopeSelector
-            mode="corporate-only"
-            corporates={corporates}
-            selectedCorporateId={selectedCorporateId}
-            onCorporateChange={setSelectedCorporateId}
-          />
+      {/* Tab strip + corporate scope merged into one 44px row (density pass) —
+          tabs deep-link into existing routes (not global chrome) on the left;
+          scope selector + summary on the right. */}
+      <div className="lg:h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-neutral-200 dark:border-primary-800 -mt-1">
+        <div className="flex items-center gap-1">
+          {TABS.map((t, i) => {
+            const active = i === 0;
+            return (
+              <button
+                key={t.label}
+                type="button"
+                disabled={t.disabled || active}
+                onClick={() => nav(t.page)}
+                title={t.disabled ? 'Treasury Performance workbook — coming soon' : undefined}
+                className={cn(
+                  'px-3 py-2 text-sm border-b-2 -mb-px transition-colors',
+                  active
+                    ? 'border-accent-500 text-primary-900 dark:text-neutral-50 font-medium'
+                    : t.disabled
+                      ? 'border-transparent text-neutral-300 dark:text-neutral-600 cursor-not-allowed'
+                      : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-primary-800 dark:hover:text-neutral-100',
+                )}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
-        <span className="body-sm text-neutral-500 dark:text-neutral-400">
-          {acctCount} accounts · {bankCount} banks · {model?.currencies.length ?? 0} currencies
-        </span>
+
+        <div className="flex items-center gap-3">
+          <div className="min-w-[220px]">
+            <ScopeSelector
+              mode="corporate-only"
+              bare
+              corporates={corporates}
+              selectedCorporateId={selectedCorporateId}
+              onCorporateChange={setSelectedCorporateId}
+            />
+          </div>
+          <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
+            {acctCount} acct · {bankCount} banks · {model?.currencies.length ?? 0} ccy
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-5 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         {/* ─── Main column ─── */}
         <div className="space-y-4 min-w-0">
 
-          {/* Cash position band — REAL */}
-          <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-              <p className="section-title">Consolidated cash · effective balance</p>
-              <div className="inline-flex rounded-lg border border-neutral-200 dark:border-primary-800 overflow-hidden">
+          {campaign && (
+            <CampaignBanner
+              campaign={campaign}
+              onDismiss={() => dismissCampaign(campaign.id)}
+              onCtaClick={() => nav(campaign.ctaHref.replace(/^\//, ''))}
+            />
+          )}
+
+          {/* Position strip — replaces the old KPI card grid. Scalar counts
+              (not currency figures — this app never sums balances across
+              currencies into one "consolidated" total; see the FX-honest
+              rule below on the currency band) rendered as format="count" so
+              they show as plain integers, not through <Amount/>. */}
+          <PositionStrip
+            cells={[
+              { label: 'Held at home bank', value: summary?.homeBankShadows ?? 0, format: 'count', size: 'lg', sublabel: 'accounts', tone: 'success' },
+              { label: 'External, sweepable', value: summary?.externalShadows ?? 0, format: 'count', sublabel: 'accounts' },
+              { label: 'Stale balances', value: staleCount, format: 'count', sublabel: 'need refresh', tone: staleCount ? 'warning' : 'neutral' },
+              { label: 'Total accounts', value: acctCount, format: 'count', sublabel: `${model?.currencies.length ?? 0} currencies` },
+            ]}
+          />
+
+          {/* Currency breakdown — hairline, no card. FX-honest: per-currency
+              only, deliberately no synthetic cross-currency grand total. */}
+          <div className="border-b border-neutral-200 dark:border-primary-800 pb-4">
+            <div className="flex items-center justify-between gap-3 pb-2">
+              <p className="section-title">Currency breakdown</p>
+              <div className="inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden">
                 {(['currency', 'bank'] as AcctView[]).map((v) => (
                   <button
                     key={v}
@@ -420,53 +452,31 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               </div>
             </div>
 
-            <div className="p-4 space-y-4">
-              {/* Honest count breakdown — scalar counts, no currency math */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-neutral-100 dark:bg-primary-800/60 rounded-lg overflow-hidden">
-                {[
-                  { lab: 'Held at home bank', val: summary?.homeBankShadows ?? 0, sub: 'accounts', tone: 'text-success-600 dark:text-success-300' },
-                  { lab: 'External, sweepable', val: summary?.externalShadows ?? 0, sub: 'accounts', tone: 'text-primary-900 dark:text-neutral-50' },
-                  { lab: 'Stale balances', val: staleCount, sub: 'need refresh', tone: staleCount ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-500 dark:text-neutral-400' },
-                  { lab: 'Total accounts', val: acctCount, sub: `${model?.currencies.length ?? 0} currencies`, tone: 'text-primary-900 dark:text-neutral-50' },
-                ].map((k) => (
-                  <div key={k.lab} className="bg-white dark:bg-primary-900 p-3">
-                    <p className="label">{k.lab}</p>
-                    <p className={cn('stat-value-sm mt-1 tabular-nums', k.tone)}>{k.val}</p>
-                    <p className="caption mt-0.5">{k.sub}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Per-currency rail — FX-honest source of truth */}
-              {model && model.currencies.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {model.currencies.map((c) => {
-                    const homePct = c.effective > 0 ? Math.round((c.home / c.effective) * 100) : 0;
-                    return (
-                      <div
-                        key={c.code}
-                        className="min-w-[150px] rounded-lg border border-neutral-200 dark:border-primary-800 px-3 py-2"
-                      >
-                        <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{c.code}</p>
-                        <p className="stat-value-sm mt-0.5 tabular-nums text-primary-900 dark:text-neutral-50">
-                          {formatCurrency(c.effective, c.code)}
-                        </p>
-                        <p className="caption mt-0.5">
-                          {homePct}% home bank · {100 - homePct}% external
-                        </p>
+            {model && model.currencies.length > 0 ? (
+              <div className="divide-y divide-neutral-200 dark:divide-primary-800">
+                {model.currencies.map((c) => {
+                  const homePct = c.effective > 0 ? Math.round((c.home / c.effective) * 100) : 0;
+                  return (
+                    <div key={c.code} className="flex items-center gap-4 py-2">
+                      <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 w-12 shrink-0">{c.code}</span>
+                      <Amount value={c.effective} currency={c.code} showCurrency={false} className="text-[20px] font-semibold text-primary-900 dark:text-neutral-50 w-40 shrink-0" />
+                      <div className="flex-1 h-[3px] bg-neutral-100 dark:bg-primary-800/60 rounded-full overflow-hidden" title={`${homePct}% home bank`}>
+                        <div className="h-full bg-accent-500" style={{ width: `${homePct}%` }} />
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="body-sm">No shadow balances available for this scope.</p>
-              )}
-            </div>
-          </Card>
+                      <span className="caption w-40 text-right shrink-0">{homePct}% home · {100 - homePct}% external</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="body-sm">No shadow balances available for this scope.</p>
+            )}
+          </div>
 
-          {/* Accounts table — REAL */}
-          <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+          {/* Accounts table — hairline: no card, no zebra, two hairline
+              weights (heavier under the header, lighter between rows). */}
+          <div>
+            <div className="flex items-center justify-between gap-3 pb-2">
               <p className="section-title">Accounts <span className="label font-normal">· all banks</span></p>
               <button
                 type="button"
@@ -477,7 +487,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               </button>
             </div>
             {groups.length === 0 ? (
-              <p className="body-sm px-4 py-6 text-center">No accounts in scope.</p>
+              <p className="body-sm py-6 text-center">No accounts in scope.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
@@ -487,7 +497,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                         <th
                           key={h || i}
                           className={cn(
-                            'label px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60',
+                            'label px-3 py-[9px] border-b border-neutral-300 dark:border-primary-700',
                             (i === 3 || i === 4) && 'text-right',
                             i === 5 && 'text-center',
                           )}
@@ -497,39 +507,39 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-primary-800/60">
                     {groups.map((g) => (
                       <React.Fragment key={g.key}>
-                        <tr className="bg-neutral-50 dark:bg-primary-800/40">
-                          <td colSpan={7} className="px-3 py-1.5 border-b border-neutral-100 dark:border-primary-800/60">
+                        <tr>
+                          <td colSpan={7} className="px-3 py-[9px]">
                             <span className="label">{g.label}</span>
                             <span className="caption ml-2">{g.meta}</span>
-                            <span className="float-right stat-value-xs tabular-nums text-primary-900 dark:text-neutral-50">{g.subtitle}</span>
+                            <span className="float-right stat-value-xs text-primary-900 dark:text-neutral-50">{g.subtitle}</span>
                           </td>
                         </tr>
                         {g.rows.map((s) => (
-                          <tr key={s.vaId} className="hover:bg-neutral-50 dark:hover:bg-primary-800/30">
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60">
+                          <tr key={s.vaId} className="hover:bg-neutral-50/50 dark:hover:bg-primary-800/30">
+                            <td className="px-3 py-[9px]">
                               <div className="text-primary-900 dark:text-neutral-50">{s.vaName}</div>
                               <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{s.vaNumber}</div>
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 text-neutral-600 dark:text-neutral-300">
+                            <td className="px-3 py-[9px] text-neutral-600 dark:text-neutral-300">
                               {s.owningEntityCode || '—'}
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60">
+                            <td className="px-3 py-[9px]">
                               <div className="text-neutral-600 dark:text-neutral-300">{s.bankName || s.bankBic}</div>
                               <div className="font-mono text-xs text-neutral-400 dark:text-neutral-500">{s.bankBic}</div>
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 text-right tabular-nums text-primary-900 dark:text-neutral-50">
-                              {formatCurrency(s.bankBalance, s.currencyCode)}
+                            <td className="px-3 py-[9px] text-right text-primary-900 dark:text-neutral-50">
+                              <Amount value={s.bankBalance} currency={s.currencyCode} showCurrency={false} />
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 text-right tabular-nums text-neutral-600 dark:text-neutral-300">
-                              {s.bankAvailableBalance != null ? formatCurrency(s.bankAvailableBalance, s.currencyCode) : '—'}
+                            <td className="px-3 py-[9px] text-right text-neutral-600 dark:text-neutral-300">
+                              {s.bankAvailableBalance != null ? <Amount value={s.bankAvailableBalance} currency={s.currencyCode} showCurrency={false} /> : '—'}
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 text-center">
+                            <td className="px-3 py-[9px] text-center">
                               <FreshnessPill shadow={s} />
                             </td>
-                            <td className="px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 text-right whitespace-nowrap">
+                            <td className="px-3 py-[9px] text-right whitespace-nowrap">
                               {(s.stale || s.lastBalanceRefreshStatus !== 'SUCCESS') && (
                                 <button
                                   type="button"
@@ -548,7 +558,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 </table>
               </div>
             )}
-          </Card>
+          </div>
 
           {/* Row 2 — Payments workspace + Sweeps & pooling */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4">
@@ -582,7 +592,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="stat-value-xs tabular-nums text-primary-900 dark:text-neutral-50">{formatCompactAmount(p.amount)}</p>
+                          <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} showCurrency={false} /></p>
                           <p className="caption">due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</p>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => nav('payables')}>Review</Button>
@@ -663,7 +673,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                         <p className="text-sm text-primary-900 dark:text-neutral-50">
                           {m.kind} · <span className="font-mono">{m.reference}</span>
                         </p>
-                        <p className="caption tabular-nums">{m.label} {formatCompactAmount(m.amount)}</p>
+                        <p className="caption">{m.label} <Amount value={m.amount} showCurrency={false} className="text-xs" /></p>
                       </div>
                       <p className="caption shrink-0 tabular-nums">{fmtDay(m.date)}</p>
                     </div>
@@ -741,13 +751,13 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   return (
                     <div key={it.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/40">
                       <div className="flex items-center gap-2">
-                        <span className={cn('rounded-full px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em]', tri.cls)}>{tri.label}</span>
-                        <span className="ml-auto text-[10px] text-neutral-400 dark:text-neutral-500">{it.timePressure?.displayText}</span>
+                        <span className={cn('rounded-full px-1.5 py-0 leading-4 text-xs font-medium uppercase tracking-[0.08em]', tri.cls)}>{tri.label}</span>
+                        <span className="ml-auto text-xs text-neutral-400 dark:text-neutral-500">{it.timePressure?.displayText}</span>
                       </div>
                       <p className="text-xs font-medium text-primary-900 dark:text-neutral-50 mt-1.5 leading-snug">{it.headline}</p>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">{it.detail}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{it.detail}</p>
                       {it.actions?.[0] && (
-                        <p className="inline-flex items-center gap-1 text-[11px] font-medium text-primary-600 dark:text-accent-400 mt-1.5">
+                        <p className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 mt-1.5">
                           {it.actions[0].label} <ArrowRight className="w-3 h-3" />
                         </p>
                       )}

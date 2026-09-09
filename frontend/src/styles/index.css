@@ -1,15 +1,31 @@
-/* Tier 3 type stack (2026-06-12):
- *  - Open Sans       → body, UI, AND numeric display (replaces both
- *    Bricolage Grotesque and IBM Plex Sans). Variable axis 300–800.
- *  - Fraunces        → page titles only (brand-moment serif, unchanged)
- *  - JetBrains Mono  → identifiers only (unchanged)
+/* Type stack:
+ *  - Geist              → body, UI only (interface sans). Weight 300-800.
+ *  - Newsreader Variable → page titles AND all numeric figures (replaces
+ *    Fraunces entirely). Real variable font (wght + opsz axes both present
+ *    in this build, confirmed via file size vs. the wght-only-axis build),
+ *    so `font-optical-sizing: auto` (the CSS default) adapts the glyph
+ *    optical size automatically to whatever font-size it renders at —
+ *    no per-element opsz class needed for the 6..72 range.
+ *  - Geist Mono         → identifiers only (IBANs, VIBANs, reference codes,
+ *    entity IDs, ISO message ids) — demoted from currency amounts, which
+ *    now render in Newsreader Variable via the .figure utility / <Amount />.
  *
- * History: Phase 11 Tier 1 (2026-05-17) introduced IBM Plex Sans for the
- * numeric-display slot and narrowed the Fraunces axis to 9..144,500..600
- * (~30KB saved). Phase 12 Tier 3 (2026-06-12) consolidated body + numerics
- * onto a single family — two fewer font downloads, one fewer mental
- * distinction; weight 600 + tabular-nums carries the display role. */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&family=Fraunces:opsz,wght@9..144,500..600&family=JetBrains+Mono:wght@400;500&display=swap');
+ * Self-hosted via @fontsource(-variable) — none of these three are on
+ * Google Fonts as a single mechanism, so all font loading goes through npm
+ * packages shipping .woff2 + @font-face CSS instead of a Google Fonts
+ * @import. Note the registered font-family for the variable package is
+ * literally "Newsreader Variable", not "Newsreader" — variables.css's
+ * --font-title/--font-numeric must reference that exact name or the
+ * @font-face never matches and silently falls through to Georgia. */
+@import '@fontsource/geist/300.css';
+@import '@fontsource/geist/400.css';
+@import '@fontsource/geist/500.css';
+@import '@fontsource/geist/600.css';
+@import '@fontsource/geist/700.css';
+@import '@fontsource/geist/800.css';
+@import '@fontsource/geist-mono/400.css';
+@import '@fontsource/geist-mono/500.css';
+@import '@fontsource-variable/newsreader/standard.css';
 
 /* Design tokens — single source of truth for color, shadow, radius, type,
    spacing, duration, easing, z-index. Imported BEFORE @tailwind so the
@@ -51,7 +67,7 @@
     /* Phase 11 Tier 1 (2026-05-17): removed a dead `font-feature-settings`
      * line that requested four Inter-specific character variants (the
      * alt single-story a / alt g / alt l / alt 1 set). Bricolage Grotesque,
-     * IBM Plex Sans, Fraunces and JetBrains Mono all ignore those Inter
+     * IBM Plex Sans, Fraunces and Geist Mono all ignore those Inter
      * variants — leftover from when body was Inter. Removal has zero visual
      * effect on the current type stack and clears confusing dead config.
      * (Literal feature tags intentionally not quoted here so they don't
@@ -72,20 +88,20 @@
        barely perceptible but cost two extra gradient layers in the paint
        budget on every viewport repaint. The radial atmosphere alone
        carries the depth signal. */
-    --section-accent: 16 42 67;      /* default: primary-900 (navy) */
-    --section-accent-warm: 245 158 11; /* default: accent-500 (gold) */
+    --section-accent: 70 73 76;      /* default: primary-900 (navy) */
+    --section-accent-warm: 25 133 161; /* default: accent-500 (gold) */
     background:
       radial-gradient(at 8% 0%, rgba(var(--section-accent-warm) / 0.05) 0%, transparent 45%),
       radial-gradient(at 92% 100%, rgba(var(--section-accent) / 0.05) 0%, transparent 50%),
-      #fafafa;
+      #e9e9ea; /* page ground — was #fafafa */
     background-attachment: fixed;
   }
 
   [data-theme="dark"] body {
     background:
       radial-gradient(at 8% 0%, rgba(var(--section-accent-warm) / 0.10) 0%, transparent 45%),
-      radial-gradient(at 92% 100%, rgba(99, 125, 152, 0.10) 0%, transparent 50%),
-      #0a1929;
+      radial-gradient(at 92% 100%, rgba(129, 131, 133, 0.10) 0%, transparent 50%),
+      #3f4a54; /* nav/deep surface — was #0a1929 (navy-950) */
     background-attachment: fixed;
   }
 
@@ -105,13 +121,13 @@
      the area of the app the user is in. Body radial gradients, top accent strip,
      and page-title underline all pick these up automatically.
      `data-section` is set on <html> by App.tsx whenever the route changes. */
-  [data-section="treasury"]     { --section-accent: 16 42 67;   --section-accent-warm: 59 130 246; }   /* navy + electric blue */
-  [data-section="finance"]      { --section-accent: 16 42 67;   --section-accent-warm: 245 158 11; }   /* navy + gold (default) */
+  [data-section="treasury"]     { --section-accent: 70 73 76;   --section-accent-warm: 59 130 246; }   /* navy + electric blue */
+  [data-section="finance"]      { --section-accent: 70 73 76;   --section-accent-warm: 25 133 161; }   /* navy + gold (default) */
   [data-section="compliance"]   { --section-accent: 36 59 83;   --section-accent-warm: 16 185 129; }   /* navy + sage */
-  [data-section="baas"]         { --section-accent: 16 42 67;   --section-accent-warm: 168 85 247; }   /* navy + violet */
-  [data-section="intercompany"] { --section-accent: 16 42 67;   --section-accent-warm: 244 114 182; }  /* navy + rose */
+  [data-section="baas"]         { --section-accent: 70 73 76;   --section-accent-warm: 168 85 247; }   /* navy + violet */
+  [data-section="intercompany"] { --section-accent: 70 73 76;   --section-accent-warm: 244 114 182; }  /* navy + rose */
   [data-section="admin"]        { --section-accent: 38 38 38;   --section-accent-warm: 163 163 163; }  /* graphite + steel */
-  [data-section="payments"]     { --section-accent: 16 42 67;   --section-accent-warm: 6 182 212; }    /* navy + cyan */
+  [data-section="payments"]     { --section-accent: 70 73 76;   --section-accent-warm: 6 182 212; }    /* navy + cyan */
 
   /* F2: Top accent strip — 3px navy→gold gradient pinned to the very top.
      Reinforces brand dominance on every page without touching component code. */
@@ -241,7 +257,7 @@
     @apply text-4xl text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum", "ss01";
     /* Tier 1 (2026-05-17): was -0.025em (tightened for Fraunces). Loosened
      * for IBM Plex Sans — better digit separation in long monetary values
@@ -250,13 +266,16 @@
     line-height: 1.05;
   }
   .stat-value-sm {
-    @apply text-2xl text-primary-900 dark:text-neutral-50;
+    @apply text-[28px] text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
-    line-height: 1.1;
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
+    /* Density pass: 24px -> 28px, line-height 1.1 -> 1 (leading-none) — the
+       number is meant to read as the largest thing on the page, not the
+       30px(now 20px) serif page title. */
+    line-height: 1;
   }
 
   /* Secondary stat value — smaller than .stat-value-sm. For dense cards
@@ -267,9 +286,9 @@
     @apply text-xl text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: 0; /* Tier 1: was -0.015em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: 0; /* Tier 1: was -0.015em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.15;
   }
 
@@ -283,9 +302,9 @@
     @apply text-2xl text-white;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.1;
   }
   /* Hero-sized inverse (matches `.stat-value` scale for full-bleed dark heroes). */
@@ -293,9 +312,9 @@
     @apply text-4xl text-white;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum", "ss01";
-    letter-spacing: -0.01em; /* Tier 1: was -0.025em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.01em; /* Tier 1: was -0.025em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.05;
   }
 
@@ -313,36 +332,36 @@
     @apply text-2xl text-success-600 dark:text-success-300;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.1;
   }
   .stat-value-warning {
     @apply text-2xl text-warning-600 dark:text-warning-300;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.1;
   }
   .stat-value-error {
     @apply text-2xl text-error-600 dark:text-error-300;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.1;
   }
   .stat-value-info {
     @apply text-2xl text-info-600 dark:text-info-300;
     font-family: var(--font-numeric);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
-    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Open Sans */
+    letter-spacing: -0.005em; /* Tier 1: was -0.02em (Fraunces). Tier 3: verified for Geist */
     line-height: 1.1;
   }
 
@@ -415,7 +434,7 @@
      that include lowercase tokens). `.overline` remains the uppercase
      variant for section eyebrows; this is the cased sibling. */
   .label-cased {
-    @apply text-[10px] font-medium text-neutral-500 dark:text-neutral-400;
+    @apply text-xs font-medium text-neutral-500 dark:text-neutral-400;
     font-family: var(--font-sans);
     line-height: 1.3;
   }
@@ -424,10 +443,8 @@
      used above page-title / section-title for context (e.g. "ACCOUNTS &
      STRUCTURE" above "Bank Accounts"). */
   .overline {
-    @apply text-[10px] font-semibold text-neutral-500 dark:text-neutral-400;
+    @apply text-xs font-semibold text-neutral-500 dark:text-neutral-400;
     font-family: var(--font-sans);
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
     line-height: 1.2;
   }
 
@@ -446,13 +463,13 @@
     @apply text-[0.8125rem] text-neutral-700 dark:text-neutral-300;
     font-family: var(--font-mono);
     font-weight: 500;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
     letter-spacing: 0;
   }
 
   /* Identifier as visual hero — VIBANs, IBANs, transaction references
-     shown as the primary value of a panel. JetBrains Mono with semibold
+     shown as the primary value of a panel. Geist Mono with semibold
      weight and wide tracking for readability at display size. Use
      sparingly — most identifiers in body context should use `.code`.
      Phase 9.1 (2026-05-13). */
@@ -460,7 +477,7 @@
     @apply text-lg text-primary-900 dark:text-neutral-50;
     font-family: var(--font-mono);
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
     letter-spacing: 0.025em;
     line-height: 1.3;
@@ -657,21 +674,20 @@
   }
 
   /* ========== AMOUNT DISPLAYS ========== */
-  /* Monetary value — body sans + tabular figures. The system rule:
-   * `.code`/mono = identifiers (IBANs, refs); `.amount` = money. Mono on
-   * amounts reads as system-log; sans-tabular reads as financial
-   * statement. Phase 12 / Tier 2 (2026-06-12).
+  /* Monetary value — the system rule: `.code`/mono = identifiers (IBANs,
+   * refs); `.amount` = money, in Newsreader (--font-numeric), not mono, not
+   * sans. Task 7': mono is demoted to identifiers only, and figures move
+   * to the numeric-display serif — same font family as page titles now.
    *
    * The pre-existing tone classes (.amount-positive/-negative/-neutral,
    * colour-only since Phase 2) are folded into this family — same names,
-   * now also carrying the sans-tabular treatment so legacy callers get
-   * the Tier 2 numerics for free. */
+   * now also carrying the numeric treatment so legacy callers get it free. */
   .amount,
   .amount-positive,
   .amount-negative,
   .amount-neutral {
-    font-family: var(--font-sans);
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
     font-weight: 500;
     letter-spacing: 0;
@@ -691,7 +707,18 @@
 
   /* Currency formatting */
   .currency-value {
-    @apply font-semibold tabular-nums;
+    @apply font-semibold;
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Generic numeric-figure utility (task 7') — apply to any currency
+   * amount, balance, rate, or count that doesn't already go through
+   * `.amount`/`.stat-value*`/`.currency-value`. `<Amount />` uses this. */
+  .figure {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
   }
 
@@ -844,7 +871,7 @@
   /* ========== BOTTOM SHEET (Mobile) ========== */
   .bottom-sheet {
     @apply fixed inset-x-0 bottom-0 bg-white rounded-t-3xl;
-    box-shadow: 0 -10px 40px rgba(16, 42, 67, 0.15);
+    box-shadow: 0 -10px 40px rgba(70, 73, 76, 0.15);
     padding-bottom: var(--safe-area-inset-bottom);
   }
 
@@ -883,7 +910,7 @@
     @apply flex items-center justify-around;
     padding-bottom: var(--safe-area-inset-bottom);
     z-index: var(--z-fixed);
-    box-shadow: 0 -4px 20px rgba(16, 42, 67, 0.08);
+    box-shadow: 0 -4px 20px rgba(70, 73, 76, 0.08);
   }
 
   .bottom-nav-item {
@@ -901,7 +928,7 @@
   }
 
   .bottom-nav-label {
-    @apply text-[10px] font-medium;
+    @apply text-xs font-medium;
   }
 
   @media (min-width: 1024px) {
@@ -982,7 +1009,7 @@
 
   /* Tabular numbers for data */
   .tabular-nums {
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum";
   }
 
@@ -1430,7 +1457,7 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 1rem 0 0.5rem 0;
-  color: rgb(16, 42, 67);
+  color: rgb(70, 73, 76);
 }
 
 .dark .copilot-prose h3 {
@@ -1446,7 +1473,7 @@
 
 .copilot-prose strong {
   font-weight: 600;
-  color: rgb(16, 42, 67);
+  color: rgb(70, 73, 76);
 }
 
 .dark .copilot-prose strong {
@@ -1463,12 +1490,12 @@
 }
 
 .copilot-prose code {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--font-mono, 'Geist Mono', monospace);
   font-size: 0.85em;
-  background: rgba(16, 42, 67, 0.06);
+  background: rgba(70, 73, 76, 0.06);
   padding: 0.1em 0.4em;
   border-radius: 0.25em;
-  color: rgb(16, 42, 67);
+  color: rgb(70, 73, 76);
 }
 
 .dark .copilot-prose code {
@@ -1477,8 +1504,8 @@
 }
 
 .copilot-prose blockquote {
-  border-left: 3px solid rgb(245, 158, 11);
-  background: rgba(245, 158, 11, 0.06);
+  border-left: 3px solid rgb(25, 133, 161);
+  background: rgba(25, 133, 161, 0.06);
   margin: 0.75rem 0;
   padding: 0.5rem 0.75rem;
   border-radius: 0 0.375rem 0.375rem 0;
@@ -1487,7 +1514,7 @@
 }
 
 .dark .copilot-prose blockquote {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(25, 133, 161, 0.1);
   color: rgb(220, 230, 250);
 }
 
@@ -1505,7 +1532,7 @@
   border-collapse: collapse;
   margin: 0.75rem 0;
   font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .copilot-prose th, .copilot-prose td {
@@ -1515,16 +1542,16 @@
 }
 
 .copilot-prose th {
-  background: rgba(16, 42, 67, 0.04);
+  background: rgba(70, 73, 76, 0.04);
   font-weight: 600;
-  color: rgb(16, 42, 67);
+  color: rgb(70, 73, 76);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .copilot-prose td:nth-child(n+3) {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--font-mono, 'Geist Mono', monospace);
   font-size: 0.8rem;
 }
 

@@ -15,13 +15,14 @@ import React, { useState, useCallback } from 'react';
 import {
   ArrowDownLeft, ArrowUpRight, FileText, Download, Search,
   Clock, CheckCircle, XCircle, AlertCircle, Loader2,
-  Building2, CreditCard, Globe, FileCode, RefreshCw,
+  Building2, CreditCard, FileCode, RefreshCw,
   Send, Layers, Eye, Copy,
 } from 'lucide-react';
 import { Card, Button, Badge, Input } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
+import { PageHeader } from '../components/layout/PageHeader';
 import {
   iso20022Api,
   virtualAccountsApi,
@@ -99,21 +100,16 @@ export default function Iso20022PaymentsPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title flex items-center gap-2">
-            <Globe className="h-7 w-7 text-info-600 dark:text-info-300" />
-            ISO 20022 Payment Processing
-          </h1>
-          <p className="text-neutral-500 mt-1">
-            Process inward/outward payments using ISO 20022 standard messages
-          </p>
-        </div>
-        <Badge variant="info" className="text-sm">
-          <FileCode className="h-4 w-4 mr-1" />
-          pacs.008 | pain.001 | camt.053
-        </Badge>
-      </div>
+      <PageHeader
+        title="ISO 20022 Payment Processing"
+        description="Process inward/outward payments using ISO 20022 standard messages"
+        actions={
+          <Badge variant="info" className="text-sm">
+            <FileCode className="h-4 w-4 mr-1" />
+            pacs.008 | pain.001 | camt.053
+          </Badge>
+        }
+      />
 
       {/* Tabs */}
       <div className="border-b border-neutral-200">

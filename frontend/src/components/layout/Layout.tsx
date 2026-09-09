@@ -27,7 +27,8 @@ import { EntityPicker } from '../permissions/EntityPicker';
 import { useUser } from '../../context/UserContext';
 import { useTheme } from '../../design-system/ThemeProvider';
 import { useCopilot } from '../../ai/copilot/CopilotProvider';
-import { useRegisteredPageHeaderActions } from '../../context/PageHeaderContext';
+import { useRegisteredPageHeaderActions, useRegisteredPageHeader } from '../../context/PageHeaderContext';
+import { HeaderHelpPopover } from './HeaderHelpPopover';
 // Phase 7 Design System Unification: IA (navigation structure + page titles +
 // mobile bottom-nav) moved out of this file into a dedicated config module
 // so it can be audited as a flat data file rather than scattered through
@@ -37,7 +38,6 @@ import {
   mobileNavItems,
   pageTitles,
   ALL_SECTION_TITLES,
-  sectionForPage,
   sectionTitleForPage,
   type NavItem,
 } from '../../config/navigation';
@@ -147,7 +147,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
       )}
 
       <aside className={cn(
-        'fixed top-0 left-0 h-full w-72 z-50 flex flex-col',
+        'fixed top-0 left-0 h-full w-60 z-50 flex flex-col',
         // Premium glass effect — flips to elevated navy panel in dark mode
         'bg-white/95 backdrop-blur-xl border-r border-neutral-200/60',
         'dark:bg-primary-900/95 dark:border-primary-800/60',
@@ -182,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               >
                 {BRAND.name}
               </h1>
-              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium uppercase tracking-[0.12em]">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
                 {BRAND.shortSubtitle}
               </p>
             </div>
@@ -224,8 +224,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 <button
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-2.5 mt-2',
-                    'text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider',
+                    'flex items-center justify-between w-full px-3 py-1.5 mt-2',
+                    'text-xs font-semibold text-neutral-400 dark:text-neutral-500',
                     'hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                   )}
                 >
@@ -260,7 +260,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         // items prevents layout shift when an item becomes
                         // active. Rounded-lg (12px) replaces rounded-xl per the
                         // canonical radius scale collapse.
-                        'w-full flex items-center gap-3 pl-[10px] pr-3 py-2.5 rounded-lg text-sm font-medium',
+                        'w-full flex items-center gap-3 pl-[10px] pr-3 py-1.5 rounded-lg text-[13px] font-medium',
                         'border-l-2 transition-colors duration-200',
                         isComingSoon
                           ? 'border-transparent text-neutral-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
@@ -282,20 +282,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       <span className="flex-1 text-left truncate">{item.label}</span>
                       {item.isNew && !isComingSoon && (
                         <span className={cn(
-                          'text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide',
+                          'text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide',
                           isActive ? 'bg-white/25 text-white' : 'bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300'
                         )}>
                           New
                         </span>
                       )}
                       {isComingSoon && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
+                        <span className="text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
                           Soon
                         </span>
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
-                          'text-[10px] font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
+                          'text-xs font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
                           getBadgeStyle(isActive, item.badgeColor)
                         )}>
                           {item.badge}
@@ -326,7 +326,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             <HelpCircle className="w-4 h-4" />
             <span>Docs</span>
           </button>
-          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+          <span className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
             {BRAND.name} v1.0
           </span>
         </div>
@@ -351,6 +351,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
   const { isTreasury } = useUser();
   const { resolvedMode, toggleMode } = useTheme();
   const pageActions = useRegisteredPageHeaderActions();
+  const { title: registeredTitle, description: registeredDescription } = useRegisteredPageHeader();
 
   const notifications = [
     { id: 0, title: 'POBO Payment Processed', message: 'AED 150,000 paid by HQ on behalf of Dubai Sub', time: '1 min ago', type: 'success' },
@@ -366,13 +367,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
       'dark:bg-primary-900/80 dark:border-primary-800/60',
       'supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-primary-900/60'
     )}>
-      {/* min-h-16 instead of h-16 so the header expands gracefully when the
-          stacked breadcrumb + title + page-title-display underline exceed 64px.
-          py-2 prevents the gold underline pseudo-element from kissing the
-          header's border-b. */}
-      <div className="flex items-center justify-between min-h-16 px-4 lg:px-8 py-2">
+      {/* Fixed h-14 (56px) — the in-page title block that used to push this
+          taller is gone (PageHeader now registers into this header instead
+          of rendering its own <h1>), so a single-line title always fits. */}
+      <div className="flex items-center justify-between h-14 px-4 lg:px-8">
         {/* Left side */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2.5 hover:bg-neutral-100 rounded-xl transition-colors"
@@ -380,20 +380,23 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
 
-          {/* Page Title - Desktop. F2: Fraunces display + gold underline accent.
-              Polish: small section breadcrumb above the title helps users learn
-              the Aperture mental model (which section the current page lives in). */}
-          {/* whitespace-nowrap on both lines so 'ACCOUNTS & STRUCTURE' / 'Balance
-              Hierarchy' don't break to two rows on standard-width headers. */}
-          <div className="hidden sm:block leading-tight min-w-0">
-            {sectionForPage(currentPage) && (
-              <p className="text-[10px] leading-none uppercase tracking-[0.16em] text-neutral-500 dark:text-neutral-400 font-semibold mb-1 whitespace-nowrap">
-                {sectionForPage(currentPage)}
-              </p>
-            )}
-            <h1 className="page-title-display text-xl leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap">
-              {pageTitles[currentPage] || BRAND.name}
+          {/* Page title — Desktop. F2: Fraunces display + gold underline
+              accent. Sourced from whatever the current page registered via
+              <PageHeader>/usePageHeaderTitle; falls back to the generic
+              per-route title for pages not yet migrated. whitespace-nowrap
+              so long titles don't wrap the header to two rows. */}
+          {/* min-w-[96px] not min-w-0 — with several page-registered header
+              actions + the search bar + EntityPicker all shrink-resistant,
+              the title was the only flexible element left and could
+              collapse to a true 0px width (confirmed live at 1440px with
+              AccountsPage's 3 header actions). A small floor keeps
+              `truncate` working for long titles without the title ever
+              fully disappearing. */}
+          <div className="hidden sm:flex items-center gap-1.5 min-w-[96px]">
+            <h1 className="page-title-display text-xl leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap truncate">
+              {registeredTitle || pageTitles[currentPage] || BRAND.name}
             </h1>
+            {registeredDescription && <HeaderHelpPopover description={registeredDescription} />}
           </div>
 
           {/* Search - Desktop */}
@@ -411,7 +414,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 )}
               />
               {/* ⌘K shortcut chip — Phase 8 Design System Unification:
-                  switched to JetBrains Mono so the keyboard glyph reads as
+                  switched to mono (Geist Mono) so the keyboard glyph reads as
                   "code/keystroke" alongside our numerics-and-code mono rule.
                   Generic sans previously made it look like a label, not a key. */}
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 label-cased bg-white dark:bg-primary-900 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-primary-800 font-mono font-medium tracking-tight">
@@ -422,12 +425,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Page-registered toolbar actions (Reload, Export, etc.) come first
               in the right cluster so they sit closest to the page title. Each
-              page registers via {@code usePageHeaderActions}. */}
+              page registers via {@code usePageHeaderActions}. shrink-0 +
+              whitespace-nowrap so buttons like "Refresh all (3 stale)" stop
+              wrapping/clipping in the now-shorter 56px header. */}
           {pageActions && (
-            <div className="hidden md:flex items-center gap-2 mr-2">
+            <div className="hidden md:flex items-center gap-2 mr-2 shrink-0 whitespace-nowrap">
               {pageActions}
             </div>
           )}
@@ -532,7 +537,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 {/* Role only — the entity code is now shown in the EntityPicker
                     above, so the (MNC-HOLDING) suffix here was redundant. */}
                 <p className={cn(
-                  'text-[11px] font-medium',
+                  'text-xs font-medium',
                   isTreasury ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'
                 )}>
                   {isTreasury ? 'Treasury' : 'Subsidiary'}
@@ -618,7 +623,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreCl
     <nav className={cn(
       'fixed inset-x-0 bottom-0 z-40 lg:hidden',
       'bg-white/95 backdrop-blur-xl border-t border-neutral-200/60',
-      'shadow-[0_-4px_20px_rgba(16,42,67,0.08)]',
+      'shadow-[0_-4px_20px_rgba(70,73,76,0.08)]',
       'safe-bottom'
     )}>
       <div className="flex items-center justify-around h-16 px-2">
@@ -652,7 +657,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreCl
                 {item.icon}
               </div>
               <span className={cn(
-                'text-[10px] font-medium mt-0.5',
+                'text-xs font-medium mt-0.5',
                 isActive && 'text-primary-700 dark:text-neutral-50'
               )}>
                 {item.label}
@@ -700,7 +705,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
       />
       <div className={cn(
         'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl dark:bg-primary-900',
-        'shadow-[0_-10px_40px_rgba(16,42,67,0.15)]',
+        'shadow-[0_-10px_40px_rgba(70,73,76,0.15)]',
         'animate-slide-in-up safe-bottom',
         'max-h-[85vh] overflow-hidden flex flex-col'
       )}>
@@ -770,7 +775,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                           </span>
                         )}
                         {item.isNew && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-accent-100 text-accent-700 uppercase dark:bg-accent-500/20 dark:text-accent-300">
+                          <span className="text-xs font-bold px-1.5 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 uppercase dark:bg-accent-500/20 dark:text-accent-300">
                             New
                           </span>
                         )}
@@ -846,7 +851,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
       {/* Main Content Area */}
       <div className={cn(
         'min-h-screen flex flex-col',
-        'lg:pl-72', // Sidebar width on desktop
+        'lg:pl-60', // Sidebar width on desktop
         'pb-20 lg:pb-0' // Bottom nav padding on mobile
       )}>
         {/* Header */}
@@ -862,7 +867,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
             a Phase 10 smell and should be migrated when the page is next
             touched. Keeping `animate-page-enter` on <main> means every page
             gets the enter animation even before migrating to <Page>. */}
-        <main className="flex-1 p-4 lg:p-8 animate-page-enter">
+        <main className="flex-1 p-4 lg:px-6 lg:py-5 animate-page-enter">
           {children}
         </main>
 

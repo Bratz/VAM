@@ -54,7 +54,7 @@ export const ToolCallRow: React.FC<ToolCallRowProps> = ({ call }) => {
               {call.errorMessage}
             </div>
           )}
-          <pre className="font-mono text-[11px] whitespace-pre-wrap break-all text-neutral-700 dark:text-neutral-300 max-h-64 overflow-y-auto">
+          <pre className="font-mono text-xs whitespace-pre-wrap break-all text-neutral-700 dark:text-neutral-300 max-h-64 overflow-y-auto">
             {JSON.stringify(call.data, null, 2)}
           </pre>
         </div>

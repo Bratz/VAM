@@ -1,4 +1,5 @@
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
 /**
  * BalanceAggregationPage - Connected to Backend
@@ -506,30 +507,32 @@ const BalanceAggregationPage: React.FC = () => {
   return (
     <Page>
       {/* Page Header with Quick Actions */}
-      <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <h1 className="page-title">Balance Aggregation</h1>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 rounded-lg dark:bg-primary-800">
-            <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
-            <select
-              value={baseCurrency}
-              onChange={(e) => setBaseCurrency(e.target.value)}
-              className="bg-transparent text-sm font-medium text-primary-900 outline-none cursor-pointer dark:text-neutral-50"
-            >
-              {CURRENCIES.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-            {refreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" /> Export
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Balance Aggregation"
+        actions={
+          <>
+            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 rounded-lg dark:bg-primary-800">
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
+              <select
+                value={baseCurrency}
+                onChange={(e) => setBaseCurrency(e.target.value)}
+                className="bg-transparent text-sm font-medium text-primary-900 outline-none cursor-pointer dark:text-neutral-50"
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+              {refreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Refresh
+            </Button>
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" /> Export
+            </Button>
+          </>
+        }
+      />
 
       {/* Corporate & Program Selector */}
       <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 border-primary-200/60 animate-fade-in" style={{ animationDelay: '0.08s' }}>

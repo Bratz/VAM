@@ -270,8 +270,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 text-[10px] bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">AIS</span>}
-                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 text-[10px] bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">PIS</span>}
+                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">AIS</span>}
+                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">PIS</span>}
                           <ChevronRight className="w-4 h-4 text-neutral-400" />
                         </div>
                       </button>
@@ -371,7 +371,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                     Click below to connect to {selectedAspsp.name}. You'll be redirected to your bank to complete authorization.
                   </p>
                   <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200 text-left max-w-sm mx-auto dark:bg-primary-950 dark:border-primary-800">
-                    <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-2 dark:text-neutral-400">Selected Permissions</p>
+                    <p className="text-xs text-neutral-500 mb-2 dark:text-neutral-400">Selected Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedPermissions.map(p => (
                         <span key={p} className="px-2 py-0.5 text-xs bg-neutral-900 text-white">{p}</span>

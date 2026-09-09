@@ -815,7 +815,7 @@ const LoanRow: React.FC<{ loan: IhbLoan; onRepay: () => void; onApprove?: () => 
             <p className="text-xs text-neutral-500 dark:text-neutral-400">{loan.createdAt ? formatDate(loan.createdAt) : '-'}</p>
           </div>
           {loan.autoCreated && (
-            <Badge variant="info" size="sm" className="text-[10px]">Sweep</Badge>
+            <Badge variant="info" size="sm" className="text-xs">Sweep</Badge>
           )}
         </div>
       </td>
@@ -844,7 +844,7 @@ const LoanRow: React.FC<{ loan: IhbLoan; onRepay: () => void; onApprove?: () => 
         <div className="flex flex-col items-center gap-1">
           {getStatusBadge(loan.status)}
           {isAwaitingSettlement && (
-            <span className="text-[10px] text-info-600 dark:text-info-300">EOD Settlement</span>
+            <span className="text-xs text-info-600 dark:text-info-300">EOD Settlement</span>
           )}
         </div>
       </td>
@@ -908,7 +908,7 @@ const DepositRow: React.FC<{ deposit: IhbDeposit; onWithdraw: () => void; onAppr
             <p className="text-xs text-neutral-500 dark:text-neutral-400">{deposit.createdAt ? formatDate(deposit.createdAt) : '-'}</p>
           </div>
           {deposit.autoCreated && (
-            <Badge variant="info" size="sm" className="text-[10px]">Sweep</Badge>
+            <Badge variant="info" size="sm" className="text-xs">Sweep</Badge>
           )}
         </div>
       </td>
@@ -937,7 +937,7 @@ const DepositRow: React.FC<{ deposit: IhbDeposit; onWithdraw: () => void; onAppr
         <div className="flex flex-col items-center gap-1">
           {getStatusBadge(deposit.status)}
           {isAwaitingSettlement && (
-            <span className="text-[10px] text-info-600 dark:text-info-300">EOD Settlement</span>
+            <span className="text-xs text-info-600 dark:text-info-300">EOD Settlement</span>
           )}
           {deposit.sweepFrequency && (
             <span className="label-cased">{deposit.sweepFrequency}</span>
@@ -2048,7 +2048,7 @@ const InHouseBankPage: React.FC = () => {
                             </Badge>
                             {/* IHB Participant Badge */}
                             {account.ihbParticipant && (
-                              <Badge variant="info" size="sm" className="text-[10px]">
+                              <Badge variant="info" size="sm" className="text-xs">
                                 IHB Participant
                               </Badge>
                             )}

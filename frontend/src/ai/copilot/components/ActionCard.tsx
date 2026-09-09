@@ -78,7 +78,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
         <span className="text-xs font-semibold uppercase tracking-wider text-warning-700 dark:text-warning-200">
           Action requires confirmation
         </span>
-        <span className="ml-auto text-[10px] text-warning-700/70 dark:text-warning-300/70 flex items-center gap-1">
+        <span className="ml-auto text-xs text-warning-700/70 dark:text-warning-300/70 flex items-center gap-1">
           <Clock className="w-3 h-3" />
           expires {formatExpiry(action.expiresAt)}
         </span>
@@ -149,7 +149,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
                 type="button"
                 onClick={onConfirm}
                 disabled={isMutating}
-                className="px-2 py-1 text-[11px] rounded border border-error-300 hover:bg-error-50 dark:border-error-700 dark:hover:bg-error-900/40"
+                className="px-2 py-1 text-xs rounded border border-error-300 hover:bg-error-50 dark:border-error-700 dark:hover:bg-error-900/40"
               >
                 Retry
               </button>
@@ -169,7 +169,7 @@ const ParamsTable: React.FC<{ params: Record<string, unknown> }> = ({ params }) 
   if (entries.length === 0) return null;
   return (
     <div className="rounded-md bg-white/70 dark:bg-primary-950/40 border border-warning-100/80 dark:border-warning-800/40 p-2">
-      <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+      <div className="flex items-center gap-1.5 mb-1 text-xs text-neutral-500 dark:text-neutral-400">
         <ListTree className="w-3 h-3" /> Parameters
       </div>
       <div className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1 text-xs font-mono">

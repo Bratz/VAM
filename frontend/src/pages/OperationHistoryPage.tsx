@@ -13,6 +13,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { cn } from '../utils';
+import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
 import {
   hierarchyOperationsApi, OperationHistoryEntry, OperationType, CorporateSummary,
@@ -402,10 +403,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
               <ArrowLeft className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
             </button>
           )}
-          <div>
-            <h1 className="page-title">Operation History</h1>
-            <p className="text-neutral-500 mt-1 dark:text-neutral-400">View and filter hierarchy operation history</p>
-          </div>
+          <PageHeader title="Operation History" description="View and filter hierarchy operation history" />
         </div>
 
         <div className="flex items-center gap-3">

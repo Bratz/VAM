@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { Card, Button, Select, StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
-import { formatCompactAmount, cn } from '../utils';
+import { cn } from '../utils';
+import { Amount } from '../components/Amount';
 import { useSweeping } from '../hooks';
 import { SweepRule, SweepExecution, corporatesApi, programsApi, Corporate, Program } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -297,12 +298,12 @@ const CashConcentrationPage: React.FC = () => {
       <HeroMetricCard
         primary={{
           label: 'Total Swept',
-          value: formatCompactAmount(stats.totalSwept),
+          value: <Amount value={stats.totalSwept} showCurrency={false} />,
           sub: 'Cumulative funds concentrated across all rules',
         }}
         secondary={{
           label: "Today's Swept",
-          value: formatCompactAmount(todaySwept),
+          value: <Amount value={todaySwept} showCurrency={false} />,
           sub: 'Net concentration today',
         }}
         icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}

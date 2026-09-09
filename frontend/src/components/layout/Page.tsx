@@ -35,7 +35,7 @@ export const Page: React.FC<PageProps> = ({
 }) => (
   <div
     className={cn(
-      'space-y-6',
+      'space-y-4',
       maxWidth === 'default' && 'max-w-7xl mx-auto w-full',
       maxWidth === 'narrow' && 'max-w-5xl mx-auto w-full',
       // maxWidth === 'full' has no cap

@@ -98,7 +98,7 @@ export const AttentionDrawer: React.FC<AttentionDrawerProps> = ({
         {/* Header */}
         <div className="flex items-start justify-between gap-3 p-4 border-b border-neutral-100 dark:border-primary-800/60">
           <div className="min-w-0 flex-1">
-            <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium', tone.bg)}>
+            <span className={cn('inline-flex items-center gap-1 px-2 py-0 leading-4 rounded-full text-xs font-medium', tone.bg)}>
               {tone.icon} {tone.label}
             </span>
             <h3 className="section-title mt-2">{item.headline}</h3>
@@ -151,7 +151,7 @@ export const AttentionDrawer: React.FC<AttentionDrawerProps> = ({
           {/* Audit preview */}
           <div className="rounded-lg bg-neutral-100 dark:bg-primary-800/60 p-3">
             <p className="label mb-1.5">If you confirm, this is recorded:</p>
-            <pre className="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 whitespace-pre-wrap break-all">
+            <pre className="text-xs font-mono text-neutral-600 dark:text-neutral-300 whitespace-pre-wrap break-all">
 {JSON.stringify(auditPreview, null, 2)}
             </pre>
           </div>

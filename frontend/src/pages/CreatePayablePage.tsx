@@ -16,6 +16,7 @@ import {
 // differences from the shared versions; deferred for a follow-up).
 import { Card, Button, Badge } from '../components/ui';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi } from '../services/api';
 import { useNavigation } from '../App';
 import { formatCurrency } from '../utils';
@@ -1258,10 +1259,10 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"><ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" /></button>
-              <div>
-                <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50">{isEditMode ? 'Edit Payable' : 'Create Payable'}</h1>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{isEditMode ? `Editing ${payableId}` : 'Record vendor invoice for payment'}</p>
-              </div>
+              <PageHeader
+                title={isEditMode ? 'Edit Payable' : 'Create Payable'}
+                description={isEditMode ? `Editing ${payableId}` : 'Record vendor invoice for payment'}
+              />
             </div>
             <div className="flex items-center gap-3">
               <Button variant="secondary" onClick={() => handleSubmit(true)} disabled={loading} leftIcon={<Save className="w-4 h-4" />}>Save Draft</Button>

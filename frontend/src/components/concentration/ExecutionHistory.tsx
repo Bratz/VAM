@@ -1,7 +1,8 @@
 import React from 'react';
 import { Clock, ArrowRight, Eye } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
-import { formatCompactCurrency, formatCompactAmount, formatRelativeTime } from '../../utils';
+import { formatCurrency, formatRelativeTime } from '../../utils';
+import { Amount } from '../Amount';
 import { SweepExecution } from '../../services/api';
 
 // ============================================================================
@@ -74,14 +75,14 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
 
                 {/* Amount */}
                 <td className="p-4 text-right font-medium tracking-tight">
-                  {formatCompactCurrency(
-                    (exec as any).sweepAmount || (exec as any).amountSwept || 0,
-                    (exec as any).currencyCode || 'AED'
-                  )}
+                  <Amount
+                    value={(exec as any).sweepAmount || (exec as any).amountSwept || 0}
+                    currency={(exec as any).currencyCode || 'AED'}
+                  />
                   {/* Balance change indicator */}
                   {(exec as any).balanceBefore !== undefined && (exec as any).balanceAfter !== undefined && (
                     <div className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">
-                      {formatCompactAmount((exec as any).balanceBefore)} → {formatCompactAmount((exec as any).balanceAfter)}
+                      {formatCurrency((exec as any).balanceBefore, (exec as any).currencyCode || 'AED')} → {formatCurrency((exec as any).balanceAfter, (exec as any).currencyCode || 'AED')}
                     </div>
                   )}
                 </td>

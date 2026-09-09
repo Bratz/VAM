@@ -57,6 +57,7 @@ import {
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
 import { useNavigation } from '../App';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 import { formatCurrency } from '../utils';
 
 // ============================================================================
@@ -1774,12 +1775,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors">
                 <ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
               </button>
-              <div>
-                <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-50">
-                  {isEditMode ? 'Edit Receivable' : 'Create Receivable'}
-                </h1>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{formData.invoiceNumber}</p>
-              </div>
+              <PageHeader
+                title={isEditMode ? 'Edit Receivable' : 'Create Receivable'}
+                description={formData.invoiceNumber}
+              />
             </div>
             <div className="flex items-center gap-3">
               <button

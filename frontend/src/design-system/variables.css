@@ -10,87 +10,95 @@
 :root {
   /* ==================== Color Primitives ==================== */
   
-  /* Navy (Primary Brand) */
-  --color-navy-50: #f0f4f8;
-  --color-navy-100: #d9e2ec;
-  --color-navy-200: #bcccdc;
-  --color-navy-300: #9fb3c8;
-  --color-navy-400: #829ab1;
-  --color-navy-500: #627d98;
-  --color-navy-600: #486581;
-  --color-navy-700: #334e68;
-  --color-navy-800: #243b53;
-  --color-navy-900: #102a43;
-  --color-navy-950: #0a1929;
+  /* Primary — grey-slate "ink" family (palette swap; this token was
+     renamed, not just re-valued, from its old navy-brand name — the
+     sibling accent family below was renamed the same way for
+     consistency). 800/900/950 are named roles: banner slate, ink,
+     nav/deep surface. */
+  --color-ink-50: #f4f4f4;
+  --color-ink-100: #e5e6e6;
+  --color-ink-200: #cfd0d0;
+  --color-ink-300: #b5b6b7;
+  --color-ink-400: #999b9d;
+  --color-ink-500: #818385;
+  --color-ink-600: #6b6d70;
+  --color-ink-700: #595b5e;
+  --color-ink-800: #4c5c68;
+  --color-ink-900: #46494c;
+  --color-ink-950: #3f4a54;
 
-  /* Gold (Accent) */
-  --color-gold-50: #fffbeb;
-  --color-gold-100: #fef3c7;
-  --color-gold-200: #fde68a;
-  --color-gold-300: #fcd34d;
-  --color-gold-400: #fbbf24;
-  --color-gold-500: #f59e0b;
-  --color-gold-600: #d97706;
-  --color-gold-700: #b45309;
-  --color-gold-800: #92400e;
-  --color-gold-900: #78350f;
+  /* Accent — pacific cyan family (palette swap; renamed from its old
+     gold-brand token name, not just re-valued).
+     500 = pacific cyan (4.28:1 on white — never for 12-13px text),
+     700 = accent deep (6.10:1). */
+  --color-cyan-50: #f1f8f9;
+  --color-cyan-100: #dfeef2;
+  --color-cyan-200: #c3dfe7;
+  --color-cyan-300: #a3ced9;
+  --color-cyan-400: #81bccb;
+  --color-cyan-500: #1985a1;
+  --color-cyan-600: #177891;
+  --color-cyan-700: #146b80;
+  --color-cyan-800: #115b6d;
+  --color-cyan-900: #0e4b5a;
 
-  /* Neutral */
+  /* Neutral — re-anchored to the new light-surface roles, ordered by
+     actual lightness (surface-subtle is lighter than page-ground). */
   --color-neutral-0: #ffffff;
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f5f5f5;
-  --color-neutral-200: #e5e5e5;
-  --color-neutral-300: #d4d4d4;
-  --color-neutral-400: #a3a3a3;
-  --color-neutral-500: #737373;
-  --color-neutral-600: #525252;
-  --color-neutral-700: #404040;
-  --color-neutral-800: #262626;
-  --color-neutral-900: #171717;
-  --color-neutral-950: #0a0a0a;
+  --color-neutral-50: #f2f2f3;
+  --color-neutral-100: #e9e9ea;
+  --color-neutral-200: #dcdcdd;
+  --color-neutral-300: #c5c3c6;
+  --color-neutral-400: #b0aeb1;
+  --color-neutral-500: #5d6165;
+  --color-neutral-600: #54585c;
+  --color-neutral-700: #4c4f52;
+  --color-neutral-800: #343638;
+  --color-neutral-900: #252627;
+  --color-neutral-950: #1a1a1b;
 
   /* Green (Success) — full scale post-Tier 2 (2026-05-13). Adding 300/400/
      800/900 stops so the semantic `success-*` palette can be fully scaled
      in tailwind.config without creating undefined classes. Hex values mirror
      Tailwind's built-in green so pages migrating from `bg-green-*` →
      `bg-success-*` are pixel-identical. */
-  --color-green-50:  #ecfdf5;
-  --color-green-100: #d1fae5;
-  --color-green-200: #a7f3d0;
-  --color-green-300: #6ee7b7;
-  --color-green-400: #34d399;
-  --color-green-500: #10b981;
-  --color-green-600: #059669;
-  --color-green-700: #047857;
-  --color-green-800: #065f46;
-  --color-green-900: #064e3b;
+  --color-green-50:  #f2f6f5;
+  --color-green-100: #e1eae7;
+  --color-green-200: #c7d8d3;
+  --color-green-300: #a4c0b7;
+  --color-green-400: #7da698;
+  --color-green-500: #578b7a;
+  --color-green-600: #3d7965;
+  --color-green-700: #276a54;
+  --color-green-800: #205745;
+  --color-green-900: #194537;
 
   /* Amber (Warning) — Phase 2 Design System Unification: repalettised from
      the Tailwind amber family (which shared hex values with gold/accent at
      every step — making warnings indistinguishable from brand accents) to
      the Tailwind orange family. Warnings are now genuinely warm-orange,
      visibly separated from the gold accent scale. */
-  --color-amber-50:  #fff7ed;
-  --color-amber-100: #ffedd5;
-  --color-amber-200: #fed7aa;
-  --color-amber-300: #fdba74;
-  --color-amber-400: #fb923c;
-  --color-amber-500: #f97316;
-  --color-amber-600: #ea580c;
-  --color-amber-700: #c2410c;
+  --color-amber-50:  #f8f5f1;
+  --color-amber-100: #efe9de;
+  --color-amber-200: #e1d5c2;
+  --color-amber-300: #cebc9c;
+  --color-amber-400: #b99f72;
+  --color-amber-500: #a48248;
+  --color-amber-600: #966f2c;
+  --color-amber-700: #8a5f14;
 
   /* Red (Error) — full scale post-Tier 2 (2026-05-13). Same expansion
      rationale as green above. */
-  --color-red-50:  #fef2f2;
-  --color-red-100: #fee2e2;
-  --color-red-200: #fecaca;
-  --color-red-300: #fca5a5;
-  --color-red-400: #f87171;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-  --color-red-700: #b91c1c;
-  --color-red-800: #991b1b;
-  --color-red-900: #7f1d1d;
+  --color-red-50:  #faf4f3;
+  --color-red-100: #f3e5e4;
+  --color-red-200: #e8cecc;
+  --color-red-300: #dab0ad;
+  --color-red-400: #cb8f8a;
+  --color-red-500: #bb6d67;
+  --color-red-600: #b15750;
+  --color-red-700: #a8443c;
+  --color-red-800: #8a3831;
+  --color-red-900: #6d2c27;
 
   /* Blue (Info) — full scale post-Tier 2 (2026-05-13). */
   --color-blue-50:  #eff6ff;
@@ -108,50 +116,50 @@
    * hierarchy levels, agreement types, currency identity). 8 hues, each
    * with subtle bg / strong text pairs for light + dark. NOT for status —
    * status stays success/warning/error/info. Phase 12 (2026-06-12). */
-  --cat-1: #4338ca;  --cat-1-soft: #eef2ff;   /* indigo  */
-  --cat-2: #7e22ce;  --cat-2-soft: #faf5ff;   /* purple  */
-  --cat-3: #0f766e;  --cat-3-soft: #f0fdfa;   /* teal    */
-  --cat-4: #be185d;  --cat-4-soft: #fdf2f8;   /* pink    */
-  --cat-5: #047857;  --cat-5-soft: #ecfdf5;   /* emerald */
-  --cat-6: #b45309;  --cat-6-soft: #fffbeb;   /* bronze  */
-  --cat-7: #1d4ed8;  --cat-7-soft: #eff6ff;   /* blue    */
-  --cat-8: #525252;  --cat-8-soft: #fafafa;   /* slate   */
+  --cat-1: #1985a1;  --cat-1-soft: #e8f3f6;   /* pacific cyan */
+  --cat-2: #146b80;  --cat-2-soft: #e8f0f2;   /* accent deep  */
+  --cat-3: #4c5c68;  --cat-3-soft: #edeff0;   /* banner slate */
+  --cat-4: #3f4a54;  --cat-4-soft: #ecedee;   /* nav deep     */
+  --cat-5: #276a54;  --cat-5-soft: #e9f0ee;   /* success      */
+  --cat-6: #8a5f14;  --cat-6-soft: #f3efe8;   /* warning      */
+  --cat-7: #a8443c;  --cat-7-soft: #f6ecec;   /* danger       */
+  --cat-8: #5d6165;  --cat-8-soft: #efeff0;   /* secondary    */
 
   /* ==================== Semantic Colors ==================== */
 
   /* Brand */
-  --color-brand-primary: var(--color-navy-900);
-  --color-brand-primary-hover: var(--color-navy-800);
-  --color-brand-primary-active: var(--color-navy-950);
-  --color-brand-primary-subtle: var(--color-navy-100);
-  --color-brand-accent: var(--color-gold-500);
-  --color-brand-accent-hover: var(--color-gold-600);
-  --color-brand-accent-subtle: var(--color-gold-100);
+  --color-brand-primary: var(--color-ink-900);
+  --color-brand-primary-hover: var(--color-ink-800);
+  --color-brand-primary-active: var(--color-ink-950);
+  --color-brand-primary-subtle: var(--color-ink-100);
+  --color-brand-accent: var(--color-cyan-500);
+  --color-brand-accent-hover: var(--color-cyan-600);
+  --color-brand-accent-subtle: var(--color-cyan-100);
 
   /* Text */
-  --color-text-primary: var(--color-navy-900);
+  --color-text-primary: var(--color-ink-900);
   --color-text-secondary: var(--color-neutral-500);
   --color-text-tertiary: var(--color-neutral-400);
   --color-text-inverse: var(--color-neutral-0);
   --color-text-disabled: var(--color-neutral-400);
-  --color-text-link: var(--color-navy-700);
-  --color-text-link-hover: var(--color-navy-900);
+  --color-text-link: var(--color-ink-700);
+  --color-text-link-hover: var(--color-ink-900);
 
   /* Background */
   --color-bg-primary: var(--color-neutral-0);
   --color-bg-secondary: var(--color-neutral-50);
   --color-bg-tertiary: var(--color-neutral-100);
-  --color-bg-inverse: var(--color-navy-950);
-  --color-bg-overlay: rgba(10, 25, 41, 0.6);
+  --color-bg-inverse: var(--color-ink-950);
+  --color-bg-overlay: rgba(63, 74, 84, 0.6); /* nav-deep — was navy-950 */
   --color-bg-hover: var(--color-neutral-50);
-  --color-bg-selected: var(--color-navy-50);
+  --color-bg-selected: var(--color-ink-50);
 
   /* Border */
   --color-border-default: var(--color-neutral-200);
   --color-border-subtle: var(--color-neutral-100);
   --color-border-strong: var(--color-neutral-300);
-  --color-border-focus: var(--color-navy-500);
-  --color-border-inverse: var(--color-navy-800);
+  --color-border-focus: var(--color-ink-500);
+  --color-border-inverse: var(--color-ink-800);
 
   /* Status - Success */
   --color-status-success: var(--color-green-500);
@@ -178,7 +186,7 @@
   --color-status-info-text: var(--color-blue-700);
 
   /* Chart */
-  --color-chart-primary: var(--color-navy-900);
+  --color-chart-primary: var(--color-ink-900);
   --color-chart-secondary: var(--color-green-500);
   --color-chart-tertiary: var(--color-blue-500);
   --color-chart-quaternary: var(--color-amber-500);
@@ -190,28 +198,28 @@
 
   /* Font Family — distinctive pair, see CLAUDE.md "Frontend Aesthetics" */
 
-  /* Body / UI sans. Tier 3 (2026-06-12): Open Sans replaces Bricolage
-   * Grotesque — category-standard neutral; large x-height and open
-   * apertures outperform Bricolage at 12.5–14px table sizes. */
-  --font-sans: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Body / UI sans — Geist, self-hosted via @fontsource/geist (not on
+   * Google Fonts). ~1.6% narrower than the prior interface sans at the
+   * same px; no size-scale rework needed. */
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Identifier mono (VA numbers, IBANs, references, transaction IDs).
-   * NOT used for monetary amounts — Tier 2 introduces .amount for those. */
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+   * NOT used for monetary amounts. Geist Mono — same width metrics as the
+   * prior mono stack, gains a slashed zero and distinct 1/l/I. */
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Numeric display — stat values, amounts at hero scale.
-   *
-   * Was Fraunces (display serif). Phase 11 Tier 1 (2026-05-17): swapped to
-   * IBM Plex Sans because Fraunces' soft curves and optical-size variation
-   * read as editorial rather than audit-grade. Tier 3 (2026-06-12):
-   * consolidated onto Open Sans (was IBM Plex Sans). Weight 600 +
-   * tabular-nums (applied by stat utilities) carries the display role.
-   * The serif is preserved on page titles (--font-title) as a brand moment. */
-  --font-numeric: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Numeric display — stat values, amounts at hero scale, AND now every
+   * currency figure (task 7' — Newsreader replaces Fraunces here too, not
+   * just on titles). Font-family name is 'Newsreader Variable' — that's
+   * the family @fontsource-variable/newsreader actually registers, NOT
+   * plain 'Newsreader'; using the literal spec string here would silently
+   * fail to match and fall through to Georgia. Weight 600 for hero scale,
+   * .figure utility adds tabular-nums lining-nums. */
+  --font-numeric: 'Newsreader Variable', Georgia, ui-serif, serif;
 
-  /* Brand-moment serif — used on page titles only. Fraunces at weights 500
-   * and 600. Single line of typography per page; precision burden zero. */
-  --font-title: 'Fraunces', Georgia, ui-serif, serif;
+  /* Brand-moment serif — page titles. Newsreader (was Fraunces), same
+   * family/name caveat as --font-numeric above. */
+  --font-title: 'Newsreader Variable', Georgia, ui-serif, serif;
 
   /* `--font-display` alias retired in Phase 12 Tier 3 (2026-06-12) — all
    * references migrated to `--font-numeric` directly. */
@@ -374,10 +382,10 @@
        modal   — modal dialog drop-shadow, deepest depth
        focus   — keyboard focus ring (gold, see Set "Focus" below)
      Every shadow on the platform should resolve to one of these. */
-  --shadow-rest:    0 1px 3px rgba(16, 42, 67, 0.06), 0 1px 2px rgba(16, 42, 67, 0.04);
-  --shadow-hover:   0 4px 6px -1px rgba(16, 42, 67, 0.07), 0 2px 4px -1px rgba(16, 42, 67, 0.04);
-  --shadow-popover: 0 10px 15px -3px rgba(16, 42, 67, 0.08), 0 4px 6px -2px rgba(16, 42, 67, 0.04);
-  --shadow-modal:   0 25px 50px -12px rgba(16, 42, 67, 0.20);
+  --shadow-rest:    0 1px 3px rgba(70, 73, 76, 0.06), 0 1px 2px rgba(70, 73, 76, 0.04);
+  --shadow-hover:   0 4px 6px -1px rgba(70, 73, 76, 0.07), 0 2px 4px -1px rgba(70, 73, 76, 0.04);
+  --shadow-popover: 0 10px 15px -3px rgba(70, 73, 76, 0.08), 0 4px 6px -2px rgba(70, 73, 76, 0.04);
+  --shadow-modal:   0 25px 50px -12px rgba(70, 73, 76, 0.20);
 
   /* LEGACY ALIASES — old depth-shadow names mapped to the canonical 5.
      Kept alive so existing `var(--shadow-sm)` etc. callers don't break.
@@ -385,7 +393,7 @@
      introduce new callers of these names. */
   --shadow-xs:          var(--shadow-rest);   /* was: 1px navy-tint   → maps to rest */
   --shadow-sm:          var(--shadow-rest);   /* was: 3px navy-tint   → maps to rest */
-  --shadow-inner:       inset 0 2px 4px 0 rgba(16, 42, 67, 0.04);  /* inset variant kept as-is */
+  --shadow-inner:       inset 0 2px 4px 0 rgba(70, 73, 76, 0.04);  /* inset variant kept as-is */
   --shadow-md:          var(--shadow-hover);  /* was: 6px navy-tint   → maps to hover */
   --shadow-lg:          var(--shadow-popover); /* was: 15px navy-tint → maps to popover */
   --shadow-xl:          var(--shadow-popover); /* was: 25px navy-tint → maps to popover */
@@ -400,8 +408,8 @@
      halos used to highlight semantic state (input validation, focus accent
      glow). Renamed to `--ring-*` in spirit; old `--shadow-*` aliases retained
      so callers stay green. */
-  --ring-accent:  0 0 0 3px rgba(245, 158, 11, 0.15);
-  --ring-primary: 0 0 0 3px rgba(16, 42, 67, 0.10);
+  --ring-accent:  0 0 0 3px rgba(25, 133, 161, 0.15);
+  --ring-primary: 0 0 0 3px rgba(70, 73, 76, 0.10);
   --ring-success: 0 0 0 3px rgba(16, 185, 129, 0.15);
   --ring-error:   0 0 0 3px rgba(247, 115, 22, 0.18);  /* Phase 2: orange-tinted to match new amber/warning hue */
   --shadow-accent:  var(--ring-accent);
@@ -489,16 +497,16 @@
   --color-text-tertiary: var(--color-neutral-500);
 
   /* Background */
-  --color-bg-primary: var(--color-navy-900);
-  --color-bg-secondary: var(--color-navy-950);
-  --color-bg-tertiary: var(--color-navy-800);
-  --color-bg-hover: var(--color-navy-800);
-  --color-bg-selected: var(--color-navy-700);
+  --color-bg-primary: var(--color-ink-900);
+  --color-bg-secondary: var(--color-ink-950);
+  --color-bg-tertiary: var(--color-ink-800);
+  --color-bg-hover: var(--color-ink-800);
+  --color-bg-selected: var(--color-ink-700);
 
   /* Border */
-  --color-border-default: var(--color-navy-700);
-  --color-border-subtle: var(--color-navy-800);
-  --color-border-strong: var(--color-navy-600);
+  --color-border-default: var(--color-ink-700);
+  --color-border-subtle: var(--color-ink-800);
+  --color-border-strong: var(--color-ink-600);
 
   /* No dark-mode shadow overrides.
      Post-Phase-3 review: the previous override block redefined the legacy

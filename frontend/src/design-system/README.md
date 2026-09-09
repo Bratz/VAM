@@ -80,16 +80,16 @@ function MyComponent() {
 
 #### Font Families
 ```css
---font-sans:    'Open Sans', system-ui, sans-serif;        /* body, UI */
---font-numeric: 'Open Sans', system-ui, sans-serif;        /* stat values, amounts */
+--font-sans:    'Geist', system-ui, sans-serif;        /* body, UI */
+--font-numeric: 'Geist', system-ui, sans-serif;        /* stat values, amounts */
 --font-title:   'Fraunces', Georgia, ui-serif, serif;      /* page titles only */
---font-mono:    'JetBrains Mono', 'Fira Code', monospace;  /* IBANs, references, code */
+--font-mono:    'Geist Mono', 'Fira Code', monospace;  /* IBANs, references, code */
 ```
 
-Tier 3 stack (Phase 12, 2026-06-12): Open Sans carries body, UI **and** numeric
+Tier 3 stack (Phase 12, 2026-06-12): Geist carries body, UI **and** numeric
 display — it replaced both Bricolage Grotesque (body) and IBM Plex Sans
 (numerics). Fraunces (variable serif by Undercase Type) remains on page titles
-only as the brand moment; JetBrains Mono on identifiers only. The historical
+only as the brand moment; Geist Mono on identifiers only. The historical
 `--font-display` alias is retired — stat utilities read `--font-numeric`
 directly. Loaded via Google Fonts in `styles/index.css`. See `CLAUDE.md`
 "Frontend Aesthetics".

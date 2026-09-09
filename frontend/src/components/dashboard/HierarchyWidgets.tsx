@@ -113,13 +113,13 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
 
   // Color palette for treemap
   const COLORS = [
-    '#102a43', // primary-900
-    '#243b53', // primary-800
-    '#334e68', // primary-700
-    '#486581', // primary-600
-    '#627d98', // primary-500
-    '#829ab1', // primary-400
-    '#9fb3c8', // primary-300
+    '#46494c', // primary-900
+    '#4c5c68', // primary-800
+    '#595b5e', // primary-700
+    '#6b6d70', // primary-600
+    '#818385', // primary-500
+    '#999b9d', // primary-400
+    '#b5b6b7', // primary-300
   ];
 
   // Transform data for treemap

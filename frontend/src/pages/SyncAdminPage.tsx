@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Play, Clock, CheckCircle, XCircle, Loader2, AlertCircle, List } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { syncAdminApi } from '../services/api';
+import { PageHeader } from '../components/layout/PageHeader';
 
 const SyncAdminPage: React.FC = () => {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -71,13 +72,11 @@ const SyncAdminPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="page-title">Sync Administration</h1>
-          <p className="text-neutral-500 dark:text-neutral-400 mt-1">Monitor and manage data synchronization jobs</p>
-        </div>
-        <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>
-      </div>
+      <PageHeader
+        title="Sync Administration"
+        description="Monitor and manage data synchronization jobs"
+        actions={<Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>}
+      />
 
       {/* Stats */}
       {stats && (

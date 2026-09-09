@@ -15,6 +15,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import { TreasuryOnly, PermissionGate } from '../components/permissions';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 
 // ============================================================================
 // TYPES
@@ -997,11 +998,8 @@ const EnhancedNettingCyclesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="page-title">Netting Cycles</h1>
-          <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">Multilateral intercompany netting management</p>
-        </div>
+      <div className="space-y-4">
+        <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
         <LoadingSpinner />
       </div>
     );
@@ -1009,10 +1007,8 @@ const EnhancedNettingCyclesPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="page-title">Netting Cycles</h1>
-        </div>
+      <div className="space-y-4">
+        <PageHeader title="Netting Cycles" description="Multilateral intercompany netting management" />
         <ErrorMessage message={error} onRetry={fetchCycles} />
       </div>
     );

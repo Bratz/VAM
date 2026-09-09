@@ -70,6 +70,13 @@ export interface DataTableProps<T> {
   stickyHeader?: boolean;
   compact?: boolean;
   striped?: boolean;
+  /**
+   * Density-pass hairline variant: no card wrapper/shadow, thinner
+   * padding, forces striped off. Opt-in (default false) so every existing
+   * caller renders exactly as before — other pages (Liquidity, Multi-Bank,
+   * In-House Bank) can adopt the same look with this one prop.
+   */
+  hairline?: boolean;
   // Mobile
   mobileCardRenderer?: (row: T, index: number) => React.ReactNode;
   // Actions
@@ -105,12 +112,14 @@ export function DataTable<T>({
   stickyHeader = false,
   compact = false,
   striped = false,
+  hairline = false,
   mobileCardRenderer,
   actions,
   bulkActions,
 }: DataTableProps<T>) {
   const [localSearch, setLocalSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const effectiveStriped = hairline ? false : striped;
 
   const handleSort = (key: string) => {
     if (!onSort) return;
@@ -165,7 +174,10 @@ export function DataTable<T>({
           <thead className={cn(
             stickyHeader && 'sticky top-0 z-10'
           )}>
-            <tr className="bg-neutral-50/80 backdrop-blur-sm border-b border-neutral-200 dark:border-primary-800">
+            <tr className={cn(
+              'border-b dark:border-primary-700',
+              hairline ? 'border-neutral-300' : 'bg-neutral-50/80 backdrop-blur-sm border-neutral-200 dark:border-primary-800'
+            )}>
               {selectable && (
                 <th className="w-12 px-4 py-3">
                   <button
@@ -218,7 +230,7 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100">
+          <tbody className={cn('divide-y', hairline ? 'divide-neutral-200 dark:divide-primary-800/60' : 'divide-neutral-100')}>
             {loading ? (
               Array.from({ length: pageSize }).map((_, i) => (
                 <tr key={i}>
@@ -258,7 +270,7 @@ export function DataTable<T>({
                     className={cn(
                       'transition-colors duration-150',
                       onRowClick && 'cursor-pointer',
-                      striped && index % 2 === 1 && 'bg-neutral-50/50',
+                      effectiveStriped && index % 2 === 1 && 'bg-neutral-50/50',
                       isSelected && 'bg-primary-50 dark:bg-primary-800/40',
                       !isSelected && 'hover:bg-neutral-50'
                     )}
@@ -563,8 +575,9 @@ export function DataTable<T>({
 
       {/* Table / Cards */}
       <div className={cn(
-        'bg-white rounded-2xl border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800',
-        'shadow-sm'
+        hairline
+          ? 'border-b border-neutral-300 dark:border-primary-700'
+          : 'bg-white rounded-2xl border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800 shadow-sm'
       )}>
         <DesktopTable />
         <MobileCards />

@@ -142,7 +142,7 @@ export const TodayHorizonPanel: React.FC<TodayHorizonPanelProps> = ({ horizon, l
               <span
                 key={h.hour}
                 className={cn(
-                  'flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-400',
+                  'flex-1 text-center text-xs text-neutral-500 dark:text-neutral-400',
                   isPeak && 'text-primary-900 dark:text-neutral-50 font-semibold',
                   isMarked && 'border-b border-warning-500',
                 )}
@@ -159,7 +159,7 @@ export const TodayHorizonPanel: React.FC<TodayHorizonPanelProps> = ({ horizon, l
       <div className="mt-3 body-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-2 flex-wrap">
         <span>Converted at</span>
         {horizon.fxDisclosure.rates.map((r) => (
-          <span key={r.pair} className="inline-flex items-center gap-1 font-mono text-[11px]">
+          <span key={r.pair} className="inline-flex items-center gap-1 font-mono text-xs">
             {r.pair} {r.rate.toFixed(4)}
           </span>
         ))}

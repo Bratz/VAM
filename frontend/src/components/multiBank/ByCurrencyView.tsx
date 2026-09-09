@@ -214,12 +214,12 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-primary-900 dark:text-neutral-50">{row.bankName ?? row.bankBic}</span>
                             {row.homeBank && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
+                              <span className="text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
                                 Home bank
                               </span>
                             )}
                           </div>
-                          <p className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">{row.bankBic}</p>
+                          <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{row.bankBic}</p>
                         </td>
                         <td className="py-2.5">{s.bankAccountNumber ?? s.bankIban ?? '—'}</td>
                         <td className="py-2.5 amount text-right text-primary-900 dark:text-neutral-50">{formatCurrency(s.bankBalanceEffective, s.currencyCode)}</td>

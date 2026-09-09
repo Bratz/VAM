@@ -343,13 +343,13 @@ const InvoiceRow: React.FC<InvoiceRowProps> = ({
           {getStatusBadge(invoice.status)}
           <div className="flex flex-wrap gap-1 mt-1">
             {invoice.isIntercompany && (
-              <Badge variant="info" size="sm" className="text-[10px]">
+              <Badge variant="info" size="sm" className="text-xs">
                 <Building2 className="w-3 h-3 mr-1" />
                 IC: {invoice.intercompanyEntityCode}
               </Badge>
             )}
             {invoice.nettingEligible && invoice.nettingStatus !== 'NOT_INCLUDED' && (
-              <Badge variant="info" size="sm" className="text-[10px]">
+              <Badge variant="info" size="sm" className="text-xs">
                 <GitMerge className="w-3 h-3 mr-1" />
                 {invoice.nettingStatus}
               </Badge>

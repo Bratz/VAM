@@ -11,6 +11,7 @@ import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { fundsAvailabilityApi } from '../services/api';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 
 // ============================================================================
 // TYPES
@@ -638,9 +639,7 @@ const FundsAvailabilityPage: React.FC = () => {
   return (
     <Page>
       {/* Page Header */}
-      <div className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <h1 className="page-title">Funds Availability</h1>
-      </div>
+      <PageHeader title="Funds Availability" />
 
       {/* Info Banner */}
       <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in" style={{ animationDelay: '0.1s' }}>

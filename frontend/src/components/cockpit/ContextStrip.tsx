@@ -1,9 +1,10 @@
 import React from 'react';
 import { Layers, RefreshCw, ArrowRight, Banknote, Building2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { cn, formatCurrency, formatCompactAmount } from '../../utils';
+import { cn, formatCurrency } from '../../utils';
 import { Card, StatusIconBadge, Skeleton } from '../ui';
 import { TreasurySummary } from '../../services/api';
+import { Amount } from '../Amount';
 
 // ============================================================================
 // Cockpit — context strip.
@@ -41,7 +42,7 @@ const TILES: Array<{
   label: string;
   page: string;
   icon: LucideIcon;
-  primary: (t: TreasurySummary) => { value: string; sub: string };
+  primary: (t: TreasurySummary) => { value: React.ReactNode; sub: string };
 }> = [
   {
     key: 'pooling',
@@ -49,7 +50,7 @@ const TILES: Array<{
     page: 'pooling',
     icon: Layers,
     primary: (t) => ({
-      value: formatCompactAmount(t.pooling.totalPooledBalance),
+      value: <Amount value={t.pooling.totalPooledBalance} showCurrency={false} />,
       sub: `${t.pooling.activePools} pools · ${t.pooling.memberCount} members`,
     }),
   },
@@ -59,7 +60,7 @@ const TILES: Array<{
     page: 'sweeping',
     icon: RefreshCw,
     primary: (t) => ({
-      value: formatCompactAmount(t.sweeping.totalSweptToday),
+      value: <Amount value={t.sweeping.totalSweptToday} showCurrency={false} />,
       sub: `${t.sweeping.executionsToday} runs today · ${t.sweeping.activeRules} rules`,
     }),
   },
@@ -69,7 +70,7 @@ const TILES: Array<{
     page: 'netting',
     icon: ArrowRight,
     primary: (t) => ({
-      value: formatCompactAmount(t.netting.totalSavingsYtd),
+      value: <Amount value={t.netting.totalSavingsYtd} showCurrency={false} />,
       sub: `${t.netting.pendingCycles} pending · ${t.netting.averageSavingsPercent.toFixed(1)}% avg savings`,
     }),
   },
@@ -79,8 +80,8 @@ const TILES: Array<{
     page: 'ihb',
     icon: Building2,
     primary: (t) => ({
-      value: formatCompactAmount(t.inHouseBank.totalLoansOutstanding),
-      sub: `${t.inHouseBank.activeEntities} entities · ${formatCompactAmount(t.inHouseBank.totalDeposits)} deposits`,
+      value: <Amount value={t.inHouseBank.totalLoansOutstanding} showCurrency={false} />,
+      sub: `${t.inHouseBank.activeEntities} entities · ${formatCurrency(t.inHouseBank.totalDeposits)} deposits`,
     }),
   },
 ];

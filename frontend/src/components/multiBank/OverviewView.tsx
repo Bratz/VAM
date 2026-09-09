@@ -129,7 +129,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       {currencies.map((c) => (
         <span
           key={c.currencyCode}
-          className="amount text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
+          className="amount text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
         >
           {c.currencyCode} {formatCurrency(c.totalEffective, c.currencyCode)}
         </span>

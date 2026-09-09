@@ -367,7 +367,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
         {/* Compact mode keeps a 10px label for grid density; full mode uses
             the canonical `.label` recipe (12px uppercase, tracked). */}
         {compact ? (
-          <span className="text-[10px] font-medium text-neutral-600 dark:text-neutral-300">
+          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
             {typeLabels[type]}
           </span>
         ) : (
@@ -384,7 +384,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
       )}>
         {isDebit && '-'}{formatCurrency(amount, currency)}
       </p>
-      <p className={cn('text-neutral-500 mt-0.5 dark:text-neutral-400', compact ? 'text-[10px]' : 'text-xs')}>
+      <p className={cn('text-neutral-500 mt-0.5 dark:text-neutral-400', 'text-xs')}>
         {formatDate(date)}
       </p>
     </div>

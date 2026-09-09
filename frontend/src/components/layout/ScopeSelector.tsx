@@ -73,6 +73,14 @@ interface CommonProps {
   /** Extra trailing content (e.g. a 3rd dropdown). Rendered just before refresh. */
   rightSlot?: React.ReactNode;
   className?: string;
+  /**
+   * Density pass: render without the Card wrapper, the "Corporate" eyebrow
+   * label, and the "Showing all" hint — just the bare dropdown(s). For
+   * callers that already compose their own chrome around the selector (e.g.
+   * the dashboard's merged tab+scope row) and don't need the concept
+   * re-labelled. Every other consumer is unaffected (defaults to false).
+   */
+  bare?: boolean;
 }
 
 interface CorporateProgramProps extends CommonProps {
@@ -169,6 +177,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
     refreshing,
     rightSlot,
     className,
+    bare,
   } = props;
 
   // ---- Compute per-mode option lists, child node, active chips ----
@@ -197,7 +206,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="primary" icon={Building} size="sm" />
         <div className="min-w-[220px]">
-          <label className="label">Corporate</label>
+          {!bare && <label className="label">Corporate</label>}
           <Select
             value={props.selectedCorporateId}
             onChange={(e) => props.onCorporateChange(e.target.value)}
@@ -328,13 +337,76 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
   const requireSelection =
     (props.mode === 'corporate-only' && (props as CorporateOnlyProps).requireSelection)
     || (props.mode === 'entity-only' && (props as EntityOnlyProps).requireSelection);
-  if (noSelectionAtAll && !requireSelection) {
+  if (noSelectionAtAll && !requireSelection && !bare) {
     placeholderHint = (
       <span className="body-sm text-neutral-500 italic dark:text-neutral-400">
         Showing all
       </span>
     );
   }
+
+  const content = (
+    <div className={cn('flex items-center gap-4 flex-wrap', bare && className)}>
+      {/* Corporate (3 of 4 modes) */}
+      {corporateField}
+
+      {/* Divider only when both fields render. entity-only renders just
+          the child; corporate-only renders just the parent. */}
+      {corporateField && childField && <Divider />}
+
+      {/* Program / Entity child (3 of 4 modes) */}
+      {childField}
+
+      {/* Optional extension slot (e.g. EntityBalanceTreePage's currency). */}
+      {rightSlot && (
+        <>
+          <Divider />
+          {rightSlot}
+        </>
+      )}
+
+      {/* Active-selection chips + clear button. */}
+      {!hideActiveChips && (
+        <div className="flex items-center gap-2 ml-auto flex-wrap">
+          {activeCorporateChip}
+          {activeChildChip}
+          {placeholderHint}
+          {anySelection && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClear}
+              leftIcon={<X className="w-3.5 h-3.5" />}
+              aria-label="Clear scope"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Refresh button — optional. When loading, the icon spins. */}
+      {onRefresh && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={refreshing || loading}
+          leftIcon={<RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />}
+          aria-label="Refresh"
+        >
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
+      )}
+
+      {/* In-flight indicator when no Refresh button is mounted. */}
+      {!onRefresh && loading && (
+        <Loader2 className="w-5 h-5 text-primary-600 animate-spin dark:text-primary-200" aria-label="Loading" />
+      )}
+    </div>
+  );
+
+  if (bare) return content;
 
   return (
     <Card
@@ -346,64 +418,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
         className,
       )}
     >
-      <div className="flex items-center gap-4 flex-wrap">
-        {/* Corporate (3 of 4 modes) */}
-        {corporateField}
-
-        {/* Divider only when both fields render. entity-only renders just
-            the child; corporate-only renders just the parent. */}
-        {corporateField && childField && <Divider />}
-
-        {/* Program / Entity child (3 of 4 modes) */}
-        {childField}
-
-        {/* Optional extension slot (e.g. EntityBalanceTreePage's currency). */}
-        {rightSlot && (
-          <>
-            <Divider />
-            {rightSlot}
-          </>
-        )}
-
-        {/* Active-selection chips + clear button. */}
-        {!hideActiveChips && (
-          <div className="flex items-center gap-2 ml-auto flex-wrap">
-            {activeCorporateChip}
-            {activeChildChip}
-            {placeholderHint}
-            {anySelection && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClear}
-                leftIcon={<X className="w-3.5 h-3.5" />}
-                aria-label="Clear scope"
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Refresh button — optional. When loading, the icon spins. */}
-        {onRefresh && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={refreshing || loading}
-            leftIcon={<RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />}
-            aria-label="Refresh"
-          >
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-        )}
-
-        {/* In-flight indicator when no Refresh button is mounted. */}
-        {!onRefresh && loading && (
-          <Loader2 className="w-5 h-5 text-primary-600 animate-spin dark:text-primary-200" aria-label="Loading" />
-        )}
-      </div>
+      {content}
     </Card>
   );
 };

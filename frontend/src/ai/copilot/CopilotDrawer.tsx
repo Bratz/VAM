@@ -78,7 +78,7 @@ export const CopilotDrawer: React.FC = () => {
                     <Dialog.Title className="font-display text-base font-semibold tracking-tight">
                       Treasury Copilot
                     </Dialog.Title>
-                    <p className="text-[11px] text-accent-300/80 uppercase tracking-wider">
+                    <p className="text-xs text-accent-300/80">
                       Stub prototype · {humaniseIntent(lastIntent)}
                     </p>
                   </div>

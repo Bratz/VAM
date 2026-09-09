@@ -8,6 +8,7 @@ import {
 import { Button, Badge, Input } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
+import { PageHeader } from '../components/layout/PageHeader';
 import toast from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8053/api/v1';
@@ -318,10 +319,11 @@ const TaxChargesSetupPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div><h1 className="page-title">Tax & Charges Setup</h1><p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">Configure tax rates, jurisdictions, and fee schedules{useMockData && <Badge variant="warning" size="sm" className="ml-2">Demo Mode</Badge>}</p></div>
-        <div className="flex gap-2"><Button variant="outline" onClick={() => console.log('Export configs')}><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={() => console.log('Import configs')}><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></div>
-      </div>
+      <PageHeader
+        title="Tax & Charges Setup"
+        description={<>Configure tax rates, jurisdictions, and fee schedules{useMockData && <Badge variant="warning" size="sm" className="ml-2">Demo Mode</Badge>}</>}
+        actions={<><Button variant="outline" onClick={() => console.log('Export configs')}><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={() => console.log('Import configs')}><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></>}
+      />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" bgColor="bg-blue-50 dark:bg-blue-500/10" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" bgColor="bg-green-50 dark:bg-green-500/10" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2" bgColor="bg-cat-2-soft dark:bg-cat-2/15" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" bgColor="bg-warning-50 dark:bg-warning-500/10" loading={loading} /></div>
       <div className="bg-white rounded-xl shadow-sm border border-neutral-100 dark:bg-primary-900 dark:border-primary-800/60">
         <div className="flex items-center gap-2 p-4 border-b border-neutral-200 dark:border-primary-800"><TabButton active={activeTab === 'taxes'} onClick={() => setActiveTab('taxes')} icon={Receipt} label="Tax Configurations" count={taxConfigs.length} /><TabButton active={activeTab === 'charges'} onClick={() => setActiveTab('charges')} icon={DollarSign} label="Charge Configurations" count={chargeConfigs.length} /><TabButton active={activeTab === 'jurisdictions'} onClick={() => setActiveTab('jurisdictions')} icon={Globe} label="Jurisdictions" count={jurisdictions.length} /></div>

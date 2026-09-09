@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge, Input } from '../components/ui';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
 import { formatRelativeTime, cn } from '../utils';
 import { getConnectorIcon } from '../components/ConnectorIcons';
@@ -325,7 +326,7 @@ const ConnectorCard: React.FC<{
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium text-neutral-900 tracking-tight dark:text-neutral-50">{connector.connectorName}</h3>
                 {connector.isBeta && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-medium tracking-wide uppercase bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">Beta</span>
+                  <span className="px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">Beta</span>
                 )}
               </div>
               <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{categoryConfig[connector.category].label} · {connector.region || 'Global'}</p>
@@ -342,12 +343,12 @@ const ConnectorCard: React.FC<{
         {/* Features */}
         <div className="flex flex-wrap gap-1 mb-4">
           {connector.supportedFeatures.slice(0, 3).map((feature, idx) => (
-            <span key={idx} className="px-2 py-0.5 text-[10px] font-medium bg-neutral-50 text-neutral-600 border border-neutral-100 dark:bg-primary-950 dark:text-neutral-300 dark:border-primary-800/60">
+            <span key={idx} className="px-2 py-0.5 text-xs font-medium bg-neutral-50 text-neutral-600 border border-neutral-100 dark:bg-primary-950 dark:text-neutral-300 dark:border-primary-800/60">
               {feature}
             </span>
           ))}
           {connector.supportedFeatures.length > 3 && (
-            <span className="px-2 py-0.5 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+            <span className="px-2 py-0.5 text-xs font-medium text-neutral-400 dark:text-neutral-500">
               +{connector.supportedFeatures.length - 3}
             </span>
           )}
@@ -357,7 +358,7 @@ const ConnectorCard: React.FC<{
         {connector.complianceStandards && connector.complianceStandards.length > 0 && (
           <div className="flex gap-1 mb-4">
             {connector.complianceStandards.slice(0, 3).map((std, idx) => (
-              <span key={idx} className="text-[10px] text-neutral-400 dark:text-neutral-500">{std}</span>
+              <span key={idx} className="text-xs text-neutral-400 dark:text-neutral-500">{std}</span>
             ))}
           </div>
         )}
@@ -424,12 +425,12 @@ const ConnectionCard: React.FC<{
           </div>
           <div className="flex items-center gap-2">
             <span className={cn(
-              "px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+              "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
               connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
             )}>
               {connection.environment === 'PRODUCTION' ? 'Prod' : 'Sandbox'}
             </span>
-            <span className={cn("px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide", status.bg, status.text)}>
+            <span className={cn("px-2 py-0.5 text-xs font-medium uppercase tracking-wide", status.bg, status.text)}>
               {status.label}
             </span>
           </div>
@@ -447,15 +448,15 @@ const ConnectionCard: React.FC<{
       <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100 dark:divide-primary-800/60 dark:border-primary-800/60">
         <div className="p-4 text-center">
           <p className="text-lg font-light text-neutral-900 dark:text-neutral-50">{connection.dataFlowCount}</p>
-          <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Flows</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Flows</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-xs font-medium text-neutral-900 capitalize dark:text-neutral-50">{connection.syncFrequency.toLowerCase().replace('_', ' ')}</p>
-          <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Frequency</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Frequency</p>
         </div>
         <div className="p-4 text-center">
           <p className="text-xs font-medium text-neutral-900 dark:text-neutral-50">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
-          <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Last Sync</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Last Sync</p>
         </div>
       </div>
 
@@ -952,13 +953,13 @@ const ConnectionDetailModal: React.FC<{
             <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-50">{connection.connectionName}</h2>
             <div className="flex items-center gap-2 mt-1">
               <span className={cn(
-                "px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
                 connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
               )}>
                 {connection.environment}
               </span>
               <span className={cn(
-                "px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
                 connection.status === 'CONNECTED' ? 'bg-neutral-900 text-white' : 'bg-error-600 text-white'
               )}>
                 {connection.status}
@@ -967,7 +968,7 @@ const ConnectionDetailModal: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Last Sync</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Last Sync</p>
           <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
         </div>
       </div>
@@ -991,7 +992,7 @@ const ConnectionDetailModal: React.FC<{
           >
             {tab.label}
             {tab.count !== undefined && (
-              <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">{tab.count}</span>
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">{tab.count}</span>
             )}
           </button>
         ))}
@@ -1009,7 +1010,7 @@ const ConnectionDetailModal: React.FC<{
                 { label: 'Created By', value: connection.createdBy },
               ].map((item, idx) => (
                 <div key={idx} className="p-4 bg-neutral-50 border border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
-                  <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{item.label}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.label}</p>
                   <p className="text-sm font-medium text-neutral-900 mt-1 capitalize dark:text-neutral-50">{item.value}</p>
                 </div>
               ))}
@@ -1090,10 +1091,10 @@ const ConnectionDetailModal: React.FC<{
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{flow.recordsProcessed?.toLocaleString() || 0}</p>
-                      <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Records</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Records</p>
                     </div>
                     <span className={cn(
-                      "px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
                       flow.status === 'ACTIVE' ? 'bg-neutral-900 text-white' : flow.status === 'PAUSED' ? 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-error-600 text-white'
                     )}>
                       {flow.status}
@@ -1134,7 +1135,7 @@ const ConnectionDetailModal: React.FC<{
                     <td className="py-3 text-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</td>
                     <td className="py-3">
                       <span className={cn(
-                        "px-2 py-0.5 text-[10px] font-medium uppercase",
+                        "px-2 py-0.5 text-xs font-medium uppercase",
                         log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction}
@@ -1147,7 +1148,7 @@ const ConnectionDetailModal: React.FC<{
                     </td>
                     <td className="py-3 text-center">
                       <span className={cn(
-                        "px-2 py-0.5 text-[10px] font-medium uppercase",
+                        "px-2 py-0.5 text-xs font-medium uppercase",
                         log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
                         log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
                         log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
@@ -1211,11 +1212,11 @@ const FieldMappingModal: React.FC<{
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-              <th className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-wide text-neutral-600 w-1/4 dark:text-neutral-300">Source</th>
-              <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-wide text-neutral-600 w-12 dark:text-neutral-300"></th>
-              <th className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-wide text-neutral-600 w-1/4 dark:text-neutral-300">Target</th>
-              <th className="px-4 py-3 text-left text-[10px] font-medium uppercase tracking-wide text-neutral-600 dark:text-neutral-300">Transform</th>
-              <th className="px-4 py-3 text-center text-[10px] font-medium uppercase tracking-wide text-neutral-600 w-20 dark:text-neutral-300">Required</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 w-1/4 dark:text-neutral-300">Source</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-600 w-12 dark:text-neutral-300"></th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 w-1/4 dark:text-neutral-300">Target</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-300">Transform</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-600 w-20 dark:text-neutral-300">Required</th>
               <th className="px-4 py-3 text-center w-12"></th>
             </tr>
           </thead>
@@ -1362,23 +1363,23 @@ const IntegrationsPage: React.FC = () => {
           space-y-6 rhythm. */}
       <div className="bg-white border-b border-neutral-200 dark:bg-primary-900 dark:border-primary-800">
         <div className="max-w-7xl mx-auto py-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-light text-neutral-900 tracking-tight dark:text-neutral-50">Integrations</h1>
-              <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">Connect ERP, treasury, and banking systems</p>
-            </div>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 text-sm border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
-                <FileText className="w-4 h-4" /> API Docs
-              </button>
-              <button
-                onClick={() => setActiveTab('connectors')}
-                className="px-4 py-2 text-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" /> Add Connection
-              </button>
-            </div>
-          </div>
+          <PageHeader
+            title="Integrations"
+            description="Connect ERP, treasury, and banking systems"
+            actions={
+              <>
+                <button className="px-4 py-2 text-sm border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+                  <FileText className="w-4 h-4" /> API Docs
+                </button>
+                <button
+                  onClick={() => setActiveTab('connectors')}
+                  className="px-4 py-2 text-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Connection
+                </button>
+              </>
+            }
+          />
 
           {/* Stats */}
           <div className="grid grid-cols-5 gap-6 mt-8">
@@ -1527,7 +1528,7 @@ const IntegrationsPage: React.FC = () => {
                     <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">{log.flowName}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium uppercase",
+                        "inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium uppercase",
                         log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction === 'INBOUND' ? <Download className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
@@ -1541,7 +1542,7 @@ const IntegrationsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={cn(
-                        "px-2 py-0.5 text-[10px] font-medium uppercase",
+                        "px-2 py-0.5 text-xs font-medium uppercase",
                         log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
                         log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
                         log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'

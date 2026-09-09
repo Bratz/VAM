@@ -221,7 +221,7 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const sizes: Record<string, string> = {
-    xs: 'px-1.5 py-0.5 text-[10px] gap-1',
+    xs: 'px-1.5 py-0 leading-4 text-xs gap-1',
     sm: 'px-2 py-0.5 text-xs gap-1',
     md: 'px-2.5 py-1 text-sm gap-1.5',
   };
@@ -852,7 +852,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
 }) => {
   const sizes: Record<string, string> = {
-    xs: 'w-6 h-6 text-[10px]',
+    xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-xs',
     md: 'w-10 h-10 text-sm',
     lg: 'w-12 h-12 text-base',

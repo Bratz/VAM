@@ -64,7 +64,7 @@ export const AttentionRow: React.FC<AttentionRowProps> = ({ item, onOpen, onActi
       )}
     >
       <span className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0 w-[88px] justify-center',
+        'inline-flex items-center gap-1 px-2 py-0 leading-4 rounded-full text-xs font-medium shrink-0 w-[88px] justify-center',
         tone.bg,
       )}>
         {tone.icon} {tone.label}

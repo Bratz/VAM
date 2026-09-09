@@ -10,46 +10,55 @@ export default {
     extend: {
       // Swiss Minimalist Design System
       colors: {
-        // Primary - Deep navy for trust and professionalism
+        // Primary — grey-slate "ink" family (palette swap, replaces navy).
+        // 800/900/950 are named roles from the spec: 800 = banner slate
+        // (#4c5c68), 900 = ink (#46494c, main dark text), 950 = nav/deep
+        // surface (#3f4a54, sidebar + dark-mode background).
         primary: {
-          50: '#f0f4f8',
-          100: '#d9e2ec',
-          200: '#bcccdc',
-          300: '#9fb3c8',
-          400: '#829ab1',
-          500: '#627d98',
-          600: '#486581',
-          700: '#334e68',
-          800: '#243b53',
-          900: '#102a43',
-          950: '#0a1929',
+          50: '#f4f4f4',
+          100: '#e5e6e6',
+          200: '#cfd0d0',
+          300: '#b5b6b7',
+          400: '#999b9d',
+          500: '#818385',
+          600: '#6b6d70',
+          700: '#595b5e',
+          800: '#4c5c68',
+          900: '#46494c',
+          950: '#3f4a54',
         },
-        // Accent - Warm gold for highlights
+        // Accent — pacific cyan family (palette swap, replaces gold).
+        // 500 = pacific cyan (#1985a1, fills/chart series/borders — 4.28:1
+        // on white, never for 12-13px text per the contrast rule). 700 =
+        // accent deep (#146b80, 6.10:1 — buttons and 13px link text).
         accent: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          800: '#92400e',
-          900: '#78350f',
+          50: '#f1f8f9',
+          100: '#dfeef2',
+          200: '#c3dfe7',
+          300: '#a3ced9',
+          400: '#81bccb',
+          500: '#1985a1',
+          600: '#177891',
+          700: '#146b80',
+          800: '#115b6d',
+          900: '#0e4b5a',
         },
-        // Neutral grays
+        // Neutral grays — re-anchored to the new light-surface roles.
+        // Ordered by actual lightness: surface-subtle (#f2f2f3) is lighter
+        // than page-ground (#e9e9ea). 700-950 interpolated toward ink
+        // (not individually specified by the palette spec).
         neutral: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a3a3a3',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          900: '#171717',
-          950: '#0a0a0a',
+          50: '#f2f2f3',
+          100: '#e9e9ea',
+          200: '#dcdcdd',
+          300: '#c5c3c6',
+          400: '#b0aeb1',
+          500: '#5d6165',
+          600: '#54585c',
+          700: '#4c4f52',
+          800: '#343638',
+          900: '#252627',
+          950: '#1a1a1b',
         },
         // Semantic colors — Tier 2 page-adoption (2026-05-13):
         // Expanded from partial (50/500/600/700) to full 50–900 scales.
@@ -61,16 +70,16 @@ export default {
         // Hex values mirror Tailwind's built-in green/red/blue so the
         // rewrite is pixel-identical.
         success: {
-          50:  '#ecfdf5',
-          100: '#d1fae5',
-          200: '#a7f3d0',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065f46',
-          900: '#064e3b',
+          50:  '#f2f6f5',
+          100: '#e1eae7',
+          200: '#c7d8d3',
+          300: '#a4c0b7',
+          400: '#7da698',
+          500: '#578b7a',
+          600: '#3d7965',
+          700: '#276a54',
+          800: '#205745',
+          900: '#194537',
         },
         // Warning — Phase 2 Design System Unification (2026-05-13):
         // Repalettised from the Tailwind amber family (which had identical
@@ -78,16 +87,16 @@ export default {
         // highlights) to the Tailwind orange family. Warnings now read as
         // genuinely warm-orange — visibly distinct from the gold accent.
         warning: {
-          50:  '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50:  '#f8f5f1',
+          100: '#efe9de',
+          200: '#e1d5c2',
+          300: '#cebc9c',
+          400: '#b99f72',
+          500: '#a48248',
+          600: '#966f2c',
+          700: '#8a5f14',
+          800: '#714e10',
+          900: '#5a3e0d',
         },
         // Override Tailwind's built-in `amber` palette so direct callers
         // (`bg-amber-100`, `text-amber-700`, etc — used heavily across
@@ -96,28 +105,28 @@ export default {
         // `bg-amber-*` would keep returning the original gold-equivalent
         // amber from Tailwind's defaults, defeating the unification.
         amber: {
-          50:  '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea580c',
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50:  '#f8f5f1',
+          100: '#efe9de',
+          200: '#e1d5c2',
+          300: '#cebc9c',
+          400: '#b99f72',
+          500: '#a48248',
+          600: '#966f2c',
+          700: '#8a5f14',
+          800: '#714e10',
+          900: '#5a3e0d',
         },
         error: {
-          50:  '#fef2f2',
-          100: '#fee2e2',
-          200: '#fecaca',
-          300: '#fca5a5',
-          400: '#f87171',
-          500: '#ef4444',
-          600: '#dc2626',
-          700: '#b91c1c',
-          800: '#991b1b',
-          900: '#7f1d1d',
+          50:  '#faf4f3',
+          100: '#f3e5e4',
+          200: '#e8cecc',
+          300: '#dab0ad',
+          400: '#cb8f8a',
+          500: '#bb6d67',
+          600: '#b15750',
+          700: '#a8443c',
+          800: '#8a3831',
+          900: '#6d2c27',
         },
         info: {
           50:  '#eff6ff',
@@ -139,14 +148,18 @@ export default {
         // text-cat-2` (dark: `dark:bg-cat-2/15 dark:text-cat-2`). Mirrors
         // --cat-N / --cat-N-soft in design-system/variables.css and
         // color.categorical in tokens.json. Phase 12 (2026-06-12).
-        'cat-1': '#4338ca', 'cat-1-soft': '#eef2ff',  // indigo
-        'cat-2': '#7e22ce', 'cat-2-soft': '#faf5ff',  // purple
-        'cat-3': '#0f766e', 'cat-3-soft': '#f0fdfa',  // teal
-        'cat-4': '#be185d', 'cat-4-soft': '#fdf2f8',  // pink
-        'cat-5': '#047857', 'cat-5-soft': '#ecfdf5',  // emerald
-        'cat-6': '#b45309', 'cat-6-soft': '#fffbeb',  // bronze
-        'cat-7': '#1d4ed8', 'cat-7-soft': '#eff6ff',  // blue
-        'cat-8': '#525252', 'cat-8-soft': '#fafafa',  // slate
+        // Palette swap: rebuilt from the grey-slate-cyan family instead of
+        // indigo/purple/pink (which would fight the new palette) — pacific
+        // cyan, accent-deep, banner-slate, nav-deep, success, warning,
+        // danger, secondary-text.
+        'cat-1': '#1985a1', 'cat-1-soft': '#e8f3f6',  // pacific cyan
+        'cat-2': '#146b80', 'cat-2-soft': '#e8f0f2',  // accent deep
+        'cat-3': '#4c5c68', 'cat-3-soft': '#edeff0',  // banner slate
+        'cat-4': '#3f4a54', 'cat-4-soft': '#ecedee',  // nav deep
+        'cat-5': '#276a54', 'cat-5-soft': '#e9f0ee',  // success
+        'cat-6': '#8a5f14', 'cat-6-soft': '#f3efe8',  // warning
+        'cat-7': '#a8443c', 'cat-7-soft': '#f6ecec',  // danger
+        'cat-8': '#5d6165', 'cat-8-soft': '#efeff0',  // secondary text
       },
       fontFamily: {
         // Tier 3 stack (Phase 12, 2026-06-12) — see styles/index.css.
@@ -157,9 +170,11 @@ export default {
         // `display` backs the `font-display` UTILITY CLASS (brand wordmark
         // serif) — unrelated to the retired --font-display CSS variable;
         // stays Fraunces by design.
-        sans: ['"Open Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
-        display: ['"Fraunces"', 'Georgia', 'ui-serif', 'serif'],
-        mono: ['"JetBrains Mono"', 'Menlo', 'monospace'],
+        sans: ['"Geist"', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        // 'Newsreader Variable' is the actual registered family name for
+        // @fontsource-variable/newsreader — not 'Newsreader'.
+        display: ['"Newsreader Variable"', 'Georgia', 'ui-serif', 'serif'],
+        mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'monospace'],
       },
       fontSize: {
         // Typography scale
@@ -213,12 +228,13 @@ export default {
       // `shadow-dropdown` (it was referenced in 2 pages but never defined
       // — those dropdowns rendered with no shadow at all).
       boxShadow: {
-        'soft':       '0 1px 3px rgba(16, 42, 67, 0.06), 0 1px 2px rgba(16, 42, 67, 0.04)',
-        'medium':     '0 4px 6px -1px rgba(16, 42, 67, 0.07), 0 2px 4px -1px rgba(16, 42, 67, 0.04)',
-        'strong':     '0 25px 50px -12px rgba(16, 42, 67, 0.20)',
-        'popover':    '0 10px 15px -3px rgba(16, 42, 67, 0.08), 0 4px 6px -2px rgba(16, 42, 67, 0.04)',
-        'dropdown':   '0 10px 15px -3px rgba(16, 42, 67, 0.08), 0 4px 6px -2px rgba(16, 42, 67, 0.04)',
-        'inner-soft': 'inset 0 2px 4px 0 rgba(16, 42, 67, 0.04)',
+        // rgba triple is ink (#46494c) — palette swap (was navy #102a43).
+        'soft':       '0 1px 3px rgba(70, 73, 76, 0.06), 0 1px 2px rgba(70, 73, 76, 0.04)',
+        'medium':     '0 4px 6px -1px rgba(70, 73, 76, 0.07), 0 2px 4px -1px rgba(70, 73, 76, 0.04)',
+        'strong':     '0 25px 50px -12px rgba(70, 73, 76, 0.20)',
+        'popover':    '0 10px 15px -3px rgba(70, 73, 76, 0.08), 0 4px 6px -2px rgba(70, 73, 76, 0.04)',
+        'dropdown':   '0 10px 15px -3px rgba(70, 73, 76, 0.08), 0 4px 6px -2px rgba(70, 73, 76, 0.04)',
+        'inner-soft': 'inset 0 2px 4px 0 rgba(70, 73, 76, 0.04)',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',

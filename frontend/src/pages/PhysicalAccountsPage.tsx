@@ -400,7 +400,7 @@ const BankCard: React.FC<{ bank: BankSummary; isSelected: boolean; onClick: () =
                 MultiBankLiquidity conformance pass: 10px uppercase, accent
                 tone for home bank, neutral for external. */}
             <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+              "text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full",
               isHomeBank
                 ? "bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300"
                 : "bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300",
@@ -1164,7 +1164,7 @@ const PhysicalAccountsPage: React.FC = () => {
                       {otherCurrencies.slice(0, 5).map(([ccy, amt]) => (
                         <span
                           key={ccy}
-                          className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
+                          className="font-mono text-xs px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
                           title={`${ccy} ${amt.toLocaleString()}`}
                         >
                           {ccy} {formatCurrency(amt, ccy)}
