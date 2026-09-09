@@ -344,7 +344,11 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       key: c.code,
       label: c.code,
       meta: `${c.shadows.length} account${c.shadows.length === 1 ? '' : 's'}`,
-      subtitle: formatCurrency(c.effective, c.code),
+      // "available", not "current" — this is a sum of bankBalanceEffective,
+      // which nets out holds/commitments. It won't match a manual sum of
+      // the rows' Current column below whenever a shadow has money held,
+      // so the label has to say which figure it is.
+      subtitle: `${formatCurrency(c.effective, c.code)} avail.`,
       rows: c.shadows,
     }));
   }, [model, view]);
@@ -489,7 +493,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   return (
                     <div key={c.code} className="flex items-center gap-4 py-2">
                       <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 w-12 shrink-0">{c.code}</span>
-                      <Amount value={c.effective} currency={c.code} showCurrency={false} className="text-[20px] font-semibold text-primary-900 dark:text-neutral-50 w-40 shrink-0" />
+                      <Amount value={c.effective} currency={c.code} showCurrency={false} className="text-[20px] font-semibold text-primary-900 dark:text-neutral-50 w-40 shrink-0 text-right tabular-nums" />
                       {/* neutral-100 (#f2f2f3) is nearly the same tone as the
                           page background this sits on, so at 0% fill (5 of
                           6 currencies here have no home-bank balance) the
