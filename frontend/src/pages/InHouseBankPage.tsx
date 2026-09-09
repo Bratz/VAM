@@ -9,7 +9,8 @@ import {
 import { Card, Button, Badge, Input, Select, EmptyState, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
-import { formatCurrency, formatDate, cn } from '../utils';
+import { formatCurrency, formatDate, cn, formatAmountForTile } from '../utils';
+import { TileAmount } from '../components/TileAmount';
 import api, { corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
@@ -1632,7 +1633,7 @@ const InHouseBankPage: React.FC = () => {
               tone="danger"
               icon={<CreditCard className="w-5 h-5" />}
               label="Loans Outstanding"
-              value={formatCurrency(totalLoanOutstanding, 'AED')}
+              value={<TileAmount value={totalLoanOutstanding} currency="AED" />}
               sub={`${activeLoans.length} active loans`}
               loading={loading}
               delay="0.2s"
@@ -1642,7 +1643,7 @@ const InHouseBankPage: React.FC = () => {
               tone="success"
               icon={<PiggyBank className="w-5 h-5" />}
               label="Total Deposits"
-              value={formatCurrency(totalDepositBalance, 'AED')}
+              value={<TileAmount value={totalDepositBalance} currency="AED" />}
               sub={`${activeDeposits.length} active deposits`}
               loading={loading}
               delay="0.25s"
@@ -1652,7 +1653,7 @@ const InHouseBankPage: React.FC = () => {
               tone={netInterest >= 0 ? 'success' : 'danger'}
               icon={<Percent className="w-5 h-5" />}
               label="Net Interest"
-              value={formatCurrency(netInterest, 'AED')}
+              value={<TileAmount value={netInterest} currency="AED" />}
               sub="Spread earned"
               loading={loading}
               delay="0.3s"
@@ -1696,7 +1697,7 @@ const InHouseBankPage: React.FC = () => {
               <StatStrip>
                 <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Lender Entities" value={lenders.length} sub="Available to lend funds" />
                 <StatTile tone="danger" icon={<TrendingDown className="w-5 h-5" />} label="Borrower Entities" value={borrowers.length} sub="Can borrow from IHB" />
-                <StatTile tone="info" icon={<Activity className="w-5 h-5" />} label="Net Position" value={formatCurrency(totalDepositBalance - totalLoanOutstanding, 'AED')} sub="Deposits - Loans" />
+                <StatTile tone="info" icon={<Activity className="w-5 h-5" />} label="Net Position" value={<TileAmount value={totalDepositBalance - totalLoanOutstanding} currency="AED" />} sub="Deposits - Loans" />
               </StatStrip>
 
               {/* Settlement Status Panel (Option B) */}
@@ -1734,13 +1735,13 @@ const InHouseBankPage: React.FC = () => {
                       {settlementStatus.pendingApproval > 0 && (
                         <StatTile tone="warning" label="Pending Approval" value={settlementStatus.pendingApproval} sub="Manual positions" />
                       )}
-                      <StatTile tone="info" label="Committed Deposits" value={settlementStatus.committedDeposits} sub={formatCurrency(settlementStatus.totalCommittedDeposits, 'AED')} />
-                      <StatTile tone="accent" label="Committed Loans" value={settlementStatus.committedLoans} sub={formatCurrency(settlementStatus.totalCommittedLoans, 'AED')} />
+                      <StatTile tone="info" label="Committed Deposits" value={settlementStatus.committedDeposits} sub={formatAmountForTile(settlementStatus.totalCommittedDeposits, 'AED')} />
+                      <StatTile tone="accent" label="Committed Loans" value={settlementStatus.committedLoans} sub={formatAmountForTile(settlementStatus.totalCommittedLoans, 'AED')} />
                       <StatTile
                         tone="neutral"
                         valueTone={settlementStatus.netCommitted >= 0 ? 'success' : 'danger'}
                         label="Net Committed"
-                        value={formatCurrency(settlementStatus.netCommitted, 'AED')}
+                        value={<TileAmount value={settlementStatus.netCommitted} currency="AED" />}
                         sub="EOD Movement"
                       />
                     </StatStrip>

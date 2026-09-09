@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
 import { formatCompactCurrency } from '../../utils';
+import { TileAmount } from '../TileAmount';
 import { NotionalPool } from '../../services/api';
 
 // ============================================================================
@@ -72,13 +73,13 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-xl p-3">
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Pool Balance</p>
           <p className="section-title mt-0.5">
-            {formatCompactCurrency(pool.totalBalance || 0, pool.poolCurrency)}
+            <TileAmount value={pool.totalBalance || 0} currency={pool.poolCurrency} />
           </p>
         </div>
         <div className="bg-success-50 dark:bg-success-500/10 rounded-xl p-3">
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Savings YTD</p>
           <p className="text-lg font-semibold text-success-700 dark:text-success-300 mt-0.5">
-            {formatCompactCurrency(pool.interestSavingsYtd || 0, pool.poolCurrency)}
+            <TileAmount value={pool.interestSavingsYtd || 0} currency={pool.poolCurrency} />
           </p>
         </div>
       </div>

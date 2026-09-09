@@ -102,6 +102,35 @@ export function formatCompactAmount(amount: number): string {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(amount);
 }
 
+/**
+ * Genuine K/M/B abbreviation — deliberately a new name, not a repurposing of
+ * formatCompactCurrency/formatCurrencyAuto/formatCompactAmount above (those
+ * three are permanently full-precision now; leave them that way). This is
+ * for summary tiles/cards only (StatTile, HeroMetricCard) where the box is
+ * physically too small for a full-precision figure to render without
+ * overflowing (confirmed live: "AED 11,735,049.00" needs 187px in a 124px
+ * tile) — anywhere a value is a line item, a table cell, or otherwise needs
+ * to be verified/reconciled, keep using formatCurrency/<Amount/>. Pair with
+ * the full-precision string as a tooltip (see <TileAmount/> in
+ * components/TileAmount.tsx) so the exact figure is never actually hidden,
+ * just not force-fit into a space too small for it.
+ */
+export function formatAmountForTile(
+  amount: number,
+  currency: string = activeMarket.currency
+): string {
+  const abs = Math.abs(amount);
+  if (abs < 1000) return formatCurrency(amount, currency);
+
+  const [divisor, suffix]: [number, string] =
+    abs >= 1_000_000_000 ? [1_000_000_000, 'B'] :
+    abs >= 1_000_000 ? [1_000_000, 'M'] :
+    [1_000, 'K'];
+  const sign = amount < 0 ? '−' : ''; // true minus (U+2212), matches <Amount/>'s convention
+  const scaled = (abs / divisor).toFixed(1);
+  return `${currency} ${sign}${scaled}${suffix}`;
+}
+
 // Format date
 export function formatDate(
   date: string | Date,

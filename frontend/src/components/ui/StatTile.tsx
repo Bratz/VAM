@@ -38,7 +38,9 @@ export interface StatTileProps {
   icon?: React.ReactNode;
   tone: keyof typeof TONE;
   label: string;
-  value: string | number;
+  /** Plain string/number, or a node like <TileAmount/> for compact currency
+      display with a full-precision tooltip. */
+  value: React.ReactNode;
   sub?: string;
   onClick?: () => void;
   active?: boolean;

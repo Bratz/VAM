@@ -8,6 +8,7 @@ import {
   BarChart3, Activity, Zap, Receipt, Building, X, XCircle, Ban,
 } from 'lucide-react';
 import { Card, Button, Badge, Input, StatusIconBadge, StatTile } from '../components/ui';
+import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Page } from '../components/layout/Page';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -1162,12 +1163,12 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           <HeroMetricCard
             primary={{
               label: 'POBO Volume',
-              value: formatCompactCurrency(stats.totalPoboVolume, 'AED'),
+              value: <TileAmount value={stats.totalPoboVolume} currency="AED" />,
               sub: `${stats.totalPoboTransactions} payments on behalf of subsidiaries`,
             }}
             secondary={{
               label: 'COBO Volume',
-              value: formatCompactCurrency(stats.totalCoboVolume, 'AED'),
+              value: <TileAmount value={stats.totalCoboVolume} currency="AED" />,
               sub: `${stats.totalCoboTransactions} collections on behalf`,
             }}
             icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
@@ -1220,9 +1221,9 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <h3 className="section-title">Corporate Position Summary</h3>
                 </div>
                 <StatStrip className="mb-6">
-                  <StatTile tone="danger" label="Total Payables" value={formatCompactCurrency(positionSummary.totalOutstandingPayables, positionSummary.currency)} />
-                  <StatTile tone="success" label="Total Receivables" value={formatCompactCurrency(positionSummary.totalOutstandingReceivables, positionSummary.currency)} />
-                  <StatTile tone="primary" label="Net Position" value={formatCompactCurrency(positionSummary.netPosition, positionSummary.currency)} />
+                  <StatTile tone="danger" label="Total Payables" value={<TileAmount value={positionSummary.totalOutstandingPayables} currency={positionSummary.currency} />} />
+                  <StatTile tone="success" label="Total Receivables" value={<TileAmount value={positionSummary.totalOutstandingReceivables} currency={positionSummary.currency} />} />
+                  <StatTile tone="primary" label="Net Position" value={<TileAmount value={positionSummary.netPosition} currency={positionSummary.currency} />} />
                 </StatStrip>
 
                 <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">

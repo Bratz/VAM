@@ -11,7 +11,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatusIconBadge, StatTile } from '../components/ui';
-import { formatCompactCurrency } from '../utils';
+import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
 import { NotionalPool, corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -313,7 +313,7 @@ const NotionalPoolingPage: React.FC = () => {
           tone="info"
           valueTone="neutral"
           label="Total Pooled"
-          value={formatCompactCurrency(filteredStats.totalBalance, 'AED')}
+          value={<TileAmount value={filteredStats.totalBalance} currency="AED" />}
           icon={<DollarSign className="w-5 h-5" />}
           loading={loading}
           delay="0.3s"
@@ -323,7 +323,7 @@ const NotionalPoolingPage: React.FC = () => {
           tone="warning"
           valueTone="success"
           label="Total Savings"
-          value={formatCompactCurrency(filteredStats.totalSavings, 'AED')}
+          value={<TileAmount value={filteredStats.totalSavings} currency="AED" />}
           icon={<PiggyBank className="w-5 h-5" />}
           loading={loading}
           delay="0.35s"

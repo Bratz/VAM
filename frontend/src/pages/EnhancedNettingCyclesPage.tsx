@@ -8,7 +8,8 @@ import {
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
-import { formatCompactCurrency, formatCurrency, cn } from '../utils';
+import { formatCurrency, cn } from '../utils';
+import { TileAmount } from '../components/TileAmount';
 import { nettingApi, NettingCycle, ApiResponse, corporatesApi, Corporate } from '../services/api';
 import { useUser } from '../context/UserContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -432,17 +433,17 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             <StatTile
               tone="neutral"
               label="Gross Volume"
-              value={formatCompactCurrency(cycle.totalGross || 0, cycle.baseCurrency)}
+              value={<TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />}
             />
             <StatTile
               tone="primary"
               label="Net Volume"
-              value={formatCompactCurrency(cycle.totalNet || 0, cycle.baseCurrency)}
+              value={<TileAmount value={cycle.totalNet || 0} currency={cycle.baseCurrency} />}
             />
             <StatTile
               tone="success"
               label="Savings"
-              value={formatCompactCurrency(cycle.savingsAmount || 0, cycle.baseCurrency)}
+              value={<TileAmount value={cycle.savingsAmount || 0} currency={cycle.baseCurrency} />}
             />
             <StatTile
               tone="info"
@@ -613,13 +614,13 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                     <div className="text-center p-3 bg-error-50 rounded-xl border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
                       <p className="label">Payables</p>
                       <p className="text-lg font-semibold text-error-700 mt-1 dark:text-error-300">
-                        {formatCompactCurrency(pos.grossPayables, pos.currency)}
+                        <TileAmount value={pos.grossPayables} currency={pos.currency} />
                       </p>
                     </div>
                     <div className="text-center p-3 bg-success-50 rounded-xl border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
                       <p className="label">Receivables</p>
                       <p className="text-lg font-semibold text-success-700 mt-1 dark:text-success-300">
-                        {formatCompactCurrency(pos.grossReceivables, pos.currency)}
+                        <TileAmount value={pos.grossReceivables} currency={pos.currency} />
                       </p>
                     </div>
                     <div className={cn(
@@ -632,7 +633,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                         pos.netDirection === 'RECEIVE' ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'
                       )}>
                         {pos.netDirection === 'PAY' ? '-' : '+'}
-                        {formatCompactCurrency(pos.netPosition, pos.currency)}
+                        <TileAmount value={pos.netPosition} currency={pos.currency} />
                       </p>
                     </div>
                   </div>
@@ -761,13 +762,13 @@ const CycleCard: React.FC<CycleCardProps> = ({
           <div className="bg-neutral-50 rounded-xl p-3 dark:bg-primary-950">
             <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Gross</p>
             <p className="text-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">
-              {formatCompactCurrency(cycle.totalGross || 0, cycle.baseCurrency)}
+              <TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />
             </p>
           </div>
           <div className="bg-success-50 rounded-xl p-3 dark:bg-success-500/10">
             <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Net</p>
             <p className="text-lg font-bold text-success-700 mt-1 dark:text-success-300">
-              {formatCompactCurrency(cycle.totalNet || 0, cycle.baseCurrency)}
+              <TileAmount value={cycle.totalNet || 0} currency={cycle.baseCurrency} />
             </p>
           </div>
         </div>
@@ -782,7 +783,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
               <span className="body-sm">Settlement Savings</span>
             </div>
             <span className="font-bold text-accent-700 dark:text-accent-300">
-              {formatCompactCurrency(cycle.savingsAmount, cycle.baseCurrency)}
+              <TileAmount value={cycle.savingsAmount} currency={cycle.baseCurrency} />
               <span className="text-xs ml-1 text-accent-600 dark:text-accent-300">({cycle.savingsPercent?.toFixed(1)}%)</span>
             </span>
           </div>
@@ -1039,7 +1040,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
         <StatTile tone="info" icon={<Layers className="w-5 h-5" />} label="Open" value={stats.open} delay="0.2s" />
         <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pending} delay="0.25s" />
         <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Settled" value={stats.settled} delay="0.3s" />
-        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={formatCompactCurrency(stats.totalSavings, 'AED')} delay="0.35s" />
+        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={<TileAmount value={stats.totalSavings} currency="AED" />} delay="0.35s" />
       </StatStrip>
 
       {/* Filter */}

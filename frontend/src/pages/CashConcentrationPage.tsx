@@ -13,7 +13,7 @@ import {
 import { Card, Button, Select, StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { cn } from '../utils';
-import { Amount } from '../components/Amount';
+import { TileAmount } from '../components/TileAmount';
 import { useSweeping } from '../hooks';
 import { SweepRule, SweepExecution, corporatesApi, programsApi, Corporate, Program } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -298,12 +298,12 @@ const CashConcentrationPage: React.FC = () => {
       <HeroMetricCard
         primary={{
           label: 'Total Swept',
-          value: <Amount value={stats.totalSwept} showCurrency={false} />,
+          value: <TileAmount value={stats.totalSwept} showCurrency={false} />,
           sub: 'Cumulative funds concentrated across all rules',
         }}
         secondary={{
           label: "Today's Swept",
-          value: <Amount value={todaySwept} showCurrency={false} />,
+          value: <TileAmount value={todaySwept} showCurrency={false} />,
           sub: 'Net concentration today',
         }}
         icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
