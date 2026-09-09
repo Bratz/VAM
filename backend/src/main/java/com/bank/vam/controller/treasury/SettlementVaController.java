@@ -380,7 +380,14 @@ public class SettlementVaController {
             .status(va.getStatus() != null ? va.getStatus().name() : "ACTIVE")
             .hierarchyNodeId(va.getHierarchyNodeId())
             .hierarchyPath(node != null ? node.getMaterializedPath() : null)
-            .hierarchyLevel(node != null ? node.getLevelNumber() : null)
+            // The VA's own hierarchyLevel (0-indexed, ROOT VA = 0) — not
+            // node.getLevelNumber(), which is HierarchyNode's separate,
+            // 1-indexed scheme (ROOT node = 1). Every other response mapper
+            // in this codebase (VirtualAccountController, ShadowAccountController,
+            // CurrencyMirrorController) already reads va.getHierarchyLevel()
+            // directly; this one was the one outlier re-deriving it from the
+            // node and off by one as a result.
+            .hierarchyLevel(va.getHierarchyLevel())
             .parentNodeName(node != null && node.getParentId() != null ? 
                 nodeRepository.findById(node.getParentId()).map(HierarchyNode::getNodeName).orElse(null) : null)
             .programId(va.getProgramId())

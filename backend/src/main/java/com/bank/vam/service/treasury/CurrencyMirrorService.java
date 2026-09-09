@@ -294,7 +294,16 @@ public class CurrencyMirrorService {
             .hierarchyNodeId(node.getId())
             .hierarchyPath(node.getMaterializedPath())
             .hierarchyPathVa(hierarchyPath)
-            .hierarchyLevel(node.getLevelNumber())
+            // node.getLevelNumber() is HierarchyNode's own 1-indexed scheme
+            // (ROOT node = 1); the VA's hierarchyLevel is 0-indexed (ROOT
+            // VA = 0) — the same mismatch fixed in HierarchyService's ROOT
+            // creation. Copying levelNumber directly here left every mirror
+            // in this createWithHierarchy chain one level too deep,
+            // including the ROOT-level one (parentMirror == null below),
+            // which isMirrorAtLevel() would already treat as unreachable
+            // by level filtering since it has no parent — but a wrong
+            // stored value is still wrong for anything that reads it directly.
+            .hierarchyLevel(node.getLevelNumber() != null ? node.getLevelNumber() - 1 : 0)
             
             // Parent mirror linkage (self-referencing VA tree)
             .parentAccountId(parentMirror != null ? parentMirror.getId() : null)
