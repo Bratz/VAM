@@ -55,7 +55,6 @@ import VibanManagementPage from './pages/VibanManagementPage';
 import InHouseBankPage from './pages/InHouseBankPage';
 import NotionalPoolingPage from './pages/NotionalPoolingPage';
 import CashConcentrationPage from './pages/CashConcentrationPage';
-import NettingCyclesPage from './pages/NettingCyclesPage';
 import TreasuryHierarchyPage from './pages/TreasuryHierarchyPage';
 import ForecastingPage from './pages/ForecastingPage';
 
@@ -155,7 +154,6 @@ export type PageType =
   | 'notional-pooling'
   | 'sweeping'
   | 'simulator'
-  | 'netting'
   | 'netting-enhanced'  // Phase 7 Enhanced Netting
   | 'hierarchy'
   | 'forecasting'
@@ -473,7 +471,7 @@ const sectionFor = (page: PageType): SectionKey => {
   if (page === 'kycc' || page === 'viban') return 'compliance';
   if (page === 'sync-admin' || page === 'integrations' || page === 'tax-charges' || page === 'settings' || page === 'operation-history') return 'admin';
   if (page.startsWith('intercompany')) return 'intercompany';
-  const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting','netting-enhanced','hierarchy',
+  const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
     'forecasting','shadow-accounts','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
     'interest-accruals','settlement-vas','exceptions','hierarchy-operations'];
@@ -587,7 +585,6 @@ const App: React.FC = () => {
       // (the simulator.* feature flags were discontinued 2026-05-16).
       case 'simulator':
         return <SimulatorPage />;
-      case 'netting': return <NettingCyclesPage />;
       case 'netting-enhanced': return <EnhancedNettingCyclesPage />;  // Phase 7 Enhanced
       case 'hierarchy': return <TreasuryHierarchyPage />;
       case 'forecasting': return <ForecastingPage />;

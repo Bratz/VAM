@@ -17,8 +17,7 @@ import {
   ArrowRightLeft, Clock, CheckCircle2, XCircle, AlertTriangle, MinusCircle,
   Copy, Globe, Building2, Edit2, ArrowUpDown, Database, Zap, X,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { Card, Button, Input, StatusIconBadge, Drawer } from '../components/ui';
+import { Card, Button, Input, StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -112,39 +111,6 @@ const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs,
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300">
       <XCircle className="w-3 h-3" /> Outdated
     </span>
-  );
-};
-
-// ============================================================================
-// OPERATIONAL STAT TILE — clickable tiles drive the status filter
-// ============================================================================
-const RateStatTile: React.FC<{
-  label: string;
-  value: number;
-  tone: 'success' | 'warning' | 'info' | 'primary';
-  icon: LucideIcon;
-  onClick?: () => void;
-  active?: boolean;
-}> = ({ label, value, tone, icon: Icon, onClick, active }) => {
-  const valueClass =
-    tone === 'success' ? 'stat-value-success' :
-    tone === 'warning' ? 'stat-value-warning' :
-    tone === 'info' ? 'stat-value-info' :
-    'stat-value-sm';
-  return (
-    <Card
-      hover={!!onClick}
-      onClick={onClick}
-      className={cn(onClick && 'cursor-pointer', active && 'ring-2 ring-accent-500')}
-    >
-      <div className="p-4 flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="label">{label}</p>
-          <p className={cn(valueClass, 'mt-1')}>{value}</p>
-        </div>
-        <StatusIconBadge tone={tone} icon={Icon} />
-      </div>
-    </Card>
   );
 };
 
@@ -621,17 +587,17 @@ const FxRatesPage: React.FC = () => {
 
       {/* Operational stats */}
       <StatStrip>
-        <RateStatTile label="Fresh" value={stats.freshCount} tone="success" icon={CheckCircle2} />
-        <RateStatTile
+        <StatTile label="Fresh" value={stats.freshCount} tone="success" icon={<CheckCircle2 className="w-5 h-5" />} />
+        <StatTile
           label="Stale"
           value={stats.staleCount}
           tone="warning"
-          icon={AlertTriangle}
+          icon={<AlertTriangle className="w-5 h-5" />}
           onClick={() => setStatusFilter(s => (s === 'stale' ? 'all' : 'stale'))}
           active={statusFilter === 'stale'}
         />
-        <RateStatTile label="Updated today" value={stats.updatedTodayCount} tone="info" icon={Clock} />
-        <RateStatTile label="Pairs" value={stats.pairs} tone="primary" icon={ArrowRightLeft} />
+        <StatTile label="Updated today" value={stats.updatedTodayCount} tone="info" icon={<Clock className="w-5 h-5" />} />
+        <StatTile label="Pairs" value={stats.pairs} tone="primary" icon={<ArrowRightLeft className="w-5 h-5" />} />
       </StatStrip>
 
       {/* Filter bar */}

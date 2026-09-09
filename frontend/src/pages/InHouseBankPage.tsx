@@ -6,7 +6,7 @@ import {
   CreditCard, Activity, FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal,
   Briefcase
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, Skeleton, EmptyState } from '../components/ui';
+import { Card, Button, Badge, Input, Select, EmptyState, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -14,6 +14,7 @@ import api, { corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
+import { StatStrip } from '../components/layout/StatStrip';
 
 // ============================================================================
 // API CONFIGURATION - UNIFIED ENDPOINTS
@@ -493,57 +494,6 @@ const ihbUnifiedApi = {
 // ============================================================================
 // SUB-COMPONENTS
 // ============================================================================
-
-const StatCard: React.FC<{
-  title: string;
-  value: string | number;
-  subtitle?: string;
-  icon: React.ReactNode;
-  color?: 'primary' | 'success' | 'error' | 'warning' | 'info';
-  loading?: boolean;
-  delay?: string;
-}> = ({ title, value, subtitle, icon, color = 'primary', loading, delay }) => {
-  const colorClasses = {
-    primary: 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200',
-    success: 'bg-success-100 text-success-600 dark:bg-success-500/20 dark:text-success-300',
-    error: 'bg-error-100 text-error-600 dark:bg-error-500/20 dark:text-error-300',
-    warning: 'bg-warning-100 text-warning-600 dark:bg-warning-500/20 dark:text-warning-300',
-    info: 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300',
-  };
-
-  const valueColorClasses = {
-    primary: 'text-primary-900 dark:text-neutral-50',
-    success: 'text-success-600 dark:text-success-300',
-    error: 'text-error-600 dark:text-error-300',
-    warning: 'text-warning-600 dark:text-warning-300',
-    info: 'text-info-600 dark:text-info-300',
-  };
-
-  return (
-    <Card hover className="animate-fade-in" style={delay ? { animationDelay: delay } : undefined}>
-      <div className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="label">{title}</p>
-            {loading ? (
-              <Skeleton className="h-8 w-24 mt-1" />
-            ) : (
-              <p className={cn('stat-value-sm mt-1', valueColorClasses[color])}>{value}</p>
-            )}
-            {loading ? (
-              <Skeleton className="h-3 w-20 mt-1" />
-            ) : subtitle ? (
-              <p className="text-xs text-neutral-400 mt-0.5 dark:text-neutral-500">{subtitle}</p>
-            ) : null}
-          </div>
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', colorClasses[color])}>
-            {icon}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-};
 
 // ============================================================================
 // CORPORATE & PROGRAM SELECTOR BAR
@@ -1643,7 +1593,7 @@ const InHouseBankPage: React.FC = () => {
         <>
           {/* Treasury Rates Banner (if available) */}
           {treasuryRates && (
-            <Card padding="sm" className="bg-gradient-to-r from-warning-50/50 via-white to-success-50/50 border-warning-200/60 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <Card padding="sm" className="bg-gradient-to-r from-warning-50/50 via-white to-success-50/50 border-warning-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
               <div className="flex items-center justify-between p-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-warning-100 flex items-center justify-center flex-shrink-0 dark:bg-warning-500/20">
@@ -1666,44 +1616,48 @@ const InHouseBankPage: React.FC = () => {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="IHB Entities"
-          value={entities.length}
-          subtitle={`${lenders.length} lenders, ${borrowers.length} borrowers`}
-          icon={<Building2 className="w-5 h-5" />}
-          color="primary"
-          loading={loading}
-          delay="0.15s"
-        />
-        <StatCard
-          title="Loans Outstanding"
-          value={formatCurrency(totalLoanOutstanding, 'AED')}
-          subtitle={`${activeLoans.length} active loans`}
-          icon={<CreditCard className="w-5 h-5" />}
-          color="error"
-          loading={loading}
-          delay="0.2s"
-        />
-        <StatCard
-          title="Total Deposits"
-          value={formatCurrency(totalDepositBalance, 'AED')}
-          subtitle={`${activeDeposits.length} active deposits`}
-          icon={<PiggyBank className="w-5 h-5" />}
-          color="success"
-          loading={loading}
-          delay="0.25s"
-        />
-        <StatCard
-          title="Net Interest"
-          value={formatCurrency(netInterest, 'AED')}
-          subtitle="Spread earned"
-          icon={<Percent className="w-5 h-5" />}
-          color={netInterest >= 0 ? 'success' : 'error'}
-          loading={loading}
-          delay="0.3s"
-        />
-      </div>
+          <StatStrip>
+            <StatTile
+              layout="row"
+              tone="primary"
+              icon={<Building2 className="w-5 h-5" />}
+              label="IHB Entities"
+              value={entities.length}
+              sub={`${lenders.length} lenders, ${borrowers.length} borrowers`}
+              loading={loading}
+              delay="0.15s"
+            />
+            <StatTile
+              layout="row"
+              tone="danger"
+              icon={<CreditCard className="w-5 h-5" />}
+              label="Loans Outstanding"
+              value={formatCurrency(totalLoanOutstanding, 'AED')}
+              sub={`${activeLoans.length} active loans`}
+              loading={loading}
+              delay="0.2s"
+            />
+            <StatTile
+              layout="row"
+              tone="success"
+              icon={<PiggyBank className="w-5 h-5" />}
+              label="Total Deposits"
+              value={formatCurrency(totalDepositBalance, 'AED')}
+              sub={`${activeDeposits.length} active deposits`}
+              loading={loading}
+              delay="0.25s"
+            />
+            <StatTile
+              layout="row"
+              tone={netInterest >= 0 ? 'success' : 'danger'}
+              icon={<Percent className="w-5 h-5" />}
+              label="Net Interest"
+              value={formatCurrency(netInterest, 'AED')}
+              sub="Spread earned"
+              loading={loading}
+              delay="0.3s"
+            />
+          </StatStrip>
 
       {/* Tabs */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
@@ -1739,34 +1693,11 @@ const InHouseBankPage: React.FC = () => {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Position Summary */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card padding="sm" className="bg-success-50 border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-success-600 dark:text-success-300" />
-                    <p className="text-sm font-semibold text-success-800 dark:text-success-300">Lender Entities</p>
-                  </div>
-                  <p className="stat-value-success">{lenders.length}</p>
-                  <p className="text-xs text-success-600 mt-1 dark:text-success-300">Available to lend funds</p>
-                </Card>
-                <Card padding="sm" className="bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingDown className="w-4 h-4 text-error-600 dark:text-error-300" />
-                    <p className="text-sm font-semibold text-error-800 dark:text-error-300">Borrower Entities</p>
-                  </div>
-                  <p className="stat-value-error">{borrowers.length}</p>
-                  <p className="text-xs text-error-600 mt-1 dark:text-error-300">Can borrow from IHB</p>
-                </Card>
-                <Card padding="sm" className="bg-info-50 border-info-200 dark:bg-info-500/10 dark:border-info-500/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Activity className="w-4 h-4 text-info-600 dark:text-info-300" />
-                    <p className="text-sm font-semibold text-info-800 dark:text-info-300">Net Position</p>
-                  </div>
-                  <p className="stat-value-sm text-info-700 dark:text-info-300">
-                    {formatCurrency(totalDepositBalance - totalLoanOutstanding, 'AED')}
-                  </p>
-                  <p className="text-xs text-info-600 mt-1 dark:text-info-300">Deposits - Loans</p>
-                </Card>
-              </div>
+              <StatStrip>
+                <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="Lender Entities" value={lenders.length} sub="Available to lend funds" />
+                <StatTile tone="danger" icon={<TrendingDown className="w-5 h-5" />} label="Borrower Entities" value={borrowers.length} sub="Can borrow from IHB" />
+                <StatTile tone="info" icon={<Activity className="w-5 h-5" />} label="Net Position" value={formatCurrency(totalDepositBalance - totalLoanOutstanding, 'AED')} sub="Deposits - Loans" />
+              </StatStrip>
 
               {/* Settlement Status Panel (Option B) */}
               {settlementStatus && (settlementStatus.committedDeposits > 0 || settlementStatus.committedLoans > 0 || settlementStatus.pendingApproval > 0) && (
@@ -1799,38 +1730,20 @@ const InHouseBankPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatStrip>
                       {settlementStatus.pendingApproval > 0 && (
-                        <div className="bg-warning-100 rounded-lg p-3 dark:bg-warning-500/20">
-                          <p className="text-xs font-medium text-warning-700 dark:text-warning-300">Pending Approval</p>
-                          {/* Phase 12 Task E: .stat-value-xs replaces the raw
-                              `text-xl font-bold`; the old `text-warning-900`
-                              (no dark variant) becomes a -700/dark:-300 pair. */}
-                          <p className="stat-value-xs text-warning-700 dark:text-warning-300">{settlementStatus.pendingApproval}</p>
-                          <p className="text-xs text-warning-600 dark:text-warning-300">Manual positions</p>
-                        </div>
+                        <StatTile tone="warning" label="Pending Approval" value={settlementStatus.pendingApproval} sub="Manual positions" />
                       )}
-                      <div className="bg-info-100 rounded-lg p-3 dark:bg-info-500/20">
-                        <p className="text-xs font-medium text-info-700 dark:text-info-300">Committed Deposits</p>
-                        <p className="stat-value-xs text-info-700 dark:text-info-300">{settlementStatus.committedDeposits}</p>
-                        <p className="text-xs text-info-600 dark:text-info-300">{formatCurrency(settlementStatus.totalCommittedDeposits, 'AED')}</p>
-                      </div>
-                      <div className="bg-cat-2/10 rounded-lg p-3 dark:bg-cat-2/15">
-                        <p className="text-xs font-medium text-cat-2">Committed Loans</p>
-                        <p className="stat-value-xs text-cat-2">{settlementStatus.committedLoans}</p>
-                        <p className="text-xs text-cat-2">{formatCurrency(settlementStatus.totalCommittedLoans, 'AED')}</p>
-                      </div>
-                      <div className="bg-neutral-100 rounded-lg p-3 dark:bg-primary-800">
-                        <p className="text-xs font-medium text-neutral-700 dark:text-neutral-200">Net Committed</p>
-                        <p className={cn(
-                          'stat-value-xs',
-                          settlementStatus.netCommitted >= 0 ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'
-                        )}>
-                          {formatCurrency(settlementStatus.netCommitted, 'AED')}
-                        </p>
-                        <p className="text-xs text-neutral-600 dark:text-neutral-300">EOD Movement</p>
-                      </div>
-                    </div>
+                      <StatTile tone="info" label="Committed Deposits" value={settlementStatus.committedDeposits} sub={formatCurrency(settlementStatus.totalCommittedDeposits, 'AED')} />
+                      <StatTile tone="accent" label="Committed Loans" value={settlementStatus.committedLoans} sub={formatCurrency(settlementStatus.totalCommittedLoans, 'AED')} />
+                      <StatTile
+                        tone="neutral"
+                        valueTone={settlementStatus.netCommitted >= 0 ? 'success' : 'danger'}
+                        label="Net Committed"
+                        value={formatCurrency(settlementStatus.netCommitted, 'AED')}
+                        sub="EOD Movement"
+                      />
+                    </StatStrip>
 
                     <p className="text-xs text-info-600 mt-3 dark:text-info-300">
                       Positions awaiting EOD settlement. Sweep-created positions auto-commit; manual positions require approval.

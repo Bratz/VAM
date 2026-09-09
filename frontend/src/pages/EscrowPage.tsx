@@ -300,7 +300,12 @@ const EscrowPage: React.FC = () => {
       </div>
 
       {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-success-50/50 via-white to-success-50/50 border-success-200/60 animate-fade-in dark:from-success-500/10 dark:via-primary-900 dark:to-success-500/10 dark:border-success-500/30 dark:from-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
+      {/* Was carrying two conflicting sets of dark "from"/"to" gradient-stop
+          utilities (a tinted attempt plus a later flat-neutralize attempt) —
+          which one wins depends on Tailwind's internal stylesheet ordering,
+          not the className order, so this rendered unpredictably. Kept the
+          single flat neutralization already used consistently elsewhere. */}
+      <Card padding="sm" className="bg-gradient-to-r from-success-50/50 via-white to-success-50/50 border-success-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 dark:border-success-500/30" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start gap-3 p-4">
           <StatusIconBadge tone="success" icon={Shield} className="flex-shrink-0 dark:bg-success-500/20" />
           <div>

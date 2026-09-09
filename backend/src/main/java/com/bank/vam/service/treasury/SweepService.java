@@ -370,11 +370,29 @@ public class SweepService {
      */
     public List<SweepRule> resolveRulesForRun(SweepRuleDto.RunSweepsRequest request) {
         if (request.getRuleIds() != null && !request.getRuleIds().isEmpty()) {
+            // Explicit rule IDs (manual "run this rule" from the UI) always
+            // run regardless of frequency — the caller picked them deliberately.
             return ruleRepository.findAllByIdWithSources(request.getRuleIds()).stream()
                     .filter(r -> r.getStatus() == SweepRule.SweepStatus.ACTIVE)
                     .collect(Collectors.toList());
         }
-        return ruleRepository.findAllActiveWithSources();
+        List<SweepRule> active = ruleRepository.findAllActiveWithSources();
+        if (request.getFrequency() == null) {
+            // No frequency given (the manual "Run Sweeps" button's request,
+            // and any other caller not scoped to a schedule) — run everything,
+            // same as before this filter existed.
+            return active;
+        }
+        // Scoped call from ScheduledJobService: only rules configured for
+        // this exact cadence. Without this, executeRealTimeSweeps() (every 5
+        // minutes) and executeDailySweeps() (once at 6pm) both ran every
+        // active rule unfiltered, so a rule configured DAILY actually
+        // executed ~289x/day (288 from the 5-minute job + 1 from the daily
+        // job) — confirmed live: cumulative "Total Swept" on individual
+        // rules had inflated into the billions after weeks of uptime.
+        return active.stream()
+                .filter(r -> r.getFrequency() == request.getFrequency())
+                .collect(Collectors.toList());
     }
 
     /**

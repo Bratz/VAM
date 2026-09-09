@@ -3,6 +3,7 @@ package com.bank.vam.service;
 import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.dto.treasury.SweepRuleDto;
 import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.entity.treasury.SweepRule;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.service.treasury.IhbUnifiedService;
 import com.bank.vam.service.treasury.SweepService;
@@ -23,8 +24,10 @@ import java.util.stream.Collectors;
  * Scheduled jobs for automated treasury operations.
  *
  * Jobs include:
- * - Real-time sweeps (every 5 minutes)
- * - Daily sweeps (6 PM)
+ * - Real-time sweeps (every 5 minutes) — REAL_TIME-frequency rules only
+ * - Daily sweeps (6 PM) — DAILY-frequency rules only
+ * - Weekly sweeps (Monday 6 PM) — WEEKLY-frequency rules only
+ * - Monthly sweeps (1st, 6 PM) — MONTHLY-frequency rules only
  * - Daily IHB interest accrual (midnight)
  * - Daily deficit funding check (6 AM)
  */
@@ -38,7 +41,17 @@ public class ScheduledJobService {
     private final LegalEntityRepository legalEntityRepository;
 
     /**
-     * Execute real-time sweeps every 5 minutes
+     * Execute REAL_TIME-frequency sweeps every 5 minutes.
+     *
+     * Was previously passing an unfiltered {@code RunSweepsRequest()} here —
+     * despite the method's name and the (stale, aspirational) comment that
+     * used to sit here, {@link SweepRuleDto.RunSweepsRequest} had no
+     * frequency field at all, so {@code resolveRulesForRun} fell through to
+     * "every active rule" regardless of its configured frequency. A rule
+     * configured DAILY was therefore actually swept ~289x/day (288 times
+     * from this job alone, plus once more from {@link #executeDailySweeps}),
+     * which is what inflated cumulative "Total Swept" figures into the
+     * billions after weeks of uptime. Now scoped to REAL_TIME only.
      */
     @Scheduled(fixedRate = 300000) // 5 minutes
     @Async("sweepExecutor")
@@ -46,9 +59,9 @@ public class ScheduledJobService {
         log.info("Starting real-time sweep execution at {}", LocalDateTime.now());
         try {
             SweepRuleDto.RunSweepsRequest request = new SweepRuleDto.RunSweepsRequest();
-            // Real-time sweeps are identified by frequency
+            request.setFrequency(SweepRule.SweepFrequency.REAL_TIME);
             SweepRuleDto.RunSweepsResponse response = sweepService.runSweeps(request);
-            log.info("Real-time sweep completed: {} success, {} failed", 
+            log.info("Real-time sweep completed: {} success, {} failed",
                     response.getSuccessCount(), response.getFailedCount());
         } catch (Exception e) {
             log.error("Real-time sweep execution failed", e);
@@ -56,7 +69,8 @@ public class ScheduledJobService {
     }
 
     /**
-     * Execute daily sweeps at 6 PM
+     * Execute DAILY-frequency sweeps at 6 PM. See {@link #executeRealTimeSweeps}
+     * for why this is now scoped to a single frequency instead of every rule.
      */
     @Scheduled(cron = "0 0 18 * * *") // 6 PM daily
     @Async("sweepExecutor")
@@ -64,11 +78,52 @@ public class ScheduledJobService {
         log.info("Starting daily sweep execution at {}", LocalDateTime.now());
         try {
             SweepRuleDto.RunSweepsRequest request = new SweepRuleDto.RunSweepsRequest();
+            request.setFrequency(SweepRule.SweepFrequency.DAILY);
             SweepRuleDto.RunSweepsResponse response = sweepService.runSweeps(request);
-            log.info("Daily sweep completed: {} success, {} failed, total swept: {}", 
+            log.info("Daily sweep completed: {} success, {} failed, total swept: {}",
                     response.getSuccessCount(), response.getFailedCount(), response.getTotalSwept());
         } catch (Exception e) {
             log.error("Daily sweep execution failed", e);
+        }
+    }
+
+    /**
+     * Execute WEEKLY-frequency sweeps Monday at 6 PM. Previously missing
+     * entirely — WEEKLY/MONTHLY rules still ran (via the unfiltered daily and
+     * every-5-minutes jobs above), just on the wrong cadence. Now each
+     * {@link SweepRule.SweepFrequency} has exactly one job that runs it.
+     */
+    @Scheduled(cron = "0 0 18 * * MON")
+    @Async("sweepExecutor")
+    public void executeWeeklySweeps() {
+        log.info("Starting weekly sweep execution at {}", LocalDateTime.now());
+        try {
+            SweepRuleDto.RunSweepsRequest request = new SweepRuleDto.RunSweepsRequest();
+            request.setFrequency(SweepRule.SweepFrequency.WEEKLY);
+            SweepRuleDto.RunSweepsResponse response = sweepService.runSweeps(request);
+            log.info("Weekly sweep completed: {} success, {} failed, total swept: {}",
+                    response.getSuccessCount(), response.getFailedCount(), response.getTotalSwept());
+        } catch (Exception e) {
+            log.error("Weekly sweep execution failed", e);
+        }
+    }
+
+    /**
+     * Execute MONTHLY-frequency sweeps on the 1st at 6 PM. See
+     * {@link #executeWeeklySweeps} — same gap, same fix.
+     */
+    @Scheduled(cron = "0 0 18 1 * *")
+    @Async("sweepExecutor")
+    public void executeMonthlySweeps() {
+        log.info("Starting monthly sweep execution at {}", LocalDateTime.now());
+        try {
+            SweepRuleDto.RunSweepsRequest request = new SweepRuleDto.RunSweepsRequest();
+            request.setFrequency(SweepRule.SweepFrequency.MONTHLY);
+            SweepRuleDto.RunSweepsResponse response = sweepService.runSweeps(request);
+            log.info("Monthly sweep completed: {} success, {} failed, total swept: {}",
+                    response.getSuccessCount(), response.getFailedCount(), response.getTotalSwept());
+        } catch (Exception e) {
+            log.error("Monthly sweep execution failed", e);
         }
     }
 

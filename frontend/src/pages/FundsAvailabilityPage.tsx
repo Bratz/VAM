@@ -642,7 +642,7 @@ const FundsAvailabilityPage: React.FC = () => {
       <PageHeader title="Funds Availability" />
 
       {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start gap-3 p-4">
           <StatusIconBadge tone="info" icon={Shield} className="flex-shrink-0 dark:bg-info-500/20" />
           <div>

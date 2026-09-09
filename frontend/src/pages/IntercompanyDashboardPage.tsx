@@ -7,7 +7,7 @@ import {
   GitMerge, Send, Download, Filter, Wallet, CreditCard, Scale,
   BarChart3, Activity, Zap, Receipt, Building, X, XCircle, Ban,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Page } from '../components/layout/Page';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -704,7 +704,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
     <Card hover className="group">
       <div className="p-4">
         {/* Premium Gradient Header */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 rounded-t-xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -1175,42 +1175,10 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Operational metrics — secondary strip below the hero. */}
           <StatStrip>
-            <Card hover className="animate-fade-in" style={{ animationDelay: '0.18s' }}>
-              <div className="p-4 flex items-center gap-3">
-                <StatusIconBadge tone="primary" icon={CreditCard} />
-                <div>
-                  <p className="stat-value-sm">{stats.totalPoboTransactions}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">POBO Count</p>
-                </div>
-              </div>
-            </Card>
-            <Card hover className="animate-fade-in" style={{ animationDelay: '0.21s' }}>
-              <div className="p-4 flex items-center gap-3">
-                <StatusIconBadge tone="info" icon={Wallet} />
-                <div>
-                  <p className="stat-value-sm">{stats.totalCoboTransactions}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">COBO Count</p>
-                </div>
-              </div>
-            </Card>
-            <Card hover className="animate-fade-in" style={{ animationDelay: '0.24s' }}>
-              <div className="p-4 flex items-center gap-3">
-                <StatusIconBadge tone="warning" icon={Clock} />
-                <div>
-                  <p className="stat-value-warning">{stats.pendingSettlement}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Pending</p>
-                </div>
-              </div>
-            </Card>
-            <Card hover className="animate-fade-in" style={{ animationDelay: '0.27s' }}>
-              <div className="p-4 flex items-center gap-3">
-                <StatusIconBadge tone="accent" icon={Building2} />
-                <div>
-                  <p className="stat-value-sm">{stats.activeEntities}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Entities</p>
-                </div>
-              </div>
-            </Card>
+            <StatTile layout="row" tone="primary" icon={<CreditCard className="w-5 h-5" />} label="POBO Count" value={stats.totalPoboTransactions} delay="0.18s" />
+            <StatTile layout="row" tone="info" icon={<Wallet className="w-5 h-5" />} label="COBO Count" value={stats.totalCoboTransactions} delay="0.21s" />
+            <StatTile layout="row" tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pendingSettlement} delay="0.24s" />
+            <StatTile layout="row" tone="accent" icon={<Building2 className="w-5 h-5" />} label="Entities" value={stats.activeEntities} delay="0.27s" />
           </StatStrip>
         </>
       )}
@@ -1251,26 +1219,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatusIconBadge tone="primary" icon={BarChart3} className="dark:bg-primary-700" />
                   <h3 className="section-title">Corporate Position Summary</h3>
                 </div>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 bg-error-50 rounded-xl text-center border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
-                    <p className="label mb-1">Total Payables</p>
-                    <p className="stat-value-sm text-error-600 dark:text-error-300">
-                      {formatCompactCurrency(positionSummary.totalOutstandingPayables, positionSummary.currency)}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-success-50 rounded-xl text-center border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
-                    <p className="label mb-1">Total Receivables</p>
-                    <p className="stat-value-sm text-success-600 dark:text-success-300">
-                      {formatCompactCurrency(positionSummary.totalOutstandingReceivables, positionSummary.currency)}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-primary-50 rounded-xl text-center border border-primary-100 dark:bg-primary-800/40 dark:border-primary-700/60">
-                    <p className="label mb-1">Net Position</p>
-                    <p className="stat-value-sm text-primary-600 dark:text-primary-200">
-                      {formatCompactCurrency(positionSummary.netPosition, positionSummary.currency)}
-                    </p>
-                  </div>
-                </div>
+                <StatStrip className="mb-6">
+                  <StatTile tone="danger" label="Total Payables" value={formatCompactCurrency(positionSummary.totalOutstandingPayables, positionSummary.currency)} />
+                  <StatTile tone="success" label="Total Receivables" value={formatCompactCurrency(positionSummary.totalOutstandingReceivables, positionSummary.currency)} />
+                  <StatTile tone="primary" label="Net Position" value={formatCompactCurrency(positionSummary.netPosition, positionSummary.currency)} />
+                </StatStrip>
 
                 <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
                   <div className="flex items-center gap-6">
@@ -1396,7 +1349,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           </div>
 
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-primary-700" />
@@ -1549,7 +1502,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           </div>
 
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
@@ -1696,7 +1649,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Entity Pairs for Settlement */}
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
             <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" className="dark:bg-success-500/20" />
@@ -1764,7 +1717,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Intercompany Virtual Accounts */}
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
             <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1926,7 +1879,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Pending Recharges Table */}
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-primary-50/50" />
+            <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-primary-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
               <h3 className="section-title">Pending POBO Recharges</h3>
               <Button variant="outline" size="sm" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>
@@ -2038,7 +1991,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       {activeTab === 'transactions' && (
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Premium Gradient Header */}
-          <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50" />
+          <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
           <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
             <h3 className="section-title">Recent Transactions</h3>
             <div className="flex items-center gap-2">
@@ -2106,7 +2059,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <Card key={entity.id} hover className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
               <div className="p-4">
                 {/* Premium Gradient Header */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 rounded-t-xl" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
 
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center dark:bg-primary-700">

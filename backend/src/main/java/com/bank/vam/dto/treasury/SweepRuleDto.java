@@ -151,6 +151,15 @@ public class SweepRuleDto {
     @Data
     public static class RunSweepsRequest {
         private List<UUID> ruleIds;
+        /**
+         * Optional: restrict the run to rules configured with this exact
+         * frequency. Null (the default for a manual "Run Sweeps" API call)
+         * means "all active rules regardless of frequency" — used by
+         * {@link com.bank.vam.service.ScheduledJobService}'s per-frequency
+         * scheduled jobs so e.g. the every-5-minutes REAL_TIME job doesn't
+         * also re-run DAILY/WEEKLY/MONTHLY rules on every tick.
+         */
+        private SweepRule.SweepFrequency frequency;
     }
 
     @Data

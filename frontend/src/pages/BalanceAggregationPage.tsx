@@ -535,7 +535,7 @@ const BalanceAggregationPage: React.FC = () => {
       />
 
       {/* Corporate & Program Selector */}
-      <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 border-primary-200/60 animate-fade-in" style={{ animationDelay: '0.08s' }}>
+      <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 border-primary-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.08s' }}>
         <div className="flex items-center gap-6 p-2">
           {/* Corporate Selector */}
           <div className="flex items-center gap-2">

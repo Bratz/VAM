@@ -279,7 +279,6 @@ export const pageTitles: Record<string, string> = {
   'simulator': 'Simulator',
   'notional-pooling': 'Notional Pooling',
   'ihb': 'In-House Bank',
-  'netting': 'Netting Cycles',
   'netting-enhanced': 'Netting Cycles',
   'intercompany': 'Intercompany Dashboard',
   'intercompany-settlement': 'Intercompany Settlement',

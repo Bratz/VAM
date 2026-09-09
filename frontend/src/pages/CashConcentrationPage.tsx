@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Filter,
 } from 'lucide-react';
-import { Card, Button, Select, StatusIconBadge } from '../components/ui';
+import { Card, Button, Select, StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { cn } from '../utils';
 import { Amount } from '../components/Amount';
@@ -311,24 +311,8 @@ const CashConcentrationPage: React.FC = () => {
 
       {/* Operational metrics — secondary strip below the hero. */}
       <StatStrip className="animate-fade-in [animation-delay:0.18s]">
-        <Card hover>
-          <div className="p-4 flex items-center gap-4">
-            <StatusIconBadge tone="primary" icon={Layers} />
-            <div>
-              <p className="stat-value-sm">{stats.activeRules}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Active Rules</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="p-4 flex items-center gap-4">
-            <StatusIconBadge tone="success" icon={Building2} />
-            <div>
-              <p className="stat-value-sm">{stats.totalAccounts}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Linked Accounts</p>
-            </div>
-          </div>
-        </Card>
+        <StatTile layout="row" tone="primary" icon={<Layers className="w-5 h-5" />} label="Active Rules" value={stats.activeRules} />
+        <StatTile layout="row" tone="success" icon={<Building2 className="w-5 h-5" />} label="Linked Accounts" value={stats.totalAccounts} />
       </StatStrip>
 
       {/* Info Banner */}

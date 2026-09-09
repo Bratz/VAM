@@ -16,6 +16,7 @@ import { TreasuryOnly, PermissionGate } from '../components/permissions';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { StatStrip } from '../components/layout/StatStrip';
 
 // ============================================================================
 // TYPES
@@ -645,7 +646,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
       {/* Settlement Tab */}
       {activeTab === 'settlement' && (
         <div className="space-y-4">
-          <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 rounded-xl border border-info-200/60">
+          <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-xl border border-info-200/60">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
               <p className="text-sm text-info-800 dark:text-info-300">
@@ -731,7 +732,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
     <Card hover className="group">
       <div className="p-4">
         {/* Premium Gradient Header */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-success-50/50 rounded-t-xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-success-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
 
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -1019,7 +1020,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       {/* Title + Quick Actions migrated to Aperture Layout header. */}
 
       {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start gap-3">
           <StatusIconBadge tone="info" icon={GitMerge} className="dark:bg-info-500/20" />
           <div>
@@ -1033,65 +1034,13 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-4">
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">Total</p>
-                <p className="stat-value-sm mt-1">{stats.total}</p>
-              </div>
-              <StatusIconBadge tone="primary" icon={GitMerge} className="dark:bg-primary-700" />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">Open</p>
-                <p className="stat-value-info mt-1">{stats.open}</p>
-              </div>
-              <StatusIconBadge tone="info" icon={Layers} className="dark:bg-info-500/20" />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">Pending</p>
-                <p className="stat-value-warning mt-1">{stats.pending}</p>
-              </div>
-              <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">Settled</p>
-                <p className="stat-value-success mt-1">{stats.settled}</p>
-              </div>
-              <StatusIconBadge tone="success" icon={CheckCircle} className="dark:bg-success-500/20" />
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">Savings</p>
-                <p className="stat-value-sm mt-1 text-accent-600 dark:text-accent-300">
-                  {formatCompactCurrency(stats.totalSavings, 'AED')}
-                </p>
-              </div>
-              <StatusIconBadge tone="accent" icon={TrendingUp} className="dark:bg-accent-500/20" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <StatStrip>
+        <StatTile tone="primary" icon={<GitMerge className="w-5 h-5" />} label="Total" value={stats.total} delay="0.15s" />
+        <StatTile tone="info" icon={<Layers className="w-5 h-5" />} label="Open" value={stats.open} delay="0.2s" />
+        <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending" value={stats.pending} delay="0.25s" />
+        <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Settled" value={stats.settled} delay="0.3s" />
+        <StatTile tone="accent" icon={<TrendingUp className="w-5 h-5" />} label="Savings" value={formatCompactCurrency(stats.totalSavings, 'AED')} delay="0.35s" />
+      </StatStrip>
 
       {/* Filter */}
       <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>

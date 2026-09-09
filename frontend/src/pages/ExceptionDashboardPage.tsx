@@ -559,7 +559,9 @@ const ExceptionDashboardPage: React.FC = () => {
 
       {/* Main Content Card */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-        <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-warning-50/50 dark:from-warning-500/10 dark:via-primary-900 dark:to-warning-500/10 rounded-t-xl dark:from-primary-900 dark:to-primary-900" />
+        {/* Same duplicate/conflicting dark cleanup as EscrowPage.tsx's
+            equivalent banner — two competing dark gradient-stop sets. */}
+        <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-warning-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-primary-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

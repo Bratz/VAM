@@ -170,11 +170,13 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, variant = 'primary', delay = '0s' }) => {
+  // Was missing dark: entirely, so every StatCard rendered as a washed-out
+  // white gradient tile in dark mode regardless of variant.
   const variants = {
-    primary: 'from-primary-50/50 via-white to-primary-50/30 border-primary-200/60',
-    success: 'from-success-50/50 via-white to-success-50/30 border-success-200/60',
-    warning: 'from-warning-50/50 via-white to-warning-50/30 border-warning-200/60',
-    info: 'from-info-50/50 via-white to-info-50/30 border-info-200/60',
+    primary: 'from-primary-50/50 via-white to-primary-50/30 border-primary-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
+    success: 'from-success-50/50 via-white to-success-50/30 border-success-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
+    warning: 'from-warning-50/50 via-white to-warning-50/30 border-warning-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
+    info: 'from-info-50/50 via-white to-info-50/30 border-info-200/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
   };
 
   const iconBg = {
