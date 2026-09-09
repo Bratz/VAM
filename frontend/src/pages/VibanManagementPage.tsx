@@ -2011,7 +2011,7 @@ const PoolDetailView: React.FC<{
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-primary-100 rounded-lg dark:bg-primary-700"><Database className="w-6 h-6 text-primary-600 dark:text-primary-200" /></div>
-          <div><h3 className="text-xl font-semibold">{pool.poolName}</h3><p className="text-neutral-500 dark:text-neutral-400">{pool.poolCode} • {pool.programName}</p></div>
+          <div><h3 className="section-title">{pool.poolName}</h3><p className="text-neutral-500 dark:text-neutral-400">{pool.poolCode} • {pool.programName}</p></div>
         </div>
         {getStatusBadge(pool.status)}
       </div>

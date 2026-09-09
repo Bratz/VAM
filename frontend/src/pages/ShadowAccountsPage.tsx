@@ -1618,7 +1618,7 @@ const ShadowAccountsPage: React.FC = () => {
                 <Layers className="w-7 h-7 text-info-600 dark:text-info-300" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-semibold">{selectedShadow.vaName}</h3>
+                <h3 className="section-title">{selectedShadow.vaName}</h3>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{selectedShadow.vaNumber}</p>
                 {selectedShadow.parentVaNumber && (
                   <div className="flex items-center gap-1 text-xs text-cat-1 mt-1">

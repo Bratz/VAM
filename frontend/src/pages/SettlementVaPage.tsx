@@ -603,7 +603,7 @@ const SettlementVaPage: React.FC<Props> = ({ programId: propProgramId, onBack })
         <Card className="border-2 border-dashed border-warning-300 bg-warning-50 dark:bg-warning-500/10">
           <div className="text-center py-12">
             <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-warning-500" />
-            <h2 className="text-xl font-semibold mb-2">Hierarchy Not Initialized</h2>
+            <h2 className="section-title mb-2">Hierarchy Not Initialized</h2>
             <p className="text-neutral-600 mb-6 dark:text-neutral-300">Initialize to create Exception VA.</p>
             <Button size="lg" onClick={() => setShowTemplateModal(true)} leftIcon={<Settings className="w-5 h-5" />}>Initialize Hierarchy</Button>
           </div>

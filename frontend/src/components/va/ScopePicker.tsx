@@ -188,7 +188,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
           roots.map(r => renderNode(r, 0))
         )}
       </div>
-      {error && <p className="text-xs text-danger-600 dark:text-danger-400">{error}</p>}
+      {error && <p className="text-xs text-error-600 dark:text-error-400">{error}</p>}
     </div>
   );
 };

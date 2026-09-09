@@ -514,7 +514,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-primary-900 truncate dark:text-neutral-50">{program.programName}</h2>
+              <h2 className="section-title truncate">{program.programName}</h2>
               <Badge variant={statusConfig[program.status]?.variant}>{statusConfig[program.status]?.label}</Badge>
               {hasHierarchy && <Badge variant="info" size="sm"><GitBranch className="w-3 h-3 mr-1" />Hierarchy</Badge>}
               {program.realtimeBalancePropagation && <Badge variant="success" size="sm"><Zap className="w-3 h-3 mr-1" />Real-time</Badge>}

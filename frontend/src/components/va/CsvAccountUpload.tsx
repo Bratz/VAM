@@ -120,7 +120,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
       )}
 
       {error && (
-        <p className="text-xs text-danger-600 dark:text-danger-400 flex items-center gap-1.5">
+        <p className="text-xs text-error-600 dark:text-error-400 flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" /> {error}
         </p>
       )}
