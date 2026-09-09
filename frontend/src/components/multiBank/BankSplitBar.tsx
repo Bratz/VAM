@@ -30,6 +30,18 @@ interface BankSplitBarProps {
   total?: number;
 }
 
+// Info ramp slots so multiple external banks each get a distinct shade
+// within the `info` family — no new colour vocabulary. Exported so every
+// bank/currency distribution visual on this page (Overview's shadow-count
+// bar included) draws from the same ramp instead of a copy that can drift.
+export const HOME_BANK_COLOUR = 'bg-success-500 dark:bg-success-400';
+export const EXTERNAL_BANK_RAMP = [
+  'bg-info-500 dark:bg-info-400',
+  'bg-info-400 dark:bg-info-300',
+  'bg-info-600 dark:bg-info-500',
+  'bg-info-300 dark:bg-info-200',
+];
+
 export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total }) => {
   const computedTotal = total ?? bankShares.reduce((a, b) => a + (b.amount || 0), 0);
   // Order: home bank first, then externals by descending amount. That ordering
@@ -41,21 +53,12 @@ export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total })
     return (b.amount || 0) - (a.amount || 0);
   });
 
-  // Info ramp slots so multiple external banks each get a distinct shade
-  // within the `info` family — no new colour vocabulary.
-  const externalRamp = [
-    'bg-info-500 dark:bg-info-400',
-    'bg-info-400 dark:bg-info-300',
-    'bg-info-600 dark:bg-info-500',
-    'bg-info-300 dark:bg-info-200',
-  ];
-
   let extIdx = 0;
   const segments = ordered.map((b) => {
     const pct = computedTotal > 0 ? Math.max(0, (b.amount / computedTotal) * 100) : 0;
     const colour = b.homeBank
-      ? 'bg-success-500 dark:bg-success-400'
-      : externalRamp[extIdx++ % externalRamp.length];
+      ? HOME_BANK_COLOUR
+      : EXTERNAL_BANK_RAMP[extIdx++ % EXTERNAL_BANK_RAMP.length];
     return { ...b, pct, colour };
   });
 

@@ -11,7 +11,7 @@ import { Card, StatusIconBadge, Button, Badge } from '../ui';
 import { StatStrip } from '../layout/StatStrip';
 import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
-import { BankSplitBar, BankShare } from './BankSplitBar';
+import { BankSplitBar, BankShare, HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './BankSplitBar';
 import { FilterKey, ViewKey } from './types';
 
 // ============================================================================
@@ -154,17 +154,11 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     ? Math.round((topExternalBank.shadowCount / totalShadows) * 100)
     : 0;
 
-  const externalRamp = [
-    'bg-info-500 dark:bg-info-400',
-    'bg-info-400 dark:bg-info-300',
-    'bg-info-600 dark:bg-info-500',
-    'bg-info-300 dark:bg-info-200',
-  ];
   let extIdx = 0;
   const distributionSegments = orderedBanks.map((b) => ({
     bank: b,
     pct: totalShadows > 0 ? (b.shadowCount / totalShadows) * 100 : 0,
-    colour: b.homeBank ? 'bg-success-500 dark:bg-success-400' : externalRamp[extIdx++ % externalRamp.length],
+    colour: b.homeBank ? HOME_BANK_COLOUR : EXTERNAL_BANK_RAMP[extIdx++ % EXTERNAL_BANK_RAMP.length],
   }));
 
   const hasWork = summary.staleCount + summary.neverRefreshedCount + failedCount > 0;
