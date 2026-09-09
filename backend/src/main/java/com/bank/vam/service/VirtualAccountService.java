@@ -444,7 +444,7 @@ public class VirtualAccountService {
                 .baseCurrency(resolvedBaseCurrency)
                 // Hierarchy fields - hierarchyNodeId will be set after node creation
                 .hierarchyPath(materializedPath)
-                .hierarchyLevel(newLevel)
+                .hierarchyLevel(newLevel - 1) // parentNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
                 .parentAccountId(parentVaId)
                 // Account classification
                 .accountType(accountType)
@@ -1712,7 +1712,7 @@ public class VirtualAccountService {
             // Update VA with hierarchy node ID, path, and PARENT'S PROGRAM
             va.setHierarchyNodeId(node.getId());
             va.setHierarchyPath(materializedPath);
-            va.setHierarchyLevel(newLevel);
+            va.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
             va.setProgramId(parentHierarchyNode.getProgramId());  // Update VA to use parent's program
             va = virtualAccountRepository.save(va);
 
@@ -1963,7 +1963,7 @@ public class VirtualAccountService {
 
             settlementVa.setHierarchyNodeId(node.getId());
             settlementVa.setHierarchyPath(materializedPath);
-            settlementVa.setHierarchyLevel(newLevel);
+            settlementVa.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
             settlementVa = virtualAccountRepository.save(settlementVa);
         }
 
@@ -2088,7 +2088,7 @@ public class VirtualAccountService {
 
             icReceivableVa.setHierarchyNodeId(node.getId());
             icReceivableVa.setHierarchyPath(materializedPath);
-            icReceivableVa.setHierarchyLevel(newLevel);
+            icReceivableVa.setHierarchyLevel(newLevel - 1); // treasuryHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
             icReceivableVa = virtualAccountRepository.save(icReceivableVa);
         }
 
@@ -2223,7 +2223,7 @@ public class VirtualAccountService {
 
             settlementVa.setHierarchyNodeId(node.getId());
             settlementVa.setHierarchyPath(materializedPath);
-            settlementVa.setHierarchyLevel(newLevel);
+            settlementVa.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
             settlementVa = virtualAccountRepository.save(settlementVa);
 
             log.info("Created Treasury Settlement VA {} with hierarchy node at {}",

@@ -1342,7 +1342,7 @@ public class HierarchyService {
                 .currencyCode(currencyCode)
                 .hierarchyNodeId(node.getId())
                 .hierarchyPath(materializedPath)
-                .hierarchyLevel(level)
+                .hierarchyLevel(level - 1) // node.levelNumber is 1-indexed, va.hierarchyLevel is 0-indexed
                 .parentAccountId(parentNode.getVirtualAccountId())
                 .accountType(VirtualAccount.AccountType.VIRTUAL)
                 .accountCategory(VirtualAccount.AccountCategory.AGGREGATION)
@@ -1746,7 +1746,7 @@ public class HierarchyService {
                 .currencyCode(currencyCode)
                 .hierarchyNodeId(node.getId())
                 .hierarchyPath(materializedPath)
-                .hierarchyLevel(newLevel)
+                .hierarchyLevel(newLevel - 1) // node.levelNumber is 1-indexed, va.hierarchyLevel is 0-indexed
                 .parentAccountId(getParentVaId(parentNode))
                 .accountType(VirtualAccount.AccountType.VIRTUAL)
                 .accountCategory(VirtualAccount.AccountCategory.AGGREGATION)
