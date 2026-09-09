@@ -904,11 +904,21 @@ const EnhancedPayablesPage: React.FC = () => {
 
   // Load payables
   const loadPayables = useCallback(async () => {
+    // Corporates load asynchronously on mount (see loadCorporates above), so
+    // selectedCorporateId is '' for the first render or two. Searching with
+    // no corporate scope fires an unscoped "all payables" query that briefly
+    // flashes the wrong data before the real corporate resolves and the
+    // effect re-fires (see loadStats below for the worse version of this
+    // race, where it used to shadow-swap the corporate entirely).
+    if (!selectedCorporateId) {
+      setPayables([]);
+      setTotalPages(0);
+      return;
+    }
     setLoading(true);
     try {
-      // Load payables - corporateId is optional, backend will return all if not provided
       const result = await payablesApiPhase2.search({
-        corporateId: selectedCorporateId || undefined,
+        corporateId: selectedCorporateId,
         programId: selectedProgramId || undefined,
         owningEntityId: selectedEntityId || undefined,
         searchTerm: searchTerm || undefined,
@@ -942,12 +952,21 @@ const EnhancedPayablesPage: React.FC = () => {
 
   // Load stats
   const loadStats = useCallback(async () => {
+    // Don't fall back to a hardcoded demo corporate here: selectedCorporateId
+    // is briefly '' while loadCorporates() (above) is still in flight on
+    // mount, and querying stats for a different, hardcoded corporate in that
+    // window used to race the real query below (whichever HTTP response
+    // landed last won), showing e.g. "51 total payables" for a corporate
+    // that was never the one selected while the table legitimately showed
+    // zero rows for the real one. Just wait for the real corporate.
+    if (!selectedCorporateId) {
+      setStats(null);
+      return;
+    }
     setStatsLoading(true);
     try {
-      // Use demo corporate ID if none selected (backend requires corporateId for stats)
-      const corpId = selectedCorporateId || '550e8400-e29b-41d4-a716-446655440000';
       const result = await payablesApiPhase2.getStats(
-        corpId,
+        selectedCorporateId,
         selectedProgramId || undefined,
         selectedEntityId || undefined
       );

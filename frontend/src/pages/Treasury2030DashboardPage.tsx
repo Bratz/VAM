@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   RefreshCw, ArrowRight, Plus, Clock, AlertTriangle,
   ArrowLeftRight, FileDown, Repeat, Building2, Wallet, Sparkles,
@@ -173,7 +173,25 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     return () => { alive = false; };
   }, []);
 
-  useEffect(() => { void load(selectedCorporateId); }, [selectedCorporateId]);
+  // Skips only its first (mount-time) run: this effect fires on mount
+  // regardless of whether selectedCorporateId "changed" from its initial
+  // '', which — before this guard — fired load('') a second time
+  // immediately after the mount effect above already called load()
+  // unscoped, doubling every request on the page (confirmed live:
+  // /ihb/loans, /dashboard/pending-approvals, /treasury/multi-bank/summary
+  // and /sweeping/rules each fired 2-3x on a single page load). The mount
+  // effect already covers that initial unscoped load. A ref (not an
+  // `if (!selectedCorporateId) return`) so switching the scope selector
+  // back to "All Corporates" (also selectedCorporateId === '') still
+  // reloads instead of silently keeping stale scoped data on screen.
+  const didMountScopeLoad = useRef(false);
+  useEffect(() => {
+    if (!didMountScopeLoad.current) {
+      didMountScopeLoad.current = true;
+      return;
+    }
+    void load(selectedCorporateId);
+  }, [selectedCorporateId]);
 
   // "Refresh all (N stale)" — refresh-if-stale across every stale shadow,
   // capped concurrency, then reload once. Mirrors the Multi-Bank page's
@@ -381,6 +399,18 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 )}
               >
                 {t.label}
+                {/* The title tooltip above is the only explanation for why
+                    this tab doesn't respond to a click, and title tooltips
+                    don't exist on touch — a phone/tablet user gets zero
+                    feedback. Same "Soon" pill already used for coming-soon
+                    sidebar nav items (Layout.tsx), reused here for a
+                    visible-on-any-input-method affordance and visual
+                    consistency with that existing pattern. */}
+                {t.disabled && (
+                  <span className="ml-1.5 align-middle text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
+                    Soon
+                  </span>
+                )}
               </button>
             );
           })}
@@ -460,7 +490,13 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     <div key={c.code} className="flex items-center gap-4 py-2">
                       <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 w-12 shrink-0">{c.code}</span>
                       <Amount value={c.effective} currency={c.code} showCurrency={false} className="text-[20px] font-semibold text-primary-900 dark:text-neutral-50 w-40 shrink-0" />
-                      <div className="flex-1 h-[3px] bg-neutral-100 dark:bg-primary-800/60 rounded-full overflow-hidden" title={`${homePct}% home bank`}>
+                      {/* neutral-100 (#f2f2f3) is nearly the same tone as the
+                          page background this sits on, so at 0% fill (5 of
+                          6 currencies here have no home-bank balance) the
+                          track read as "not rendered" rather than "correctly
+                          showing zero". neutral-200 gives the empty track a
+                          visible rail regardless of fill amount. */}
+                      <div className="flex-1 h-[3px] bg-neutral-200 dark:bg-primary-800/60 rounded-full overflow-hidden" title={`${homePct}% home bank`}>
                         <div className="h-full bg-accent-500" style={{ width: `${homePct}%` }} />
                       </div>
                       <span className="caption w-40 text-right shrink-0">{homePct}% home · {100 - homePct}% external</span>
@@ -489,7 +525,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             {groups.length === 0 ? (
               <p className="body-sm py-6 text-center">No accounts in scope.</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto scroll-fade-x">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="text-left">

@@ -1,3 +1,12 @@
+-- client_encoding pinned to UTF8 for this session: without it, psql falls
+-- back to the shell locale's encoding (often not UTF-8 on a fresh box/CI
+-- runner), which silently mangles every non-ASCII character below into
+-- mojibake on insert (e.g. '·' becomes 'Â·') -- a data corruption, not a
+-- display bug, since it's the bytes actually written to the table. See
+-- V14__fix_mojibake_encoding.sql for the one-time repair of data seeded
+-- before this fix existed.
+SET client_encoding = 'UTF8';
+
 -- ==========================================
 -- VAM Portal - Reset Seed Data Script
 -- ==========================================

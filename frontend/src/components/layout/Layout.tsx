@@ -225,8 +225,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
                     'flex items-center justify-between w-full px-3 py-1.5 mt-2',
-                    'text-xs font-semibold text-neutral-400 dark:text-neutral-500',
-                    'hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                    // neutral-400/dark:neutral-500 measured at 2.20:1 (light)
+                    // and 1.45:1 (dark) against the sidebar background — both
+                    // fail WCAG's 4.5:1 minimum for 12px text by a wide
+                    // margin. neutral-500/dark:neutral-300 measure 6.24:1 and
+                    // 5.18:1 respectively (computed via the W3C
+                    // relative-luminance formula against the actual
+                    // rendered backgrounds).
+                    'text-xs font-semibold text-neutral-500 dark:text-neutral-300',
+                    'hover:text-neutral-600 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                   )}
                 >
                   <span>{section.title}</span>
@@ -326,7 +333,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             <HelpCircle className="w-4 h-4" />
             <span>Docs</span>
           </button>
-          <span className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
+          {/* Same neutral-400/dark:neutral-500 contrast failure as the
+              section headers above (2.20:1 light, 1.45:1 dark) — same fix. */}
+          <span className="text-xs text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
             {BRAND.name} v1.0
           </span>
         </div>
@@ -370,9 +379,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
       {/* Fixed h-14 (56px) — the in-page title block that used to push this
           taller is gone (PageHeader now registers into this header instead
           of rendering its own <h1>), so a single-line title always fits. */}
-      <div className="flex items-center justify-between h-14 px-4 lg:px-8">
-        {/* Left side */}
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center h-14 px-4 lg:px-8">
+        {/* Left side. No justify-between on the row above: that only pushes
+            this div and "Right side" apart by their own min-content widths,
+            leaving the gap between them as dead space the title can't reach.
+            flex-1 here instead makes this div itself claim that gap, so the
+            flex-1 title below (which sits inside it) has real room to grow
+            into instead of truncating while the header is visibly half-empty. */}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2.5 hover:bg-neutral-100 rounded-xl transition-colors"
@@ -385,15 +399,28 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               <PageHeader>/usePageHeaderTitle; falls back to the generic
               per-route title for pages not yet migrated. whitespace-nowrap
               so long titles don't wrap the header to two rows. */}
-          {/* min-w-[96px] not min-w-0 — with several page-registered header
-              actions + the search bar + EntityPicker all shrink-resistant,
-              the title was the only flexible element left and could
-              collapse to a true 0px width (confirmed live at 1440px with
-              AccountsPage's 3 header actions). A small floor keeps
+          {/* flex-1 min-w-[96px] not min-w-0 — with several page-registered
+              header actions + the search bar + EntityPicker all
+              shrink-resistant, the title was the only flexible element left
+              and could collapse to a true 0px width (confirmed live at
+              1440px with AccountsPage's 3 header actions), and even where it
+              didn't fully collapse it truncated long before running out of
+              real header space because it never grew past its own
+              min-content width (confirmed live: titles truncated at
+              1280-1440px with the header visibly half-empty). flex-1 lets it
+              claim the parent's slack; the min-w-[96px] floor still keeps
               `truncate` working for long titles without the title ever
-              fully disappearing. */}
-          <div className="hidden sm:flex items-center gap-1.5 min-w-[96px]">
-            <h1 className="page-title-display text-xl leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap truncate">
+              fully disappearing when space is genuinely tight. */}
+          <div className="hidden sm:flex items-center gap-1.5 flex-1 min-w-[96px]">
+            {/* No flex-1 here (only on the wrapper div) — the wrapper
+                growing gives the title room to render at full width with
+                the help button sitting right after the visible text; if h1
+                itself also grew, the button would get pushed to the far
+                right edge of the wrapper's now-large box, stranded away
+                from the text it annotates. min-w-0 lets this still shrink
+                and truncate on the rare title that's longer than even the
+                grown wrapper allows. */}
+            <h1 className="page-title-display text-xl leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap truncate min-w-0">
               {registeredTitle || pageTitles[currentPage] || BRAND.name}
             </h1>
             {registeredDescription && <HeaderHelpPopover description={registeredDescription} />}
@@ -538,7 +565,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                     above, so the (MNC-HOLDING) suffix here was redundant. */}
                 <p className={cn(
                   'text-xs font-medium',
-                  isTreasury ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'
+                  // dark:text-neutral-400 measured 4.11:1 against this
+                  // header's dark background, just under the 4.5:1 minimum
+                  // for 12px text — bumped to neutral-300 (5.18:1) to match
+                  // the sidebar's fix for the same underlying issue.
+                  isTreasury ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-300'
                 )}>
                   {isTreasury ? 'Treasury' : 'Subsidiary'}
                 </p>
@@ -622,7 +653,12 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreCl
   return (
     <nav className={cn(
       'fixed inset-x-0 bottom-0 z-40 lg:hidden',
-      'bg-white/95 backdrop-blur-xl border-t border-neutral-200/60',
+      // Was missing a dark: background entirely — stayed bg-white/95 in dark
+      // mode, rendering as a bright white bar at the bottom of an otherwise
+      // dark screen, with its dark:text-neutral-400 inactive-tab labels
+      // (added below) then landing on the wrong background and going
+      // low-contrast in the other direction.
+      'bg-white/95 dark:bg-primary-900/95 backdrop-blur-xl border-t border-neutral-200/60 dark:border-primary-800/60',
       'shadow-[0_-4px_20px_rgba(70,73,76,0.08)]',
       'safe-bottom'
     )}>
@@ -650,7 +686,11 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreCl
                 'transition-colors duration-200',
                 isActive
                   ? 'text-primary-700 dark:text-neutral-50'
-                  : 'text-neutral-500 active:bg-neutral-100 dark:text-neutral-400'
+                  // Same 4.11:1-against-dark-bg fix as the user-menu role
+                  // label above, now that this bar actually renders dark in
+                  // dark mode (its own dark:bg-primary-900/95 was missing
+                  // until this pass).
+                  : 'text-neutral-500 active:bg-neutral-100 dark:text-neutral-300'
               )}
             >
               <div className="p-1.5">
@@ -742,7 +782,15 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
           {navSections.slice(1).map((section, idx) => (
             section.title && (
               <div key={idx} className="mb-4">
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider px-2 mb-2">
+                {/* Same fix as the desktop sidebar's section headers above:
+                    neutral-400 measured 2.20:1 in light mode and 4.11:1 in
+                    dark mode against this sheet's bg-white/dark:bg-primary-900
+                    — both below the 4.5:1 minimum for 12px text. Also drops
+                    uppercase/tracking-wider to match the desktop sidebar's
+                    section headers (density pass removed it there; this
+                    mobile "More" sheet is a separate render path that got
+                    missed at the time). */}
+                <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 px-2 mb-2">
                   {section.title}
                 </p>
                 <div className="space-y-0.5">

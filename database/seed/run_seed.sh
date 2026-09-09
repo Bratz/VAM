@@ -36,10 +36,17 @@ print_header() {
 run_sql() {
     local file=$1
     local description=$2
-    
+
     echo -e "${YELLOW}Running: ${description}${NC}"
-    
-    PGPASSWORD=$DB_PASS psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f "$file" 2>&1 | \
+
+    # PGCLIENTENCODING pinned to UTF8: without it, psql falls back to the
+    # shell locale's encoding (often not UTF-8 on a fresh machine/CI
+    # runner), which silently mangles every non-ASCII character in these
+    # UTF-8-encoded seed files into mojibake on insert (e.g. '·' becomes
+    # 'Â·') — a data corruption, not a display bug, since it's the bytes
+    # actually written to the table. See V14__fix_mojibake_encoding.sql
+    # for the one-time repair of data seeded before this fix.
+    PGPASSWORD=$DB_PASS PGCLIENTENCODING=UTF8 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f "$file" 2>&1 | \
         grep -E "(NOTICE|ERROR|rows)" || true
     
     if [ $? -eq 0 ]; then

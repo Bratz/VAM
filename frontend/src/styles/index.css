@@ -976,6 +976,20 @@
     background: transparent;
   }
 
+  /* ========== HORIZONTAL SCROLL AFFORDANCE ========== */
+  /* For overflow-x:auto containers (wide tables) that give no visual hint
+     there's more content off-screen below the `lg` breakpoint, where a
+     mobile browser's scrollbar is usually invisible at rest. A static
+     mask (not scroll-position-aware — no JS listener) fading both edges;
+     mask-image affects alpha only, so it works over any background color
+     without hardcoding light/dark fill colors. */
+  @media (max-width: 1023px) {
+    .scroll-fade-x {
+      mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    }
+  }
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: #d4d4d4;
     border-radius: 3px;
