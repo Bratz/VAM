@@ -21,7 +21,7 @@ import {
   Landmark, Calculator, ArrowRight, GitBranch, ExternalLink, Layers,
   CheckCircle, XCircle, PlayCircle, Edit, MoreVertical, Calendar,
 } from 'lucide-react';
-import { Card, Button, Badge } from '../components/ui';
+import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { useNavigation } from '../App';
@@ -633,172 +633,101 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
 };
 
 // ============================================================================
-// PAYABLE ROW COMPONENT
+// PAYABLE ACTIONS CELL (DataTable "Actions" column)
 // ============================================================================
 
-interface PayableRowProps {
+interface PayableActionsCellProps {
   payable: PayablePhase2;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
   onViewDetails: (payable: PayablePhase2) => void;
   onRequestPobo: (payable: PayablePhase2) => void;
   onApprove: (payable: PayablePhase2) => void;
   onReject: (payable: PayablePhase2) => void;
   onSubmit: (payable: PayablePhase2) => void;
-  onSchedule: (payable: PayablePhase2) => void;
   onEdit: (payable: PayablePhase2) => void;
   onPayNow: (payable: PayablePhase2) => void;
 }
 
-const PayableRow: React.FC<PayableRowProps> = ({
-  payable, isSelected, onSelect, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onSchedule, onEdit, onPayNow
+const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
+  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onEdit, onPayNow
 }) => {
-  // Determine which actions are available based on status
   const canSubmit = payable.status === 'DRAFT';
   const canApprove = payable.status === 'PENDING_APPROVAL';
   const canReject = payable.status === 'PENDING_APPROVAL';
   const canEdit = payable.status === 'DRAFT' || payable.status === 'REJECTED';
-  const canSchedule = payable.status === 'APPROVED';
   const canPayNow = payable.status === 'APPROVED' || payable.status === 'SCHEDULED';
 
   return (
-    <tr className={cn(
-      "data-table-row group",
-      isSelected && "bg-primary-50 dark:bg-primary-800/40"
-    )}>
-      <td className="data-table-cell">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onSelect(payable.id)}
-          className="rounded border-neutral-300 dark:border-primary-700 text-primary-600 dark:text-primary-200 focus:ring-primary-500"
-        />
-      </td>
-      <td className="data-table-cell">
-        <div>
-          <p className="font-medium text-primary-900 dark:text-neutral-50">{payable.invoiceNumber || payable.payableNumber}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.payableNumber}</p>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div>
-          <p className="font-medium text-sm text-primary-900 dark:text-neutral-50">{payable.vendorName}</p>
-          {payable.owningEntityCode && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.owningEntityCode}</p>
-          )}
-        </div>
-      </td>
-      <td className="data-table-cell text-right">
-        <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(payable.netAmount, payable.currencyCode)}</p>
-        {payable.outstandingAmount !== payable.netAmount && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Due: {formatCurrency(payable.outstandingAmount, payable.currencyCode)}</p>
-        )}
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col gap-1">
-          <span className={cn(
-            "text-sm",
-            payable.isOverdue ? "text-error-600 dark:text-error-300 font-medium" : "text-neutral-600 dark:text-neutral-300"
-          )}>
-            {formatDate(payable.dueDate)}
-          </span>
-          {payable.isOverdue && (
-            <Badge variant="error" size="sm">Overdue</Badge>
-          )}
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col gap-1">
-          {getStatusBadge(payable.status)}
-          {getPoboStatusBadge(payable.poboRequestStatus)}
-        </div>
-      </td>
-      <td className="data-table-cell">
-        {getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus)}
-      </td>
-      <td className="data-table-cell">
-        <div className="flex items-center gap-1">
-          {/* Always visible: View Details */}
-          <button
-            onClick={() => onViewDetails(payable)}
-            className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
-            title="View Details"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-
-          {/* Draft status: Submit for approval, Edit */}
-          {canSubmit && (
-            <button
-              onClick={() => onSubmit(payable)}
-              className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
-              title="Submit for Approval"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          )}
-          {canEdit && (
-            <button
-              onClick={() => onEdit(payable)}
-              className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
-              title="Edit"
-            >
-              <Edit className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Pending Approval status: Approve, Reject */}
-          {canApprove && (
-            <button
-              onClick={() => onApprove(payable)}
-              className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
-              title="Approve"
-            >
-              <CheckCircle className="w-4 h-4" />
-            </button>
-          )}
-          {canReject && (
-            <button
-              onClick={() => onReject(payable)}
-              className="p-1.5 text-neutral-500 hover:text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-error-500/10"
-              title="Reject"
-            >
-              <XCircle className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Approved status: Pay Now - Primary action */}
-          {canPayNow && (
-            <button
-              onClick={() => onPayNow(payable)}
-              className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
-              title="Pay Now"
-            >
-              <PlayCircle className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* POBO request (for approved payables) */}
-          {payable.canRequestPobo && (
-            <button
-              onClick={() => onRequestPobo(payable)}
-              className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
-              title="Request POBO"
-            >
-              <Landmark className="w-4 h-4" />
-            </button>
-          )}
-          {payable.canAddToNetting && (
-            <button
-              className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
-              title="Add to Netting"
-            >
-              <GitBranch className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
+    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => onViewDetails(payable)}
+        className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
+        title="View Details"
+      >
+        <Eye className="w-4 h-4" />
+      </button>
+      {canSubmit && (
+        <button
+          onClick={() => onSubmit(payable)}
+          className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
+          title="Submit for Approval"
+        >
+          <Send className="w-4 h-4" />
+        </button>
+      )}
+      {canEdit && (
+        <button
+          onClick={() => onEdit(payable)}
+          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
+          title="Edit"
+        >
+          <Edit className="w-4 h-4" />
+        </button>
+      )}
+      {canApprove && (
+        <button
+          onClick={() => onApprove(payable)}
+          className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
+          title="Approve"
+        >
+          <CheckCircle className="w-4 h-4" />
+        </button>
+      )}
+      {canReject && (
+        <button
+          onClick={() => onReject(payable)}
+          className="p-1.5 text-neutral-500 hover:text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-error-500/10"
+          title="Reject"
+        >
+          <XCircle className="w-4 h-4" />
+        </button>
+      )}
+      {canPayNow && (
+        <button
+          onClick={() => onPayNow(payable)}
+          className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
+          title="Pay Now"
+        >
+          <PlayCircle className="w-4 h-4" />
+        </button>
+      )}
+      {payable.canRequestPobo && (
+        <button
+          onClick={() => onRequestPobo(payable)}
+          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
+          title="Request POBO"
+        >
+          <Landmark className="w-4 h-4" />
+        </button>
+      )}
+      {payable.canAddToNetting && (
+        <button
+          className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
+          title="Add to Netting"
+        >
+          <GitBranch className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   );
 };
 
@@ -1003,24 +932,6 @@ const EnhancedPayablesPage: React.FC = () => {
   }, [payables, activeTab]);
 
   // Handlers
-  const handleSelectAll = () => {
-    if (selectedIds.size === filteredPayables.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredPayables.map(p => p.id)));
-    }
-  };
-
-  const handleSelect = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
-
   const handleRequestPobo = (payable: PayablePhase2) => {
     setPoboPayables([payable]);
     setShowPoboModal(true);
@@ -1251,93 +1162,97 @@ const EnhancedPayablesPage: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr className="data-table-header">
-                <th className="data-table-header-cell w-12">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === filteredPayables.length && filteredPayables.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded border-neutral-300 dark:border-primary-700 text-primary-600 dark:text-primary-200 focus:ring-primary-500"
-                  />
-                </th>
-                <th className="data-table-header-cell">Invoice</th>
-                <th className="data-table-header-cell">Vendor / Entity</th>
-                <th className="data-table-header-cell text-right">Amount</th>
-                <th className="data-table-header-cell">Due Date</th>
-                <th className="data-table-header-cell">Status</th>
-                <th className="data-table-header-cell">Route</th>
-                <th className="data-table-header-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <Loader2 className="w-8 h-8 text-primary-600 dark:text-primary-200 animate-spin mx-auto" />
-                    <p className="text-neutral-500 mt-2 dark:text-neutral-400">Loading payables...</p>
-                  </td>
-                </tr>
-              ) : filteredPayables.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <FileText className="w-12 h-12 text-neutral-300 mx-auto dark:text-neutral-600 mb-3" />
-                    <p className="text-neutral-500 dark:text-neutral-400">No payables found</p>
-                    <p className="text-neutral-400 text-sm mt-1 dark:text-neutral-500">
-                      {!selectedCorporateId ? 'Select a corporate to view payables' : 'Try adjusting your filters'}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredPayables.map(payable => (
-                  <PayableRow
-                    key={payable.id}
-                    payable={payable}
-                    isSelected={selectedIds.has(payable.id)}
-                    onSelect={handleSelect}
-                    onViewDetails={(p) => navigate(`/payables/${p.id}`)}
-                    onRequestPobo={handleRequestPobo}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    onSubmit={handleSubmitForApproval}
-                    onSchedule={handleSchedule}
-                    onEdit={handleEdit}
-                    onPayNow={handlePayNow}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 dark:border-primary-800">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Page {currentPage + 1} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage === 0}
-                onClick={() => setCurrentPage(p => p - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={currentPage >= totalPages - 1}
-                onClick={() => setCurrentPage(p => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <DataTable
+          data={filteredPayables}
+          keyExtractor={(payable) => payable.id}
+          loading={loading}
+          selectable
+          selectedKeys={selectedIds}
+          onSelectionChange={(keys) => setSelectedIds(keys as Set<string>)}
+          onRowClick={(payable) => navigate(`/payables/${payable.id}`)}
+          pagination={totalPages > 1}
+          pageSize={20}
+          currentPage={currentPage + 1}
+          totalCount={totalPages * 20}
+          onPageChange={(p) => setCurrentPage(p - 1)}
+          emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyTitle="No payables found"
+          emptyDescription={!selectedCorporateId ? 'Select a corporate to view payables' : 'Try adjusting your filters'}
+          columns={[
+            {
+              key: 'invoiceNumber',
+              header: 'Invoice',
+              render: (_, payable) => (
+                <div>
+                  <p className="font-medium text-primary-900 dark:text-neutral-50">{payable.invoiceNumber || payable.payableNumber}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.payableNumber}</p>
+                </div>
+              ),
+            },
+            {
+              key: 'vendorName',
+              header: 'Vendor / Entity',
+              render: (_, payable) => (
+                <div>
+                  <p className="font-medium text-sm text-primary-900 dark:text-neutral-50">{payable.vendorName}</p>
+                  {payable.owningEntityCode && <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.owningEntityCode}</p>}
+                </div>
+              ),
+            },
+            {
+              key: 'netAmount',
+              header: 'Amount',
+              align: 'right',
+              render: (_, payable) => (
+                <>
+                  <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(payable.netAmount, payable.currencyCode)}</p>
+                  {payable.outstandingAmount !== payable.netAmount && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Due: {formatCurrency(payable.outstandingAmount, payable.currencyCode)}</p>
+                  )}
+                </>
+              ),
+            },
+            {
+              key: 'dueDate',
+              header: 'Due Date',
+              render: (_, payable) => (
+                <div className="flex flex-col gap-1">
+                  <span className={cn("text-sm", payable.isOverdue ? "text-error-600 dark:text-error-300 font-medium" : "text-neutral-600 dark:text-neutral-300")}>
+                    {formatDate(payable.dueDate)}
+                  </span>
+                  {payable.isOverdue && <Badge variant="error" size="sm">Overdue</Badge>}
+                </div>
+              ),
+            },
+            {
+              key: 'status',
+              header: 'Status',
+              render: (_, payable) => (
+                <div className="flex flex-col gap-1">
+                  {getStatusBadge(payable.status)}
+                  {getPoboStatusBadge(payable.poboRequestStatus)}
+                </div>
+              ),
+            },
+            { key: 'paymentRoute', header: 'Route', render: (_, payable) => getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus) },
+            {
+              key: 'actions',
+              header: 'Actions',
+              render: (_, payable) => (
+                <PayableActionsCell
+                  payable={payable}
+                  onViewDetails={(p) => navigate(`/payables/${p.id}`)}
+                  onRequestPobo={handleRequestPobo}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                  onSubmit={handleSubmitForApproval}
+                  onEdit={handleEdit}
+                  onPayNow={handlePayNow}
+                />
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* POBO Modal */}

@@ -9,7 +9,7 @@ import {
   FileText, Upload, ChevronDown, ChevronRight, Filter, Zap, GitBranch, Unlink,
   AlertTriangle, Info, Loader2, MapPin, Check, Building, Users, Coins,
 } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, EmptyState, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -713,94 +713,6 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
 // ACCOUNT ROW COMPONENT - UPDATED WITH LINK BUTTON
 // ============================================================================
 
-const AccountRow: React.FC<{
-  account: PhysicalAccount;
-  onView: (a: PhysicalAccount) => void;
-  onSync: (a: PhysicalAccount) => void;
-  onLinkToHierarchy: (a: PhysicalAccount) => void;
-}> = ({ account, onView, onSync, onLinkToHierarchy }) => {
-  const entityIdValue = account.legalEntityId || account.entityId;
-  const hasShadow = !!account.shadowVaId;
-
-  return (
-    <tr className="data-table-row group cursor-pointer" onClick={() => onView(account)}>
-      <td className="data-table-cell">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
-            account.isHomeBank ? 'bg-primary-100 dark:bg-primary-700' : 'bg-info-50 dark:bg-info-500/10'
-          )}>
-            {account.isHomeBank ? <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-5 h-5 text-info-600 dark:text-info-300" />}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              {/* Account name reads as the dominant identifier in the row —
-                  use body weight (`body` utility) at primary-900 tone. The
-                  group-hover colour shift is preserved. */}
-              <p className="body text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">{account.accountName}</p>
-              <span className={cn("px-1.5 py-0.5 rounded text-xs shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
-                {account.isHomeBank ? <Server className="w-3 h-3 inline" /> : <Wifi className="w-3 h-3 inline" />}
-              </span>
-            </div>
-            <p className="code truncate mt-0.5">{formatAccountNumber(account)}</p>
-          </div>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <p className="body-sm text-primary-900 dark:text-neutral-50">{account.entityName || '-'}</p>
-        <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{account.entityCode || '-'}</p>
-      </td>
-      <td className="data-table-cell">
-        <p className="body-sm text-primary-900 dark:text-neutral-50">{account.bankName}</p>
-        {/* Bank code (SWIFT/BIC) is a tabular identifier — uses the `.code`
-            typography utility (font-mono, primary text, xs). */}
-        <p className="code mt-0.5">{account.bankCode}</p>
-      </td>
-      <td className="data-table-cell text-right">
-        {/* Balance — Phase 9 display tier (Fraunces 20px + tabular-nums). */}
-        <p className="stat-value-xs">{formatCurrency(account.currentBalance, account.currency)}</p>
-      </td>
-      <td className="data-table-cell text-center">
-        {hasShadow ? (
-          <div className="flex items-center justify-center gap-1">
-            <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
-            <span className="text-xs text-success-600 font-medium dark:text-success-300">Linked</span>
-          </div>
-        ) : (
-          <span className="text-neutral-400 dark:text-neutral-500">—</span>
-        )}
-      </td>
-      <td className="data-table-cell text-center">
-        {entityIdValue ? <Building2 className="w-4 h-4 text-info-600 mx-auto dark:text-info-300" /> : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
-      </td>
-      <td className="data-table-cell text-center">
-        <Badge variant={account.syncStatus === 'SYNCED' ? 'success' : 'warning'} size="sm">{account.syncStatus}</Badge>
-      </td>
-      <td className="data-table-cell text-center" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-center gap-1">
-          {!hasShadow && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onLinkToHierarchy(account)}
-              title="Link to Hierarchy"
-              className="text-cat-1 hover:bg-cat-1-soft opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-cat-1/15"
-            >
-              <GitBranch className="w-4 h-4" />
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={() => onView(account)} title="View Details" className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => onSync(account)} title="Sync Balance" className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
-      </td>
-    </tr>
-  );
-};
-
 // ============================================================================
 // CREATE ACCOUNT MODAL
 // ============================================================================
@@ -1261,54 +1173,21 @@ const PhysicalAccountsPage: React.FC = () => {
       </Card>
 
       <Card className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="data-table">
-            <thead className="data-table-header">
-              <tr>
-                <th className="data-table-header-cell">Account</th>
-                <th className="data-table-header-cell">Entity</th>
-                <th className="data-table-header-cell">Bank</th>
-                <th className="data-table-header-cell text-right">Balance</th>
-                <th className="data-table-header-cell text-center">Shadow</th>
-                <th className="data-table-header-cell text-center">Entity Link</th>
-                <th className="data-table-header-cell text-center">Sync</th>
-                <th className="data-table-header-cell text-center w-24">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-              {loading ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center"><Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto dark:text-primary-200" /><p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Loading...</p></td></tr>
-              ) : accounts.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center"><Building2 className="w-12 h-12 text-neutral-300 mx-auto dark:text-neutral-600" /><p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">No accounts found</p></td></tr>
-              ) : accounts.map(account => (
-                <AccountRow
-                  key={account.id}
-                  account={account}
-                  onView={setSelectedAccount}
-                  onSync={handleSyncAccount}
-                  onLinkToHierarchy={handleLinkToHierarchy}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="md:hidden p-4 space-y-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
-            </div>
-          ) : accounts.length === 0 ? (
-            <EmptyState
-              icon={<Building2 className="w-12 h-12" />}
-              title="No accounts found"
-              description="Try adjusting your filters or add a new account."
-            />
-          ) : accounts.map((account, idx) => (
+        <DataTable
+          data={accounts}
+          keyExtractor={(account) => account.id}
+          loading={loading}
+          onRowClick={(account) => setSelectedAccount(account)}
+          pagination={totalPages > 1}
+          pageSize={20}
+          currentPage={page + 1}
+          totalCount={totalElements}
+          onPageChange={(p) => setPage(p - 1)}
+          emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyTitle="No accounts found"
+          emptyDescription="Try adjusting your filters or add a new account."
+          mobileCardRenderer={(account, idx) => (
             <Card
-              key={account.id}
               interactive
               hover
               onClick={() => setSelectedAccount(account)}
@@ -1358,17 +1237,93 @@ const PhysicalAccountsPage: React.FC = () => {
                 <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-500" />
               </div>
             </Card>
-          ))}
-        </div>
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Showing {page * 20 + 1} to {Math.min((page + 1) * 20, totalElements)} of {totalElements}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Next</Button>
-            </div>
-          </div>
-        )}
+          )}
+          columns={[
+            {
+              key: 'accountName',
+              header: 'Account',
+              render: (_, account) => (
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+                    account.isHomeBank ? 'bg-primary-100 dark:bg-primary-700' : 'bg-info-50 dark:bg-info-500/10'
+                  )}>
+                    {account.isHomeBank ? <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-5 h-5 text-info-600 dark:text-info-300" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="body text-primary-900 truncate dark:text-neutral-50">{account.accountName}</p>
+                      <span className={cn("px-1.5 py-0.5 rounded text-xs shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
+                        {account.isHomeBank ? <Server className="w-3 h-3 inline" /> : <Wifi className="w-3 h-3 inline" />}
+                      </span>
+                    </div>
+                    <p className="code truncate mt-0.5">{formatAccountNumber(account)}</p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'entityName',
+              header: 'Entity',
+              render: (_, account) => (
+                <>
+                  <p className="body-sm text-primary-900 dark:text-neutral-50">{account.entityName || '-'}</p>
+                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{account.entityCode || '-'}</p>
+                </>
+              ),
+            },
+            {
+              key: 'bankName',
+              header: 'Bank',
+              render: (_, account) => (
+                <>
+                  <p className="body-sm text-primary-900 dark:text-neutral-50">{account.bankName}</p>
+                  <p className="code mt-0.5">{account.bankCode}</p>
+                </>
+              ),
+            },
+            { key: 'currentBalance', header: 'Balance', align: 'right', render: (_, account) => <p className="stat-value-xs">{formatCurrency(account.currentBalance, account.currency)}</p> },
+            {
+              key: 'shadowVaId',
+              header: 'Shadow',
+              align: 'center',
+              render: (_, account) => account.shadowVaId ? (
+                <div className="flex items-center justify-center gap-1">
+                  <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
+                  <span className="text-xs text-success-600 font-medium dark:text-success-300">Linked</span>
+                </div>
+              ) : (
+                <span className="text-neutral-400 dark:text-neutral-500">—</span>
+              ),
+            },
+            {
+              key: 'entityLink',
+              header: 'Entity Link',
+              align: 'center',
+              render: (_, account) => (account.legalEntityId || account.entityId)
+                ? <Building2 className="w-4 h-4 text-info-600 mx-auto dark:text-info-300" />
+                : <span className="text-neutral-400 dark:text-neutral-500">—</span>,
+            },
+            { key: 'syncStatus', header: 'Sync', align: 'center', render: (_, account) => <Badge variant={account.syncStatus === 'SYNCED' ? 'success' : 'warning'} size="sm">{account.syncStatus}</Badge> },
+            {
+              key: 'actions',
+              header: 'Actions',
+              align: 'center',
+              width: '6rem',
+              render: (_, account) => (
+                <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
+                  {!account.shadowVaId && (
+                    <Button variant="ghost" size="sm" onClick={() => handleLinkToHierarchy(account)} title="Link to Hierarchy" className="text-cat-1 hover:bg-cat-1-soft dark:hover:bg-cat-1/15">
+                      <GitBranch className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedAccount(account)} title="View Details"><Eye className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleSyncAccount(account)} title="Sync Balance"><RefreshCw className="w-4 h-4" /></Button>
+                </div>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Account Details Modal */}
