@@ -54,7 +54,14 @@ jobs:
       - name: Upload results for this commit
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-checks-${{ github.sha }}
+          # Not github.sha: for a pull_request-triggered run, github.sha is a
+          # synthetic merge commit, not the branch's real head commit — the
+          # defect-fix service looks artifacts up by workflow_run.head_sha
+          # (the real one), so naming with github.sha here would make every
+          # PR-triggered artifact unfindable. github.event.pull_request.head.sha
+          # is only set on pull_request events, so this falls back to the
+          # (correct, real) github.sha on a plain push to main.
+          name: frontend-checks-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             frontend/tsc.log
             frontend/eslint.json
