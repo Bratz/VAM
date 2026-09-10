@@ -188,6 +188,13 @@ springdoc:
     path: /swagger-ui.html
     enabled: true
 
+# Sentry error monitoring — SDK auto-disables itself when dsn is blank, so this
+# is a safe no-op until SENTRY_DSN is actually set (see deploy/oci/docker-compose.yml).
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:local}
+  traces-sample-rate: 0  # error capture only — no perf tracing needed yet
+
 # Management
 management:
   endpoints:

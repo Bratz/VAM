@@ -89,6 +89,9 @@ services:
       # Internal docker-network address — the gateway container, not the
       # public URL. Only this backend and the gateway ever talk over it.
       VAM_MCP_GATEWAY_JWKS_URI: http://mcp-gateway:9443/context-jwks
+      # Sentry error monitoring — optional, no-op when unset (see application.yml).
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
       # On a 1GB AMD micro (see DEPLOYMENT.md "1GB fallback"), uncomment to
       # cap the heap below the container-percentage default:
       # JAVA_OPTS: "-Xmx640m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC"
