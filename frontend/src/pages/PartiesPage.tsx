@@ -5,7 +5,7 @@ import {
   CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, Building,
   ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save,
 } from 'lucide-react';
-import { Card, Badge, Button } from '../components/ui';
+import { Card, Badge, Button, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -2562,73 +2562,84 @@ const PartiesPage: React.FC = () => {
           </Card>
 
           {/* Table */}
-          <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Party</th>
-                    <th className="data-table-header-cell">Entity</th>
-                    <th className="data-table-header-cell">Roles</th>
-                    <th className="data-table-header-cell text-center">Payment Factory</th>
-                    <th className="data-table-header-cell text-center">KYC</th>
-                    <th className="data-table-header-cell text-center">Status</th>
-                    <th className="data-table-header-cell text-center w-32">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {parties.map((party) => {
+          <Card padding="none" className="animate-fade-in py-2" style={{ animationDelay: '0.35s' }}>
+            <DataTable
+              data={parties}
+              keyExtractor={(party) => party.id}
+              onRowClick={(party) => setSelectedParty(party)}
+              emptyIcon={<Users className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+              emptyTitle="No parties found"
+              emptyDescription="Try adjusting your search or filters"
+              columns={[
+                {
+                  key: 'displayName',
+                  header: 'Party',
+                  render: (_, party) => {
                     const TypeIcon = typeConfig[party.partyType]?.icon || Building2;
-                    const kycConf = kycStatusConfig[party.kycStatus] || kycStatusConfig.PENDING;
                     return (
-                      <tr key={party.id} className="data-table-row group cursor-pointer" onClick={() => setSelectedParty(party)}>
-                        <td className="data-table-cell">
-                          <div className="flex items-center gap-3">
-                            <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-                              <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
-                            </div>
-                            <div><p className="text-sm font-semibold text-primary-900 group-hover:text-primary-600 transition-colors dark:text-neutral-50">{party.displayName || party.legalName}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.partyCode}</p></div>
-                          </div>
-                        </td>
-                        <td className="data-table-cell"><OwningEntityBadge entityCode={party.owningEntityCode} /></td>
-                        <td className="data-table-cell">
-                          <div className="flex flex-wrap gap-1">
-                            {party.roles.slice(0, 2).map((role) => {
-                              const config = roleConfig[role];
-                              return config ? <span key={role} className={cn('px-2 py-0.5 rounded text-xs font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
-                            })}
-                          </div>
-                        </td>
-                        <td className="data-table-cell">
-                          <div className="flex flex-wrap justify-center gap-1">
-                            <PoboBadge eligible={party.poboEligible} />
-                            <IntercompanyBadge isIntercompany={party.isIntercompany} linkedEntityCode={party.linkedLegalEntityCode} />
-                            <NettingBadge eligible={party.nettingEligible || party.isIntercompany} />
-                            {party.isIntercompany && party.icCreditLimit && <IcCreditBadge limit={party.icCreditLimit} exposure={party.icCurrentExposure} />}
-                          </div>
-                        </td>
-                        <td className="data-table-cell text-center"><Badge variant={kycConf.variant as any} size="sm">{kycConf.label}</Badge></td>
-                        <td className="data-table-cell text-center"><Badge variant={party.status === 'ACTIVE' ? 'success' : 'error'} size="sm">{party.status}</Badge></td>
-                        <td className="data-table-cell text-center" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedParty(party)}><Eye className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Edit className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="sm"><MoreHorizontal className="w-4 h-4" /></Button>
-                          </div>
-                        </td>
-                      </tr>
+                      <div className="flex items-center gap-3">
+                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
+                          <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
+                        </div>
+                        <div><p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{party.displayName || party.legalName}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.partyCode}</p></div>
+                      </div>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {parties.length === 0 && (
-              <div className="p-12 text-center">
-                <Users className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                <p className="text-lg font-medium text-primary-900 dark:text-neutral-50">No parties found</p>
-                <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">Try adjusting your search or filters</p>
-              </div>
-            )}
+                  },
+                },
+                { key: 'owningEntityCode', header: 'Entity', render: (_, party) => <OwningEntityBadge entityCode={party.owningEntityCode} /> },
+                {
+                  key: 'roles',
+                  header: 'Roles',
+                  render: (_, party) => (
+                    <div className="flex flex-wrap gap-1">
+                      {party.roles.slice(0, 2).map((role) => {
+                        const config = roleConfig[role];
+                        return config ? <span key={role} className={cn('px-2 py-0.5 rounded text-xs font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
+                      })}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'paymentFactory',
+                  header: 'Payment Factory',
+                  align: 'center',
+                  render: (_, party) => (
+                    <div className="flex flex-wrap justify-center gap-1">
+                      <PoboBadge eligible={party.poboEligible} />
+                      <IntercompanyBadge isIntercompany={party.isIntercompany} linkedEntityCode={party.linkedLegalEntityCode} />
+                      <NettingBadge eligible={party.nettingEligible || party.isIntercompany} />
+                      {party.isIntercompany && party.icCreditLimit && <IcCreditBadge limit={party.icCreditLimit} exposure={party.icCurrentExposure} />}
+                    </div>
+                  ),
+                },
+                {
+                  key: 'kycStatus',
+                  header: 'KYC',
+                  align: 'center',
+                  render: (_, party) => {
+                    const kycConf = kycStatusConfig[party.kycStatus] || kycStatusConfig.PENDING;
+                    return <Badge variant={kycConf.variant as any} size="sm">{kycConf.label}</Badge>;
+                  },
+                },
+                { key: 'status', header: 'Status', align: 'center', render: (_, party) => <Badge variant={party.status === 'ACTIVE' ? 'success' : 'error'} size="sm">{party.status}</Badge> },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  align: 'center',
+                  width: '8rem',
+                  // ponytail: always-visible instead of hover-reveal — DataTable's
+                  // row doesn't expose a per-row className hook for the
+                  // group-hover trick the hand-rolled table used.
+                  render: (_, party) => (
+                    <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm" onClick={() => setSelectedParty(party)}><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><MoreHorizontal className="w-4 h-4" /></Button>
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </Card>
 
           {/* Detail Modal */}

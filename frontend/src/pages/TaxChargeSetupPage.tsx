@@ -5,7 +5,7 @@ import {
   Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store,
   Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign,
 } from 'lucide-react';
-import { Button, Badge, Input } from '../components/ui';
+import { Button, Badge, Input, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -184,34 +184,168 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.FC
   </button>
 );
 
-const LoadingTable: React.FC = () => (<div className="space-y-3 p-4">{[1, 2, 3, 4, 5].map((i) => (<div key={i} className="flex items-center gap-4"><div className="w-8 h-8 bg-neutral-200 animate-pulse rounded-lg dark:bg-primary-800" /><div className="flex-1 space-y-2"><div className="h-4 bg-neutral-200 animate-pulse rounded w-1/3 dark:bg-primary-800" /><div className="h-3 bg-neutral-100 animate-pulse rounded w-1/4 dark:bg-primary-800" /></div><div className="h-6 w-16 bg-neutral-200 animate-pulse rounded dark:bg-primary-800" /></div>))}</div>);
+const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j: TaxJurisdiction) => void; loading?: boolean }> = ({ jurisdictions, onEdit, loading }) => (
+  <DataTable
+    data={jurisdictions}
+    keyExtractor={(j) => j.id}
+    loading={loading}
+    columns={[
+      {
+        key: 'jurisdictionName', header: 'Jurisdiction',
+        render: (_, j) => (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center dark:bg-blue-500/10"><Globe className="w-4 h-4 text-blue-600 dark:text-blue-300" /></div>
+            <div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{j.jurisdictionName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{j.jurisdictionCode}</p></div>
+          </div>
+        ),
+      },
+      { key: 'countryCode', header: 'Country', render: (_, j) => <Badge variant="neutral" size="sm">{j.countryCode}</Badge> },
+      { key: 'taxAuthorityName', header: 'Tax Authority', render: (_, j) => <p className="text-sm text-neutral-600 dark:text-neutral-300">{j.taxAuthorityName || '-'}</p> },
+      {
+        key: 'supported', header: 'Supported Taxes', align: 'center',
+        render: (_, j) => (
+          <div className="flex justify-center gap-1">
+            {j.supportsVat && <Badge variant="info" size="sm">VAT</Badge>}
+            {j.supportsGst && <Badge variant="success" size="sm">GST</Badge>}
+            {j.supportsWithholding && <Badge variant="warning" size="sm">WHT</Badge>}
+            {j.supportsSalesTax && <Badge variant="accent" size="sm">Sales</Badge>}
+          </div>
+        ),
+      },
+      { key: 'reportingCurrency', header: 'Currency', render: (_, j) => <Badge variant="neutral" size="sm">{j.reportingCurrency}</Badge> },
+      { key: 'status', header: 'Status', render: (_, j) => <Badge variant={j.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{j.status}</Badge> },
+      { key: 'actions', header: 'Actions', align: 'right', render: (_, j) => <Button variant="ghost" size="sm" onClick={() => onEdit(j)}><Edit2 className="w-4 h-4" /></Button> },
+    ]}
+  />
+);
 
-const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j: TaxJurisdiction) => void; loading?: boolean }> = ({ jurisdictions, onEdit, loading }) => {
-  if (loading) return <LoadingTable />;
-  return (
-    <div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-neutral-200 dark:border-primary-800"><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Jurisdiction</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Country</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Tax Authority</th><th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Supported Taxes</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Currency</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Status</th><th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Actions</th></tr></thead><tbody>
-      {jurisdictions.map((j) => (<tr key={j.id} className="border-b border-neutral-100 hover:bg-neutral-50 dark:border-primary-800/60 dark:hover:bg-primary-800/50"><td className="py-3 px-4"><div className="flex items-center gap-2"><div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center dark:bg-blue-500/10"><Globe className="w-4 h-4 text-blue-600 dark:text-blue-300" /></div><div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{j.jurisdictionName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{j.jurisdictionCode}</p></div></div></td><td className="py-3 px-4"><Badge variant="neutral" size="sm">{j.countryCode}</Badge></td><td className="py-3 px-4"><p className="text-sm text-neutral-600 dark:text-neutral-300">{j.taxAuthorityName || '-'}</p></td><td className="py-3 px-4"><div className="flex justify-center gap-1">{j.supportsVat && <Badge variant="info" size="sm">VAT</Badge>}{j.supportsGst && <Badge variant="success" size="sm">GST</Badge>}{j.supportsWithholding && <Badge variant="warning" size="sm">WHT</Badge>}{j.supportsSalesTax && <Badge variant="accent" size="sm">Sales</Badge>}</div></td><td className="py-3 px-4"><Badge variant="neutral" size="sm">{j.reportingCurrency}</Badge></td><td className="py-3 px-4"><Badge variant={j.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{j.status}</Badge></td><td className="py-3 px-4 text-right"><Button variant="ghost" size="sm" onClick={() => onEdit(j)}><Edit2 className="w-4 h-4" /></Button></td></tr>))}
-      </tbody></table></div>
-  );
-};
+const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxConfiguration) => void; onDelete: (id: string) => void; loading?: boolean }> = ({ configs, onEdit, onDelete, loading }) => (
+  <DataTable
+    data={configs}
+    keyExtractor={(c) => c.id}
+    loading={loading}
+    columns={[
+      {
+        key: 'taxName', header: 'Tax Code',
+        render: (_, c) => {
+          const typeConfig = TAX_TYPE_CONFIG[c.taxType] || TAX_TYPE_CONFIG.OTHER;
+          const TypeIcon = typeConfig.icon;
+          return (
+            <div className="flex items-center gap-2">
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div>
+              <div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{c.taxName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{c.taxCode}</p></div>
+            </div>
+          );
+        },
+      },
+      { key: 'taxType', header: 'Type', render: (_, c) => <Badge variant="info" size="sm">{(TAX_TYPE_CONFIG[c.taxType] || TAX_TYPE_CONFIG.OTHER).label}</Badge> },
+      { key: 'jurisdictionCode', header: 'Jurisdiction', render: (_, c) => <p className="text-sm text-neutral-600 dark:text-neutral-300">{c.jurisdictionCode}</p> },
+      {
+        key: 'ratePercentage', header: 'Rate', align: 'right',
+        render: (_, c) => (
+          <>
+            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{c.ratePercentage}%</p>
+            {c.minimumAmount && <p className="text-xs text-neutral-500 dark:text-neutral-400">Min: {c.minimumAmount}</p>}
+          </>
+        ),
+      },
+      {
+        key: 'appliesTo', header: 'Applies To', align: 'center',
+        render: (_, c) => (
+          <div className="flex justify-center gap-1">
+            {c.appliesToPayables && <Badge variant="accent" size="sm">Payables</Badge>}
+            {c.appliesToReceivables && <Badge variant="info" size="sm">Receivables</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: 'flags', header: 'Flags', align: 'center',
+        render: (_, c) => (
+          <div className="flex justify-center gap-1">
+            {c.isWithholding && <Badge variant="warning" size="sm">WHT</Badge>}
+            {c.isRecoverable && <Badge variant="success" size="sm">Recoverable</Badge>}
+          </div>
+        ),
+      },
+      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge> },
+      {
+        key: 'actions', header: 'Actions', align: 'right',
+        render: (_, c) => (
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => onDelete(c.taxCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+          </div>
+        ),
+      },
+    ]}
+  />
+);
 
-const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxConfiguration) => void; onDelete: (id: string) => void; loading?: boolean }> = ({ configs, onEdit, onDelete, loading }) => {
-  if (loading) return <LoadingTable />;
-  return (
-    <div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-neutral-200 dark:border-primary-800"><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Tax Code</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Type</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Jurisdiction</th><th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Rate</th><th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Applies To</th><th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Flags</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Status</th><th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Actions</th></tr></thead><tbody>
-      {configs.map((c) => { const typeConfig = TAX_TYPE_CONFIG[c.taxType] || TAX_TYPE_CONFIG.OTHER; const TypeIcon = typeConfig.icon; return (<tr key={c.id} className="border-b border-neutral-100 hover:bg-neutral-50 dark:border-primary-800/60 dark:hover:bg-primary-800/50"><td className="py-3 px-4"><div className="flex items-center gap-2"><div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div><div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{c.taxName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{c.taxCode}</p></div></div></td><td className="py-3 px-4"><Badge variant="info" size="sm">{typeConfig.label}</Badge></td><td className="py-3 px-4"><p className="text-sm text-neutral-600 dark:text-neutral-300">{c.jurisdictionCode}</p></td><td className="py-3 px-4 text-right"><p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{c.ratePercentage}%</p>{c.minimumAmount && <p className="text-xs text-neutral-500 dark:text-neutral-400">Min: {c.minimumAmount}</p>}</td><td className="py-3 px-4"><div className="flex justify-center gap-1">{c.appliesToPayables && <Badge variant="accent" size="sm">Payables</Badge>}{c.appliesToReceivables && <Badge variant="info" size="sm">Receivables</Badge>}</div></td><td className="py-3 px-4"><div className="flex justify-center gap-1">{c.isWithholding && <Badge variant="warning" size="sm">WHT</Badge>}{c.isRecoverable && <Badge variant="success" size="sm">Recoverable</Badge>}</div></td><td className="py-3 px-4"><Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge></td><td className="py-3 px-4 text-right"><div className="flex justify-end gap-1"><Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button><Button variant="ghost" size="sm" onClick={() => onDelete(c.taxCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button></div></td></tr>); })}
-      </tbody></table></div>
-  );
-};
-
-const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: ChargeConfiguration) => void; onDelete: (id: string) => void; loading?: boolean }> = ({ configs, onEdit, onDelete, loading }) => {
-  if (loading) return <LoadingTable />;
-  return (
-    <div className="overflow-x-auto"><table className="w-full"><thead><tr className="border-b border-neutral-200 dark:border-primary-800"><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Charge Code</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Type</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Category</th><th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Rate/Amount</th><th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Scope</th><th className="text-center py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Waivers</th><th className="text-left py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Status</th><th className="text-right py-3 px-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Actions</th></tr></thead><tbody>
-      {configs.map((c) => { const typeConfig = CHARGE_TYPE_CONFIG[c.chargeType] || CHARGE_TYPE_CONFIG.OTHER; const TypeIcon = typeConfig.icon; const catConfig = CHARGE_CATEGORY_CONFIG[c.chargeCategory] || CHARGE_CATEGORY_CONFIG.FIXED; return (<tr key={c.id} className="border-b border-neutral-100 hover:bg-neutral-50 dark:border-primary-800/60 dark:hover:bg-primary-800/50"><td className="py-3 px-4"><div className="flex items-center gap-2"><div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div><div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{c.chargeName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p></div></div></td><td className="py-3 px-4"><Badge variant="info" size="sm">{typeConfig.label}</Badge></td><td className="py-3 px-4"><Badge variant="neutral" size="sm">{catConfig.label}</Badge></td><td className="py-3 px-4 text-right">{c.chargeCategory === 'FIXED' ? <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(c.fixedAmount || 0, c.currencyCode)}</p> : c.chargeCategory === 'PERCENTAGE' ? <div><p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{c.percentageRate}%</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{c.minimumCharge && `Min: ${c.minimumCharge}`}{c.maximumCharge && ` / Max: ${c.maximumCharge}`}</p></div> : <p className="text-sm text-neutral-600 dark:text-neutral-300">Tiered</p>}</td><td className="py-3 px-4"><div className="flex justify-center gap-1">{c.isCrossBorder && <Badge variant="accent" size="sm">Cross-Border</Badge>}{c.isDomestic && <Badge variant="info" size="sm">Domestic</Badge>}</div></td><td className="py-3 px-4"><div className="flex justify-center gap-1">{c.waiverForVip && <Badge variant="warning" size="sm">VIP</Badge>}{c.waiverThreshold && <Badge variant="success" size="sm">Threshold</Badge>}</div></td><td className="py-3 px-4"><Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge></td><td className="py-3 px-4 text-right"><div className="flex justify-end gap-1"><Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button><Button variant="ghost" size="sm" onClick={() => onDelete(c.chargeCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button></div></td></tr>); })}
-      </tbody></table></div>
-  );
-};
+const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: ChargeConfiguration) => void; onDelete: (id: string) => void; loading?: boolean }> = ({ configs, onEdit, onDelete, loading }) => (
+  <DataTable
+    data={configs}
+    keyExtractor={(c) => c.id}
+    loading={loading}
+    columns={[
+      {
+        key: 'chargeName', header: 'Charge Code',
+        render: (_, c) => {
+          const typeConfig = CHARGE_TYPE_CONFIG[c.chargeType] || CHARGE_TYPE_CONFIG.OTHER;
+          const TypeIcon = typeConfig.icon;
+          return (
+            <div className="flex items-center gap-2">
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div>
+              <div><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{c.chargeName}</p><p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p></div>
+            </div>
+          );
+        },
+      },
+      { key: 'chargeType', header: 'Type', render: (_, c) => <Badge variant="info" size="sm">{(CHARGE_TYPE_CONFIG[c.chargeType] || CHARGE_TYPE_CONFIG.OTHER).label}</Badge> },
+      { key: 'chargeCategory', header: 'Category', render: (_, c) => <Badge variant="neutral" size="sm">{(CHARGE_CATEGORY_CONFIG[c.chargeCategory] || CHARGE_CATEGORY_CONFIG.FIXED).label}</Badge> },
+      {
+        key: 'rate', header: 'Rate/Amount', align: 'right',
+        render: (_, c) => c.chargeCategory === 'FIXED'
+          ? <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(c.fixedAmount || 0, c.currencyCode)}</p>
+          : c.chargeCategory === 'PERCENTAGE'
+            ? (
+              <div>
+                <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{c.percentageRate}%</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">{c.minimumCharge && `Min: ${c.minimumCharge}`}{c.maximumCharge && ` / Max: ${c.maximumCharge}`}</p>
+              </div>
+            )
+            : <p className="text-sm text-neutral-600 dark:text-neutral-300">Tiered</p>,
+      },
+      {
+        key: 'scope', header: 'Scope', align: 'center',
+        render: (_, c) => (
+          <div className="flex justify-center gap-1">
+            {c.isCrossBorder && <Badge variant="accent" size="sm">Cross-Border</Badge>}
+            {c.isDomestic && <Badge variant="info" size="sm">Domestic</Badge>}
+          </div>
+        ),
+      },
+      {
+        key: 'waivers', header: 'Waivers', align: 'center',
+        render: (_, c) => (
+          <div className="flex justify-center gap-1">
+            {c.waiverForVip && <Badge variant="warning" size="sm">VIP</Badge>}
+            {c.waiverThreshold && <Badge variant="success" size="sm">Threshold</Badge>}
+          </div>
+        ),
+      },
+      { key: 'status', header: 'Status', render: (_, c) => <Badge variant={c.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{c.status}</Badge> },
+      {
+        key: 'actions', header: 'Actions', align: 'right',
+        render: (_, c) => (
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => onDelete(c.chargeCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+          </div>
+        ),
+      },
+    ]}
+  />
+);
 
 const TaxConfigModal: React.FC<{ isOpen: boolean; onClose: () => void; config?: TaxConfiguration; jurisdictions: TaxJurisdiction[]; onSave: (data: Partial<TaxConfiguration>) => void; saving?: boolean }> = ({ isOpen, onClose, config, jurisdictions, onSave, saving }) => {
   const [formData, setFormData] = useState<Partial<TaxConfiguration>>({ taxCode: '', taxName: '', description: '', taxType: 'VAT', jurisdictionCode: 'UAE', taxCategory: 'STANDARD', ratePercentage: 5, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: new Date().toISOString().split('T')[0] });

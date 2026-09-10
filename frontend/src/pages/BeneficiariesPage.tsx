@@ -6,9 +6,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, Search, CheckCircle, Trash2, Loader2, AlertCircle,
   RefreshCw, Building2, Globe, CreditCard, ChevronRight, Eye,
-  MoreHorizontal, Clock, Ban, ChevronLeft,
+  MoreHorizontal, Clock, Ban,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, Skeleton, EmptyState } from '../components/ui';
+import { Card, Button, Badge, Input, Select, Skeleton, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { beneficiariesApi, Beneficiary } from '../services/api';
 import { cn } from '../utils';
@@ -59,10 +59,10 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, iconCol
 };
 
 // ============================================================================
-// BENEFICIARY ROW (Desktop Table)
+// BENEFICIARY ACTIONS CELL (Desktop Table — DataTable "Actions" column)
 // ============================================================================
 
-interface BeneficiaryRowProps {
+interface BeneficiaryActionsCellProps {
   beneficiary: Beneficiary;
   onView: (b: Beneficiary) => void;
   onVerify: (id: string) => void;
@@ -70,7 +70,7 @@ interface BeneficiaryRowProps {
   processing: boolean;
 }
 
-const BeneficiaryRow: React.FC<BeneficiaryRowProps> = ({
+const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
   beneficiary,
   onView,
   onVerify,
@@ -80,121 +80,44 @@ const BeneficiaryRow: React.FC<BeneficiaryRowProps> = ({
   const [showActions, setShowActions] = useState(false);
 
   return (
-    <tr
-      className="data-table-row group cursor-pointer"
-      onClick={() => onView(beneficiary)}
-    >
-      {/* Beneficiary Info */}
-      <td className="data-table-cell">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
-            beneficiary.beneficiaryType === 'CORPORATE' ? "bg-info-50 dark:bg-info-500/10" : "bg-primary-50 dark:bg-primary-800/40"
-          )}>
-            {beneficiary.beneficiaryType === 'CORPORATE' ? (
-              <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
-            ) : (
-              <Users className="w-5 h-5 text-primary-600 dark:text-primary-200" />
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setShowActions(!showActions)}
+        className="p-2 hover:bg-neutral-100 rounded-lg transition-all"
+      >
+        <MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+      </button>
+      {showActions && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
+          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+            <button
+              onClick={() => { onView(beneficiary); setShowActions(false); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50"
+            >
+              <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
+            </button>
+            {beneficiary.validationStatus !== 'VERIFIED' && (
+              <button
+                onClick={() => { onVerify(beneficiary.id); setShowActions(false); }}
+                disabled={processing}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-success-600 hover:bg-success-50 transition-colors disabled:opacity-50 dark:text-success-300"
+              >
+                <CheckCircle className="w-4 h-4" /> Verify Beneficiary
+              </button>
             )}
+            <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
+            <button
+              onClick={() => { onDelete(beneficiary.id); setShowActions(false); }}
+              disabled={processing}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 transition-colors disabled:opacity-50 dark:text-error-300"
+            >
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
-              {beneficiary.beneficiaryName}
-            </p>
-            <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
-              <Globe className="w-3 h-3" />
-              <span>{beneficiary.countryCode || 'N/A'}</span>
-            </div>
-          </div>
-        </div>
-      </td>
-
-      {/* Type */}
-      <td className="data-table-cell">
-        <Badge
-          variant="neutral"
-          size="sm"
-          className={cn(
-            beneficiary.beneficiaryType === 'CORPORATE'
-              ? "bg-info-50 text-info-700 border-info-100 dark:bg-info-500/10 dark:text-info-300 dark:border-info-500/30"
-              : "bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30"
-          )}
-        >
-          {beneficiary.beneficiaryType || 'INDIVIDUAL'}
-        </Badge>
-      </td>
-
-      {/* Bank */}
-      <td className="data-table-cell">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{beneficiary.bankName || '-'}</p>
-        <p className="text-xs text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{beneficiary.swiftCode || '-'}</p>
-      </td>
-
-      {/* Account/IBAN */}
-      <td className="data-table-cell">
-        <p className="text-sm font-mono text-primary-900 truncate max-w-[200px] dark:text-neutral-50">
-          {beneficiary.iban || beneficiary.accountNumber || '-'}
-        </p>
-        <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{beneficiary.currencyCode || 'AED'}</p>
-      </td>
-
-      {/* Status */}
-      <td className="data-table-cell">
-        <Badge
-          variant={beneficiary.validationStatus === 'VERIFIED' ? 'success' : 'warning'}
-          size="sm"
-        >
-          {beneficiary.validationStatus === 'VERIFIED' ? (
-            <CheckCircle className="w-3 h-3 mr-1" />
-          ) : (
-            <Clock className="w-3 h-3 mr-1" />
-          )}
-          {beneficiary.validationStatus || 'PENDING'}
-        </Badge>
-      </td>
-
-      {/* Actions */}
-      <td className="data-table-cell" onClick={(e) => e.stopPropagation()}>
-        <div className="relative">
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="p-2 hover:bg-neutral-100 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-          >
-            <MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-          </button>
-          {showActions && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
-                <button
-                  onClick={() => { onView(beneficiary); setShowActions(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50"
-                >
-                  <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
-                </button>
-                {beneficiary.validationStatus !== 'VERIFIED' && (
-                  <button
-                    onClick={() => { onVerify(beneficiary.id); setShowActions(false); }}
-                    disabled={processing}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-success-600 hover:bg-success-50 transition-colors disabled:opacity-50 dark:text-success-300"
-                  >
-                    <CheckCircle className="w-4 h-4" /> Verify Beneficiary
-                  </button>
-                )}
-                <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
-                <button
-                  onClick={() => { onDelete(beneficiary.id); setShowActions(false); }}
-                  disabled={processing}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 transition-colors disabled:opacity-50 dark:text-error-300"
-                >
-                  <Trash2 className="w-4 h-4" /> Delete
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
+        </>
+      )}
+    </div>
   );
 };
 
@@ -497,8 +420,6 @@ const BeneficiariesPage: React.FC = () => {
     (currentPage + 1) * pageSize
   );
 
-  const totalPages = Math.ceil(filteredBeneficiaries.length / pageSize);
-
   // Loading State
   if (loading) {
     return (
@@ -617,131 +538,125 @@ const BeneficiariesPage: React.FC = () => {
 
       {/* Beneficiaries Table/Cards */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-        {paginatedBeneficiaries.length > 0 ? (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Beneficiary</th>
-                    <th className="data-table-header-cell">Type</th>
-                    <th className="data-table-header-cell">Bank</th>
-                    <th className="data-table-header-cell">Account/IBAN</th>
-                    <th className="data-table-header-cell">Status</th>
-                    <th className="data-table-header-cell w-16">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {paginatedBeneficiaries.map((ben) => (
-                    <BeneficiaryRow
-                      key={ben.id}
-                      beneficiary={ben}
-                      onView={setSelectedBeneficiary}
-                      onVerify={handleVerify}
-                      onDelete={handleDelete}
-                      processing={processing}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden p-4 space-y-3">
-              {paginatedBeneficiaries.map((ben, idx) => (
-                <BeneficiaryMobileCard
-                  key={ben.id}
-                  beneficiary={ben}
-                  onView={setSelectedBeneficiary}
-                  index={idx}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-neutral-200 dark:border-primary-800">
-                <p className="text-sm text-neutral-500 order-2 sm:order-1 dark:text-neutral-400">
-                  Showing{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">
-                    {Math.min(currentPage * pageSize + 1, filteredBeneficiaries.length)}
-                  </span>
-                  {' '}to{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">
-                    {Math.min((currentPage + 1) * pageSize, filteredBeneficiaries.length)}
-                  </span>
-                  {' '}of{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">{filteredBeneficiaries.length}</span>
-                  {' '}beneficiaries
-                </p>
-                <div className="flex items-center gap-1 order-1 sm:order-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 0}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="hidden sm:flex items-center gap-1">
-                    {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                      const p = currentPage < 3 ? i : currentPage - 2 + i;
-                      if (p >= totalPages) return null;
-                      return (
-                        <Button
-                          key={p}
-                          variant={currentPage === p ? 'primary' : 'ghost'}
-                          size="sm"
-                          onClick={() => setCurrentPage(p)}
-                        >
-                          {p + 1}
-                        </Button>
-                      );
-                    })}
+        <DataTable
+          data={paginatedBeneficiaries}
+          keyExtractor={(ben) => ben.id}
+          onRowClick={setSelectedBeneficiary}
+          pagination
+          pageSize={pageSize}
+          currentPage={currentPage + 1}
+          totalCount={filteredBeneficiaries.length}
+          onPageChange={(page) => setCurrentPage(page - 1)}
+          mobileCardRenderer={(ben, idx) => (
+            <BeneficiaryMobileCard beneficiary={ben} onView={setSelectedBeneficiary} index={idx} />
+          )}
+          emptyIcon={<Users className="w-12 h-12" />}
+          emptyTitle="No beneficiaries found"
+          emptyDescription={searchQuery ? 'Try adjusting your search criteria.' : 'Get started by adding your first beneficiary.'}
+          emptyAction={
+            searchQuery ? (
+              <Button variant="outline" onClick={() => setSearchQuery('')}>Clear Search</Button>
+            ) : (
+              <Button onClick={() => setShowCreateModal(true)} leftIcon={<Plus className="w-4 h-4" />}>Add Beneficiary</Button>
+            )
+          }
+          columns={[
+            {
+              key: 'beneficiaryName',
+              header: 'Beneficiary',
+              render: (_, beneficiary) => (
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                    beneficiary.beneficiaryType === 'CORPORATE' ? "bg-info-50 dark:bg-info-500/10" : "bg-primary-50 dark:bg-primary-800/40"
+                  )}>
+                    {beneficiary.beneficiaryType === 'CORPORATE' ? (
+                      <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
+                    ) : (
+                      <Users className="w-5 h-5 text-primary-600 dark:text-primary-200" />
+                    )}
                   </div>
-                  <span className="sm:hidden text-sm text-neutral-600 px-2 dark:text-neutral-300">
-                    {currentPage + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage >= totalPages - 1}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-primary-900 truncate dark:text-neutral-50">
+                      {beneficiary.beneficiaryName}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                      <Globe className="w-3 h-3" />
+                      <span>{beneficiary.countryCode || 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="p-8">
-            <EmptyState
-              icon={<Users className="w-12 h-12" />}
-              title="No beneficiaries found"
-              description={
-                searchQuery
-                  ? 'Try adjusting your search criteria.'
-                  : 'Get started by adding your first beneficiary.'
-              }
-              action={
-                searchQuery ? (
-                  <Button variant="outline" onClick={() => setSearchQuery('')}>
-                    Clear Search
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setShowCreateModal(true)}
-                    leftIcon={<Plus className="w-4 h-4" />}
-                  >
-                    Add Beneficiary
-                  </Button>
-                )
-              }
-            />
-          </div>
-        )}
+              ),
+            },
+            {
+              key: 'beneficiaryType',
+              header: 'Type',
+              render: (_, beneficiary) => (
+                <Badge
+                  variant="neutral"
+                  size="sm"
+                  className={cn(
+                    beneficiary.beneficiaryType === 'CORPORATE'
+                      ? "bg-info-50 text-info-700 border-info-100 dark:bg-info-500/10 dark:text-info-300 dark:border-info-500/30"
+                      : "bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30"
+                  )}
+                >
+                  {beneficiary.beneficiaryType || 'INDIVIDUAL'}
+                </Badge>
+              ),
+            },
+            {
+              key: 'bankName',
+              header: 'Bank',
+              render: (_, beneficiary) => (
+                <>
+                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{beneficiary.bankName || '-'}</p>
+                  <p className="text-xs text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{beneficiary.swiftCode || '-'}</p>
+                </>
+              ),
+            },
+            {
+              key: 'iban',
+              header: 'Account/IBAN',
+              render: (_, beneficiary) => (
+                <>
+                  <p className="text-sm font-mono text-primary-900 truncate max-w-[200px] dark:text-neutral-50">
+                    {beneficiary.iban || beneficiary.accountNumber || '-'}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{beneficiary.currencyCode || 'AED'}</p>
+                </>
+              ),
+            },
+            {
+              key: 'validationStatus',
+              header: 'Status',
+              render: (_, beneficiary) => (
+                <Badge variant={beneficiary.validationStatus === 'VERIFIED' ? 'success' : 'warning'} size="sm">
+                  {beneficiary.validationStatus === 'VERIFIED' ? (
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                  ) : (
+                    <Clock className="w-3 h-3 mr-1" />
+                  )}
+                  {beneficiary.validationStatus || 'PENDING'}
+                </Badge>
+              ),
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              width: '4rem',
+              render: (_, beneficiary) => (
+                <BeneficiaryActionsCell
+                  beneficiary={beneficiary}
+                  onView={setSelectedBeneficiary}
+                  onVerify={handleVerify}
+                  onDelete={handleDelete}
+                  processing={processing}
+                />
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Create Modal */}

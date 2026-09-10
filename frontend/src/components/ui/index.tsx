@@ -19,6 +19,12 @@ export type { DrawerProps } from './Drawer';
 export { StatTile } from './StatTile';
 export type { StatTileProps } from './StatTile';
 
+// Shared table primitive (pagination, sort, selection, search, mobile-card
+// fallback, hairline variant) — was missing from this barrel, which is
+// likely why every list page grew its own hand-rolled <table> instead.
+export { DataTable } from './DataTable';
+export type { Column, DataTableProps } from './DataTable';
+
 // ============================================================================
 // WORLD-CLASS UI COMPONENTS - Swiss Minimalism + Premium Polish
 // ============================================================================

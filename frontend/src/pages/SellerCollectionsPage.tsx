@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingBag, Search, Loader2, AlertCircle, RefreshCw, Download, Eye, CreditCard, TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
 import { formatCurrency } from '../utils';
@@ -151,43 +151,39 @@ const SellerCollectionsPage: React.FC = () => {
           </Card>
 
           <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
-                  <tr>
-                    <th className="text-left p-4 label">Reference</th>
-                    <th className="text-left p-4 label">Seller</th>
-                    <th className="text-left p-4 label">Payment Method</th>
-                    <th className="text-right p-4 label">Amount</th>
-                    <th className="text-left p-4 label">Status</th>
-                    <th className="text-left p-4 label">Date</th>
-                    <th className="text-right p-4 label">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {filteredCollections.map(c => (
-                    <tr key={c.id} className="hover:bg-neutral-50 transition-colors dark:hover:bg-primary-800/50">
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <ShoppingBag className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                          <span className="font-mono text-sm">{c.transactionRef}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-sm font-medium text-neutral-900 dark:text-neutral-50">{c.merchantName}</td>
-                      <td className="p-4"><Badge variant="neutral">{c.paymentMethod}</Badge></td>
-                      <td className="p-4 text-right font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</td>
-                      <td className="p-4">{getStatusBadge(c.status)}</td>
-                      <td className="p-4 text-sm text-neutral-600 dark:text-neutral-300">{new Date(c.transactionDate).toLocaleString()}</td>
-                      <td className="p-4 text-right">
-                        <Button size="sm" variant="ghost" onClick={() => { setSelectedItem(c); setShowDetailModal(true); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={filteredCollections}
+              keyExtractor={(c) => c.id}
+              emptyIcon={<ShoppingBag className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+              emptyTitle="No collections found"
+              columns={[
+                {
+                  key: 'transactionRef',
+                  header: 'Reference',
+                  render: (_, c) => (
+                    <div className="flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 text-primary-600 dark:text-primary-200" />
+                      <span className="font-mono text-sm">{c.transactionRef}</span>
+                    </div>
+                  ),
+                },
+                { key: 'merchantName', header: 'Seller', render: (_, c) => <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{c.merchantName}</span> },
+                { key: 'paymentMethod', header: 'Payment Method', render: (_, c) => <Badge variant="neutral">{c.paymentMethod}</Badge> },
+                { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
+                { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
+                { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(c.transactionDate).toLocaleString()}</span> },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  align: 'right',
+                  render: (_, c) => (
+                    <Button size="sm" variant="ghost" onClick={() => { setSelectedItem(c); setShowDetailModal(true); }}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           </Card>
         </>
       )}
@@ -205,34 +201,20 @@ const SellerCollectionsPage: React.FC = () => {
           </Card>
 
           <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
-                  <tr>
-                    <th className="text-left p-4 label">Settlement Ref</th>
-                    <th className="text-left p-4 label">Seller</th>
-                    <th className="text-right p-4 label">Gross</th>
-                    <th className="text-right p-4 label">Commission</th>
-                    <th className="text-right p-4 label">Net</th>
-                    <th className="text-left p-4 label">Status</th>
-                    <th className="text-left p-4 label">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {settlements.map(s => (
-                    <tr key={s.id} className="hover:bg-neutral-50 transition-colors dark:hover:bg-primary-800/50">
-                      <td className="p-4 font-mono text-sm">{s.settlementRef}</td>
-                      <td className="p-4 text-sm font-medium text-neutral-900 dark:text-neutral-50">{s.merchantName}</td>
-                      <td className="p-4 text-right font-medium tracking-tight">{formatCurrency(s.grossAmount, 'AED')}</td>
-                      <td className="p-4 text-right text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission, 'AED')}</td>
-                      <td className="p-4 text-right font-medium tracking-tight">{formatCurrency(s.netAmount, 'AED')}</td>
-                      <td className="p-4">{getStatusBadge(s.status)}</td>
-                      <td className="p-4 text-sm text-neutral-600 dark:text-neutral-300">{s.settlementDate}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={settlements}
+              keyExtractor={(s) => s.id}
+              emptyTitle="No settlements found"
+              columns={[
+                { key: 'settlementRef', header: 'Settlement Ref', render: (_, s) => <span className="font-mono text-sm">{s.settlementRef}</span> },
+                { key: 'merchantName', header: 'Seller', render: (_, s) => <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{s.merchantName}</span> },
+                { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount, 'AED')}</span> },
+                { key: 'commission', header: 'Commission', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission, 'AED')}</span> },
+                { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount, 'AED')}</span> },
+                { key: 'status', header: 'Status', render: (_, s) => getStatusBadge(s.status) },
+                { key: 'settlementDate', header: 'Date', render: (_, s) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{s.settlementDate}</span> },
+              ]}
+            />
           </Card>
         </>
       )}
