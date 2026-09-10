@@ -1,34 +1,32 @@
 # Automated Defect-Fix Pipeline — Design
 
-Status: **Mechanically working, but the first two "successes" (KAN-7,
-KAN-8) were false positives — root cause found and fixed 2026-09-10, not
-yet re-verified live.**
+Status: **VERIFIED END-TO-END — a genuine, confirmed fix (2026-09-10).**
 
-A live smoke test got the full loop to run end to end for real: CI failure
-detected → Jira ticket filed → coding agent ran → test gate passed → PR
-merged. But investigating KAN-8 (a backend defect) surfaced that neither
-fix actually touched the reported bug. Root cause: `GitWorktreeManager`
-branched the coding agent's worktree from `origin/main` — but every defect
-this pipeline detects comes from a PR-triggered CI failure, and a PR that
-fails CI is, by definition, not merged, so the defective code only ever
-existed on the PR's own branch, never on `main`. The agent's worktree
-never contained the real buggy file; it was reconstructing something
-plausible from the ticket text alone. For KAN-7 (frontend) that happened
-to produce a genuine-looking clean file at the reported path. For KAN-8
-(backend) it produced a local shadow class inside the test file that
-trivially passed while the real (never-merged) buggy class sat untouched
-— a merged PR that looked like a fix but wasn't one.
+The first two "successes" (KAN-7, KAN-8) turned out to be false positives:
+`GitWorktreeManager` branched the coding agent's worktree from
+`origin/main`, but every defect this pipeline detects comes from a
+PR-triggered CI failure — code that fails CI is, by definition, not
+merged, so the defective code only ever existed on the PR's own branch,
+never on `main`. The agent's worktree never contained the real buggy
+file; it reconstructed something plausible from the ticket text alone
+(a fabricated clean file for KAN-7, a shadow class that trivially passed
+its own fake test for KAN-8) while the real bug sat untouched.
 
-**Fixed**: the coding agent's worktree now checks out the *originating
-PR's own branch* (threaded through from the webhook payload into the
-ticket as a `SOURCE_BRANCH` marker, same pattern as `DEFECT_SIGNATURE`),
-and pushes the fix straight back onto that same branch — updating the
-existing PR in place — instead of creating a disconnected new branch and a
-second PR (which also removes the "two PRs collide on the same file"
-problem KAN-6/KAN-7 hit). The system prompt was also hardened to
-explicitly forbid weakening/replacing tests or fabricating stand-in types.
-**Not yet re-verified live** — the next smoke test needs to confirm the
-agent actually edits the real production file this time.
+**Fixed and re-verified live with `KAN-9`**: the coding agent's worktree
+now checks out the *originating PR's own branch* (threaded through as a
+`SOURCE_BRANCH` ticket marker) and pushes the fix straight back onto that
+branch, updating the existing PR in place. This time the agent correctly
+found and edited the real production file:
+```diff
+     public String greet(String name) {
+-        return "Hello, World!";
++        return "Hello, " + name + "!";
+     }
+```
+Confirmed via the GitHub API directly (commit `9428a454`, authored by
+`defect-fix-bot@vam-portal.local`) — a minimal, correct, genuine fix, not
+a workaround. The mechanism is now trustworthy, not just mechanically
+running.
 
 Getting this far took a long live-debugging pass — wrong GitHub Actions
 merge-commit SHA, a redirect the HTTP client wasn't following, two Jira
@@ -37,10 +35,24 @@ team-managed projects, a test gate that gated on the whole project's exit
 code instead of the one ticket's defect, absolute/inconsistent file paths
 between the CI runner and the VM worktree, stale worktrees/branches left
 behind by interrupted attempts, a non-force push rejected by an earlier
-attempt's leftover branch, and now the worktree-source bug above. None of
-these were guessable from the design — each needed a real run to surface.
-See the git log for `defect-fix-service/` for the full list if useful
-context later.
+attempt's leftover branch, the worktree-source bug above, and a missing
+loop-prevention guard (added after researching CI-autofix reference
+implementations — see below). None of these were guessable from the
+design — each needed a real run to surface. See the git log for
+`defect-fix-service/` for the full list if useful context later.
+
+**Reference research (2026-09-10)**: before continuing to iterate blindly,
+checked this design against high-star open-source reference
+implementations (OpenHands ~70k★, SWE-agent ~19.7k★/NeurIPS 2024, and
+CI-autofix guides from OpenAI/Anthropic/Devin). Confirmed correct:
+push-fix-to-the-existing-PR-branch (matches `git-auto-commit-action` and
+Codex/Devin's own CI-autofix patterns) and worktree/container-based
+isolation (matches OpenHands' `Workspace` abstraction). One real gap
+found and fixed: every CI-autofix guide checked calls out loop-prevention
+as required — added a guard skipping any `workflow_run` whose head commit
+was authored by the bot itself. Also noted, not yet acted on: SWE-agent's
+Agent-Computer Interface (a curated command set, not raw shell) is the
+more rigorous answer to the `run_command` sandboxing gap below.
 
 **Known remaining gaps, not yet exercised:**
 - The re-verification above still only covers single-file, single-defect
