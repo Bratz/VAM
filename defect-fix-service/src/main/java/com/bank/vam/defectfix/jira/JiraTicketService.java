@@ -23,7 +23,12 @@ public class JiraTicketService {
             log.debug("Skipping {} — already ticketed ({})", defect.signature(), dedupLabel);
             return;
         }
-        String description = defect.details() + "\n\nFirst detected on PR #" + prNumber + ".";
+        // The DEFECT_SIGNATURE line is machine-readable: TriageOrchestrator parses it back out of
+        // the ticket description to know exactly which defect the test gate needs to see resolved
+        // (as opposed to "does the whole project's lint/test command exit 0", which is unwinnable
+        // on a codebase that already has pre-existing, unrelated warnings/failures).
+        String description = defect.details() + "\n\nFirst detected on PR #" + prNumber + "."
+                + "\n\nDEFECT_SIGNATURE: " + defect.signature().source() + "|" + defect.signature().key();
         String stackLabel = defect.signature().source().startsWith("frontend") ? "stack-frontend" : "stack-backend";
         String key = jiraClient.createIssue(defect.summary(), description, dedupLabel, stackLabel);
         log.info("Filed {} for {}", key, defect.signature());

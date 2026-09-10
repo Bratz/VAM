@@ -3,6 +3,7 @@ package com.bank.vam.defectfix.orchestrate;
 import com.bank.vam.defectfix.agent.CodingAgentClient;
 import com.bank.vam.defectfix.config.PipelineProperties;
 import com.bank.vam.defectfix.detect.DefectDetectionService.Stack;
+import com.bank.vam.defectfix.detect.DefectSignature;
 import com.bank.vam.defectfix.gate.TestGateRunner;
 import com.bank.vam.defectfix.gate.TestGateRunner.GateResult;
 import com.bank.vam.defectfix.git.GitWorktreeManager;
@@ -85,6 +86,10 @@ public class TriageOrchestrator {
         String taskBrief = "Fix the following defect in vam-portal:\n\n" + issue.summary() + "\n\n" + issue.description();
 
         try {
+            // Throws (caught below, escalating with a clear message instead of getting stuck
+            // retrying the same ticket forever) for any ticket filed before this signature-
+            // tracking fix landed — there's nothing to safely gate on for those.
+            DefectSignature targetDefect = extractSignature(issue.description());
             jiraClient.transitionTo(issue.key(), "In Progress");
             worktreeManager.ensureBaseRepoReady();
             Path workDir = worktreeManager.createWorktree(branch);
@@ -95,7 +100,7 @@ public class TriageOrchestrator {
                 String prompt = attempt == 0 ? taskBrief
                         : taskBrief + "\n\nYour previous attempt did not pass the test gate. Output:\n" + lastResult.output();
                 codingAgentClient.runFix(workDir, prompt);
-                lastResult = testGateRunner.runGate(stack, workDir);
+                lastResult = testGateRunner.runGate(stack, workDir, targetDefect);
                 if (lastResult.passed()) {
                     onSuccess(issue, workDir, branch);
                     return;
@@ -142,6 +147,19 @@ public class TriageOrchestrator {
         } catch (Exception e) {
             log.error("Could not transition {} to {}", issueKey, status, e);
         }
+    }
+
+    private static final String SIGNATURE_MARKER = "DEFECT_SIGNATURE: ";
+
+    /** Pulls the "source|key" line JiraTicketService embeds in every ticket it files back out. */
+    private DefectSignature extractSignature(String description) {
+        for (String line : description.split("\\R")) {
+            if (line.startsWith(SIGNATURE_MARKER)) {
+                return DefectSignature.parse(line.substring(SIGNATURE_MARKER.length()).strip());
+            }
+        }
+        throw new IllegalStateException("No " + SIGNATURE_MARKER.strip() + " line in this ticket's description "
+                + "— likely filed before signature tracking was added");
     }
 
     private String slug(String text) {

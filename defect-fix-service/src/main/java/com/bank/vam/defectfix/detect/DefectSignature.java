@@ -11,4 +11,13 @@ public record DefectSignature(String source, String key) {
     public String asLabel() {
         return "sig:" + Integer.toHexString((source + ":" + key).hashCode());
     }
+
+    /** Inverse of the "source|key" form embedded in a ticket's description (see JiraTicketService). */
+    public static DefectSignature parse(String sourcePipeKey) {
+        int separator = sourcePipeKey.indexOf('|');
+        if (separator < 0) {
+            throw new IllegalArgumentException("Not a \"source|key\" defect signature: " + sourcePipeKey);
+        }
+        return new DefectSignature(sourcePipeKey.substring(0, separator), sourcePipeKey.substring(separator + 1));
+    }
 }
