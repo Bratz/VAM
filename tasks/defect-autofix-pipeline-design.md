@@ -331,3 +331,52 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
    build/run the image — first real test happens on the OCI VM.
 7. Sentry instrumentation (frontend + backend) + its webhook receiver — not
    started. Independent of steps 1-6 (separate detector).
+
+## 11. Post-deployment live verification (this pass)
+
+Steps 1-6 above were built untested against Docker (no local Docker in the
+dev environment). Live-verified on the OCI VM since, in order:
+
+- **KAN-7/KAN-8 were false positives** — the coding agent's git worktree
+  was branching off `origin/main` instead of the PR's actual failing
+  branch, so both "successful" fixes never touched real buggy code. Fixed
+  by threading `SOURCE_BRANCH` through the ticket description
+  (`JiraTicketService` writes it, `TriageOrchestrator` reads it back out)
+  so `GitWorktreeManager.createWorktree` branches from the real PR head.
+- **KAN-9** (backend) — first fix confirmed genuine post-SOURCE_BRANCH-fix,
+  independently verified via the GitHub API (diff + commit author
+  `Defect Fix Bot`), not just pipeline self-report.
+- **Loop-prevention guard added**: the detector now ignores CI failures on
+  commits authored by the bot itself, closing a real refire risk (bot pushes
+  a fix → CI reruns → any unrelated pre-existing failure on that same commit
+  would otherwise file a duplicate ticket against its own fix commit).
+- **Trajectory logging added** (`CodingAgentClient.ToolCallRecord`,
+  `TicketTrajectory`, `TriageOrchestrator.writeTrajectory`) — modeled on
+  SWE-agent's `.traj` files / OpenHands' event log: one structured JSON
+  artifact per ticket run under `<workspaceDir>/trajectories/`, covering
+  every attempt's full tool-call sequence, gate result, and final outcome
+  — not just log lines. Live-verified end-to-end on KAN-10 (frontend) and
+  KAN-12 (backend); see `KAN-12-*.json` for a real example.
+- **KAN-12 gate duration**: the backend test gate (`mvn -B test`, full
+  suite, no filtering — see `TestGateRunner.runBackendChecks`) took ~11
+  minutes wall-clock on the OCI VM for a fix that took the coding agent
+  under 15 seconds to write, vs. ~1:22 for the same suite on a local dev
+  machine. `ps aux` during the run showed the Maven process alive but with
+  only ~9s of accumulated CPU time over 10+ minutes — mostly blocked/
+  waiting, not compute-bound; root cause not yet confirmed (candidates:
+  cold Maven cache for a fresh worktree, throttled/shared OCI vCPU, slow
+  Postgres/network I/O during Spring context boot). **Open, unverified
+  concern**: `TestGateRunner.run()` force-kills the gate command at its
+  600s timeout but `runBackendChecks()` doesn't check whether that
+  happened — it unconditionally parses whatever `target/surefire-reports/`
+  XML files exist afterward. Since KAN-12's total run was close to that
+  ceiling, a timeout-truncated run could silently read as a clean pass if
+  the relevant test class's report happened to flush before the kill.
+  Deferred — revisit if a future run's gate timing looks similarly close
+  to 600s.
+- Smoke-test branches/PRs used for this verification (`test/defectfix-*`,
+  KAN-9/10/12): KAN-12's (PR #10, backend) merged then its throwaway
+  `SmokeTestReverser`/`SmokeTestReverserTest` fixture removed from `main`
+  in a follow-up commit. KAN-9 (PR #8) and KAN-10 (PR #9) are still open,
+  unmerged — pending the same close-without-merge-and-delete-branch
+  treatment.
