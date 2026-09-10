@@ -17,7 +17,7 @@ import {
   ArrowRightLeft, Clock, CheckCircle2, XCircle, AlertTriangle, MinusCircle,
   Copy, Globe, Building2, Edit2, ArrowUpDown, Database, Zap, X,
 } from 'lucide-react';
-import { Card, Button, Input, StatusIconBadge, Drawer, StatTile } from '../components/ui';
+import { Card, Button, Input, StatusIconBadge, Drawer, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
@@ -124,149 +124,109 @@ interface RatesTableProps {
   refreshingIds: Set<string>;
 }
 
-const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow, refreshingIds }) => {
-  if (rates.length === 0) {
-    return (
-      <Card>
-        <div className="p-12 text-center">
-          <TrendingUp className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-          <p className="body">No FX rates match your filters</p>
-          <p className="body-sm mt-1">Try clearing search and filters, or add a new rate.</p>
-        </div>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-neutral-200 dark:border-primary-800">
-              <th className="label py-3 px-4 text-left">Pair</th>
-              <th className="label py-3 px-4 text-right">Rate</th>
-              <th className="label py-3 px-4 text-right">Inverse</th>
-              <th className="label py-3 px-4 text-right">Bid</th>
-              <th className="label py-3 px-4 text-right">Ask</th>
-              <th className="label py-3 px-4 text-left">Type</th>
-              <th className="label py-3 px-4 text-left">Source</th>
-              <th className="label py-3 px-4 text-left">Updated</th>
-              <th className="label py-3 px-4 text-left">Status</th>
-              <th className="label py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rates.map((rate) => (
-              <RateRow
-                key={rate.id}
-                rate={rate}
-                onClick={() => onRowClick(rate)}
-                onRefresh={() => onRefreshRow(rate)}
-                refreshing={refreshingIds.has(rate.id)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
-};
-
-const RateRow: React.FC<{
-  rate: EnrichedRate;
-  onClick: () => void;
-  onRefresh: () => void;
-  refreshing: boolean;
-}> = ({ rate, onClick, onRefresh, refreshing }) => {
-  const typeConfig = RATE_TYPE_CONFIG[rate.rateType] ?? RATE_TYPE_CONFIG.SPOT;
-  const sourceConfig = SOURCE_CONFIG[rate.rateSource] ?? SOURCE_CONFIG.MANUAL;
-  const SourceIcon = sourceConfig.icon;
-  const inverse = rate.inverseRate ?? 1 / rate.rate;
-
-  return (
-    <tr
-      onClick={onClick}
-      className="border-b border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/40 cursor-pointer transition-colors"
-    >
-      {/* Pair — plain text, no gradient chips */}
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">
-            {rate.fromCurrency}
-          </span>
-          <ArrowRightLeft className="w-3 h-3 text-neutral-400" />
-          <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">
-            {rate.toCurrency}
-          </span>
-        </div>
-      </td>
-
-      {/* Rate — the hero number */}
-      <td className="py-3 px-4 text-right">
-        <span className="stat-value-xs">{formatFxRate(rate.rate, rate.fromCurrency, rate.toCurrency)}</span>
-      </td>
-
-      {/* Inverse — muted */}
-      <td className="py-3 px-4 text-right font-mono text-sm text-neutral-500 dark:text-neutral-400">
-        {formatFxRate(inverse, rate.toCurrency, rate.fromCurrency)}
-      </td>
-
-      {/* Bid / Ask — muted unless present */}
-      <td className="py-3 px-4 text-right font-mono text-sm">
-        {rate.bidRate ? (
-          <span className="text-success-700 dark:text-success-300">{formatFxRate(rate.bidRate, rate.fromCurrency, rate.toCurrency)}</span>
-        ) : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
-      </td>
-      <td className="py-3 px-4 text-right font-mono text-sm">
-        {rate.askRate ? (
-          <span className="text-error-700 dark:text-error-300">{formatFxRate(rate.askRate, rate.fromCurrency, rate.toCurrency)}</span>
-        ) : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
-      </td>
-
-      {/* Type — subtle tonal badge */}
-      <td className="py-3 px-4">
-        <span className={cn(
-          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-          typeConfig.bgColor, typeConfig.color
-        )}>
-          {typeConfig.label}
-        </span>
-      </td>
-
-      {/* Source — icon + label */}
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-200">
-          <SourceIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-          {sourceConfig.label}
-        </div>
-      </td>
-
-      {/* Updated — relative time */}
-      <td className="py-3 px-4 text-sm text-neutral-600 dark:text-neutral-300">
-        {relativeTime(rate._ageMs)}
-      </td>
-
-      {/* Status — Fresh / Stale / Outdated / Inactive */}
-      <td className="py-3 px-4">
-        <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} />
-      </td>
-
-      {/* Actions — refresh this pair */}
-      <td className="py-3 px-4 text-right">
-        <button
-          onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-          disabled={refreshing}
-          aria-label={`Refresh ${rate.fromCurrency}/${rate.toCurrency}`}
-          className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
-        >
-          {refreshing
-            ? <Loader2 className="w-4 h-4 animate-spin" />
-            : <RefreshCw className="w-4 h-4" />}
-        </button>
-      </td>
-    </tr>
-  );
-};
+const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow, refreshingIds }) => (
+  <Card>
+    <DataTable
+      data={rates}
+      keyExtractor={(rate) => rate.id}
+      onRowClick={onRowClick}
+      emptyIcon={<TrendingUp className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+      emptyTitle="No FX rates match your filters"
+      emptyDescription="Try clearing search and filters, or add a new rate."
+      columns={[
+        {
+          key: 'fromCurrency',
+          header: 'Pair',
+          render: (_, rate) => (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{rate.fromCurrency}</span>
+              <ArrowRightLeft className="w-3 h-3 text-neutral-400" />
+              <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{rate.toCurrency}</span>
+            </div>
+          ),
+        },
+        { key: 'rate', header: 'Rate', align: 'right', render: (_, rate) => <span className="stat-value-xs">{formatFxRate(rate.rate, rate.fromCurrency, rate.toCurrency)}</span> },
+        {
+          key: 'inverseRate',
+          header: 'Inverse',
+          align: 'right',
+          render: (_, rate) => (
+            <span className="font-mono text-sm text-neutral-500 dark:text-neutral-400">
+              {formatFxRate(rate.inverseRate ?? 1 / rate.rate, rate.toCurrency, rate.fromCurrency)}
+            </span>
+          ),
+        },
+        {
+          key: 'bidRate',
+          header: 'Bid',
+          align: 'right',
+          render: (_, rate) => (
+            <span className="font-mono text-sm">
+              {rate.bidRate
+                ? <span className="text-success-700 dark:text-success-300">{formatFxRate(rate.bidRate, rate.fromCurrency, rate.toCurrency)}</span>
+                : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
+            </span>
+          ),
+        },
+        {
+          key: 'askRate',
+          header: 'Ask',
+          align: 'right',
+          render: (_, rate) => (
+            <span className="font-mono text-sm">
+              {rate.askRate
+                ? <span className="text-error-700 dark:text-error-300">{formatFxRate(rate.askRate, rate.fromCurrency, rate.toCurrency)}</span>
+                : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
+            </span>
+          ),
+        },
+        {
+          key: 'rateType',
+          header: 'Type',
+          render: (_, rate) => {
+            const typeConfig = RATE_TYPE_CONFIG[rate.rateType] ?? RATE_TYPE_CONFIG.SPOT;
+            return (
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', typeConfig.bgColor, typeConfig.color)}>
+                {typeConfig.label}
+              </span>
+            );
+          },
+        },
+        {
+          key: 'rateSource',
+          header: 'Source',
+          render: (_, rate) => {
+            const sourceConfig = SOURCE_CONFIG[rate.rateSource] ?? SOURCE_CONFIG.MANUAL;
+            const SourceIcon = sourceConfig.icon;
+            return (
+              <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-200">
+                <SourceIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                {sourceConfig.label}
+              </div>
+            );
+          },
+        },
+        { key: '_ageMs', header: 'Updated', render: (_, rate) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{relativeTime(rate._ageMs)}</span> },
+        { key: 'isActive', header: 'Status', render: (_, rate) => <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} /> },
+        {
+          key: 'actions',
+          header: 'Actions',
+          align: 'right',
+          render: (_, rate) => (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRefreshRow(rate); }}
+              disabled={refreshingIds.has(rate.id)}
+              aria-label={`Refresh ${rate.fromCurrency}/${rate.toCurrency}`}
+              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+            >
+              {refreshingIds.has(rate.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            </button>
+          ),
+        },
+      ]}
+    />
+  </Card>
+);
 
 // ============================================================================
 // DETAIL FIELD (drawer metadata grid cell)

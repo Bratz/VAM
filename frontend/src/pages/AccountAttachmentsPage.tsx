@@ -6,7 +6,7 @@ import {
   ArrowRightLeft, Key, Percent, AlertTriangle, X,
   ChevronDown, Wallet, Globe, MapPin,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, StatTile, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
@@ -626,63 +626,76 @@ const AccountAttachmentsPage: React.FC = () => {
 
       {/* Table */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead className="data-table-header">
-                <tr>
-                  <th className="data-table-header-cell">Account / Entity</th>
-                  <th className="data-table-header-cell">Relationship</th>
-                  <th className="data-table-header-cell">Status</th>
-                  <th className="data-table-header-cell">Validity</th>
-                  <th className="data-table-header-cell">Limits</th>
-                  <th className="data-table-header-cell w-28">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                {filteredAttachments.map(att => {
-                  const cfg = RELATIONSHIP_CONFIG[att.relationshipType as RelationshipType];
-                  const Icon = cfg?.icon || Link2;
-                  return (
-                    <tr key={att.id} className="data-table-row group cursor-pointer" onClick={() => { setSelectedAttachment(att); setShowDetailModal(true); }}>
-                      <td className="data-table-cell">
-                        <div className="flex items-center gap-3">
-                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
-                          <div className="min-w-0"><p className="text-sm font-semibold text-primary-900 group-hover:text-primary-600 transition-colors truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="text-xs text-neutral-500 truncate dark:text-neutral-400">{att.entityName || 'Unknown Entity'}</p></div>
-                        </div>
-                      </td>
-                      <td className="data-table-cell">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="neutral" size="sm">{cfg?.label || att.relationshipType}</Badge>
-                          {att.isPrimary && <Badge variant="warning" size="sm">Primary</Badge>}
-                        </div>
-                      </td>
-                      <td className="data-table-cell"><Badge variant={STATUS_CONFIG[att.status as AttachmentStatus]?.variant} size="sm">{STATUS_CONFIG[att.status as AttachmentStatus]?.label}</Badge></td>
-                      <td className="data-table-cell text-sm text-neutral-600 dark:text-neutral-300">{formatDate(att.effectiveFrom)}{att.effectiveTo && <span className="text-xs text-neutral-400 dark:text-neutral-500"> to {formatDate(att.effectiveTo)}</span>}</td>
-                      <td className="data-table-cell">{att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-xs">Max: {formatCurrency(att.maxTransactionAmount, 'AED')}</span>}{att.relationshipType === 'COLLATERAL' && att.collateralPercent && <span className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" />{att.collateralPercent}%</span>}</td>
-                      <td className="data-table-cell" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="sm" onClick={() => { setSelectedAttachment(att); setShowDetailModal(true); }}><Eye className="w-4 h-4" /></Button>
-                          {att.status === 'PENDING_APPROVAL' && <Button variant="ghost" size="sm" onClick={() => handleApprove(att.id)} className="text-success-600 dark:text-success-300" disabled={submitting}><CheckCircle2 className="w-4 h-4" /></Button>}
-                          {att.status === 'ACTIVE' && <Button variant="ghost" size="sm" onClick={() => handleSuspend(att.id)} className="text-warning-600 dark:text-warning-300" disabled={submitting}><Ban className="w-4 h-4" /></Button>}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {!loading && filteredAttachments.length === 0 && (
-          <div className="text-center py-12">
-            <Link2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-            <p className="text-lg font-medium text-primary-900 dark:text-neutral-50">No attachments found</p>
-            <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">Try adjusting your filters or create a new attachment.</p>
-          </div>
-        )}
+        <DataTable
+          data={filteredAttachments}
+          keyExtractor={(att) => att.id}
+          loading={loading}
+          onRowClick={(att) => { setSelectedAttachment(att); setShowDetailModal(true); }}
+          emptyIcon={<Link2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyTitle="No attachments found"
+          emptyDescription="Try adjusting your filters or create a new attachment."
+          columns={[
+            {
+              key: 'vaNumber',
+              header: 'Account / Entity',
+              render: (_, att) => {
+                const cfg = RELATIONSHIP_CONFIG[att.relationshipType as RelationshipType];
+                const Icon = cfg?.icon || Link2;
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
+                    <div className="min-w-0"><p className="text-sm font-semibold text-primary-900 truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="text-xs text-neutral-500 truncate dark:text-neutral-400">{att.entityName || 'Unknown Entity'}</p></div>
+                  </div>
+                );
+              },
+            },
+            {
+              key: 'relationshipType',
+              header: 'Relationship',
+              render: (_, att) => {
+                const cfg = RELATIONSHIP_CONFIG[att.relationshipType as RelationshipType];
+                return (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="neutral" size="sm">{cfg?.label || att.relationshipType}</Badge>
+                    {att.isPrimary && <Badge variant="warning" size="sm">Primary</Badge>}
+                  </div>
+                );
+              },
+            },
+            { key: 'status', header: 'Status', render: (_, att) => <Badge variant={STATUS_CONFIG[att.status as AttachmentStatus]?.variant} size="sm">{STATUS_CONFIG[att.status as AttachmentStatus]?.label}</Badge> },
+            {
+              key: 'effectiveFrom',
+              header: 'Validity',
+              render: (_, att) => (
+                <span className="text-sm text-neutral-600 dark:text-neutral-300">
+                  {formatDate(att.effectiveFrom)}{att.effectiveTo && <span className="text-xs text-neutral-400 dark:text-neutral-500"> to {formatDate(att.effectiveTo)}</span>}
+                </span>
+              ),
+            },
+            {
+              key: 'limits',
+              header: 'Limits',
+              render: (_, att) => (
+                <>
+                  {att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-xs">Max: {formatCurrency(att.maxTransactionAmount, 'AED')}</span>}
+                  {att.relationshipType === 'COLLATERAL' && att.collateralPercent && <span className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" />{att.collateralPercent}%</span>}
+                </>
+              ),
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              width: '7rem',
+              render: (_, att) => (
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedAttachment(att); setShowDetailModal(true); }}><Eye className="w-4 h-4" /></Button>
+                  {att.status === 'PENDING_APPROVAL' && <Button variant="ghost" size="sm" onClick={() => handleApprove(att.id)} className="text-success-600 dark:text-success-300" disabled={submitting}><CheckCircle2 className="w-4 h-4" /></Button>}
+                  {att.status === 'ACTIVE' && <Button variant="ghost" size="sm" onClick={() => handleSuspend(att.id)} className="text-warning-600 dark:text-warning-300" disabled={submitting}><Ban className="w-4 h-4" /></Button>}
+                </div>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Detail Modal */}
