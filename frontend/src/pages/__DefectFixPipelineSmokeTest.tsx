@@ -1,4 +1,4 @@
-// Retrigger #4 — Jira /search -> /search/jql migration fix, see d542fb7.
+// Retrigger #5 — Jira issue-type resolution fix, see 29fc1df.
 // Throwaway file for testing the automated defect-fix pipeline
 // (see tasks/defect-autofix-pipeline-design.md). Safe to delete once the
 // pipeline has picked this up and filed a Jira ticket for it.
