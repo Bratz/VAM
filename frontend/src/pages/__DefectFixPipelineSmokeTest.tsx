@@ -1,4 +1,4 @@
-// Retrigger #3 — CI exit-code-capture + redirect-follow fixes, see 9eeca09 / 89e7d5c.
+// Retrigger #4 — Jira /search -> /search/jql migration fix, see d542fb7.
 // Throwaway file for testing the automated defect-fix pipeline
 // (see tasks/defect-autofix-pipeline-design.md). Safe to delete once the
 // pipeline has picked this up and filed a Jira ticket for it.
