@@ -19,7 +19,10 @@ on:
     paths: ["frontend/**"]
   push:
     branches: [main]
-    paths: ["frontend/**"]
+    # No paths filter here (unlike pull_request above): every commit on main
+    # needs its own baseline artifact so the defect-fix service can always
+    # find one to diff a PR's merge-base against, even if that particular
+    # commit didn't touch frontend/**.
 
 jobs:
   check:

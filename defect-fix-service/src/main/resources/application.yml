@@ -1,0 +1,18 @@
+server:
+  port: 8090
+
+pipeline:
+  jira:
+    base-url: ${JIRA_BASE_URL:https://vam-five.atlassian.net}
+    email: ${JIRA_EMAIL:}
+    api-token: ${JIRA_API_TOKEN:}
+    project-key: ${JIRA_PROJECT_KEY:KAN}
+  github:
+    owner: ${GITHUB_OWNER:Bratz}
+    repo: ${GITHUB_REPO:VAM}
+    token: ${GITHUB_TOKEN:}
+    webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
+
+logging:
+  level:
+    com.bank.vam.defectfix: DEBUG
