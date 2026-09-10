@@ -71,7 +71,16 @@ public class FrontendResultParser {
             if (!m.matches()) {
                 continue;
             }
-            String file = m.group("file");
+            // tsc reports paths relative to ITS OWN cwd (frontend/, since that's where
+            // `npm run type-check` runs from) — e.g. "src/pages/Foo.tsx". But the coding agent's
+            // tools resolve paths relative to workDir, the REPO ROOT (it contains both frontend/
+            // and backend/), so "src/pages/Foo.tsx" doesn't exist from there — only
+            // "frontend/src/pages/Foo.tsx" does. Confirmed live: the agent burned through its
+            // entire 20-turn budget on a typecheck ticket without ever finding the file, because
+            // the task brief text (built from this defect's summary/details) told it the wrong
+            // path. Prefixing here also matches parseEslintJson's convention (repo-root-relative),
+            // so both parsers are now consistent with each other, not just with the agent.
+            String file = "frontend/" + m.group("file");
             String code = m.group("code");
             String message = m.group("message");
             DefectSignature sig = new DefectSignature("frontend-typecheck", code + ":" + file);

@@ -35,7 +35,10 @@ class FrontendResultParserTest {
     }
 
     @Test
-    void parsesTscLog() {
+    void parsesTscLogAndPrefixesFrontendSinceTscReportsPathsRelativeToItsOwnCwd() {
+        // tsc runs from inside frontend/, so it reports "src/pages/Foo.tsx" — but the coding
+        // agent's tools resolve relative to the repo root (which also contains backend/), so the
+        // defect text handed to it needs "frontend/src/pages/Foo.tsx" to actually be findable.
         String log = """
                 src/pages/Foo.tsx(622,10): error TS6133: 'processing' is declared but its value is never read.
                 some unrelated build output line
@@ -47,8 +50,8 @@ class FrontendResultParserTest {
         assertThat(defects).hasSize(2);
         assertThat(defects).extracting(d -> d.signature().key())
                 .containsExactlyInAnyOrder(
-                        "TS6133:src/pages/Foo.tsx",
-                        "TS2304:src/pages/Bar.tsx");
+                        "TS6133:frontend/src/pages/Foo.tsx",
+                        "TS2304:frontend/src/pages/Bar.tsx");
     }
 
     @Test
