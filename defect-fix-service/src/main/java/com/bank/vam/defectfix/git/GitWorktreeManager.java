@@ -82,7 +82,13 @@ public class GitWorktreeManager {
             return false;
         }
         run(worktreePath, "commit", "-m", commitMessage);
-        run(worktreePath, "push", authenticatedRemoteUrl(), "HEAD:refs/heads/" + branchName);
+        // --force: these fix/* branches are created and pushed to exclusively by this pipeline —
+        // no human ever pushes to one directly — so this push IS the authoritative state for the
+        // ticket, not a collaborative one. Confirmed live as necessary: a non-force push was
+        // rejected non-fast-forward because an earlier, since-abandoned attempt on the same
+        // ticket (interrupted before cleanupStale existed) had already pushed something to this
+        // exact branch name on GitHub.
+        run(worktreePath, "push", "--force", authenticatedRemoteUrl(), "HEAD:refs/heads/" + branchName);
         return true;
     }
 

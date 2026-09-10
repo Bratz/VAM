@@ -6,7 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+
+import java.util.Optional;
 
 @Component
 public class GitHubPullRequestClient {
@@ -25,7 +28,12 @@ public class GitHubPullRequestClient {
                 .build();
     }
 
-    /** @return the new PR's html_url */
+    /**
+     * @return the PR's html_url — either a freshly created one, or an existing open PR for this
+     * exact branch if one already exists (an interrupted earlier attempt on the same ticket, now
+     * superseded by this force-pushed branch, can leave one behind; GitHub 422s a second create
+     * for the same head/base pair rather than just returning the existing PR).
+     */
     public String createPullRequest(String headBranch, String baseBranch, String title, String body) {
         ObjectNode requestBody = objectMapper.createObjectNode();
         requestBody.put("title", title);
@@ -33,11 +41,27 @@ public class GitHubPullRequestClient {
         requestBody.put("base", baseBranch);
         requestBody.put("body", body);
 
-        JsonNode response = restClient.post()
-                .uri("/repos/{owner}/{repo}/pulls", config.owner(), config.repo())
-                .body(requestBody)
+        try {
+            JsonNode response = restClient.post()
+                    .uri("/repos/{owner}/{repo}/pulls", config.owner(), config.repo())
+                    .body(requestBody)
+                    .retrieve()
+                    .body(JsonNode.class);
+            return response.path("html_url").asText();
+        } catch (HttpClientErrorException.UnprocessableEntity e) {
+            return findExistingPullRequestUrl(headBranch)
+                    .orElseThrow(() -> e);
+        }
+    }
+
+    private Optional<String> findExistingPullRequestUrl(String headBranch) {
+        JsonNode response = restClient.get()
+                .uri("/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
+                        config.owner(), config.repo(), config.owner(), headBranch)
                 .retrieve()
                 .body(JsonNode.class);
-        return response.path("html_url").asText();
+        return response.isArray() && !response.isEmpty()
+                ? Optional.of(response.get(0).path("html_url").asText())
+                : Optional.empty();
     }
 }
