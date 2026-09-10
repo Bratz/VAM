@@ -21,7 +21,7 @@ import {
   Building2, Landmark, Calculator, Edit2, GitMerge, Layers,
   ThumbsUp, ThumbsDown, Play,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { 
@@ -255,164 +255,6 @@ const StatsCard: React.FC<{
         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', colorClasses[color])}>{icon}</div>
       </div>
     </Card>
-  );
-};
-
-// Invoice Row Component
-interface InvoiceRowProps {
-  invoice: InvoicePhase3;
-  isSelected: boolean;
-  onSelect: (id: string) => void;
-  onView: () => void;
-  onEdit: () => void;
-  onRequestCobo: () => void;
-  onAddToNetting: () => void;
-  onGenerateViban: () => void;
-}
-
-const InvoiceRow: React.FC<InvoiceRowProps> = ({
-  invoice,
-  isSelected,
-  onSelect,
-  onView,
-  onEdit,
-  onRequestCobo,
-  onAddToNetting,
-  onGenerateViban,
-}) => {
-  const isOverdue = new Date(invoice.dueDate) < new Date() && invoice.status === 'OPEN';
-  const daysOverdue = isOverdue ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
-  const canRequestCobo = !invoice.isCobo &&
-    invoice.coboRequestStatus === 'NOT_REQUESTED' &&
-    ['OPEN', 'PARTIAL'].includes(invoice.status);
-
-  const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
-
-  return (
-    <tr className={cn('data-table-row group', isOverdue && 'bg-error-50/30 dark:bg-error-500/10')}>
-      <td className="data-table-cell">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onSelect(invoice.id)}
-          disabled={!isSelectable}
-          className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700 dark:text-primary-200"
-        />
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col">
-          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</span>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
-          <span className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{invoice.customerVaNumber || '-'}</span>
-          {invoice.owningEntityCode && (
-            <span className="text-xs text-primary-600 dark:text-primary-200">Entity: {invoice.owningEntityCode}</span>
-          )}
-        </div>
-      </td>
-      <td className="data-table-cell text-right">
-        <div className="flex flex-col items-end">
-          <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
-            {formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}
-          </span>
-          {invoice.paidAmount > 0 && (
-            <span className="text-xs text-success-600 dark:text-success-300">
-              Paid: {formatCurrency(invoice.paidAmount, invoice.currencyCode)}
-            </span>
-          )}
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            Due: {formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}
-          </span>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col gap-1">
-          <span className="text-sm">{formatDate(invoice.dueDate)}</span>
-          {isOverdue && (
-            <span className="text-xs text-error-600 font-medium dark:text-error-300">{daysOverdue} days overdue</span>
-          )}
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col gap-1">
-          {getStatusBadge(invoice.status)}
-          <div className="flex flex-wrap gap-1 mt-1">
-            {invoice.isIntercompany && (
-              <Badge variant="info" size="sm" className="text-xs">
-                <Building2 className="w-3 h-3 mr-1" />
-                IC: {invoice.intercompanyEntityCode}
-              </Badge>
-            )}
-            {invoice.nettingEligible && invoice.nettingStatus !== 'NOT_INCLUDED' && (
-              <Badge variant="info" size="sm" className="text-xs">
-                <GitMerge className="w-3 h-3 mr-1" />
-                {invoice.nettingStatus}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex flex-col gap-1">
-          {invoice.assignedViban ? (
-            <div className="flex items-center gap-1">
-              <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">{invoice.assignedViban.slice(0, 10)}...</span>
-              <button onClick={() => navigator.clipboard.writeText(invoice.assignedViban!)} className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300">
-                <Copy className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">No VIBAN</span>
-          )}
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="sm" onClick={onView} title="View Details">
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onEdit} title="Edit Invoice">
-            <Edit2 className="w-4 h-4" />
-          </Button>
-          {canRequestCobo && (
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<ArrowDownLeft className="w-4 h-4" />}
-              onClick={onRequestCobo}
-              title="Request COBO"
-            >
-              COBO
-            </Button>
-          )}
-          {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAddToNetting}
-              title="Add to Netting Cycle"
-            >
-              <GitMerge className="w-4 h-4" />
-            </Button>
-          )}
-          {!invoice.assignedViban && isSelectable && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onGenerateViban}
-              title="Generate VIBAN"
-            >
-              <QrCode className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </td>
-    </tr>
   );
 };
 
@@ -1207,6 +1049,13 @@ const EnhancedReceivablesPage: React.FC = () => {
     <Page>
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+        {activeTab === 'invoices' && (
+          <Button variant="outline" size="sm" onClick={handleSelectAll}>
+            {selectedIds.size > 0 && selectedIds.size === filteredInvoices.filter(inv => ['OPEN', 'PARTIAL'].includes(inv.status)).length
+              ? 'Clear selection'
+              : 'Select all eligible'}
+          </Button>
+        )}
         {selectedIds.size > 0 && (
           <Button
             variant="primary"
@@ -1385,365 +1234,537 @@ const EnhancedReceivablesPage: React.FC = () => {
             <>
               {/* All Invoices Tab */}
               {activeTab === 'invoices' && (
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr className="data-table-header">
-                        <th className="data-table-header-cell w-12">
+                <DataTable
+                  data={filteredInvoices}
+                  keyExtractor={(invoice) => invoice.id}
+                  emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyTitle="No invoices found"
+                  columns={[
+                    {
+                      key: 'select',
+                      header: '',
+                      width: '3rem',
+                      render: (_, invoice) => {
+                        const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
+                        return (
                           <input
                             type="checkbox"
-                            onChange={handleSelectAll}
-                            checked={selectedIds.size > 0 && selectedIds.size === filteredInvoices.filter(inv => ['OPEN', 'PARTIAL'].includes(inv.status)).length}
-                            className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
+                            checked={selectedIds.has(invoice.id)}
+                            onChange={() => handleSelectInvoice(invoice.id)}
+                            disabled={!isSelectable}
+                            className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700 dark:text-primary-200"
                           />
-                        </th>
-                        <th className="data-table-header-cell">Invoice</th>
-                        <th className="data-table-header-cell">Customer</th>
-                        <th className="data-table-header-cell text-right">Amount</th>
-                        <th className="data-table-header-cell">Due Date</th>
-                        <th className="data-table-header-cell">Status</th>
-                        <th className="data-table-header-cell">VIBAN</th>
-                        <th className="data-table-header-cell">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredInvoices.map(invoice => (
-                        <InvoiceRow
-                          key={invoice.id}
-                          invoice={invoice}
-                          isSelected={selectedIds.has(invoice.id)}
-                          onSelect={handleSelectInvoice}
-                          onView={() => handleViewInvoice(invoice)}
-                          onEdit={() => handleEditInvoice(invoice)}
-                          onRequestCobo={() => handleRequestCobo(invoice)}
-                          onAddToNetting={() => handleAddToNetting(invoice)}
-                          onGenerateViban={() => handleGenerateViban(invoice)}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                  {filteredInvoices.length === 0 && (
-                    <div className="text-center py-12">
-                      <FileText className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No invoices found</p>
-                    </div>
-                  )}
-                </div>
+                        );
+                      },
+                    },
+                    {
+                      key: 'invoiceNumber',
+                      header: 'Invoice',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'customerName',
+                      header: 'Customer',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
+                          <span className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{invoice.customerVaNumber || '-'}</span>
+                          {invoice.owningEntityCode && (
+                            <span className="text-xs text-primary-600 dark:text-primary-200">Entity: {invoice.owningEntityCode}</span>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'invoiceAmount',
+                      header: 'Amount',
+                      align: 'right',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+                            {formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}
+                          </span>
+                          {invoice.paidAmount > 0 && (
+                            <span className="text-xs text-success-600 dark:text-success-300">
+                              Paid: {formatCurrency(invoice.paidAmount, invoice.currencyCode)}
+                            </span>
+                          )}
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Due: {formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}
+                          </span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'dueDate',
+                      header: 'Due Date',
+                      render: (_, invoice) => {
+                        const isOverdue = new Date(invoice.dueDate) < new Date() && invoice.status === 'OPEN';
+                        const daysOverdue = isOverdue ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                        return (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm">{formatDate(invoice.dueDate)}</span>
+                            {isOverdue && (
+                              <span className="text-xs text-error-600 font-medium dark:text-error-300">{daysOverdue} days overdue</span>
+                            )}
+                          </div>
+                        );
+                      },
+                    },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col gap-1">
+                          {getStatusBadge(invoice.status)}
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {invoice.isIntercompany && (
+                              <Badge variant="info" size="sm" className="text-xs">
+                                <Building2 className="w-3 h-3 mr-1" />
+                                IC: {invoice.intercompanyEntityCode}
+                              </Badge>
+                            )}
+                            {invoice.nettingEligible && invoice.nettingStatus !== 'NOT_INCLUDED' && (
+                              <Badge variant="info" size="sm" className="text-xs">
+                                <GitMerge className="w-3 h-3 mr-1" />
+                                {invoice.nettingStatus}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'assignedViban',
+                      header: 'VIBAN',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col gap-1">
+                          {invoice.assignedViban ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">{invoice.assignedViban.slice(0, 10)}...</span>
+                              <button onClick={() => navigator.clipboard.writeText(invoice.assignedViban!)} className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300">
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500">No VIBAN</span>
+                          )}
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Actions',
+                      render: (_, invoice) => {
+                        const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
+                        const canRequestCobo = !invoice.isCobo &&
+                          invoice.coboRequestStatus === 'NOT_REQUESTED' &&
+                          isSelectable;
+                        return (
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)} title="View Details">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)} title="Edit Invoice">
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            {canRequestCobo && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                leftIcon={<ArrowDownLeft className="w-4 h-4" />}
+                                onClick={() => handleRequestCobo(invoice)}
+                                title="Request COBO"
+                              >
+                                COBO
+                              </Button>
+                            )}
+                            {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddToNetting(invoice)}
+                                title="Add to Netting Cycle"
+                              >
+                                <GitMerge className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {!invoice.assignedViban && isSelectable && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGenerateViban(invoice)}
+                                title="Generate VIBAN"
+                              >
+                                <QrCode className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      },
+                    },
+                  ]}
+                />
               )}
 
               {/* Intercompany Tab */}
               {activeTab === 'intercompany' && (
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr className="data-table-header">
-                        <th className="data-table-header-cell">Invoice</th>
-                        <th className="data-table-header-cell">From Entity</th>
-                        <th className="data-table-header-cell">To Entity (IC)</th>
-                        <th className="data-table-header-cell text-right">Amount</th>
-                        <th className="data-table-header-cell text-center">Status</th>
-                        <th className="data-table-header-cell text-center">Netting</th>
-                        <th className="data-table-header-cell">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {intercompanyInvoices.map((invoice) => (
-                        <tr key={invoice.id} className="data-table-row group">
-                          <td className="data-table-cell">
-                            <p className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <Badge variant="info" size="sm">
-                              {invoice.owningEntityCode || 'Unknown'}
-                            </Badge>
-                            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.owningEntityName || ''}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <Badge variant="info" size="sm">
-                              <Building2 className="w-3 h-3 mr-1" />
-                              {invoice.intercompanyEntityCode || 'Unknown'}
-                            </Badge>
-                            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.intercompanyEntityName || ''}</p>
-                          </td>
-                          <td className="data-table-cell text-right">
-                            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</p>
-                          </td>
-                          <td className="data-table-cell text-center">
-                            {getStatusBadge(invoice.status)}
-                          </td>
-                          <td className="data-table-cell text-center">
-                            {getNettingStatusBadge(invoice.nettingStatus)}
-                          </td>
-                          <td className="data-table-cell">
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
-                                <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)}>
-                                  <GitMerge className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {intercompanyInvoices.length === 0 && (
-                    <div className="text-center py-12">
-                      <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No intercompany invoices found</p>
-                    </div>
-                  )}
-                </div>
+                <DataTable
+                  data={intercompanyInvoices}
+                  keyExtractor={(invoice) => invoice.id}
+                  emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyTitle="No intercompany invoices found"
+                  columns={[
+                    {
+                      key: 'invoiceNumber',
+                      header: 'Invoice',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'owningEntityCode',
+                      header: 'From Entity',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <Badge variant="info" size="sm">{invoice.owningEntityCode || 'Unknown'}</Badge>
+                          <span className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.owningEntityName || ''}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'intercompanyEntityCode',
+                      header: 'To Entity (IC)',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <Badge variant="info" size="sm">
+                            <Building2 className="w-3 h-3 mr-1" />
+                            {invoice.intercompanyEntityCode || 'Unknown'}
+                          </Badge>
+                          <span className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.intercompanyEntityName || ''}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'outstandingAmount',
+                      header: 'Amount',
+                      align: 'right',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
+                      ),
+                    },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      align: 'center',
+                      render: (_, invoice) => getStatusBadge(invoice.status),
+                    },
+                    {
+                      key: 'nettingStatus',
+                      header: 'Netting',
+                      align: 'center',
+                      render: (_, invoice) => getNettingStatusBadge(invoice.nettingStatus),
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Actions',
+                      render: (_, invoice) => (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
+                            <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)}>
+                              <GitMerge className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
               )}
 
               {/* Pending Netting Tab */}
               {activeTab === 'pending-netting' && (
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr className="data-table-header">
-                        <th className="data-table-header-cell">Invoice</th>
-                        <th className="data-table-header-cell">Customer</th>
-                        <th className="data-table-header-cell text-right">Amount</th>
-                        <th className="data-table-header-cell text-center">Netting Status</th>
-                        <th className="data-table-header-cell">Cycle</th>
-                        <th className="data-table-header-cell">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingNettingInvoices.map((invoice) => (
-                        <tr key={invoice.id} className="data-table-row group">
-                          <td className="data-table-cell">
-                            <p className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</p>
-                          </td>
-                          <td className="data-table-cell text-right">
-                            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</p>
-                          </td>
-                          <td className="data-table-cell text-center">
-                            {getNettingStatusBadge(invoice.nettingStatus)}
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm font-mono">{invoice.nettingCycleRef || '-'}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRemoveFromNetting(invoice)}
-                                title="Remove from Netting"
-                              >
-                                <X className="w-4 h-4" />
-                              </Button>
-                              {invoice.nettingCycleId && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleViewNettingCycle(invoice.nettingCycleId!)}
-                                  title="View Cycle"
-                                >
-                                  <Layers className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {pendingNettingInvoices.length === 0 && (
-                    <div className="text-center py-12">
-                      <GitMerge className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No receivables pending netting</p>
-                    </div>
-                  )}
-                </div>
+                <DataTable
+                  data={pendingNettingInvoices}
+                  keyExtractor={(invoice) => invoice.id}
+                  emptyIcon={<GitMerge className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyTitle="No receivables pending netting"
+                  columns={[
+                    {
+                      key: 'invoiceNumber',
+                      header: 'Invoice',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                      ),
+                    },
+                    {
+                      key: 'customerName',
+                      header: 'Customer',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
+                      ),
+                    },
+                    {
+                      key: 'outstandingAmount',
+                      header: 'Amount',
+                      align: 'right',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
+                      ),
+                    },
+                    {
+                      key: 'nettingStatus',
+                      header: 'Netting Status',
+                      align: 'center',
+                      render: (_, invoice) => getNettingStatusBadge(invoice.nettingStatus),
+                    },
+                    {
+                      key: 'nettingCycleRef',
+                      header: 'Cycle',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-mono">{invoice.nettingCycleRef || '-'}</span>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Actions',
+                      render: (_, invoice) => (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveFromNetting(invoice)}
+                            title="Remove from Netting"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                          {invoice.nettingCycleId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewNettingCycle(invoice.nettingCycleId!)}
+                              title="View Cycle"
+                            >
+                              <Layers className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
               )}
 
               {/* VIBANs Tab */}
               {activeTab === 'vibans' && (
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr className="data-table-header">
-                        <th className="data-table-header-cell">VIBAN</th>
-                        <th className="data-table-header-cell">Reference</th>
-                        <th className="data-table-header-cell">Customer</th>
-                        <th className="data-table-header-cell text-right">Expected</th>
-                        <th className="data-table-header-cell text-right">Received</th>
-                        <th className="data-table-header-cell text-center">Status</th>
-                        <th className="data-table-header-cell">Expires</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {vibans.map((viban) => (
-                        <tr key={viban.id} className="data-table-row group">
-                          <td className="data-table-cell">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
-                              <button
-                                onClick={() => navigator.clipboard.writeText(viban.virtualIban)}
-                                className="text-neutral-400 hover:text-neutral-600 transition-colors opacity-0 group-hover:opacity-100 dark:text-neutral-500 dark:hover:text-neutral-300"
-                              >
-                                <Copy className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm font-mono">{viban.reference}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{viban.customerName}</p>
-                          </td>
-                          <td className="data-table-cell text-right">
-                            <p className="text-sm">{formatCurrency(viban.expectedAmount, viban.currency)}</p>
-                          </td>
-                          <td className="data-table-cell text-right">
-                            <p className="text-sm font-semibold text-success-600 dark:text-success-300">
-                              {formatCurrency(viban.receivedAmount, viban.currency)}
-                            </p>
-                          </td>
-                          <td className="data-table-cell text-center">
-                            <Badge
-                              variant={viban.status === 'PAID' ? 'success' : viban.status === 'ACTIVE' ? 'info' : 'neutral'}
-                              size="sm"
-                            >
-                              {viban.status}
-                            </Badge>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm">{formatDate(viban.expiresAt)}</p>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {vibans.length === 0 && (
-                    <div className="text-center py-12">
-                      <QrCode className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No VIBANs generated</p>
-                    </div>
-                  )}
-                </div>
+                <DataTable
+                  data={vibans}
+                  keyExtractor={(viban) => viban.id}
+                  emptyIcon={<QrCode className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyTitle="No VIBANs generated"
+                  columns={[
+                    {
+                      key: 'virtualIban',
+                      header: 'VIBAN',
+                      render: (_, viban) => (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(viban.virtualIban)}
+                            className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'reference',
+                      header: 'Reference',
+                      render: (_, viban) => <span className="text-sm font-mono">{viban.reference}</span>,
+                    },
+                    {
+                      key: 'customerName',
+                      header: 'Customer',
+                      render: (_, viban) => (
+                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{viban.customerName}</span>
+                      ),
+                    },
+                    {
+                      key: 'expectedAmount',
+                      header: 'Expected',
+                      align: 'right',
+                      render: (_, viban) => <span className="text-sm">{formatCurrency(viban.expectedAmount, viban.currency)}</span>,
+                    },
+                    {
+                      key: 'receivedAmount',
+                      header: 'Received',
+                      align: 'right',
+                      render: (_, viban) => (
+                        <span className="text-sm font-semibold text-success-600 dark:text-success-300">
+                          {formatCurrency(viban.receivedAmount, viban.currency)}
+                        </span>
+                      ),
+                    },
+                    {
+                      key: 'status',
+                      header: 'Status',
+                      align: 'center',
+                      render: (_, viban) => (
+                        <Badge
+                          variant={viban.status === 'PAID' ? 'success' : viban.status === 'ACTIVE' ? 'info' : 'neutral'}
+                          size="sm"
+                        >
+                          {viban.status}
+                        </Badge>
+                      ),
+                    },
+                    {
+                      key: 'expiresAt',
+                      header: 'Expires',
+                      render: (_, viban) => <span className="text-sm">{formatDate(viban.expiresAt)}</span>,
+                    },
+                  ]}
+                />
               )}
 
               {/* COBO History Tab - WITH TREASURY APPROVAL BUTTONS */}
               {activeTab === 'cobo-history' && (
-                <div className="overflow-x-auto">
-                  <table className="data-table">
-                    <thead>
-                      <tr className="data-table-header">
-                        <th className="data-table-header-cell">Invoice</th>
-                        <th className="data-table-header-cell">Customer</th>
-                        <th className="data-table-header-cell text-right">Amount</th>
-                        <th className="data-table-header-cell">Collector</th>
-                        <th className="data-table-header-cell">On Behalf</th>
-                        <th className="data-table-header-cell text-center">Status</th>
-                        <th className="data-table-header-cell">Requested</th>
-                        <th className="data-table-header-cell">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {coboHistoryInvoices.map((invoice) => (
-                        <tr key={invoice.id} className="data-table-row group">
-                          <td className="data-table-cell">
-                            <p className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboTransactionRef || '-'}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</p>
-                          </td>
-                          <td className="data-table-cell text-right">
-                            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm">{invoice.coboCollectorEntityCode || '-'}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboCollectorEntityName || ''}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm">{invoice.owningEntityCode || '-'}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.owningEntityName || ''}</p>
-                          </td>
-                          <td className="data-table-cell text-center">
-                            {getCoboStatusBadge(invoice.coboRequestStatus) || (<Badge variant="neutral" size="sm">Pending</Badge>)}
-                          </td>
-                          <td className="data-table-cell">
-                            <p className="text-sm">{invoice.coboRequestedAt ? formatDate(invoice.coboRequestedAt) : '-'}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboRequestedBy || ''}</p>
-                          </td>
-                          <td className="data-table-cell">
-                            <div className="flex items-center gap-1">
-                              {/* Treasury Approval Actions */}
-                              {invoice.coboRequestStatus === 'PENDING_TREASURY_APPROVAL' && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleApproveCobo(invoice)}
-                                    className="text-success-600 border-success-200 hover:bg-success-50 dark:text-success-300 dark:border-success-500/30 dark:hover:bg-success-500/10"
-                                    title="Approve COBO"
-                                  >
-                                    <ThumbsUp className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleRejectCobo(invoice)}
-                                    className="text-error-600 border-error-200 hover:bg-error-50 dark:text-error-300 dark:border-error-500/30 dark:hover:bg-error-500/10"
-                                    title="Reject COBO"
-                                  >
-                                    <ThumbsDown className="w-4 h-4" />
-                                  </Button>
-                                </>
-                              )}
-                              {/* Execute Collection */}
-                              {invoice.coboRequestStatus === 'APPROVED' && (
-                                <Button
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={() => handleExecuteCobo(invoice)}
-                                  leftIcon={<Play className="w-4 h-4" />}
-                                  title="Execute Collection"
-                                >
-                                  Execute
-                                </Button>
-                              )}
-                              {/* View Details */}
+                <DataTable
+                  data={coboHistoryInvoices}
+                  keyExtractor={(invoice) => invoice.id}
+                  emptyIcon={<ArrowDownLeft className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyTitle="No COBO collections found"
+                  columns={[
+                    {
+                      key: 'invoiceNumber',
+                      header: 'Invoice',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboTransactionRef || '-'}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'customerName',
+                      header: 'Customer',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
+                      ),
+                    },
+                    {
+                      key: 'invoiceAmount',
+                      header: 'Amount',
+                      align: 'right',
+                      render: (_, invoice) => (
+                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}</span>
+                      ),
+                    },
+                    {
+                      key: 'coboCollectorEntityCode',
+                      header: 'Collector',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm">{invoice.coboCollectorEntityCode || '-'}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboCollectorEntityName || ''}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'owningEntityCode',
+                      header: 'On Behalf',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm">{invoice.owningEntityCode || '-'}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.owningEntityName || ''}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'coboRequestStatus',
+                      header: 'Status',
+                      align: 'center',
+                      render: (_, invoice) => getCoboStatusBadge(invoice.coboRequestStatus) || (<Badge variant="neutral" size="sm">Pending</Badge>),
+                    },
+                    {
+                      key: 'coboRequestedAt',
+                      header: 'Requested',
+                      render: (_, invoice) => (
+                        <div className="flex flex-col">
+                          <span className="text-sm">{invoice.coboRequestedAt ? formatDate(invoice.coboRequestedAt) : '-'}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboRequestedBy || ''}</span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'actions',
+                      header: 'Actions',
+                      render: (_, invoice) => (
+                        <div className="flex items-center gap-1">
+                          {invoice.coboRequestStatus === 'PENDING_TREASURY_APPROVAL' && (
+                            <>
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
-                                onClick={() => handleViewInvoice(invoice)}
-                                title="View Details"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleApproveCobo(invoice)}
+                                className="text-success-600 border-success-200 hover:bg-success-50 dark:text-success-300 dark:border-success-500/30 dark:hover:bg-success-500/10"
+                                title="Approve COBO"
                               >
-                                <Eye className="w-4 h-4" />
+                                <ThumbsUp className="w-4 h-4" />
                               </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {coboHistoryInvoices.length === 0 && (
-                    <div className="text-center py-12">
-                      <ArrowDownLeft className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                      <p className="text-neutral-500 dark:text-neutral-400">No COBO collections found</p>
-                    </div>
-                  )}
-                </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectCobo(invoice)}
+                                className="text-error-600 border-error-200 hover:bg-error-50 dark:text-error-300 dark:border-error-500/30 dark:hover:bg-error-500/10"
+                                title="Reject COBO"
+                              >
+                                <ThumbsDown className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          {invoice.coboRequestStatus === 'APPROVED' && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleExecuteCobo(invoice)}
+                              leftIcon={<Play className="w-4 h-4" />}
+                              title="Execute Collection"
+                            >
+                              Execute
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewInvoice(invoice)}
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
               )}
             </>
           )}
