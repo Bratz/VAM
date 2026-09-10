@@ -44,12 +44,32 @@ public class GitWorktreeManager {
         run(baseRepoPath.getParent(), "clone", authenticatedRemoteUrl(), baseRepoPath.getFileName().toString());
     }
 
-    /** Creates a fresh worktree off origin/main on a new branch. Caller is responsible for cleanup. */
+    /**
+     * Creates a fresh worktree off origin/main on a new branch. Caller is responsible for cleanup.
+     * Cleans up any same-named worktree/branch left behind by a PRIOR attempt on this same ticket
+     * first — a crash or restart mid-attempt (this service got rebuilt/killed mid-flight more than
+     * once while first standing this up) leaves exactly that kind of debris, and without this,
+     * every retry after one would hit "a branch named ... already exists" and never get anywhere.
+     */
     public Path createWorktree(String branchName) throws IOException, InterruptedException {
         Files.createDirectories(worktreesRoot);
         Path worktreePath = worktreesRoot.resolve(sanitize(branchName));
+        cleanupStale(worktreePath, branchName);
         run(baseRepoPath, "worktree", "add", "-b", branchName, worktreePath.toString(), "origin/main");
         return worktreePath;
+    }
+
+    private void cleanupStale(Path worktreePath, String branchName) {
+        try {
+            run(baseRepoPath, "worktree", "remove", worktreePath.toString(), "--force");
+        } catch (Exception e) {
+            // Expected in the common case: no stale worktree at this path.
+        }
+        try {
+            run(baseRepoPath, "branch", "-D", branchName);
+        } catch (Exception e) {
+            // Expected in the common case: no stale branch.
+        }
     }
 
     /** @return true if there were changes to commit and they were pushed; false if the agent made no changes. */
