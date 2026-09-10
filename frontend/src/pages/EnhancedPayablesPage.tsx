@@ -846,13 +846,28 @@ const EnhancedPayablesPage: React.FC = () => {
     }
     setLoading(true);
     try {
+      // The Pending/Intercompany/POBO/Netting tabs filter client-side (see
+      // filteredPayables below) on fields the search endpoint can't express
+      // as a single-value query param (e.g. "pending" is status IN
+      // (PENDING_APPROVAL, PENDING_POBO), and the backend only supports
+      // exact-match equality, no IN/OR - see PayableRepository.searchPayables).
+      // Paginating server-side at 20/page while filtering client-side meant
+      // a tab could show "No payables found" whenever none of its matches
+      // happened to land on the currently-loaded page, even though the tab's
+      // own badge count (sourced from /payables/stats) said otherwise.
+      // ponytail: fetch the whole corpus for a filtered tab instead of
+      // teaching the backend query to do IN-clauses - correct at the demo's
+      // realistic volumes (dozens, not thousands); revisit with real
+      // server-side status-list filtering if a corporate's payables ever
+      // outgrow one page.
+      const isFilteredTab = activeTab !== 'all';
       const result = await payablesApiPhase2.search({
         corporateId: selectedCorporateId,
         programId: selectedProgramId || undefined,
         owningEntityId: selectedEntityId || undefined,
         searchTerm: searchTerm || undefined,
-        page: currentPage,
-        size: 20,
+        page: isFilteredTab ? 0 : currentPage,
+        size: isFilteredTab ? 1000 : 20,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       });
@@ -863,10 +878,10 @@ const EnhancedPayablesPage: React.FC = () => {
         setTotalPages(1);
       } else if (result?.payables) {
         setPayables(result.payables);
-        setTotalPages(result.totalPages || 1);
+        setTotalPages(isFilteredTab ? 1 : (result.totalPages || 1));
       } else if (result?.content) {
         setPayables(result.content);
-        setTotalPages(result.totalPages || 1);
+        setTotalPages(isFilteredTab ? 1 : (result.totalPages || 1));
       } else {
         setPayables([]);
         setTotalPages(0);
@@ -877,7 +892,7 @@ const EnhancedPayablesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedCorporateId, selectedProgramId, selectedEntityId, searchTerm, currentPage]);
+  }, [selectedCorporateId, selectedProgramId, selectedEntityId, searchTerm, currentPage, activeTab]);
 
   // Load stats
   const loadStats = useCallback(async () => {
@@ -1125,7 +1140,7 @@ const EnhancedPayablesPage: React.FC = () => {
             ].map(tab => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(0); }}
                 className={cn(
                   "px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200",
                   activeTab === tab.key
