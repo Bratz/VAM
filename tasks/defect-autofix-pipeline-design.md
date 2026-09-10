@@ -195,11 +195,9 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
    started yet (separate detector, not on the critical path below).
 5. **Anthropic API key** — code is written (real tool-use loop against the
    verified Anthropic Java SDK API surface), but never called live yet.
-6. **Jira workflow statuses** — the code assumes a project with `To Do` →
-   `In Progress` → `In Review` → `Done`/`Blocked` statuses (transitions are
-   looked up by name via the Jira API, so exact IDs don't matter, but the
-   status *names* must exist in the KAN project's workflow). Please confirm
-   KAN has these, or tell me the actual status names to use instead.
+6. ~~Jira workflow statuses~~ — **done**: `In Review` and `Blocked` added to
+   KAN's (team-managed) workflow, matching the exact names the code already
+   uses. No code change needed.
 7. Confirm branch/PR target (`main`, presumably) and any required PR
    labels/reviewers convention.
 
