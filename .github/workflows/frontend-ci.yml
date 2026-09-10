@@ -42,12 +42,26 @@ jobs:
       - run: npm ci
 
       - name: Type-check (captured, non-blocking)
-        run: npm run type-check > tsc.log 2>&1; echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        # set +e: each step's script runs under `bash -e` by default, so
+        # without this, a non-zero exit from `npm run type-check` aborts the
+        # script right there — the exit_code line below would never run, and
+        # steps.typecheck.outputs.exit_code would stay unset (not "0", but
+        # not the real code either) instead of accurately reflecting failure.
+        run: |
+          set +e
+          npm run type-check > tsc.log 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         id: typecheck
         continue-on-error: true
 
       - name: Lint (captured as JSON, non-blocking)
-        run: npx eslint . --ext ts,tsx --format json --output-file eslint.json; echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        # --max-warnings 0 matches this repo's own `npm run lint` script —
+        # without it, a file with only warnings (no errors) exits 0 on its
+        # own merits, same as the project's real "clean lint" bar.
+        run: |
+          set +e
+          npx eslint . --ext ts,tsx --max-warnings 0 --format json --output-file eslint.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         id: lint
         continue-on-error: true
 

@@ -40,7 +40,13 @@ jobs:
           cache: "maven"
 
       - name: Run tests (captured, non-blocking)
-        run: mvn -B test; echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        # set +e: see the identical note in frontend-ci.yml — without it, a
+        # failing `mvn test` aborts the script under bash -e before the
+        # exit_code line runs, leaving the output unset instead of accurate.
+        run: |
+          set +e
+          mvn -B test
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         id: test
         continue-on-error: true
 
