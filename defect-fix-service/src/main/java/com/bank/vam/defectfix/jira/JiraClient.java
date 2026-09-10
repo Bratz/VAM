@@ -167,9 +167,14 @@ public class JiraClient {
         restClient.post().uri("/issue/{key}/transitions", issueKey).body(body).retrieve().toBodilessEntity();
     }
 
+    private static final int MAX_COMMENT_CHARS = 20_000;
+
     public void addComment(String issueKey, String text) {
+        String truncated = text.length() > MAX_COMMENT_CHARS
+                ? text.substring(0, MAX_COMMENT_CHARS) + "\n...[truncated, " + text.length() + " chars total]"
+                : text;
         ObjectNode body = objectMapper.createObjectNode();
-        body.set("body", toAdf(text));
+        body.set("body", toAdf(truncated));
         restClient.post().uri("/issue/{key}/comment", issueKey).body(body).retrieve().toBodilessEntity();
     }
 

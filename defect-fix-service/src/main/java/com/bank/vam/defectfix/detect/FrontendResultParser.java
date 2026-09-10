@@ -31,7 +31,14 @@ public class FrontendResultParser {
         }
         JsonNode files = objectMapper.readTree(json);
         for (JsonNode file : files) {
-            String filePath = file.path("filePath").asText();
+            // ESLint's JSON formatter always emits an ABSOLUTE path, and that absolute prefix
+            // differs between where detection runs (a GitHub Actions runner,
+            // /home/runner/work/VAM/VAM/frontend/...) and where the test gate re-runs the same
+            // check (a worktree on the VM, /data/.../worktrees/.../frontend/...). Left as-is, the
+            // signature for the "same" defect would never match across the two, so the gate could
+            // never see a fix as resolved — normalize to repo-relative (frontend/src/...) so both
+            // environments produce the identical signature for the identical defect.
+            String filePath = relativizeToFrontend(file.path("filePath").asText());
             for (JsonNode msg : file.path("messages")) {
                 // Both severities are real defects here: this repo's `npm run lint` runs with
                 // --max-warnings 0, so a severity-1 warning fails the build same as an error.
@@ -45,6 +52,13 @@ public class FrontendResultParser {
             }
         }
         return defects;
+    }
+
+    /** "/anything/.../frontend/src/pages/Foo.tsx" -> "frontend/src/pages/Foo.tsx"; unchanged if "frontend/" isn't found. */
+    private String relativizeToFrontend(String absoluteOrAnyPath) {
+        String normalized = absoluteOrAnyPath.replace('\\', '/');
+        int marker = normalized.lastIndexOf("/frontend/");
+        return marker < 0 ? normalized : normalized.substring(marker + 1);
     }
 
     public List<DetectedDefect> parseTscLog(String log) {
