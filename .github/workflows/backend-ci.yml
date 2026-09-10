@@ -1,0 +1,56 @@
+# ============================================================================
+# Backend detector for the automated defect-fix pipeline
+# (see tasks/defect-autofix-pipeline-design.md).
+#
+# Runs `mvn test` on every PR and on every push to main, and uploads the
+# JUnit surefire reports as a commit-tagged artifact. The defect-fix service
+# (not this workflow) decides what's a "new" failure: it diffs the set of
+# failing test classes/methods at a PR's HEAD against the same at the PR's
+# merge-base commit, so pre-existing failures never get auto-ticketed.
+#
+# This workflow's own pass/fail status still reflects reality (it is NOT
+# forced green) — it's a normal CI signal for humans; the diffing/ticketing
+# decision lives entirely in the service.
+# ============================================================================
+name: Backend CI
+
+on:
+  pull_request:
+    paths: ["backend/**"]
+  push:
+    branches: [main]
+    paths: ["backend/**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Run tests (captured, non-blocking)
+        run: mvn -B test; echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        id: test
+        continue-on-error: true
+
+      - name: Upload surefire reports for this commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-checks-${{ github.sha }}
+          path: backend/target/surefire-reports/
+          retention-days: 14
+
+      - name: Fail the job if tests actually failed
+        run: |
+          if [ "${{ steps.test.outputs.exit_code }}" != "0" ]; then
+            echo "mvn test failed — see surefire-reports artifact"
+            exit 1
+          fi
