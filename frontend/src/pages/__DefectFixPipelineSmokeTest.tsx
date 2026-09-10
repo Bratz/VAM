@@ -1,4 +1,4 @@
-// Retrigger #2 — CI artifact-naming fix, see bcc71d2.
+// Retrigger #3 — CI exit-code-capture + redirect-follow fixes, see 9eeca09 / 89e7d5c.
 // Throwaway file for testing the automated defect-fix pipeline
 // (see tasks/defect-autofix-pipeline-design.md). Safe to delete once the
 // pipeline has picked this up and filed a Jira ticket for it.
