@@ -45,31 +45,31 @@ public class GitWorktreeManager {
     }
 
     /**
-     * Creates a fresh worktree off origin/main on a new branch. Caller is responsible for cleanup.
-     * Cleans up any same-named worktree/branch left behind by a PRIOR attempt on this same ticket
-     * first — a crash or restart mid-attempt (this service got rebuilt/killed mid-flight more than
-     * once while first standing this up) leaves exactly that kind of debris, and without this,
-     * every retry after one would hit "a branch named ... already exists" and never get anywhere.
+     * Creates a worktree checked out at the CURRENT tip of {@code sourceBranch} (detached, not a
+     * new local branch — commitAndPush below pushes straight back to that same branch by name
+     * regardless of local branch state, so there's nothing to name here). Caller is responsible
+     * for cleanup.
+     *
+     * Deliberately the PR's OWN branch, not a fresh one off main: the defective code a ticket is
+     * about lives only on the branch that failed CI (a PR that fails CI is, by definition, not
+     * merged, so main never has it) — branching from main would leave the agent unable to see the
+     * actual bug at all. Confirmed live: that was exactly what happened before this existed.
+     *
+     * Cleans up any same-named worktree left behind by a PRIOR attempt on this same ticket first —
+     * a crash or restart mid-attempt (this service got rebuilt/killed mid-flight more than once
+     * while first standing this up) leaves exactly that kind of debris.
      */
-    public Path createWorktree(String branchName) throws IOException, InterruptedException {
+    public Path createWorktree(String sourceBranch) throws IOException, InterruptedException {
         Files.createDirectories(worktreesRoot);
-        Path worktreePath = worktreesRoot.resolve(sanitize(branchName));
-        cleanupStale(worktreePath, branchName);
-        run(baseRepoPath, "worktree", "add", "-b", branchName, worktreePath.toString(), "origin/main");
-        return worktreePath;
-    }
-
-    private void cleanupStale(Path worktreePath, String branchName) {
+        Path worktreePath = worktreesRoot.resolve(sanitize(sourceBranch));
         try {
             run(baseRepoPath, "worktree", "remove", worktreePath.toString(), "--force");
         } catch (Exception e) {
             // Expected in the common case: no stale worktree at this path.
         }
-        try {
-            run(baseRepoPath, "branch", "-D", branchName);
-        } catch (Exception e) {
-            // Expected in the common case: no stale branch.
-        }
+        run(baseRepoPath, "fetch", "origin", sourceBranch);
+        run(baseRepoPath, "worktree", "add", "--detach", worktreePath.toString(), "origin/" + sourceBranch);
+        return worktreePath;
     }
 
     /** @return true if there were changes to commit and they were pushed; false if the agent made no changes. */
@@ -82,22 +82,19 @@ public class GitWorktreeManager {
             return false;
         }
         run(worktreePath, "commit", "-m", commitMessage);
-        // --force: these fix/* branches are created and pushed to exclusively by this pipeline —
-        // no human ever pushes to one directly — so this push IS the authoritative state for the
-        // ticket, not a collaborative one. Confirmed live as necessary: a non-force push was
-        // rejected non-fast-forward because an earlier, since-abandoned attempt on the same
-        // ticket (interrupted before cleanupStale existed) had already pushed something to this
-        // exact branch name on GitHub.
-        run(worktreePath, "push", "--force", authenticatedRemoteUrl(), "HEAD:refs/heads/" + branchName);
+        // NOT --force: branchName here is the ORIGINAL PR's own branch — it may belong to a human
+        // (or another process), not this pipeline exclusively, so a non-fast-forward push should
+        // fail loudly (caught by the caller, which escalates to a human) rather than clobber
+        // whatever someone else pushed there since this worktree was created.
+        run(worktreePath, "push", authenticatedRemoteUrl(), "HEAD:refs/heads/" + branchName);
         return true;
     }
 
-    public void removeWorktree(Path worktreePath, String branchName) {
+    public void removeWorktree(Path worktreePath) {
         try {
             run(baseRepoPath, "worktree", "remove", worktreePath.toString(), "--force");
-            run(baseRepoPath, "branch", "-D", branchName);
         } catch (Exception e) {
-            log.warn("Failed to clean up worktree {} (branch {}) — leaving for manual cleanup", worktreePath, branchName, e);
+            log.warn("Failed to clean up worktree {} — leaving for manual cleanup", worktreePath, e);
         }
     }
 

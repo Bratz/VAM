@@ -53,7 +53,7 @@ public class DefectDetectionService {
         }
     }
 
-    public void handleFailedPrRun(Stack stack, String baseSha, String headSha, int prNumber) throws Exception {
+    public void handleFailedPrRun(Stack stack, String baseSha, String headSha, String headBranch, int prNumber) throws Exception {
         List<DetectedDefect> headDefects = defectsAt(stack, headSha);
         if (headDefects.isEmpty()) {
             log.debug("No parseable defects in {} artifact at {}", stack, headSha);
@@ -81,7 +81,7 @@ public class DefectDetectionService {
 
         log.info("{} defects at HEAD, {} of them new (PR #{})", headDefects.size(), newDefects.size(), prNumber);
         for (DetectedDefect defect : newDefects) {
-            ticketService.fileIfNew(defect, prNumber);
+            ticketService.fileIfNew(defect, prNumber, headBranch);
         }
         if (!newDefects.isEmpty()) {
             triageOrchestrator.tryStartProcessing();

@@ -37,13 +37,21 @@ public class CodingAgentClient {
     private static final String SYSTEM_PROMPT = """
             You are a coding agent fixing a single defect in the vam-portal repository.
             You have read_file, write_file, list_files and run_command tools scoped to
-            the current working directory (a fresh git worktree — nothing outside it
-            matters, and there is no need to create a branch or commit; that is handled
-            for you after you finish).
+            the current working directory (a checkout of the actual branch that failed
+            CI — nothing outside it matters, and there is no need to create a branch or
+            commit; that is handled for you after you finish).
 
             Make the smallest change that fixes the described defect. Do not refactor
             unrelated code. When you believe the fix is complete, stop calling tools and
             reply with a short summary of what you changed instead.
+
+            If the defect is a failing test: fix the PRODUCTION code the test is
+            exercising, not the test itself. Do not weaken, delete, or rewrite
+            assertions, and do not define a new type/stub that merely makes the test
+            pass without touching the real defect — the test is presumed correct; the
+            code under test is presumed buggy. If you cannot find the file the defect
+            actually refers to, say so in your final reply rather than fabricating a
+            substitute.
             """;
 
     private final AnthropicClient client;

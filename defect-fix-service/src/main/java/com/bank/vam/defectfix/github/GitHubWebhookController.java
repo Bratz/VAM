@@ -83,10 +83,11 @@ public class GitHubWebhookController {
 
         String baseSha = pr.path("base").path("sha").asText();
         String headSha = run.path("head_sha").asText();
+        String headBranch = run.path("head_branch").asText();
         int prNumber = pr.path("number").asInt();
 
         try {
-            detectionService.handleFailedPrRun(stack, baseSha, headSha, prNumber);
+            detectionService.handleFailedPrRun(stack, baseSha, headSha, headBranch, prNumber);
         } catch (Exception e) {
             log.error("Failed to process workflow_run for PR #{}", prNumber, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("processing failed");
