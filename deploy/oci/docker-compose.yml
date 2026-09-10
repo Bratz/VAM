@@ -34,6 +34,23 @@
 # below) — Caddy on 80/443 is the only public entry point now. See
 # docs/DEPLOYMENT.md "Part 1.5 — MCP gateway" for the firewall steps.
 #
+# The defect-fix pipeline service (see tasks/defect-autofix-pipeline-design.md)
+# is likewise entirely opt-in. To turn it on:
+#
+#   cat >> deploy/oci/.env <<'EOF'
+#   JIRA_EMAIL=you@example.com
+#   JIRA_API_TOKEN=<your Jira API token>
+#   GITHUB_TOKEN=<PAT with Contents:RW, Pull requests:RW, Actions:R on Bratz/VAM>
+#   GITHUB_WEBHOOK_SECRET=<random string — also entered as the webhook's secret in GitHub>
+#   ANTHROPIC_API_KEY=<your Anthropic API key>
+#   EOF
+#   sudo docker compose --profile defectfix up -d --build
+#
+# Then register the webhook itself: GitHub repo → Settings → Webhooks → Add
+# webhook, Payload URL https://161-33-9-182.sslip.io/webhooks/github,
+# content type application/json, secret = the same GITHUB_WEBHOOK_SECRET
+# above, events = "Workflow runs" only.
+#
 services:
   db:
     image: postgres:16-alpine
@@ -118,12 +135,55 @@ services:
     expose:
       - "9443"
 
+  defect-fix-service:
+    build:
+      context: ../..
+      dockerfile: defect-fix-service/Dockerfile
+    restart: unless-stopped
+    profiles: ["defectfix"]   # opt-in, same pattern as the mcp profile — off by default
+    # NOT `:?required` on any of these, deliberately: Compose interpolates
+    # every service's `environment:` block while parsing the file, before
+    # `profiles:` decides what actually starts (see the identical note on
+    # mcp-gateway above — a required-and-missing var here would abort
+    # `docker compose up -d` for EVERY service, even a plain unprofiled
+    # deploy that never touches this one). Falling back to empty is safe:
+    # with the `defectfix` profile inactive this container never starts, and
+    # if someone runs `--profile defectfix` without setting the real values,
+    # the container comes up but every outbound call fails obviously (401s /
+    # empty-string auth) — visible and non-fatal, not a stack-wide outage.
+    environment:
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-https://vam-five.atlassian.net}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-KAN}
+      GITHUB_OWNER: ${GITHUB_OWNER:-Bratz}
+      GITHUB_REPO: ${GITHUB_REPO:-VAM}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      AGENT_WORKSPACE_DIR: /data/defect-fix-workspace
+    volumes:
+      # Holds the service's own repo clone + per-ticket worktrees — including
+      # ones deliberately left behind after an escalation for human
+      # inspection (see TriageOrchestrator.onExhausted). Must survive
+      # container restarts/redeploys, hence a named volume, not tmpfs.
+      - defectfix_workspace:/data/defect-fix-workspace
+    # No public port mapping — same pattern as mcp-gateway; Caddy is the only
+    # external entry point (see Caddyfile's /webhooks/* route).
+    expose:
+      - "8090"
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    profiles: ["mcp"]   # only meaningful once the gateway itself is enabled
-    depends_on:
-      - mcp-gateway
+    profiles: ["mcp", "defectfix"]   # starts if either dependent service is enabled
+    # No depends_on here on purpose: mcp-gateway only exists in the compose
+    # project when the "mcp" profile is active. A hard depends_on on it would
+    # break `docker compose --profile defectfix up -d` run alone (Compose
+    # won't start a service outside the active profile set just because
+    # something depends on it). Caddy's reverse_proxy handles an absent/not-
+    # yet-up upstream fine — it just 502s that route until it's reachable.
     ports:
       - "80:80"    # Let's Encrypt HTTP-01 challenge + HTTP->HTTPS redirect
       - "443:443"
@@ -136,3 +196,4 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+  defectfix_workspace:

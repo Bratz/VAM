@@ -228,5 +228,20 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
    opens the PR; on success Jira → `In Review` with a comment linking it; on
    exhausted retries Jira → `Blocked` + `needs-human` label + the last gate
    output as a comment (worktree deliberately left on disk for inspection).
-6. Sentry instrumentation (frontend + backend) + its webhook receiver — not
-   started. Independent of steps 1-5 (separate detector).
+6. ~~OCI deployment wiring~~ — **done**: `defect-fix-service/Dockerfile`
+   (needs a full JDK, not JRE — the test gate runs real `mvn test`/`npm run
+   type-check` inside this container — plus git/bash/node/npm), a new
+   opt-in `defectfix` profile in `deploy/oci/docker-compose.yml` (mirrors
+   the existing `mcp` profile's pattern, including its "don't use `:?
+   required` — Compose evaluates every service's env block regardless of
+   active profiles" lesson, which a first draft of this change actually
+   re-broke before being caught), a named volume for the workspace dir
+   (survives restarts — holds both the live repo clone and any worktrees
+   left behind for human inspection after an escalation), and a
+   `/webhooks/*` path route added to the existing Caddy config alongside
+   the untouched MCP gateway route. GitHub's webhook Payload URL, once
+   deployed, is `https://161-33-9-182.sslip.io/webhooks/github`. **Not yet
+   verified**: no Docker available in this dev environment to actually
+   build/run the image — first real test happens on the OCI VM.
+7. Sentry instrumentation (frontend + backend) + its webhook receiver — not
+   started. Independent of steps 1-6 (separate detector).

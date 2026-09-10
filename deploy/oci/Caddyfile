@@ -8,10 +8,20 @@
 # Domain: sslip.io's free wildcard DNS resolves <ip-with-dashes>.sslip.io to
 # that literal IP with zero registration. If the VM's IP ever changes, this
 # hostname (and GATEWAY_PUBLIC_BASE_URL in .env) both need updating to match.
+#
+# /webhooks/* additionally routes to defect-fix-service (see
+# tasks/defect-autofix-pipeline-design.md) — GitHub's webhook config should
+# point at https://161-33-9-182.sslip.io/webhooks/github. Everything else
+# keeps going to the MCP gateway, unchanged.
 # ============================================================================
 
 161-33-9-182.sslip.io {
-	reverse_proxy mcp-gateway:9443
+	handle /webhooks/* {
+		reverse_proxy defect-fix-service:8090
+	}
+	handle {
+		reverse_proxy mcp-gateway:9443
+	}
 
 	# No access logging by default — without this, `docker compose logs caddy`
 	# only ever shows startup/ACME events, never per-request traffic, which
