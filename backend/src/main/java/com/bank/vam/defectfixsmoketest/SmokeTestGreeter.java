@@ -7,8 +7,7 @@ package com.bank.vam.defectfixsmoketest;
  */
 public class SmokeTestGreeter {
 
-    // Deliberately wrong: ignores the name argument entirely.
     public String greet(String name) {
-        return "Hello, World!";
+        return "Hello, " + name + "!";
     }
 }
