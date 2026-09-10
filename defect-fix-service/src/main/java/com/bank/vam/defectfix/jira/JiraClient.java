@@ -38,13 +38,13 @@ public class JiraClient {
         String jql = "project = " + config.projectKey() + " AND labels = \"" + PIPELINE_LABEL
                 + "\" AND labels = \"" + label + "\"";
         JsonNode response = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/search")
+                .uri(uriBuilder -> uriBuilder.path("/search/jql")
                         .queryParam("jql", jql)
                         .queryParam("maxResults", 1)
                         .build())
                 .retrieve()
                 .body(JsonNode.class);
-        return response.path("total").asInt(0) > 0;
+        return !response.path("issues").isEmpty();
     }
 
     /** Creates a ticket labeled with the pipeline label + this defect's dedup and stack labels. Returns the new issue key. */
@@ -77,7 +77,7 @@ public class JiraClient {
         String jql = "project = " + config.projectKey() + " AND labels = \"" + PIPELINE_LABEL
                 + "\" AND status = \"To Do\" ORDER BY created ASC";
         JsonNode response = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/search")
+                .uri(uriBuilder -> uriBuilder.path("/search/jql")
                         .queryParam("jql", jql)
                         .queryParam("maxResults", 1)
                         .queryParam("fields", "summary,description,labels")
@@ -100,20 +100,6 @@ public class JiraClient {
             }
         }
         return Optional.of(new Issue(key, summary, description, stackLabel));
-    }
-
-    /** True if any pipeline-labeled ticket is currently being worked (the single-concurrency gate). */
-    public boolean anyTicketInProgress() {
-        String jql = "project = " + config.projectKey() + " AND labels = \"" + PIPELINE_LABEL
-                + "\" AND status = \"In Progress\"";
-        JsonNode response = restClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/search")
-                        .queryParam("jql", jql)
-                        .queryParam("maxResults", 1)
-                        .build())
-                .retrieve()
-                .body(JsonNode.class);
-        return response.path("total").asInt(0) > 0;
     }
 
     public void transitionTo(String issueKey, String targetStatusName) {
