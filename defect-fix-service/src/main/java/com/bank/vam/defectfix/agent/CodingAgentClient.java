@@ -66,7 +66,11 @@ public class CodingAgentClient {
         this.model = properties.anthropic().model();
     }
 
-    public record AgentRunResult(boolean stoppedNaturally, String finalMessage) {
+    /** One tool call this agent run made — the SWE-agent/OpenHands-style "step" record. */
+    public record ToolCallRecord(int turn, String tool, String args, String result) {
+    }
+
+    public record AgentRunResult(boolean stoppedNaturally, String finalMessage, List<ToolCallRecord> trajectory) {
     }
 
     public AgentRunResult runFix(Path workDir, String taskBrief) {
@@ -74,6 +78,7 @@ public class CodingAgentClient {
         messages.add(MessageParam.builder().role(MessageParam.Role.USER).content(taskBrief).build());
 
         List<ToolUnion> tools = buildTools();
+        List<ToolCallRecord> trajectory = new ArrayList<>();
         String lastText = "";
 
         for (int turn = 0; turn < agentConfig.maxTurns(); turn++) {
@@ -100,12 +105,17 @@ public class CodingAgentClient {
 
             if (toolUses.isEmpty()) {
                 log.info("Agent stopped after turn {}: {}", turn + 1, oneLine(lastText, 300));
-                return new AgentRunResult(true, lastText);
+                return new AgentRunResult(true, lastText, trajectory);
             }
 
             List<ContentBlockParam> results = new ArrayList<>();
             for (ToolUseBlock toolUse : toolUses) {
-                String result = executeTool(toolUse, workDir);
+                JsonNode input = toolUse._input().convert(JsonNode.class);
+                String argsSummary = summarizeArgs(toolUse.name(), input);
+                log.info("  {} {}", toolUse.name(), argsSummary);
+                String result = executeTool(toolUse.name(), input, workDir);
+                log.debug("  -> {}", oneLine(result, 500));
+                trajectory.add(new ToolCallRecord(turn + 1, toolUse.name(), argsSummary, oneLine(result, 2000)));
                 results.add(ContentBlockParam.ofToolResult(
                         ToolResultBlockParam.builder().toolUseId(toolUse.id()).content(result).build()));
             }
@@ -114,24 +124,20 @@ public class CodingAgentClient {
 
         log.warn("Coding agent hit the {}-turn budget without stopping naturally. Last text: {}",
                 agentConfig.maxTurns(), oneLine(lastText, 300));
-        return new AgentRunResult(false, lastText);
+        return new AgentRunResult(false, lastText, trajectory);
     }
 
-    private String executeTool(ToolUseBlock toolUse, Path workDir) {
-        JsonNode input = toolUse._input().convert(JsonNode.class);
-        log.info("  {} {}", toolUse.name(), summarizeArgs(toolUse.name(), input));
+    private String executeTool(String toolName, JsonNode input, Path workDir) {
         try {
-            String result = switch (toolUse.name()) {
+            return switch (toolName) {
                 case "read_file" -> WorkspaceTools.readFile(workDir, input.path("path").asText());
                 case "write_file" -> WorkspaceTools.writeFile(workDir, input.path("path").asText(), input.path("content").asText());
                 case "list_files" -> WorkspaceTools.listFiles(workDir, input.path("path").asText("."));
                 case "run_command" -> WorkspaceTools.runCommand(workDir, input.path("command").asText());
-                default -> "Unknown tool: " + toolUse.name();
+                default -> "Unknown tool: " + toolName;
             };
-            log.debug("  -> {}", oneLine(result, 500));
-            return result;
         } catch (Exception e) {
-            log.warn("Tool {} failed: {}", toolUse.name(), e.getMessage());
+            log.warn("Tool {} failed: {}", toolName, e.getMessage());
             return "Error: " + e.getMessage();
         }
     }

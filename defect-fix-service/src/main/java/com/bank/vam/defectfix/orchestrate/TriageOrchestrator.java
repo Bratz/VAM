@@ -1,6 +1,7 @@
 package com.bank.vam.defectfix.orchestrate;
 
 import com.bank.vam.defectfix.agent.CodingAgentClient;
+import com.bank.vam.defectfix.agent.CodingAgentClient.AgentRunResult;
 import com.bank.vam.defectfix.config.PipelineProperties;
 import com.bank.vam.defectfix.detect.DefectDetectionService.Stack;
 import com.bank.vam.defectfix.detect.DefectSignature;
@@ -10,6 +11,7 @@ import com.bank.vam.defectfix.git.GitWorktreeManager;
 import com.bank.vam.defectfix.github.GitHubPullRequestClient;
 import com.bank.vam.defectfix.jira.JiraClient;
 import com.bank.vam.defectfix.jira.JiraClient.Issue;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,7 +19,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -43,6 +50,8 @@ public class TriageOrchestrator {
     private final TestGateRunner testGateRunner;
     private final GitHubPullRequestClient pullRequestClient;
     private final int maxRetries;
+    private final Path trajectoriesDir;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final AtomicBoolean busy = new AtomicBoolean(false);
 
     public TriageOrchestrator(JiraClient jiraClient,
@@ -57,6 +66,7 @@ public class TriageOrchestrator {
         this.testGateRunner = testGateRunner;
         this.pullRequestClient = pullRequestClient;
         this.maxRetries = properties.agent().maxRetries();
+        this.trajectoriesDir = Path.of(properties.agent().workspaceDir()).resolve("trajectories");
     }
 
     /**
@@ -95,47 +105,58 @@ public class TriageOrchestrator {
         log.info("Starting {}: {}", issue.key(), issue.summary());
         Stack stack = "stack-backend".equals(issue.stackLabel()) ? Stack.BACKEND : Stack.FRONTEND;
         String taskBrief = "Fix the following defect in vam-portal:\n\n" + issue.summary() + "\n\n" + issue.description();
+        String startedAt = Instant.now().toString();
+        List<TicketTrajectory.AttemptRecord> attemptRecords = new ArrayList<>();
+        DefectSignature targetDefect = null;
+        String sourceBranch = null;
 
         try {
             // Both throw (caught below, escalating with a clear message instead of getting stuck
             // retrying the same ticket forever) for any ticket filed before signature/branch
             // tracking was added — there's nothing to safely act on for those.
-            DefectSignature targetDefect = extractMarker(issue.description(), SIGNATURE_MARKER, DefectSignature::parse);
-            String branch = extractMarker(issue.description(), SOURCE_BRANCH_MARKER, s -> s);
+            targetDefect = extractMarker(issue.description(), SIGNATURE_MARKER, DefectSignature::parse);
+            sourceBranch = extractMarker(issue.description(), SOURCE_BRANCH_MARKER, s -> s);
 
             jiraClient.transitionTo(issue.key(), "In Progress");
             worktreeManager.ensureBaseRepoReady();
-            Path workDir = worktreeManager.createWorktree(branch);
+            Path workDir = worktreeManager.createWorktree(sourceBranch);
             testGateRunner.prepare(stack, workDir);
 
             GateResult lastResult = null;
             for (int attempt = 0; attempt <= maxRetries; attempt++) {
                 String prompt = attempt == 0 ? taskBrief
                         : taskBrief + "\n\nYour previous attempt did not pass the test gate. Output:\n" + lastResult.output();
-                codingAgentClient.runFix(workDir, prompt);
+                AgentRunResult agentResult = codingAgentClient.runFix(workDir, prompt);
                 lastResult = testGateRunner.runGate(stack, workDir, targetDefect);
+                attemptRecords.add(new TicketTrajectory.AttemptRecord(attempt + 1, agentResult.stoppedNaturally(),
+                        agentResult.finalMessage(), agentResult.trajectory(), lastResult.passed(), lastResult.output()));
                 if (lastResult.passed()) {
-                    onSuccess(issue, workDir, branch);
+                    String prUrl = onSuccess(issue, workDir, sourceBranch);
+                    writeTrajectory(issue, stack, targetDefect, sourceBranch, startedAt, attemptRecords,
+                            prUrl != null ? "success" : "no-changes", prUrl, null);
                     return;
                 }
                 log.info("{} attempt {} failed the test gate", issue.key(), attempt + 1);
             }
             onExhausted(issue, workDir, lastResult);
+            writeTrajectory(issue, stack, targetDefect, sourceBranch, startedAt, attemptRecords, "exhausted", null, null);
         } catch (Exception e) {
             log.error("Unexpected failure processing {}", issue.key(), e);
             jiraClient.addComment(issue.key(), "Pipeline error while processing this ticket: " + e.getMessage());
             jiraClient.addLabel(issue.key(), "needs-human");
             safeTransition(issue.key(), "Blocked");
+            writeTrajectory(issue, stack, targetDefect, sourceBranch, startedAt, attemptRecords, "error", null, e.getMessage());
         }
     }
 
-    private void onSuccess(Issue issue, Path workDir, String branch) throws Exception {
+    /** @return the linked PR's URL, or null if the agent made no changes (a different terminal state, not a real success). */
+    private String onSuccess(Issue issue, Path workDir, String branch) throws Exception {
         boolean pushed = worktreeManager.commitAndPush(workDir, branch, "Fix " + issue.key() + ": " + issue.summary());
         if (!pushed) {
             jiraClient.addComment(issue.key(), "Test gate passed but the coding agent made no file changes — nothing to push. Needs human review.");
             jiraClient.addLabel(issue.key(), "needs-human");
             safeTransition(issue.key(), "Blocked");
-            return;
+            return null;
         }
         // The fix was pushed straight back onto the PR's own branch (see createWorktree), so its
         // existing open PR is the one to link — not a new one. Falls back to creating a fresh PR
@@ -147,6 +168,25 @@ public class TriageOrchestrator {
         jiraClient.addComment(issue.key(), "Fix verified and pushed: " + prUrl);
         jiraClient.transitionTo(issue.key(), "In Review");
         worktreeManager.removeWorktree(workDir);
+        return prUrl;
+    }
+
+    /** Writes the full run as a structured JSON artifact (SWE-agent/OpenHands-style trajectory), not just log lines. */
+    private void writeTrajectory(Issue issue, Stack stack, DefectSignature targetDefect, String sourceBranch,
+                                  String startedAt, List<TicketTrajectory.AttemptRecord> attempts,
+                                  String outcome, String prUrl, String errorMessage) {
+        TicketTrajectory trajectory = new TicketTrajectory(
+                issue.key(), stack.name(),
+                targetDefect == null ? null : targetDefect.source() + "|" + targetDefect.key(),
+                sourceBranch, startedAt, attempts, outcome, prUrl, errorMessage, Instant.now().toString());
+        try {
+            Files.createDirectories(trajectoriesDir);
+            Path file = trajectoriesDir.resolve(issue.key() + "-" + System.currentTimeMillis() + ".json");
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), trajectory);
+            log.info("Wrote trajectory for {} to {}", issue.key(), file);
+        } catch (IOException e) {
+            log.warn("Failed to write trajectory for {}", issue.key(), e);
+        }
     }
 
     private void onExhausted(Issue issue, Path workDir, GateResult lastResult) {
