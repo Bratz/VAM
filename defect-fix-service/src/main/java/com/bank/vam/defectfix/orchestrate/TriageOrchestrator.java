@@ -12,6 +12,8 @@ import com.bank.vam.defectfix.jira.JiraClient;
 import com.bank.vam.defectfix.jira.JiraClient.Issue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -58,10 +60,20 @@ public class TriageOrchestrator {
     }
 
     /**
+     * A ticket left sitting in To Do (service restarted mid-backlog, or a manual Jira edit) won't
+     * otherwise get picked up again until the next NEW defect is detected — check once on every
+     * boot so a redeploy naturally re-kicks the queue instead of leaving it stalled.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        tryStartProcessing();
+    }
+
+    /**
      * Call after filing a new ticket (or on any other signal that the backlog might have work).
      * No-op if already busy — the busy worker will pick up the new ticket itself once it's free.
-     * Runs async so the caller (the GitHub webhook handler) isn't blocked for the ticket's whole
-     * fix-and-test cycle, which can run long.
+     * Runs async so the caller (the GitHub webhook handler, or the startup listener above) isn't
+     * blocked for the ticket's whole fix-and-test cycle, which can run long.
      */
     @Async
     public void tryStartProcessing() {
