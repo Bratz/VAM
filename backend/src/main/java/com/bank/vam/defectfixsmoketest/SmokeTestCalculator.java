@@ -7,8 +7,8 @@ package com.bank.vam.defectfixsmoketest;
  */
 public class SmokeTestCalculator {
 
-    // Deliberately wrong: subtracts instead of adding.
-    public int add(int a, int b) {
-        return a - b;
+    // Deliberately wrong: always returns 0 instead of the product.
+    public int multiply(int a, int b) {
+        return 0;
     }
 }

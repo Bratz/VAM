@@ -9,7 +9,7 @@ class SmokeTestCalculatorTest {
     private final SmokeTestCalculator calculator = new SmokeTestCalculator();
 
     @Test
-    void addReturnsTheSumOfBothArguments() {
-        assertThat(calculator.add(2, 3)).isEqualTo(5);
+    void multiplyReturnsTheProductOfBothArguments() {
+        assertThat(calculator.multiply(3, 4)).isEqualTo(12);
     }
 }
