@@ -6,7 +6,7 @@ import {
   CheckCircle, PiggyBank, CreditCard, BarChart3,
   ArrowUpRight, Activity, Search
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, Select , StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { corporatesApi } from '../services/api';
@@ -180,65 +180,6 @@ const getTypeLabel = (type: AccrualType): string => {
   }
 };
 
-const AccrualRow: React.FC<{ 
-  accrual: InterestAccrual; 
-  selected: boolean;
-  onSelect: () => void;
-  onView: () => void;
-}> = ({ accrual, selected, onSelect, onView }) => {
-  const isCredit = ['DEPOSIT', 'VA_CREDIT'].includes(accrual.accrualType);
-  
-  return (
-    <tr className={cn('hover:bg-neutral-50 dark:hover:bg-primary-800/50', selected && 'bg-primary-50 dark:bg-primary-800/40')}>
-      <td className="px-4 py-3">
-        <input 
-          type="checkbox" 
-          checked={selected} 
-          onChange={onSelect}
-          className="rounded border-neutral-300 dark:border-primary-700"
-        />
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <AccrualTypeIcon type={accrual.accrualType} />
-          <div>
-            <p className="text-sm font-mono text-primary-900 dark:text-neutral-50">{accrual.accrualReference}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{getTypeLabel(accrual.accrualType)}</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.entityName || '-'}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.virtualAccountNumber || accrual.loanReference || accrual.depositReference}</p>
-      </td>
-      <td className="px-4 py-3">
-        <p className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(accrual.periodStart)}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">to {formatDate(accrual.periodEnd)}</p>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <p className="text-sm text-primary-900 dark:text-neutral-50">{formatCurrency(accrual.principalBalance, accrual.currency)}</p>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.interestRate.toFixed(3)}%</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.dayCountConvention}</p>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{accrual.daysInPeriod} days</p>
-      </td>
-      <td className="px-4 py-3 text-right">
-        <p className={cn('text-sm font-semibold', isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-          {isCredit ? '+' : '-'}{formatCurrency(accrual.accruedAmount, accrual.currency)}
-        </p>
-      </td>
-      <td className="px-4 py-3 text-center">
-        <Badge variant={getStatusVariant(accrual.status)} size="sm">{accrual.status}</Badge>
-      </td>
-      <td className="px-4 py-3 text-center">
-        <Button variant="ghost" size="sm" onClick={onView}><Eye className="w-4 h-4" /></Button>
-      </td>
-    </tr>
-  );
-};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -357,18 +298,6 @@ const InterestAccrualReportsPage: React.FC = () => {
     } catch (err) {
       alert('Export failed');
     }
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredAccruals.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(filteredAccruals.map(a => a.id)));
-  };
-
-  const toggleSelect = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
   };
 
   const filteredAccruals = accruals.filter(a => {
@@ -495,40 +424,84 @@ const InterestAccrualReportsPage: React.FC = () => {
       )}
 
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-              <tr>
-                <th className="px-4 py-3 text-left">
-                  <input type="checkbox" checked={selectedIds.size === filteredAccruals.length && filteredAccruals.length > 0} onChange={toggleSelectAll} className="rounded border-neutral-300 dark:border-primary-700" />
-                </th>
-                <th className="px-4 py-3 text-left label">Reference / Type</th>
-                <th className="px-4 py-3 text-left label">Entity / Account</th>
-                <th className="px-4 py-3 text-left label">Period</th>
-                <th className="px-4 py-3 text-right label">Principal</th>
-                <th className="px-4 py-3 text-right label">Rate</th>
-                <th className="px-4 py-3 text-right label">Days</th>
-                <th className="px-4 py-3 text-right label">Accrued</th>
-                <th className="px-4 py-3 text-center label">Status</th>
-                <th className="px-4 py-3 text-center label">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-              {filteredAccruals.map(accrual => (
-                <AccrualRow key={accrual.id} accrual={accrual} selected={selectedIds.has(accrual.id)} onSelect={() => toggleSelect(accrual.id)} onView={() => { setSelectedAccrual(accrual); setShowDetailModal(true); }} />
-              ))}
-            </tbody>
-          </table>
-          {filteredAccruals.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Percent className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
-              </div>
-              <p className="text-neutral-500 font-medium dark:text-neutral-400">No interest accruals found</p>
-              <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">{accruals.length === 0 ? 'Run daily accrual to generate interest calculations' : 'Try adjusting your filters'}</p>
-            </div>
-          )}
-        </div>
+        <DataTable
+          data={filteredAccruals}
+          keyExtractor={(accrual) => accrual.id}
+          selectable
+          selectedKeys={selectedIds}
+          onSelectionChange={(keys) => setSelectedIds(keys as Set<string>)}
+          emptyIcon={<Percent className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />}
+          emptyTitle="No interest accruals found"
+          emptyDescription={accruals.length === 0 ? 'Run daily accrual to generate interest calculations' : 'Try adjusting your filters'}
+          columns={[
+            {
+              key: 'accrualReference',
+              header: 'Reference / Type',
+              render: (_, accrual) => (
+                <div className="flex items-center gap-2">
+                  <AccrualTypeIcon type={accrual.accrualType} />
+                  <div>
+                    <p className="text-sm font-mono text-primary-900 dark:text-neutral-50">{accrual.accrualReference}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{getTypeLabel(accrual.accrualType)}</p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'entityName',
+              header: 'Entity / Account',
+              render: (_, accrual) => (
+                <>
+                  <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.entityName || '-'}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.virtualAccountNumber || accrual.loanReference || accrual.depositReference}</p>
+                </>
+              ),
+            },
+            {
+              key: 'periodStart',
+              header: 'Period',
+              render: (_, accrual) => (
+                <>
+                  <p className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(accrual.periodStart)}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">to {formatDate(accrual.periodEnd)}</p>
+                </>
+              ),
+            },
+            { key: 'principalBalance', header: 'Principal', align: 'right', render: (_, accrual) => <span className="text-sm text-primary-900 dark:text-neutral-50">{formatCurrency(accrual.principalBalance, accrual.currency)}</span> },
+            {
+              key: 'interestRate',
+              header: 'Rate',
+              align: 'right',
+              render: (_, accrual) => (
+                <>
+                  <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.interestRate.toFixed(3)}%</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.dayCountConvention}</p>
+                </>
+              ),
+            },
+            { key: 'daysInPeriod', header: 'Days', align: 'right', render: (_, accrual) => <span className="text-sm text-neutral-500 dark:text-neutral-400">{accrual.daysInPeriod} days</span> },
+            {
+              key: 'accruedAmount',
+              header: 'Accrued',
+              align: 'right',
+              render: (_, accrual) => {
+                const isCredit = ['DEPOSIT', 'VA_CREDIT'].includes(accrual.accrualType);
+                return (
+                  <span className={cn('text-sm font-semibold', isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+                    {isCredit ? '+' : '-'}{formatCurrency(accrual.accruedAmount, accrual.currency)}
+                  </span>
+                );
+              },
+            },
+            { key: 'status', header: 'Status', align: 'center', render: (_, accrual) => <Badge variant={getStatusVariant(accrual.status)} size="sm">{accrual.status}</Badge> },
+            {
+              key: 'actions',
+              header: 'Action',
+              align: 'center',
+              render: (_, accrual) => <Button variant="ghost" size="sm" onClick={() => { setSelectedAccrual(accrual); setShowDetailModal(true); }}><Eye className="w-4 h-4" /></Button>,
+            },
+          ]}
+        />
       </Card>
 
       <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Accrual Details" size="lg">

@@ -7,14 +7,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Package, Folder, Building2, GitMerge, GitBranch, Globe, Check, Clock,
-  AlertTriangle, Loader2, RefreshCw, Eye, Search, Filter, Download, X,
-  ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Settings,
+  Package, Folder, Building2, GitMerge, GitBranch, Globe, Clock,
+  Loader2, RefreshCw, Eye, Search, Download, X,
+  Calendar, CheckCircle, XCircle, Settings,
   ArrowLeft,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
+import { DataTable } from '../components/ui';
 import {
   hierarchyOperationsApi, OperationHistoryEntry, OperationType, CorporateSummary,
 } from '../services/hierarchyOperationsApi';
@@ -257,38 +258,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
 };
 
 // ============================================================================
-// OPERATION ROW
-// ============================================================================
-
-interface OperationRowProps {
-  operation: OperationHistoryEntry;
-  onViewDetails: (op: OperationHistoryEntry) => void;
-}
-
-const OperationRow: React.FC<OperationRowProps> = ({ operation, onViewDetails }) => (
-  <tr className="hover:bg-neutral-50 transition-colors dark:hover:bg-primary-800/50">
-    <td className="px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon(operation.operationType)}</div>
-        <div>
-          <p className="font-medium text-primary-900 dark:text-neutral-50">{operation.operationType.replace(/_/g, ' ')}</p>
-          <p className="text-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{operation.summary}</p>
-        </div>
-      </div>
-    </td>
-    <td className="px-4 py-3">{getStatusBadge(operation.status)}</td>
-    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">{operation.performedBy}</td>
-    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">
-      <div>{new Date(operation.createdAt).toLocaleDateString()}</div>
-      <div className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(operation.createdAt).toLocaleTimeString()}</div>
-    </td>
-    <td className="px-4 py-3">
-      <Button variant="ghost" size="sm" onClick={() => onViewDetails(operation)}><Eye className="w-4 h-4" /></Button>
-    </td>
-  </tr>
-);
-
-// ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
@@ -441,42 +410,47 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
             <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your filters</p>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Operation</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Performed By</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {operations.map((op) => (
-                    <OperationRow key={op.id} operation={op} onViewDetails={setSelectedOperation} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="px-4 py-3 border-t border-neutral-200 flex items-center justify-between dark:border-primary-800">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Showing {operations.length} of {totalPages * pageSize} operations
-              </p>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 0}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="text-sm text-neutral-600 dark:text-neutral-300">Page {page + 1} of {totalPages}</span>
-                <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page >= totalPages - 1}>
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </>
+          <DataTable
+            data={operations}
+            keyExtractor={(op) => op.id}
+            pagination
+            pageSize={pageSize}
+            currentPage={page + 1}
+            totalCount={totalPages * pageSize}
+            onPageChange={(p) => setPage(p - 1)}
+            columns={[
+              {
+                key: 'operationType',
+                header: 'Operation',
+                render: (_, op) => (
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon(op.operationType)}</div>
+                    <div>
+                      <p className="font-medium text-primary-900 dark:text-neutral-50">{op.operationType.replace(/_/g, ' ')}</p>
+                      <p className="text-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{op.summary}</p>
+                    </div>
+                  </div>
+                ),
+              },
+              { key: 'status', header: 'Status', render: (_, op) => getStatusBadge(op.status) },
+              { key: 'performedBy', header: 'Performed By', render: (_, op) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{op.performedBy}</span> },
+              {
+                key: 'createdAt',
+                header: 'Date',
+                render: (_, op) => (
+                  <div className="text-sm text-neutral-600 dark:text-neutral-300">
+                    <div>{new Date(op.createdAt).toLocaleDateString()}</div>
+                    <div className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(op.createdAt).toLocaleTimeString()}</div>
+                  </div>
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (_, op) => <Button variant="ghost" size="sm" onClick={() => setSelectedOperation(op)}><Eye className="w-4 h-4" /></Button>,
+              },
+            ]}
+          />
         )}
       </Card>
 

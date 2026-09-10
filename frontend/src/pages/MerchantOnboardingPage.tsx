@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Plus, Search, CheckCircle, Loader2, AlertCircle, RefreshCw, Eye, Users, TrendingUp, Ban } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
 import { formatCurrency } from '../utils';
@@ -154,58 +154,47 @@ const MerchantOnboardingPage: React.FC = () => {
 
       {/* Merchants Table */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
-              <tr>
-                <th className="text-left p-4 label">Merchant</th>
-                <th className="text-left p-4 label">Category</th>
-                <th className="text-left p-4 label">Commission</th>
-                <th className="text-right p-4 label">Monthly Volume</th>
-                <th className="text-left p-4 label">Status</th>
-                <th className="text-left p-4 label">Onboarded</th>
-                <th className="text-right p-4 label">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-              {filteredMerchants.map(m => (
-                <tr key={m.id} className="hover:bg-neutral-50 transition-colors dark:hover:bg-primary-800/50">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="primary" icon={Store} className="dark:bg-primary-700" />
-                      <div>
-                        <p className="font-medium text-neutral-900 dark:text-neutral-50">{m.merchantName}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{m.merchantId}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4"><Badge variant="neutral">{m.category}</Badge></td>
-                  <td className="p-4 text-sm font-medium">{m.commissionRate}%</td>
-                  <td className="p-4 text-right font-medium tracking-tight">{formatCurrency(m.monthlyVolume, 'AED')}</td>
-                  <td className="p-4">{getStatusBadge(m.status)}</td>
-                  <td className="p-4 text-sm text-neutral-600 dark:text-neutral-300">{new Date(m.onboardedAt).toLocaleDateString()}</td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => viewDetails(m.id)}><Eye className="w-4 h-4" /></Button>
-                      {m.status === 'PENDING' && (
-                        <Button size="sm" variant="outline" onClick={() => handleApprove(m.id)} disabled={processing}>
-                          <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredMerchants.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16">
-            <StatusIconBadge tone="neutral" icon={Store} size="lg" className="mb-4 dark:bg-primary-800" />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No merchants found</p>
-          </div>
-        )}
+        <DataTable
+          data={filteredMerchants}
+          keyExtractor={(m) => m.id}
+          emptyIcon={<Store className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyTitle="No merchants found"
+          columns={[
+            {
+              key: 'merchantName',
+              header: 'Merchant',
+              render: (_, m) => (
+                <div className="flex items-center gap-3">
+                  <StatusIconBadge tone="primary" icon={Store} className="dark:bg-primary-700" />
+                  <div>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-50">{m.merchantName}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{m.merchantId}</p>
+                  </div>
+                </div>
+              ),
+            },
+            { key: 'category', header: 'Category', render: (_, m) => <Badge variant="neutral">{m.category}</Badge> },
+            { key: 'commissionRate', header: 'Commission', render: (_, m) => <span className="text-sm font-medium">{m.commissionRate}%</span> },
+            { key: 'monthlyVolume', header: 'Monthly Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.monthlyVolume, 'AED')}</span> },
+            { key: 'status', header: 'Status', render: (_, m) => getStatusBadge(m.status) },
+            { key: 'onboardedAt', header: 'Onboarded', render: (_, m) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(m.onboardedAt).toLocaleDateString()}</span> },
+            {
+              key: 'actions',
+              header: 'Actions',
+              align: 'right',
+              render: (_, m) => (
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => viewDetails(m.id)}><Eye className="w-4 h-4" /></Button>
+                  {m.status === 'PENDING' && (
+                    <Button size="sm" variant="outline" onClick={() => handleApprove(m.id)} disabled={processing}>
+                      <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                    </Button>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Create Modal */}

@@ -5,10 +5,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Shield, CheckCircle, XCircle, Clock, AlertTriangle, Loader2,
-  AlertCircle, RefreshCw, Eye, ChevronRight, ChevronLeft,
-  FileText, Users, TrendingUp, Ban,
+  AlertCircle, RefreshCw, Eye, ChevronRight,
+  FileText, TrendingUp, Ban,
 } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, EmptyState , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { kycApi } from '../services/api';
 import { cn } from '../utils';
@@ -69,75 +69,38 @@ interface KycRowProps {
   processing: boolean;
 }
 
-const KycRow: React.FC<KycRowProps> = ({ kyc, onView, onApprove, onReject, processing }) => {
-  const getRiskBadge = (level: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'error'> = {
-      LOW: 'success', MEDIUM: 'warning', HIGH: 'error'
-    };
-    return <Badge variant={variants[level] || 'neutral'} size="sm">{level}</Badge>;
+const getKycRiskBadge = (level: string) => {
+  const variants: Record<string, 'success' | 'warning' | 'error'> = {
+    LOW: 'success', MEDIUM: 'warning', HIGH: 'error'
   };
-
-  return (
-    <tr className="data-table-row group cursor-pointer" onClick={() => onView(kyc.id)}>
-      <td className="data-table-cell">
-        <div className="flex items-center gap-3">
-          <StatusIconBadge tone="primary" icon={Shield} className="shrink-0 transition-transform group-hover:scale-105 dark:bg-primary-700" />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-primary-900 font-mono truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
-              {kyc.applicationRef}
-            </p>
-            <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
-              {new Date(kyc.submittedAt).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{kyc.entityName}</p>
-      </td>
-      <td className="data-table-cell">
-        <Badge variant="neutral" size="sm">{kyc.entityType}</Badge>
-      </td>
-      <td className="data-table-cell">
-        {getRiskBadge(kyc.riskLevel)}
-      </td>
-      <td className="data-table-cell">
-        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
-          {kyc.documentsVerified}/{kyc.documentsSubmitted}
-        </span>
-      </td>
-      <td className="data-table-cell" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onView(kyc.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onApprove(kyc.id)}
-            disabled={processing}
-            className="text-success-600 hover:bg-success-50 opacity-0 group-hover:opacity-100 transition-opacity dark:text-success-300 dark:hover:bg-success-500/10"
-          >
-            <CheckCircle className="w-4 h-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onReject(kyc)}
-            className="text-error-600 hover:bg-error-50 opacity-0 group-hover:opacity-100 transition-opacity dark:text-error-300 dark:hover:bg-error-500/10"
-          >
-            <XCircle className="w-4 h-4" />
-          </Button>
-        </div>
-      </td>
-    </tr>
-  );
+  return <Badge variant={variants[level] || 'neutral'} size="sm">{level}</Badge>;
 };
+
+// ponytail: actions always-visible instead of hover-reveal — DataTable's
+// row doesn't expose a per-row className hook for the group-hover trick
+// the old hand-rolled table used.
+const KycActionsCell: React.FC<Omit<KycRowProps, 'kyc'> & { kyc: any }> = ({ kyc, onView, onApprove, onReject, processing }) => (
+  <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+    <Button size="sm" variant="ghost" onClick={() => onView(kyc.id)}><Eye className="w-4 h-4" /></Button>
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => onApprove(kyc.id)}
+      disabled={processing}
+      className="text-success-600 hover:bg-success-50 dark:text-success-300 dark:hover:bg-success-500/10"
+    >
+      <CheckCircle className="w-4 h-4" />
+    </Button>
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => onReject(kyc)}
+      className="text-error-600 hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-500/10"
+    >
+      <XCircle className="w-4 h-4" />
+    </Button>
+  </div>
+);
 
 // ============================================================================
 // KYC MOBILE CARD
@@ -327,7 +290,6 @@ const KyccPage: React.FC = () => {
   };
 
   const paginatedKyc = pendingKyc.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-  const totalPages = Math.ceil(pendingKyc.length / pageSize);
 
   // Loading State
   if (loading) {
@@ -454,96 +416,60 @@ const KyccPage: React.FC = () => {
           <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Pending Review ({pendingKyc.length})</h3>
         </div>
 
-        {paginatedKyc.length > 0 ? (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Application</th>
-                    <th className="data-table-header-cell">Entity</th>
-                    <th className="data-table-header-cell">Type</th>
-                    <th className="data-table-header-cell">Risk Level</th>
-                    <th className="data-table-header-cell">Documents</th>
-                    <th className="data-table-header-cell text-right w-32">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {paginatedKyc.map((kyc) => (
-                    <KycRow
-                      key={kyc.id}
-                      kyc={kyc}
-                      onView={viewDetails}
-                      onApprove={handleApprove}
-                      onReject={(k) => { setSelectedKyc(k); setShowRejectModal(true); }}
-                      processing={processing}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden p-4 space-y-3">
-              {paginatedKyc.map((kyc, idx) => (
-                <KycMobileCard
-                  key={kyc.id}
+        <DataTable
+          data={paginatedKyc}
+          keyExtractor={(kyc) => kyc.id}
+          onRowClick={(kyc) => viewDetails(kyc.id)}
+          pagination
+          pageSize={pageSize}
+          currentPage={currentPage + 1}
+          totalCount={pendingKyc.length}
+          onPageChange={(p) => setCurrentPage(p - 1)}
+          mobileCardRenderer={(kyc, idx) => (
+            <KycMobileCard kyc={kyc} onView={viewDetails} index={idx} />
+          )}
+          emptyIcon={<Shield className="w-12 h-12" />}
+          emptyTitle="No pending applications"
+          emptyDescription="All KYC applications have been processed."
+          columns={[
+            {
+              key: 'applicationRef',
+              header: 'Application',
+              render: (_, kyc) => (
+                <div className="flex items-center gap-3">
+                  <StatusIconBadge tone="primary" icon={Shield} className="shrink-0 dark:bg-primary-700" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.applicationRef}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{new Date(kyc.submittedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ),
+            },
+            { key: 'entityName', header: 'Entity', render: (_, kyc) => <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{kyc.entityName}</p> },
+            { key: 'entityType', header: 'Type', render: (_, kyc) => <Badge variant="neutral" size="sm">{kyc.entityType}</Badge> },
+            { key: 'riskLevel', header: 'Risk Level', render: (_, kyc) => getKycRiskBadge(kyc.riskLevel) },
+            {
+              key: 'documentsVerified',
+              header: 'Documents',
+              render: (_, kyc) => <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{kyc.documentsVerified}/{kyc.documentsSubmitted}</span>,
+            },
+            {
+              key: 'actions',
+              header: 'Actions',
+              align: 'right',
+              width: '8rem',
+              render: (_, kyc) => (
+                <KycActionsCell
                   kyc={kyc}
                   onView={viewDetails}
-                  index={idx}
+                  onApprove={handleApprove}
+                  onReject={(k) => { setSelectedKyc(k); setShowRejectModal(true); }}
+                  processing={processing}
                 />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-neutral-200 dark:border-primary-800">
-                <p className="text-sm text-neutral-500 order-2 sm:order-1 dark:text-neutral-400">
-                  Showing{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">
-                    {Math.min(currentPage * pageSize + 1, pendingKyc.length)}
-                  </span>
-                  {' '}to{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">
-                    {Math.min((currentPage + 1) * pageSize, pendingKyc.length)}
-                  </span>
-                  {' '}of{' '}
-                  <span className="font-medium text-primary-900 dark:text-neutral-50">{pendingKyc.length}</span>
-                </p>
-                <div className="flex items-center gap-1 order-1 sm:order-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 0}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="text-sm text-neutral-600 px-3 dark:text-neutral-300">
-                    {currentPage + 1} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage >= totalPages - 1}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="p-8">
-            <EmptyState
-              icon={<Shield className="w-12 h-12" />}
-              title="No pending applications"
-              description="All KYC applications have been processed."
-            />
-          </div>
-        )}
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* Detail Modal */}
