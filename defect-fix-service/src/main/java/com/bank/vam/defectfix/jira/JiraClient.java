@@ -22,6 +22,11 @@ public class JiraClient {
     private final PipelineProperties.Jira config;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // Lazily resolved (not at construction) so a Jira hiccup at service boot doesn't stop the app
+    // from starting at all. Team-managed projects don't reliably ship a "Bug" issue type, so this
+    // looks up whatever the project actually has instead of hardcoding a name.
+    private volatile String issueTypeId;
+
     public JiraClient(PipelineProperties properties) {
         this.config = properties.jira();
         String basicAuth = Base64.getEncoder().encodeToString(
@@ -54,8 +59,7 @@ public class JiraClient {
         project.put("key", config.projectKey());
         fields.put("summary", summary);
         fields.set("description", toAdf(description));
-        ObjectNode issueType = fields.putObject("issuetype");
-        issueType.put("name", "Bug");
+        fields.putObject("issuetype").put("id", resolveIssueTypeId());
         fields.putArray("labels").add(PIPELINE_LABEL).add(dedupLabel).add(stackLabel);
 
         ObjectNode body = objectMapper.createObjectNode();
@@ -67,6 +71,46 @@ public class JiraClient {
                 .retrieve()
                 .body(JsonNode.class);
         return response.path("key").asText();
+    }
+
+    /**
+     * Picks a usable, non-subtask issue type from the project's own configuration — "Bug" if the
+     * project has one (common, but not guaranteed on a team-managed project), otherwise whatever
+     * non-subtask type comes first. Resolved once and cached; a project's issue types don't change
+     * at runtime.
+     */
+    private String resolveIssueTypeId() {
+        String cached = issueTypeId;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (this) {
+            if (issueTypeId != null) {
+                return issueTypeId;
+            }
+            JsonNode project = restClient.get()
+                    .uri("/project/{key}", config.projectKey())
+                    .retrieve()
+                    .body(JsonNode.class);
+            String fallbackId = null;
+            for (JsonNode type : project.path("issueTypes")) {
+                if (type.path("subtask").asBoolean(false)) {
+                    continue;
+                }
+                if ("Bug".equalsIgnoreCase(type.path("name").asText())) {
+                    issueTypeId = type.path("id").asText();
+                    return issueTypeId;
+                }
+                if (fallbackId == null) {
+                    fallbackId = type.path("id").asText();
+                }
+            }
+            if (fallbackId == null) {
+                throw new IllegalStateException("Project " + config.projectKey() + " has no usable (non-subtask) issue type");
+            }
+            issueTypeId = fallbackId;
+            return issueTypeId;
+        }
     }
 
     public record Issue(String key, String summary, String description, String stackLabel) {
