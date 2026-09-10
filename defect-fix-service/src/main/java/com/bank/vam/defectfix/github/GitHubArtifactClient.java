@@ -3,12 +3,14 @@ package com.bank.vam.defectfix.github;
 import com.bank.vam.defectfix.config.PipelineProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,8 +27,17 @@ public class GitHubArtifactClient {
 
     public GitHubArtifactClient(PipelineProperties properties) {
         this.config = properties.github();
+        // GET .../artifacts/{id}/zip returns a 302 to a signed blob-storage URL rather than the
+        // zip bytes directly — the JDK HttpClient Spring wraps here defaults to NOT following
+        // redirects, which silently turned into a null body. NORMAL also does the right (safe)
+        // thing on its own: the JDK strips the Authorization header when a redirect crosses to a
+        // different host, so the GitHub PAT is never forwarded to the storage host.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
         this.restClient = RestClient.builder()
                 .baseUrl("https://api.github.com")
+                .requestFactory(new JdkClientHttpRequestFactory(httpClient))
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + config.token())
                 .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
                 .defaultHeader("X-GitHub-Api-Version", "2022-11-28")
@@ -62,6 +73,10 @@ public class GitHubArtifactClient {
                 .uri("/repos/{owner}/{repo}/actions/artifacts/{id}/zip", config.owner(), config.repo(), artifactId)
                 .retrieve()
                 .body(byte[].class);
+        if (zipBytes == null || zipBytes.length == 0) {
+            throw new IllegalStateException("Empty response downloading artifact " + artifactId
+                    + " — expected a zip body (possibly after following a redirect)");
+        }
 
         Map<String, String> files = new LinkedHashMap<>();
         try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
