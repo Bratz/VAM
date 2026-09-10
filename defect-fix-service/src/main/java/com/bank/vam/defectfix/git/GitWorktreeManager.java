@@ -1,0 +1,116 @@
+package com.bank.vam.defectfix.git;
+
+import com.bank.vam.defectfix.config.PipelineProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Maintains one local clone of the target repo and hands out per-ticket git
+ * worktrees on their own branch, so concurrent tickets (if concurrency is
+ * ever raised above 1) never collide on the same working directory.
+ */
+@Component
+public class GitWorktreeManager {
+
+    private static final Logger log = LoggerFactory.getLogger(GitWorktreeManager.class);
+    private static final Duration COMMAND_TIMEOUT = Duration.ofMinutes(5);
+
+    private final PipelineProperties.GitHub githubConfig;
+    private final Path baseRepoPath;
+    private final Path worktreesRoot;
+
+    public GitWorktreeManager(PipelineProperties properties) {
+        this.githubConfig = properties.github();
+        Path workspace = Path.of(properties.agent().workspaceDir());
+        this.baseRepoPath = workspace.resolve("repo");
+        this.worktreesRoot = workspace.resolve("worktrees");
+    }
+
+    /** Clones the repo on first use, otherwise fetches latest main. Call before creating a worktree. */
+    public synchronized void ensureBaseRepoReady() throws IOException, InterruptedException {
+        if (Files.isDirectory(baseRepoPath.resolve(".git"))) {
+            run(baseRepoPath, "fetch", "origin", "main");
+            return;
+        }
+        Files.createDirectories(baseRepoPath.getParent());
+        run(baseRepoPath.getParent(), "clone", authenticatedRemoteUrl(), baseRepoPath.getFileName().toString());
+    }
+
+    /** Creates a fresh worktree off origin/main on a new branch. Caller is responsible for cleanup. */
+    public Path createWorktree(String branchName) throws IOException, InterruptedException {
+        Files.createDirectories(worktreesRoot);
+        Path worktreePath = worktreesRoot.resolve(sanitize(branchName));
+        run(baseRepoPath, "worktree", "add", "-b", branchName, worktreePath.toString(), "origin/main");
+        return worktreePath;
+    }
+
+    /** @return true if there were changes to commit and they were pushed; false if the agent made no changes. */
+    public boolean commitAndPush(Path worktreePath, String branchName, String commitMessage)
+            throws IOException, InterruptedException {
+        run(worktreePath, "add", "-A");
+        CommandResult status = run(worktreePath, "status", "--porcelain");
+        if (status.output().isBlank()) {
+            log.warn("Coding agent made no file changes in {} — nothing to commit", worktreePath);
+            return false;
+        }
+        run(worktreePath, "commit", "-m", commitMessage);
+        run(worktreePath, "push", authenticatedRemoteUrl(), "HEAD:refs/heads/" + branchName);
+        return true;
+    }
+
+    public void removeWorktree(Path worktreePath, String branchName) {
+        try {
+            run(baseRepoPath, "worktree", "remove", worktreePath.toString(), "--force");
+            run(baseRepoPath, "branch", "-D", branchName);
+        } catch (Exception e) {
+            log.warn("Failed to clean up worktree {} (branch {}) — leaving for manual cleanup", worktreePath, branchName, e);
+        }
+    }
+
+    private String authenticatedRemoteUrl() {
+        return "https://x-access-token:" + githubConfig.token() + "@github.com/"
+                + githubConfig.owner() + "/" + githubConfig.repo() + ".git";
+    }
+
+    private String sanitize(String branchName) {
+        return branchName.replaceAll("[^a-zA-Z0-9._-]", "-");
+    }
+
+    private CommandResult run(Path cwd, String... gitArgs) throws IOException, InterruptedException {
+        List<String> command = new java.util.ArrayList<>();
+        command.add("git");
+        command.addAll(List.of(gitArgs));
+
+        Process process = new ProcessBuilder(command)
+                .directory(cwd.toFile())
+                .redirectErrorStream(true)
+                .start();
+        boolean finished = process.waitFor(COMMAND_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
+        String output = redactToken(new String(process.getInputStream().readAllBytes()));
+        if (!finished) {
+            process.destroyForcibly();
+            throw new IOException("git " + String.join(" ", gitArgs) + " timed out after " + COMMAND_TIMEOUT);
+        }
+        if (process.exitValue() != 0) {
+            throw new IOException("git " + String.join(" ", gitArgs) + " failed (exit " + process.exitValue() + "): " + output);
+        }
+        return new CommandResult(process.exitValue(), output);
+    }
+
+    /** git can echo the authenticated remote URL (with the embedded PAT) into its own error output. */
+    private String redactToken(String text) {
+        String token = githubConfig.token();
+        return (token == null || token.isBlank()) ? text : text.replace(token, "***");
+    }
+
+    private record CommandResult(int exitCode, String output) {
+    }
+}

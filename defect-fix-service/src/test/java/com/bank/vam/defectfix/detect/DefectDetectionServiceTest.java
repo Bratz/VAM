@@ -2,6 +2,7 @@ package com.bank.vam.defectfix.detect;
 
 import com.bank.vam.defectfix.github.GitHubArtifactClient;
 import com.bank.vam.defectfix.jira.JiraTicketService;
+import com.bank.vam.defectfix.orchestrate.TriageOrchestrator;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -15,8 +16,9 @@ class DefectDetectionServiceTest {
 
     private final GitHubArtifactClient artifactClient = mock(GitHubArtifactClient.class);
     private final JiraTicketService ticketService = mock(JiraTicketService.class);
+    private final TriageOrchestrator triageOrchestrator = mock(TriageOrchestrator.class);
     private final DefectDetectionService service = new DefectDetectionService(
-            artifactClient, new FrontendResultParser(), new BackendResultParser(), ticketService);
+            artifactClient, new FrontendResultParser(), new BackendResultParser(), ticketService, triageOrchestrator);
 
     @Test
     void onlyFilesDefectsThatAreNewComparedToTheMergeBase() throws Exception {

@@ -187,14 +187,20 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
 1. ~~Jira project key~~ — **KAN**, done.
 2. ~~Jira API token~~ — **done** (generated, will be wired as an OCI env
    var, not committed).
-3. **GitHub PAT** for the service (repo + PR scopes on `Bratz/VAM`) — still
-   needed before the ticket-creator/PR-opener parts of the service can be
-   built and tested end-to-end. Not needed for step 1 (CI workflows).
+3. **GitHub PAT** for the service (repo + PR scopes on `Bratz/VAM`) — code
+   is written and unit-tested, but nothing has been run end-to-end against
+   the real GitHub API yet. Needed to actually verify artifact download,
+   merge-base diffing, and PR creation live.
 4. **Create the Sentry account/org + project(s)**, hand over DSNs — not
-   needed until the Sentry instrumentation step.
-5. **Anthropic API key** for the service — needed before the coding-agent
-   loop can be built.
-6. Confirm branch/PR target (`main`, presumably) and any required PR
+   started yet (separate detector, not on the critical path below).
+5. **Anthropic API key** — code is written (real tool-use loop against the
+   verified Anthropic Java SDK API surface), but never called live yet.
+6. **Jira workflow statuses** — the code assumes a project with `To Do` →
+   `In Progress` → `In Review` → `Done`/`Blocked` statuses (transitions are
+   looked up by name via the Jira API, so exact IDs don't matter, but the
+   status *names* must exist in the KAN project's workflow). Please confirm
+   KAN has these, or tell me the actual status names to use instead.
+7. Confirm branch/PR target (`main`, presumably) and any required PR
    labels/reviewers convention.
 
 ## 10. Suggested build order (once signed off)
@@ -208,8 +214,19 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
 2. Service skeleton: webhook receivers → Jira ticket creation + dedup
    (this alone is independently useful/testable before any coding agent
    exists).
-3. Triage step (single-concurrency JQL gate + task brief builder).
-4. Coding agent loop (worktree, fix, test gate, retries).
-5. PR creation + Jira transition wiring.
-6. Sentry instrumentation (frontend + backend) + its webhook receiver —
-   can land in parallel with steps 1-5 since it's a separate detector.
+3. ~~Triage step~~ — **done**: `TriageOrchestrator` (single-concurrency via
+   an in-process gate — see its ponytail note on that choice's ceiling),
+   picks the oldest `To Do` ticket via JQL, builds the task brief from the
+   ticket's summary+description.
+4. ~~Coding agent loop~~ — **done**: `GitWorktreeManager` (per-ticket
+   worktree on its own branch), `CodingAgentClient` (real tool-use loop
+   against the Anthropic Java SDK — read_file/write_file/list_files/
+   run_command, all path-escape-guarded, tested), `TestGateRunner`
+   (frontend: type-check+lint; backend: mvn test), retry loop wired in
+   `TriageOrchestrator` up to `pipeline.agent.max-retries` (default 2).
+5. ~~PR creation + Jira transition wiring~~ — **done**: `GitHubPullRequestClient`
+   opens the PR; on success Jira → `In Review` with a comment linking it; on
+   exhausted retries Jira → `Blocked` + `needs-human` label + the last gate
+   output as a comment (worktree deliberately left on disk for inspection).
+6. Sentry instrumentation (frontend + backend) + its webhook receiver — not
+   started. Independent of steps 1-5 (separate detector).

@@ -12,6 +12,13 @@ pipeline:
     repo: ${GITHUB_REPO:VAM}
     token: ${GITHUB_TOKEN:}
     webhook-secret: ${GITHUB_WEBHOOK_SECRET:}
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+  agent:
+    workspace-dir: ${AGENT_WORKSPACE_DIR:/data/defect-fix-workspace}
+    max-turns: ${AGENT_MAX_TURNS:20}
+    max-retries: ${AGENT_MAX_RETRIES:2}
 
 logging:
   level:

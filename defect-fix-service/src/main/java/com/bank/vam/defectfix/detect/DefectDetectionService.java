@@ -2,6 +2,7 @@ package com.bank.vam.defectfix.detect;
 
 import com.bank.vam.defectfix.github.GitHubArtifactClient;
 import com.bank.vam.defectfix.jira.JiraTicketService;
+import com.bank.vam.defectfix.orchestrate.TriageOrchestrator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,15 +28,18 @@ public class DefectDetectionService {
     private final FrontendResultParser frontendParser;
     private final BackendResultParser backendParser;
     private final JiraTicketService ticketService;
+    private final TriageOrchestrator triageOrchestrator;
 
     public DefectDetectionService(GitHubArtifactClient artifactClient,
                                    FrontendResultParser frontendParser,
                                    BackendResultParser backendParser,
-                                   JiraTicketService ticketService) {
+                                   JiraTicketService ticketService,
+                                   TriageOrchestrator triageOrchestrator) {
         this.artifactClient = artifactClient;
         this.frontendParser = frontendParser;
         this.backendParser = backendParser;
         this.ticketService = ticketService;
+        this.triageOrchestrator = triageOrchestrator;
     }
 
     public enum Stack {
@@ -78,6 +82,9 @@ public class DefectDetectionService {
         log.info("{} defects at HEAD, {} of them new (PR #{})", headDefects.size(), newDefects.size(), prNumber);
         for (DetectedDefect defect : newDefects) {
             ticketService.fileIfNew(defect, prNumber);
+        }
+        if (!newDefects.isEmpty()) {
+            triageOrchestrator.tryStartProcessing();
         }
     }
 

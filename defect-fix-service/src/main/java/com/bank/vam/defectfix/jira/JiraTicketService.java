@@ -24,7 +24,8 @@ public class JiraTicketService {
             return;
         }
         String description = defect.details() + "\n\nFirst detected on PR #" + prNumber + ".";
-        String key = jiraClient.createIssue(defect.summary(), description, dedupLabel);
+        String stackLabel = defect.signature().source().startsWith("frontend") ? "stack-frontend" : "stack-backend";
+        String key = jiraClient.createIssue(defect.summary(), description, dedupLabel, stackLabel);
         log.info("Filed {} for {}", key, defect.signature());
     }
 }
