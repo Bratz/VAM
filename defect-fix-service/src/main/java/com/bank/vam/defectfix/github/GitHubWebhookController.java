@@ -3,6 +3,7 @@ package com.bank.vam.defectfix.github;
 import com.bank.vam.defectfix.config.PipelineProperties;
 import com.bank.vam.defectfix.detect.DefectDetectionService;
 import com.bank.vam.defectfix.detect.DefectDetectionService.Stack;
+import com.bank.vam.defectfix.jira.JiraClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -18,6 +19,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RestController
 public class GitHubWebhookController {
@@ -36,11 +39,16 @@ public class GitHubWebhookController {
 
     private final PipelineProperties.GitHub config;
     private final DefectDetectionService detectionService;
+    private final JiraClient jiraClient;
+    private final Pattern issueKeyPattern;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public GitHubWebhookController(PipelineProperties properties, DefectDetectionService detectionService) {
+    public GitHubWebhookController(PipelineProperties properties, DefectDetectionService detectionService,
+                                    JiraClient jiraClient) {
         this.config = properties.github();
         this.detectionService = detectionService;
+        this.jiraClient = jiraClient;
+        this.issueKeyPattern = Pattern.compile("\\b" + Pattern.quote(properties.jira().projectKey()) + "-\\d+\\b");
     }
 
     @PostMapping("/webhooks/github")
@@ -51,15 +59,19 @@ public class GitHubWebhookController {
             log.warn("Rejected GitHub webhook: bad signature");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        if (!"workflow_run".equals(eventType)) {
-            return ResponseEntity.ok("ignored: not workflow_run");
-        }
 
         JsonNode payload;
         try {
             payload = objectMapper.readTree(rawBody);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("invalid JSON");
+        }
+
+        if ("pull_request".equals(eventType)) {
+            return handlePullRequestEvent(payload);
+        }
+        if (!"workflow_run".equals(eventType)) {
+            return ResponseEntity.ok("ignored: not workflow_run or pull_request");
         }
 
         JsonNode run = payload.path("workflow_run");
@@ -107,6 +119,36 @@ public class GitHubWebhookController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("processing failed");
         }
         return ResponseEntity.ok("processed");
+    }
+
+    /**
+     * Closes the loop the coding-agent path leaves open: on success it only ever gets a ticket to
+     * "In Review" (see TriageOrchestrator.onSuccess) and waits for a human to merge the PR. Reads
+     * the "Resolves KEY." footer GitHubPullRequestClient.ensureIssueLinked stamped onto the PR body
+     * back out and transitions that ticket to Done — no Jira search needed. Requires the webhook's
+     * subscribed events to include "Pull requests", not just "Workflow runs".
+     */
+    private ResponseEntity<String> handlePullRequestEvent(JsonNode payload) {
+        if (!"closed".equals(payload.path("action").asText())) {
+            return ResponseEntity.ok("ignored: not closed");
+        }
+        JsonNode pr = payload.path("pull_request");
+        if (!pr.path("merged").asBoolean(false)) {
+            return ResponseEntity.ok("ignored: closed without merging");
+        }
+        Matcher matcher = issueKeyPattern.matcher(pr.path("body").asText(""));
+        if (!matcher.find()) {
+            return ResponseEntity.ok("ignored: no linked ticket in PR body");
+        }
+        String issueKey = matcher.group();
+        try {
+            jiraClient.transitionTo(issueKey, "Done");
+            log.info("PR #{} merged — transitioned {} to Done", pr.path("number").asInt(), issueKey);
+        } catch (Exception e) {
+            log.error("Failed to close {} after PR merge", issueKey, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("transition failed");
+        }
+        return ResponseEntity.ok("closed " + issueKey);
     }
 
     private boolean isValidSignature(byte[] body, String signatureHeader) {

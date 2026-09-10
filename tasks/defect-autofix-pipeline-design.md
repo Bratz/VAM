@@ -200,6 +200,11 @@ full "should we even fix this" gate. It:
 ### 4.5 Human gate
 PR review/merge in GitHub is the only manual step in the happy path.
 Escalated tickets surface as `Blocked` in Jira with full context attached.
+Merging the PR is genuinely the *only* manual step — closing the ticket
+itself is automatic (see section 11): `GitHubPullRequestClient.ensureIssueLinked`
+stamps a "Resolves KEY." footer onto the PR body when the fix is pushed,
+and `GitHubWebhookController`'s `pull_request` handler reads that back out
+on merge to transition the ticket to `Done`.
 
 ## 5. Jira project requirements
 
@@ -285,7 +290,9 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
 6. Register the webhook: GitHub repo (`Bratz/VAM`) → **Settings → Webhooks
    → Add webhook** — Payload URL `https://161-33-9-182.sslip.io/webhooks/github`,
    content type `application/json`, secret = the same `GITHUB_WEBHOOK_SECRET`
-   from step 2, events = **Workflow runs** only.
+   from step 2, events = **Workflow runs** and **Pull requests** (the latter
+   is what auto-closes a ticket to `Done` when its fix PR is merged — see
+   section 11).
 7. First real test: introduce a deliberate lint/type error on a branch, open
    a PR, let Frontend CI fail, and confirm a Jira ticket appears in KAN.
 
@@ -380,3 +387,18 @@ dev environment). Live-verified on the OCI VM since, in order:
   in a follow-up commit. KAN-9 (PR #8) and KAN-10 (PR #9) are still open,
   unmerged — pending the same close-without-merge-and-delete-branch
   treatment.
+- **Nobody was closing tickets to `Done`** — a real gap found after the
+  fact: `TriageOrchestrator` only ever transitions a ticket through
+  `In Progress`/`In Review`/`Blocked`, never `Done`, and the webhook
+  receiver only ever subscribed to `workflow_run`, so the pipeline had no
+  way to even know a PR got merged. Fixed: `GitHubPullRequestClient
+  .ensureIssueLinked` stamps a "Resolves KEY." footer onto the PR body
+  right after the fix is verified and pushed (idempotent — also covers the
+  common reused-existing-PR path, which never set a body otherwise), and a
+  new `pull_request` handler in `GitHubWebhookController` reads that footer
+  back out on `action=closed, merged=true` and transitions the ticket to
+  `Done` — no Jira search needed. **Requires re-registering the GitHub
+  webhook** to also send "Pull requests" events, not just "Workflow runs"
+  (see the deployment runbook above) — not yet done on the OCI VM as of
+  this writing. Not yet live-verified end-to-end (needs a real PR merge
+  after that webhook update).

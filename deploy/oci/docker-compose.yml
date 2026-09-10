@@ -49,7 +49,8 @@
 # Then register the webhook itself: GitHub repo → Settings → Webhooks → Add
 # webhook, Payload URL https://161-33-9-182.sslip.io/webhooks/github,
 # content type application/json, secret = the same GITHUB_WEBHOOK_SECRET
-# above, events = "Workflow runs" only.
+# above, events = "Workflow runs" and "Pull requests" (the latter auto-closes
+# a ticket to Done when its fix PR is merged).
 #
 services:
   db:

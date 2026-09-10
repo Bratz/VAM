@@ -165,6 +165,9 @@ public class TriageOrchestrator {
                 .orElseGet(() -> pullRequestClient.createPullRequest(branch, "main",
                         "Fix " + issue.key() + ": " + issue.summary(),
                         "Resolves " + issue.key() + ".\n\n" + issue.summary()));
+        // The reused-existing-PR path (the common case) never sets a body linking the ticket —
+        // this is what the pull_request-merged webhook reads back out to auto-close the ticket.
+        pullRequestClient.ensureIssueLinked(branch, issue.key());
         jiraClient.addComment(issue.key(), "Fix verified and pushed: " + prUrl);
         jiraClient.transitionTo(issue.key(), "In Review");
         worktreeManager.removeWorktree(workDir);

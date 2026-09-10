@@ -68,4 +68,36 @@ public class GitHubPullRequestClient {
                 ? Optional.of(response.get(0).path("html_url").asText())
                 : Optional.empty();
     }
+
+    /**
+     * Appends a "Resolves KEY." footer to the PR's own description if it isn't already there —
+     * the durable, no-extra-lookup link a merge webhook reads back out to know which Jira ticket
+     * to close (see GitHubWebhookController's pull_request handler). Idempotent: safe to call on
+     * every success, including a PR this pipeline reused rather than created (that path never set
+     * the body at all otherwise).
+     */
+    public void ensureIssueLinked(String headBranch, String issueKey) {
+        JsonNode response = restClient.get()
+                .uri("/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
+                        config.owner(), config.repo(), config.owner(), headBranch)
+                .retrieve()
+                .body(JsonNode.class);
+        if (!response.isArray() || response.isEmpty()) {
+            return;
+        }
+        JsonNode pr = response.get(0);
+        String body = pr.path("body").asText("");
+        if (body.contains(issueKey)) {
+            return;
+        }
+        int number = pr.path("number").asInt();
+        String newBody = body.isBlank() ? "Resolves " + issueKey + "." : body + "\n\n---\nResolves " + issueKey + ".";
+        ObjectNode requestBody = objectMapper.createObjectNode();
+        requestBody.put("body", newBody);
+        restClient.patch()
+                .uri("/repos/{owner}/{repo}/pulls/{number}", config.owner(), config.repo(), number)
+                .body(requestBody)
+                .retrieve()
+                .toBodilessEntity();
+    }
 }
