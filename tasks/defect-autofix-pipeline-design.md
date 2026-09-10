@@ -1,6 +1,33 @@
 # Automated Defect-Fix Pipeline — Design
 
-Status: **APPROVED — implementation underway.**
+Status: **VERIFIED END-TO-END (2026-09-10).** A live smoke test (deliberate
+lint+typecheck defect on a throwaway file, PR against `main`) went all the
+way through the full loop for real: CI failure detected → Jira ticket
+(KAN-7) filed → coding agent fixed it → test gate correctly verified the
+fix → PR opened → human-reviewed and merged. The mechanism works.
+
+Getting there took a long live-debugging pass fixing ~15 real bugs found
+only by actually running it (wrong GitHub Actions merge-commit SHA, a
+redirect the HTTP client wasn't following, two Jira API deprecations, a
+hardcoded issue type that doesn't exist on team-managed projects, a test
+gate that gated on the whole project's exit code instead of the one
+ticket's defect, absolute/inconsistent file paths between the CI runner
+and the VM worktree confusing both the gate and the coding agent, stale
+worktrees/branches left behind by interrupted attempts, and a non-force
+push rejected by an earlier attempt's leftover branch). None of these were
+guessable from the design — each needed a real run to surface. See the git
+log for `defect-fix-service/` for the full list if useful context later.
+
+**Known remaining gaps, not yet exercised:**
+- Only tested on a single-file frontend lint/typecheck defect. Backend
+  (Java/Maven) defects, and defects needing multi-file changes, go through
+  the same generic mechanism but haven't been proven live yet.
+- `run_command`'s shell access isn't sandboxed to the worktree the way
+  `read_file`/`write_file`/`list_files` are (confirmed live: the agent
+  could discover sibling worktrees this way) — the worktree/container is
+  the intended boundary, not command allow-listing; tightening this is a
+  real gap, not a hypothetical one.
+- Sentry instrumentation was never started (separate detector).
 
 - Jira project key: **KAN** (`vam-five.atlassian.net`)
 - Jira API token: generated (held by user, wired in as an OCI env var when
