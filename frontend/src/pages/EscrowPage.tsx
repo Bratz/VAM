@@ -299,26 +299,6 @@ const EscrowPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Info Banner */}
-      {/* Was carrying two conflicting sets of dark "from"/"to" gradient-stop
-          utilities (a tinted attempt plus a later flat-neutralize attempt) —
-          which one wins depends on Tailwind's internal stylesheet ordering,
-          not the className order, so this rendered unpredictably. Kept the
-          single flat neutralization already used consistently elsewhere. */}
-      <Card padding="sm" className="bg-gradient-to-r from-success-50/50 via-white to-success-50/50 border-success-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 dark:border-success-500/30" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-start gap-3 p-4">
-          <StatusIconBadge tone="success" icon={Shield} className="flex-shrink-0 dark:bg-success-500/20" />
-          <div>
-            <p className="text-sm font-semibold text-success-800 dark:text-success-300">Secure Transaction Holding</p>
-            <p className="text-sm text-success-700 mt-1 dark:text-success-300">
-              Digital escrow provides secure holding of funds for transactions between buyers and sellers.
-              Funds are released upon milestone completion or through dispute resolution. Both parties are
-              linked to the <strong>Parties</strong> master for unified KYC compliance.
-            </p>
-          </div>
-        </div>
-      </Card>
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <StatCard

@@ -4,7 +4,7 @@ import {
   Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown,
   Plus, Edit, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle,
   XCircle, Clock, CreditCard, Landmark, FlaskConical, Building, ArrowLeftRight,
-  PiggyBank, Banknote, GitBranch, Copy, Lock, Layers,
+  PiggyBank, Banknote, GitBranch, Copy, Lock,
   Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent,
   Mail, Phone, MapPin, FileText, Calendar, Hash, DollarSign, Shield, Zap, Save,
 } from 'lucide-react';
@@ -1379,23 +1379,6 @@ const LegalEntitiesPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 border-primary-100/50 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center shrink-0 dark:bg-primary-700">
-            <Layers className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-primary-800 dark:text-neutral-100">Corporate Entity Structure</p>
-            <p className="text-sm text-primary-700 mt-1 dark:text-neutral-200">
-              <strong className="text-cat-2">Treasury Centers</strong> provide intercompany funding.
-              <strong className="text-success-700 dark:text-success-300"> Bank Customers</strong> have direct banking relationships with external limits.
-              <strong className="text-info-700 dark:text-info-300"> IHB-enabled</strong> entities can participate in intercompany lending/borrowing.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Headline figures — Total Entities + Group Limit headroom. Lifted
           out of the operational strip so the treasurer's first read lands on

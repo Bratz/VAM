@@ -8,7 +8,7 @@ import {
   Scale, AlertTriangle, Eye, MoreVertical, Building, X,
   GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles,
 } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input , StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -3958,27 +3958,6 @@ const TreasuryHierarchyPage: React.FC = () => {
         onProgramChange={handleProgramChange}
         loading={loadingPrograms}
       />
-
-      {/* Info Banner — gradient kept for light-mode visual interest; dark-mode
-          flips to a flat muted panel so the legend text reads cleanly against
-          the navy backdrop (the original via-white created a bright sheen). */}
-      <Card
-        padding="sm"
-        className="bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 border-primary-200/60 dark:bg-none dark:bg-primary-900/50 dark:border-primary-800 animate-fade-in"
-        style={{ animationDelay: '0.15s' }}
-      >
-        <div className="flex items-start gap-3">
-          <StatusIconBadge tone="primary" icon={Layers} className="dark:bg-primary-700" />
-          <div>
-            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Group Balance Hierarchy</p>
-            <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-1">
-              <strong className="text-info-700 dark:text-info-300">Currency Mirrors (M-Nodes)</strong> aggregate same-currency balances.
-              <strong className="text-accent-700 dark:text-accent-300"> Settlement VAs</strong> collect fees.
-              <strong className="text-warning-700 dark:text-warning-300"> Exception VAs</strong> hold unmatched transactions.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Headline figures — Consolidated + Net Position. Matches the
           hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN

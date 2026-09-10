@@ -316,20 +316,6 @@ const CashConcentrationPage: React.FC = () => {
         <StatTile layout="row" tone="success" icon={<Building2 className="w-5 h-5" />} label="Linked Accounts" value={stats.totalAccounts} />
       </StatStrip>
 
-      {/* Info Banner */}
-      <Card padding="sm" className="bg-info-50/50 dark:bg-info-500/10 border-info-200/60 dark:border-info-500/30 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <div className="flex items-start gap-3 p-4">
-          <StatusIconBadge tone="info" icon={Building2} className="flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-info-800 dark:text-info-300">Automated Cash Sweeping</p>
-            <p className="text-sm text-info-700 dark:text-info-300 mt-1">
-              Cash concentration automatically transfers funds from subsidiary accounts to a central treasury account based on predefined rules.
-              Configure sweep types, thresholds, and frequencies to optimize your liquidity management.
-            </p>
-          </div>
-        </div>
-      </Card>
-
       {/* Tabs with Filter — icon + pill-count style matches Intercompany Dashboard's tab row. */}
       <div className="flex items-center justify-between border-b border-neutral-200 dark:border-primary-800 animate-fade-in" style={{ animationDelay: '0.25s' }}>
         <div className="flex gap-1">

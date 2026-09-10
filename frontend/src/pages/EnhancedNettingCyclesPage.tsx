@@ -1020,20 +1020,6 @@ const EnhancedNettingCyclesPage: React.FC = () => {
     <Page>
       {/* Title + Quick Actions migrated to Aperture Layout header. */}
 
-      {/* Info Banner */}
-      <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-start gap-3">
-          <StatusIconBadge tone="info" icon={GitMerge} className="dark:bg-info-500/20" />
-          <div>
-            <p className="text-sm font-semibold text-info-800 dark:text-info-300">Multilateral Netting Engine</p>
-            <p className="text-sm text-info-700 mt-1 dark:text-info-300">
-              Consolidate intercompany payables, receivables, POBO recharges, and IHB obligations into
-              optimized net settlement positions. Reduce payment count and settlement costs.
-            </p>
-          </div>
-        </div>
-      </Card>
-
       {/* Stats Cards */}
       <StatStrip>
         <StatTile tone="primary" icon={<GitMerge className="w-5 h-5" />} label="Total" value={stats.total} delay="0.15s" />

@@ -9,7 +9,7 @@ import {
   Building2,
   AlertCircle,
 } from 'lucide-react';
-import { Card, Button, Badge, Skeleton, StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Skeleton, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
@@ -273,20 +273,6 @@ const NotionalPoolingPage: React.FC = () => {
           </Badge>
         </div>
       )}
-
-      {/* Info Banner */}
-      <Card padding="sm" className="bg-info-50/50 dark:bg-info-500/10 border-info-100/50 dark:border-info-500/30 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <div className="flex items-start gap-3">
-          <StatusIconBadge tone="info" icon={Layers} size="sm" rounded="lg" className="flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-info-800 dark:text-info-300">Notional Balance Pooling</p>
-            <p className="text-xs text-info-600 dark:text-info-300 mt-0.5">
-              Virtually combines account balances to calculate interest on the aggregate position without physically moving funds.
-              Add multiple accounts as pool members to maximize interest benefits.
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Headline figures — Total Pooled (aggregate balance under pooling)
           alongside Total Savings (the interest benefit it earns). Treasurer's
