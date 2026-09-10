@@ -7,8 +7,7 @@ package com.bank.vam.defectfixsmoketest;
  */
 public class SmokeTestReverser {
 
-    // Deliberately wrong: returns the input unchanged instead of reversing it.
     public String reverse(String input) {
-        return input;
+        return new StringBuilder(input).reverse().toString();
     }
 }
