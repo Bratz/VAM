@@ -187,19 +187,45 @@ Escalated tickets surface as `Blocked` in Jira with full context attached.
 1. ~~Jira project key~~ — **KAN**, done.
 2. ~~Jira API token~~ — **done** (generated, will be wired as an OCI env
    var, not committed).
-3. **GitHub PAT** for the service (repo + PR scopes on `Bratz/VAM`) — code
-   is written and unit-tested, but nothing has been run end-to-end against
-   the real GitHub API yet. Needed to actually verify artifact download,
-   merge-base diffing, and PR creation live.
+3. ~~GitHub PAT~~ — **done** (generated, held by user).
 4. **Create the Sentry account/org + project(s)**, hand over DSNs — not
    started yet (separate detector, not on the critical path below).
-5. **Anthropic API key** — code is written (real tool-use loop against the
-   verified Anthropic Java SDK API surface), but never called live yet.
+5. ~~Anthropic API key~~ — **done** (generated, held by user).
 6. ~~Jira workflow statuses~~ — **done**: `In Review` and `Blocked` added to
    KAN's (team-managed) workflow, matching the exact names the code already
    uses. No code change needed.
 7. Confirm branch/PR target (`main`, presumably) and any required PR
    labels/reviewers convention.
+8. **Actual deployment to the OCI VM** — I have no SSH/remote access to
+   that VM (only this local dev machine), so this step has to be run by the
+   user. See "Deployment runbook" below.
+
+## Deployment runbook (run on the OCI VM, not here)
+
+1. SSH into the VM, `cd ~/VAM/deploy/oci`.
+2. If `.env` doesn't already have `VAM_DB_PASSWORD`, this is the same file
+   — add to it, don't replace it:
+   ```
+   cat >> .env <<'EOF'
+   JIRA_EMAIL=<your Atlassian account email>
+   JIRA_API_TOKEN=<the Jira API token>
+   GITHUB_TOKEN=<the GitHub PAT>
+   GITHUB_WEBHOOK_SECRET=<run `openssl rand -hex 32` on the VM to generate one>
+   ANTHROPIC_API_KEY=<the Anthropic API key>
+   EOF
+   ```
+   (Generate `GITHUB_WEBHOOK_SECRET` with the `openssl` command shown, on
+   the VM itself, so it never has to be typed or pasted anywhere else.)
+3. `git pull origin main` (picks up everything built so far).
+4. `sudo docker compose --profile defectfix up -d --build`
+5. `sudo docker compose logs -f defect-fix-service` — confirm it starts
+   clean (look for "Started DefectFixServiceApplication").
+6. Register the webhook: GitHub repo (`Bratz/VAM`) → **Settings → Webhooks
+   → Add webhook** — Payload URL `https://161-33-9-182.sslip.io/webhooks/github`,
+   content type `application/json`, secret = the same `GITHUB_WEBHOOK_SECRET`
+   from step 2, events = **Workflow runs** only.
+7. First real test: introduce a deliberate lint/type error on a branch, open
+   a PR, let Frontend CI fail, and confirm a Jira ticket appears in KAN.
 
 ## 10. Suggested build order (once signed off)
 
