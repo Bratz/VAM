@@ -99,6 +99,7 @@ public class CodingAgentClient {
                     .reduce("", (a, b) -> a + b);
 
             if (toolUses.isEmpty()) {
+                log.info("Agent stopped after turn {}: {}", turn + 1, oneLine(lastText, 300));
                 return new AgentRunResult(true, lastText);
             }
 
@@ -111,24 +112,43 @@ public class CodingAgentClient {
             messages.add(MessageParam.builder().role(MessageParam.Role.USER).contentOfBlockParams(results).build());
         }
 
-        log.warn("Coding agent hit the {}-turn budget without stopping naturally", agentConfig.maxTurns());
+        log.warn("Coding agent hit the {}-turn budget without stopping naturally. Last text: {}",
+                agentConfig.maxTurns(), oneLine(lastText, 300));
         return new AgentRunResult(false, lastText);
     }
 
     private String executeTool(ToolUseBlock toolUse, Path workDir) {
         JsonNode input = toolUse._input().convert(JsonNode.class);
+        log.info("  {} {}", toolUse.name(), summarizeArgs(toolUse.name(), input));
         try {
-            return switch (toolUse.name()) {
+            String result = switch (toolUse.name()) {
                 case "read_file" -> WorkspaceTools.readFile(workDir, input.path("path").asText());
                 case "write_file" -> WorkspaceTools.writeFile(workDir, input.path("path").asText(), input.path("content").asText());
                 case "list_files" -> WorkspaceTools.listFiles(workDir, input.path("path").asText("."));
                 case "run_command" -> WorkspaceTools.runCommand(workDir, input.path("command").asText());
                 default -> "Unknown tool: " + toolUse.name();
             };
+            log.debug("  -> {}", oneLine(result, 500));
+            return result;
         } catch (Exception e) {
             log.warn("Tool {} failed: {}", toolUse.name(), e.getMessage());
             return "Error: " + e.getMessage();
         }
+    }
+
+    /** Short, log-friendly summary of a tool call's arguments — the ones worth seeing at a glance, not the full payload. */
+    private String summarizeArgs(String toolName, JsonNode input) {
+        return switch (toolName) {
+            case "read_file", "list_files" -> input.path("path").asText();
+            case "write_file" -> input.path("path").asText() + " (" + input.path("content").asText().length() + " chars)";
+            case "run_command" -> oneLine(input.path("command").asText(), 200);
+            default -> input.toString();
+        };
+    }
+
+    private String oneLine(String text, int maxChars) {
+        String flattened = text.replace("\n", " \\n ").strip();
+        return flattened.length() > maxChars ? flattened.substring(0, maxChars) + "..." : flattened;
     }
 
     private List<ToolUnion> buildTools() {
