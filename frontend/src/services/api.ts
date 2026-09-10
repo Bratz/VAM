@@ -45,12 +45,20 @@ apiClient.interceptors.request.use(
       }
     }
 
-    if (!config.headers['X-Legal-Entity-Id']) {
+    // 'X-No-Entity-Scope' is an internal marker (never sent to the backend)
+    // for callers whose own UI has an explicit "all entities" selector — it
+    // stops this global fallback from silently re-scoping the request to
+    // whatever entity happens to be cached from a *different* page's picker.
+    // Without it, a caller that legitimately wants no entity filter can't
+    // distinguish "I didn't set this" from "I explicitly want none", since
+    // both look identical (header absent) by the time this interceptor runs.
+    if (!config.headers['X-Legal-Entity-Id'] && !config.headers['X-No-Entity-Scope']) {
       const entityId = localStorage.getItem('current_entity_id');
       if (entityId) {
         config.headers['X-Legal-Entity-Id'] = entityId;
       }
     }
+    delete config.headers['X-No-Entity-Scope'];
 
     return config;
   },
@@ -2934,18 +2942,30 @@ export const payablesApiPhase2 = {
     const params: Record<string, string> = {};
     if (programId) params.programId = programId;
     if (owningEntityId) params.owningEntityId = owningEntityId;
+    const headers: Record<string, string> = { 'X-Corporate-Id': corporateId };
+    // This page owns an explicit "all entities" selector — see the same
+    // marker in search() below for why this is needed, not just tidy.
+    if (owningEntityId) headers['X-Legal-Entity-Id'] = owningEntityId;
+    else headers['X-No-Entity-Scope'] = '1';
     const response = await apiClient.get<ApiResponse<PayableStatsPhase2>>('/payables/stats', {
-      headers: { 'X-Corporate-Id': corporateId },
+      headers,
       params
     });
     return extractPayableData(response.data);
   },
-  
+
   search: async (params: PayableSearchParams): Promise<PayableListResponse> => {
     const { corporateId, owningEntityId, ...queryParams } = params;
     const headers: Record<string, string> = {};
     if (corporateId) headers['X-Corporate-Id'] = corporateId;
+    // EnhancedPayablesPage has its own Entity dropdown with a real "All
+    // Entities" option; when chosen, owningEntityId is legitimately absent
+    // and must NOT be silently backfilled from whatever entity another
+    // page's picker last cached in localStorage (that stale value scoped
+    // this query to zero rows while /payables/stats, unaffected, still
+    // reported the true corporate-wide count — the bug this marker fixes).
     if (owningEntityId) headers['X-Legal-Entity-Id'] = owningEntityId;
+    else headers['X-No-Entity-Scope'] = '1';
     const response = await apiClient.get<ApiResponse<PayableListResponse>>('/payables', {
       headers,
       params: { ...queryParams, owningEntityId }
