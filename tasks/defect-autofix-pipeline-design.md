@@ -1,27 +1,50 @@
 # Automated Defect-Fix Pipeline — Design
 
-Status: **VERIFIED END-TO-END (2026-09-10).** A live smoke test (deliberate
-lint+typecheck defect on a throwaway file, PR against `main`) went all the
-way through the full loop for real: CI failure detected → Jira ticket
-(KAN-7) filed → coding agent fixed it → test gate correctly verified the
-fix → PR opened → human-reviewed and merged. The mechanism works.
+Status: **Mechanically working, but the first two "successes" (KAN-7,
+KAN-8) were false positives — root cause found and fixed 2026-09-10, not
+yet re-verified live.**
 
-Getting there took a long live-debugging pass fixing ~15 real bugs found
-only by actually running it (wrong GitHub Actions merge-commit SHA, a
-redirect the HTTP client wasn't following, two Jira API deprecations, a
-hardcoded issue type that doesn't exist on team-managed projects, a test
-gate that gated on the whole project's exit code instead of the one
-ticket's defect, absolute/inconsistent file paths between the CI runner
-and the VM worktree confusing both the gate and the coding agent, stale
-worktrees/branches left behind by interrupted attempts, and a non-force
-push rejected by an earlier attempt's leftover branch). None of these were
-guessable from the design — each needed a real run to surface. See the git
-log for `defect-fix-service/` for the full list if useful context later.
+A live smoke test got the full loop to run end to end for real: CI failure
+detected → Jira ticket filed → coding agent ran → test gate passed → PR
+merged. But investigating KAN-8 (a backend defect) surfaced that neither
+fix actually touched the reported bug. Root cause: `GitWorktreeManager`
+branched the coding agent's worktree from `origin/main` — but every defect
+this pipeline detects comes from a PR-triggered CI failure, and a PR that
+fails CI is, by definition, not merged, so the defective code only ever
+existed on the PR's own branch, never on `main`. The agent's worktree
+never contained the real buggy file; it was reconstructing something
+plausible from the ticket text alone. For KAN-7 (frontend) that happened
+to produce a genuine-looking clean file at the reported path. For KAN-8
+(backend) it produced a local shadow class inside the test file that
+trivially passed while the real (never-merged) buggy class sat untouched
+— a merged PR that looked like a fix but wasn't one.
+
+**Fixed**: the coding agent's worktree now checks out the *originating
+PR's own branch* (threaded through from the webhook payload into the
+ticket as a `SOURCE_BRANCH` marker, same pattern as `DEFECT_SIGNATURE`),
+and pushes the fix straight back onto that same branch — updating the
+existing PR in place — instead of creating a disconnected new branch and a
+second PR (which also removes the "two PRs collide on the same file"
+problem KAN-6/KAN-7 hit). The system prompt was also hardened to
+explicitly forbid weakening/replacing tests or fabricating stand-in types.
+**Not yet re-verified live** — the next smoke test needs to confirm the
+agent actually edits the real production file this time.
+
+Getting this far took a long live-debugging pass — wrong GitHub Actions
+merge-commit SHA, a redirect the HTTP client wasn't following, two Jira
+API deprecations, a hardcoded issue type that doesn't exist on
+team-managed projects, a test gate that gated on the whole project's exit
+code instead of the one ticket's defect, absolute/inconsistent file paths
+between the CI runner and the VM worktree, stale worktrees/branches left
+behind by interrupted attempts, a non-force push rejected by an earlier
+attempt's leftover branch, and now the worktree-source bug above. None of
+these were guessable from the design — each needed a real run to surface.
+See the git log for `defect-fix-service/` for the full list if useful
+context later.
 
 **Known remaining gaps, not yet exercised:**
-- Only tested on a single-file frontend lint/typecheck defect. Backend
-  (Java/Maven) defects, and defects needing multi-file changes, go through
-  the same generic mechanism but haven't been proven live yet.
+- The re-verification above still only covers single-file, single-defect
+  changes. Multi-file fixes haven't been exercised.
 - `run_command`'s shell access isn't sandboxed to the worktree the way
   `read_file`/`write_file`/`list_files` are (confirmed live: the agent
   could discover sibling worktrees this way) — the worktree/container is

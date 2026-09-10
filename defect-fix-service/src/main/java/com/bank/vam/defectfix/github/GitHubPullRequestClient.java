@@ -54,7 +54,11 @@ public class GitHubPullRequestClient {
         }
     }
 
-    private Optional<String> findExistingPullRequestUrl(String headBranch) {
+    /** Open PR for this exact head branch, if one exists — the pipeline now pushes fixes straight
+     * back onto the branch that failed CI, so this is the normal way onSuccess finds the PR to
+     * link (it already existed before the fix; the pipeline doesn't create a fresh one anymore
+     * except as a fallback if that original PR is somehow gone). */
+    public Optional<String> findExistingPullRequestUrl(String headBranch) {
         JsonNode response = restClient.get()
                 .uri("/repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=open",
                         config.owner(), config.repo(), config.owner(), headBranch)

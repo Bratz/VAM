@@ -94,14 +94,15 @@ public class TriageOrchestrator {
     private void processTicket(Issue issue) {
         log.info("Starting {}: {}", issue.key(), issue.summary());
         Stack stack = "stack-backend".equals(issue.stackLabel()) ? Stack.BACKEND : Stack.FRONTEND;
-        String branch = "fix/" + issue.key().toLowerCase() + "-" + slug(issue.summary());
         String taskBrief = "Fix the following defect in vam-portal:\n\n" + issue.summary() + "\n\n" + issue.description();
 
         try {
-            // Throws (caught below, escalating with a clear message instead of getting stuck
-            // retrying the same ticket forever) for any ticket filed before this signature-
-            // tracking fix landed — there's nothing to safely gate on for those.
-            DefectSignature targetDefect = extractSignature(issue.description());
+            // Both throw (caught below, escalating with a clear message instead of getting stuck
+            // retrying the same ticket forever) for any ticket filed before signature/branch
+            // tracking was added — there's nothing to safely act on for those.
+            DefectSignature targetDefect = extractMarker(issue.description(), SIGNATURE_MARKER, DefectSignature::parse);
+            String branch = extractMarker(issue.description(), SOURCE_BRANCH_MARKER, s -> s);
+
             jiraClient.transitionTo(issue.key(), "In Progress");
             worktreeManager.ensureBaseRepoReady();
             Path workDir = worktreeManager.createWorktree(branch);
@@ -119,7 +120,7 @@ public class TriageOrchestrator {
                 }
                 log.info("{} attempt {} failed the test gate", issue.key(), attempt + 1);
             }
-            onExhausted(issue, workDir, branch, lastResult);
+            onExhausted(issue, workDir, lastResult);
         } catch (Exception e) {
             log.error("Unexpected failure processing {}", issue.key(), e);
             jiraClient.addComment(issue.key(), "Pipeline error while processing this ticket: " + e.getMessage());
@@ -131,20 +132,24 @@ public class TriageOrchestrator {
     private void onSuccess(Issue issue, Path workDir, String branch) throws Exception {
         boolean pushed = worktreeManager.commitAndPush(workDir, branch, "Fix " + issue.key() + ": " + issue.summary());
         if (!pushed) {
-            jiraClient.addComment(issue.key(), "Test gate passed but the coding agent made no file changes — nothing to open a PR for. Needs human review.");
+            jiraClient.addComment(issue.key(), "Test gate passed but the coding agent made no file changes — nothing to push. Needs human review.");
             jiraClient.addLabel(issue.key(), "needs-human");
             safeTransition(issue.key(), "Blocked");
             return;
         }
-        String prUrl = pullRequestClient.createPullRequest(branch, "main",
-                "Fix " + issue.key() + ": " + issue.summary(),
-                "Resolves " + issue.key() + ".\n\n" + issue.summary());
-        jiraClient.addComment(issue.key(), "Fix verified and PR opened: " + prUrl);
+        // The fix was pushed straight back onto the PR's own branch (see createWorktree), so its
+        // existing open PR is the one to link — not a new one. Falls back to creating a fresh PR
+        // only if that original one is somehow gone (closed/branch deleted) by the time this runs.
+        String prUrl = pullRequestClient.findExistingPullRequestUrl(branch)
+                .orElseGet(() -> pullRequestClient.createPullRequest(branch, "main",
+                        "Fix " + issue.key() + ": " + issue.summary(),
+                        "Resolves " + issue.key() + ".\n\n" + issue.summary()));
+        jiraClient.addComment(issue.key(), "Fix verified and pushed: " + prUrl);
         jiraClient.transitionTo(issue.key(), "In Review");
-        worktreeManager.removeWorktree(workDir, branch);
+        worktreeManager.removeWorktree(workDir);
     }
 
-    private void onExhausted(Issue issue, Path workDir, String branch, GateResult lastResult) {
+    private void onExhausted(Issue issue, Path workDir, GateResult lastResult) {
         jiraClient.addComment(issue.key(), "Exhausted " + (maxRetries + 1) + " attempt(s). Last test gate output:\n" + lastResult.output());
         jiraClient.addLabel(issue.key(), "needs-human");
         safeTransition(issue.key(), "Blocked");
@@ -162,20 +167,16 @@ public class TriageOrchestrator {
     }
 
     private static final String SIGNATURE_MARKER = "DEFECT_SIGNATURE: ";
+    private static final String SOURCE_BRANCH_MARKER = "SOURCE_BRANCH: ";
 
-    /** Pulls the "source|key" line JiraTicketService embeds in every ticket it files back out. */
-    private DefectSignature extractSignature(String description) {
+    /** Pulls a "MARKER: value" line JiraTicketService embeds in every ticket it files back out. */
+    private <T> T extractMarker(String description, String marker, java.util.function.Function<String, T> parse) {
         for (String line : description.split("\\R")) {
-            if (line.startsWith(SIGNATURE_MARKER)) {
-                return DefectSignature.parse(line.substring(SIGNATURE_MARKER.length()).strip());
+            if (line.startsWith(marker)) {
+                return parse.apply(line.substring(marker.length()).strip());
             }
         }
-        throw new IllegalStateException("No " + SIGNATURE_MARKER.strip() + " line in this ticket's description "
-                + "— likely filed before signature tracking was added");
-    }
-
-    private String slug(String text) {
-        String slug = text.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
-        return slug.length() > 40 ? slug.substring(0, 40) : slug;
+        throw new IllegalStateException("No \"" + marker.strip() + "\" line in this ticket's description "
+                + "— likely filed before that tracking was added");
     }
 }

@@ -40,10 +40,10 @@ class DefectDetectionServiceTest {
         when(artifactClient.findArtifactId("frontend-checks-merge1")).thenReturn(Optional.of(2L));
         when(artifactClient.downloadAndUnzip(2L)).thenReturn(Map.of("eslint.json", baselineEslint));
 
-        service.handleFailedPrRun(DefectDetectionService.Stack.FRONTEND, "base1", "head1", 42);
+        service.handleFailedPrRun(DefectDetectionService.Stack.FRONTEND, "base1", "head1", "some-branch", 42);
 
         ArgumentCaptor<DetectedDefect> filed = ArgumentCaptor.forClass(DetectedDefect.class);
-        verify(ticketService, times(1)).fileIfNew(filed.capture(), eq(42));
+        verify(ticketService, times(1)).fileIfNew(filed.capture(), eq(42), eq("some-branch"));
         assertThat(filed.getValue().signature().key()).isEqualTo("ruleB:a.tsx");
     }
 
@@ -58,8 +58,8 @@ class DefectDetectionServiceTest {
         when(artifactClient.findMergeBaseSha("base1", "head1")).thenReturn("merge1");
         when(artifactClient.findArtifactId("frontend-checks-merge1")).thenReturn(Optional.empty());
 
-        service.handleFailedPrRun(DefectDetectionService.Stack.FRONTEND, "base1", "head1", 7);
+        service.handleFailedPrRun(DefectDetectionService.Stack.FRONTEND, "base1", "head1", "some-branch", 7);
 
-        verify(ticketService, times(1)).fileIfNew(any(), eq(7));
+        verify(ticketService, times(1)).fileIfNew(any(), eq(7), eq("some-branch"));
     }
 }

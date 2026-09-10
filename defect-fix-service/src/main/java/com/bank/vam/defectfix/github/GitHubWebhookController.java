@@ -24,6 +24,16 @@ public class GitHubWebhookController {
 
     private static final Logger log = LoggerFactory.getLogger(GitHubWebhookController.class);
 
+    // Matches the git identity the coding agent commits under (see defect-fix-service/Dockerfile's
+    // `git config --system user.email`). Loop-prevention guard: the bot pushes its fix straight
+    // back onto the PR branch, which re-triggers pull_request CI, which re-fires this webhook.
+    // Dedup (JiraClient.existsWithLabel) stops the SAME defect being re-ticketed, but if a fix
+    // ever incidentally introduces a different new warning, that's a genuinely new signature and
+    // dedup wouldn't catch it — every CI-autofix reference implementation checked (Claude Code's
+    // own GitHub Actions guide, OpenAI's Codex autofix cookbook) calls this out as a required
+    // guard, not an edge case.
+    private static final String BOT_COMMIT_EMAIL = "defect-fix-bot@vam-portal.local";
+
     private final PipelineProperties.GitHub config;
     private final DefectDetectionService detectionService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -62,6 +72,10 @@ public class GitHubWebhookController {
         if (!"pull_request".equals(run.path("event").asText())) {
             return ResponseEntity.ok("ignored: not PR-triggered (push runs only seed baseline artifacts)");
         }
+        String commitAuthorEmail = run.path("head_commit").path("author").path("email").asText();
+        if (BOT_COMMIT_EMAIL.equals(commitAuthorEmail)) {
+            return ResponseEntity.ok("ignored: bot's own commit (loop-prevention guard)");
+        }
 
         Stack stack = switch (run.path("name").asText()) {
             case "Frontend CI" -> Stack.FRONTEND;
@@ -83,10 +97,11 @@ public class GitHubWebhookController {
 
         String baseSha = pr.path("base").path("sha").asText();
         String headSha = run.path("head_sha").asText();
+        String headBranch = run.path("head_branch").asText();
         int prNumber = pr.path("number").asInt();
 
         try {
-            detectionService.handleFailedPrRun(stack, baseSha, headSha, prNumber);
+            detectionService.handleFailedPrRun(stack, baseSha, headSha, headBranch, prNumber);
         } catch (Exception e) {
             log.error("Failed to process workflow_run for PR #{}", prNumber, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("processing failed");
