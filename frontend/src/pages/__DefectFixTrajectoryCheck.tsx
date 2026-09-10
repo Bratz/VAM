@@ -4,6 +4,5 @@
 import React from 'react';
 
 export const DefectFixTrajectoryCheck: React.FC = () => {
-  const unusedGreeting = 'this triggers no-unused-vars';
   return <div>trajectory check</div>;
 };
