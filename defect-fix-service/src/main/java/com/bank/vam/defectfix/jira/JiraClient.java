@@ -146,7 +146,18 @@ public class JiraClient {
         return Optional.of(new Issue(key, summary, description, stackLabel));
     }
 
+    /** No-op if the issue is already in targetStatusName — e.g. a redelivered GitHub webhook
+     * re-transitioning an already-Done ticket, which would otherwise throw (there's usually no
+     * Done -> Done transition to find). Makes every caller idempotent, not just the merge path. */
     public void transitionTo(String issueKey, String targetStatusName) {
+        String currentStatus = restClient.get()
+                .uri("/issue/{key}?fields=status", issueKey)
+                .retrieve()
+                .body(JsonNode.class)
+                .path("fields").path("status").path("name").asText();
+        if (targetStatusName.equalsIgnoreCase(currentStatus)) {
+            return;
+        }
         JsonNode transitions = restClient.get()
                 .uri("/issue/{key}/transitions", issueKey)
                 .retrieve()
