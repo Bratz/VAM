@@ -129,6 +129,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
+        // This @RestControllerAdvice handles the exception, so Spring MVC never reaches Sentry's
+        // own automatic resolver (it only sees exceptions that stay unhandled) — forward explicitly
+        // for every genuinely unexpected error. The other handlers above are normal, expected
+        // control flow (404s, validation, business rules), not defects, so they're deliberately
+        // NOT forwarded — that would flood Sentry with noise instead of real production errors.
+        io.sentry.Sentry.captureException(ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("An unexpected error occurred", "INTERNAL_ERROR"));
     }
