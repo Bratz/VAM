@@ -11,6 +11,8 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
+import { EntityHierarchyTreemap } from '../components/dashboard/EntityHierarchyTreemap';
+import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
 import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
 import { PositionStrip } from '../components/PositionStrip';
@@ -689,6 +691,52 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 </table>
               </div>
             )}
+          </div>
+
+          {/* Row 1.5 — Entity hierarchy treemap + geographic exposure map.
+              Geo intentionally scoped to the single dominant currency
+              (model.topCcy/bankShares, the same FX-honest scope the
+              Sweeps & pooling composition bar already uses below) — summing
+              bank balances across countries that hold different currencies
+              would be exactly the synthetic cross-currency total this page
+              elsewhere refuses to fabricate. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            <Card padding="none" className="overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+                <p className="section-title">Entity positions</p>
+              </div>
+              <div className="p-4">
+                <EntityHierarchyTreemap
+                  corporateId={selectedCorporateId || undefined}
+                  categoricalColors={chartChrome.categorical}
+                  tooltipBg={chartChrome.tooltipBg}
+                  tooltipText={chartChrome.tooltipText}
+                  tooltipShadow={chartChrome.tooltipShadow}
+                  currency={model?.topCcy?.code}
+                />
+              </div>
+            </Card>
+            <Card padding="none" className="overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+                <p className="section-title">
+                  Geographic exposure
+                  {model?.topCcy && <span className="label ml-2 font-normal">· {model.topCcy.code} (largest balance)</span>}
+                </p>
+              </div>
+              <div className="p-4">
+                {model?.bankShares && model.bankShares.length > 0 ? (
+                  <GeoExposureMap
+                    bankShares={model.bankShares}
+                    currency={model.topCcy!.code}
+                    tooltipBg={chartChrome.tooltipBg}
+                    tooltipText={chartChrome.tooltipText}
+                    tooltipShadow={chartChrome.tooltipShadow}
+                  />
+                ) : (
+                  <p className="body-sm py-6 text-center">No shadow balances available for this scope.</p>
+                )}
+              </div>
+            </Card>
           </div>
 
           {/* Row 2 — Payments workspace + Sweeps & pooling. items-start: grid's
