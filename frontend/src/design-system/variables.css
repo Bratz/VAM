@@ -208,18 +208,16 @@
    * prior mono stack, gains a slashed zero and distinct 1/l/I. */
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Numeric display — stat values, amounts at hero scale, AND now every
-   * currency figure (task 7' — Newsreader replaces Fraunces here too, not
-   * just on titles). Font-family name is 'Newsreader Variable' — that's
-   * the family @fontsource-variable/newsreader actually registers, NOT
-   * plain 'Newsreader'; using the literal spec string here would silently
-   * fail to match and fall through to Georgia. Weight 600 for hero scale,
-   * .figure utility adds tabular-nums lining-nums. */
-  --font-numeric: 'Newsreader Variable', Georgia, ui-serif, serif;
+  /* Numeric display — stat values, amounts at hero scale, and every
+   * currency figure. Switched from Newsreader Variable to Geist (same
+   * interface sans used everywhere else) — titles/figures no longer carry
+   * a separate serif identity. .figure utility still adds tabular-nums
+   * lining-nums on top of this. */
+  --font-numeric: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Brand-moment serif — page titles. Newsreader (was Fraunces), same
-   * family/name caveat as --font-numeric above. */
-  --font-title: 'Newsreader Variable', Georgia, ui-serif, serif;
+  /* Page titles — switched from Newsreader Variable to Geist, same as
+   * --font-numeric above. */
+  --font-title: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* `--font-display` alias retired in Phase 12 Tier 3 (2026-06-12) — all
    * references migrated to `--font-numeric` directly. */
