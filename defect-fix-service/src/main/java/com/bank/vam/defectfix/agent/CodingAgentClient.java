@@ -45,6 +45,13 @@ public class CodingAgentClient {
             unrelated code. When you believe the fix is complete, stop calling tools and
             reply with a short summary of what you changed instead.
 
+            Before writing new code, check whether the codebase already has a helper,
+            pattern, or import that does what you need, and reuse it. Do not add a new
+            dependency, a new abstraction (interface, config option, factory) for this
+            one fix, or defensive handling for an input or state that cannot occur here.
+            Do not write new tests — the existing test suite is the only gate this fix
+            is judged against.
+
             If the defect is a failing test: fix the PRODUCTION code the test is
             exercising, not the test itself. Do not weaken, delete, or rewrite
             assertions, and do not define a new type/stub that merely makes the test
