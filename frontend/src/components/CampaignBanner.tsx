@@ -49,11 +49,16 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
 
   if (variant === 'quiet') {
     return (
+      // Hairline, not a card: no rounded corners, no full border box, no
+      // tinted fill — a bottom rule only, matching the same
+      // border-b border-neutral-200 treatment the dashboard's own currency
+      // breakdown and accounts table use just below this. The earlier
+      // bordered/tinted box read as a separate "card" competing with that
+      // hairline system rather than belonging to it.
       <div
         className={cn(
           'flex flex-col lg:flex-row lg:items-center lg:min-h-11 gap-2 lg:gap-3',
-          'rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 lg:py-0',
-          'dark:border-primary-700 dark:bg-primary-800/40'
+          'border-b border-neutral-200 dark:border-primary-800 pb-2 lg:pb-0'
         )}
       >
         <div className="flex items-center gap-2 flex-wrap min-w-0">

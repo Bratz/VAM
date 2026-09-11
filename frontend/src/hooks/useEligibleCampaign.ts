@@ -22,7 +22,7 @@ const CAMPAIGNS: Campaign[] = [
     body: 'Corporates running 3+ EUR accounts typically consolidate 15–20% of idle float this way — no cash movement required.',
     ctaLabel: 'See pooling options',
     ctaHref: '/notional-pooling',
-    variant: 'primary',
+    variant: 'quiet',
     dismissible: true,
     expiresAt: '2026-12-31T00:00:00Z',
   },
