@@ -2,19 +2,22 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   RefreshCw, ArrowRight, Plus, Clock, AlertTriangle,
   ArrowLeftRight, FileDown, Repeat, Building2, Wallet, Sparkles,
+  ChevronDown, ChevronRight,
 } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
-import { cn, formatCurrency } from '../utils';
+import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
 import { PositionStrip } from '../components/PositionStrip';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { useEligibleCampaign } from '../hooks/useEligibleCampaign';
 import { CampaignBanner } from '../components/CampaignBanner';
+import { useTheme } from '../design-system/ThemeProvider';
 import {
   multiBankLiquidityApi,
   MultiBankLiquiditySummary,
@@ -91,6 +94,30 @@ const CREDIT_MOVES = new Set<string>([
   'SETTLEMENT_CREDIT', 'EXCEPTION_CREDIT', 'EXCEPTION_RELEASE', 'ROBO_CREDIT', 'POOL_CREDIT',
 ]);
 
+// Categorical chart palette — six semantic families (not the flat cat-1..8
+// tokens: those include primary-800/950-based tones — banner-slate/nav-deep
+// — that are near-indistinguishable from this app's dark-mode backgrounds
+// when used as a bar fill; confirmed live, a GBP bar in that color was
+// effectively invisible in dark mode). Same light/dark-per-hue pattern as
+// ForecastingPage.tsx's useChartColors: a deep "700" shade on light
+// backgrounds, a bright "400" shade on dark ones, per family.
+const CHART_CATEGORICAL_LIGHT = ['#146b80', '#276a54', '#8a5f14', '#a8443c', '#1d4ed8', '#5d6165'];
+const CHART_CATEGORICAL_DARK = ['#81bccb', '#7da698', '#b99f72', '#cb8f8a', '#60a5fa', '#b5b6b7'];
+
+// Chart chrome (grid/axis/tooltip) does need to flip with the theme, same
+// pattern as ForecastingPage.tsx's useChartColors.
+function useChartChrome() {
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+  return useMemo(() => ({
+    tickFill: isDark ? '#b5b6b7' : '#5d6165', // primary-300 / neutral-500
+    tooltipBg: isDark ? '#343638' : '#ffffff', // neutral-800
+    tooltipText: isDark ? '#f2f2f3' : '#46494c', // neutral-50 / primary-900
+    tooltipShadow: '0 4px 12px rgba(70,73,76,0.15)',
+    categorical: isDark ? CHART_CATEGORICAL_DARK : CHART_CATEGORICAL_LIGHT,
+  }), [isDark]);
+}
+
 type AcctView = 'currency' | 'bank';
 
 interface CcyBucket {
@@ -117,6 +144,7 @@ const fmtDay = (d: Date) =>
   `${d.toLocaleDateString('en-US', { weekday: 'short' })} · ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 
 const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ onNavigate }) => {
+  const chartChrome = useChartChrome();
   const [summary, setSummary] = useState<MultiBankLiquiditySummary | null>(null);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
   const [txns, setTxns] = useState<Transaction[]>([]);
@@ -128,6 +156,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
   const [view, setView] = useState<AcctView>('currency');
+  // Accounts table groups collapse to just their header/subtotal by default
+  // (see the Accounts table render below) — this tracks which group keys
+  // have been expanded to show their individual account rows.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { open: openCopilot } = useCopilot();
@@ -498,26 +530,59 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             </div>
 
             {model && model.currencies.length > 0 ? (
-              <div className="divide-y divide-neutral-200 dark:divide-primary-800">
-                {model.currencies.map((c) => {
-                  const homePct = c.effective > 0 ? Math.round((c.home / c.effective) * 100) : 0;
-                  return (
-                    <div key={c.code} className="flex items-center gap-4 py-2">
-                      <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 w-12 shrink-0">{c.code}</span>
-                      <Amount value={c.effective} currency={c.code} showCurrency={false} className="text-[20px] font-semibold text-primary-900 dark:text-neutral-50 w-40 shrink-0 text-right tabular-nums" />
-                      {/* neutral-100 (#f2f2f3) is nearly the same tone as the
-                          page background this sits on, so at 0% fill (5 of
-                          6 currencies here have no home-bank balance) the
-                          track read as "not rendered" rather than "correctly
-                          showing zero". neutral-200 gives the empty track a
-                          visible rail regardless of fill amount. */}
-                      <div className="flex-1 h-[3px] bg-neutral-200 dark:bg-primary-800/60 rounded-full overflow-hidden" title={`${homePct}% home bank`}>
-                        <div className="h-full bg-accent-500" style={{ width: `${homePct}%` }} />
-                      </div>
-                      <span className="caption w-40 text-right shrink-0">{homePct}% home · {100 - homePct}% external</span>
-                    </div>
-                  );
-                })}
+              // Real chart, not a text list — bar length is proportional to
+              // size so "USD dwarfs SGD" reads instantly; the home/external
+              // split each row used to show inline moves to the tooltip
+              // (still there, just on demand rather than always-on).
+              <div style={{ height: Math.max(model.currencies.length * 32, 80) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={model.currencies}
+                    layout="vertical"
+                    margin={{ top: 4, right: 56, bottom: 4, left: 4 }}
+                  >
+                    <XAxis type="number" hide />
+                    <YAxis
+                      type="category"
+                      dataKey="code"
+                      width={44}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 12, fill: chartChrome.tickFill, fontFamily: 'var(--font-mono)' }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: chartChrome.tickFill, opacity: 0.06 }}
+                      contentStyle={{
+                        backgroundColor: chartChrome.tooltipBg,
+                        border: 'none',
+                        borderRadius: '12px',
+                        boxShadow: chartChrome.tooltipShadow,
+                        padding: '10px 14px',
+                        color: chartChrome.tooltipText,
+                      }}
+                      labelStyle={{ color: chartChrome.tooltipText, fontWeight: 600 }}
+                      formatter={(_value: number, _name: string, item: any) => {
+                        const c = item.payload as CcyBucket;
+                        const homePct = c.effective > 0 ? Math.round((c.home / c.effective) * 100) : 0;
+                        return [
+                          `${formatCurrency(c.effective, c.code)} — ${homePct}% home · ${100 - homePct}% external`,
+                          'Balance',
+                        ] as [string, string];
+                      }}
+                    />
+                    <Bar dataKey="effective" radius={[0, 4, 4, 0]} barSize={18} isAnimationActive={false}>
+                      {model.currencies.map((c, i) => (
+                        <Cell key={c.code} fill={chartChrome.categorical[i % chartChrome.categorical.length]} />
+                      ))}
+                      <LabelList
+                        dataKey="effective"
+                        position="right"
+                        formatter={(v: number) => formatAmountForTile(v).replace(/^\S+\s/, '')}
+                        style={{ fontSize: 12, fill: chartChrome.tickFill }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             ) : (
               <p className="body-sm">No shadow balances available for this scope.</p>
@@ -559,16 +624,30 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 dark:divide-primary-800/60">
-                    {groups.map((g) => (
+                    {groups.map((g) => {
+                      const isExpanded = expandedGroups.has(g.key);
+                      return (
                       <React.Fragment key={g.key}>
-                        <tr>
+                        <tr
+                          className="cursor-pointer hover:bg-neutral-50/50 dark:hover:bg-primary-800/30"
+                          onClick={() => setExpandedGroups((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(g.key)) next.delete(g.key); else next.add(g.key);
+                            return next;
+                          })}
+                        >
                           <td colSpan={7} className="px-3 py-[9px]">
-                            <span className="label">{g.label}</span>
+                            <span className="inline-flex items-center gap-1.5">
+                              {isExpanded
+                                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />}
+                              <span className="label">{g.label}</span>
+                            </span>
                             <span className="caption ml-2">{g.meta}</span>
                             <span className="float-right stat-value-xs text-primary-900 dark:text-neutral-50">{g.subtitle}</span>
                           </td>
                         </tr>
-                        {g.rows.map((s) => (
+                        {isExpanded && g.rows.map((s) => (
                           <tr key={s.vaId} className="hover:bg-neutral-50/50 dark:hover:bg-primary-800/30">
                             <td className="px-3 py-[9px]">
                               <div className="text-primary-900 dark:text-neutral-50">{s.vaName}</div>
@@ -604,15 +683,19 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           </tr>
                         ))}
                       </React.Fragment>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
           </div>
 
-          {/* Row 2 — Payments workspace + Sweeps & pooling */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4">
+          {/* Row 2 — Payments workspace + Sweeps & pooling. items-start: grid's
+              default stretch was forcing the shorter card (Payments, often
+              just 1-2 real items) up to match the taller one (Sweeps, a bar
+              chart + up to 6 rows), leaving a large dead-space gap inside it. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 items-start">
 
             {/* Payments — Awaiting approval is REAL; other states are nav-only */}
             <Card padding="none" className="overflow-hidden">
