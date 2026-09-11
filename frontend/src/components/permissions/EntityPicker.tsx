@@ -63,11 +63,18 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
       )}
 
       {showEntity && (
-        <div className="relative">
+        // max-w + truncate: entity names run long ("MNC-UAE-ABUDHABI - MNC
+        // Abu Dhabi Branch"), and with no width cap a native <select> sizes
+        // itself to its widest option — up to 369px measured live, the
+        // single biggest consumer of the sticky header's row width and a
+        // major contributor to header elements overflowing/overlapping at
+        // 1440px. The dropdown's own open options list still shows full
+        // text; only the closed-state display truncates.
+        <div className="relative max-w-[180px]">
           <select
             value={currentEntityId || ''}
             onChange={(e) => switchEntity(e.target.value)}
-            className={`appearance-none bg-white border border-neutral-300 rounded-lg pr-8 pl-3 ${
+            className={`w-full truncate appearance-none bg-white border border-neutral-300 rounded-lg pr-8 pl-3 ${
               compact ? 'py-1 text-sm' : 'py-2'
             } focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-primary-900 dark:border-primary-700`}
           >
