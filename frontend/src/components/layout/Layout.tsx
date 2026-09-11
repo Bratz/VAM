@@ -426,13 +426,21 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             {registeredDescription && <HeaderHelpPopover description={registeredDescription} />}
           </div>
 
-          {/* Search - Desktop. min-w-0 + w-full (not a fixed w-80) so this
-              whole chain can actually shrink when page-registered header
-              actions (e.g. Dashboard's "Refresh all"/"New payment", only
-              present once a corporate is selected) claim more of the row —
-              a fixed-width input can't shrink and was overflowing past its
-              squeezed flex box straight on top of those buttons instead. */}
-          <div className="hidden lg:flex items-center ml-4 min-w-0 flex-shrink">
+          {/* Search - Desktop. min-w-0 + w-full (not a fixed w-80) lets this
+              chain shrink instead of overflowing when page-registered header
+              actions (e.g. Dashboard's "Refresh all"/"New payment") claim
+              more of the row — but shrinking alone still isn't enough: even
+              at its 140px floor, the row's total content (title + search +
+              actions + entity picker + icons) can outweigh the available
+              width below ~1350px, which measured as a real, reproducible
+              overlap at 1280px (a common laptop viewport), not just a rare
+              edge case. Rather than let it collide again at some other
+              width, hide search outright once actions are registered and
+              raise its own breakpoint to 2xl — a hidden search is a much
+              smaller loss (the sidebar's own "Search menu..." still covers
+              it) than an intermittently overlapping header. Pages with no
+              header actions keep the original lg breakpoint, unaffected. */}
+          <div className={cn('hidden items-center ml-4 min-w-0 flex-shrink', pageActions ? '2xl:flex' : 'lg:flex')}>
             <div className="relative min-w-0 w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
