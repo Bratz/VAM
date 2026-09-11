@@ -426,15 +426,20 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             {registeredDescription && <HeaderHelpPopover description={registeredDescription} />}
           </div>
 
-          {/* Search - Desktop */}
-          <div className="hidden lg:flex items-center ml-4">
-            <div className="relative">
+          {/* Search - Desktop. min-w-0 + w-full (not a fixed w-80) so this
+              whole chain can actually shrink when page-registered header
+              actions (e.g. Dashboard's "Refresh all"/"New payment", only
+              present once a corporate is selected) claim more of the row —
+              a fixed-width input can't shrink and was overflowing past its
+              squeezed flex box straight on top of those buttons instead. */}
+          <div className="hidden lg:flex items-center ml-4 min-w-0 flex-shrink">
+            <div className="relative min-w-0 w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search accounts, transactions..."
                 className={cn(
-                  'w-80 h-10 pl-10 pr-12 rounded-xl border border-neutral-200 dark:border-primary-800',
+                  'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-xl border border-neutral-200 dark:border-primary-800',
                   'bg-neutral-50/80 text-sm placeholder:text-neutral-400',
                   'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                   'transition-all duration-200'
