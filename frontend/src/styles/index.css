@@ -1474,7 +1474,7 @@
    in. Light + dark variants. */
 
 .copilot-prose h3 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-title, 'Newsreader Variable', serif);
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
