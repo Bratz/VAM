@@ -387,6 +387,23 @@ dev environment). Live-verified on the OCI VM since, in order:
   in a follow-up commit. KAN-9 (PR #8) and KAN-10 (PR #9) are still open,
   unmerged — pending the same close-without-merge-and-delete-branch
   treatment.
+- **The loop-prevention guard used to blindly ignore every CI failure on the
+  bot's own commits** — including a genuinely new defect the fix itself
+  introduced, which dedup (`existsWithLabel`) can't catch since it's a
+  different signature. Fixed: `GitHubWebhookController` now always
+  processes the failure, but computes a `chainDepth` via
+  `GitHubPullRequestClient.countTrailingBotCommits` — how many consecutive
+  bot-authored commits sit at this PR's HEAD with no human commit since (0
+  if HEAD isn't a bot commit at all). `JiraTicketService.fileIfNew` files
+  the ticket as normal below `MAX_CHAIN_DEPTH` (currently 3, hardcoded, not
+  yet config), but at/above it escalates straight to `Blocked` +
+  `needs-human` instead of leaving it in `To Do` for automatic pickup — the
+  chain of "bot fixes X, which trips Y, which the bot 'fixes' into Z..."
+  gets capped rather than looping (or worse, silently merging a stack of
+  bot-introduced regressions). A human pushing any commit resets the count
+  to 0. Not yet live-verified (needs a real chained-regression scenario to
+  test against; the smoke tests so far have all been single, isolated
+  defects that didn't chain).
 - **Nobody was closing tickets to `Done`** — a real gap found after the
   fact: `TriageOrchestrator` only ever transitions a ticket through
   `In Progress`/`In Review`/`Blocked`, never `Done`, and the webhook

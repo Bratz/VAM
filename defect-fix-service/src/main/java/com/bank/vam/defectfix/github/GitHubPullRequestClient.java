@@ -100,4 +100,27 @@ public class GitHubPullRequestClient {
                 .retrieve()
                 .toBodilessEntity();
     }
+
+    /**
+     * How many commits, walking back from this PR's current HEAD, were authored by botEmail with
+     * no human commit in between. 0 if HEAD itself isn't a bot commit. Used to cap a chain of
+     * automated fixes that keep tripping new defects in each other, rather than looping forever —
+     * see GitHubWebhookController's loop-prevention guard.
+     */
+    public int countTrailingBotCommits(int prNumber, String botEmail) {
+        JsonNode commits = restClient.get()
+                .uri("/repos/{owner}/{repo}/pulls/{number}/commits?per_page=100",
+                        config.owner(), config.repo(), prNumber)
+                .retrieve()
+                .body(JsonNode.class);
+        int count = 0;
+        for (int i = commits.size() - 1; i >= 0; i--) {
+            String authorEmail = commits.get(i).path("commit").path("author").path("email").asText();
+            if (!botEmail.equals(authorEmail)) {
+                break;
+            }
+            count++;
+        }
+        return count;
+    }
 }

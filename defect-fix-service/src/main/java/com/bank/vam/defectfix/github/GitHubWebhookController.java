@@ -28,26 +28,27 @@ public class GitHubWebhookController {
     private static final Logger log = LoggerFactory.getLogger(GitHubWebhookController.class);
 
     // Matches the git identity the coding agent commits under (see defect-fix-service/Dockerfile's
-    // `git config --system user.email`). Loop-prevention guard: the bot pushes its fix straight
-    // back onto the PR branch, which re-triggers pull_request CI, which re-fires this webhook.
-    // Dedup (JiraClient.existsWithLabel) stops the SAME defect being re-ticketed, but if a fix
-    // ever incidentally introduces a different new warning, that's a genuinely new signature and
-    // dedup wouldn't catch it — every CI-autofix reference implementation checked (Claude Code's
-    // own GitHub Actions guide, OpenAI's Codex autofix cookbook) calls this out as a required
-    // guard, not an edge case.
+    // `git config --system user.email`). The bot pushes its fix straight back onto the PR branch,
+    // which re-triggers pull_request CI, which re-fires this webhook. Dedup (JiraClient
+    // .existsWithLabel) already stops the SAME defect being re-ticketed on its own (the fixed
+    // signature no longer appears at HEAD). What's NOT safe to ignore is a fix incidentally
+    // introducing a genuinely NEW defect — a different signature dedup has never seen — so this
+    // is no longer a blanket "ignore the bot's commits" guard; see chainDepth below.
     private static final String BOT_COMMIT_EMAIL = "defect-fix-bot@vam-portal.local";
 
     private final PipelineProperties.GitHub config;
     private final DefectDetectionService detectionService;
     private final JiraClient jiraClient;
+    private final GitHubPullRequestClient pullRequestClient;
     private final Pattern issueKeyPattern;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GitHubWebhookController(PipelineProperties properties, DefectDetectionService detectionService,
-                                    JiraClient jiraClient) {
+                                    JiraClient jiraClient, GitHubPullRequestClient pullRequestClient) {
         this.config = properties.github();
         this.detectionService = detectionService;
         this.jiraClient = jiraClient;
+        this.pullRequestClient = pullRequestClient;
         this.issueKeyPattern = Pattern.compile("\\b" + Pattern.quote(properties.jira().projectKey()) + "-\\d+\\b");
     }
 
@@ -84,11 +85,6 @@ public class GitHubWebhookController {
         if (!"pull_request".equals(run.path("event").asText())) {
             return ResponseEntity.ok("ignored: not PR-triggered (push runs only seed baseline artifacts)");
         }
-        String commitAuthorEmail = run.path("head_commit").path("author").path("email").asText();
-        if (BOT_COMMIT_EMAIL.equals(commitAuthorEmail)) {
-            return ResponseEntity.ok("ignored: bot's own commit (loop-prevention guard)");
-        }
-
         Stack stack = switch (run.path("name").asText()) {
             case "Frontend CI" -> Stack.FRONTEND;
             case "Backend CI" -> Stack.BACKEND;
@@ -112,8 +108,18 @@ public class GitHubWebhookController {
         String headBranch = run.path("head_branch").asText();
         int prNumber = pr.path("number").asInt();
 
+        // 0 unless HEAD is itself a bot commit — a human pushing anything resets this to 0, since
+        // countTrailingBotCommits only counts an unbroken run of bot commits back from HEAD.
+        String commitAuthorEmail = run.path("head_commit").path("author").path("email").asText();
+        int chainDepth = BOT_COMMIT_EMAIL.equals(commitAuthorEmail)
+                ? pullRequestClient.countTrailingBotCommits(prNumber, BOT_COMMIT_EMAIL)
+                : 0;
+        if (chainDepth > 0) {
+            log.info("PR #{} HEAD is a bot commit — {} consecutive bot commit(s) with no human commit since", prNumber, chainDepth);
+        }
+
         try {
-            detectionService.handleFailedPrRun(stack, baseSha, headSha, headBranch, prNumber);
+            detectionService.handleFailedPrRun(stack, baseSha, headSha, headBranch, prNumber, chainDepth);
         } catch (Exception e) {
             log.error("Failed to process workflow_run for PR #{}", prNumber, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("processing failed");
