@@ -414,8 +414,23 @@ dev environment). Live-verified on the OCI VM since, in order:
   common reused-existing-PR path, which never set a body otherwise), and a
   new `pull_request` handler in `GitHubWebhookController` reads that footer
   back out on `action=closed, merged=true` and transitions the ticket to
-  `Done` — no Jira search needed. **Requires re-registering the GitHub
-  webhook** to also send "Pull requests" events, not just "Workflow runs"
-  (see the deployment runbook above) — not yet done on the OCI VM as of
-  this writing. Not yet live-verified end-to-end (needs a real PR merge
-  after that webhook update).
+  `Done` — no Jira search needed. Requires the GitHub webhook to also send
+  "Pull requests" events, not just "Workflow runs" — done, and the whole
+  loop live-verified end-to-end via a fresh smoke test (KAN-13, PR #11):
+  ticket filed → coding agent fixed it → gate passed (with the new elapsed-
+  time logging correctly showing a clean, non-timed-out run this time) →
+  `ensureIssueLinked` stamped "Resolves KAN-13." onto the PR body → human
+  merged PR #11 → webhook transitioned KAN-13 to `Done` automatically.
+  **One real, narrow issue found along the way**: merging a fix PR pushes
+  to `main`, which triggers `deploy-oci.yml`'s auto-deploy — which rebuilds
+  and restarts `defect-fix-service` (see section below) — the very same
+  container that needs to receive that merge's `pull_request` webhook.
+  GitHub's first delivery attempt landed during that restart window and
+  got a 502 from Caddy (no upstream to proxy to); GitHub's automatic retry
+  succeeded once the container was back up, and KAN-13 did end up `Done`.
+  Not fixed — GitHub's retry-with-backoff covers it in practice, and a
+  proper fix (a health-check-gated rolling restart, or decoupling the
+  webhook receiver from the auto-fix worker so a restart of one doesn't
+  drop the other's traffic) is disproportionate effort for a single-
+  instance side pipeline; flagging it here as a known, accepted, self-
+  healing-so-far risk rather than silently leaving it undocumented.
