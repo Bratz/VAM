@@ -90,7 +90,7 @@ Corporate Digital Banking platform built on a Virtual Account Management core. F
 > **Naming convention**: *Aperture* is the customer-facing product brand (UI titles, docs, marketing). *VAM* (Virtual Account Management) remains the internal codename — visible in the Java package (`com.bank.vam`), the database schema (`vam_db`), API paths (`/api/...`), configuration keys (`vam.*`), and deployment artefact names. Treat the rename as a brand/marketing change, **not** a code/schema change. Like Chromium (codebase) vs Chrome (product).
 
 ### Stack
-- **Backend**: Spring Boot 3.2.5, Java 21, PostgreSQL 15, Flyway, Redis (optional), Spring Security/OAuth2
+- **Backend**: Spring Boot 3.2.5, Java 21, PostgreSQL 15 (schema via `hibernate.ddl-auto: update`; Flyway is on the classpath but disabled — see Notes & Gotchas), Redis (optional), Spring Security/OAuth2
 - **Frontend**: React 18 + TypeScript, Vite 5, Tailwind, React Query, Zustand, React Router 6
 - **Infra**: Docker Compose (Postgres + Redis + Backend + Frontend + WireMock BaNCS stub + Adminer)
 
@@ -128,7 +128,15 @@ GRANT ALL PRIVILEGES ON DATABASE vam_db TO vam_user;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 ```
-Flyway runs migrations automatically on backend startup.
+Flyway is currently disabled (`spring.flyway.enabled: false` in
+`application.yml` — schema is managed via `hibernate.ddl-auto: update`
+instead). Files under `database/migrations/` are NOT applied automatically
+by anything, on any environment: `quickstart.bat` only copies them into the
+Flyway resource folder, it doesn't run them, and the OCI deploy seeds from a
+pre-baked dump (`database/dump/vam_db_full.sql.gz`) once on an empty
+database and never touches migrations again. Any new file added there
+(schema DDL or one-off data repairs like V14/V15) must be applied by hand
+via `psql` against each environment that needs it — nothing runs it for you.
 
 **2. Backend** (`http://localhost:8080`):
 ```
@@ -196,7 +204,7 @@ docker-compose logs -f backend
 
 ## Notes & Gotchas
 - Server context path is `/api` — frontend talks to `http://localhost:8080/api` (Vite proxy in `vite.config.ts`).
-- Flyway expects migrations in `backend/src/main/resources/db/migration/`. `quickstart.bat` copies `database/migrations/*.sql` there during backend setup.
+- Flyway is disabled (`spring.flyway.enabled: false`) — see "How to Start the Application" above. `quickstart.bat` copies `database/migrations/*.sql` into `backend/src/main/resources/db/migration/` but nothing executes them; apply new migration files by hand with `psql` on whichever environment needs them.
 - If you change `application.yml` profiles, mirror env vars in `.env` / `docker-compose.yml`.
 - Two parallel project trees exist (`./` and `./vam-enhanced/`). Before editing, confirm which tree the user means — don't blindly edit both.
 - Redis is optional in dev; comment out the Redis block in `application.yml` if not running it.
