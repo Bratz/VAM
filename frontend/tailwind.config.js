@@ -162,18 +162,15 @@ export default {
         'cat-8': '#5d6165', 'cat-8-soft': '#efeff0',  // secondary text
       },
       fontFamily: {
-        // Tier 3 stack (Phase 12, 2026-06-12) — see styles/index.css.
-        // `sans` drives Tailwind preflight's body font: Open Sans replaced
-        // Bricolage Grotesque, which had been hardcoded here SEPARATELY
-        // from the --font-sans token (silent divergence — keep this line
-        // aligned with design-system/variables.css).
-        // `display` backs the `font-display` UTILITY CLASS (brand wordmark
-        // serif) — unrelated to the retired --font-display CSS variable;
-        // stays Fraunces by design.
+        // Single sans stack app-wide — keep this aligned with
+        // design-system/variables.css's --font-sans/--font-title/
+        // --font-numeric, which all point at the same Geist stack now.
+        // `display` backs the `font-display` UTILITY CLASS (brand wordmark,
+        // e.g. the "Aperture" logo) — previously a separate Newsreader
+        // Variable serif; unified onto Geist so no page carries two
+        // typefaces. Unrelated to the retired --font-display CSS variable.
         sans: ['"Geist"', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
-        // 'Newsreader Variable' is the actual registered family name for
-        // @fontsource-variable/newsreader — not 'Newsreader'.
-        display: ['"Newsreader Variable"', 'Georgia', 'ui-serif', 'serif'],
+        display: ['"Geist"', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'monospace'],
       },
       fontSize: {

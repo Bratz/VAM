@@ -18,7 +18,7 @@ export interface AmountProps {
  * Renders the decimal part in a lighter tone so magnitude reads first, a
  * true minus (U+2212, not a hyphen) + danger colour for negatives — never
  * parentheses — and the `.figure` numeral treatment (tabular-nums
- * lining-nums, Newsreader). Stays inline so callers control alignment
+ * lining-nums, Geist). Stays inline so callers control alignment
  * (add `text-right` on the table cell / flex container, not here).
  */
 export const Amount: React.FC<AmountProps> = ({ value, currency, showCurrency = true, className }) => {

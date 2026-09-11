@@ -1,22 +1,15 @@
-/* Type stack:
- *  - Geist              → body, UI only (interface sans). Weight 300-800.
- *  - Newsreader Variable → page titles AND all numeric figures (replaces
- *    Fraunces entirely). Real variable font (wght + opsz axes both present
- *    in this build, confirmed via file size vs. the wght-only-axis build),
- *    so `font-optical-sizing: auto` (the CSS default) adapts the glyph
- *    optical size automatically to whatever font-size it renders at —
- *    no per-element opsz class needed for the 6..72 range.
- *  - Geist Mono         → identifiers only (IBANs, VIBANs, reference codes,
- *    entity IDs, ISO message ids) — demoted from currency amounts, which
- *    now render in Newsreader Variable via the .figure utility / <Amount />.
+/* Type stack — Geist everywhere:
+ *  - Geist      → body, UI, page titles, AND all numeric figures
+ *    (--font-sans/--font-title/--font-numeric all resolve to the same
+ *    stack). Weight 300-800. Newsreader Variable (briefly used for titles
+ *    and figures, itself replacing Fraunces before that) was dropped so no
+ *    page carries a second serif identity.
+ *  - Geist Mono → identifiers only (IBANs, VIBANs, reference codes,
+ *    entity IDs, ISO message ids) — not used for monetary amounts.
  *
- * Self-hosted via @fontsource(-variable) — none of these three are on
- * Google Fonts as a single mechanism, so all font loading goes through npm
- * packages shipping .woff2 + @font-face CSS instead of a Google Fonts
- * @import. Note the registered font-family for the variable package is
- * literally "Newsreader Variable", not "Newsreader" — variables.css's
- * --font-title/--font-numeric must reference that exact name or the
- * @font-face never matches and silently falls through to Georgia. */
+ * Self-hosted via @fontsource — not on Google Fonts as a single mechanism,
+ * so font loading goes through npm packages shipping .woff2 + @font-face
+ * CSS instead of a Google Fonts @import. */
 @import '@fontsource/geist/300.css';
 @import '@fontsource/geist/400.css';
 @import '@fontsource/geist/500.css';
@@ -25,7 +18,6 @@
 @import '@fontsource/geist/800.css';
 @import '@fontsource/geist-mono/400.css';
 @import '@fontsource/geist-mono/500.css';
-@import '@fontsource-variable/newsreader/standard.css';
 
 /* Design tokens — single source of truth for color, shadow, radius, type,
    spacing, duration, easing, z-index. Imported BEFORE @tailwind so the
@@ -683,9 +675,9 @@
 
   /* ========== AMOUNT DISPLAYS ========== */
   /* Monetary value — the system rule: `.code`/mono = identifiers (IBANs,
-   * refs); `.amount` = money, in Newsreader (--font-numeric), not mono, not
-   * sans. Task 7': mono is demoted to identifiers only, and figures move
-   * to the numeric-display serif — same font family as page titles now.
+   * refs); `.amount` = money, via --font-numeric (Geist), not mono. Mono
+   * is demoted to identifiers only — figures use the same font as page
+   * titles and everything else now.
    *
    * The pre-existing tone classes (.amount-positive/-negative/-neutral,
    * colour-only since Phase 2) are folded into this family — same names,
@@ -1474,7 +1466,7 @@
    in. Light + dark variants. */
 
 .copilot-prose h3 {
-  font-family: var(--font-title, 'Newsreader Variable', serif);
+  font-family: var(--font-title, 'Geist', sans-serif);
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
