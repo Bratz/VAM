@@ -62,7 +62,8 @@ more rigorous answer to the `run_command` sandboxing gap below.
   could discover sibling worktrees this way) — the worktree/container is
   the intended boundary, not command allow-listing; tightening this is a
   real gap, not a hypothetical one.
-- Sentry instrumentation was never started (separate detector).
+- Sentry SDK instrumentation is done and verified end-to-end (see section
+  11); its webhook-to-Jira detector is still not started (separate piece).
 
 - Jira project key: **KAN** (`vam-five.atlassian.net`)
 - Jira API token: generated (held by user, wired in as an OCI env var when
@@ -255,8 +256,11 @@ on merge to transition the ticket to `Done`.
 2. ~~Jira API token~~ — **done** (generated, will be wired as an OCI env
    var, not committed).
 3. ~~GitHub PAT~~ — **done** (generated, held by user).
-4. **Create the Sentry account/org + project(s)**, hand over DSNs — not
-   started yet (separate detector, not on the critical path below).
+4. ~~Create the Sentry account/org + project(s), hand over DSNs~~ — **done**:
+   account created, SDKs wired into both frontend and backend, and event
+   delivery confirmed end-to-end on both (see section 11). The webhook
+   detector that turns a captured error into a Jira ticket is still not
+   started.
 5. ~~Anthropic API key~~ — **done** (generated, held by user).
 6. ~~Jira workflow statuses~~ — **done**: `In Review` and `Blocked` added to
    KAN's (team-managed) workflow, matching the exact names the code already
@@ -336,8 +340,11 @@ on merge to transition the ticket to `Done`.
    deployed, is `https://161-33-9-182.sslip.io/webhooks/github`. **Not yet
    verified**: no Docker available in this dev environment to actually
    build/run the image — first real test happens on the OCI VM.
-7. Sentry instrumentation (frontend + backend) + its webhook receiver — not
-   started. Independent of steps 1-6 (separate detector).
+7. Sentry instrumentation (frontend + backend) — SDKs wired and confirmed
+   delivering real events end-to-end on both sides (see section 11). The
+   webhook receiver turning a captured error into a Jira ticket is not
+   started — still blocked on the open design question in section 11 (no
+   pre-existing failing check to gate a fix against, unlike CI failures).
 
 ## 11. Post-deployment live verification (this pass)
 
@@ -434,3 +441,31 @@ dev environment). Live-verified on the OCI VM since, in order:
   drop the other's traffic) is disproportionate effort for a single-
   instance side pipeline; flagging it here as a known, accepted, self-
   healing-so-far risk rather than silently leaving it undocumented.
+- **Deploy auto-deploy workflow was silently skipping `defect-fix-service`
+  and `mcp-gateway`/`caddy`** — `deploy-oci.yml`'s `docker compose up -d
+  --build` had no `--profile` flags, and Compose only manages a profile's
+  services when that profile is active for the invocation (it also does
+  NOT stop or rebuild an already-running out-of-profile container). So
+  every push fetched new source via `git pull` but left those three
+  services running their old image indefinitely — exactly why every
+  `defect-fix-service` change earlier in this pass needed a manual rebuild.
+  Fixed: added `--profile mcp --profile defectfix`; confirmed live via
+  `docker compose ps` showing all three services freshly restarted right
+  after a push.
+- **Sentry SDK verified end-to-end on both stacks, with one real bug found
+  and fixed along the way**: frontend confirmed via a live browser check
+  against the actual initialized client (`Sentry.init()` genuinely ran
+  with a real DSN, transport configured, `client.flush()` confirmed
+  delivery) — an uncaught test error and a manually-captured one both
+  showed up in the Sentry dashboard. Backend initially did NOT deliver
+  anything despite a correct DSN and a throwaway endpoint (`GET
+  /api/v1/sentry-test`) correctly throwing and logging: `GlobalExceptionHandler`
+  (a `@RestControllerAdvice`) catches every exception itself and returns a
+  response, so Spring MVC considers it handled and `sentry-spring-boot-starter`'s
+  automatic resolver — which only sees genuinely unhandled exceptions —
+  never got a chance to run. Fixed with one line: `Sentry.captureException(ex)`
+  in the generic `@ExceptionHandler(Exception.class)` catch-all specifically
+  (not the other handlers there — 404s, validation, business exceptions are
+  expected control flow, not defects, and forwarding those would flood
+  Sentry with noise). Confirmed live afterward: the same test endpoint now
+  reaches the dashboard. Throwaway test endpoint removed once confirmed.
