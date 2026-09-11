@@ -51,7 +51,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
     return (
       <div
         className={cn(
-          'flex flex-col lg:flex-row lg:items-center lg:h-11 gap-2 lg:gap-3',
+          'flex flex-col lg:flex-row lg:items-center lg:min-h-11 gap-2 lg:gap-3',
           'rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 lg:py-0',
           'dark:border-primary-700 dark:bg-primary-800/40'
         )}
@@ -75,7 +75,16 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col lg:flex-row lg:items-center lg:justify-between lg:h-[66px] gap-3',
+        // min-h, not a fixed h: at narrower widths (or once the CTA + "Not
+        // now" + dismiss cluster crowd the row), the headline/body column
+        // narrows and wraps to more lines than 66px allows. A fixed height
+        // clipped there — the overflowing text still rendered (no
+        // overflow-hidden), just past the box's own colored background, as
+        // near-invisible light text directly on the white page underneath.
+        // Reproduced live: "...no cash movement required." bled out below
+        // the dark banner. min-h keeps the common case at 66px and grows
+        // for wrapped copy instead of losing it.
+        'flex flex-col lg:flex-row lg:items-center lg:justify-between lg:min-h-[66px] gap-3',
         // bg-primary-800 = banner slate (#4c5c68) per the palette spec.
         'rounded-xl bg-primary-800 text-white px-4 py-3 lg:py-0'
       )}
