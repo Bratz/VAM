@@ -7,8 +7,7 @@ package com.bank.vam.defectfixsmoketest;
  */
 public class SmokeTestAdder {
 
-    // Deliberately wrong: subtracts instead of adding.
     public int add(int a, int b) {
-        return a - b;
+        return a + b;
     }
 }
