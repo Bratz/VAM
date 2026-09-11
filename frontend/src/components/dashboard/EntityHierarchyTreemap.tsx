@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { ResponsiveContainer, Treemap, Tooltip } from 'recharts';
-import { balanceStructureApi, BalanceHierarchyNode } from '../../services/api';
+import { BalanceHierarchyNode } from '../../services/api';
 import { formatCurrency } from '../../utils';
 
 // Real hierarchy data — NOT the old components/dashboard/HierarchyWidgets.tsx
@@ -28,14 +28,26 @@ interface TreemapNode {
 // tile needs for now) — a flat array of {name, size} is exactly the shape
 // <Cell>-based coloring already works for (same pattern as the currency
 // bar chart).
-function sumBalance(node: BalanceHierarchyNode): number {
+//
+// Exported for reuse by the page's "Consolidated position" headline figure
+// — root.consolidatedBalance ALONE undercounts for the exact same reason
+// (confirmed live: reading it directly gave AED 1.9M against a true
+// recursive total of AED 36.3M for the same scope, an 18x gap) so the
+// headline must run through this same function, not duplicate a second,
+// potentially-diverging copy of this non-obvious logic.
+export function sumBalance(node: BalanceHierarchyNode): number {
   const own = Math.max(node.consolidatedBalance, 0);
   const childrenSum = (node.children ?? []).reduce((total, c) => total + sumBalance(c), 0);
   return own + childrenSum;
 }
 
 interface EntityHierarchyTreemapProps {
-  corporateId?: string;
+  // Fetched once by the parent page (Treasury2030DashboardPage's load())
+  // and shared with the new consolidated-position headline figure — this
+  // component used to fetch balanceStructureApi.getHierarchy() itself,
+  // duplicating that network call.
+  root: BalanceHierarchyNode | null;
+  loading: boolean;
   categoricalColors: string[];
   tooltipBg: string;
   tooltipText: string;
@@ -44,26 +56,14 @@ interface EntityHierarchyTreemapProps {
 }
 
 export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
-  corporateId,
+  root,
+  loading,
   categoricalColors,
   tooltipBg,
   tooltipText,
   tooltipShadow,
   currency = 'AED',
 }) => {
-  const [root, setRoot] = useState<BalanceHierarchyNode | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    balanceStructureApi.getHierarchy(corporateId)
-      .then((res) => { if (!cancelled) setRoot(res?.data ?? null); })
-      .catch(() => { if (!cancelled) setRoot(null); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [corporateId]);
-
   const treemapData = useMemo<TreemapNode[]>(() => {
     if (!root?.children || root.children.length === 0) return [];
     // The root itself (GROUP, e.g. "Test Multinational Corp") is rarely a

@@ -11,7 +11,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
-import { EntityHierarchyTreemap } from '../components/dashboard/EntityHierarchyTreemap';
+import { EntityHierarchyTreemap, sumBalance } from '../components/dashboard/EntityHierarchyTreemap';
 import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
 import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
@@ -37,6 +37,8 @@ import {
   FxRate,
   dashboardApi,
   PendingApprovals,
+  balanceStructureApi,
+  BalanceHierarchyNode,
 } from '../services/api';
 import { cockpitApi } from '../services/cockpitApi';
 import { useCopilot } from '../ai/copilot/CopilotProvider';
@@ -162,6 +164,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   // (see the Accounts table render below) — this tracks which group keys
   // have been expanded to show their individual account rows.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [hierarchyRoot, setHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
+  const [positionView, setPositionView] = useState<'entity' | 'geo'>('entity');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { open: openCopilot } = useCopilot();
@@ -171,7 +175,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
   const load = async (scoped?: string) => {
     const s = scoped || undefined;
-    const [mb, att, tx, rl, ln, dp, fx, pa] = await Promise.allSettled([
+    const [mb, att, tx, rl, ln, dp, fx, pa, bh] = await Promise.allSettled([
       multiBankLiquidityApi.getSummary(s),
       cockpitApi.getAttentionItems(s),
       transactionsApi.getRecent(20, s),
@@ -180,6 +184,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       ihbApi.getAllDeposits(),
       fxRateApi.getAllActiveRates(),
       dashboardApi.getPendingApprovals(),
+      // Fetched once here (not inside EntityHierarchyTreemap, which used to
+      // fetch this same endpoint independently) so both the treemap and the
+      // new consolidated-position headline figure share one network call.
+      balanceStructureApi.getHierarchy(s),
     ]);
     if (mb.status === 'fulfilled' && mb.value?.data) setSummary(mb.value.data);
     if (att.status === 'fulfilled') setAttention(att.value);
@@ -189,6 +197,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     if (dp.status === 'fulfilled' && Array.isArray(dp.value?.data)) setDeposits(dp.value.data);
     if (fx.status === 'fulfilled' && Array.isArray(fx.value?.data)) setFxRates(fx.value.data);
     if (pa.status === 'fulfilled') setPending(pa.value);
+    if (bh.status === 'fulfilled') setHierarchyRoot(bh.value?.data ?? null);
   };
 
   useEffect(() => {
@@ -493,14 +502,32 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             />
           )}
 
-          {/* Position strip — replaces the old KPI card grid. Scalar counts
-              (not currency figures — this app never sums balances across
-              currencies into one "consolidated" total; see the FX-honest
-              rule below on the currency band) rendered as format="count" so
-              they show as plain integers, not through <Amount/>. */}
+          {/* Position summary — leads with one real headline figure, per
+              every fintech dashboard studied (Mercury: "current balance
+              with a visible trend"). This is NOT the client-side sum this
+              app has always refused to fabricate — hierarchyRoot comes
+              from balanceStructureApi.getHierarchy's reportingCurrency
+              param, a real backend FX conversion, not raw currencies added
+              together. Sublabel says so explicitly. Uses sumBalance (same
+              recursive helper the treemap below uses), NOT
+              hierarchyRoot.consolidatedBalance directly — that field alone
+              undercounts by the same root-doesn't-roll-up-its-children
+              issue the treemap already had to work around (confirmed live:
+              root.consolidatedBalance read AED 1.9M against a true
+              recursive total of AED 36.3M for the same scope). The rest of
+              the strip (previously its own KPI row) are scalar counts,
+              unchanged. */}
           <PositionStrip
             cells={[
-              { label: 'Held at home bank', value: summary?.homeBankShadows ?? 0, format: 'count', size: 'lg', sublabel: 'accounts', tone: 'success' },
+              {
+                label: 'Consolidated position',
+                value: hierarchyRoot ? sumBalance(hierarchyRoot) : 0,
+                currency: 'AED',
+                format: 'currency',
+                size: 'lg',
+                sublabel: 'AED · FX-converted, live rates',
+              },
+              { label: 'Held at home bank', value: summary?.homeBankShadows ?? 0, format: 'count', sublabel: 'accounts', tone: 'success' },
               { label: 'External, sweepable', value: summary?.externalShadows ?? 0, format: 'count', sublabel: 'accounts' },
               { label: 'Stale balances', value: staleCount, format: 'count', sublabel: 'need refresh', tone: staleCount ? 'warning' : 'neutral' },
               { label: 'Total accounts', value: acctCount, format: 'count', sublabel: `${model?.currencies.length ?? 0} currencies` },
@@ -590,6 +617,57 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="body-sm">No shadow balances available for this scope.</p>
             )}
           </div>
+
+          {/* Payments — Awaiting approval is REAL; other states are
+              nav-only. Moved ahead of the Accounts table (was after it) —
+              this is the treasury team's own actionable work queue
+              ("money in motion"), which real dashboard research
+              consistently places right after the headline number, not
+              buried under a reference table. */}
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+              <p className="section-title">
+                Payments
+                <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-xs font-medium tabular-nums">
+                  {pending?.payablesCount ?? 0} awaiting
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={() => nav('payables')}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+              >
+                All payments <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div>
+              {(pending?.payables?.length ?? 0) === 0 ? (
+                <p className="body-sm px-4 py-6 text-center">Nothing awaiting approval.</p>
+              ) : (
+                pending!.payables.slice(0, 5).map((p) => (
+                  <div key={p.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{p.vendorName}</p>
+                        <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} showCurrency={false} /></p>
+                        <p className="caption">due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => nav('payables')}>Review</Button>
+                    </div>
+                  </div>
+                ))
+              )}
+              {(pending?.totalPending ?? 0) > 0 && (
+                <div className="px-4 py-2 bg-neutral-50 dark:bg-primary-800/40 text-xs text-neutral-500 dark:text-neutral-400 flex items-center justify-between">
+                  <span className="tabular-nums">{pending?.totalPending} items pending approval (incl. {pending?.transactionsCount ?? 0} transactions)</span>
+                  <button type="button" onClick={() => nav('payables')} className="font-medium text-primary-600 dark:text-accent-400 hover:underline">View all →</button>
+                </div>
+              )}
+            </div>
+          </Card>
 
           {/* Accounts table — hairline: no card, no zebra, two hairline
               weights (heavier under the header, lighter between rows). */}
@@ -693,190 +771,154 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             )}
           </div>
 
-          {/* Row 1.5 — Entity hierarchy treemap + geographic exposure map.
+          {/* Position breakdown — entity treemap and geo map merged into
+              ONE card via a toggle (same pattern as Currency breakdown's
+              "By Currency / By Bank" above), not two separate sections —
+              part of the module consolidation (12 -> 7 main sections)
+              this pass makes per the "5-9 core elements" research finding.
               Geo intentionally scoped to the single dominant currency
               (model.topCcy/bankShares, the same FX-honest scope the
-              Sweeps & pooling composition bar already uses below) — summing
+              Sweeps & pooling composition bar below already uses) — summing
               bank balances across countries that hold different currencies
               would be exactly the synthetic cross-currency total this page
               elsewhere refuses to fabricate. */}
+          <div className="border-b border-neutral-200 dark:border-primary-800 pb-4">
+            <div className="flex items-center justify-between gap-3 pb-2">
+              <p className="section-title">
+                Position breakdown
+                {positionView === 'geo' && model?.topCcy && <span className="label ml-2 font-normal">· {model.topCcy.code} (largest balance)</span>}
+              </p>
+              <div className="inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden">
+                {([['entity', 'By entity'], ['geo', 'By country']] as const).map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setPositionView(v)}
+                    className={cn(
+                      'px-3 py-1 text-xs transition-colors',
+                      positionView === v
+                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                        : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {positionView === 'entity' ? (
+              <EntityHierarchyTreemap
+                root={hierarchyRoot}
+                loading={loading}
+                categoricalColors={chartChrome.categorical}
+                tooltipBg={chartChrome.tooltipBg}
+                tooltipText={chartChrome.tooltipText}
+                tooltipShadow={chartChrome.tooltipShadow}
+                currency={model?.topCcy?.code}
+              />
+            ) : model?.bankShares && model.bankShares.length > 0 ? (
+              <GeoExposureMap
+                bankShares={model.bankShares}
+                currency={model.topCcy!.code}
+                tooltipBg={chartChrome.tooltipBg}
+                tooltipText={chartChrome.tooltipText}
+                tooltipShadow={chartChrome.tooltipShadow}
+              />
+            ) : (
+              <p className="body-sm py-6 text-center">No shadow balances available for this scope.</p>
+            )}
+          </div>
+
+          {/* Sweeps & pooling + Recent statement activity — paired side by
+              side (items-start: same dead-space fix as the old Payments/
+              Sweeps row). Both are lower-priority supporting/historical
+              content now that Payments moved up to its own full-width slot
+              above, so pairing them back into one row recovers the
+              horizontal-packing efficiency that splitting the old 2-column
+              rows into full-width sections gave up — confirmed live the
+              consolidation alone (fewer named sections) still nudged
+              scrollHeight up slightly (2364px -> 2501px at 1440x900) purely
+              from lost packing, before this pairing recovers it. IHB
+              maturities (was its own permanent card, usually an empty state
+              — "No in-house bank loans or deposits mature in the next 14
+              days" observed live) folds into Sweeps as a conditional line:
+              hide-when-empty matches Brex's "surface exceptions, hide
+              non-events" principle generalized to non-events generally,
+              rather than giving a usually-empty section its own card. */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <p className="section-title">Entity positions</p>
-              </div>
-              <div className="p-4">
-                <EntityHierarchyTreemap
-                  corporateId={selectedCorporateId || undefined}
-                  categoricalColors={chartChrome.categorical}
-                  tooltipBg={chartChrome.tooltipBg}
-                  tooltipText={chartChrome.tooltipText}
-                  tooltipShadow={chartChrome.tooltipShadow}
-                  currency={model?.topCcy?.code}
-                />
-              </div>
-            </Card>
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <p className="section-title">
-                  Geographic exposure
-                  {model?.topCcy && <span className="label ml-2 font-normal">· {model.topCcy.code} (largest balance)</span>}
-                </p>
-              </div>
-              <div className="p-4">
-                {model?.bankShares && model.bankShares.length > 0 ? (
-                  <GeoExposureMap
-                    bankShares={model.bankShares}
-                    currency={model.topCcy!.code}
-                    tooltipBg={chartChrome.tooltipBg}
-                    tooltipText={chartChrome.tooltipText}
-                    tooltipShadow={chartChrome.tooltipShadow}
-                  />
-                ) : (
-                  <p className="body-sm py-6 text-center">No shadow balances available for this scope.</p>
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* Row 2 — Payments workspace + Sweeps & pooling. items-start: grid's
-              default stretch was forcing the shorter card (Payments, often
-              just 1-2 real items) up to match the taller one (Sweeps, a bar
-              chart + up to 6 rows), leaving a large dead-space gap inside it. */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 items-start">
-
-            {/* Payments — Awaiting approval is REAL; other states are nav-only */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <p className="section-title">
-                  Payments
-                  <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-xs font-medium tabular-nums">
-                    {pending?.payablesCount ?? 0} awaiting
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => nav('payables')}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
-                >
-                  All payments <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-              <div>
-                {(pending?.payables?.length ?? 0) === 0 ? (
-                  <p className="body-sm px-4 py-6 text-center">Nothing awaiting approval.</p>
-                ) : (
-                  pending!.payables.slice(0, 5).map((p) => (
-                    <div key={p.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{p.vendorName}</p>
-                          <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} showCurrency={false} /></p>
-                          <p className="caption">due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</p>
-                        </div>
-                        <Button size="sm" variant="outline" onClick={() => nav('payables')}>Review</Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-                {(pending?.totalPending ?? 0) > 0 && (
-                  <div className="px-4 py-2 bg-neutral-50 dark:bg-primary-800/40 text-xs text-neutral-500 dark:text-neutral-400 flex items-center justify-between">
-                    <span className="tabular-nums">{pending?.totalPending} items pending approval (incl. {pending?.transactionsCount ?? 0} transactions)</span>
-                    <button type="button" onClick={() => nav('payables')} className="font-medium text-primary-600 dark:text-accent-400 hover:underline">View all →</button>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Sweeps & pooling — REAL */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <p className="section-title">Sweeps &amp; pooling</p>
-                <button
-                  type="button"
-                  onClick={() => nav('sweeping')}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
-                >
-                  Configure <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="p-4 space-y-3">
-                {model && model.bankShares.length > 0 && (
-                  <div>
-                    <p className="label mb-1.5">Composition · {model.topCcy?.code} (largest balance)</p>
-                    <BankSplitBar bankShares={model.bankShares} />
-                  </div>
-                )}
-                <div className="border-t border-neutral-100 dark:border-primary-800/60 pt-2">
-                  {sweepRows.length === 0 ? (
-                    <p className="body-sm py-3 text-center">No sweep rules in scope.</p>
-                  ) : (
-                    sweepRows.map((r) => (
-                      <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
-                        <div className="min-w-0">
-                          <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
-                          <p className="caption">{r.sweepType} · {r.frequency}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
-                        </div>
-                        <span className={cn(
-                          'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
-                          r.status === 'ACTIVE'
-                            ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
-                            : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300',
-                        )}>
-                          {r.status}
-                        </span>
-                      </div>
-                    ))
-                  )}
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+              <p className="section-title">Sweeps &amp; pooling</p>
+              <button
+                type="button"
+                onClick={() => nav('sweeping')}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+              >
+                Configure <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              {model && model.bankShares.length > 0 && (
+                <div>
+                  <p className="label mb-1.5">Composition · {model.topCcy?.code} (largest balance)</p>
+                  <BankSplitBar bankShares={model.bankShares} />
                 </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Row 3 — Maturities + Recent statement activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-            {/* Maturities · next 14 days — REAL (IHB) */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center gap-1.5 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <Clock className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
-                <p className="section-title">IHB maturities · next 14 days</p>
-              </div>
-              <div>
-                {maturities.length === 0 ? (
-                  <p className="body-sm px-4 py-6 text-center">No in-house bank loans or deposits mature in the next 14 days.</p>
+              )}
+              <div className="border-t border-neutral-100 dark:border-primary-800/60 pt-2">
+                {sweepRows.length === 0 ? (
+                  <p className="body-sm py-3 text-center">No sweep rules in scope.</p>
                 ) : (
-                  maturities.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                  sweepRows.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
                       <div className="min-w-0">
-                        <p className="text-sm text-primary-900 dark:text-neutral-50">
-                          {m.kind} · <span className="font-mono">{m.reference}</span>
-                        </p>
-                        <p className="caption">{m.label} <Amount value={m.amount} showCurrency={false} className="text-xs" /></p>
+                        <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
+                        <p className="caption">{r.sweepType} · {r.frequency}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
                       </div>
-                      <p className="caption shrink-0 tabular-nums">{fmtDay(m.date)}</p>
+                      <span className={cn(
+                        'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+                        r.status === 'ACTIVE'
+                          ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
+                          : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300',
+                      )}>
+                        {r.status}
+                      </span>
                     </div>
                   ))
                 )}
               </div>
-            </Card>
-
-            {/* Recent statement activity — REAL */}
-            <Card padding="none" className="overflow-hidden">
-              <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
-                <p className="section-title">Recent statement activity</p>
-                <button
-                  type="button"
-                  onClick={() => nav('statements')}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
-                >
-                  <FileDown className="w-3 h-3" /> Statements
-                </button>
+              <div className="border-t border-neutral-100 dark:border-primary-800/60 pt-2 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 shrink-0" />
+                {maturities.length === 0 ? (
+                  <p className="caption">No IHB loans or deposits mature in the next 14 days.</p>
+                ) : (
+                  <div className="min-w-0 flex-1 space-y-1">
+                    {maturities.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between gap-3">
+                        <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">
+                          {m.kind} · <span className="font-mono">{m.reference}</span> — {m.label} <Amount value={m.amount} showCurrency={false} className="text-xs" />
+                        </p>
+                        <p className="caption shrink-0 tabular-nums">{fmtDay(m.date)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div>
+            </div>
+          </Card>
+
+          {/* Recent statement activity — REAL */}
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+              <p className="section-title">Recent statement activity</p>
+              <button
+                type="button"
+                onClick={() => nav('statements')}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+              >
+                <FileDown className="w-3 h-3" /> Statements
+              </button>
+            </div>
+            <div>
                 {txns.length === 0 ? (
                   <p className="body-sm px-4 py-6 text-center">No recent transactions in scope.</p>
                 ) : (
