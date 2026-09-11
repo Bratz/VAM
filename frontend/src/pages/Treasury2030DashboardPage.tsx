@@ -381,8 +381,19 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
       {/* Tab strip + corporate scope merged into one 44px row (density pass) —
           tabs deep-link into existing routes (not global chrome) on the left;
-          scope selector + summary on the right. */}
-      <div className="lg:h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-neutral-200 dark:border-primary-800 -mt-1">
+          scope selector + summary on the right. min-h, not a fixed h: with
+          lg:flex-wrap still on, selecting a corporate adds an active-chip +
+          "Clear" button to the scope side, and at ~1280-1440px that pushes
+          the row's two children (tabs ~639px + scope ~640px) past the
+          available width, wrapping the scope selector onto a second line.
+          A fixed h-11 doesn't grow for that second line, so it rendered 42px
+          below the row's own box — squarely on top of the campaign banner
+          underneath. Reproduced live: picking a corporate on the dashboard
+          left the corporate <select> visually overlapping the banner's
+          "OFFER" tag. min-h-11 keeps the common single-line case at the
+          same 44px while letting a wrapped second line push the banner down
+          instead of overlapping it. */}
+      <div className="lg:min-h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-neutral-200 dark:border-primary-800 -mt-1">
         <div className="flex items-center gap-1">
           {TABS.map((t, i) => {
             const active = i === 0;
