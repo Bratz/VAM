@@ -5,6 +5,8 @@ import com.bank.vam.defectfix.detect.DefectDetectionService.Stack;
 import com.bank.vam.defectfix.detect.DefectSignature;
 import com.bank.vam.defectfix.detect.DetectedDefect;
 import com.bank.vam.defectfix.detect.FrontendResultParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 @Component
 public class TestGateRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(TestGateRunner.class);
     private static final long GATE_TIMEOUT_SECONDS = 600;
 
     private final FrontendResultParser frontendParser;
@@ -60,10 +63,18 @@ public class TestGateRunner {
      * mode (a fix that breaks the file badly enough to make the linter/compiler choke entirely).
      */
     public GateResult runGate(Stack stack, Path workDir, DefectSignature targetDefect) throws Exception {
+        log.info("Running {} test gate against target defect {}", stack, targetDefect);
         List<DetectedDefect> defects = stack == Stack.FRONTEND
                 ? runFrontendChecks(workDir)
                 : runBackendChecks(workDir);
-        return decide(stack, defects, targetDefect);
+        GateResult result = decide(stack, defects, targetDefect);
+        log.info("Gate {}: {}", result.passed() ? "PASSED" : "FAILED", oneLine(result.output(), 300));
+        return result;
+    }
+
+    private String oneLine(String text, int maxChars) {
+        String flattened = text.replace("\n", " \\n ").strip();
+        return flattened.length() > maxChars ? flattened.substring(0, maxChars) + "..." : flattened;
     }
 
     /** The actual pass/fail decision, split out from shelling out so it's directly testable. */
@@ -118,14 +129,26 @@ public class TestGateRunner {
 
     /** Deliberately ignores the process exit code — pass/fail is decided by the parsed defect set, not raw status. */
     private void run(Path cwd, String command) throws IOException, InterruptedException {
+        log.info("Gate command starting in {}: {}", cwd, oneLine(command, 200));
+        long startedAt = System.nanoTime();
         Process process = new ProcessBuilder("bash", "-lc", command)
                 .directory(cwd.toFile())
                 .redirectErrorStream(true)
                 .start();
         boolean finished = process.waitFor(GATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         process.getInputStream().readAllBytes();
+        long elapsedSeconds = (System.nanoTime() - startedAt) / 1_000_000_000L;
         if (!finished) {
             process.destroyForcibly();
+            // Whatever partial output the command had produced (e.g. surefire-reports already
+            // flushed for test classes that finished before the kill) is still parsed as-is by the
+            // caller — a truncated run can silently read as a clean pass. Logged loudly here so a
+            // gate result that looks fine is at least visibly suspect in the logs.
+            log.warn("Gate command TIMED OUT after {}s (limit {}s) and was force-killed — any result "
+                    + "parsed from its output may be based on a partial/incomplete run: {}",
+                    elapsedSeconds, GATE_TIMEOUT_SECONDS, oneLine(command, 200));
+        } else {
+            log.info("Gate command finished in {}s", elapsedSeconds);
         }
     }
 }
