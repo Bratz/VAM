@@ -9,6 +9,15 @@
 #
 # The VM must already have the repo cloned at ~/VAM and deploy/oci/.env
 # created (see docs/DEPLOYMENT.md).
+#
+# --profile mcp --profile defectfix are passed explicitly below: Compose only
+# manages a profile-scoped service (mcp-gateway, defect-fix-service, caddy)
+# when its profile is active for the invocation, and does NOT stop or rebuild
+# an already-running out-of-profile container either — so a plain `up` here
+# would silently leave those three running their OLD image forever, even
+# though `git pull` did fetch the new code. If you stop using one of these
+# profiles on the VM, remove its --profile flag here too, or this workflow
+# will keep redeploying it on every push regardless.
 # ============================================================================
 name: Deploy to OCI VM
 
@@ -33,5 +42,5 @@ jobs:
             cd ~/VAM
             git pull origin main
             cd deploy/oci
-            sudo docker compose up -d --build
+            sudo docker compose --profile mcp --profile defectfix up -d --build
             sudo docker image prune -f
