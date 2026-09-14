@@ -44,3 +44,7 @@ jobs:
             cd deploy/oci
             sudo docker compose --profile mcp --profile defectfix up -d --build
             sudo docker image prune -f
+            # BuildKit cache isn't touched by image prune and grows unbounded
+            # across rebuilds (hit 19GB and filled the VM's 45GB disk) — keep
+            # a 48h window so incremental builds stay fast without piling up.
+            sudo docker builder prune -af --filter until=48h
