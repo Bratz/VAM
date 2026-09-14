@@ -55,7 +55,6 @@ import {
   TrendingUp,
   ShoppingCart,
   Store,
-  Eye,
   DollarSign,
   Sparkles,    // Insights section / Treasury Copilot
   FileCode2,   // ISO 20022 Payments
@@ -130,7 +129,6 @@ export const navSections: NavSection[] = [
       { icon: <FolderKanban className="w-5 h-5" />, label: 'Programs', href: 'programs' },
       { icon: <GitBranch className="w-5 h-5" />, label: 'Balance Hierarchy', href: 'hierarchy' },
       { icon: <Layers className="w-5 h-5" />, label: 'Entity Balance Tree', href: 'entity-balance-tree' },
-      { icon: <Eye className="w-5 h-5" />, label: 'Shadow Accounts', href: 'shadow-accounts' },
       { icon: <Globe className="w-5 h-5" />, label: 'Currency Mirrors', href: 'currency-mirrors' },
       { icon: <Combine className="w-5 h-5" />, label: 'Reorganization', href: 'hierarchy-operations' },
     ]
@@ -257,7 +255,6 @@ export const pageTitles: Record<string, string> = {
   'programs': 'Programs',
   'hierarchy': 'Balance Hierarchy',
   'entity-balance-tree': 'Entity Balance Tree',
-  'shadow-accounts': 'Shadow Accounts',
   'currency-mirrors': 'Currency Mirrors',
   'hierarchy-operations': 'Corporate Reorganization',
   // Parties & Entities

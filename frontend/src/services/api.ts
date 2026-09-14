@@ -1651,44 +1651,12 @@ export interface IhbEntity {
   createdAt: string;
 }
 
-export interface IhbLoan {
-  id: string;
-  loanReference: string;
-  lenderId: string;
-  borrowerId: string;
-  principalAmount: number;
-  outstandingAmount: number;
-  interestRate: number;
-  status: string;
-  maturityDate: string;
-  createdAt: string;
-}
-
-export interface IhbDeposit {
-  id: string;
-  depositReference: string;
-  entityId: string;
-  principalAmount: number;
-  currentBalance: number;
-  interestRate: number;
-  accruedInterest: number;
-  status: string;
-  maturityDate?: string;
-  createdAt: string;
-}
-
 export const ihbApi = {
   getStats: () => apiClient.get<ApiResponse<any>>('/ihb/stats').then(r => r.data),
   getAllEntities: () => apiClient.get<ApiResponse<IhbEntity[]>>('/ihb/entities').then(r => r.data),
   getEntityById: (id: string) => apiClient.get<ApiResponse<IhbEntity>>(`/ihb/entities/${id}`).then(r => r.data),
   createEntity: (data: any) => apiClient.post<ApiResponse<IhbEntity>>('/ihb/entities', data).then(r => r.data),
   updateEntity: (id: string, data: any) => apiClient.put<ApiResponse<IhbEntity>>(`/ihb/entities/${id}`, data).then(r => r.data),
-  getAllLoans: () => apiClient.get<ApiResponse<IhbLoan[]>>('/ihb/loans').then(r => r.data),
-  createLoan: (data: any) => apiClient.post<ApiResponse<IhbLoan>>('/ihb/loans', data).then(r => r.data),
-  repayLoan: (id: string, amount: number) => apiClient.post<ApiResponse<any>>(`/ihb/loans/${id}/repay`, { amount }).then(r => r.data),
-  getAllDeposits: () => apiClient.get<ApiResponse<IhbDeposit[]>>('/ihb/deposits').then(r => r.data),
-  createDeposit: (data: any) => apiClient.post<ApiResponse<IhbDeposit>>('/ihb/deposits', data).then(r => r.data),
-  withdrawDeposit: (id: string, amount: number) => apiClient.post<ApiResponse<any>>(`/ihb/deposits/${id}/withdraw`, { amount }).then(r => r.data),
 };
 
 // ============================================================================
@@ -3440,6 +3408,13 @@ export const treasuryHierarchyApi = {
 
 export type BalanceNodeType = 'GROUP' | 'REGION' | 'ENTITY' | 'VIRTUAL_ACCOUNT' | 'SHADOW_ACCOUNT';
 
+// Dashboard "Position breakdown" — flat FX-converted totals, by corporate or by program
+export interface BalanceBreakdownItem {
+  id: string;
+  name: string;
+  balance: number;
+}
+
 export interface BalanceHierarchyNode {
   id: string;
   name: string;
@@ -3447,27 +3422,43 @@ export interface BalanceHierarchyNode {
   type: BalanceNodeType;
   level: number;
   currencyCode: string;
-  
+  // The backend sends both of these on real nodes (confirmed live) though
+  // neither was previously typed here — needed to identify CURRENCY_MIRROR
+  // nodes, which mirror a balance already counted elsewhere in the tree.
+  specialType?: string;
+  accountCategory?: string;
+  // IC_RECEIVABLE / IC_PAYABLE / etc. — distinguishes the two intercompany
+  // ledgers, which otherwise both show as accountCategory=INTERCOMPANY.
+  mirrorAccountType?: string;
+  // The backend always sends these (BalanceStructureService resolves them
+  // from the VA's owningEntityId on every node), though undefined on nodes
+  // with no owning entity set — e.g. an orphaned ROOT VA. Used by
+  // EntityHierarchyTreemap to label leaf account boxes by their real legal
+  // entity instead of the raw account name.
+  owningEntityId?: string;
+  owningEntityCode?: string;
+  owningEntityName?: string;
+
   // Balance information
   localBalance: number;
   consolidatedBalance: number;
   availableBalance?: number;
-  
+
   // Intercompany positions
   intercompanyReceivable: number;
   intercompanyPayable: number;
   netPosition: number;
-  
+
   // Interest (for notional pooling)
   interestRate?: number;
   interestAllocation?: number;
-  
+
   // Participation flags
   participatesInPooling: boolean;
   participatesInNetting: boolean;
   participatesInSweep: boolean;
   sweepTarget?: string;
-  
+
   // Hierarchy
   parentId?: string;
   children?: BalanceHierarchyNode[];
@@ -3570,7 +3561,19 @@ export const balanceStructureApi = {
     apiClient.get<ApiResponse<BalanceSummary>>('/treasury/balance-structure/summary', {
       params: { corporateId, programId, reportingCurrency }
     }).then(r => r.data),
-  
+
+  // Dashboard "Position breakdown" — firm-wide per corporate / per program
+  getByCorporate: (reportingCurrency = 'AED') =>
+    apiClient.get<ApiResponse<BalanceBreakdownItem[]>>('/treasury/balance-structure/by-corporate', {
+      params: { reportingCurrency }
+    }).then(r => r.data),
+
+  getByProgram: (corporateId?: string, reportingCurrency = 'AED') =>
+    apiClient.get<ApiResponse<BalanceBreakdownItem[]>>('/treasury/balance-structure/by-program', {
+      params: { corporateId, reportingCurrency }
+    }).then(r => r.data),
+
+
   // Physical bank account
   getPhysicalAccount: (corporateId?: string) => 
     apiClient.get<ApiResponse<BalancePhysicalAccount>>('/treasury/balance-structure/physical-account', { 
@@ -4520,8 +4523,6 @@ export const poboApi = {
     apiClient.post<ApiResponse<any>>(`/pobo/recharges/${id}/approve`, null, { params: { approver } }).then(r => r.data),
   rejectRecharge: (id: string, rejector: string, reason?: string) =>
     apiClient.post<ApiResponse<any>>(`/pobo/recharges/${id}/reject`, null, { params: { rejector, reason } }).then(r => r.data),
-  settleViaIhbLoan: (id: string, ihbLoanId: string, loanReference: string) =>
-    apiClient.post<ApiResponse<any>>(`/pobo/recharges/${id}/settle/ihb-loan`, null, { params: { ihbLoanId, loanReference } }).then(r => r.data),
 };
 
 export type VaSpecialType = 'REGULAR' | 'SETTLEMENT' | 'EXCEPTION';
@@ -4613,15 +4614,29 @@ export interface ResolveSettlementVaResponse {
 // EXCEPTION TRANSACTION TYPES
 // ============================================================================
 
-export type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'WRITTEN_OFF' | 'REVERSED';
-export type ExceptionType = 
-  | 'UNMATCHED_PAYMENT' 
-  | 'MISSING_SETTLEMENT_VA' 
-  | 'BANK_INTEREST' 
-  | 'FX_DIFFERENCE' 
-  | 'CHARGE_REVERSAL'
-  | 'MANUAL_ADJUSTMENT'
-  | 'OTHER';
+// Kept in sync with backend ExceptionTransaction.ExceptionStatus/ExceptionType
+// (entity/treasury/ExceptionTransaction.java) — this used to be a smaller,
+// partially-mismatched guess (e.g. 'REVERSED' here vs the real 'RETURNED'),
+// which meant any real row outside the guessed set crashed EXCEPTION_TYPE_CONFIG/
+// EXCEPTION_STATUS_CONFIG lookups (undefined.icon) the moment a page actually
+// called the real endpoint instead of mock data.
+export type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'WRITTEN_OFF' | 'RETURNED' | 'ON_HOLD' | 'ESCALATED';
+export type ExceptionType =
+  | 'UNMATCHED_PAYMENT'
+  | 'RECONCILIATION_DIFF'
+  | 'FAILED_PAYMENT'
+  | 'INVALID_VIBAN'
+  | 'AMOUNT_MISMATCH'
+  | 'DUPLICATE_PAYMENT'
+  | 'BANK_INTEREST'
+  | 'BANK_CHARGE'
+  | 'FX_DIFFERENCE'
+  | 'FX_GAIN'
+  | 'FX_LOSS'
+  | 'SYSTEM_ERROR'
+  | 'MISSING_SETTLEMENT_VA'
+  | 'OVERPAYMENT'
+  | 'PENDING_REFUND';
 
 export interface ExceptionTransaction {
   id: string;
@@ -4681,6 +4696,7 @@ export interface ExceptionSummary {
 export interface ExceptionFilters {
   status?: ExceptionStatus;
   type?: ExceptionType;
+  programId?: string;
   exceptionVaId?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -4691,7 +4707,7 @@ export interface ExceptionFilters {
 }
 
 export interface ExceptionListResponse {
-  content: ExceptionTransaction[];
+  exceptions: ExceptionTransaction[]; // real backend field name — was mistyped as `content` (Spring Page shape) here, never caught because no page called this endpoint until now
   totalElements: number;
   totalPages: number;
   page: number;
@@ -4817,6 +4833,7 @@ export const exceptionApi = {
     const params = new URLSearchParams();
     if (filters.status) params.append('status', filters.status);
     if (filters.type) params.append('type', filters.type);
+    if (filters.programId) params.append('programId', filters.programId);
     if (filters.exceptionVaId) params.append('exceptionVaId', filters.exceptionVaId);
     if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
     if (filters.dateTo) params.append('dateTo', filters.dateTo);
@@ -4825,9 +4842,17 @@ export const exceptionApi = {
     if (filters.page !== undefined) params.append('page', filters.page.toString());
     if (filters.size !== undefined) params.append('size', filters.size.toString());
     
-    return apiClient.get<ApiResponse<ExceptionListResponse>>(
+    // Backend returns each row's currency as `currency`; every consumer here
+    // (this page, AllocationModal) reads `.currencyCode` — remapped once at
+    // the boundary rather than touching each of those call sites.
+    const res = await apiClient.get<ApiResponse<{ exceptions: Array<Record<string, unknown>>; totalElements: number; totalPages: number; page: number; size: number }>>(
       `/treasury/exceptions?${params.toString()}`
-    ).then(r => r.data);
+    );
+    const body = res.data;
+    if (body.success && body.data) {
+      body.data.exceptions = body.data.exceptions.map((e) => ({ ...e, currencyCode: e.currency }));
+    }
+    return body as unknown as ApiResponse<ExceptionListResponse>;
   },
 
   /**
@@ -7263,33 +7288,7 @@ export const ihbUnifiedApi = {
   getEntityPosition: (entityId: string) =>
     apiClient.get<ApiResponse<any>>(`/ihb/entities/${entityId}/position`).then(r => r.data),
 
-  // Loans
-  getLoans: (corporateId: string) =>
-    apiClient.get<ApiResponse<IhbLoan[]>>(`/ihb/corporate/${corporateId}/loans`).then(r => r.data),
-
-  getActiveLoans: (corporateId: string) =>
-    apiClient.get<ApiResponse<IhbLoan[]>>(`/ihb/corporate/${corporateId}/loans/active`).then(r => r.data),
-
-  createLoan: (data: CreateLoanUnifiedRequest) =>
-    apiClient.post<ApiResponse<IhbLoan>>('/ihb/loans', data).then(r => r.data),
-
-  repayLoan: (loanId: string, amount: number) =>
-    apiClient.post<ApiResponse<IhbLoan>>(`/ihb/loans/${loanId}/repay`, { amount }).then(r => r.data),
-
-  // Deposits
-  getDeposits: (corporateId: string) =>
-    apiClient.get<ApiResponse<IhbDeposit[]>>(`/ihb/corporate/${corporateId}/deposits`).then(r => r.data),
-
-  createDeposit: (data: CreateDepositUnifiedRequest) =>
-    apiClient.post<ApiResponse<IhbDeposit>>('/ihb/deposits', data).then(r => r.data),
-
-  withdrawDeposit: (depositId: string, amount: number) =>
-    apiClient.post<ApiResponse<IhbDeposit>>(`/ihb/deposits/${depositId}/withdraw`, { amount }).then(r => r.data),
-
-  // Interest & Stats
-  calculateInterest: (corporateId: string) =>
-    apiClient.post<ApiResponse<CalculateInterestResponse>>(`/ihb/corporate/${corporateId}/interest/calculate`).then(r => r.data),
-
+  // Stats
   getStats: (corporateId: string) =>
     apiClient.get<ApiResponse<IhbStatsUnified>>(`/ihb/corporate/${corporateId}/stats`).then(r => r.data),
 
@@ -7561,6 +7560,16 @@ export interface EntityPairSummary {
   pendingTransactions: number;
 }
 
+export interface SubsidiaryIntercompanyPosition {
+  subsidiaryEntityId: string;
+  subsidiaryEntityCode: string;
+  subsidiaryEntityName: string;
+  currencyCode: string;
+  receivableBalance: number;
+  payableBalance: number;
+  netPosition: number;
+}
+
 export interface BilateralPosition {
   entity1Id: string;
   entity1Code: string;
@@ -7811,6 +7820,10 @@ export const intercompanyApiEnhanced = {
   // Get entity pairs
   getEntityPairs: (corporateId: string) =>
     apiClient.get<ApiResponse<EntityPairSummary[]>>('/intercompany/entity-pairs', { params: { corporateId } }).then(r => r.data),
+
+  // Get per-subsidiary IC Receivable/Payable positions (real VA balances, not IntercompanyTransaction/Recharge sums)
+  getPositions: (corporateId: string) =>
+    apiClient.get<ApiResponse<SubsidiaryIntercompanyPosition[]>>('/intercompany/positions', { params: { corporateId } }).then(r => r.data),
 
   // Get bilateral position
   getBilateralPosition: (entity1Id: string, entity2Id: string) =>

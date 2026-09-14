@@ -80,6 +80,7 @@ public class BalanceStructureDto {
         // ====================================================================
         private SpecialVaType specialType;      // REGULAR, SETTLEMENT, EXCEPTION, CURRENCY_MIRROR
         private AccountCategory accountCategory; // ROOT, AGGREGATION, SETTLEMENT, etc.
+        private String mirrorAccountType;       // IC_RECEIVABLE, IC_PAYABLE, etc. — null for non-mirror VAs
         
         // Balance information
         private BigDecimal localBalance;
@@ -185,6 +186,20 @@ public class BalanceStructureDto {
         
         // Currencies involved
         private List<String> currencies;
+    }
+
+    // ========================================================================
+    // BREAKDOWN ITEM DTO (by-corporate / by-program dashboard views)
+    // ========================================================================
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BalanceBreakdownItem {
+        private UUID id;
+        private String name;
+        private BigDecimal balance;
     }
 
     // ========================================================================

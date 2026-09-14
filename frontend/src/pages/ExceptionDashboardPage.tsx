@@ -37,6 +37,7 @@ import {
   X,
   Info,
   TrendingUp,
+  TrendingDown,
   Wallet,
   Target,
   History,
@@ -45,68 +46,26 @@ import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer } from '../co
 import { formatCurrency, cn } from '../utils';
 import { AllocationModal } from '../components/treasury/AllocationModal';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { ScopeSelector, ScopeCorporate, ScopeProgram } from '../components/layout/ScopeSelector';
+import {
+  exceptionApi,
+  corporatesApi,
+  programsApi,
+  ExceptionStatus,
+  ExceptionType,
+  ExceptionTransaction,
+  ExceptionSummary,
+  ExceptionFilters,
+  ExceptionTimelineEntry,
+} from '../services/api';
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
-
-type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'WRITTEN_OFF' | 'REVERSED';
-type ExceptionType = 'UNMATCHED_PAYMENT' | 'MISSING_SETTLEMENT_VA' | 'BANK_INTEREST' | 'FX_DIFFERENCE' | 'CHARGE_REVERSAL' | 'MANUAL_ADJUSTMENT' | 'OTHER';
-
-interface ExceptionTransaction {
-  id: string;
-  exceptionNumber: string;
-  programId: string;
-  exceptionType: ExceptionType;
-  status: ExceptionStatus;
-  amount: number;
-  currencyCode: string;
-  exceptionVaId?: string;
-  exceptionVaNumber?: string;
-  sourceVaId?: string;
-  sourceVaNumber?: string;
-  allocatedToVaId?: string;
-  allocatedToVaNumber?: string;
-  bankReference?: string;
-  valueDate?: string;
-  remitterName?: string;
-  remitterReference?: string;
-  remitterBank?: string;
-  remitterAccount?: string;
-  notes?: string;
-  allocatedBy?: string;
-  allocatedAt?: string;
-  allocationNotes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ExceptionSummary {
-  openCount: number;
-  openAmount: number;
-  inProgressCount: number;
-  inProgressAmount: number;
-  resolvedCount: number;
-  resolvedAmount: number;
-  writtenOffCount: number;
-  writtenOffAmount: number;
-  agedOver30Days?: number;
-  todayResolved?: number;
-}
-
-interface ExceptionFilters {
-  status?: ExceptionStatus;
-  type?: ExceptionType;
-  page?: number;
-  size?: number;
-}
-
-interface ExceptionTimelineEntry {
-  action: string;
-  timestamp: string;
-  actor?: string;
-  details?: string;
-}
+// ExceptionStatus/Type/Transaction/Summary/Filters/TimelineEntry come from
+// services/api.ts — this page used to shadow them with its own local mock
+// copies, which is why it always showed 3 fake hardcoded rows instead of the
+// real backend data.
 
 // Task 3.3.3: Allocation result
 interface AllocationResult {
@@ -132,26 +91,41 @@ interface ToastNotification {
 // CONSTANTS
 // ============================================================================
 
-const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, { 
-  label: string; 
-  variant: 'success' | 'warning' | 'error' | 'info' | 'neutral'; 
-  icon: React.FC<{ className?: string }> 
+const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
+  label: string;
+  variant: 'success' | 'warning' | 'error' | 'info' | 'neutral';
+  icon: React.FC<{ className?: string }>
 }> = {
   OPEN: { label: 'Open', variant: 'warning', icon: Clock },
   IN_PROGRESS: { label: 'In Progress', variant: 'info', icon: RefreshCw },
+  ON_HOLD: { label: 'On Hold', variant: 'neutral', icon: Eye },
+  ESCALATED: { label: 'Escalated', variant: 'error', icon: AlertTriangle },
   RESOLVED: { label: 'Resolved', variant: 'success', icon: CheckCircle2 },
   WRITTEN_OFF: { label: 'Written Off', variant: 'neutral', icon: XCircle },
-  REVERSED: { label: 'Reversed', variant: 'error', icon: RotateCcw },
+  RETURNED: { label: 'Returned', variant: 'error', icon: RotateCcw },
 };
 
+// Kept in sync with the backend's ExceptionTransaction.ExceptionType enum —
+// Record<> makes TypeScript enforce that every real backend value has an
+// entry here, so a new/renamed type can't silently reach `undefined.icon`
+// the way this page's mock-data era ('CHARGE_REVERSAL', 'OTHER', etc. — none
+// of which the backend actually has) did.
 const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.FC<{ className?: string }> }> = {
   UNMATCHED_PAYMENT: { label: 'Unmatched Payment', icon: CreditCard },
-  MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
+  RECONCILIATION_DIFF: { label: 'Reconciliation Difference', icon: History },
+  FAILED_PAYMENT: { label: 'Failed Payment', icon: AlertCircle },
+  INVALID_VIBAN: { label: 'Invalid VIBAN', icon: X },
+  AMOUNT_MISMATCH: { label: 'Amount Mismatch', icon: Search },
+  DUPLICATE_PAYMENT: { label: 'Duplicate Payment', icon: AlertTriangle },
   BANK_INTEREST: { label: 'Bank Interest', icon: DollarSign },
+  BANK_CHARGE: { label: 'Bank Charge', icon: Wallet },
   FX_DIFFERENCE: { label: 'FX Difference', icon: TrendingUp },
-  CHARGE_REVERSAL: { label: 'Charge Reversal', icon: RotateCcw },
-  MANUAL_ADJUSTMENT: { label: 'Manual Adjustment', icon: FileText },
-  OTHER: { label: 'Other', icon: AlertCircle },
+  FX_GAIN: { label: 'FX Gain', icon: TrendingUp },
+  FX_LOSS: { label: 'FX Loss', icon: TrendingDown },
+  SYSTEM_ERROR: { label: 'System Error', icon: AlertTriangle },
+  MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
+  OVERPAYMENT: { label: 'Overpayment', icon: DollarSign },
+  PENDING_REFUND: { label: 'Pending Refund', icon: RotateCcw },
 };
 
 // ============================================================================
@@ -201,76 +175,6 @@ const ToastContainer: React.FC<{ toasts: ToastNotification[]; onDismiss: (id: st
       {toasts.map((toast) => <Toast key={toast.id} toast={toast} onDismiss={onDismiss} />)}
     </div>
   );
-};
-
-// ============================================================================
-// MOCK API
-// ============================================================================
-
-const exceptionApi = {
-  getAll: async (filters: ExceptionFilters) => {
-    const mockExceptions: ExceptionTransaction[] = [
-      {
-        id: 'exc-001',
-        exceptionNumber: 'EXC-2024-001',
-        programId: 'prog-001',
-        exceptionType: 'UNMATCHED_PAYMENT',
-        status: 'OPEN',
-        amount: 5000,
-        currencyCode: 'AED',
-        exceptionVaNumber: 'EXCEPTION-AED-001',
-        remitterName: 'ABC Trading LLC',
-        remitterReference: 'INV-2024-001',
-        remitterBank: 'Emirates NBD',
-        bankReference: 'BANCS-REF-12345',
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'exc-002',
-        exceptionNumber: 'EXC-2024-002',
-        programId: 'prog-001',
-        exceptionType: 'MISSING_SETTLEMENT_VA',
-        status: 'OPEN',
-        amount: 150,
-        currencyCode: 'AED',
-        exceptionVaNumber: 'EXCEPTION-AED-001',
-        notes: 'Fee from wallet topup',
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-      {
-        id: 'exc-003',
-        exceptionNumber: 'EXC-2024-003',
-        programId: 'prog-001',
-        exceptionType: 'BANK_INTEREST',
-        status: 'IN_PROGRESS',
-        amount: 2340,
-        currencyCode: 'AED',
-        exceptionVaNumber: 'EXCEPTION-AED-001',
-        notes: 'ADCB December interest',
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    ];
-
-    let filtered = mockExceptions;
-    if (filters.status) filtered = filtered.filter(e => e.status === filters.status);
-    if (filters.type) filtered = filtered.filter(e => e.exceptionType === filters.type);
-
-    return { success: true, data: { content: filtered, totalPages: 1, totalElements: filtered.length, page: filters.page || 0 }};
-  },
-  getSummary: async () => ({
-    success: true,
-    data: { openCount: 12, openAmount: 45230.50, inProgressCount: 5, inProgressAmount: 18500, resolvedCount: 156, resolvedAmount: 890000, writtenOffCount: 8, writtenOffAmount: 12500, agedOver30Days: 3, todayResolved: 4 } as ExceptionSummary,
-  }),
-  getTimeline: async (id: string) => ({
-    success: true,
-    data: [
-      { action: 'Created', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), details: 'Unmatched payment parked' },
-      { action: 'Note Added', timestamp: new Date(Date.now() - 1.5 * 24 * 60 * 60 * 1000).toISOString(), actor: 'John Smith', details: 'Investigating remitter info' },
-    ] as ExceptionTimelineEntry[],
-  }),
 };
 
 // ============================================================================
@@ -462,6 +366,25 @@ const ExceptionDashboardPage: React.FC = () => {
   const [allocationException, setAllocationException] = useState<ExceptionTransaction | null>(null);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
+  // Corporate/program scope — the backend only filters by programId (there's
+  // no corporateId param on GET /treasury/exceptions), so the corporate
+  // dropdown exists to narrow the program list, same as InHouseBankPage.
+  const [corporates, setCorporates] = useState<ScopeCorporate[]>([]);
+  const [programs, setPrograms] = useState<ScopeProgram[]>([]);
+  const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  const [selectedProgramId, setSelectedProgramId] = useState('');
+  const [loadingSelectors, setLoadingSelectors] = useState(true);
+
+  useEffect(() => {
+    Promise.all([corporatesApi.getAll(), programsApi.getAll()])
+      .then(([corpRes, progRes]) => {
+        if (corpRes.success) setCorporates(corpRes.data as unknown as ScopeCorporate[]);
+        if (progRes.success) setPrograms((progRes.data as any).programs ?? []);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSelectors(false));
+  }, []);
+
   const addToast = useCallback((type: ToastType, title: string, message: string, duration?: number) => {
     setToasts(prev => [...prev, { id: `toast-${Date.now()}`, type, title, message, duration }]);
   }, []);
@@ -474,13 +397,28 @@ const ExceptionDashboardPage: React.FC = () => {
     if (showLoader) setLoading(true);
     else setRefreshing(true);
     try {
-      const [exceptionsRes, summaryRes] = await Promise.all([exceptionApi.getAll(filters), exceptionApi.getSummary()]);
-      if (exceptionsRes.success) { setExceptions(exceptionsRes.data.content); setTotalElements(exceptionsRes.data.totalElements); }
-      if (summaryRes.success) setSummary(summaryRes.data);
+      const scopedFilters = { ...filters, programId: selectedProgramId || undefined };
+      const [exceptionsRes, summaryRes] = await Promise.all([
+        exceptionApi.getAll(scopedFilters),
+        exceptionApi.getSummary(selectedProgramId || undefined),
+      ]);
+      if (exceptionsRes.success) { setExceptions(exceptionsRes.data.exceptions); setTotalElements(exceptionsRes.data.totalElements); }
+      // Backend's /exceptions/summary omits writtenOffAmount (and would omit
+      // any other count/amount) when there's nothing in that bucket yet —
+      // formatCurrency(undefined) rendered as "AED NaN" rather than "AED 0.00".
+      // The type says these are always present; at runtime they aren't, hence
+      // defaulting every field before the real (possibly partial) data wins.
+      if (summaryRes.success) setSummary({
+        openCount: 0, openAmount: 0, inProgressCount: 0, inProgressAmount: 0,
+        resolvedCount: 0, resolvedAmount: 0, writtenOffCount: 0, writtenOffAmount: 0,
+        reversedCount: 0, agedOver30Days: 0, agedOver60Days: 0, agedOver90Days: 0,
+        todayCreated: 0, todayResolved: 0,
+        ...(summaryRes.data as Partial<ExceptionSummary>),
+      });
       setError(null);
     } catch (err: unknown) { setError(err instanceof Error ? err.message : 'Failed to load data'); }
     finally { setLoading(false); setRefreshing(false); }
-  }, [filters]);
+  }, [filters, selectedProgramId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -546,6 +484,20 @@ const ExceptionDashboardPage: React.FC = () => {
     <Page>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       {/* Quick Actions migrated to Aperture Layout header. */}
+
+      {/* Corporate & Program Selector — backend only filters by programId,
+          so the corporate dropdown exists purely to narrow the program list. */}
+      <ScopeSelector
+        mode="corporate-program"
+        corporates={corporates}
+        programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
+        selectedCorporateId={selectedCorporateId}
+        selectedProgramId={selectedProgramId}
+        onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}
+        onProgramChange={setSelectedProgramId}
+        loading={loadingSelectors}
+        disableChildUntilParent
+      />
 
       {/* Summary Stats */}
       {summary && (

@@ -905,12 +905,28 @@ public class PhysicalAccountController {
         response.put("branchName", account.getBranchName());
         
         // Entity info
+        // entityName/entityCode are a denormalized cache on PhysicalAccount,
+        // populated when an account is created via legalEntityId. Seed/legacy
+        // rows can have a real legalEntityId but a never-populated cache
+        // (e.g. inserted directly via SQL) — resolve live from the legal
+        // entity in that case instead of silently falling back to the
+        // corporate name, which made every account in a corporate look like
+        // it belonged to no specific entity.
+        String entityName = account.getEntityName();
+        String entityCode = account.getEntityCode();
+        if ((entityName == null || entityCode == null) && account.getLegalEntityId() != null) {
+            LegalEntity resolvedEntity = legalEntityRepository.findById(account.getLegalEntityId()).orElse(null);
+            if (resolvedEntity != null) {
+                if (entityName == null) entityName = resolvedEntity.getEntityName();
+                if (entityCode == null) entityCode = resolvedEntity.getEntityCode();
+            }
+        }
         response.put("corporateId", account.getCorporateId());
         response.put("corporateName", corporateName);
         response.put("legalEntityId", account.getLegalEntityId());
         response.put("entityId", account.getLegalEntityId()); // Alias for frontend compatibility
-        response.put("entityName", account.getEntityName() != null ? account.getEntityName() : corporateName);
-        response.put("entityCode", account.getEntityCode());
+        response.put("entityName", entityName != null ? entityName : corporateName);
+        response.put("entityCode", entityCode);
         
         // Balances
         response.put("currency", account.getCurrencyCode());

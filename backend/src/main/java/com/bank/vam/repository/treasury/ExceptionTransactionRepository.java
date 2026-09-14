@@ -237,11 +237,26 @@ public interface ExceptionTransactionRepository extends JpaRepository<ExceptionT
     List<Object[]> getSummaryByStatus();
 
     /**
+     * Same as {@link #getSummaryByStatus()}, scoped to one program.
+     */
+    @Query("SELECT e.status, COUNT(e), COALESCE(SUM(e.amount), 0) FROM ExceptionTransaction e " +
+           "WHERE e.programId = :programId GROUP BY e.status ORDER BY e.status")
+    List<Object[]> getSummaryByStatusAndProgramId(@Param("programId") UUID programId);
+
+    /**
      * Get exception summary by type for open exceptions.
      */
     @Query("SELECT e.exceptionType, COUNT(e), COALESCE(SUM(e.amount), 0) FROM ExceptionTransaction e " +
            "WHERE e.status IN ('OPEN', 'IN_PROGRESS') GROUP BY e.exceptionType ORDER BY e.exceptionType")
     List<Object[]> getOpenSummaryByType();
+
+    /**
+     * Same as {@link #getOpenSummaryByType()}, scoped to one program.
+     */
+    @Query("SELECT e.exceptionType, COUNT(e), COALESCE(SUM(e.amount), 0) FROM ExceptionTransaction e " +
+           "WHERE e.status IN ('OPEN', 'IN_PROGRESS') AND e.programId = :programId " +
+           "GROUP BY e.exceptionType ORDER BY e.exceptionType")
+    List<Object[]> getOpenSummaryByTypeAndProgramId(@Param("programId") UUID programId);
 
     /**
      * Get exception summary by Exception VA.

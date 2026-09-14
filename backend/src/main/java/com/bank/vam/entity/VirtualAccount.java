@@ -618,11 +618,12 @@ public class VirtualAccount extends BaseEntity {
     /**
      * IC Payable VA ID - Treasury's intercompany payable VA for this subsidiary.
      *
-     * For ROBO (Receive-On-Behalf-Of) collections where Treasury collects on behalf of a subsidiary,
-     * this tracks Treasury's obligation to the subsidiary. When Treasury receives funds via ROBO,
-     * the IC Payable VA balance INCREASES (Treasury owes more to subsidiary).
+     * For COBO (Collect-On-Behalf-Of) collections where Treasury collects on behalf of a
+     * subsidiary, this tracks Treasury's obligation to the subsidiary. When Treasury receives
+     * funds via COBO, the IC Payable VA balance INCREASES (Treasury owes more to subsidiary).
      *
-     * Symmetric counterpart to icReceivableVaId for POBO flows.
+     * Symmetric counterpart to icReceivableVaId, mirroring POBO's IC Receivable but for the
+     * opposite flow direction.
      */
     @Column(name = "ic_payable_va_id")
     private UUID icPayableVaId;
@@ -953,7 +954,7 @@ public class VirtualAccount extends BaseEntity {
     }
 
     public enum VaSpecialType {
-        REGULAR, SETTLEMENT, EXCEPTION, IC_PAYABLE, IC_RECEIVABLE
+        REGULAR, SETTLEMENT, EXCEPTION
     }
 
     /**
@@ -1048,14 +1049,17 @@ public class VirtualAccount extends BaseEntity {
      * - IHB Current Account (IHB_CURRENT) - Subsidiary's position at Treasury
      * - IHB Settlement VA (IHB_SETTLEMENT) - Per-subsidiary routing/settlement point
      * - IC Receivable VA at Treasury (IC_RECEIVABLE) - Treasury's claim on subsidiary
+     * - IC Payable VA at Treasury (IC_PAYABLE) - Treasury's obligation to subsidiary
      */
     public enum MirrorAccountType {
         /** Subsidiary's IHB Current Account - the main IHB position account */
         IHB_CURRENT,
         /** Per-subsidiary settlement VA - routes payments to Treasury */
         IHB_SETTLEMENT,
-        /** Treasury's IC Receivable - mirrors subsidiary's IHB balance */
+        /** Treasury's IC Receivable - mirrors subsidiary's IHB balance (POBO) */
         IC_RECEIVABLE,
+        /** Treasury's IC Payable - mirrors subsidiary's IHB balance (COBO) */
+        IC_PAYABLE,
         /** Treasury's omnibus settlement account */
         TREASURY_SETTLEMENT,
         /** Not a mirror account */
@@ -1863,6 +1867,13 @@ public class VirtualAccount extends BaseEntity {
     }
 
     /**
+     * Check if this is an IC Payable VA (Treasury's obligation to subsidiary).
+     */
+    public boolean isIcPayableVa() {
+        return mirrorAccountType == MirrorAccountType.IC_PAYABLE;
+    }
+
+    /**
      * Check if this is a Treasury Settlement VA (omnibus settlement).
      */
     public boolean isTreasurySettlementVa() {
@@ -1895,6 +1906,13 @@ public class VirtualAccount extends BaseEntity {
      */
     public boolean isConfiguredFor6LegPobo() {
         return hasIhbSettlementVa() && hasIcReceivable() && treasuryPoolVaId != null;
+    }
+
+    /**
+     * Check if all mirror accounts are configured for 6-leg COBO.
+     */
+    public boolean isConfiguredFor6LegCobo() {
+        return hasIhbSettlementVa() && hasIcPayable() && treasuryPoolVaId != null;
     }
 
     // Backward compatibility getters

@@ -74,6 +74,15 @@ public class LegalEntity extends BaseEntity {
     @Builder.Default
     private Integer hierarchyLevel = 0;
 
+    /**
+     * Populated on demand by tree-building endpoints (e.g.
+     * HierarchyController.getLegalEntityTree()) — not a real relationship,
+     * just a place to hang the recursive result so the frontend's existing
+     * `LegalEntity.children` field (services/api.ts) actually gets filled.
+     */
+    @Transient
+    private List<LegalEntity> children;
+
     // ========================================================================
     // VA HIERARCHY INTEGRATION (Currency Mirror Support)
     // ========================================================================

@@ -4,6 +4,7 @@ import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.hierarchy.HierarchyDto.*;
 import com.bank.vam.entity.hierarchy.HierarchyNode;
 import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.service.hierarchy.BalanceAggregationService;
@@ -43,6 +44,7 @@ public class HierarchyController {
     private final BalanceAggregationService balanceAggregationService;
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final LegalEntityRepository legalEntityRepository;
+    private final VirtualAccountRepository virtualAccountRepository;
 
     // ========================================================================
     // LEGAL ENTITY ENDPOINTS
@@ -112,17 +114,33 @@ public class HierarchyController {
     @Operation(summary = "Get legal entity hierarchy tree", description = "Get legal entities as a tree structure")
     public ResponseEntity<ApiResponse<List<LegalEntity>>> getLegalEntityTree(
             @PathVariable UUID corporateId) {
-        
+
         log.debug("Fetching legal entity tree for corporate: {}", corporateId);
-        
+
         try {
-            // Get root entities (no parent)
-            List<LegalEntity> entities = legalEntityRepository.findByCorporateIdAndParentEntityIdIsNull(corporateId);
-            return ResponseEntity.ok(ApiResponse.success(entities));
-            
+            // Was: return the roots with no recursion at all, so `children` was
+            // always empty regardless of real parent/child data — every entity
+            // below a root (e.g. Treasury/UK/USA/UAE under a holding company)
+            // was silently invisible to any caller of this endpoint.
+            List<LegalEntity> roots = legalEntityRepository.findByCorporateIdAndParentEntityIdIsNull(corporateId);
+            roots.forEach(this::attachChildren);
+            return ResponseEntity.ok(ApiResponse.success(roots));
+
         } catch (Exception e) {
             log.error("Failed to fetch legal entity tree", e);
             return ResponseEntity.ok(ApiResponse.error("Failed to fetch: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Recursively populate {@link LegalEntity#getChildren()} — see
+     * {@link #getLegalEntityTree} for why this exists.
+     */
+    private void attachChildren(LegalEntity entity) {
+        List<LegalEntity> children = legalEntityRepository.findByParentEntityIdOrderByEntityName(entity.getId());
+        if (!children.isEmpty()) {
+            children.forEach(this::attachChildren);
+            entity.setChildren(children);
         }
     }
 
@@ -669,7 +687,7 @@ public class HierarchyController {
         return NodeResponse.builder()
                 .id(node.getId())
                 .nodeCode(node.getNodeCode())
-                .nodeName(node.getNodeName())
+                .nodeName(resolveDisplayName(node))
                 .nodeType(node.getNodeType())
                 .levelNumber(node.getLevelNumber())
                 .dimensionValue(node.getDimensionValue())
@@ -684,6 +702,24 @@ public class HierarchyController {
                 .status(node.getStatus())
                 .virtualAccountId(node.getVirtualAccountId() != null ? node.getVirtualAccountId() : null)
                 .build();
+    }
+
+    /**
+     * A node linked to a VA (AGGREGATION/ROOT nodes created via
+     * HierarchyService.createAggregation()) has two name columns that can
+     * drift (node_name vs. virtual_accounts.va_name). The VA is the source
+     * of truth for what a user actually renames — sourcing the display
+     * name live from it here means a client always sees the current
+     * account name even if some other write path leaves node_name stale.
+     * Falls back to the node's own name for structural nodes with no VA.
+     */
+    private String resolveDisplayName(HierarchyNode node) {
+        if (node.getVirtualAccountId() != null) {
+            return virtualAccountRepository.findById(node.getVirtualAccountId())
+                    .map(com.bank.vam.entity.VirtualAccount::getVaName)
+                    .orElse(node.getNodeName());
+        }
+        return node.getNodeName();
     }
 
 // ========================================================================

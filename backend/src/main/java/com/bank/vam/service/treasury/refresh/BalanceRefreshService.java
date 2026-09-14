@@ -5,8 +5,11 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.BalanceDataSource;
 import com.bank.vam.entity.VirtualAccount.BalanceRefreshStatus;
+import com.bank.vam.entity.treasury.ExceptionTransaction;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.treasury.ExceptionTransactionRepository;
+import com.bank.vam.service.treasury.SettlementVaResolverService;
 import com.bank.vam.service.treasury.refresh.ShadowBalanceAdapter.RefreshResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -14,6 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
@@ -41,16 +45,22 @@ public class BalanceRefreshService {
     private final VirtualAccountRepository vaRepository;
     private final MultiBankProperties multiBankProperties;
     private final StubAdapter stub;
+    private final SettlementVaResolverService settlementVaResolverService;
+    private final ExceptionTransactionRepository exceptionRepository;
     private final Map<BalanceDataSource, ShadowBalanceAdapter> adapters =
             new EnumMap<>(BalanceDataSource.class);
 
     public BalanceRefreshService(VirtualAccountRepository vaRepository,
                                  MultiBankProperties multiBankProperties,
                                  List<ShadowBalanceAdapter> dedicatedAdapters,
-                                 StubAdapter stub) {
+                                 StubAdapter stub,
+                                 SettlementVaResolverService settlementVaResolverService,
+                                 ExceptionTransactionRepository exceptionRepository) {
         this.vaRepository = vaRepository;
         this.multiBankProperties = multiBankProperties;
         this.stub = stub;
+        this.settlementVaResolverService = settlementVaResolverService;
+        this.exceptionRepository = exceptionRepository;
         for (ShadowBalanceAdapter a : dedicatedAdapters) {
             // Only index real adapters; the stub is the fallback (skip self-registration).
             if (a != stub) {
@@ -154,6 +164,7 @@ public class BalanceRefreshService {
                 shadow.setBankBalanceAt(result.asOf());
             }
             shadow.setLastBalanceRefreshStatus(BalanceRefreshStatus.SUCCESS);
+            postReconciliationVarianceIfAny(shadow);
         } else {
             shadow.setLastBalanceRefreshStatus(BalanceRefreshStatus.FAILED);
             log.warn("Refresh failed for shadow {} ({}): {}",
@@ -161,6 +172,51 @@ public class BalanceRefreshService {
         }
         vaRepository.save(shadow);
         return shadow.getLastBalanceRefreshStatus();
+    }
+
+    /**
+     * Bank statement ({@code bankBalance}) vs ledger ({@code currentBalance}) on the same
+     * shadow row are two independently-updated fields (this method updates only the
+     * former; ledger movements like {@code executeTransfer} update only the latter) — see
+     * {@code VirtualAccount.getEffectiveBalance()}. A non-zero gap after a fresh CBS sync is
+     * a genuine data-quality issue worth flagging, but it is NOT new or missing money:
+     * {@code getEffectiveBalance()} already returns {@code bankBalance} for PHYSICAL_MIRROR
+     * accounts, so this shadow's full confirmed balance was already counted in every rollup
+     * before this method ever runs. Crediting/debiting the Exception VA by the variance (an
+     * earlier version of this method did exactly that) double-counts that same cash a second
+     * time in BalanceStructureService's corporate-wide total — confirmed live: TestMNC's
+     * consolidated position jumped by the exact variance amount the moment it was posted.
+     * So this only raises an audit-trail record (ExceptionType.RECONCILIATION_DIFF) for
+     * someone to investigate why the ledger drifted — it does not move any balance — and
+     * brings the shadow's own ledger back into agreement so the same gap isn't re-flagged
+     * on the next refresh cycle.
+     */
+    private void postReconciliationVarianceIfAny(VirtualAccount shadow) {
+        BigDecimal bankBalance = shadow.getBankBalance();
+        BigDecimal currentBalance = shadow.getCurrentBalance();
+        if (bankBalance == null || currentBalance == null || shadow.getProgramId() == null) {
+            return;
+        }
+        BigDecimal variance = bankBalance.subtract(currentBalance);
+        if (variance.compareTo(BigDecimal.ZERO) == 0) {
+            return;
+        }
+
+        VirtualAccount exceptionVa = settlementVaResolverService.getOrCreateExceptionVa(
+                shadow.getProgramId(), shadow.getCurrencyCode(), shadow.getCorporateId());
+
+        exceptionRepository.save(ExceptionTransaction.createReconciliationDiffException(
+                shadow.getProgramId(), exceptionVa.getId(), shadow.getId(), variance,
+                shadow.getCurrencyCode(),
+                "Shadow " + shadow.getVaNumber() + " bank balance vs ledger balance variance on refresh"));
+
+        log.warn("Reconciliation variance on shadow {}: bank={} book={} variance={} -> logged against Exception VA {} (no balance moved)",
+                shadow.getVaNumber(), bankBalance, currentBalance, variance, exceptionVa.getVaNumber());
+
+        // Bring the ledger back into agreement with the just-confirmed bank balance —
+        // the variance itself now lives in the Exception VA, not as an ongoing gap here.
+        shadow.setCurrentBalance(bankBalance);
+        shadow.setAvailableBalance(bankBalance);
     }
 
     private ShadowBalanceAdapter resolveAdapter(BalanceDataSource source) {

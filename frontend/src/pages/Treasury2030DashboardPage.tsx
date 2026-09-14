@@ -11,8 +11,9 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
-import { EntityHierarchyTreemap, sumBalance } from '../components/dashboard/EntityHierarchyTreemap';
+import { EntityHierarchyTreemap, FlatBreakdownTreemap, sumBalance } from '../components/dashboard/EntityHierarchyTreemap';
 import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
+import { IntercompanyPositionChart } from '../components/dashboard/IntercompanyPositionChart';
 import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
 import { PositionStrip } from '../components/PositionStrip';
@@ -30,15 +31,15 @@ import {
   Transaction,
   sweepingApi,
   SweepRule,
-  ihbApi,
-  IhbLoan,
-  IhbDeposit,
   fxRateApi,
   FxRate,
   dashboardApi,
   PendingApprovals,
   balanceStructureApi,
   BalanceHierarchyNode,
+  BalanceBreakdownItem,
+  intercompanyApiEnhanced,
+  SubsidiaryIntercompanyPosition,
 } from '../services/api';
 import { cockpitApi } from '../services/cockpitApi';
 import { useCopilot } from '../ai/copilot/CopilotProvider';
@@ -119,6 +120,12 @@ function useChartChrome() {
     tooltipText: isDark ? '#f2f2f3' : '#46494c', // neutral-50 / primary-900
     tooltipShadow: '0 4px 12px rgba(70,73,76,0.15)',
     categorical: isDark ? CHART_CATEGORICAL_DARK : CHART_CATEGORICAL_LIGHT,
+    // Semantic (not categorical) pair for IC Receivable/Payable — reuses the
+    // same green/red family already in CHART_CATEGORICAL_* (indices 1 and 3)
+    // rather than inventing new colors, since those two are already verified
+    // visible in both themes.
+    receivableFill: isDark ? CHART_CATEGORICAL_DARK[1] : CHART_CATEGORICAL_LIGHT[1],
+    payableFill: isDark ? CHART_CATEGORICAL_DARK[3] : CHART_CATEGORICAL_LIGHT[3],
   }), [isDark]);
 }
 
@@ -144,28 +151,38 @@ const fmtTime = (iso?: string) => {
   const d = new Date(iso);
   return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 };
-const fmtDay = (d: Date) =>
-  `${d.toLocaleDateString('en-US', { weekday: 'short' })} · ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-
 const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ onNavigate }) => {
   const chartChrome = useChartChrome();
   const [summary, setSummary] = useState<MultiBankLiquiditySummary | null>(null);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [rules, setRules] = useState<SweepRule[]>([]);
-  const [loans, setLoans] = useState<IhbLoan[]>([]);
-  const [deposits, setDeposits] = useState<IhbDeposit[]>([]);
   const [fxRates, setFxRates] = useState<FxRate[]>([]);
   const [pending, setPending] = useState<PendingApprovals | null>(null);
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  // Program-level scope for the Position breakdown's drill-down — only
+  // used by the entity-hierarchy fetch and this section, unlike
+  // selectedCorporateId which drives the whole page.
+  const [selectedProgramId, setSelectedProgramId] = useState('');
   const [view, setView] = useState<AcctView>('currency');
   // Accounts table groups collapse to just their header/subtotal by default
   // (see the Accounts table render below) — this tracks which group keys
   // have been expanded to show their individual account rows.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hierarchyRoot, setHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
-  const [positionView, setPositionView] = useState<'entity' | 'geo'>('entity');
+  // Program-scoped tree for the Position breakdown's "By entity" drill-down
+  // only — deliberately separate from `hierarchyRoot` above. They used to
+  // share one fetch/state, which meant drilling into a program in the
+  // breakdown widget silently shrank the "Consolidated position" hero
+  // figure to that one program's balance, with nothing on the hero card
+  // indicating it was no longer showing the full corporate/firm total.
+  const [programHierarchyRoot, setProgramHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
+  const [programHierarchyLoading, setProgramHierarchyLoading] = useState(false);
+  const [corporateBreakdown, setCorporateBreakdown] = useState<BalanceBreakdownItem[]>([]);
+  const [programBreakdown, setProgramBreakdown] = useState<BalanceBreakdownItem[]>([]);
+  const [icPositions, setIcPositions] = useState<SubsidiaryIntercompanyPosition[]>([]);
+  const [positionView, setPositionView] = useState<'corporate' | 'program' | 'entity' | 'geo' | 'intercompany'>('entity');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { open: openCopilot } = useCopilot();
@@ -173,31 +190,58 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
   const nav = (page?: string) => { if (page) onNavigate?.(page); };
 
+  // Guards against out-of-order responses: switching the corporate scope
+  // fires a second load() while the first (e.g. the slower, heavier
+  // "All Corporates" mount-time call) is still in flight. Without this,
+  // whichever call's Promise.allSettled happens to resolve last wins and
+  // overwrites the screen with stale data — confirmed live: scoping to
+  // TestMNC kept showing the All-Corporates consolidated-position figure
+  // because that unscoped call (23 accounts) resolved after the lighter
+  // scoped one (3 accounts).
+  const loadSeq = useRef(0);
   const load = async (scoped?: string) => {
+    const seq = ++loadSeq.current;
     const s = scoped || undefined;
-    const [mb, att, tx, rl, ln, dp, fx, pa, bh] = await Promise.allSettled([
+    const [mb, att, tx, rl, fx, pa, bh, cb, pb, icp] = await Promise.allSettled([
       multiBankLiquidityApi.getSummary(s),
       cockpitApi.getAttentionItems(s),
       transactionsApi.getRecent(20, s),
       sweepingApi.getAllRules(),
-      ihbApi.getAllLoans(),
-      ihbApi.getAllDeposits(),
       fxRateApi.getAllActiveRates(),
       dashboardApi.getPendingApprovals(),
-      // Fetched once here (not inside EntityHierarchyTreemap, which used to
-      // fetch this same endpoint independently) so both the treemap and the
-      // new consolidated-position headline figure share one network call.
+      // Firm/corporate-wide only — deliberately NOT narrowed by
+      // selectedProgramId. This feeds the "Consolidated position" hero
+      // figure, which must keep meaning the full scope regardless of
+      // whatever the Position breakdown widget is currently drilled into.
+      // See programHierarchyRoot below for the program-scoped tree used by
+      // the breakdown's own "By entity" view.
       balanceStructureApi.getHierarchy(s),
+      // "By corporate" is always firm-wide — unlike the other breakdowns it
+      // doesn't take a scope, since it IS the firm-wide-by-corporate view.
+      balanceStructureApi.getByCorporate('AED'),
+      // "By program" only makes sense once a specific corporate is picked
+      // above — with no corporate selected there's no single owner to
+      // attribute a mixed list to, so skip the call entirely rather than
+      // silently falling back to a firm-wide mix (confirmed confusing live:
+      // a TestMNC program showed up with All Corporates selected, with
+      // nothing indicating which corporate it belonged to).
+      s ? balanceStructureApi.getByProgram(s, 'AED') : Promise.resolve({ data: [] as BalanceBreakdownItem[] }),
+      // Intercompany positions are per-corporate (there's no firm-wide
+      // "netted across everyone" view that would mean anything) — same
+      // corporate-only gate as "By program" above.
+      s ? intercompanyApiEnhanced.getPositions(s) : Promise.resolve({ data: [] as SubsidiaryIntercompanyPosition[] }),
     ]);
+    if (seq !== loadSeq.current) return; // a newer load() call superseded this one
     if (mb.status === 'fulfilled' && mb.value?.data) setSummary(mb.value.data);
     if (att.status === 'fulfilled') setAttention(att.value);
     if (tx.status === 'fulfilled' && Array.isArray(tx.value?.data)) setTxns(tx.value.data);
     if (rl.status === 'fulfilled' && Array.isArray(rl.value?.data)) setRules(rl.value.data);
-    if (ln.status === 'fulfilled' && Array.isArray(ln.value?.data)) setLoans(ln.value.data);
-    if (dp.status === 'fulfilled' && Array.isArray(dp.value?.data)) setDeposits(dp.value.data);
     if (fx.status === 'fulfilled' && Array.isArray(fx.value?.data)) setFxRates(fx.value.data);
     if (pa.status === 'fulfilled') setPending(pa.value);
     if (bh.status === 'fulfilled') setHierarchyRoot(bh.value?.data ?? null);
+    if (cb.status === 'fulfilled' && Array.isArray(cb.value?.data)) setCorporateBreakdown(cb.value.data);
+    if (pb.status === 'fulfilled' && Array.isArray(pb.value?.data)) setProgramBreakdown(pb.value.data);
+    if (icp.status === 'fulfilled' && Array.isArray(icp.value?.data)) setIcPositions(icp.value.data);
   };
 
   useEffect(() => {
@@ -235,6 +279,30 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     }
     void load(selectedCorporateId);
   }, [selectedCorporateId]);
+
+  // Program-scoped hierarchy for the Position breakdown's "By entity" view
+  // only (see programHierarchyRoot's declaration for why this is separate
+  // from the main load() above). Re-fetches whenever the drilled-into
+  // program or the page's corporate scope changes; clears when no program
+  // is selected so the breakdown falls back to the firm/corporate-wide tree.
+  useEffect(() => {
+    if (!selectedProgramId) { setProgramHierarchyRoot(null); return; }
+    let alive = true;
+    setProgramHierarchyLoading(true);
+    balanceStructureApi.getHierarchy(selectedCorporateId || undefined, selectedProgramId)
+      .then((res) => { if (alive) setProgramHierarchyRoot(res?.data ?? null); })
+      .catch(() => { if (alive) setProgramHierarchyRoot(null); })
+      .finally(() => { if (alive) setProgramHierarchyLoading(false); });
+    return () => { alive = false; };
+  }, [selectedCorporateId, selectedProgramId]);
+
+  // Reused by both the top ScopeSelector and the Position breakdown's
+  // "By corporate" drill-click — changing corporate invalidates whatever
+  // program was selected under the PREVIOUS corporate.
+  const handleCorporateChange = (id: string) => {
+    setSelectedProgramId('');
+    setSelectedCorporateId(id);
+  };
 
   // "Refresh all (N stale)" — refresh-if-stale across every stale shadow,
   // capped concurrency, then reload once. Mirrors the Multi-Bank page's
@@ -328,26 +396,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       : [];
     return { currencies, banks, topCcy, bankShares };
   }, [summary]);
-
-  // ─── REAL: IHB loans + deposits maturing within the next 14 days ───
-  const maturities = useMemo(() => {
-    const now = new Date();
-    const horizon = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-    const rows: { id: string; kind: string; reference: string; date: Date; amount: number; label: string }[] = [];
-    for (const l of loans) {
-      if (!l.maturityDate) continue;
-      const d = new Date(l.maturityDate);
-      if (isNaN(d.getTime()) || d < now || d > horizon) continue;
-      rows.push({ id: l.id, kind: 'Loan', reference: l.loanReference, date: d, amount: l.outstandingAmount ?? l.principalAmount, label: 'Outstanding' });
-    }
-    for (const dp of deposits) {
-      if (!dp.maturityDate) continue;
-      const d = new Date(dp.maturityDate);
-      if (isNaN(d.getTime()) || d < now || d > horizon) continue;
-      rows.push({ id: dp.id, kind: 'Deposit', reference: dp.depositReference, date: d, amount: dp.currentBalance ?? dp.principalAmount, label: 'Balance' });
-    }
-    return rows.sort((a, b) => a.date.getTime() - b.date.getTime()).slice(0, 7);
-  }, [loans, deposits]);
 
   // ─── REAL: sweep rules, scope-filtered (group-level API, client filter) ──
   const sweepRows = useMemo(() => {
@@ -481,7 +529,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               bare
               corporates={corporates}
               selectedCorporateId={selectedCorporateId}
-              onCorporateChange={setSelectedCorporateId}
+              onCorporateChange={handleCorporateChange}
             />
           </div>
           <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
@@ -787,9 +835,30 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="section-title">
                 Position breakdown
                 {positionView === 'geo' && model?.topCcy && <span className="label ml-2 font-normal">· {model.topCcy.code} (largest balance)</span>}
+                {/* Breadcrumb for wherever a corporate/program click has
+                    drilled the page's own scope to — lets the user see
+                    (and clear) the path without hunting for the top
+                    picker. Only corporate/program show here: entity-level
+                    drill is local to EntityHierarchyTreemap and shows its
+                    own "Back" control instead. */}
+                {selectedCorporateId && (positionView === 'program' || positionView === 'entity' || positionView === 'intercompany') && (
+                  <span className="label ml-2 font-normal">
+                    · {corporates.find((c) => c.id === selectedCorporateId)?.legalName ?? 'Selected corporate'}
+                    {selectedProgramId && positionView === 'entity' && (
+                      <> › {programBreakdown.find((p) => p.id === selectedProgramId)?.name ?? 'Selected program'}</>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { handleCorporateChange(''); setPositionView('corporate'); }}
+                      className="ml-1.5 underline hover:no-underline"
+                    >
+                      Clear
+                    </button>
+                  </span>
+                )}
               </p>
               <div className="inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden">
-                {([['entity', 'By entity'], ['geo', 'By country']] as const).map(([v, label]) => (
+                {([['corporate', 'By corporate'], ['program', 'By program'], ['entity', 'By entity'], ['geo', 'By country'], ['intercompany', 'By intercompany']] as const).map(([v, label]) => (
                   <button
                     key={v}
                     type="button"
@@ -806,16 +875,65 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 ))}
               </div>
             </div>
-            {positionView === 'entity' ? (
-              <EntityHierarchyTreemap
-                root={hierarchyRoot}
+            {positionView === 'corporate' ? (
+              <FlatBreakdownTreemap
+                data={corporateBreakdown.map((c) => ({ id: c.id, name: c.name, size: c.balance }))}
                 loading={loading}
+                categoricalColors={chartChrome.categorical}
+                tooltipBg={chartChrome.tooltipBg}
+                tooltipText={chartChrome.tooltipText}
+                tooltipShadow={chartChrome.tooltipShadow}
+                emptyMessage="No corporate balance data available."
+                onItemClick={(item) => {
+                  if (!item.id) return;
+                  handleCorporateChange(item.id);
+                  setPositionView('program');
+                }}
+              />
+            ) : positionView === 'program' ? (
+              !selectedCorporateId ? (
+                <p className="body-sm py-6 text-center">Select a corporate above to see its programs.</p>
+              ) : (
+                <FlatBreakdownTreemap
+                  data={programBreakdown.map((p) => ({ id: p.id, name: p.name, size: p.balance }))}
+                  loading={loading}
+                  categoricalColors={chartChrome.categorical}
+                  tooltipBg={chartChrome.tooltipBg}
+                  tooltipText={chartChrome.tooltipText}
+                  tooltipShadow={chartChrome.tooltipShadow}
+                  emptyMessage="No program balance data available."
+                  onItemClick={(item) => {
+                    if (!item.id) return;
+                    setSelectedProgramId(item.id);
+                    setPositionView('entity');
+                  }}
+                />
+              )
+            ) : positionView === 'entity' ? (
+              <EntityHierarchyTreemap
+                root={selectedProgramId ? programHierarchyRoot : hierarchyRoot}
+                loading={loading || (!!selectedProgramId && programHierarchyLoading)}
                 categoricalColors={chartChrome.categorical}
                 tooltipBg={chartChrome.tooltipBg}
                 tooltipText={chartChrome.tooltipText}
                 tooltipShadow={chartChrome.tooltipShadow}
                 currency={model?.topCcy?.code}
               />
+            ) : positionView === 'intercompany' ? (
+              !selectedCorporateId ? (
+                <p className="body-sm py-6 text-center">Select a corporate above to see its intercompany positions.</p>
+              ) : (
+                <IntercompanyPositionChart
+                  positions={icPositions}
+                  loading={loading}
+                  receivableFill={chartChrome.receivableFill}
+                  payableFill={chartChrome.payableFill}
+                  tickFill={chartChrome.tickFill}
+                  tooltipBg={chartChrome.tooltipBg}
+                  tooltipText={chartChrome.tooltipText}
+                  tooltipShadow={chartChrome.tooltipShadow}
+                />
+              )
             ) : model?.bankShares && model.bankShares.length > 0 ? (
               <GeoExposureMap
                 bankShares={model.bankShares}
@@ -884,23 +1002,6 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                       </span>
                     </div>
                   ))
-                )}
-              </div>
-              <div className="border-t border-neutral-100 dark:border-primary-800/60 pt-2 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 shrink-0" />
-                {maturities.length === 0 ? (
-                  <p className="caption">No IHB loans or deposits mature in the next 14 days.</p>
-                ) : (
-                  <div className="min-w-0 flex-1 space-y-1">
-                    {maturities.map((m) => (
-                      <div key={m.id} className="flex items-center justify-between gap-3">
-                        <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">
-                          {m.kind} · <span className="font-mono">{m.reference}</span> — {m.label} <Amount value={m.amount} showCurrency={false} className="text-xs" />
-                        </p>
-                        <p className="caption shrink-0 tabular-nums">{fmtDay(m.date)}</p>
-                      </div>
-                    ))}
-                  </div>
                 )}
               </div>
             </div>

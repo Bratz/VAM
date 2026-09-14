@@ -765,6 +765,33 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) FROM VirtualAccount v WHERE v.parentAccountId = :parentId GROUP BY v.currencyCode")
     List<Object[]> sumBalanceByParentGroupedByCurrency(@Param("parentId") UUID parentId);
 
+    // Dashboard "Position breakdown" (By corporate / By program) — excludes
+    // categories that would double-count or duplicate money already shown
+    // elsewhere on the dashboard:
+    //   ROOT/AGGREGATION   - pure containers; their current_balance is a
+    //                        stale/cached artifact, not real standalone money
+    //                        (the real total is the sum of their children).
+    //   CURRENCY_MIRROR    - restates a balance already counted under its
+    //                        real (non-mirror) account, not a disjoint slice.
+    //   PHYSICAL_MIRROR    - shadow-of-bank-account VAs, already shown in
+    //                        the dashboard's Currency breakdown/By country
+    //                        widgets (MultiBankLiquidityViewService) —
+    //                        counting them here too would double-show them.
+    // Same exclusion set BalanceStructureService.recomputeRollup() applies
+    // when building the "By entity" tree / hero figure, so all these views
+    // agree on what counts as real, once-counted money.
+    @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) FROM VirtualAccount v " +
+           "WHERE v.corporateId = :corporateId " +
+           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR') " +
+           "GROUP BY v.currencyCode")
+    List<Object[]> sumBalanceByCorporateGroupedByCurrency(@Param("corporateId") UUID corporateId);
+
+    @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) FROM VirtualAccount v " +
+           "WHERE v.programId = :programId " +
+           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR') " +
+           "GROUP BY v.currencyCode")
+    List<Object[]> sumBalanceByProgramGroupedByCurrency(@Param("programId") UUID programId);
+
     // ========================================================================
     // HOLDER PARTY QUERIES
     // ========================================================================

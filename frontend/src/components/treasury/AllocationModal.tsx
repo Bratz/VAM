@@ -45,6 +45,9 @@ import {
   ArrowRight,
   Clock,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  RotateCcw,
 } from 'lucide-react';
 import { Card, Badge, Button } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
@@ -54,13 +57,20 @@ import { formatCurrency, cn } from '../../utils';
 // TYPE DEFINITIONS
 // ============================================================================
 
-type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'WRITTEN_OFF' | 'REVERSED';
-type ExceptionType = 'UNMATCHED_PAYMENT' | 'MISSING_SETTLEMENT_VA' | 'BANK_INTEREST' | 'FX_DIFFERENCE' | 'CHARGE_REVERSAL' | 'MANUAL_ADJUSTMENT' | 'OTHER';
+// Kept in sync with backend ExceptionTransaction.ExceptionStatus/ExceptionType
+// (see the matching note in services/api.ts) — this used to be a narrower,
+// partially-wrong guess and is now widened to match every real value.
+type ExceptionStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'WRITTEN_OFF' | 'RETURNED' | 'ON_HOLD' | 'ESCALATED';
+type ExceptionType =
+  | 'UNMATCHED_PAYMENT' | 'RECONCILIATION_DIFF' | 'FAILED_PAYMENT' | 'INVALID_VIBAN'
+  | 'AMOUNT_MISMATCH' | 'DUPLICATE_PAYMENT' | 'BANK_INTEREST' | 'BANK_CHARGE'
+  | 'FX_DIFFERENCE' | 'FX_GAIN' | 'FX_LOSS' | 'SYSTEM_ERROR'
+  | 'MISSING_SETTLEMENT_VA' | 'OVERPAYMENT' | 'PENDING_REFUND';
 
 interface ExceptionTransaction {
   id: string;
   exceptionNumber: string;
-  programId: string;
+  programId?: string;
   exceptionType: ExceptionType;
   status: ExceptionStatus;
   amount: number;
@@ -82,7 +92,7 @@ interface ExceptionTransaction {
   allocatedAt?: string;
   allocationNotes?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 // Updated to match backend DTO
@@ -179,12 +189,20 @@ interface ToastNotification {
 
 const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.FC<{ className?: string }> }> = {
   UNMATCHED_PAYMENT: { label: 'Unmatched Payment', icon: Wallet },
-  MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
+  RECONCILIATION_DIFF: { label: 'Reconciliation Difference', icon: Search },
+  FAILED_PAYMENT: { label: 'Failed Payment', icon: AlertCircle },
+  INVALID_VIBAN: { label: 'Invalid VIBAN', icon: X },
+  AMOUNT_MISMATCH: { label: 'Amount Mismatch', icon: Layers },
+  DUPLICATE_PAYMENT: { label: 'Duplicate Payment', icon: Layers },
   BANK_INTEREST: { label: 'Bank Interest', icon: Building2 },
+  BANK_CHARGE: { label: 'Bank Charge', icon: Building2 },
   FX_DIFFERENCE: { label: 'FX Difference', icon: Globe },
-  CHARGE_REVERSAL: { label: 'Charge Reversal', icon: X },
-  MANUAL_ADJUSTMENT: { label: 'Manual Adjustment', icon: Layers },
-  OTHER: { label: 'Other', icon: AlertCircle },
+  FX_GAIN: { label: 'FX Gain', icon: TrendingUp },
+  FX_LOSS: { label: 'FX Loss', icon: TrendingDown },
+  SYSTEM_ERROR: { label: 'System Error', icon: AlertTriangle },
+  MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
+  OVERPAYMENT: { label: 'Overpayment', icon: Wallet },
+  PENDING_REFUND: { label: 'Pending Refund', icon: RotateCcw },
 };
 
 // ============================================================================

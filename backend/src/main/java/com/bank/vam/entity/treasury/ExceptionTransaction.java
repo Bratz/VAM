@@ -714,6 +714,29 @@ public class ExceptionTransaction extends BaseEntity {
     }
     
     /**
+     * Create exception for a PHYSICAL_MIRROR shadow whose CBS-synced {@code bankBalance}
+     * (bank statement) no longer agrees with its own ledger {@code currentBalance} (book) —
+     * see {@code VirtualAccount.getEffectiveBalance()}. Raised by
+     * {@code BalanceRefreshService} on every scheduled refresh that finds a variance.
+     */
+    public static ExceptionTransaction createReconciliationDiffException(
+            UUID programId, UUID exceptionVaId, UUID originalVaId,
+            BigDecimal variance, String currencyCode, String description) {
+        return ExceptionTransaction.builder()
+            .exceptionNumber(generateExceptionNumber())
+            .programId(programId)
+            .exceptionType(ExceptionType.RECONCILIATION_DIFF)
+            .exceptionVaId(exceptionVaId)
+            .originalVaId(originalVaId)
+            .amount(variance) // signed: positive = bank ahead of book, negative = book ahead of bank
+            .currencyCode(currencyCode)
+            .description(description != null ? description : "Shadow bank balance vs ledger balance variance")
+            .status(ExceptionStatus.OPEN)
+            .priority(ExceptionPriority.NORMAL)
+            .build();
+    }
+
+    /**
      * Create exception for overpayment.
      * NEW: Added for overpayment handling.
      */

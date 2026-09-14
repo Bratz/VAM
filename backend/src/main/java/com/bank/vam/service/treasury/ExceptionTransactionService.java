@@ -74,8 +74,16 @@ public class ExceptionTransactionService {
 
     @Transactional(readOnly = true)
     public ExceptionSummary getExceptionSummary(UUID programId) {
-        List<Object[]> statusSummary = exceptionRepository.getSummaryByStatus();
-        List<Object[]> typeSummary = exceptionRepository.getOpenSummaryByType();
+        // Was always firm-wide regardless of the programId argument — the two
+        // repository calls below never took it. A program-scoped caller (e.g.
+        // the Exceptions page's corporate/program selector) got back the same
+        // totals as "All Programs", silently ignoring the filter.
+        List<Object[]> statusSummary = programId != null
+            ? exceptionRepository.getSummaryByStatusAndProgramId(programId)
+            : exceptionRepository.getSummaryByStatus();
+        List<Object[]> typeSummary = programId != null
+            ? exceptionRepository.getOpenSummaryByTypeAndProgramId(programId)
+            : exceptionRepository.getOpenSummaryByType();
         
         Map<String, Long> countByType = new HashMap<>();
         Map<String, BigDecimal> amountByType = new HashMap<>();

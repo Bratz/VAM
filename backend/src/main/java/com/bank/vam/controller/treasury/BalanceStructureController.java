@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -80,6 +81,29 @@ public class BalanceStructureController {
         BalanceSummary summary = balanceStructureService.getSummary(corpId, programId, reportingCurrency);
 
         return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    /**
+     * Dashboard "Position breakdown" — firm-wide total per corporate.
+     */
+    @GetMapping("/by-corporate")
+    @Operation(summary = "Get balance breakdown by corporate",
+               description = "Returns each corporate's FX-converted total balance, firm-wide (not scoped to one corporate)")
+    public ResponseEntity<ApiResponse<List<BalanceBreakdownItem>>> getByCorporate(
+            @RequestParam(defaultValue = "AED") String reportingCurrency) {
+        return ResponseEntity.ok(ApiResponse.success(balanceStructureService.getBalanceByCorporate(reportingCurrency)));
+    }
+
+    /**
+     * Dashboard "Position breakdown" — total per program, optionally scoped to one corporate.
+     */
+    @GetMapping("/by-program")
+    @Operation(summary = "Get balance breakdown by program",
+               description = "Returns each program's FX-converted total balance; scoped to corporateId if provided, firm-wide otherwise")
+    public ResponseEntity<ApiResponse<List<BalanceBreakdownItem>>> getByProgram(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam(defaultValue = "AED") String reportingCurrency) {
+        return ResponseEntity.ok(ApiResponse.success(balanceStructureService.getBalanceByProgram(corporateId, reportingCurrency)));
     }
 
     /**

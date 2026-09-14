@@ -61,7 +61,6 @@ import ForecastingPage from './pages/ForecastingPage';
 // ============================================================================
 // TREASURY PAGES - Phase 7 (Shadow, Currency Mirror, Credit, Funds)
 // ============================================================================
-import ShadowAccountsPage from './pages/ShadowAccountsPage';
 import MultiBankLiquidityPage from './pages/MultiBankLiquidityPage';
 import SimulatorPage from './pages/SimulatorPage';
 import CurrencyMirrorPage from './pages/CurrencyMirrorPage';
@@ -159,7 +158,7 @@ export type PageType =
   | 'forecasting'
   
   // Treasury - Phase 7 (Shadow, Currency Mirror, Credit, Funds)
-  | 'shadow-accounts'
+  // 'shadow-accounts' merged into 'physical-accounts' (Bank Accounts page)
   | 'multi-bank-liquidity'
   | 'currency-mirrors'
   | 'credit-limits'
@@ -472,7 +471,7 @@ const sectionFor = (page: PageType): SectionKey => {
   if (page === 'sync-admin' || page === 'integrations' || page === 'tax-charges' || page === 'settings' || page === 'operation-history') return 'admin';
   if (page.startsWith('intercompany')) return 'intercompany';
   const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
-    'forecasting','shadow-accounts','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates',
+    'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
     'interest-accruals','settlement-vas','exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
@@ -592,7 +591,6 @@ const App: React.FC = () => {
       // ====================================================================
       // Treasury - Phase 7 (Shadow, Currency Mirror, Credit, Funds)
       // ====================================================================
-      case 'shadow-accounts': return <ShadowAccountsPage />;
       case 'multi-bank-liquidity': return <MultiBankLiquidityPage />;
       case 'currency-mirrors': return <CurrencyMirrorPage />;
       case 'credit-limits': return <CreditLimitsPage />;

@@ -30,7 +30,7 @@ public class BalanceStructureService {
     private final VirtualAccountRepository virtualAccountRepository;
     private final PhysicalAccountRepository physicalAccountRepository;
     private final CorporateRepository corporateRepository;
-    private final IhbLoanRepository ihbLoanRepository;
+    private final ProgramRepository programRepository;
     private final IhbEntityRepository ihbEntityRepository;
     private final NotionalPoolRepository notionalPoolRepository;
     private final PoolMemberRepository poolMemberRepository;
@@ -399,6 +399,54 @@ public class BalanceStructureService {
         return fxRateService.convert(amount, currency, target).setScale(2, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Dashboard "Position breakdown" — firm-wide total per corporate.
+     * Sums each corporate's balances per-currency first (sumBalanceByCorporateGroupedByCurrency),
+     * then FX-converts each bucket via convertToReporting — same FX-honest
+     * pattern as the hierarchy tree above, never adds raw cross-currency amounts.
+     */
+    @Transactional(readOnly = true)
+    public List<BalanceBreakdownItem> getBalanceByCorporate(String reportingCurrency) {
+        return corporateRepository.findAll().stream()
+            .map(c -> BalanceBreakdownItem.builder()
+                .id(c.getId())
+                .name(c.getLegalName())
+                .balance(sumConverted(virtualAccountRepository.sumBalanceByCorporateGroupedByCurrency(c.getId()), reportingCurrency))
+                .build())
+            .filter(item -> item.getBalance().signum() > 0)
+            .sorted(Comparator.comparing(BalanceBreakdownItem::getBalance).reversed())
+            .toList();
+    }
+
+    /**
+     * Dashboard "Position breakdown" — total per program, optionally scoped
+     * to one corporate (narrows the view when a corporate is selected on
+     * the dashboard; firm-wide across all programs otherwise).
+     */
+    @Transactional(readOnly = true)
+    public List<BalanceBreakdownItem> getBalanceByProgram(UUID corporateId, String reportingCurrency) {
+        List<com.bank.vam.entity.Program> programs = corporateId != null
+            ? programRepository.findByCorporateId(corporateId)
+            : programRepository.findAll();
+        return programs.stream()
+            .map(p -> BalanceBreakdownItem.builder()
+                .id(p.getId())
+                .name(p.getProgramName())
+                .balance(sumConverted(virtualAccountRepository.sumBalanceByProgramGroupedByCurrency(p.getId()), reportingCurrency))
+                .build())
+            .filter(item -> item.getBalance().signum() > 0)
+            .sorted(Comparator.comparing(BalanceBreakdownItem::getBalance).reversed())
+            .toList();
+    }
+
+    private BigDecimal sumConverted(List<Object[]> currencyBuckets, String reportingCurrency) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Object[] row : currencyBuckets) {
+            total = total.add(convertToReporting((BigDecimal) row[1], (String) row[0], reportingCurrency));
+        }
+        return total;
+    }
+
     private HierarchyNode buildHierarchyFromAccounts(Corporate corporate, List<VirtualAccount> accounts,
                                                      Map<UUID, PoolMember> poolMemberMap,
                                                      Map<UUID, SweepRule> sweepRuleMap,
@@ -408,6 +456,11 @@ public class BalanceStructureService {
         // Build hierarchical tree from flat list using parent relationships
         List<HierarchyNode> children = buildHierarchyTree(
             accounts, poolMemberMap, sweepRuleMap, nettingMap, icPositions, reportingCurrency);
+
+        // Recompute every node's consolidatedBalance as a true post-order
+        // rollup before anything reads it — see recomputeRollup() for why
+        // this can't just trust what buildNodeFromVA() set.
+        children.forEach(this::recomputeRollup);
 
         // DEBUG: Log children balances
         log.info("ROOT has {} direct children", children.size());
@@ -419,6 +472,7 @@ public class BalanceStructureService {
         }
 
         BigDecimal totalBalance = children.stream()
+            .filter(n -> n.getAccountCategory() != AccountCategory.CURRENCY_MIRROR)
             .map(HierarchyNode::getConsolidatedBalance)
             .filter(Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -499,8 +553,56 @@ public class BalanceStructureService {
         roots.sort(Comparator
             .comparingInt(HierarchyNode::getLevel)
             .thenComparing(HierarchyNode::getName));
-        
+
         return roots;
+    }
+
+    /**
+     * Post-order rollup, replacing whatever buildNodeFromVA() set from the
+     * cached aggregatedBalance column. ROOT/AGGREGATION nodes contribute
+     * ZERO of their own — their cached value is itself an old partial
+     * rollup (HierarchyVaService.recalculateAggregationBalance() only sums
+     * CURRENCY_MIRROR/AGGREGATION children, never TRANSACTION) — treating
+     * it as "this level's own money" and adding a fresh children-sum on
+     * top double-counts real money once per hierarchy level (confirmed
+     * live: a single AED 2790 leaf balance compounded to over 4x its value
+     * across a 3-level EMEA REGION > UK > LONDON OPS chain). localBalance
+     * is zeroed the same way for the same reason — it's not a real
+     * standalone figure for these categories either, just the same cached
+     * artifact. CURRENCY_MIRROR children are excluded from every parent's
+     * sum entirely (mirrors, not real money).
+     */
+    private BigDecimal recomputeRollup(HierarchyNode node) {
+        BigDecimal childrenSum = BigDecimal.ZERO;
+        if (node.getChildren() != null) {
+            for (HierarchyNode child : node.getChildren()) {
+                BigDecimal childTotal = recomputeRollup(child);
+                if (child.getAccountCategory() == AccountCategory.CURRENCY_MIRROR) {
+                    continue; // restates a branch's total, not a disjoint slice of it
+                }
+                // IC Payable is Treasury's liability to a subsidiary (COBO), not an asset —
+                // it must reduce Treasury's own rollup, the same real money an IC Receivable
+                // (the POBO counterpart) correctly adds, just viewed from the other side.
+                if ("IC_PAYABLE".equals(child.getMirrorAccountType())) {
+                    childrenSum = childrenSum.subtract(childTotal);
+                } else {
+                    childrenSum = childrenSum.add(childTotal);
+                }
+            }
+        }
+        boolean isContainer = node.getAccountCategory() == AccountCategory.ROOT
+            || node.getAccountCategory() == AccountCategory.AGGREGATION;
+        BigDecimal ownBalance = isContainer ? BigDecimal.ZERO
+            : (node.getConsolidatedBalance() != null ? node.getConsolidatedBalance() : BigDecimal.ZERO);
+        BigDecimal total = ownBalance.add(childrenSum);
+        node.setConsolidatedBalance(total);
+        if (isContainer) {
+            node.setLocalBalance(BigDecimal.ZERO);
+        }
+        BigDecimal icReceivable = node.getIntercompanyReceivable() != null ? node.getIntercompanyReceivable() : BigDecimal.ZERO;
+        BigDecimal icPayable = node.getIntercompanyPayable() != null ? node.getIntercompanyPayable() : BigDecimal.ZERO;
+        node.setNetPosition(total.add(icReceivable).subtract(icPayable));
+        return total;
     }
 
     private HierarchyNode buildNodeFromVA(VirtualAccount va,
@@ -573,6 +675,7 @@ public class BalanceStructureService {
             // NEW: Special Type and Account Category for icon differentiation
             .specialType(specialType)
             .accountCategory(accountCategory)
+            .mirrorAccountType(va.getMirrorAccountType() != null ? va.getMirrorAccountType().name() : null)
             .level(level)
             // Use balanceCurrency for display - AGGREGATION nodes show balance in baseCurrency
             .currencyCode(balanceCurrency)
