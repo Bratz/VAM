@@ -36,9 +36,16 @@ spring:
         order_inserts: true
         order_updates: true
 
-  # Disable Flyway for now (use JPA auto-create)
+  # Flyway owns what ddl-auto can't express: RLS policies, seed data,
+  # backfills, one-off data repairs (see database/migrations/). It must
+  # never redefine a column/table that an @Entity also maps — that stays on
+  # ddl-auto below. Baseline is inclusive: existing DBs already have V2-V13's
+  # effects (built by ddl-auto + historical hand-run psql), so baseline skips
+  # those and only V14+ actually execute.
   flyway:
-    enabled: false
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: "13"   # quoted: avoid YAML int-parsing ambiguity
 
   # Jackson
   jackson:

@@ -90,14 +90,14 @@ Corporate Digital Banking platform built on a Virtual Account Management core. F
 > **Naming convention**: *Aperture* is the customer-facing product brand (UI titles, docs, marketing). *VAM* (Virtual Account Management) remains the internal codename — visible in the Java package (`com.bank.vam`), the database schema (`vam_db`), API paths (`/api/...`), configuration keys (`vam.*`), and deployment artefact names. Treat the rename as a brand/marketing change, **not** a code/schema change. Like Chromium (codebase) vs Chrome (product).
 
 ### Stack
-- **Backend**: Spring Boot 3.2.5, Java 21, PostgreSQL 15 (schema via `hibernate.ddl-auto: update`; Flyway is on the classpath but disabled — see Notes & Gotchas), Redis (optional), Spring Security/OAuth2
+- **Backend**: Spring Boot 3.2.5, Java 21, PostgreSQL 15 (schema via `hibernate.ddl-auto: update`; Flyway enabled for RLS/seed/backfill migrations, baseline-on-migrate at V13 — see Notes & Gotchas), Redis (optional), Spring Security/OAuth2
 - **Frontend**: React 18 + TypeScript, Vite 5, Tailwind, React Query, Zustand, React Router 6
 - **Infra**: Docker Compose (Postgres + Redis + Backend + Frontend + WireMock BaNCS stub + Adminer)
 
 ### Layout
 - `backend/` — Spring Boot service (`com.bank.vam`)
 - `frontend/` — Vite React app
-- `database/migrations/` — Flyway SQL (V2, V3, V4)
+- `database/migrations/` — Flyway SQL (V2-V15, auto-applied on startup)
 - `database/seed/` — seed data scripts
 - `docs/` — architecture references
 - `vam-enhanced/` — parallel/enhanced variant of the same project (treat as alternate copy; verify before editing both)
@@ -128,15 +128,20 @@ GRANT ALL PRIVILEGES ON DATABASE vam_db TO vam_user;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 ```
-Flyway is currently disabled (`spring.flyway.enabled: false` in
-`application.yml` — schema is managed via `hibernate.ddl-auto: update`
-instead). Files under `database/migrations/` are NOT applied automatically
-by anything, on any environment: `quickstart.bat` only copies them into the
-Flyway resource folder, it doesn't run them, and the OCI deploy seeds from a
-pre-baked dump (`database/dump/vam_db_full.sql.gz`) once on an empty
-database and never touches migrations again. Any new file added there
-(schema DDL or one-off data repairs like V14/V15) must be applied by hand
-via `psql` against each environment that needs it — nothing runs it for you.
+Flyway is enabled (`spring.flyway.enabled: true` in `application.yml`) and
+auto-applies everything under `database/migrations/` on every app startup —
+a new migration file just needs a restart to take effect on any environment,
+no more manual `psql`. It's baselined at V13 (`baseline-on-migrate: true`,
+`baseline-version: "13"`) since V2-V13 aren't safe to replay against a
+schema that already has their effects (built historically by ddl-auto +
+hand-run psql); only V14 onward genuinely execute. Ordinary entity-mapped
+DDL (new `@Entity` columns/tables) still comes from `hibernate.ddl-auto:
+update`, unchanged — Flyway is only for what ddl-auto can't express: RLS
+policies, seed data, backfills, one-off data repairs. Don't write a new
+migration that redefines a column/table an `@Entity` also maps; that's
+ddl-auto's job. The OCI deploy still seeds fresh instances from a pre-baked
+dump (`database/dump/vam_db_full.sql.gz`) before Flyway ever runs, so this
+doesn't change that path.
 
 **2. Backend** (`http://localhost:8080`):
 ```
@@ -204,7 +209,7 @@ docker-compose logs -f backend
 
 ## Notes & Gotchas
 - Server context path is `/api` — frontend talks to `http://localhost:8080/api` (Vite proxy in `vite.config.ts`).
-- Flyway is disabled (`spring.flyway.enabled: false`) — see "How to Start the Application" above. `quickstart.bat` copies `database/migrations/*.sql` into `backend/src/main/resources/db/migration/` but nothing executes them; apply new migration files by hand with `psql` on whichever environment needs them.
+- Flyway is enabled (`spring.flyway.enabled: true`, baselined at V13) and auto-applies `database/migrations/*.sql` on every startup — see "How to Start the Application" above. A new migration must not redefine a column/table an `@Entity` also maps; that stays on `hibernate.ddl-auto: update`.
 - If you change `application.yml` profiles, mirror env vars in `.env` / `docker-compose.yml`.
 - Two parallel project trees exist (`./` and `./vam-enhanced/`). Before editing, confirm which tree the user means — don't blindly edit both.
 - Redis is optional in dev; comment out the Redis block in `application.yml` if not running it.
