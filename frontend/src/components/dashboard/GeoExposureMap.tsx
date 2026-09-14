@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
-import { geoEqualEarth } from 'd3-geo';
+import { geoEqualEarth, geoArea } from 'd3-geo';
 import { feature } from 'topojson-client';
 import worldAtlas from 'world-atlas/countries-50m.json';
 import type { Topology, GeometryCollection } from 'topojson-specification';
@@ -47,6 +47,28 @@ const ALPHA2_TO_NUMERIC: Record<string, string> = {
 function countryFromBic(bic: string): string | null {
   const cc = bic.slice(4, 6).toUpperCase();
   return /^[A-Z]{2}$/.test(cc) ? cc : null;
+}
+
+// world-atlas's MultiPolygon features bundle a country's overseas territories
+// into the same geometry as the mainland — e.g. France's feature spans from
+// French Guiana (-62°) to Réunion (+56°), crossing the equator. fitExtent()
+// fits to the *geometric* bounds of whatever it's given, so including those
+// rings made "zoom to fit" barely different from the full-world view: it was
+// dutifully framing a box that stretched from South America to the Indian
+// Ocean just because France was one of the matched countries. This keeps
+// only the largest ring (by spherical area) per feature for bounds-fitting
+// purposes only — actual rendering below still uses the untouched feature,
+// so overseas territories still render and color correctly, they just don't
+// skew what "zoom to fit" considers the extent to frame.
+function largestRing<T extends { geometry: any }>(f: T): T {
+  if (f.geometry?.type !== 'MultiPolygon') return f;
+  let best = f.geometry.coordinates[0];
+  let bestArea = 0;
+  for (const coords of f.geometry.coordinates) {
+    const area = geoArea({ type: 'Polygon', coordinates: coords });
+    if (area > bestArea) { bestArea = area; best = coords; }
+  }
+  return { ...f, geometry: { type: 'Polygon', coordinates: best } };
 }
 
 // Internal SVG coordinate space for the map. Chosen wide/flat to match this
@@ -122,9 +144,9 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
   // projection (full world) otherwise.
   const zoomProjection = useMemo(() => {
     if (!zoomToFit || !hasData) return null;
-    const matchingFeatures = (WORLD_COUNTRIES as any).features.filter(
-      (f: any) => numericToAmount.has(String(f.id)),
-    );
+    const matchingFeatures = (WORLD_COUNTRIES as any).features
+      .filter((f: any) => numericToAmount.has(String(f.id)))
+      .map(largestRing);
     if (matchingFeatures.length === 0) return null;
     const padding = 20;
     return geoEqualEarth().fitExtent(
