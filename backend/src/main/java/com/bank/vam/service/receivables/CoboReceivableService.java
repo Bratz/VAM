@@ -64,6 +64,7 @@ public class CoboReceivableService {
     private final LegalEntityRepository legalEntityRepository;
     private final FeePostingService feePostingService;
     private final IntercompanyRechargeRepository rechargeRepository;
+    private final com.bank.vam.service.TransactionService transactionService;
     
     // Fee configuration
     private static final BigDecimal COBO_SERVICE_FEE_PERCENT = new BigDecimal("0.0015"); // 0.15%
@@ -316,18 +317,27 @@ public class CoboReceivableService {
             coboRecharge.getRechargeReference(), treasuryEntity.getEntityCode(),
             subsidiaryEntity.getEntityCode(), netAmount);
 
-        if (subsidiaryVa != null && subsidiaryVa.getStatus() == VaStatus.ACTIVE) {
+        if (subsidiaryVa != null && subsidiaryVa.getStatus() == VaStatus.ACTIVE && subsidiaryVa.isConfiguredFor6LegCobo()) {
+            // Subsidiary is fully IHB-onboarded: route through the same 6-leg mirror-account
+            // ledger flow as POBO, so the real IC Payable VA balance actually moves — the
+            // plain transfer below only ever updated subsidiaryVa/treasuryVa balances, never
+            // any IC Payable ledger, since (until now) no such ledger existed for COBO.
+            transactionService.makeIhb6LegCoboCollection(
+                subsidiaryVa, netAmount, receivable.getCustomerName(),
+                request.getPaymentReference(), LocalDate.now());
+            log.info("COBO funds {} forwarded to subsidiary VA {} via 6-leg IHB flow", netAmount, subsidiaryVa.getVaNumber());
+        } else if (subsidiaryVa != null && subsidiaryVa.getStatus() == VaStatus.ACTIVE) {
             // Transfer net amount to subsidiary
             BigDecimal subsidiaryBalanceBefore = subsidiaryVa.getCurrentBalance();
-            
+
             // Debit treasury
             treasuryVa.debit(netAmount);
             virtualAccountRepository.save(treasuryVa);
-            
+
             // Credit subsidiary
             subsidiaryVa.credit(netAmount);
             virtualAccountRepository.save(subsidiaryVa);
-            
+
             // Record transfer
             Transaction transferOut = Transaction.builder()
                 .referenceNumber(Transaction.generateReference(MovementType.TRANSFER_OUT))

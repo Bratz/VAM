@@ -100,6 +100,8 @@ Both write paths emit a `COPILOT_ACTION_EXECUTED` audit-log entry with full prov
 | `SET_ALERT` | "Alert me if VA-DUBAI-001 drops below 50000" | `set_balance_alert` (write) | Action card with Confirm/Cancel |
 | `UNKNOWN` | "What's the weather?" | — | Polite refusal + 6 suggested prompts |
 
+> **Data dependency:** `VA-DUBAI-001` in the `SET_ALERT` example above and the `accountRef` row below is a real seeded TestMNC account (`ResponseComposer.composeGreeting()`), not a placeholder — it exists so the suggested prompt resolves to a real account and the action card lights up instead of showing "no account matched." If TestMNC's demo data is ever renamed or rebuilt, keep this va_number or update both `ResponseComposer.java` and this doc together.
+
 ### Slot extraction (regex)
 
 The router pulls these slots from input before matching intents:

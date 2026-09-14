@@ -37,7 +37,7 @@ class SweepServiceFrequencyFilterTest {
         // collaborator can stay null for this unit test.
         return new SweepService(
                 ruleRepository, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
     }
 
     @Test

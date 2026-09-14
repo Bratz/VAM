@@ -60,6 +60,11 @@ public class ResponseComposer {
 
     private String composeGreeting() {
         String ccy = marketProfile.getDefaultCurrency();
+        // VA-DUBAI-001 below is a real seeded TestMNC account (va_number, not a
+        // placeholder) — see docs/copilot.md's SET_ALERT row for why: the example
+        // must resolve to a real account or the action card shows a "no account
+        // matched" error instead of lighting up. If TestMNC's demo data is ever
+        // renamed/rebuilt, keep this va_number (or update it here + copilot.md together).
         return """
                 Hi — I'm **Treasury Copilot**, the AI assistant inside **Aperture**.
 

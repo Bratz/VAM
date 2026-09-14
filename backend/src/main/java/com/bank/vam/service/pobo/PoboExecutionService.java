@@ -1,11 +1,9 @@
 package com.bank.vam.service.pobo;
 
 import com.bank.vam.dto.pobo.PoboDto.*;
-import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
 import com.bank.vam.entity.pobo.PoboAuthorization;
-import com.bank.vam.entity.treasury.IhbLoan;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.payables.PayableRepository;
@@ -14,7 +12,6 @@ import com.bank.vam.repository.pobo.PoboAuthorizationRepository;
 import com.bank.vam.service.party.PartyService;
 import com.bank.vam.service.tax.ChargeService;
 import com.bank.vam.service.treasury.FeePostingService;
-import com.bank.vam.service.treasury.IhbUnifiedService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +54,6 @@ public class PoboExecutionService {
     private final PayableRepository payableRepository;
     private final PoboAuthorizationRepository authorizationRepository;
     private final IntercompanyRechargeRepository rechargeRepository;
-    private final IhbUnifiedService ihbUnifiedService;
     private final ChargeService chargeService;
     private final PartyService partyService;
     private final PoboService poboService;
@@ -149,37 +145,24 @@ public class PoboExecutionService {
             validation
         );
         
-        // 6. Optionally create IHB loan (Task 5.4)
-        IhbLoanResult ihbLoanResult = null;
-        if (Boolean.TRUE.equals(request.getCreateIhbLoan()) && validation.isIhbEnabled()) {
-            ihbLoanResult = createIhbLoanForRecharge(recharge, request);
-            
-            if (ihbLoanResult != null && ihbLoanResult.isSuccess()) {
-                // Link loan to recharge
-                recharge.settleViaIhbLoan(ihbLoanResult.getLoanId(), ihbLoanResult.getLoanReference());
-                rechargeRepository.save(recharge);
-            }
-        }
-        
-        // 7. Update payable status
+        // 6. Update payable status
         payable.markPoboExecuted(
             paymentResult.getTransactionRef(),
-            ihbLoanResult != null ? ihbLoanResult.getLoanId() : null,
+            null,
             recharge.getId()
         );
         payableRepository.save(payable);
-        
-        // 8. Record usage against authorization
+
+        // 7. Record usage against authorization
         poboService.recordPoboUsage(
             request.getTreasuryEntityId(),
             payable.getOwningEntityId(),
             payable.getNetAmount()
         );
-        
-        log.info("POBO payment executed: {} -> recharge: {}, IHB loan: {}", 
-            executionRef, 
-            recharge.getRechargeReference(),
-            ihbLoanResult != null ? ihbLoanResult.getLoanReference() : "N/A");
+
+        log.info("POBO payment executed: {} -> recharge: {}",
+            executionRef,
+            recharge.getRechargeReference());
         
         return PoboExecutionResult.builder()
             .success(true)
@@ -195,9 +178,6 @@ public class PoboExecutionService {
             .rechargeAmount(recharge.getRechargeAmount())
             .serviceFee(recharge.getServiceFee())
             .totalRecharge(recharge.getTotalRecharge())
-            .ihbLoanCreated(ihbLoanResult != null && ihbLoanResult.isSuccess())
-            .ihbLoanId(ihbLoanResult != null ? ihbLoanResult.getLoanId() : null)
-            .ihbLoanReference(ihbLoanResult != null ? ihbLoanResult.getLoanReference() : null)
             .executedAt(LocalDateTime.now())
             .executedBy(request.getExecutedBy())
             .build();
@@ -436,66 +416,6 @@ public class PoboExecutionService {
     }
 
     // ========================================================================
-    // PHASE 5 TASK 5.4: IHB LOAN INTEGRATION
-    // ========================================================================
-    
-    /**
-     * Create IHB loan to finance the POBO recharge.
-     * 
-     * When treasury pays on behalf of subsidiary:
-     * - Subsidiary effectively "borrows" from treasury
-     * - IHB loan formalizes this with interest
-     */
-    private IhbLoanResult createIhbLoanForRecharge(
-            IntercompanyRecharge recharge, 
-            PoboExecuteRequest request) {
-        
-        try {
-            // Calculate loan maturity based on recharge terms
-            LocalDate maturityDate = request.getLoanMaturityDate() != null ?
-                request.getLoanMaturityDate() :
-                LocalDate.now().plusDays(30); // Default 30-day loan
-            
-            IhbDto.CreateLoanUnifiedRequest loanRequest = new IhbDto.CreateLoanUnifiedRequest();
-            loanRequest.setLenderEntityId(recharge.getPayerEntityId());
-            loanRequest.setBorrowerEntityId(recharge.getBehalfEntityId());
-            loanRequest.setPrincipalAmount(recharge.getTotalRecharge());
-            loanRequest.setCurrencyCode(recharge.getCurrencyCode());
-            loanRequest.setDisbursementDate(LocalDate.now());
-            loanRequest.setMaturityDate(maturityDate);
-            loanRequest.setInterestType(IhbLoan.InterestType.FIXED);
-            loanRequest.setRepaymentFrequency(IhbLoan.RepaymentFrequency.BULLET);
-            
-            // Optional: Use specific interest rate from request
-            if (request.getIhbInterestRate() != null) {
-                loanRequest.setBaseRate(request.getIhbInterestRate());
-            }
-            
-            IhbDto.LoanResponse loan = ihbUnifiedService.createLoan(loanRequest);
-            
-            log.info("Created IHB loan {} for POBO recharge {}", 
-                loan.getLoanReference(), recharge.getRechargeReference());
-            
-            return IhbLoanResult.builder()
-                .success(true)
-                .loanId(loan.getId())
-                .loanReference(loan.getLoanReference())
-                .principalAmount(loan.getPrincipalAmount())
-                .interestRate(loan.getInterestRate())
-                .maturityDate(loan.getMaturityDate())
-                .build();
-                
-        } catch (BusinessException e) {
-            log.warn("IHB loan creation failed for recharge {}: {}", 
-                recharge.getRechargeReference(), e.getMessage());
-            return IhbLoanResult.builder()
-                .success(false)
-                .errorMessage(e.getMessage())
-                .build();
-        }
-    }
-
-    // ========================================================================
     // PHASE 5 TASK 5.6: BATCH POBO PROCESSING
     // ========================================================================
     
@@ -525,8 +445,6 @@ public class PoboExecutionService {
                     .treasuryEntityCode(request.getTreasuryEntityCode())
                     .treasuryEntityName(request.getTreasuryEntityName())
                     .treasuryVaId(request.getTreasuryVaId())
-                    .createIhbLoan(request.getCreateIhbLoan())
-                    .loanMaturityDate(request.getLoanMaturityDate())
                     .executedBy(request.getExecutedBy())
                     .build();
                 
@@ -667,9 +585,6 @@ public class PoboExecutionService {
         private BigDecimal rechargeAmount;
         private BigDecimal serviceFee;
         private BigDecimal totalRecharge;
-        private boolean ihbLoanCreated;
-        private UUID ihbLoanId;
-        private String ihbLoanReference;
         private LocalDateTime executedAt;
         private String executedBy;
         private String errorMessage;
@@ -687,18 +602,6 @@ public class PoboExecutionService {
         private List<PoboExecutionResult> results;
         private LocalDateTime executedAt;
         private String executedBy;
-    }
-    
-    @Data
-    @Builder
-    public static class IhbLoanResult {
-        private boolean success;
-        private UUID loanId;
-        private String loanReference;
-        private BigDecimal principalAmount;
-        private BigDecimal interestRate;
-        private LocalDate maturityDate;
-        private String errorMessage;
     }
     
     @Data
@@ -723,12 +626,9 @@ public class PoboExecutionService {
         private String treasuryEntityCode;
         private String treasuryEntityName;
         private UUID treasuryVaId;
-        private Boolean createIhbLoan;
-        private LocalDate loanMaturityDate;
-        private BigDecimal ihbInterestRate;
         private String executedBy;
     }
-    
+
     @Data
     @Builder
     public static class BatchPoboExecuteRequest {
@@ -737,8 +637,6 @@ public class PoboExecutionService {
         private String treasuryEntityCode;
         private String treasuryEntityName;
         private UUID treasuryVaId;
-        private Boolean createIhbLoan;
-        private LocalDate loanMaturityDate;
         private String executedBy;
     }
 }

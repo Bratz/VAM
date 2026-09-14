@@ -8,8 +8,6 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.treasury.ExternalMandate;
-import com.bank.vam.entity.treasury.IhbDeposit;
-import com.bank.vam.entity.treasury.IhbLoan;
 import com.bank.vam.entity.treasury.SweepExecution;
 import com.bank.vam.entity.treasury.SweepRule;
 import com.bank.vam.entity.treasury.SweepRuleSource;
@@ -19,12 +17,11 @@ import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
-import com.bank.vam.repository.treasury.IhbDepositRepository;
-import com.bank.vam.repository.treasury.IhbLoanRepository;
 import com.bank.vam.repository.treasury.SweepExecutionRepository;
 import com.bank.vam.repository.treasury.SweepRuleRepository;
 import com.bank.vam.repository.treasury.SweepRuleSourceRepository;
 import com.bank.vam.repository.treasury.SweepRunRepository;
+import com.bank.vam.service.TransactionService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,8 +75,6 @@ public class SweepService {
     private final VirtualAccountRepository virtualAccountRepository;
     private final TransactionRepository transactionRepository;
     private final LegalEntityRepository legalEntityRepository;
-    private final IhbLoanRepository ihbLoanRepository;
-    private final IhbDepositRepository ihbDepositRepository;
     private final FeePostingService feePostingService;
     private final IhbFxService fxService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
@@ -89,6 +84,7 @@ public class SweepService {
     private final com.bank.vam.config.HomeBankProperties homeBankProperties;
     private final com.bank.vam.repository.treasury.ExternalMandateRepository externalMandateRepository;
     private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
+    private final TransactionService transactionService;
 
     /**
      * Per-source transaction boundary used by {@link #runSweeps}. Each source's
@@ -257,14 +253,24 @@ public class SweepService {
                 VirtualAccount va = vaById.get(sourceReq.getAccountId());
                 if (va != null) {
                     hasShadowLeg |= assertShadowLegEligible(va, sourceReq.getAccountNumber(), rule.getRail());
+                    assertPooledOrMirrored(va, sourceReq.getAccountNumber());
                     sourceVasForMirroring.add(va);
                 }
             }
         }
-        VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId()).orElse(null);
-        if (targetVa != null) {
-            hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
-        }
+        // Was .orElse(null): an unresolvable target silently passed rule
+        // creation and only surfaced later as a masked NPE inside
+        // executeTransfer ("Transfer execution failed", real cause hidden).
+        // Fail loudly here instead, same as the source-account check above.
+        VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId())
+                .orElseThrow(() -> new BusinessException("Target account not found: " + request.getTargetAccountId()));
+        hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
+        // No assertPooledOrMirrored() on the target: a dedicated Treasury pool/root
+        // account is routinely the ONLY VA on its own physical account by design —
+        // that's the destination the concentration exists to fill, not a stand-in for
+        // a subsidiary's account. The risk this guard targets (a leg silently backed
+        // by no real shared cash) is specific to the many distinct subsidiary
+        // accounts feeding IN, i.e. the sources — see assertPooledOrMirrored's javadoc.
         // v2 multi-bank field, previously never populated (default NOTIONAL) — a rule
         // touching at least one shadow account now actually gets REAL execution wired
         // in executeRules/executeTransfer via mirrorIfHomeBankShadow, so reflect that here.
@@ -567,16 +573,12 @@ public class SweepService {
     /**
      * Execute a single sweep from source to target account.
      *
-     * OPTION B ARCHITECTURE (Position-Based Settlement):
-     * - Sweeps create IHB positions ONLY (no immediate fund movement)
-     * - Funds are committed (committedOutflow on source VA)
-     * - Actual settlement happens at EOD via IhbSettlementService
-     * - Maturity = sweep frequency (daily=overnight, monthly=30 days, etc.)
-     *
-     * Benefits:
-     * - Netting: Multiple sweeps net to single settlement
-     * - Single source of truth: IHB position is the record
-     * - True IHB model: Positions drive interest, not VA balances
+     * Moves real cash immediately (executeTransfer), then — for cross-entity,
+     * IHB-configured pairs — posts an intercompany-position mirror leg on top
+     * (TransactionService.postSweepSurplusIntercompanyLeg): the subsidiary's
+     * IHB Current Account balance increases and Treasury's IC Payable VA for
+     * that subsidiary increases by the same amount, same shape as a COBO
+     * collection.
      */
     private SweepExecution executeSweep(SweepRule rule, SweepRuleSource source,
                                          Map<UUID, VirtualAccount> sourceVaById,
@@ -648,35 +650,61 @@ public class SweepService {
                     log.warn("Sweep blocked for {} - insufficient available balance: {} < {}",
                         source.getAccountNumber(), availableBalance, sweepAmount);
                 } else {
-                    // ====================================================
-                    // OPTION B: Create position + commit (NO fund movement)
-                    // ====================================================
+                    // Move the real cash immediately (previously deferred to
+                    // an EOD IhbSettlementService.runSettlement() that had no
+                    // caller anywhere in the codebase — sweeps only ever
+                    // committed availableBalance, never actually moved
+                    // currentBalance). Mirrors how deficit funding already
+                    // moves cash immediately via the same executeTransfer().
+                    boolean transferSuccess = executeTransfer(
+                        sourceVa, targetVa, sweepAmount, rule.getCurrencyCode(),
+                        execution.getExecutionReference(), "Cash concentration sweep - " + rule.getRuleName()
+                    );
 
-                    // 1. Commit the outflow on source VA (reduces available balance)
-                    sourceVa.commitOutflow(sweepAmount);
-                    virtualAccountRepository.save(sourceVa);
+                    if (!transferSuccess) {
+                        execution.setSweepAmount(BigDecimal.ZERO);
+                        execution.setBalanceAfter(sourceVa.getCurrentBalance());
+                        execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
+                        execution.setErrorMessage("Transfer execution failed");
+                    } else {
+                        execution.setSweepAmount(sweepAmount);
+                        execution.setBalanceAfter(sourceVa.getCurrentBalance());
+                        execution.setStatus(SweepExecution.ExecutionStatus.SETTLED);
 
-                    // 2. Create IHB Deposit position with COMMITTED status
-                    IhbDeposit deposit = createCommittedIhbDeposit(source, rule, sweepAmount, execution,
-                            sourceVa, targetVa, legalEntityById);
+                        rule.setTotalSwept(rule.getTotalSwept().add(sweepAmount));
 
-                    // 3. Update execution
-                    execution.setSweepAmount(sweepAmount);
-                    execution.setBalanceAfter(sourceVa.getCurrentBalance()); // Unchanged until settlement
-                    execution.setStatus(SweepExecution.ExecutionStatus.COMMITTED);
-                    execution.setIhbDepositId(deposit != null ? deposit.getId() : null);
-                    execution.setIhbEnabled(deposit != null);
+                        // Post the intercompany-position mirror on top of the
+                        // real transfer above, for cross-entity IHB-configured
+                        // pairs only (same gate the old IhbDeposit creation
+                        // used) — see TransactionService.postSweepSurplusIntercompanyLeg.
+                        // Best-effort: a failure here doesn't undo the real
+                        // transfer that already succeeded above.
+                        LegalEntity sourceEntity = sourceVa.getOwningEntityId() != null ?
+                            legalEntityById.get(sourceVa.getOwningEntityId()) : null;
+                        LegalEntity targetEntity = targetVa != null && targetVa.getOwningEntityId() != null ?
+                            legalEntityById.get(targetVa.getOwningEntityId()) : null;
+                        if (sourceEntity != null && targetEntity != null
+                                && sourceEntity.isIhbEnabled() && targetEntity.canLend()) {
+                            try {
+                                virtualAccountRepository
+                                    .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
+                                    .filter(VirtualAccount::hasIcPayable)
+                                    .ifPresent(ihbCurrentVa -> transactionService.postSweepSurplusIntercompanyLeg(
+                                        ihbCurrentVa, sweepAmount, execution.getExecutionReference(), LocalDate.now()));
+                            } catch (Exception e) {
+                                log.error("Failed to post sweep intercompany leg for {}: {}",
+                                    execution.getExecutionReference(), e.getMessage(), e);
+                            }
+                        }
 
-                    // Update rule total (committed, not yet settled)
-                    rule.setTotalSwept(rule.getTotalSwept().add(sweepAmount));
+                        // Post sweep fee
+                        postSweepFee(source, execution, sweepAmount);
 
-                    // Post sweep fee
-                    postSweepFee(source, execution, sweepAmount);
-
-                    log.info("Sweep committed: {} {} from {} ({}) to {} ({}) - awaiting EOD settlement",
-                        sweepAmount, rule.getCurrencyCode(),
-                        source.getAccountNumber(), source.getEntityCode(),
-                        rule.getTargetAccountNumber(), rule.getTargetEntityCode());
+                        log.info("Sweep executed: {} {} from {} ({}) to {} ({})",
+                            sweepAmount, rule.getCurrencyCode(),
+                            source.getAccountNumber(), source.getEntityCode(),
+                            rule.getTargetAccountNumber(), rule.getTargetEntityCode());
+                    }
                 }
             }
         } catch (Exception e) {
@@ -689,344 +717,8 @@ public class SweepService {
         return executionRepository.save(execution);
     }
 
-    /**
-     * Create a COMMITTED IHB Deposit (awaiting EOD settlement).
-     *
-     * Position details:
-     * - Status: COMMITTED (not SETTLED until EOD)
-     * - Maturity: Based on sweep frequency (daily=overnight, etc.)
-     * - Interest accrues from value date (= position date by default)
-     */
-    private IhbDeposit createCommittedIhbDeposit(SweepRuleSource source, SweepRule rule,
-                                                  BigDecimal amount, SweepExecution execution,
-                                                  VirtualAccount sourceVa, VirtualAccount targetVa,
-                                                  Map<UUID, LegalEntity> legalEntityById) {
-        try {
-            // Source/target VA and owning entities are pre-fetched once per
-            // rule by the caller (N+1 fix) — this used to re-run findById on
-            // the source VA (again), the target VA, and both entities on
-            // EVERY source iteration of the same rule.
-            if (sourceVa == null || sourceVa.getOwningEntityId() == null) {
-                log.debug("Source VA has no owning entity - skipping IHB position creation");
-                return null;
-            }
-
-            if (targetVa == null || targetVa.getOwningEntityId() == null) {
-                log.debug("Target VA has no owning entity - skipping IHB position creation");
-                return null;
-            }
-
-            LegalEntity sourceEntity = legalEntityById.get(sourceVa.getOwningEntityId());
-            LegalEntity targetEntity = legalEntityById.get(targetVa.getOwningEntityId());
-
-            if (sourceEntity == null || targetEntity == null) {
-                log.debug("Could not resolve entities - skipping IHB position creation");
-                return null;
-            }
-
-            // Check if both entities are IHB-enabled
-            if (!sourceEntity.isIhbEnabled()) {
-                log.debug("Source entity {} is not IHB-enabled - skipping IHB position", sourceEntity.getEntityCode());
-                return null;
-            }
-
-            if (!targetEntity.canLend()) {
-                log.debug("Target entity {} is not a Treasury Center - skipping IHB position", targetEntity.getEntityCode());
-                return null;
-            }
-
-            // Determine interest rate
-            BigDecimal interestRate = determineDepositRate(sourceEntity, targetEntity);
-
-            // Calculate maturity based on sweep frequency
-            LocalDate positionDate = LocalDate.now();
-            LocalDate maturityDate = calculateMaturityDate(rule.getFrequency(), positionDate);
-
-            // Create the deposit with COMMITTED status
-            IhbDeposit deposit = new IhbDeposit();
-            String timestamp = LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String random = String.format("%04d", (int)(Math.random() * 10000));
-            deposit.setDepositReference("IHB-D-" + timestamp.substring(8) + random);
-
-            // Entity references
-            deposit.setDepositorLegalEntityId(sourceEntity.getId());
-            deposit.setDepositorEntityCode(sourceEntity.getEntityCode());
-            deposit.setTreasuryLegalEntityId(targetEntity.getId());
-            deposit.setCorporateId(sourceEntity.getCorporateId());
-            deposit.setDepositorVaId(sourceVa.getId());
-            deposit.setTreasuryVaId(targetVa.getId());
-
-            // ================================================================
-            // CROSS-CURRENCY HANDLING
-            // ================================================================
-            String sourceCurrency = sourceVa.getCurrencyCode();
-            String targetCurrency = targetVa.getCurrencyCode();
-            String settlementCurrency = rule.getCurrencyCode() != null ? rule.getCurrencyCode() : targetCurrency;
-
-            BigDecimal principalAmount = amount;
-            BigDecimal originalAmount = null;
-            String originalCurrency = null;
-            BigDecimal fxRate = null;
-            LocalDate fxRateDate = null;
-
-            // Check for cross-currency scenario
-            if (!sourceCurrency.equals(settlementCurrency)) {
-                // Cross-currency deposit: convert source currency to settlement currency
-                if (fxService.isCurrencyPairSupported(sourceCurrency, settlementCurrency)) {
-                    IhbFxService.ConversionResult conversion = fxService.convert(
-                        amount, sourceCurrency, settlementCurrency, positionDate);
-
-                    principalAmount = conversion.convertedAmount();
-                    originalAmount = conversion.originalAmount();
-                    originalCurrency = conversion.originalCurrency();
-                    fxRate = conversion.rateUsed().rate();
-                    fxRateDate = conversion.conversionDate();
-
-                    log.info("Cross-currency deposit: {} {} → {} {} @ {}",
-                        originalAmount, originalCurrency, principalAmount, settlementCurrency, fxRate);
-                } else {
-                    log.warn("Unsupported currency pair {}/{} - using source currency",
-                        sourceCurrency, settlementCurrency);
-                    settlementCurrency = sourceCurrency;
-                }
-            }
-
-            // Amounts (with cross-currency support)
-            deposit.setPrincipalAmount(principalAmount);
-            deposit.setCurrencyCode(settlementCurrency);
-            deposit.setCurrentBalance(principalAmount);
-            deposit.setInterestRate(interestRate);
-
-            // Cross-currency fields
-            deposit.setOriginalAmount(originalAmount);
-            deposit.setOriginalCurrency(originalCurrency);
-            deposit.setFxRate(fxRate);
-            deposit.setFxRateDate(fxRateDate);
-
-            // Dates
-            deposit.setDepositDate(positionDate);
-            deposit.setValueDate(positionDate);  // Interest starts from today
-            deposit.setMaturityDate(maturityDate);
-
-            // Type and status
-            deposit.setDepositType(IhbDeposit.DepositType.FIXED);  // Sweep deposits have fixed maturity
-            deposit.setStatus(IhbDeposit.DepositStatus.COMMITTED);  // Awaiting settlement
-
-            // Interest
-            deposit.setAccruedInterest(BigDecimal.ZERO);
-            deposit.setTotalInterestEarned(BigDecimal.ZERO);
-
-            // Sweep tracking
-            deposit.setSweepExecutionReference(execution.getExecutionReference());
-            deposit.setAutoCreated(true);
-            deposit.setSweepRuleId(rule.getId());
-            deposit.setSweepFrequency(rule.getFrequency() != null ? rule.getFrequency().name() : "DAILY");
-
-            // Update depositor's total deposited (committed, not yet settled)
-            sourceEntity.addDepositedAmount(amount);
-            legalEntityRepository.save(sourceEntity);
-
-            deposit = ihbDepositRepository.save(deposit);
-
-            log.info("Created COMMITTED IHB deposit {} - {} {} @ {}%, matures {}",
-                deposit.getDepositReference(), amount, rule.getCurrencyCode(),
-                interestRate, maturityDate);
-
-            return deposit;
-
-        } catch (Exception e) {
-            log.error("Failed to create IHB deposit for sweep {}: {}",
-                execution.getExecutionReference(), e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Calculate maturity date based on sweep frequency.
-     * Sweep positions mature at the next sweep cycle.
-     */
-    private LocalDate calculateMaturityDate(SweepRule.SweepFrequency frequency, LocalDate positionDate) {
-        if (frequency == null) {
-            return positionDate.plusDays(1);  // Default overnight
-        }
-        return switch (frequency) {
-            case DAILY -> positionDate.plusDays(1);
-            case WEEKLY -> positionDate.plusWeeks(1);
-            //case BIWEEKLY -> positionDate.plusWeeks(2);
-            case MONTHLY -> positionDate.plusMonths(1);
-            //case QUARTERLY -> positionDate.plusMonths(3);
-            default -> positionDate.plusDays(1);
-        };
-    }
-
     // ========================================================================
-    // IHB INTEGRATION
-    // ========================================================================
-
-    /**
-     * Create IHB positions when sweeping between IHB-enabled entities.
-     * 
-     * When Entity A's funds are swept to Treasury T:
-     * - Entity A gets an IHB Deposit (they're "depositing" with Treasury)
-     * - This represents an intercompany receivable with interest
-     * 
-     * The Treasury Center (target) doesn't create a separate loan because
-     * the deposit already represents the liability. The Treasury's total
-     * deposits represent their borrowings from subsidiaries.
-     */
-    private void createIhbPositionsIfApplicable(SweepRuleSource source, SweepRule rule, 
-                                                 BigDecimal amount, SweepExecution execution) {
-        try {
-            // Get source VA to find owning entity
-            VirtualAccount sourceVa = virtualAccountRepository.findById(source.getAccountId())
-                .orElse(null);
-            if (sourceVa == null || sourceVa.getOwningEntityId() == null) {
-                log.debug("Source VA has no owning entity - skipping IHB position creation");
-                return;
-            }
-            
-            // Get target VA to find treasury entity
-            VirtualAccount targetVa = virtualAccountRepository.findById(rule.getTargetAccountId())
-                .orElse(null);
-            if (targetVa == null || targetVa.getOwningEntityId() == null) {
-                log.debug("Target VA has no owning entity - skipping IHB position creation");
-                return;
-            }
-            
-            // Get both entities
-            LegalEntity sourceEntity = legalEntityRepository.findById(sourceVa.getOwningEntityId())
-                .orElse(null);
-            LegalEntity targetEntity = legalEntityRepository.findById(targetVa.getOwningEntityId())
-                .orElse(null);
-            
-            if (sourceEntity == null || targetEntity == null) {
-                log.debug("Could not resolve entities - skipping IHB position creation");
-                return;
-            }
-            
-            // Check if both entities are IHB-enabled
-            boolean sourceIhbEnabled = sourceEntity.isIhbEnabled();
-            boolean targetIsTreasury = targetEntity.canLend(); // Treasury Center can lend
-            
-            if (!sourceIhbEnabled) {
-                log.debug("Source entity {} is not IHB-enabled - sweep without IHB position", 
-                    sourceEntity.getEntityCode());
-                return;
-            }
-            
-            if (!targetIsTreasury) {
-                log.debug("Target entity {} is not a Treasury Center - sweep without IHB position", 
-                    targetEntity.getEntityCode());
-                return;
-            }
-            
-            // Both entities are IHB-enabled: Create deposit for source entity
-            log.info("Creating IHB deposit for sweep: {} deposits {} {} with Treasury {}", 
-                sourceEntity.getEntityCode(), amount, rule.getCurrencyCode(), targetEntity.getEntityCode());
-            
-            IhbDeposit deposit = createIhbDepositFromSweep(
-                sourceEntity, targetEntity, 
-                sourceVa, targetVa,
-                amount, rule.getCurrencyCode(),
-                execution.getExecutionReference()
-            );
-            
-            // Store IHB reference in execution for tracking
-            execution.setIhbDepositId(deposit.getId());
-            execution.setIhbEnabled(true);
-            
-            log.info("Created IHB deposit {} from sweep {} - {} {} @ {}%", 
-                deposit.getDepositReference(), execution.getExecutionReference(),
-                amount, rule.getCurrencyCode(), deposit.getInterestRate());
-            
-        } catch (Exception e) {
-            log.error("Failed to create IHB positions for sweep {}: {}", 
-                execution.getExecutionReference(), e.getMessage());
-            // Don't fail the sweep, just log the error
-        }
-    }
-
-    /**
-     * Create an IHB Deposit when funds are swept to Treasury Center.
-     * 
-     * The deposit represents:
-     * - From source entity's perspective: An intercompany deposit earning interest
-     * - From Treasury's perspective: A liability (borrowed funds) paying interest
-     */
-    private IhbDeposit createIhbDepositFromSweep(LegalEntity depositor, LegalEntity treasury,
-                                                  VirtualAccount depositorVa, VirtualAccount treasuryVa,
-                                                  BigDecimal amount, String currency,
-                                                  String sweepReference) {
-        // Determine interest rate
-        BigDecimal interestRate = determineDepositRate(depositor, treasury);
-        
-        IhbDeposit deposit = new IhbDeposit();
-        // Generate unique deposit reference with timestamp
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String random = String.format("%04d", (int)(Math.random() * 10000));
-        deposit.setDepositReference("IHB-D-" + timestamp.substring(8) + random); // HHmmss + random = 10 chars
-        deposit.setDepositorLegalEntityId(depositor.getId());
-        deposit.setDepositorEntityCode(depositor.getEntityCode());
-        deposit.setTreasuryLegalEntityId(treasury.getId());
-        deposit.setCorporateId(depositor.getCorporateId());
-        deposit.setDepositorVaId(depositorVa.getId());
-        deposit.setTreasuryVaId(treasuryVa.getId());
-        deposit.setPrincipalAmount(amount);
-        deposit.setCurrencyCode(currency);
-        deposit.setCurrentBalance(amount);
-        deposit.setInterestRate(interestRate);
-        deposit.setDepositDate(LocalDate.now());
-        // Sweep deposits are typically CALL (no fixed maturity)
-        deposit.setDepositType(IhbDeposit.DepositType.CALL);
-        deposit.setStatus(IhbDeposit.DepositStatus.ACTIVE);
-        deposit.setAccruedInterest(BigDecimal.ZERO);
-        deposit.setTotalInterestEarned(BigDecimal.ZERO);
-        // Link to sweep execution
-        deposit.setSweepExecutionReference(sweepReference);
-        deposit.setAutoCreated(true);
-        
-        // Update depositor's total deposited
-        depositor.addDepositedAmount(amount);
-        legalEntityRepository.save(depositor);
-        
-        return ihbDepositRepository.save(deposit);
-    }
-
-    /**
-     * Determine the deposit rate based on entity configurations.
-     *
-     * Priority:
-     * 1. Treasury's InterestConfiguration (if attached)
-     * 2. Entity spreads (base rate - depositor's lending spread)
-     * 3. Default rate
-     */
-    private BigDecimal determineDepositRate(LegalEntity depositor, LegalEntity treasury) {
-        // Try Treasury's Interest Configuration first
-        if (treasury.getIhbInterestConfigId() != null) {
-            // Would need to inject InterestConfigRepository to look this up
-            // For now, use spread-based calculation
-        }
-
-        // Base rate (e.g., EIBOR at 5%)
-        BigDecimal baseRate = new BigDecimal("5.00");
-
-        // Depositor gets base rate minus their lending spread
-        // (The spread is the "cost" of the intermediation)
-        BigDecimal depositorSpread = depositor.getLendingRateSpread() != null ?
-            depositor.getLendingRateSpread() : BigDecimal.ZERO;
-
-        BigDecimal rate = baseRate.subtract(depositorSpread);
-
-        // Ensure rate is not negative
-        if (rate.compareTo(BigDecimal.ZERO) < 0) {
-            rate = BigDecimal.ZERO;
-        }
-
-        return rate.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    // ========================================================================
-    // DEFICIT FUNDING (IHB LOAN CREATION)
+    // DEFICIT FUNDING
     // ========================================================================
 
     /**
@@ -1193,26 +885,29 @@ public class SweepService {
                 return result;
             }
 
-            // Create IHB Loan for the borrower
-            IhbLoan loan = createIhbLoanFromDeficitFunding(
-                    treasuryEntity, sourceEntity,
-                    targetVa, sourceVa,
-                    deficit, rule.getCurrencyCode(),
-                    executionRef
-            );
+            // Post the intercompany-position mirror on top of the real
+            // transfer above, for cross-entity IHB-configured pairs only —
+            // see TransactionService.postSweepDeficitIntercompanyLeg.
+            // Best-effort: a failure here doesn't undo the real transfer.
+            try {
+                virtualAccountRepository
+                    .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(sourceEntity.getId(), rule.getCurrencyCode())
+                    .filter(VirtualAccount::hasIcReceivable)
+                    .ifPresent(ihbCurrentVa -> transactionService.postSweepDeficitIntercompanyLeg(
+                        ihbCurrentVa, deficit, executionRef, LocalDate.now()));
+            } catch (Exception e) {
+                log.error("Failed to post deficit-funding intercompany leg for {}: {}", executionRef, e.getMessage(), e);
+            }
 
             result.setFunded(true);
             result.setFundedAmount(deficit);
             result.setBalanceAfter(currentBalance.add(deficit));
-            result.setIhbLoanId(loan.getId());
-            result.setIhbLoanReference(loan.getLoanReference());
-            result.setMessage("Deficit funded via IHB loan");
+            result.setMessage("Deficit funded via cash concentration");
 
-            log.info("Deficit funding: {} {} from Treasury {} to {} ({}). Loan: {}",
+            log.info("Deficit funding: {} {} from Treasury {} to {} ({})",
                     deficit, rule.getCurrencyCode(),
                     treasuryEntity.getEntityCode(),
-                    sourceEntity.getEntityCode(), source.getAccountNumber(),
-                    loan.getLoanReference());
+                    sourceEntity.getEntityCode(), source.getAccountNumber());
 
         } catch (Exception e) {
             log.error("Deficit funding failed for {}: {}", source.getAccountNumber(), e.getMessage(), e);
@@ -1220,80 +915,6 @@ public class SweepService {
         }
 
         return result;
-    }
-
-    /**
-     * Create an IHB Loan when Treasury provides deficit funding.
-     *
-     * The loan represents:
-     * - From borrower's perspective: Intercompany payable with interest obligation
-     * - From Treasury's perspective: Intercompany receivable earning interest
-     */
-    private IhbLoan createIhbLoanFromDeficitFunding(LegalEntity lender, LegalEntity borrower,
-                                                     VirtualAccount lenderVa, VirtualAccount borrowerVa,
-                                                     BigDecimal amount, String currency,
-                                                     String fundingReference) {
-        // Determine interest rate (what borrower pays)
-        BigDecimal interestRate = determineLendingRate(lender, borrower);
-
-        IhbLoan loan = new IhbLoan();
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String random = String.format("%04d", (int)(Math.random() * 10000));
-        loan.setLoanReference("IHB-L-" + timestamp.substring(8) + random);
-        loan.setLenderLegalEntityId(lender.getId());
-        loan.setLenderEntityCode(lender.getEntityCode());
-        loan.setBorrowerLegalEntityId(borrower.getId());
-        loan.setBorrowerEntityCode(borrower.getEntityCode());
-        loan.setCorporateId(borrower.getCorporateId());
-        loan.setLenderVaId(lenderVa.getId());
-        loan.setBorrowerVaId(borrowerVa.getId());
-        loan.setPrincipalAmount(amount);
-        loan.setCurrencyCode(currency);
-        loan.setOutstandingAmount(amount);
-        loan.setInterestRate(interestRate);
-        loan.setInterestType(IhbLoan.InterestType.FIXED);
-        loan.setDisbursementDate(LocalDate.now());
-        // Deficit funding loans are typically short-term or on-demand
-        loan.setMaturityDate(LocalDate.now().plusMonths(1)); // 1 month default
-        loan.setRepaymentFrequency(IhbLoan.RepaymentFrequency.BULLET);
-        loan.setStatus(IhbLoan.LoanStatus.ACTIVE);
-        loan.setAccruedInterest(BigDecimal.ZERO);
-        loan.setTotalInterestPaid(BigDecimal.ZERO);
-
-        // Update borrower's exposure
-        borrower.utilizeIhbLimit(amount);
-        legalEntityRepository.save(borrower);
-
-        // Update lender's lent amount
-        lender.addLentAmount(amount);
-        legalEntityRepository.save(lender);
-
-        return ihbLoanRepository.save(loan);
-    }
-
-    /**
-     * Determine the lending rate (what borrower pays).
-     *
-     * Priority:
-     * 1. Treasury's InterestConfiguration
-     * 2. Base rate + Treasury lending spread + Borrower borrowing spread
-     * 3. Default rate
-     */
-    private BigDecimal determineLendingRate(LegalEntity lender, LegalEntity borrower) {
-        // Base rate (e.g., EIBOR at 5%)
-        BigDecimal baseRate = new BigDecimal("5.00");
-
-        // Lender's spread (what Treasury charges)
-        BigDecimal lenderSpread = lender.getLendingRateSpread() != null ?
-                lender.getLendingRateSpread() : BigDecimal.ZERO;
-
-        // Borrower's spread (additional risk premium)
-        BigDecimal borrowerSpread = borrower.getBorrowingRateSpread() != null ?
-                borrower.getBorrowingRateSpread() : BigDecimal.ZERO;
-
-        BigDecimal rate = baseRate.add(lenderSpread).add(borrowerSpread);
-
-        return rate.setScale(2, RoundingMode.HALF_UP);
     }
 
     // ========================================================================
@@ -1365,6 +986,33 @@ public class SweepService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Reject a SOURCE leg that models a standalone bank account as if it were pooled.
+     * Not applied to the target — see the call site in {@link #createRule}.
+     * PHYSICAL_MIRROR/EXTERNAL_MIRROR VAs are exempt — they ARE the 1:1 real-account
+     * proxy by design, and {@link #mirrorIfHomeBankShadow} carries their movement
+     * through to the real balance. Anything else (TRANSACTION/COLLECTION/etc.) only
+     * moves {@code VirtualAccount.currentBalance} when swept (see {@code executeTransfer})
+     * — nothing ever touches the underlying {@code PhysicalAccount}'s own balance. That's
+     * correct when the VA is one of several sub-ledgers sharing a pooled physical account
+     * (the pool's real cash already moved once, into that shared account), but if this VA
+     * is the ONLY VA on its physical account, there's no pool — it's a distinct,
+     * separately-titled account (e.g. a subsidiary's own operating account) pretending to
+     * be a ledger-only leg, and a sweep on it would silently reassign ownership on paper
+     * without moving any real cash.
+     */
+    private void assertPooledOrMirrored(VirtualAccount va, String accountNumberForError) {
+        if (va.isPhysicalMirror() || va.isExternalMirror()) {
+            return;
+        }
+        if (virtualAccountRepository.countByPhysicalAccountId(va.getPhysicalAccountId()) <= 1) {
+            throw new BusinessException(
+                    "Account " + accountNumberForError + " is the only VA on its physical account, so it isn't "
+                    + "actually pooled — a sweep on it would move the ledger only, not real cash. Onboard it as a "
+                    + "PHYSICAL_MIRROR shadow VA instead of a plain operational VA, or add it to an existing pool.");
+        }
     }
 
     /**
@@ -1680,9 +1328,6 @@ public class SweepService {
         dto.setErrorMessage(exec.getErrorMessage());
         dto.setExecutionTime(exec.getExecutionTime());
         dto.setCompletedAt(exec.getCompletedAt());
-        // IHB fields
-        dto.setIhbEnabled(exec.getIhbEnabled());
-        dto.setIhbDepositId(exec.getIhbDepositId());
         return dto;
     }
 }

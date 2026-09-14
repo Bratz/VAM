@@ -1554,6 +1554,489 @@ public class TransactionService {
         return txn1_ownerDebit;
     }
 
+    /**
+     * Process a COBO collection using the full 6-leg IHB mirror-account flow — the
+     * COBO counterpart of {@link #makeIhb6LegPoboPayment}, with the flow of money
+     * reversed: an external collection is routed down to the subsidiary instead of
+     * the subsidiary's payment being routed out externally.
+     *
+     * CBS → Shadow VA → Treasury Settlement VA → (IC Payable) → IHB Settlement VA → IHB Current Account
+     *
+     * BALANCE EFFECTS:
+     * - Shadow VA: INCREASES (physical account receives external funds)
+     * - Treasury Settlement VA: Nets to ZERO (pass-through)
+     * - IC Payable VA: INCREASES (Treasury now owes subsidiary more)
+     * - IHB Settlement VA: Nets to ZERO (pass-through)
+     * - IHB Current Account: INCREASES (subsidiary receives the collection)
+     *
+     * Takes the NET (post-fee) amount as principal — the COBO service fee is
+     * calculated and posted by the caller (CoboReceivableService), unchanged.
+     *
+     * @param ownerVa IHB Current Account of the subsidiary the collection is for
+     * @param netAmount Amount to credit the subsidiary, after COBO fee
+     * @param remitterName External party the funds were collected from
+     * @param paymentReference External payment reference
+     * @param valueDate Value date for the ledger entries
+     * @return The final leg's transaction (IHB Current Account credit)
+     */
+    @Transactional
+    public Transaction makeIhb6LegCoboCollection(
+            VirtualAccount ownerVa,
+            BigDecimal netAmount,
+            String remitterName,
+            String paymentReference,
+            LocalDate valueDate) {
+
+        log.info("Processing IHB 6-leg COBO collection: OwnerVA={}, NetAmount={}",
+            ownerVa.getVaNumber(), netAmount);
+
+        if (!ownerVa.isConfiguredFor6LegCobo()) {
+            throw new BusinessException("IHB Current Account " + ownerVa.getVaNumber() +
+                " not configured for 6-leg COBO. IhbSettlementVaId=" + ownerVa.getIhbSettlementVaId() +
+                ", IcPayableVaId=" + ownerVa.getIcPayableVaId() +
+                ", TreasuryPoolVaId=" + ownerVa.getTreasuryPoolVaId());
+        }
+
+        VirtualAccount ihbSettlementVa = virtualAccountRepository.findById(ownerVa.getIhbSettlementVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("IHB Settlement VA not found: " + ownerVa.getIhbSettlementVaId()));
+
+        VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(ownerVa.getTreasuryPoolVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("Treasury Settlement VA not found: " + ownerVa.getTreasuryPoolVaId()));
+
+        VirtualAccount icPayableVa = virtualAccountRepository.findById(ownerVa.getIcPayableVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("IC Payable VA not found: " + ownerVa.getIcPayableVaId()));
+
+        validateVaActive(ownerVa, "IHB owner");
+        validateVaActive(ihbSettlementVa, "IHB Settlement");
+        validateVaActive(treasurySettlementVa, "Treasury Settlement");
+        validateVaActive(icPayableVa, "IC Payable");
+
+        LegalEntity ownerEntity = ownerVa.getOwningEntityId() != null ?
+            legalEntityRepository.findById(ownerVa.getOwningEntityId()).orElse(null) : null;
+
+        VirtualAccount shadowVa = resolveShadowVa(treasurySettlementVa);
+        if (shadowVa == null) {
+            throw new BusinessException("No Shadow VA found for Treasury COBO. " +
+                "Shadow VA is required for Treasury Center to receive external collections.");
+        }
+
+        String correlationId = generateCorrelationId("IHBCOBO");
+        String behalfOfEntity = ownerEntity != null ? ownerEntity.getEntityCode() : ownerVa.getVaNumber();
+
+        // =====================================================================
+        // IHB 6-LEG COBO FLOW
+        // CBS → Shadow VA → Treasury Settlement VA → IC Payable → IHB Settlement VA → IHB Current Account
+        // =====================================================================
+
+        // LEG 1: CREDIT Shadow VA (CBS trigger - money arrives at physical account)
+        BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
+        shadowVa.applyShadowMovement(netAmount);
+        virtualAccountRepository.save(shadowVa);
+
+        // Also credit Treasury Settlement VA for the external collection
+        BigDecimal treasuryBalanceBefore1 = treasurySettlementVa.getCurrentBalance();
+        treasurySettlementVa.setCurrentBalance(treasuryBalanceBefore1.add(netAmount));
+        virtualAccountRepository.save(treasurySettlementVa);
+
+        Transaction txn1_shadowCredit = Transaction.builder()
+                .movementType(Transaction.MovementType.ROBO_CREDIT)
+                .transactionCategory(TransactionCategory.EXTERNAL)
+                .corporateId(shadowVa.getCorporateId())
+                .vaId(shadowVa.getId())
+                .physicalAccountId(shadowVa.getLinkedPhysicalAccountId())
+                .programId(shadowVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(shadowBalanceBefore)
+                .balanceAfter(shadowVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("COBO"))
+                .description("CBS IHB COBO collected from " + remitterName + " on behalf of " + behalfOfEntity)
+                .channel("CBS")
+                .remitterName(remitterName)
+                .externalReference(paymentReference)
+                .counterpartyVaId(treasurySettlementVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 1 of 6 (Shadow VA credit - CBS inbound). Physical Account: " +
+                    shadowVa.getBankAccountNumber())
+                .build();
+        transactionRepository.save(txn1_shadowCredit);
+
+        // LEG 2: IC Payable VA (Treasury's obligation to subsidiary INCREASES)
+        BigDecimal icPayableBalanceBefore = icPayableVa.getCurrentBalance();
+        icPayableVa.setCurrentBalance(icPayableBalanceBefore.add(netAmount));
+        virtualAccountRepository.save(icPayableVa);
+
+        Transaction txn2_icPayable = Transaction.builder()
+                .movementType(Transaction.MovementType.IC_PAYABLE)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(icPayableVa.getCorporateId())
+                .legalEntityId(icPayableVa.getOwningEntityId())
+                .vaId(icPayableVa.getId())
+                .programId(icPayableVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(icPayableBalanceBefore)
+                .balanceAfter(icPayableVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("IC Payable: Treasury owes " + behalfOfEntity + " for COBO collected from " + remitterName)
+                .channel("IHB_COBO")
+                .counterpartyVaId(ownerVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 2 of 6 (IC Payable increase - Treasury's obligation to subsidiary)")
+                .build();
+        transactionRepository.save(txn2_icPayable);
+
+        // LEG 3: DEBIT Treasury Settlement VA (routes down to IHB Settlement)
+        BigDecimal treasuryBalanceBefore2 = treasurySettlementVa.getCurrentBalance();
+        treasurySettlementVa.setCurrentBalance(treasuryBalanceBefore2.subtract(netAmount));
+        virtualAccountRepository.save(treasurySettlementVa);
+
+        Transaction txn3_treasuryDebit = Transaction.builder()
+                .movementType(Transaction.MovementType.TRANSFER_OUT)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(treasurySettlementVa.getCorporateId())
+                .legalEntityId(treasurySettlementVa.getOwningEntityId())
+                .vaId(treasurySettlementVa.getId())
+                .programId(treasurySettlementVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(treasuryBalanceBefore2)
+                .balanceAfter(treasurySettlementVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("Treasury routes IHB COBO to " + behalfOfEntity)
+                .channel("IHB_COBO")
+                .counterpartyVaId(ihbSettlementVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 3 of 6 (Treasury Settlement debit)")
+                .build();
+        transactionRepository.save(txn3_treasuryDebit);
+
+        // LEG 4: CREDIT IHB Settlement VA (receives from Treasury)
+        BigDecimal ihbSettBalanceBefore1 = ihbSettlementVa.getCurrentBalance();
+        ihbSettlementVa.setCurrentBalance(ihbSettBalanceBefore1.add(netAmount));
+        virtualAccountRepository.save(ihbSettlementVa);
+
+        Transaction txn4_ihbSettCredit = Transaction.builder()
+                .movementType(Transaction.MovementType.TRANSFER_IN)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ihbSettlementVa.getCorporateId())
+                .legalEntityId(ihbSettlementVa.getOwningEntityId())
+                .vaId(ihbSettlementVa.getId())
+                .programId(ihbSettlementVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(ihbSettBalanceBefore1)
+                .balanceAfter(ihbSettlementVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("IHB Settlement received from Treasury for " + behalfOfEntity)
+                .channel("IHB_COBO")
+                .counterpartyVaId(treasurySettlementVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 4 of 6 (IHB Settlement credit)")
+                .build();
+        transactionRepository.save(txn4_ihbSettCredit);
+
+        // LEG 5: DEBIT IHB Settlement VA (routes to subsidiary)
+        BigDecimal ihbSettBalanceBefore2 = ihbSettlementVa.getCurrentBalance();
+        ihbSettlementVa.setCurrentBalance(ihbSettBalanceBefore2.subtract(netAmount));
+        virtualAccountRepository.save(ihbSettlementVa);
+
+        Transaction txn5_ihbSettDebit = Transaction.builder()
+                .movementType(Transaction.MovementType.TRANSFER_OUT)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ihbSettlementVa.getCorporateId())
+                .legalEntityId(ihbSettlementVa.getOwningEntityId())
+                .vaId(ihbSettlementVa.getId())
+                .programId(ihbSettlementVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(ihbSettBalanceBefore2)
+                .balanceAfter(ihbSettlementVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("IHB Settlement routes COBO proceeds to " + behalfOfEntity)
+                .channel("IHB_COBO")
+                .counterpartyVaId(ownerVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 5 of 6 (IHB Settlement debit to subsidiary)")
+                .build();
+        transactionRepository.save(txn5_ihbSettDebit);
+
+        // LEG 6: CREDIT IHB Current Account (subsidiary receives the collection)
+        BigDecimal ownerBalanceBefore = ownerVa.getCurrentBalance();
+        ownerVa.setCurrentBalance(ownerBalanceBefore.add(netAmount));
+        ownerVa.setAvailableBalance(ownerVa.getCurrentBalance().add(
+            ownerVa.getEffectiveCreditLimit() != null ? ownerVa.getEffectiveCreditLimit() : BigDecimal.ZERO));
+        virtualAccountRepository.save(ownerVa);
+
+        Transaction txn6_ownerCredit = Transaction.builder()
+                .movementType(Transaction.MovementType.TRANSFER_IN)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ownerVa.getCorporateId())
+                .legalEntityId(ownerVa.getOwningEntityId())
+                .vaId(ownerVa.getId())
+                .programId(ownerVa.getProgramId())
+                .amount(netAmount)
+                .currencyCode(ownerVa.getCurrencyCode())
+                .balanceBefore(ownerBalanceBefore)
+                .balanceAfter(ownerVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("IHBCOBO"))
+                .description("IHB COBO collection received from " + remitterName + " via Treasury")
+                .channel("IHB_COBO")
+                .remitterName(remitterName)
+                .externalReference(paymentReference)
+                .counterpartyVaId(ihbSettlementVa.getId())
+                .correlationId(correlationId)
+                .isRobo(true)
+                .behalfOfEntity(behalfOfEntity)
+                .behalfOfVaId(ownerVa.getId())
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("IHB COBO - leg 6 of 6 (IHB Current Account credit)")
+                .build();
+        txn6_ownerCredit = transactionRepository.save(txn6_ownerCredit);
+
+        propagateBalanceChanges(ownerVa.getId(), netAmount);
+
+        log.info("IHB 6-leg COBO completed: CBS → {} → {} (IC Payable:{}) → {} → {}, amount={}, behalfOf={}",
+            shadowVa.getVaNumber(), treasurySettlementVa.getVaNumber(), icPayableVa.getCurrentBalance(),
+            ihbSettlementVa.getVaNumber(), ownerVa.getVaNumber(), netAmount, behalfOfEntity);
+
+        return txn6_ownerCredit;
+    }
+
+    /**
+     * Posts the intercompany ledger leg for a cross-entity SURPLUS cash-
+     * concentration sweep (subsidiary's excess cash flows up to Treasury).
+     *
+     * A sweep is a purely internal VA-to-VA transfer, not an external CBS
+     * event — the caller (SweepService) already moves the real cash between
+     * the sweep's own source/target VAs via executeTransfer(); this method
+     * only posts the intercompany-position mirror on top of that, the same
+     * economic shape as a COBO collection (Treasury now holds money that
+     * isn't its own) without the Shadow-VA/CBS legs that don't apply here.
+     *
+     * Subsidiary's IHB Current Account INCREASES (they still have a claim on
+     * the cash, now via their Treasury position). Treasury's IC Payable VA
+     * for that subsidiary INCREASES by the same amount.
+     *
+     * @param ihbCurrentVa IHB Current Account of the subsidiary whose surplus was swept
+     * @param amount Amount swept, in ihbCurrentVa's own currency
+     * @param executionReference SweepExecution.executionReference, for traceability
+     * @param valueDate Value date for the ledger entries
+     * @return The IHB Current Account leg's transaction
+     */
+    @Transactional
+    public Transaction postSweepSurplusIntercompanyLeg(
+            VirtualAccount ihbCurrentVa, BigDecimal amount, String executionReference, LocalDate valueDate) {
+
+        if (!ihbCurrentVa.hasIcPayable()) {
+            throw new BusinessException("IHB Current Account " + ihbCurrentVa.getVaNumber() +
+                " has no IC Payable VA configured - cannot post sweep intercompany leg");
+        }
+        VirtualAccount icPayableVa = virtualAccountRepository.findById(ihbCurrentVa.getIcPayableVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("IC Payable VA not found: " + ihbCurrentVa.getIcPayableVaId()));
+
+        validateVaActive(ihbCurrentVa, "IHB owner");
+        validateVaActive(icPayableVa, "IC Payable");
+
+        String correlationId = generateCorrelationId("SWEEPIC");
+
+        BigDecimal ownerBalanceBefore = ihbCurrentVa.getCurrentBalance();
+        ihbCurrentVa.setCurrentBalance(ownerBalanceBefore.add(amount));
+        ihbCurrentVa.setAvailableBalance(ihbCurrentVa.getCurrentBalance().add(
+            ihbCurrentVa.getEffectiveCreditLimit() != null ? ihbCurrentVa.getEffectiveCreditLimit() : BigDecimal.ZERO));
+        virtualAccountRepository.save(ihbCurrentVa);
+
+        Transaction ownerTxn = Transaction.builder()
+                .movementType(Transaction.MovementType.SWEEP_IN)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ihbCurrentVa.getCorporateId())
+                .legalEntityId(ihbCurrentVa.getOwningEntityId())
+                .vaId(ihbCurrentVa.getId())
+                .programId(ihbCurrentVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(ownerBalanceBefore)
+                .balanceAfter(ihbCurrentVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("SWEEPIC"))
+                .description("Cash concentration surplus swept to Treasury")
+                .channel("SWEEP")
+                .externalReference(executionReference)
+                .counterpartyVaId(icPayableVa.getId())
+                .correlationId(correlationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Sweep surplus - IHB Current Account credit")
+                .build();
+        ownerTxn = transactionRepository.save(ownerTxn);
+
+        BigDecimal icPayableBalanceBefore = icPayableVa.getCurrentBalance();
+        icPayableVa.setCurrentBalance(icPayableBalanceBefore.add(amount));
+        virtualAccountRepository.save(icPayableVa);
+
+        Transaction icPayableTxn = Transaction.builder()
+                .movementType(Transaction.MovementType.IC_PAYABLE)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(icPayableVa.getCorporateId())
+                .legalEntityId(icPayableVa.getOwningEntityId())
+                .vaId(icPayableVa.getId())
+                .programId(icPayableVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(icPayableBalanceBefore)
+                .balanceAfter(icPayableVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("SWEEPIC"))
+                .description("IC Payable: Treasury owes " + ihbCurrentVa.getOwningEntityCode() + " for swept surplus")
+                .channel("SWEEP")
+                .externalReference(executionReference)
+                .counterpartyVaId(ihbCurrentVa.getId())
+                .correlationId(correlationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Sweep surplus - IC Payable increase (Treasury's obligation to subsidiary)")
+                .build();
+        transactionRepository.save(icPayableTxn);
+
+        propagateBalanceChanges(ihbCurrentVa.getId(), amount);
+
+        log.info("Sweep surplus IC leg posted: IHB Current {} -> {}, IC Payable {} -> {}, execution={}",
+            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(),
+            icPayableBalanceBefore, icPayableVa.getCurrentBalance(), executionReference);
+
+        return ownerTxn;
+    }
+
+    /**
+     * Posts the intercompany ledger leg for a cross-entity DEFICIT-FUNDING
+     * sweep (Treasury tops up a subsidiary below its target balance).
+     * COBO/POBO counterpart of {@link #postSweepSurplusIntercompanyLeg} —
+     * same internal-transfer-only scope, opposite direction.
+     *
+     * Subsidiary's IHB Current Account DECREASES (they now owe Treasury).
+     * Treasury's IC Receivable VA for that subsidiary INCREASES by the same amount.
+     *
+     * @param ihbCurrentVa IHB Current Account of the subsidiary that was funded
+     * @param amount Amount funded, in ihbCurrentVa's own currency
+     * @param executionReference Sweep execution reference, for traceability
+     * @param valueDate Value date for the ledger entries
+     * @return The IHB Current Account leg's transaction
+     */
+    @Transactional
+    public Transaction postSweepDeficitIntercompanyLeg(
+            VirtualAccount ihbCurrentVa, BigDecimal amount, String executionReference, LocalDate valueDate) {
+
+        if (!ihbCurrentVa.hasIcReceivable()) {
+            throw new BusinessException("IHB Current Account " + ihbCurrentVa.getVaNumber() +
+                " has no IC Receivable VA configured - cannot post sweep intercompany leg");
+        }
+        VirtualAccount icReceivableVa = virtualAccountRepository.findById(ihbCurrentVa.getIcReceivableVaId())
+                .orElseThrow(() -> new ResourceNotFoundException("IC Receivable VA not found: " + ihbCurrentVa.getIcReceivableVaId()));
+
+        validateVaActive(ihbCurrentVa, "IHB owner");
+        validateVaActive(icReceivableVa, "IC Receivable");
+
+        String correlationId = generateCorrelationId("SWEEPIC");
+
+        BigDecimal ownerBalanceBefore = ihbCurrentVa.getCurrentBalance();
+        ihbCurrentVa.setCurrentBalance(ownerBalanceBefore.subtract(amount));
+        ihbCurrentVa.setAvailableBalance(ihbCurrentVa.getCurrentBalance().add(
+            ihbCurrentVa.getEffectiveCreditLimit() != null ? ihbCurrentVa.getEffectiveCreditLimit() : BigDecimal.ZERO));
+        virtualAccountRepository.save(ihbCurrentVa);
+
+        Transaction ownerTxn = Transaction.builder()
+                .movementType(Transaction.MovementType.SWEEP_OUT)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(ihbCurrentVa.getCorporateId())
+                .legalEntityId(ihbCurrentVa.getOwningEntityId())
+                .vaId(ihbCurrentVa.getId())
+                .programId(ihbCurrentVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(ownerBalanceBefore)
+                .balanceAfter(ihbCurrentVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("SWEEPIC"))
+                .description("Cash concentration deficit funded by Treasury")
+                .channel("SWEEP")
+                .externalReference(executionReference)
+                .counterpartyVaId(icReceivableVa.getId())
+                .correlationId(correlationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Sweep deficit funding - IHB Current Account debit")
+                .build();
+        ownerTxn = transactionRepository.save(ownerTxn);
+
+        BigDecimal icReceivableBalanceBefore = icReceivableVa.getCurrentBalance();
+        icReceivableVa.setCurrentBalance(icReceivableBalanceBefore.add(amount));
+        virtualAccountRepository.save(icReceivableVa);
+
+        Transaction icReceivableTxn = Transaction.builder()
+                .movementType(Transaction.MovementType.IC_RECEIVABLE)
+                .transactionCategory(TransactionCategory.INTERNAL)
+                .corporateId(icReceivableVa.getCorporateId())
+                .legalEntityId(icReceivableVa.getOwningEntityId())
+                .vaId(icReceivableVa.getId())
+                .programId(icReceivableVa.getProgramId())
+                .amount(amount)
+                .currencyCode(ihbCurrentVa.getCurrencyCode())
+                .balanceBefore(icReceivableBalanceBefore)
+                .balanceAfter(icReceivableVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(valueDate)
+                .referenceNumber(generateReferenceNumber("SWEEPIC"))
+                .description("IC Receivable: Treasury claim on " + ihbCurrentVa.getOwningEntityCode() + " for deficit funding")
+                .channel("SWEEP")
+                .externalReference(executionReference)
+                .counterpartyVaId(ihbCurrentVa.getId())
+                .correlationId(correlationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Sweep deficit funding - IC Receivable increase (Treasury's claim on subsidiary)")
+                .build();
+        transactionRepository.save(icReceivableTxn);
+
+        propagateBalanceChanges(ihbCurrentVa.getId(), amount.negate());
+
+        log.info("Sweep deficit IC leg posted: IHB Current {} -> {}, IC Receivable {} -> {}, execution={}",
+            ownerBalanceBefore, ihbCurrentVa.getCurrentBalance(),
+            icReceivableBalanceBefore, icReceivableVa.getCurrentBalance(), executionReference);
+
+        return ownerTxn;
+    }
+
     // ========================================================================
     // INTERCOMPANY TRANSACTION RECORD CREATION
     // ========================================================================
@@ -1946,60 +2429,6 @@ public class TransactionService {
                 txn4_targetIn.getId(), correlationId);
         }
 
-        // =====================================================================
-        // IC PAYABLE TRACKING: ROBO Collection - Treasury owes Subsidiary
-        // =====================================================================
-        // If this is a ROBO collection (Treasury collected on behalf of Subsidiary),
-        // create an IC Payable entry to track Treasury's obligation to the Subsidiary.
-        // This uses the Current Account model for intercompany tracking (IHB Loan/Deposit is future scope).
-        if (Boolean.TRUE.equals(request.getIsRobo()) && request.getBehalfOfEntityId() != null) {
-            // Find or resolve IC Payable VA for Treasury
-            VirtualAccount icPayableVa = resolveIcPayableVa(settlementVa, request.getBehalfOfEntityId());
-
-            if (icPayableVa != null) {
-                // Leg 5: IC Payable increases (Treasury's obligation to Subsidiary)
-                // The IC Payable VA balance increases - Treasury now owes more to the Subsidiary
-                BigDecimal icPayableBalanceBefore = icPayableVa.getCurrentBalance();
-                icPayableVa.setCurrentBalance(icPayableBalanceBefore.add(netAmount));
-                icPayableVa.setAvailableBalance(icPayableVa.getCurrentBalance());
-                virtualAccountRepository.save(icPayableVa);
-
-                Transaction txn5_icPayable = Transaction.builder()
-                    .movementType(Transaction.MovementType.IC_PAYABLE)
-                    .transactionCategory(Transaction.TransactionCategory.INTERNAL)
-                    .corporateId(settlementVa.getCorporateId())
-                    .vaId(icPayableVa.getId())
-                    .programId(icPayableVa.getProgramId())
-                    .amount(netAmount)
-                    .currencyCode(currency)
-                    .balanceBefore(icPayableBalanceBefore)
-                    .balanceAfter(icPayableVa.getCurrentBalance())
-                    .transactionDate(LocalDateTime.now())
-                    .valueDate(valueDate)
-                    .referenceNumber(generateReferenceNumber("ICPAY"))
-                    .description("IC Payable: Treasury owes " + request.getBehalfOfEntityCode())
-                    .correlationId(correlationId)
-                    .counterpartyVaId(targetVa.getId())
-                    .isRobo(true)
-                    .behalfOfEntity(request.getBehalfOfEntityCode())
-                    .behalfOfVaId(targetVa.getId())
-                    .channel(request.getChannel())
-                    .status(Transaction.TransactionStatus.COMPLETED)
-                    .processingNotes("ROBO Collection - IC Payable leg (Treasury obligation to " +
-                        request.getBehalfOfEntityCode() + ")")
-                    .build();
-                transactionRepository.save(txn5_icPayable);
-                allTransactions.add(txn5_icPayable);
-
-                log.info("ROBO IC Payable recorded: Treasury owes {} {} to {}, IC Payable VA: {}",
-                    netAmount, currency, request.getBehalfOfEntityCode(), icPayableVa.getVaNumber());
-            } else {
-                log.warn("ROBO collection: IC Payable VA not found for entity {}. " +
-                    "IC tracking skipped - configure icPayableVaId on Settlement VA or create IC_PAYABLE special type VA.",
-                    request.getBehalfOfEntityCode());
-            }
-        }
-
         log.info("Collection completed: CBS → {} → {} → {}, gross={}, fee={}, net={}, correlation={}{}",
             shadowVa.getVaNumber(), settlementVa.getVaNumber(), targetVa.getVaNumber(),
             request.getAmount(), collectionFee, netAmount, correlationId,
@@ -2136,81 +2565,6 @@ public class TransactionService {
 
         } catch (Exception e) {
             log.error("Failed to resolve Shadow VA: {}", e.getMessage(), e);
-        }
-
-        return null;
-    }
-
-    // ========================================================================
-    // IC PAYABLE VA RESOLUTION (ROBO Collections)
-    // ========================================================================
-
-    /**
-     * Resolve IC Payable VA for ROBO collections.
-     *
-     * IC Payable VA tracks Treasury's obligation to subsidiaries when Treasury
-     * receives funds on their behalf (ROBO - Receive On Behalf Of).
-     *
-     * Resolution strategy (priority order):
-     * 1. Settlement VA's icPayableVaId - if configured, use directly
-     * 2. Special Type lookup - find IC_PAYABLE VA in same program
-     *
-     * Similar to how IC Receivable is resolved in POBO 6-leg flow.
-     *
-     * @param settlementVa The Settlement VA through which the collection was processed
-     * @param behalfOfEntityId The legal entity ID on whose behalf Treasury collected
-     * @return The IC Payable VA if found, null otherwise
-     */
-    private VirtualAccount resolveIcPayableVa(VirtualAccount settlementVa, UUID behalfOfEntityId) {
-        try {
-            // Strategy 1: Check if Settlement VA has icPayableVaId configured
-            if (settlementVa.getIcPayableVaId() != null) {
-                Optional<VirtualAccount> icPayableVa = virtualAccountRepository
-                    .findById(settlementVa.getIcPayableVaId());
-                if (icPayableVa.isPresent() && icPayableVa.get().getStatus() == VaStatus.ACTIVE) {
-                    log.debug("Resolved IC Payable VA by configured ID: {}", icPayableVa.get().getVaNumber());
-                    return icPayableVa.get();
-                }
-            }
-
-            // Strategy 2: Find by special type in same program
-            if (settlementVa.getProgramId() != null) {
-                List<VirtualAccount> icPayableVas = virtualAccountRepository
-                    .findByProgramIdAndSpecialType(settlementVa.getProgramId(),
-                        VirtualAccount.VaSpecialType.IC_PAYABLE);
-
-                Optional<VirtualAccount> activeIcPayable = icPayableVas.stream()
-                    .filter(va -> va.getStatus() == VaStatus.ACTIVE)
-                    .findFirst();
-
-                if (activeIcPayable.isPresent()) {
-                    log.debug("Resolved IC Payable VA by special type in program: {}",
-                        activeIcPayable.get().getVaNumber());
-                    return activeIcPayable.get();
-                }
-            }
-
-            // Strategy 3: Find by special type at corporate level (fallback)
-            List<VirtualAccount> corporateIcPayables = virtualAccountRepository
-                .findByProgramIdAndSpecialType(null, VirtualAccount.VaSpecialType.IC_PAYABLE);
-
-            Optional<VirtualAccount> corporateIcPayable = corporateIcPayables.stream()
-                .filter(va -> va.getCorporateId().equals(settlementVa.getCorporateId()))
-                .filter(va -> va.getStatus() == VaStatus.ACTIVE)
-                .filter(va -> settlementVa.getCurrencyCode().equals(va.getCurrencyCode()))
-                .findFirst();
-
-            if (corporateIcPayable.isPresent()) {
-                log.debug("Resolved IC Payable VA at corporate level: {}",
-                    corporateIcPayable.get().getVaNumber());
-                return corporateIcPayable.get();
-            }
-
-            log.debug("No IC Payable VA found for program: {}, currency: {}, behalfOfEntity: {}",
-                settlementVa.getProgramId(), settlementVa.getCurrencyCode(), behalfOfEntityId);
-
-        } catch (Exception e) {
-            log.error("Failed to resolve IC Payable VA: {}", e.getMessage(), e);
         }
 
         return null;

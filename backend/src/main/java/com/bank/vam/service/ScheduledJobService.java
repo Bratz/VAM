@@ -128,47 +128,38 @@ public class ScheduledJobService {
     }
 
     /**
-     * Calculate IHB interest daily at midnight.
-     * Runs for ALL corporates with IHB-enabled entities.
+     * Accrue interest on every IHB Current Account daily at midnight, using
+     * each account's own effectiveCreditRate/effectiveDebitRate. Cash-
+     * concentration sweeps (SweepService) and POBO/COBO both move these same
+     * accounts, so this is the one interest engine that covers all of them —
+     * previously implemented but only reachable via a manual POST endpoint,
+     * never actually scheduled.
      */
     @Scheduled(cron = "0 0 0 * * *") // Midnight
     @Async("taskExecutor")
-    public void calculateDailyInterest() {
-        log.info("Starting daily IHB interest calculation at {}", LocalDateTime.now());
+    public void calculateDailyIhbCurrentAccountInterest() {
+        log.info("Starting daily IHB Current Account interest calculation at {}", LocalDateTime.now());
         try {
-            // Find all distinct corporate IDs with IHB-enabled entities
-            List<LegalEntity> ihbEntities = legalEntityRepository.findByIhbEnabledTrue();
-            Set<UUID> corporateIds = ihbEntities.stream()
-                    .map(LegalEntity::getCorporateId)
-                    .filter(id -> id != null)
-                    .collect(Collectors.toSet());
-
-            int totalLoans = 0;
-            int totalDeposits = 0;
-            BigDecimal totalLoanInterest = BigDecimal.ZERO;
-            BigDecimal totalDepositInterest = BigDecimal.ZERO;
-
-            for (UUID corporateId : corporateIds) {
-                try {
-                    IhbDto.CalculateInterestResponse response = ihbUnifiedService.calculateDailyInterest(corporateId);
-                    totalLoans += response.getLoansProcessed();
-                    totalDeposits += response.getDepositsProcessed();
-                    totalLoanInterest = totalLoanInterest.add(
-                            response.getTotalLoanInterest() != null ? response.getTotalLoanInterest() : BigDecimal.ZERO);
-                    totalDepositInterest = totalDepositInterest.add(
-                            response.getTotalDepositInterest() != null ? response.getTotalDepositInterest() : BigDecimal.ZERO);
-                    log.debug("Interest calculated for corporate {}: {} loans, {} deposits",
-                            corporateId, response.getLoansProcessed(), response.getDepositsProcessed());
-                } catch (Exception e) {
-                    log.error("Interest calculation failed for corporate {}: {}", corporateId, e.getMessage());
-                }
-            }
-
-            log.info("Daily IHB interest calculation completed: {} corporates, {} loans ({}), {} deposits ({})",
-                    corporateIds.size(), totalLoans, totalLoanInterest, totalDeposits, totalDepositInterest);
-
+            var results = ihbUnifiedService.calculateDailyInterestForCurrentAccounts();
+            log.info("Daily IHB Current Account interest calculation completed: {} accounts", results.size());
         } catch (Exception e) {
-            log.error("Daily interest calculation failed", e);
+            log.error("Daily IHB Current Account interest calculation failed", e);
+        }
+    }
+
+    /**
+     * Post the interest accrued above onto each account's actual balance,
+     * shortly after it's calculated.
+     */
+    @Scheduled(cron = "0 30 0 * * *") // 12:30 AM
+    @Async("taskExecutor")
+    public void postIhbCurrentAccountInterest() {
+        log.info("Starting IHB Current Account interest posting at {}", LocalDateTime.now());
+        try {
+            var results = ihbUnifiedService.postInterestForCurrentAccounts();
+            log.info("IHB Current Account interest posting completed: {} accounts", results.size());
+        } catch (Exception e) {
+            log.error("IHB Current Account interest posting failed", e);
         }
     }
 

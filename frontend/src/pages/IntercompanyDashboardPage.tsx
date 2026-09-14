@@ -104,8 +104,6 @@ interface IntercompanyTransaction {
   charges: number;
   netAmount: number;
   status: string;
-  ihbLoanId?: string;
-  ihbDepositId?: string;
   viban?: string;
   settlementRef?: string;
   processedAt?: string;
@@ -145,13 +143,6 @@ interface PoboPreview {
   currencyCode: string;
   charges: number;
   totalAmount: number;
-  ihbLoanPreview?: {
-    lenderId: string;
-    borrowerId: string;
-    principalAmount: number;
-    interestRate: number;
-    estimatedInterest: number;
-  };
   withinCreditLimit: boolean;
   availableLimit: number;
   warnings: string[];
@@ -218,7 +209,7 @@ const intercompanyApi = {
     return response.data.data;
   },
 
-  executePobo: async (data: { payingEntityId: string; behalfEntityId: string; amount: number; currencyCode?: string; description?: string; createIhbLoan?: boolean }) => {
+  executePobo: async (data: { payingEntityId: string; behalfEntityId: string; amount: number; currencyCode?: string; description?: string }) => {
     const response = await apiClient.post('/intercompany/pobo/execute', data);
     return response.data.data;
   },
@@ -334,7 +325,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
     amount: '',
     currencyCode: 'AED',
     description: '',
-    createIhbLoan: true,
     generateViban: false,
   });
 
@@ -380,7 +370,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           amount: parseFloat(formData.amount),
           currencyCode: formData.currencyCode,
           description: formData.description,
-          createIhbLoan: formData.createIhbLoan,
         });
       } else {
         response = await intercompanyApi.setupCobo({
@@ -412,7 +401,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       amount: '',
       currencyCode: 'AED',
       description: '',
-      createIhbLoan: true,
       generateViban: false,
     });
     setPreview(null);
@@ -523,17 +511,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           </div>
 
           <div className="space-y-2">
-            {isPOBO && (
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={formData.createIhbLoan}
-                  onChange={(e) => setFormData({ ...formData, createIhbLoan: e.target.checked })}
-                  className="rounded text-primary-600 dark:text-primary-200"
-                />
-                <span className="text-sm text-neutral-700 dark:text-neutral-200">Create IHB loan for subsidiary reimbursement</span>
-              </label>
-            )}
             {!isPOBO && (
               <label className="flex items-center gap-2">
                 <input 
@@ -607,25 +584,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
             </div>
           )}
 
-          {preview.ihbLoanPreview && (
-            <div className="p-3 bg-info-50 rounded-lg dark:bg-info-500/10">
-              <p className="text-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Preview</p>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div>
-                  <p className="text-neutral-500 dark:text-neutral-400">Principal</p>
-                  <p className="font-medium">{formatCurrency(preview.ihbLoanPreview.principalAmount, formData.currencyCode)}</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500 dark:text-neutral-400">Interest Rate</p>
-                  <p className="font-medium">{preview.ihbLoanPreview.interestRate}%</p>
-                </div>
-                <div>
-                  <p className="text-neutral-500 dark:text-neutral-400">Est. Interest (30d)</p>
-                  <p className="font-medium">{formatCurrency(preview.ihbLoanPreview.estimatedInterest, formData.currencyCode)}</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -641,12 +599,6 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
             <p className="text-sm text-neutral-500 dark:text-neutral-400">Reference</p>
             <p className="font-mono font-medium text-primary-600 dark:text-primary-200">{result.transactionRef}</p>
           </div>
-          {result.ihbLoanRef && (
-            <div className="mt-3 p-3 bg-info-50 rounded-lg inline-block dark:bg-info-500/10">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">IHB Loan Reference</p>
-              <p className="font-mono font-medium text-info-600 dark:text-info-300">{result.ihbLoanRef}</p>
-            </div>
-          )}
           {result.viban && (
             <div className="mt-3 p-3 bg-success-50 rounded-lg inline-block dark:bg-success-500/10">
               <p className="text-sm text-neutral-500 dark:text-neutral-400">VIBAN Generated</p>
@@ -1282,10 +1234,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <GitMerge className="w-4 h-4 text-primary-600 dark:text-primary-200" />
                     <span className="font-medium text-neutral-700 dark:text-neutral-200">Multilateral Netting</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2.5 bg-info-50 rounded-xl dark:bg-info-500/10">
-                    <Building2 className="w-4 h-4 text-info-600 dark:text-info-300" />
-                    <span className="font-medium text-neutral-700 dark:text-neutral-200">IHB Loan/Deposit</span>
-                  </div>
                 </div>
               </div>
             </Card>
@@ -1350,7 +1298,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <th className="data-table-header-cell text-center"></th>
                     <th className="data-table-header-cell">{isTreasuryView ? 'Subsidiary (Owes)' : 'Treasury (Owed To)'}</th>
                     <th className="data-table-header-cell text-right">Amount</th>
-                    <th className="data-table-header-cell">IHB Loan</th>
                     <th className="data-table-header-cell">Status</th>
                     <th className="data-table-header-cell text-center">Actions</th>
                   </tr>
@@ -1358,7 +1305,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <tbody>
                   {transactions.filter(poboTransactionFilter).length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center">
+                      <td colSpan={7} className="px-4 py-12 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                           <CreditCard className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
                         </div>
@@ -1387,13 +1334,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                       </td>
                       <td className="data-table-cell text-right">
                         <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(tx.amount, tx.currencyCode)}</p>
-                      </td>
-                      <td className="data-table-cell">
-                        {tx.ihbLoanId ? (
-                          <Badge variant="info" size="sm">Loan Created</Badge>
-                        ) : (
-                          <span className="text-neutral-400 dark:text-neutral-500">—</span>
-                        )}
                       </td>
                       <td className="data-table-cell">
                         <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'PENDING' ? 'warning' : 'primary'} size="sm">

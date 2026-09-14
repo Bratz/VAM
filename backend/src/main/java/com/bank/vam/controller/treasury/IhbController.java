@@ -5,7 +5,6 @@ import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.service.VirtualAccountService;
-import com.bank.vam.service.treasury.IhbSettlementService;
 import com.bank.vam.service.treasury.IhbUnifiedService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,7 +37,6 @@ public class IhbController {
 
     private final IhbUnifiedService ihbUnifiedService;
     private final VirtualAccountService virtualAccountService;
-    private final IhbSettlementService ihbSettlementService;
 
     // ========================================================================
     // GLOBAL ENDPOINTS (All IHB entities across corporates)
@@ -66,26 +64,6 @@ public class IhbController {
             @Parameter(description = "Legal Entity ID") @PathVariable UUID entityId) {
         log.debug("GET /api/v1/ihb/entities/{}/position", entityId);
         return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getEntityPosition(entityId)));
-    }
-
-    @PostMapping("/loans/{loanId}/repay")
-    @Operation(summary = "Repay loan")
-    public ResponseEntity<ApiResponse<IhbDto.LoanResponse>> repayLoan(
-            @Parameter(description = "Loan ID") @PathVariable UUID loanId,
-            @Valid @RequestBody IhbDto.LoanRepaymentRequest request) {
-        log.info("POST /api/v1/ihb/loans/{}/repay - {}", loanId, request.getAmount());
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.repayLoan(loanId, request), "Repayment processed"));
-    }
-
-    @PostMapping("/deposits/{depositId}/withdraw")
-    @Operation(summary = "Withdraw from deposit")
-    public ResponseEntity<ApiResponse<IhbDto.DepositResponse>> withdrawDeposit(
-            @Parameter(description = "Deposit ID") @PathVariable UUID depositId,
-            @Valid @RequestBody IhbDto.WithdrawRequest request) {
-        log.info("POST /api/v1/ihb/deposits/{}/withdraw - {}", depositId, request.getAmount());
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.withdrawDeposit(depositId, request), "Withdrawal processed"));
     }
 
     // ========================================================================
@@ -131,87 +109,8 @@ public class IhbController {
     }
 
     // ========================================================================
-    // LOAN ENDPOINTS
+    // STATISTICS
     // ========================================================================
-
-    @GetMapping("/loans")
-    @Operation(summary = "Get all loans (across corporates)",
-               description = "Unscoped list used by the cockpit's loan-rollover producer and the legacy ihbApi.getAllLoans() client.")
-    public ResponseEntity<ApiResponse<List<IhbDto.LoanResponse>>> getAllLoans() {
-        log.debug("GET /api/v1/ihb/loans");
-        return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getAllLoans()));
-    }
-
-    @GetMapping("/corporate/{corporateId}/loans")
-    @Operation(summary = "Get all loans for corporate")
-    public ResponseEntity<ApiResponse<List<IhbDto.LoanResponse>>> getLoans(
-            @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
-        log.debug("GET /api/v1/ihb/corporate/{}/loans", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getLoans(corporateId)));
-    }
-
-    @GetMapping("/corporate/{corporateId}/loans/active")
-    @Operation(summary = "Get active loans for corporate")
-    public ResponseEntity<ApiResponse<List<IhbDto.LoanResponse>>> getActiveLoans(
-            @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
-        log.debug("GET /api/v1/ihb/corporate/{}/loans/active", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getActiveLoans(corporateId)));
-    }
-
-    @PostMapping("/loans")
-    @Operation(summary = "Create IHB loan",
-               description = "Create intercompany loan between two LegalEntities")
-    public ResponseEntity<ApiResponse<IhbDto.LoanResponse>> createLoan(
-            @Valid @RequestBody IhbDto.CreateLoanUnifiedRequest request) {
-        log.info("POST /api/v1/ihb/loans - from {} to {} for {}",
-            request.getLenderEntityId(), request.getBorrowerEntityId(), request.getPrincipalAmount());
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.createLoan(request), "Loan created"));
-    }
-
-    // ========================================================================
-    // DEPOSIT ENDPOINTS
-    // ========================================================================
-
-    @GetMapping("/deposits")
-    @Operation(summary = "Get all deposits (across corporates)",
-               description = "Unscoped list used by the cockpit and the legacy ihbApi.getAllDeposits() client.")
-    public ResponseEntity<ApiResponse<List<IhbDto.DepositResponse>>> getAllDeposits() {
-        log.debug("GET /api/v1/ihb/deposits");
-        return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getAllDeposits()));
-    }
-
-    @GetMapping("/corporate/{corporateId}/deposits")
-    @Operation(summary = "Get all deposits for corporate")
-    public ResponseEntity<ApiResponse<List<IhbDto.DepositResponse>>> getDeposits(
-            @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
-        log.debug("GET /api/v1/ihb/corporate/{}/deposits", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getDeposits(corporateId)));
-    }
-
-    @PostMapping("/deposits")
-    @Operation(summary = "Create IHB deposit",
-               description = "Create intercompany deposit from a LegalEntity")
-    public ResponseEntity<ApiResponse<IhbDto.DepositResponse>> createDeposit(
-            @Valid @RequestBody IhbDto.CreateDepositUnifiedRequest request) {
-        log.info("POST /api/v1/ihb/deposits - from {} for {}",
-            request.getDepositorEntityId(), request.getPrincipalAmount());
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.createDeposit(request), "Deposit created"));
-    }
-
-    // ========================================================================
-    // INTEREST & STATISTICS
-    // ========================================================================
-
-    @PostMapping("/corporate/{corporateId}/interest/calculate")
-    @Operation(summary = "Calculate daily interest")
-    public ResponseEntity<ApiResponse<IhbDto.CalculateInterestResponse>> calculateInterest(
-            @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
-        log.info("POST /api/v1/ihb/corporate/{}/interest/calculate", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(
-            ihbUnifiedService.calculateDailyInterest(corporateId), "Interest calculated"));
-    }
 
     @GetMapping("/corporate/{corporateId}/stats")
     @Operation(summary = "Get IHB statistics")
@@ -219,14 +118,6 @@ public class IhbController {
             @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
         log.debug("GET /api/v1/ihb/corporate/{}/stats", corporateId);
         return ResponseEntity.ok(ApiResponse.success(ihbUnifiedService.getStats(corporateId)));
-    }
-
-    @GetMapping("/corporate/{corporateId}/settlement/status")
-    @Operation(summary = "Get settlement status for corporate")
-    public ResponseEntity<ApiResponse<IhbSettlementService.SettlementStatusResponse>> getSettlementStatus(
-            @Parameter(description = "Corporate ID") @PathVariable UUID corporateId) {
-        log.debug("GET /api/v1/ihb/corporate/{}/settlement/status", corporateId);
-        return ResponseEntity.ok(ApiResponse.success(ihbSettlementService.getSettlementStatus(corporateId)));
     }
 
     // ========================================================================

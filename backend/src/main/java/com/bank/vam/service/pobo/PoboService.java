@@ -1,14 +1,11 @@
 package com.bank.vam.service.pobo;
 
 import com.bank.vam.dto.pobo.PoboDto.*;
-import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.entity.pobo.*;
-import com.bank.vam.entity.treasury.IhbLoan;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.pobo.*;
 import com.bank.vam.service.tax.ChargeService;
-import com.bank.vam.service.treasury.IhbUnifiedService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +51,6 @@ public class PoboService {
     private final PoboAuthorizationRepository authorizationRepository;
     private final IntercompanyRechargeRepository rechargeRepository;
     private final ChargeService chargeService;
-    private final IhbUnifiedService ihbUnifiedService;  // Phase 5: IHB integration
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     private static final AtomicLong authSequence = new AtomicLong(1);
@@ -418,25 +414,6 @@ public class PoboService {
     }
 
     /**
-     * Settle recharge via IHB loan.
-     */
-    @Transactional
-    public RechargeResponse settleViaIhbLoan(UUID rechargeId, UUID ihbLoanId, String loanReference) {
-        IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-
-        if (!recharge.canBeSettled()) {
-            throw new BusinessException("Recharge cannot be settled in current status: " + recharge.getStatus());
-        }
-
-        recharge.settleViaIhbLoan(ihbLoanId, loanReference);
-        recharge = rechargeRepository.save(recharge);
-        
-        log.info("Settled recharge {} via IHB loan: {}", recharge.getRechargeReference(), loanReference);
-        return toRechargeResponse(recharge);
-    }
-
-    /**
      * Settle recharge via netting.
      */
     @Transactional
@@ -503,9 +480,7 @@ public class PoboService {
 
         // 4. Create intercompany recharge if enabled
         RechargeResponse recharge = null;
-        UUID ihbLoanId = null;
-        String ihbLoanReference = null;
-        
+
         if (Boolean.TRUE.equals(request.getCreateRecharge())) {
             CreateRechargeRequest rechargeRequest = CreateRechargeRequest.builder()
                 .payerEntityId(request.getPayerEntityId())
@@ -527,43 +502,12 @@ public class PoboService {
             if (!Boolean.TRUE.equals(validation.getRequiresApproval())) {
                 recharge = approveRecharge(recharge.getId(), "SYSTEM_AUTO");
             }
-            
-            // 5. Create IHB loan if requested (Phase 5 enhancement)
-            if (Boolean.TRUE.equals(request.getCreateIhbLoan())) {
-                IhbLoanResult loanResult = createIhbLoanForRecharge(
-                    recharge.getId(),
-                    request.getPayerEntityId(),
-                    request.getBehalfEntityId(),
-                    recharge.getTotalRecharge(),
-                    request.getCurrencyCode()
-                );
-                
-                if (loanResult != null && loanResult.isSuccess()) {
-                    ihbLoanId = loanResult.getLoanId();
-                    ihbLoanReference = loanResult.getLoanReference();
-                    
-                    // Settle recharge via IHB loan
-                    try {
-                        settleViaIhbLoan(recharge.getId(), ihbLoanId, ihbLoanReference);
-                        log.info("Created IHB loan {} for POBO recharge {}", 
-                            ihbLoanReference, recharge.getRechargeReference());
-                    } catch (Exception e) {
-                        log.warn("Failed to settle recharge via IHB loan: {}", e.getMessage());
-                        // Loan was created but settlement failed - manual intervention needed
-                    }
-                } else if (loanResult != null) {
-                    log.warn("Failed to create IHB loan for recharge {}: {}", 
-                        recharge.getRechargeReference(), loanResult.getErrorMessage());
-                    // Continue without IHB loan - recharge will need manual settlement
-                }
-            }
         }
 
-        log.info("Processed POBO payment: {} -> {}, amount={}, recharge={}, ihbLoan={}", 
-            request.getPayerEntityCode(), request.getBehalfEntityCode(), 
-            request.getAmount(), 
-            recharge != null ? recharge.getRechargeReference() : "N/A",
-            ihbLoanReference != null ? ihbLoanReference : "N/A");
+        log.info("Processed POBO payment: {} -> {}, amount={}, recharge={}",
+            request.getPayerEntityCode(), request.getBehalfEntityCode(),
+            request.getAmount(),
+            recharge != null ? recharge.getRechargeReference() : "N/A");
 
         return PoboPaymentResponse.builder()
             .paymentExecutionId(executionId)
@@ -575,65 +519,8 @@ public class PoboService {
             .rechargeAmount(recharge != null ? recharge.getRechargeAmount() : null)
             .serviceFee(recharge != null ? recharge.getServiceFee() : null)
             .totalRecharge(recharge != null ? recharge.getTotalRecharge() : null)
-            .ihbLoanId(ihbLoanId)
-            .ihbLoanReference(ihbLoanReference)
             .processedAt(LocalDateTime.now())
             .build();
-    }
-
-    // ========================================================================
-    // PHASE 5: IHB LOAN INTEGRATION
-    // ========================================================================
-    
-    /**
-     * Phase 5: Create IHB loan for POBO recharge settlement.
-     * 
-     * When treasury pays on behalf of subsidiary:
-     * - Subsidiary effectively "borrows" from treasury
-     * - IHB loan formalizes this with interest
-     * - Loan is linked to recharge for tracking
-     */
-    private IhbLoanResult createIhbLoanForRecharge(
-            UUID rechargeId,
-            UUID lenderEntityId,
-            UUID borrowerEntityId,
-            BigDecimal amount,
-            String currency) {
-        
-        try {
-            // Create loan request
-            IhbDto.CreateLoanUnifiedRequest loanRequest = new IhbDto.CreateLoanUnifiedRequest();
-            loanRequest.setLenderEntityId(lenderEntityId);
-            loanRequest.setBorrowerEntityId(borrowerEntityId);
-            loanRequest.setPrincipalAmount(amount);
-            loanRequest.setCurrencyCode(currency != null ? currency : marketProfile.getDefaultCurrency());
-            loanRequest.setDisbursementDate(LocalDate.now());
-            loanRequest.setMaturityDate(LocalDate.now().plusDays(30)); // Default 30-day loan
-            loanRequest.setInterestType(IhbLoan.InterestType.FIXED);
-            loanRequest.setRepaymentFrequency(IhbLoan.RepaymentFrequency.BULLET);
-            
-            // Create the loan via IHB service
-            IhbDto.LoanResponse loan = ihbUnifiedService.createLoan(loanRequest);
-            
-            log.info("Created IHB loan {} for POBO recharge, amount: {} {}", 
-                loan.getLoanReference(), currency, amount);
-            
-            return IhbLoanResult.builder()
-                .success(true)
-                .loanId(loan.getId())
-                .loanReference(loan.getLoanReference())
-                .principalAmount(loan.getPrincipalAmount())
-                .interestRate(loan.getInterestRate())
-                .maturityDate(loan.getMaturityDate())
-                .build();
-                
-        } catch (Exception e) {
-            log.warn("IHB loan creation failed for recharge {}: {}", rechargeId, e.getMessage());
-            return IhbLoanResult.builder()
-                .success(false)
-                .errorMessage(e.getMessage())
-                .build();
-        }
     }
 
     // ========================================================================
@@ -752,19 +639,4 @@ public class PoboService {
     // ========================================================================
     // PHASE 5: INNER CLASSES
     // ========================================================================
-    
-    /**
-     * Phase 5: Result class for IHB loan creation
-     */
-    @Data
-    @Builder
-    public static class IhbLoanResult {
-        private boolean success;
-        private UUID loanId;
-        private String loanReference;
-        private BigDecimal principalAmount;
-        private BigDecimal interestRate;
-        private LocalDate maturityDate;
-        private String errorMessage;
-    }
 }

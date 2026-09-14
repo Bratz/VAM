@@ -117,35 +117,6 @@ public class SweepRuleDto {
         private String errorMessage;
         private LocalDateTime executionTime;
         private LocalDateTime completedAt;
-        
-        // ====================================================================
-        // IHB INTEGRATION FIELDS
-        // ====================================================================
-        
-        /**
-         * Whether this sweep created IHB intercompany positions.
-         */
-        private Boolean ihbEnabled;
-        
-        /**
-         * IHB Deposit ID created for source entity.
-         */
-        private UUID ihbDepositId;
-        
-        /**
-         * IHB Loan ID if a loan was created.
-         */
-        private UUID ihbLoanId;
-        
-        /**
-         * IHB Deposit reference for display.
-         */
-        private String ihbDepositReference;
-        
-        /**
-         * Interest rate applied to IHB position.
-         */
-        private BigDecimal ihbInterestRate;
     }
 
     @Data
@@ -213,9 +184,6 @@ public class SweepRuleDto {
         private boolean funded;
         private BigDecimal fundedAmount;
         private String message;
-        // IHB loan created
-        private UUID ihbLoanId;
-        private String ihbLoanReference;
     }
 
     // ========================================================================

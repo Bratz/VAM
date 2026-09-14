@@ -194,8 +194,7 @@ public class PayableCalculationService {
             UUID payableId,
             BigDecimal amount,
             String currencyCode,
-            boolean createRecharge,
-            boolean createIhbLoan) {
+            boolean createRecharge) {
 
         PoboDto.PoboPaymentRequest request = PoboDto.PoboPaymentRequest.builder()
             .payerEntityId(payerEntityId)
@@ -206,7 +205,6 @@ public class PayableCalculationService {
             .amount(amount)
             .currencyCode(currencyCode != null ? currencyCode : "AED")
             .createRecharge(createRecharge)
-            .createIhbLoan(createIhbLoan)
             .build();
 
         PoboDto.PoboPaymentResponse result = poboService.processPoboPayment(request);
@@ -221,7 +219,6 @@ public class PayableCalculationService {
             .rechargeAmount(result.getRechargeAmount())
             .serviceFee(result.getServiceFee())
             .totalRecharge(result.getTotalRecharge())
-            .ihbLoanId(result.getIhbLoanId())
             .processedAt(result.getProcessedAt())
             .build();
     }

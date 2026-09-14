@@ -143,12 +143,12 @@ public class SweepController {
     }
 
     // ========================================================================
-    // DEFICIT FUNDING ENDPOINTS (IHB Loan Creation)
+    // DEFICIT FUNDING ENDPOINTS
     // ========================================================================
 
     @PostMapping("/deficit-funding")
     @Operation(summary = "Run deficit funding for TARGET_BALANCE rules",
-               description = "Provides IHB loans to accounts below target balance. Creates IhbLoan records.")
+               description = "Funds accounts below target balance from Treasury via real cash transfer, mirrored as an IC Receivable position.")
     public ResponseEntity<ApiResponse<SweepRuleDto.DeficitFundingResponse>> runDeficitFunding(
             @RequestBody(required = false) SweepRuleDto.DeficitFundingRequest request) {
         if (request == null) {

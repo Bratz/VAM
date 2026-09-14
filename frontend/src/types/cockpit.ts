@@ -35,8 +35,7 @@ export type AttentionCategory =
   // V2 categories — the schema accepts them now so consumers don't need a
   // conditional check; producers return `[]` until the backing data lands.
   | 'fx_exposure'
-  | 'concentration_risk'
-  | 'loan_rollover';
+  | 'concentration_risk';
 
 /**
  * Time pressure is data, not chrome. Every attention item carries one. The

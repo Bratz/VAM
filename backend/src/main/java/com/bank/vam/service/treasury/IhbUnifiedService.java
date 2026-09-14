@@ -41,8 +41,6 @@ import java.util.stream.Collectors;
 public class IhbUnifiedService {
 
     private final LegalEntityRepository legalEntityRepository;
-    private final IhbLoanRepository loanRepository;
-    private final IhbDepositRepository depositRepository;
     private final VirtualAccountRepository virtualAccountRepository;
     private final FeePostingService feePostingService;
     // ENHANCED: For IHB→Sweep integration
@@ -52,15 +50,6 @@ public class IhbUnifiedService {
     // ENHANCED: For WHT calculation on cross-border interest
     private final TaxService taxService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
-
-    private static final AtomicInteger loanSequence = new AtomicInteger(1);
-    private static final AtomicInteger depositSequence = new AtomicInteger(1);
-    
-    private static final BigDecimal LOAN_ARRANGEMENT_FEE_RATE = new BigDecimal("0.001");
-    private static final BigDecimal LOAN_ARRANGEMENT_FEE_MIN = new BigDecimal("100.00");
-    private static final BigDecimal LOAN_ARRANGEMENT_FEE_MAX = new BigDecimal("5000.00");
-    private static final BigDecimal DEPOSIT_ARRANGEMENT_FEE_RATE = new BigDecimal("0.0005");
-    private static final BigDecimal DEPOSIT_ARRANGEMENT_FEE_MIN = new BigDecimal("50.00");
 
     // ========================================================================
     // IHB ENTITY MANAGEMENT
@@ -507,331 +496,19 @@ public class IhbUnifiedService {
     }
 
     // ========================================================================
-    // LOAN OPERATIONS
-    // ========================================================================
-
-    @Transactional(readOnly = true)
-    public List<IhbDto.LoanResponse> getLoans(UUID corporateId) {
-        return loanRepository.findByCorporateId(corporateId).stream()
-                .map(this::toLoanResponse).collect(Collectors.toList());
-    }
-
-    /**
-     * All loans across every corporate. Backs {@code GET /api/v1/ihb/loans},
-     * which the frontend's legacy {@code ihbApi.getAllLoans()} and the
-     * cockpit's loan-rollover producer call without a corporate scope.
-     */
-    @Transactional(readOnly = true)
-    public List<IhbDto.LoanResponse> getAllLoans() {
-        return loanRepository.findAll().stream()
-                .map(this::toLoanResponse).collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public List<IhbDto.LoanResponse> getActiveLoans(UUID corporateId) {
-        return loanRepository.findByCorporateIdAndStatus(corporateId, IhbLoan.LoanStatus.ACTIVE)
-                .stream().map(this::toLoanResponse).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public IhbDto.LoanResponse createLoan(IhbDto.CreateLoanUnifiedRequest request) {
-        LegalEntity lender = legalEntityRepository.findById(request.getLenderEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lender entity not found"));
-        if (!lender.canLend()) throw new BusinessException("Entity cannot lend: " + lender.getEntityCode());
-
-        LegalEntity borrower = legalEntityRepository.findById(request.getBorrowerEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Borrower entity not found"));
-        if (!borrower.canBorrow()) throw new BusinessException("Entity cannot borrow: " + borrower.getEntityCode());
-
-        if (!lender.getCorporateId().equals(borrower.getCorporateId())) {
-            throw new BusinessException("Lender and borrower must be from the same corporate");
-        }
-        if (!borrower.canBorrowAmount(request.getPrincipalAmount())) {
-            throw new BusinessException("Borrower credit limit exceeded. Available: " + borrower.getAvailableIhbLimit());
-        }
-
-        // ENHANCED: Currency validation
-        String loanCurrency = request.getCurrencyCode() != null ? 
-                request.getCurrencyCode() : lender.getEffectiveIhbCurrency();
-        
-        // Validate currency is supported by Treasury Center
-        String treasuryCurrency = lender.getEffectiveIhbCurrency();
-        if (!loanCurrency.equals(treasuryCurrency)) {
-            // Cross-currency IHB loans require FX - warn but allow
-            log.warn("Cross-currency IHB loan: {} loan from {} treasury. FX conversion may apply.", 
-                    loanCurrency, treasuryCurrency);
-        }
-        
-        // Validate borrower has VA in the loan currency
-        List<VirtualAccount> borrowerVas = virtualAccountRepository.findByOwningEntityIdAndCurrencyCode(
-                borrower.getId(), loanCurrency);
-        if (borrowerVas.isEmpty()) {
-            throw new BusinessException("Borrower has no account in currency: " + loanCurrency + 
-                    ". Create a " + loanCurrency + " virtual account first.");
-        }
-
-        UUID lenderVaId = resolveSettlementVa(lender);
-        UUID borrowerVaId = resolveSettlementVaForCurrency(borrower, loanCurrency);
-        
-        // ENHANCED: Determine effective rate - from InterestConfig or spreads
-        BigDecimal effectiveRate;
-        UUID interestConfigId = request.getInterestConfigId();
-        
-        if (interestConfigId != null) {
-            // Use rate from attached interest configuration
-            effectiveRate = lookupRateFromConfig(interestConfigId, request.getPrincipalAmount());
-            log.info("Using interest config {} for loan rate: {}", interestConfigId, effectiveRate);
-        } else if (request.getBaseRate() != null) {
-            // Calculate from base rate + spreads
-            effectiveRate = request.getBaseRate()
-                .add(lender.getLendingRateSpread())
-                .add(borrower.getBorrowingRateSpread());
-        } else {
-            // Default rate from entity spreads
-            effectiveRate = new BigDecimal("5.00")  // Default base
-                .add(lender.getLendingRateSpread())
-                .add(borrower.getBorrowingRateSpread());
-        }
-
-        IhbLoan loan = new IhbLoan();
-        loan.setLoanReference("IHB-L-" + String.format("%06d", loanSequence.getAndIncrement()));
-        loan.setLenderLegalEntityId(lender.getId());
-        loan.setLenderEntityCode(lender.getEntityCode());
-        loan.setBorrowerLegalEntityId(borrower.getId());
-        loan.setBorrowerEntityCode(borrower.getEntityCode());
-        loan.setCorporateId(lender.getCorporateId());
-        loan.setLenderVaId(lenderVaId);
-        loan.setBorrowerVaId(borrowerVaId);
-        loan.setPrincipalAmount(request.getPrincipalAmount());
-        loan.setCurrencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : lender.getEffectiveIhbCurrency());
-        loan.setOutstandingAmount(request.getPrincipalAmount());
-        loan.setInterestRate(effectiveRate);
-        loan.setInterestType(request.getInterestType() != null ? request.getInterestType() : IhbLoan.InterestType.FIXED);
-        loan.setBaseRateType(request.getBaseRateType());
-        loan.setSpread(lender.getLendingRateSpread().add(borrower.getBorrowingRateSpread()));
-        loan.setDisbursementDate(request.getDisbursementDate() != null ? request.getDisbursementDate() : LocalDate.now());
-        loan.setMaturityDate(request.getMaturityDate());
-        loan.setRepaymentFrequency(request.getRepaymentFrequency() != null ? request.getRepaymentFrequency() : IhbLoan.RepaymentFrequency.MONTHLY);
-        loan.setStatus(IhbLoan.LoanStatus.ACTIVE);
-        loan.setAccruedInterest(BigDecimal.ZERO);
-        loan.setTotalInterestPaid(BigDecimal.ZERO);
-        loan.setInterestConfigId(interestConfigId);  // Store the config reference
-
-        borrower.utilizeIhbLimit(request.getPrincipalAmount());
-        lender.addLentAmount(request.getPrincipalAmount());
-        legalEntityRepository.save(borrower);
-        legalEntityRepository.save(lender);
-        loan = loanRepository.save(loan);
-        postLoanArrangementFee(loan, borrowerVaId);
-
-        log.info("Created IHB loan: {} from {} to {} for {} {} at {}%", 
-            loan.getLoanReference(), lender.getEntityCode(), borrower.getEntityCode(),
-            loan.getCurrencyCode(), loan.getPrincipalAmount(), effectiveRate);
-        return toLoanResponse(loan);
-    }
-
-    @Transactional
-    public IhbDto.LoanResponse repayLoan(UUID loanId, IhbDto.LoanRepaymentRequest request) {
-        IhbLoan loan = loanRepository.findById(loanId)
-                .orElseThrow(() -> new ResourceNotFoundException("Loan not found: " + loanId));
-        if (loan.getStatus() != IhbLoan.LoanStatus.ACTIVE) {
-            throw new BusinessException("Loan is not active: " + loan.getLoanReference());
-        }
-
-        BigDecimal repayment = request.getAmount().min(loan.getOutstandingAmount());
-        loan.setOutstandingAmount(loan.getOutstandingAmount().subtract(repayment));
-
-        LegalEntity borrower = legalEntityRepository.findById(loan.getBorrowerLegalEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Borrower not found"));
-        borrower.releaseIhbLimit(repayment);
-        legalEntityRepository.save(borrower);
-
-        LegalEntity lender = legalEntityRepository.findById(loan.getLenderLegalEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Lender not found"));
-        lender.reduceLentAmount(repayment);
-        legalEntityRepository.save(lender);
-
-        if (loan.getOutstandingAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            loan.setStatus(IhbLoan.LoanStatus.MATURED);
-            log.info("Loan {} fully repaid", loan.getLoanReference());
-        }
-        loan.setUpdatedAt(LocalDateTime.now());
-        loan = loanRepository.save(loan);
-        log.info("Repaid {} on loan {}", repayment, loan.getLoanReference());
-        return toLoanResponse(loan);
-    }
-
-    // ========================================================================
-    // DEPOSIT OPERATIONS
-    // ========================================================================
-
-    @Transactional(readOnly = true)
-    public List<IhbDto.DepositResponse> getDeposits(UUID corporateId) {
-        return depositRepository.findByCorporateId(corporateId).stream()
-                .map(this::toDepositResponse).collect(Collectors.toList());
-    }
-
-    /**
-     * All deposits across every corporate. Backs {@code GET /api/v1/ihb/deposits}
-     * — see {@link #getAllLoans()} for the caller rationale.
-     */
-    @Transactional(readOnly = true)
-    public List<IhbDto.DepositResponse> getAllDeposits() {
-        return depositRepository.findAll().stream()
-                .map(this::toDepositResponse).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public IhbDto.DepositResponse createDeposit(IhbDto.CreateDepositUnifiedRequest request) {
-        LegalEntity depositor = legalEntityRepository.findById(request.getDepositorEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Depositor entity not found"));
-        if (!depositor.isIhbEnabled()) {
-            throw new BusinessException("Entity is not IHB-enabled: " + depositor.getEntityCode());
-        }
-
-        LegalEntity treasury = request.getTreasuryEntityId() != null ?
-            legalEntityRepository.findById(request.getTreasuryEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Treasury entity not found")) :
-            findTreasuryCenter(depositor.getCorporateId());
-
-        UUID depositorVaId = resolveSettlementVa(depositor);
-        UUID treasuryVaId = treasury != null ? resolveSettlementVa(treasury) : null;
-
-        BigDecimal interestRate = request.getInterestRate();
-        if (interestRate == null && request.getBaseRate() != null) {
-            interestRate = request.getBaseRate().subtract(depositor.getLendingRateSpread()).max(BigDecimal.ZERO);
-        }
-
-        IhbDeposit deposit = new IhbDeposit();
-        deposit.setDepositReference("IHB-D-" + String.format("%06d", depositSequence.getAndIncrement()));
-        deposit.setDepositorLegalEntityId(depositor.getId());
-        deposit.setDepositorEntityCode(depositor.getEntityCode());
-        deposit.setTreasuryLegalEntityId(treasury != null ? treasury.getId() : null);
-        deposit.setCorporateId(depositor.getCorporateId());
-        deposit.setDepositorVaId(depositorVaId);
-        deposit.setTreasuryVaId(treasuryVaId);
-        deposit.setPrincipalAmount(request.getPrincipalAmount());
-        deposit.setCurrencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : depositor.getEffectiveIhbCurrency());
-        deposit.setCurrentBalance(request.getPrincipalAmount());
-        deposit.setInterestRate(interestRate != null ? interestRate : BigDecimal.ZERO);
-        deposit.setDepositDate(request.getDepositDate() != null ? request.getDepositDate() : LocalDate.now());
-        deposit.setMaturityDate(request.getMaturityDate());
-        deposit.setDepositType(request.getDepositType() != null ? request.getDepositType() : IhbDeposit.DepositType.CALL);
-        deposit.setNoticePeriodDays(request.getNoticePeriodDays());
-        deposit.setStatus(IhbDeposit.DepositStatus.ACTIVE);
-        deposit.setAccruedInterest(BigDecimal.ZERO);
-        deposit.setTotalInterestEarned(BigDecimal.ZERO);
-
-        depositor.addDepositedAmount(request.getPrincipalAmount());
-        legalEntityRepository.save(depositor);
-        deposit = depositRepository.save(deposit);
-        postDepositArrangementFee(deposit, depositorVaId);
-
-        log.info("Created IHB deposit: {} from {} for {} {}", 
-            deposit.getDepositReference(), depositor.getEntityCode(),
-            deposit.getCurrencyCode(), deposit.getPrincipalAmount());
-        return toDepositResponse(deposit);
-    }
-
-    @Transactional
-    public IhbDto.DepositResponse withdrawDeposit(UUID depositId, IhbDto.WithdrawRequest request) {
-        IhbDeposit deposit = depositRepository.findById(depositId)
-                .orElseThrow(() -> new ResourceNotFoundException("Deposit not found: " + depositId));
-        if (deposit.getStatus() != IhbDeposit.DepositStatus.ACTIVE) {
-            throw new BusinessException("Deposit is not active: " + deposit.getDepositReference());
-        }
-        if (deposit.getDepositType() == IhbDeposit.DepositType.FIXED && LocalDate.now().isBefore(deposit.getMaturityDate())) {
-            throw new BusinessException("Cannot withdraw fixed-term deposit before maturity");
-        }
-
-        BigDecimal withdrawal = request.getAmount().min(deposit.getCurrentBalance());
-        deposit.setCurrentBalance(deposit.getCurrentBalance().subtract(withdrawal));
-
-        LegalEntity depositor = legalEntityRepository.findById(deposit.getDepositorLegalEntityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Depositor not found"));
-        depositor.reduceDepositedAmount(withdrawal);
-        legalEntityRepository.save(depositor);
-
-        if (deposit.getCurrentBalance().compareTo(BigDecimal.ZERO) <= 0) {
-            deposit.setStatus(IhbDeposit.DepositStatus.WITHDRAWN);
-        }
-        deposit.setUpdatedAt(LocalDateTime.now());
-        deposit = depositRepository.save(deposit);
-        log.info("Withdrew {} from deposit {}", withdrawal, deposit.getDepositReference());
-        return toDepositResponse(deposit);
-    }
-
-    // ========================================================================
-    // INTEREST CALCULATION
-    // ========================================================================
-
-    @Transactional
-    public IhbDto.CalculateInterestResponse calculateDailyInterest(UUID corporateId) {
-        LocalDate today = LocalDate.now();
-        List<IhbLoan> activeLoans = loanRepository.findByCorporateIdAndStatus(corporateId, IhbLoan.LoanStatus.ACTIVE);
-        List<IhbDeposit> activeDeposits = depositRepository.findByCorporateIdAndStatus(corporateId, IhbDeposit.DepositStatus.ACTIVE);
-
-        BigDecimal totalLoanInterest = BigDecimal.ZERO;
-        BigDecimal totalDepositInterest = BigDecimal.ZERO;
-        BigDecimal totalSpread = BigDecimal.ZERO;
-
-        for (IhbLoan loan : activeLoans) {
-            BigDecimal dailyRate = loan.getInterestRate().divide(BigDecimal.valueOf(36500), 10, RoundingMode.HALF_UP);
-            BigDecimal interest = loan.getOutstandingAmount().multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
-            loan.setAccruedInterest(loan.getAccruedInterest().add(interest));
-            totalLoanInterest = totalLoanInterest.add(interest);
-
-            if (loan.getSpread() != null && loan.getSpread().compareTo(BigDecimal.ZERO) > 0) {
-                BigDecimal spread = calculateInterestSpread(loan, interest);
-                if (spread.compareTo(BigDecimal.ZERO) > 0 && loan.getBorrowerVaId() != null) {
-                    postInterestSpread(loan, spread);
-                    totalSpread = totalSpread.add(spread);
-                }
-            }
-        }
-        loanRepository.saveAll(activeLoans);
-
-        for (IhbDeposit deposit : activeDeposits) {
-            BigDecimal dailyRate = deposit.getInterestRate().divide(BigDecimal.valueOf(36500), 10, RoundingMode.HALF_UP);
-            BigDecimal interest = deposit.getCurrentBalance().multiply(dailyRate).setScale(2, RoundingMode.HALF_UP);
-            deposit.setAccruedInterest(deposit.getAccruedInterest().add(interest));
-            totalDepositInterest = totalDepositInterest.add(interest);
-        }
-        depositRepository.saveAll(activeDeposits);
-
-        IhbDto.CalculateInterestResponse response = new IhbDto.CalculateInterestResponse();
-        response.setCalculationDate(today);
-        response.setLoansProcessed(activeLoans.size());
-        response.setDepositsProcessed(activeDeposits.size());
-        response.setTotalLoanInterest(totalLoanInterest);
-        response.setTotalDepositInterest(totalDepositInterest);
-        response.setTotalSpread(totalSpread);
-        response.setNetInterest(totalLoanInterest.subtract(totalDepositInterest));
-
-        log.info("Daily interest for corporate {}: {} loans, {} deposits", corporateId, activeLoans.size(), activeDeposits.size());
-        return response;
-    }
-
-    // ========================================================================
     // STATISTICS
     // ========================================================================
 
     @Transactional(readOnly = true)
     public IhbDto.IhbStatsResponse getStats(UUID corporateId) {
         List<LegalEntity> ihbEntities = legalEntityRepository.findByCorporateIdAndIhbEnabledTrue(corporateId);
-        List<IhbLoan> activeLoans = loanRepository.findByCorporateIdAndStatus(corporateId, IhbLoan.LoanStatus.ACTIVE);
-        List<IhbDeposit> activeDeposits = depositRepository.findByCorporateIdAndStatus(corporateId, IhbDeposit.DepositStatus.ACTIVE);
-
-        BigDecimal totalOutstanding = activeLoans.stream().map(IhbLoan::getOutstandingAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalDeposits = activeDeposits.stream().map(IhbDeposit::getCurrentBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         IhbDto.IhbStatsResponse stats = new IhbDto.IhbStatsResponse();
         stats.setTotalEntities((long) ihbEntities.size());
-        stats.setActiveLoans(activeLoans.size());
-        stats.setActiveDeposits(activeDeposits.size());
-        stats.setTotalOutstandingLoans(totalOutstanding);
-        stats.setTotalDepositsBalance(totalDeposits);
-        stats.setNetPosition(totalDeposits.subtract(totalOutstanding));
+        stats.setNetPosition(ihbEntities.stream()
+            .map(LegalEntity::getNetIhbPosition)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add));
         return stats;
     }
 
@@ -840,28 +517,16 @@ public class IhbUnifiedService {
         LegalEntity entity = legalEntityRepository.findById(entityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entity not found: " + entityId));
 
-        List<IhbLoan> loansAsLender = loanRepository.findByLenderLegalEntityIdAndStatus(entityId, IhbLoan.LoanStatus.ACTIVE);
-        List<IhbLoan> loansAsBorrower = loanRepository.findByBorrowerLegalEntityIdAndStatus(entityId, IhbLoan.LoanStatus.ACTIVE);
-        List<IhbDeposit> deposits = depositRepository.findByDepositorLegalEntityIdAndStatus(entityId, IhbDeposit.DepositStatus.ACTIVE);
-
-        BigDecimal totalLent = loansAsLender.stream().map(IhbLoan::getOutstandingAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalBorrowed = loansAsBorrower.stream().map(IhbLoan::getOutstandingAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalDeposited = deposits.stream().map(IhbDeposit::getCurrentBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
-
         IhbDto.EntityPositionResponse response = new IhbDto.EntityPositionResponse();
         response.setEntityId(entityId);
         response.setEntityCode(entity.getEntityCode());
         response.setEntityName(entity.getEntityName());
-        response.setTotalLentOut(totalLent);
-        response.setTotalBorrowed(totalBorrowed);
-        response.setTotalDeposited(totalDeposited);
-        response.setNetPosition(totalLent.add(totalDeposited).subtract(totalBorrowed));
+        response.setTotalLentOut(entity.getTotalLentOut());
+        response.setTotalDeposited(entity.getTotalDeposited());
+        response.setNetPosition(entity.getNetIhbPosition());
         response.setIhbCreditLimit(entity.getIhbCreditLimit());
         response.setIhbAvailableLimit(entity.getIhbAvailableLimit());
         response.setUtilizationPercent(entity.getIhbUtilizationPercent());
-        response.setLoansAsLender(loansAsLender.stream().map(this::toLoanResponse).collect(Collectors.toList()));
-        response.setLoansAsBorrower(loansAsBorrower.stream().map(this::toLoanResponse).collect(Collectors.toList()));
-        response.setDeposits(deposits.stream().map(this::toDepositResponse).collect(Collectors.toList()));
         return response;
     }
 
@@ -956,48 +621,6 @@ public class IhbUnifiedService {
                 .stream().findFirst().orElse(null);
     }
 
-    private BigDecimal calculateInterestSpread(IhbLoan loan, BigDecimal totalInterest) {
-        if (loan.getSpread() == null || loan.getSpread().compareTo(BigDecimal.ZERO) <= 0) return BigDecimal.ZERO;
-        BigDecimal spreadRatio = loan.getSpread().divide(loan.getInterestRate(), 10, RoundingMode.HALF_UP);
-        return totalInterest.multiply(spreadRatio).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private void postLoanArrangementFee(IhbLoan loan, UUID borrowerVaId) {
-        if (borrowerVaId == null) return;
-        BigDecimal fee = loan.getPrincipalAmount().multiply(LOAN_ARRANGEMENT_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
-        fee = fee.max(LOAN_ARRANGEMENT_FEE_MIN).min(LOAN_ARRANGEMENT_FEE_MAX);
-        try {
-            feePostingService.postFee(borrowerVaId, fee, "IHB_LOAN_ARRANGEMENT_FEE", loan.getId(),
-                "IHB loan " + loan.getLoanReference() + " arrangement fee");
-            log.info("Posted loan fee {} for {}", fee, loan.getLoanReference());
-        } catch (Exception e) {
-            log.error("Failed to post loan fee for {}: {}", loan.getLoanReference(), e.getMessage());
-        }
-    }
-
-    private void postDepositArrangementFee(IhbDeposit deposit, UUID depositorVaId) {
-        if (depositorVaId == null) return;
-        BigDecimal fee = deposit.getPrincipalAmount().multiply(DEPOSIT_ARRANGEMENT_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
-        fee = fee.max(DEPOSIT_ARRANGEMENT_FEE_MIN);
-        try {
-            feePostingService.postFee(depositorVaId, fee, "IHB_DEPOSIT_ARRANGEMENT_FEE", deposit.getId(),
-                "IHB deposit " + deposit.getDepositReference() + " arrangement fee");
-            log.info("Posted deposit fee {} for {}", fee, deposit.getDepositReference());
-        } catch (Exception e) {
-            log.error("Failed to post deposit fee for {}: {}", deposit.getDepositReference(), e.getMessage());
-        }
-    }
-
-    private void postInterestSpread(IhbLoan loan, BigDecimal spread) {
-        if (loan.getBorrowerVaId() == null) return;
-        try {
-            feePostingService.postFee(loan.getBorrowerVaId(), spread, "IHB_INTEREST_SPREAD", loan.getId(),
-                "IHB loan " + loan.getLoanReference() + " interest spread");
-        } catch (Exception e) {
-            log.error("Failed to post spread for {}: {}", loan.getLoanReference(), e.getMessage());
-        }
-    }
-
     // ========================================================================
     // MAPPERS
     // ========================================================================
@@ -1029,55 +652,6 @@ public class IhbUnifiedService {
         return dto;
     }
 
-    private IhbDto.LoanResponse toLoanResponse(IhbLoan loan) {
-        IhbDto.LoanResponse dto = new IhbDto.LoanResponse();
-        dto.setId(loan.getId());
-        dto.setLoanReference(loan.getLoanReference());
-        dto.setLenderEntityId(loan.getLenderLegalEntityId());
-        dto.setLenderEntityCode(loan.getLenderEntityCode());
-        dto.setBorrowerEntityId(loan.getBorrowerLegalEntityId());
-        dto.setBorrowerEntityCode(loan.getBorrowerEntityCode());
-        dto.setPrincipalAmount(loan.getPrincipalAmount());
-        dto.setCurrencyCode(loan.getCurrencyCode());
-        dto.setOutstandingAmount(loan.getOutstandingAmount());
-        dto.setInterestRate(loan.getInterestRate());
-        dto.setInterestType(loan.getInterestType());
-        dto.setBaseRateType(loan.getBaseRateType());
-        dto.setSpread(loan.getSpread());
-        dto.setAccruedInterest(loan.getAccruedInterest());
-        dto.setTotalInterestPaid(loan.getTotalInterestPaid());
-        dto.setDisbursementDate(loan.getDisbursementDate());
-        dto.setMaturityDate(loan.getMaturityDate());
-        dto.setRepaymentFrequency(loan.getRepaymentFrequency());
-        dto.setStatus(loan.getStatus());
-        dto.setCreatedAt(loan.getCreatedAt());
-        legalEntityRepository.findById(loan.getLenderLegalEntityId()).ifPresent(e -> dto.setLenderEntityName(e.getEntityName()));
-        legalEntityRepository.findById(loan.getBorrowerLegalEntityId()).ifPresent(e -> dto.setBorrowerEntityName(e.getEntityName()));
-        return dto;
-    }
-
-    private IhbDto.DepositResponse toDepositResponse(IhbDeposit deposit) {
-        IhbDto.DepositResponse dto = new IhbDto.DepositResponse();
-        dto.setId(deposit.getId());
-        dto.setDepositReference(deposit.getDepositReference());
-        dto.setDepositorEntityId(deposit.getDepositorLegalEntityId());
-        dto.setDepositorEntityCode(deposit.getDepositorEntityCode());
-        dto.setPrincipalAmount(deposit.getPrincipalAmount());
-        dto.setCurrencyCode(deposit.getCurrencyCode());
-        dto.setCurrentBalance(deposit.getCurrentBalance());
-        dto.setInterestRate(deposit.getInterestRate());
-        dto.setAccruedInterest(deposit.getAccruedInterest());
-        dto.setTotalInterestEarned(deposit.getTotalInterestEarned());
-        dto.setDepositDate(deposit.getDepositDate());
-        dto.setMaturityDate(deposit.getMaturityDate());
-        dto.setDepositType(deposit.getDepositType());
-        dto.setNoticePeriodDays(deposit.getNoticePeriodDays());
-        dto.setStatus(deposit.getStatus());
-        dto.setCreatedAt(deposit.getCreatedAt());
-        legalEntityRepository.findById(deposit.getDepositorLegalEntityId()).ifPresent(e -> dto.setDepositorEntityName(e.getEntityName()));
-        return dto;
-    }
-
     private IhbEntity.EntityType mapEntityType(LegalEntity.EntityType type) {
         if (type == null) return IhbEntity.EntityType.SUBSIDIARY;
         return switch (type) {
@@ -1099,84 +673,6 @@ public class IhbUnifiedService {
     // ========================================================================
     // INTEREST CONFIGURATION INTEGRATION
     // ========================================================================
-
-    /**
-     * Look up interest rate from attached InterestConfiguration.
-     * For loans, uses the effective debit rate (what borrower pays).
-     * For deposits, uses the effective credit rate (what depositor earns).
-     */
-    private BigDecimal lookupRateFromConfig(UUID configId, BigDecimal amount) {
-        if (configId == null) {
-            return new BigDecimal("5.00"); // Default rate
-        }
-        
-        try {
-            InterestConfiguration config = interestConfigRepository.findById(configId)
-                .orElseThrow(() -> new ResourceNotFoundException("Interest config not found: " + configId));
-            
-            // For IHB loans, use debit rate (what borrower pays)
-            // This is the rate charged on borrowed funds
-            BigDecimal rate = config.getEffectiveDebitRate();
-            
-            if (rate == null) {
-                // Fall back to credit rate if debit not set
-                rate = config.getEffectiveCreditRate();
-            }
-            
-            if (rate == null) {
-                // Calculate from base + spread if effective not set
-                BigDecimal baseRate = config.getDebitBaseRate() != null ? 
-                        config.getDebitBaseRate() : config.getCreditBaseRate();
-                BigDecimal spread = config.getDebitSpread() != null ? 
-                        config.getDebitSpread() : BigDecimal.ZERO;
-                rate = baseRate != null ? baseRate.add(spread) : new BigDecimal("5.00");
-            }
-            
-            log.debug("Looked up rate {} from config {} for amount {}", rate, configId, amount);
-            return rate;
-            
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("Failed to lookup rate from config {}: {}", configId, e.getMessage());
-            return new BigDecimal("5.00"); // Default on error
-        }
-    }
-
-    /**
-     * Look up deposit rate from attached InterestConfiguration.
-     * Uses the effective credit rate (what depositor earns).
-     */
-    private BigDecimal lookupDepositRateFromConfig(UUID configId, BigDecimal amount) {
-        if (configId == null) {
-            return new BigDecimal("3.00"); // Default deposit rate
-        }
-        
-        try {
-            InterestConfiguration config = interestConfigRepository.findById(configId)
-                .orElseThrow(() -> new ResourceNotFoundException("Interest config not found: " + configId));
-            
-            // For IHB deposits, use credit rate (what depositor earns)
-            BigDecimal rate = config.getEffectiveCreditRate();
-            
-            if (rate == null) {
-                // Calculate from base + spread if effective not set
-                BigDecimal baseRate = config.getCreditBaseRate();
-                BigDecimal spread = config.getCreditSpread() != null ? 
-                        config.getCreditSpread() : BigDecimal.ZERO;
-                rate = baseRate != null ? baseRate.add(spread) : new BigDecimal("3.00");
-            }
-            
-            log.debug("Looked up deposit rate {} from config {} for amount {}", rate, configId, amount);
-            return rate;
-            
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("Failed to lookup deposit rate from config {}: {}", configId, e.getMessage());
-            return new BigDecimal("3.00"); // Default on error
-        }
-    }
 
     // ========================================================================
     // IHB CURRENT ACCOUNT OPERATIONS

@@ -1775,6 +1775,13 @@ public class VirtualAccountService {
             log.info("IC Receivable VA: {} at Treasury for subsidiary {}",
                 icReceivableVa.getVaNumber(), participant.getEntityCode());
 
+            // 17c. Create IC Payable VA at Treasury (tracks Treasury's obligation to subsidiary)
+            // COBO counterpart of 17b — enables the same intercompany accounting for the
+            // opposite flow direction (Treasury collecting externally on the subsidiary's behalf)
+            VirtualAccount icPayableVa = ensureIcPayableVa(va, participant, treasury, treasurySettlementVa, ihbProgramId);
+            log.info("IC Payable VA: {} at Treasury for subsidiary {}",
+                icPayableVa.getVaNumber(), participant.getEntityCode());
+
             // Mark Treasury Settlement VA as TREASURY_SETTLEMENT type if not already set
             if (treasurySettlementVa.getMirrorAccountType() == null ||
                 treasurySettlementVa.getMirrorAccountType() == VirtualAccount.MirrorAccountType.NONE) {
@@ -2100,6 +2107,128 @@ public class VirtualAccountService {
             icReceivableVa.getVaNumber(), treasury.getEntityCode(), participant.getEntityCode(), ihbCurrentAccount.getVaNumber());
 
         return icReceivableVa;
+    }
+
+    /**
+     * Ensure Treasury has an IC Payable VA for a subsidiary (COBO counterpart of
+     * {@link #ensureIcReceivableVa}).
+     *
+     * Mirrors ensureIcReceivableVa exactly, but tracks Treasury's OBLIGATION to the
+     * subsidiary (COBO: Treasury collects externally on the subsidiary's behalf) rather
+     * than its claim (POBO: Treasury pays externally on the subsidiary's behalf).
+     *
+     * @param ihbCurrentAccount The subsidiary's IHB Current Account
+     * @param participant The subsidiary legal entity
+     * @param treasury The treasury center entity
+     * @param treasurySettlementVa Treasury's settlement VA (for linking)
+     * @param ihbProgramId The IHB program ID
+     * @return The IC Payable VA at Treasury
+     */
+    @Transactional
+    public VirtualAccount ensureIcPayableVa(
+            VirtualAccount ihbCurrentAccount,
+            LegalEntity participant,
+            LegalEntity treasury,
+            VirtualAccount treasurySettlementVa,
+            UUID ihbProgramId) {
+
+        // 1. Check if IC Payable VA already exists
+        if (ihbCurrentAccount.getIcPayableVaId() != null) {
+            Optional<VirtualAccount> existing = virtualAccountRepository.findById(ihbCurrentAccount.getIcPayableVaId());
+            if (existing.isPresent()) {
+                log.debug("IC Payable VA already exists: {}", existing.get().getVaNumber());
+                return existing.get();
+            }
+        }
+
+        String currency = ihbCurrentAccount.getCurrencyCode();
+
+        // 2. Look for existing IC Payable VA by naming convention
+        String expectedVaNumber = "ICP-" + treasury.getEntityCode() + "-" + participant.getEntityCode() + "-" + currency;
+        Optional<VirtualAccount> existingByNumber = virtualAccountRepository.findByVaNumber(expectedVaNumber);
+        if (existingByNumber.isPresent()) {
+            // Link it to the IHB Current Account
+            ihbCurrentAccount.setIcPayableVaId(existingByNumber.get().getId());
+            virtualAccountRepository.save(ihbCurrentAccount);
+            log.debug("Found existing IC Payable VA: {}", existingByNumber.get().getVaNumber());
+            return existingByNumber.get();
+        }
+
+        // 3. Create new IC Payable VA at Treasury
+        log.info("Creating IC Payable VA at {} for subsidiary {} in {}",
+            treasury.getEntityCode(), participant.getEntityCode(), currency);
+
+        String vaNumber = expectedVaNumber;
+        String vaName = "IC Payable - " + participant.getEntityName() + " " + currency;
+
+        // Get Treasury's hierarchy node for placement
+        HierarchyNode treasuryHierarchyNode = null;
+        if (treasurySettlementVa.getHierarchyNodeId() != null) {
+            treasuryHierarchyNode = hierarchyNodeRepository.findById(treasurySettlementVa.getHierarchyNodeId()).orElse(null);
+        }
+
+        VirtualAccount icPayableVa = VirtualAccount.builder()
+            .vaNumber(vaNumber)
+            .vaName(vaName)
+            .corporateId(treasury.getCorporateId())
+            .programId(treasuryHierarchyNode != null ? treasuryHierarchyNode.getProgramId() : ihbProgramId)
+            .physicalAccountId(treasurySettlementVa.getPhysicalAccountId())
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.INTERCOMPANY)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .mirrorAccountType(VirtualAccount.MirrorAccountType.IC_PAYABLE)
+            .mirrorsVaId(ihbCurrentAccount.getId())  // Points to the subsidiary's IHB Current Account
+            .owningEntityId(treasury.getId())
+            .owningEntityCode(treasury.getEntityCode())
+            .parentAccountId(treasurySettlementVa.getId())  // Child of Treasury Settlement VA
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("IC-PAYABLE-" + participant.getEntityCode() + "-" + currency)
+            .build();
+
+        icPayableVa = virtualAccountRepository.save(icPayableVa);
+
+        // 4. Create hierarchy node under Treasury if hierarchy exists
+        if (treasuryHierarchyNode != null) {
+            String nodeCode = "ICP-" + participant.getEntityCode() + "-" + currency;
+            String materializedPath = treasuryHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+            int newLevel = treasuryHierarchyNode.getLevelNumber() + 1;
+
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(treasuryHierarchyNode.getProgramId())
+                .parentId(treasuryHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(vaName)
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(currency)
+                .dimensionValue("IC_PAYABLE")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(icPayableVa.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+
+            icPayableVa.setHierarchyNodeId(node.getId());
+            icPayableVa.setHierarchyPath(materializedPath);
+            icPayableVa.setHierarchyLevel(newLevel - 1); // treasuryHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            icPayableVa = virtualAccountRepository.save(icPayableVa);
+        }
+
+        // 5. Link IC Payable VA to the IHB Current Account
+        ihbCurrentAccount.setIcPayableVaId(icPayableVa.getId());
+        virtualAccountRepository.save(ihbCurrentAccount);
+
+        log.info("Created IC Payable VA: {} at Treasury {} for subsidiary {} (linked to IHB Current Account {})",
+            icPayableVa.getVaNumber(), treasury.getEntityCode(), participant.getEntityCode(), ihbCurrentAccount.getVaNumber());
+
+        return icPayableVa;
     }
 
     /**
@@ -2696,6 +2825,25 @@ public class VirtualAccountService {
             throw new ResourceNotFoundException("Physical account not found: " + request.getPhysicalAccountId());
         }
 
+        // One physical account backs at most one program's real balance. Same-program
+        // reuse (ordinary pooling sub-ledgers of one account) is fine and untouched —
+        // ShadowAccountService.createShadowAccount() already guards against a second
+        // PHYSICAL_MIRROR of the same account. What that guard can't see is a plain
+        // leaf VA in a DIFFERENT program independently pointing at an account another
+        // program already mirrors: BalanceStructureService's corporate-wide rollup sums
+        // every leaf VA it finds with no dedup by physicalAccountId, so that leaf's
+        // balance would double-count real cash the mirror already reports in full.
+        if (request.getPhysicalAccountId() != null) {
+            virtualAccountRepository.findByLinkedPhysicalAccountId(request.getPhysicalAccountId())
+                .filter(mirror -> !Objects.equals(mirror.getProgramId(), request.getProgramId()))
+                .ifPresent(mirror -> {
+                    throw new BusinessException(
+                        "Physical account " + request.getPhysicalAccountId() + " is already mirrored by "
+                        + mirror.getVaNumber() + " under a different program. Represent cross-program "
+                        + "access to that cash as an inter-program claim, not a second direct reference.");
+                });
+        }
+
         // Validate hierarchy node if provided
         if (request.getHierarchyNodeId() != null) {
             if (!hierarchyNodeRepository.existsById(request.getHierarchyNodeId())) {
@@ -2971,6 +3119,17 @@ public class VirtualAccountService {
 
         if (request.getVaName() != null) {
             va.setVaName(request.getVaName());
+            // Keep the linked hierarchy_nodes row's name in sync — the two
+            // are dual-written at creation (HierarchyService.createAggregation())
+            // but nothing propagated a rename until now, letting an
+            // AGGREGATION VA's name drift from its node's name (the node is
+            // what the "pick a parent" tree picker UI displays).
+            if (va.getHierarchyNodeId() != null) {
+                hierarchyNodeRepository.findById(va.getHierarchyNodeId()).ifPresent(node -> {
+                    node.setNodeName(request.getVaName());
+                    hierarchyNodeRepository.save(node);
+                });
+            }
         }
         if (request.getExternalReference() != null) {
             va.setExternalReference(request.getExternalReference());

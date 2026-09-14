@@ -203,7 +203,6 @@ public class PoboDto {
         private BigDecimal amount;
         private String currencyCode;
         private Boolean createRecharge;
-        private Boolean createIhbLoan;  // Phase 5: Option to create IHB loan for reimbursement
     }
     
     @Data
@@ -218,8 +217,6 @@ public class PoboDto {
         private BigDecimal rechargeAmount;
         private BigDecimal serviceFee;
         private BigDecimal totalRecharge;
-        private UUID ihbLoanId;           // Phase 5: IHB loan ID if created
-        private String ihbLoanReference;  // Phase 5: IHB loan reference if created
         private LocalDateTime processedAt;
     }
 

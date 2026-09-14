@@ -98,31 +98,6 @@ public class SweepExecution {
     private String bancsSyncStatus = "PENDING";
 
     // ========================================================================
-    // IHB INTEGRATION FIELDS
-    // ========================================================================
-
-    /**
-     * Whether this sweep created IHB positions (loan/deposit).
-     * True when both source and target entities are IHB-enabled.
-     */
-    @Column(name = "ihb_enabled")
-    private Boolean ihbEnabled = false;
-
-    /**
-     * IHB Deposit ID created from this sweep.
-     * When funds are swept TO Treasury, source entity gets a deposit.
-     */
-    @Column(name = "ihb_deposit_id")
-    private UUID ihbDepositId;
-
-    /**
-     * IHB Loan ID if a loan was created.
-     * Used for reverse sweeps or deficit funding.
-     */
-    @Column(name = "ihb_loan_id")
-    private UUID ihbLoanId;
-
-    // ========================================================================
     // TIMESTAMPS
     // ========================================================================
 
@@ -175,10 +150,6 @@ public class SweepExecution {
 
     public boolean isAwaitingSettlement() {
         return status == ExecutionStatus.COMMITTED;
-    }
-
-    public boolean hasIhbPosition() {
-        return Boolean.TRUE.equals(ihbEnabled) && (ihbDepositId != null || ihbLoanId != null);
     }
 
     public boolean wasSkipped() {

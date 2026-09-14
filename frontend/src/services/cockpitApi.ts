@@ -26,7 +26,6 @@
 //                        |   side permission filter in V1.                   |
 //   fx_exposure          | STUB — needs `fx_policy_band` reference table.    | produceFxExposures
 //   concentration_risk   | STUB — needs `bank_credit_rating` reference.      | produceConcentrationRisks
-//   loan_rollover        | ihbApi.getAllLoans() filtered for maturity today. | produceLoanRollovers
 //
 // Naming note: this is intentionally `cockpitApi`, NOT `exceptionsApi` —
 // the existing `exceptionApi` (services/api.ts ~4705) handles a different
@@ -40,10 +39,8 @@ import {
   payablesApi,
   sweepingApi,
   transactionsApi,
-  ihbApi,
   type MultiBankLiquiditySummary,
   type SweepExecution,
-  type IhbLoan,
   type Transaction,
   type Payable,
 } from './api';
@@ -382,42 +379,6 @@ async function produceConcentrationRisks(_entityId?: string): Promise<AttentionI
   return [];
 }
 
-async function produceLoanRollovers(_entityId?: string): Promise<AttentionItem[]> {
-  try {
-    const res = await ihbApi.getAllLoans();
-    const loans: IhbLoan[] = (res?.data ?? []) as IhbLoan[];
-    const today = new Date();
-    const todayStr = today.toISOString().slice(0, 10);
-    return loans
-      .filter((l) => l.maturityDate?.slice(0, 10) === todayStr && l.status === 'ACTIVE')
-      .map((l): AttentionItem => {
-        const pressure = pressureFromFutureIso(l.maturityDate);
-        const isLarge = l.outstandingAmount >= 5_000_000;
-        return {
-          id: `loan_rollover:${l.id}`,
-          severity: 'high',
-          category: 'loan_rollover',
-          headline: `Loan matures today · ${l.loanReference}`,
-          detail: `Outstanding ${l.outstandingAmount.toLocaleString()} · rate ${l.interestRate}%`,
-          context: {
-            reference: l.loanReference,
-            entityId: l.borrowerId,
-          },
-          timePressure: pressure,
-          actions: [
-            { label: 'Review', kind: 'drawer', actionId: 'review', requiresConfirmation: false },
-            { label: 'Roll over', kind: 'execute', actionId: 'rollover', requiresConfirmation: true, requiresSecondFactor: isLarge },
-          ],
-          createdAt: l.createdAt,
-        };
-      });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('[cockpit] produceLoanRollovers failed:', err);
-    return [];
-  }
-}
-
 // ============================================================================
 // Sort key — severity first (critical → high → medium), then time pressure
 // (least time first; for past events, most time elapsed first).
@@ -480,7 +441,6 @@ export const cockpitApi = {
       producePendingApprovals(entityId),
       produceFxExposures(entityId),
       produceConcentrationRisks(entityId),
-      produceLoanRollovers(entityId),
     ]);
     const items: AttentionItem[] = [];
     for (const r of results) {

@@ -14,6 +14,7 @@ import com.bank.vam.service.intercompany.IntercompanyTransactionService.Bilatera
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.BilateralSettlementResult;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.TransferPricingValidation;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.IntercompanyPositionSummary;
+import com.bank.vam.service.intercompany.IntercompanyTransactionService.SubsidiaryIntercompanyPosition;
 import com.bank.vam.service.intercompany.IntercompanyTransactionService.EntityIntercompanyReport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -100,6 +101,15 @@ public class IntercompanyController {
         log.debug("Getting entity pairs for corporate: {}", corporateId);
         List<EntityPairSummary> pairs = transactionService.getEntityPairs(corporateId);
         return ResponseEntity.ok(ApiResponse.success(pairs));
+    }
+
+    @GetMapping("/positions")
+    @Operation(summary = "Get per-subsidiary intercompany positions",
+        description = "IC Receivable/Payable balances per subsidiary, sourced from the real VA ledger")
+    public ResponseEntity<ApiResponse<List<SubsidiaryIntercompanyPosition>>> getIntercompanyPositions(
+            @RequestParam UUID corporateId) {
+        log.debug("Getting intercompany positions for corporate: {}", corporateId);
+        return ResponseEntity.ok(ApiResponse.success(transactionService.getIntercompanyPositions(corporateId)));
     }
 
     @GetMapping("/bilateral-position")

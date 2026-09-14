@@ -1,8 +1,6 @@
 package com.bank.vam.dto.treasury;
 
-import com.bank.vam.entity.treasury.IhbDeposit;
 import com.bank.vam.entity.treasury.IhbEntity;
-import com.bank.vam.entity.treasury.IhbLoan;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -103,170 +101,6 @@ public class IhbDto {
         private UUID settlementVaId;
     }
 
-    // ========================================================================
-    // LOAN DTOs
-    // ========================================================================
-
-    @Data
-    public static class LoanResponse {
-        private UUID id;
-        private String loanReference;
-        private UUID lenderEntityId;
-        private String lenderEntityCode;
-        private String lenderEntityName;
-        private UUID borrowerEntityId;
-        private String borrowerEntityCode;
-        private String borrowerEntityName;
-        private BigDecimal principalAmount;
-        private String currencyCode;
-        private BigDecimal outstandingAmount;
-        private BigDecimal interestRate;
-        private IhbLoan.InterestType interestType;
-        private String baseRateType;
-        private BigDecimal spread;
-        private BigDecimal accruedInterest;
-        private BigDecimal totalInterestPaid;
-        private LocalDate disbursementDate;
-        private LocalDate maturityDate;
-        private LocalDate nextInterestDate;
-        private LocalDate nextPaymentDate;
-        private IhbLoan.RepaymentFrequency repaymentFrequency;
-        private IhbLoan.LoanStatus status;
-        private LocalDateTime createdAt;
-    }
-
-    @Data
-    public static class CreateLoanRequest {
-        private UUID lenderEntityId;
-        private UUID borrowerEntityId;
-        private BigDecimal principalAmount;
-        private String currencyCode;
-        private BigDecimal interestRate;
-        private IhbLoan.InterestType interestType;
-        private String baseRateType;
-        private BigDecimal spread;
-        private LocalDate disbursementDate;
-        private LocalDate maturityDate;
-        private IhbLoan.RepaymentFrequency repaymentFrequency;
-    }
-
-    /**
-     * Unified request to create an IHB loan using LegalEntity references.
-     */
-    @Data
-    public static class CreateLoanUnifiedRequest {
-        @NotNull
-        private UUID lenderEntityId;
-        
-        @NotNull
-        private UUID borrowerEntityId;
-        
-        @NotNull
-        @DecimalMin(value = "0.01")
-        private BigDecimal principalAmount;
-        
-        private String currencyCode;
-        
-        @NotNull
-        @DecimalMin(value = "0.00")
-        private BigDecimal baseRate;
-        
-        private String baseRateType;
-        
-        private IhbLoan.InterestType interestType;
-        
-        private LocalDate disbursementDate;
-        
-        @NotNull
-        private LocalDate maturityDate;
-        
-        private IhbLoan.RepaymentFrequency repaymentFrequency;
-        
-        // ENHANCED: Interest configuration attachment
-        private UUID interestConfigId;  // If provided, rates are looked up from config
-    }
-
-    @Data
-    public static class LoanRepaymentRequest {
-        private BigDecimal amount;
-        private boolean includeInterest;
-    }
-
-    // ========================================================================
-    // DEPOSIT DTOs
-    // ========================================================================
-
-    @Data
-    public static class DepositResponse {
-        private UUID id;
-        private String depositReference;
-        private UUID depositorEntityId;
-        private String depositorEntityCode;
-        private String depositorEntityName;
-        private BigDecimal principalAmount;
-        private String currencyCode;
-        private BigDecimal currentBalance;
-        private BigDecimal interestRate;
-        private BigDecimal accruedInterest;
-        private BigDecimal totalInterestEarned;
-        private LocalDate depositDate;
-        private LocalDate maturityDate;
-        private LocalDate lastInterestDate;
-        private IhbDeposit.DepositType depositType;
-        private Integer noticePeriodDays;
-        private IhbDeposit.DepositStatus status;
-        private LocalDateTime createdAt;
-    }
-
-    @Data
-    public static class CreateDepositRequest {
-        private UUID depositorEntityId;
-        private BigDecimal principalAmount;
-        private String currencyCode;
-        private BigDecimal interestRate;
-        private LocalDate depositDate;
-        private LocalDate maturityDate;
-        private IhbDeposit.DepositType depositType;
-        private Integer noticePeriodDays;
-    }
-
-    /**
-     * Unified request to create an IHB deposit using LegalEntity references.
-     */
-    @Data
-    public static class CreateDepositUnifiedRequest {
-        @NotNull
-        private UUID depositorEntityId;
-        
-        private UUID treasuryEntityId; // Optional - auto-resolved if null
-        
-        @NotNull
-        @DecimalMin(value = "0.01")
-        private BigDecimal principalAmount;
-        
-        private String currencyCode;
-        
-        private BigDecimal interestRate;
-        
-        private BigDecimal baseRate;
-        
-        private LocalDate depositDate;
-        
-        private LocalDate maturityDate;
-        
-        private IhbDeposit.DepositType depositType;
-        
-        private Integer noticePeriodDays;
-        
-        // ENHANCED: Interest configuration attachment
-        private UUID interestConfigId;  // If provided, rates are looked up from config
-    }
-
-    @Data
-    public static class WithdrawRequest {
-        private BigDecimal amount;
-        private boolean breakDeposit;
-    }
 
     // ========================================================================
     // STATS & POSITION DTOs
@@ -275,15 +109,7 @@ public class IhbDto {
     @Data
     public static class IhbStatsResponse {
         private Long totalEntities;
-        private int activeLoans;
-        private int activeDeposits;
-        private BigDecimal totalOutstandingLoans;
-        private BigDecimal totalDepositsBalance;
         private BigDecimal netPosition;
-        
-        // Phase 2 fields
-        private BigDecimal totalAccruedLoanInterest;
-        private BigDecimal totalAccruedDepositInterest;
     }
 
     @Data
@@ -295,33 +121,11 @@ public class IhbDto {
         private BigDecimal totalBorrowed;
         private BigDecimal totalDeposited;
         private BigDecimal netPosition;
-        
+
         // Phase 2 fields
         private BigDecimal ihbCreditLimit;
         private BigDecimal ihbAvailableLimit;
         private BigDecimal utilizationPercent;
-        
-        private List<LoanResponse> loansAsLender;
-        private List<LoanResponse> loansAsBorrower;
-        private List<DepositResponse> deposits;
-    }
-
-    @Data
-    public static class CalculateInterestRequest {
-        private LocalDate calculationDate;
-    }
-
-    @Data
-    public static class CalculateInterestResponse {
-        private LocalDate calculationDate;
-        private int loansProcessed;
-        private int depositsProcessed;
-        private BigDecimal totalLoanInterest;
-        private BigDecimal totalDepositInterest;
-        
-        // Phase 2 fields
-        private BigDecimal totalSpread;
-        private BigDecimal netInterest;
     }
 
     // ========================================================================

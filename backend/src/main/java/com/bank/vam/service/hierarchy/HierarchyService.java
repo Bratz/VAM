@@ -245,6 +245,20 @@ public class HierarchyService {
 
         if (request.getNodeName() != null) {
             node.setNodeName(request.getNodeName());
+            // Keep the linked VA's own name in sync — createAggregation() sets
+            // both node.nodeName and va.vaName from the same request.getName()
+            // at creation time, but nothing kept them in sync on rename until
+            // now. Confirmed live: two real AGGREGATION nodes had drifted to
+            // "Operations Division"/"Treasury Division" here while their
+            // linked VAs (read by the dashboard's balance tree) still said
+            // "Operations Aggregation"/"Treasury Aggregation".
+            if (node.getVirtualAccountId() != null) {
+                virtualAccountRepository.findById(node.getVirtualAccountId())
+                    .ifPresent(va -> {
+                        va.setVaName(request.getNodeName());
+                        virtualAccountRepository.save(va);
+                    });
+            }
         }
         if (request.getDimensionValue() != null) {
             node.setDimensionValue(request.getDimensionValue());
@@ -338,12 +352,31 @@ public class HierarchyService {
         // Calculate level offset for subtree
         int levelOffset = newNodeLevel - node.getLevelNumber();
 
+        UUID oldParentId = node.getParentId();
+
         // Update this node
         node.setParentId(newParent.getId());
         node.setLevelNumber(newNodeLevel);
         node.setMaterializedPath(newPath);
         node.setMaxDepth(maxDepth);
         nodeRepository.save(node);
+
+        // Keep child_count accurate across the reparent — otherwise it's
+        // increment-only (set at creation, never adjusted here), same gap
+        // fixed for deleteNode() above.
+        if (oldParentId != null) {
+            nodeRepository.findById(oldParentId).ifPresent(oldParent -> {
+                int remaining = Math.max((oldParent.getChildCount() != null ? oldParent.getChildCount() : 1) - 1, 0);
+                oldParent.setChildCount(remaining);
+                if (remaining == 0) {
+                    oldParent.setIsLeaf(true);
+                }
+                nodeRepository.save(oldParent);
+            });
+        }
+        newParent.setChildCount((newParent.getChildCount() != null ? newParent.getChildCount() : 0) + 1);
+        newParent.setIsLeaf(false);
+        nodeRepository.save(newParent);
 
         // Update all descendants' paths AND levels
         if (levelOffset != 0) {
@@ -494,6 +527,17 @@ public class HierarchyService {
                 }
             }
         }
+
+        // NOTE: no manual child_count decrement here — the DB trigger
+        // trg_hierarchy_nodes_child_count (update_parent_child_count(),
+        // AFTER INSERT OR DELETE ON hierarchy_nodes) already does this
+        // correctly for both this delete and the subtree rows removed
+        // below. Confirmed live: adding a Java-side decrement here
+        // double-counted (expected childCount 5->4, actually went 5->3)
+        // because the trigger fires again when deleteSubtree's DELETE
+        // executes. That trigger only covers INSERT/DELETE though — it
+        // has no UPDATE clause, so moveNode()'s reparenting (an UPDATE of
+        // parent_id) is NOT covered and still needs its own fix below.
 
         // Delete subtree
         int deleted = nodeRepository.deleteSubtree(node.getProgramId(), node.getMaterializedPath());
@@ -2235,7 +2279,7 @@ public class HierarchyService {
             .parentId(node.getParentId())
             .levelNumber(node.getLevelNumber())
             .nodeCode(node.getNodeCode())
-            .nodeName(node.getNodeName())
+            .nodeName(resolveDisplayName(node))
             .nodeType(node.getNodeType())
             .currencyCode(node.getCurrencyCode())
             .dimensionValue(node.getDimensionValue())
@@ -2255,6 +2299,20 @@ public class HierarchyService {
             .createdAt(node.getCreatedAt())
             .updatedAt(node.getUpdatedAt())
             .build();
+    }
+
+    /**
+     * Same reasoning as HierarchyController's copy of this helper: a node
+     * linked to a VA should show the VA's name live, not a second stored
+     * copy that can drift from it — the account is the source of truth.
+     */
+    private String resolveDisplayName(HierarchyNode node) {
+        if (node.getVirtualAccountId() != null) {
+            return virtualAccountRepository.findById(node.getVirtualAccountId())
+                .map(VirtualAccount::getVaName)
+                .orElse(node.getNodeName());
+        }
+        return node.getNodeName();
     }
 
     private String generateRootVaNumber(Program program, String rootCode) {

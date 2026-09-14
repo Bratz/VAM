@@ -229,15 +229,6 @@ public class PoboController {
         return ResponseEntity.ok(poboService.rejectRecharge(id, rejector, reason));
     }
 
-    @PostMapping("/recharges/{id}/settle/ihb")
-    @Operation(summary = "Settle recharge via IHB loan")
-    public ResponseEntity<RechargeResponse> settleViaIhbLoan(
-            @PathVariable UUID id,
-            @RequestParam UUID ihbLoanId,
-            @RequestParam String loanReference) {
-        return ResponseEntity.ok(poboService.settleViaIhbLoan(id, ihbLoanId, loanReference));
-    }
-    
     @PostMapping("/recharges/{id}/settle/netting")
     @Operation(summary = "Settle recharge via netting")
     public ResponseEntity<RechargeResponse> settleViaNetting(
