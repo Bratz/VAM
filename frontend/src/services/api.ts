@@ -3389,20 +3389,6 @@ export const syncAdminApi = {
 };
 
 // ============================================================================
-// TREASURY HIERARCHY API
-// ============================================================================
-
-export const treasuryHierarchyApi = {
-  getHierarchy: (corporateId?: string) => apiClient.get<ApiResponse<any>>('/treasury/hierarchy', { params: { corporateId } }).then(r => r.data),
-  getNodeDetails: (id: string) => apiClient.get<ApiResponse<any>>(`/treasury/hierarchy/nodes/${id}`).then(r => r.data),
-  createNode: (data: any) => apiClient.post<ApiResponse<any>>('/treasury/hierarchy/nodes', data).then(r => r.data),
-  updateNode: (id: string, data: any) => apiClient.put<ApiResponse<any>>(`/treasury/hierarchy/nodes/${id}`, data).then(r => r.data),
-  deleteNode: (id: string) => apiClient.delete<ApiResponse<void>>(`/treasury/hierarchy/nodes/${id}`).then(r => r.data),
-  moveNode: (id: string, newParentId: string) => apiClient.post<ApiResponse<any>>(`/treasury/hierarchy/nodes/${id}/move`, { newParentId }).then(r => r.data),
-  getSummary: () => apiClient.get<ApiResponse<any>>('/treasury/hierarchy/summary').then(r => r.data),
-};
-
-// ============================================================================
 // BALANCE STRUCTURE API (Treasury Hierarchy with full features)
 // ============================================================================
 
@@ -6940,14 +6926,6 @@ export const hierarchyVaApi = {
     ).then(r => r.data),
 
   /**
-   * Get hierarchy tree (existing endpoint).
-   */
-  getTree: (programId: string) =>
-    apiClient.get<ApiResponse<any>>(
-      `/programs/${programId}/hierarchy/tree`
-    ).then(r => r.data),
-
-  /**
    * Recalculate hierarchy balances (existing endpoint).
    */
   recalculate: (programId: string) =>
@@ -7934,7 +7912,6 @@ export default {
   kyc: kycApi,
   viban: vibanApi,
   syncAdmin: syncAdminApi,
-  treasuryHierarchy: treasuryHierarchyApi,
   balanceStructure: balanceStructureApi,
   integrations: integrationsApi,
   taxCharge: taxChargeApi,

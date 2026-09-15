@@ -309,7 +309,7 @@ public class HierarchyService {
 
         // Validate same program (cross-program moves require explicit migration)
         if (!node.getProgramId().equals(newParent.getProgramId())) {
-            throw new BusinessException("Cannot move node to different program. Use migrateSubtree for cross-program moves.");
+            throw new BusinessException("Cannot move node to a different program.");
         }
 
         // Check not moving to descendant
@@ -439,76 +439,6 @@ public class HierarchyService {
     }
 
     /**
-     * Migrate a subtree from one program to another.
-     * Levels are recalculated based on target program's configuration.
-     *
-     * @param nodeId Root node of subtree to migrate
-     * @param targetProgramId Target program ID
-     * @param targetParentId Target parent node ID in the new program
-     * @return Updated node response
-     */
-    @Transactional
-    public NodeResponse migrateSubtree(UUID nodeId, UUID targetProgramId, UUID targetParentId) {
-        HierarchyNode node = nodeRepository.findById(nodeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Node not found: " + nodeId));
-
-        HierarchyNode targetParent = nodeRepository.findById(targetParentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Target parent not found"));
-
-        if (!targetParent.getProgramId().equals(targetProgramId)) {
-            throw new BusinessException("Target parent does not belong to target program");
-        }
-
-        Program targetProgram = programRepository.findById(targetProgramId)
-            .orElseThrow(() -> new ResourceNotFoundException("Target program not found"));
-
-        int maxDepth = targetProgram.getMaxHierarchyDepth() != null
-            ? targetProgram.getMaxHierarchyDepth()
-            : HierarchyNode.DEFAULT_MAX_DEPTH;
-
-        int subtreeDepth = calculateSubtreeDepth(node);
-        int newParentLevel = targetParent.getLevelNumber();
-        int newMaxLevel = newParentLevel + subtreeDepth;
-
-        if (newMaxLevel > maxDepth) {
-            throw new BusinessException(String.format(
-                "Cannot migrate subtree: would exceed target program's max depth %d (need %d levels)",
-                maxDepth, newMaxLevel));
-        }
-
-        // Migrate node and all descendants
-        migrateNodeRecursive(node, targetProgramId, targetParent, maxDepth);
-
-        log.info("Migrated subtree {} from program {} to program {} under parent {}",
-            node.getNodeCode(), node.getProgramId(), targetProgramId, targetParent.getNodeCode());
-
-        return toNodeResponse(node);
-    }
-
-    private void migrateNodeRecursive(HierarchyNode node, UUID targetProgramId,
-                                       HierarchyNode newParent, int maxDepth) {
-        String oldPath = node.getMaterializedPath();
-        String newPath = HierarchyNode.buildPath(newParent.getMaterializedPath(), node.getNodeCode());
-        int newLevel = newParent.getLevelNumber() + 1;
-
-        // Get children before updating this node
-        List<HierarchyNode> children = nodeRepository.findByParentIdOrderByDisplayOrderAsc(node.getId());
-
-        // Update this node
-        node.setProgramId(targetProgramId);
-        node.setParentId(newParent.getId());
-        node.setLevelNumber(newLevel);
-        node.setMaterializedPath(newPath);
-        node.setMaxDepth(maxDepth);
-        nodeRepository.save(node);
-
-        // Recursively migrate children
-        for (HierarchyNode child : children) {
-            migrateNodeRecursive(child, targetProgramId, node, maxDepth);
-        }
-    }
-
-    /**
      * Delete a node and all descendants.
      */
     public void deleteNode(UUID nodeId) {
@@ -546,146 +476,16 @@ public class HierarchyService {
 
     // ========================================================================
     // Tree Operations
+    //
+    // getTree/getSubtree/getChildren/getBreadcrumb/searchNodes were removed
+    // 2026-09-15 — confirmed zero callers anywhere (frontend or backend)
+    // beyond their own now-deleted HierarchyController endpoints. The tree
+    // this codebase's frontend actually renders comes from
+    // BalanceStructureService.getHierarchy, an independent implementation
+    // that reads VirtualAccount.parentAccountId chains directly and has no
+    // dependency on HierarchyNodeRepository or this class at all. See the
+    // VAM Context Ledger artifact for the full finding.
     // ========================================================================
-
-    /**
-     * Get full tree for a program.
-     *
-     * Enhanced in v5.4.0 to include Currency Mirror VAs as tree nodes.
-     * Currency Mirrors are displayed as children of their parent AGGREGATION/ROOT nodes.
-     */
-    @Transactional(readOnly = true)
-    public TreeResponse getTree(UUID programId) {
-        Program program = programRepository.findById(programId)
-            .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
-
-        List<LevelConfigResponse> levelConfigs = getLevelConfigs(programId);
-        List<HierarchyNode> allNodes = nodeRepository.findByProgramIdOrderByMaterializedPathAsc(programId);
-
-        // NOTE: System-generated VAs (Currency Mirrors, Exception VAs) are NOT included in the tree view
-        // They exist for internal balance aggregation purposes only
-        // Use the Currency Breakdown API (/api/v1/treasury/aggregation/multi-currency/{programId})
-        // to see currency-wise balance breakdown
-
-        log.debug("Building tree for program {} with {} nodes", programId, allNodes.size());
-
-        // Build tree structure (without Currency Mirrors - they are system VAs)
-        List<TreeNodeResponse> roots = buildTreeStructure(allNodes);
-
-        // Calculate stats
-        TreeStats stats = TreeStats.builder()
-            .totalNodes(allNodes.size())
-            .leafNodes((int) allNodes.stream().filter(HierarchyNode::getIsLeaf).count())
-            .maxDepth(allNodes.stream().mapToInt(HierarchyNode::getDepth).max().orElse(0))
-            .totalBalance(allNodes.stream()
-                .filter(n -> n.getLevelNumber() == 1)
-                .map(HierarchyNode::getAggregatedBalance)
-                .reduce(BigDecimal.ZERO, BigDecimal::add))
-            .lastUpdated(LocalDateTime.now())
-            .build();
-
-        return TreeResponse.builder()
-            .programId(programId)
-            .programCode(program.getProgramCode())
-            .programName(program.getProgramName())
-            .levelConfigs(levelConfigs)
-            .roots(roots)
-            .stats(stats)
-            .build();
-    }
-
-    /**
-     * Get subtree under a specific node.
-     * NOTE: System-generated VAs (Currency Mirrors, Exception VAs) are NOT included.
-     */
-    @Transactional(readOnly = true)
-    public List<TreeNodeResponse> getSubtree(UUID nodeId) {
-        HierarchyNode node = nodeRepository.findById(nodeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Node not found: " + nodeId));
-
-        List<HierarchyNode> descendants = nodeRepository.findDescendants(node.getProgramId(), node.getMaterializedPath());
-
-        // Add the node itself
-        List<HierarchyNode> allNodes = new ArrayList<>();
-        allNodes.add(node);
-        allNodes.addAll(descendants);
-
-        return buildTreeStructure(allNodes);
-    }
-
-    /**
-     * Get children of a node.
-     */
-    @Transactional(readOnly = true)
-    public List<NodeResponse> getChildren(UUID nodeId) {
-        return nodeRepository.findByParentIdOrderByDisplayOrderAsc(nodeId)
-            .stream()
-            .map(this::toNodeResponse)
-            .collect(Collectors.toList());
-    }
-
-    /**
-     * Get ancestors (breadcrumb) for a node.
-     */
-    @Transactional(readOnly = true)
-    public BreadcrumbResponse getBreadcrumb(UUID nodeId) {
-        HierarchyNode node = nodeRepository.findById(nodeId)
-            .orElseThrow(() -> new ResourceNotFoundException("Node not found: " + nodeId));
-
-        List<HierarchyNode> ancestors = nodeRepository.findAncestors(node.getProgramId(), node.getMaterializedPath());
-        List<LevelConfigResponse> levelConfigs = getLevelConfigs(node.getProgramId());
-        Map<Integer, String> levelNames = levelConfigs.stream()
-            .collect(Collectors.toMap(LevelConfigResponse::getLevelNumber, LevelConfigResponse::getLevelName));
-
-        List<BreadcrumbItem> path = ancestors.stream()
-            .map(n -> BreadcrumbItem.builder()
-                .id(n.getId())
-                .nodeCode(n.getNodeCode())
-                .nodeName(n.getNodeName())
-                .levelNumber(n.getLevelNumber())
-                .levelName(levelNames.get(n.getLevelNumber()))
-                .build())
-            .collect(Collectors.toList());
-
-        // Add current node
-        path.add(BreadcrumbItem.builder()
-            .id(node.getId())
-            .nodeCode(node.getNodeCode())
-            .nodeName(node.getNodeName())
-            .levelNumber(node.getLevelNumber())
-            .levelName(levelNames.get(node.getLevelNumber()))
-            .build());
-
-        return BreadcrumbResponse.builder()
-            .path(path)
-            .currentNode(toNodeResponse(node))
-            .build();
-    }
-
-    /**
-     * Search nodes by name or code.
-     */
-    @Transactional(readOnly = true)
-    public List<NodeResponse> searchNodes(UUID programId, String searchTerm) {
-        List<HierarchyNode> byName = nodeRepository.searchByName(programId, searchTerm);
-        List<HierarchyNode> byCode = nodeRepository.searchByCode(programId, searchTerm);
-
-        Set<UUID> seen = new HashSet<>();
-        List<NodeResponse> results = new ArrayList<>();
-        
-        for (HierarchyNode n : byName) {
-            if (seen.add(n.getId())) {
-                results.add(toNodeResponse(n));
-            }
-        }
-        for (HierarchyNode n : byCode) {
-            if (seen.add(n.getId())) {
-                results.add(toNodeResponse(n));
-            }
-        }
-
-        return results;
-    }
 
     // ========================================================================
     // HIERARCHY INITIALIZATION (v4.5.0 - Enhanced with Currency Mirrors)
@@ -846,7 +646,7 @@ public class HierarchyService {
             
             if (request.isCreateExceptionVa()) {
                 log.info("Step 6: Creating Exception VA for base currency {}...", baseCurrency);
-                VirtualAccount exceptionVa = createExceptionVaForInit(program, rootNode, baseCurrency);
+                VirtualAccount exceptionVa = createExceptionVaIfNotExists(program, rootNode, baseCurrency);
                 if (exceptionVa != null) {
                     exceptionVaIds.add(exceptionVa.getId());
                     exceptionCurrencies.add(baseCurrency);
@@ -869,7 +669,7 @@ public class HierarchyService {
                         
                         // Create Exception VA for this currency
                         if (request.isCreateExceptionVa()) {
-                            VirtualAccount exceptionVa = createExceptionVaForInit(program, rootNode, currency);
+                            VirtualAccount exceptionVa = createExceptionVaIfNotExists(program, rootNode, currency);
                             if (exceptionVa != null) {
                                 exceptionVaIds.add(exceptionVa.getId());
                                 exceptionCurrencies.add(currency);
@@ -1066,102 +866,6 @@ public class HierarchyService {
         }
     }
 
-    /**
-     * Create Exception VA during initialization.
-     * 
-     * Exception VAs are SIBLINGS at the ROOT level, not children.
-     * They have the SAME hierarchyLevel as ROOT but with parentAccountId pointing to ROOT.
-     * 
-     * @param program Program entity
-     * @param parentNode ROOT hierarchy node
-     * @param currency Currency code
-     * @return Created Exception VA
-     */
-    private VirtualAccount createExceptionVaForInit(Program program, HierarchyNode parentNode, String currency) {
-        log.debug("Creating Exception VA for program {} currency {}", program.getProgramCode(), currency);
-        
-        try {
-            // Generate unique VA number for Exception VA
-            String programPrefix = program.getProgramCode().length() > 8 
-                ? program.getProgramCode().substring(0, 8).toUpperCase()
-                : program.getProgramCode().toUpperCase();
-            // Add timestamp to make it unique
-            String vaNumber = "EXCEPTION-" + currency + "-" + programPrefix + "-" + System.currentTimeMillis() % 10000;
-
-            // Default level = 1 (same as ROOT - they are siblings)
-            int level = 1;
-
-            // Exception VA path is sibling path
-            String hierarchyPathVa = "/EXCEPTION-" + currency;
-
-            log.info("Building Exception VA: vaNumber={}, currency={}, level={}", vaNumber, currency, level);
-
-            // Create Exception VA - all fields initialized to avoid NPE
-            VirtualAccount exceptionVa = VirtualAccount.builder()
-                .vaNumber(vaNumber)
-                .vaName("Exception Account - " + currency)
-                .programId(program.getId())
-                .corporateId(program.getCorporateId())
-                .physicalAccountId(program.getPhysicalAccountId())
-                .currencyCode(currency)
-                .accountType(VirtualAccount.AccountType.VIRTUAL)
-                .accountCategory(VirtualAccount.AccountCategory.EXCEPTION)
-                .specialType(VirtualAccount.VaSpecialType.EXCEPTION)
-                .hierarchyNodeId(parentNode.getId())
-                .hierarchyPath(parentNode.getMaterializedPath() + "/EXCEPTION-" + currency)
-                .hierarchyPathVa(hierarchyPathVa)
-                .hierarchyLevel(level)
-                .parentAccountId(parentNode.getVirtualAccountId())  // Use node's VA ID directly
-                .status(VirtualAccount.VaStatus.ACTIVE)
-                // Initialize ALL numeric fields to avoid NPE
-                .currentBalance(BigDecimal.ZERO)
-                .availableBalance(BigDecimal.ZERO)
-                .aggregatedBalance(BigDecimal.ZERO)
-                .aggregatedBalanceBase(BigDecimal.ZERO)
-                .heldBalance(BigDecimal.ZERO)
-                .mirrorBalance(BigDecimal.ZERO)
-                .balanceInBase(BigDecimal.ZERO)
-                .dailyUsed(BigDecimal.ZERO)
-                .weeklyUsed(BigDecimal.ZERO)
-                .monthlyUsed(BigDecimal.ZERO)
-                .annualUsed(BigDecimal.ZERO)
-                .dailyTopupUsed(BigDecimal.ZERO)
-                .monthlyTopupUsed(BigDecimal.ZERO)
-                .creditLimitUtilized(BigDecimal.ZERO)
-                .pointsBalance(BigDecimal.ZERO)
-                .pendingPoints(BigDecimal.ZERO)
-                .lifetimePoints(BigDecimal.ZERO)
-                // Initialize Integer fields
-                .transactionCount(0)
-                .topupCount(0)
-                .withdrawalCount(0)
-                .kycLevel(0)
-                .kycVerified(false)
-                .valueType(VirtualAccount.ValueType.FIAT)
-                .build();
-
-            log.info("Saving Exception VA to database...");
-            exceptionVa = virtualAccountRepository.save(exceptionVa);
-            log.info("✓ Saved EXCEPTION VA {} (ID: {}) for currency {}", 
-                exceptionVa.getVaNumber(), exceptionVa.getId(), currency);
-
-            // Update parent node child count - use safe increment
-            // if (parentNode.getChildCount() == null) {
-            //     parentNode.setChildCount(1);
-            // } else {
-            //     parentNode.setChildCount(parentNode.getChildCount() + 1);
-            // }
-            // nodeRepository.save(parentNode);
-
-            return exceptionVa;
-            
-        } catch (Exception e) {
-            log.error("Failed to create Exception VA for {}: {} - {}", 
-                currency, e.getClass().getSimpleName(), e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     /**
      * Create a sample aggregation path from Level 2 to hierarchyDepth-1.
@@ -1500,111 +1204,30 @@ public class HierarchyService {
     // ========================================================================
 
     /**
-     * Initialize program hierarchy with auto-created Exception VAs.
+     * Create an Exception VA for a currency, if one doesn't already exist —
+     * the single canonical path for this operation. This used to be
+     * duplicated as {@code createExceptionVaForInit}, which never checked
+     * for an existing VA and never set {@code accountCategory}, leaving
+     * VAs created through it invisible to {@code SettlementVaResolverService}'s
+     * and {@code ReceivablesService}'s primary exception-VA lookups (both
+     * query by {@code accountCategory}, not {@code specialType}).
      */
-    public void initializeProgramHierarchy(UUID programId, String templateType) {
-        Program program = programRepository.findById(programId)
-            .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
-
-        applyTemplate(programId, templateType);
-
-        String currency = program.getCurrencyCode();
-        if (currency == null || currency.isEmpty()) {
-            currency = "AED";
-        }
-
-        HierarchyNode masterNode = findOrCreateCurrencyMasterNode(program, currency);
-        createExceptionVaIfNotExists(program, masterNode, currency);
-
-        log.info("Initialized hierarchy for program {} with currency {}", 
-            program.getProgramCode(), currency);
-    }
-
-    /**
-     * Initialize program hierarchy for multiple currencies.
-     */
-    public void initializeProgramHierarchyMultiCurrency(UUID programId, String templateType, List<String> currencies) {
-        Program program = programRepository.findById(programId)
-            .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
-
-        applyTemplate(programId, templateType);
-
-        for (String currency : currencies) {
-            HierarchyNode masterNode = findOrCreateCurrencyMasterNode(program, currency);
-            createExceptionVaIfNotExists(program, masterNode, currency);
-        }
-
-        log.info("Initialized hierarchy for program {} with {} currencies", 
-            program.getProgramCode(), currencies.size());
-    }
-
-    /**
-     * Find or create the L1 Master node for a currency.
-     */
-    private HierarchyNode findOrCreateCurrencyMasterNode(Program program, String currency) {
-        String nodeCode = currency + "-MASTER";
-        
-        Optional<HierarchyNode> existingOpt = nodeRepository
-            .findByProgramIdAndLevelNumber(program.getId(), 1)
-            .stream()
-            .filter(n -> n.getCurrencyCode() != null && n.getCurrencyCode().equals(currency))
-            .findFirst();
-        
-        if (existingOpt.isPresent()) {
-            return existingOpt.get();
-        }
-
-        String path = "/" + program.getProgramCode() + "/" + currency;
-        
-        HierarchyNode masterNode = HierarchyNode.builder()
-            .programId(program.getId())
-            .parentId(null)
-            .levelNumber(1)
-            .nodeCode(nodeCode)
-            .nodeName(currency + " Master")
-            .nodeType(HierarchyNodeType.MASTER)
-            .currencyCode(currency)
-            .dimensionValue(currency)
-            .materializedPath(path)
-            .isLeaf(false)
-            .childCount(0)
-            .status("ACTIVE")
-            .aggregatedBalance(BigDecimal.ZERO)
-            .availableBalance(BigDecimal.ZERO)
-            .build();
-
-        masterNode = nodeRepository.save(masterNode);
-
-        if (program.getRootHierarchyNodeId() == null) {
-            program.setRootHierarchyNodeId(masterNode.getId());
-            programRepository.save(program);
-        }
-
-        log.info("Created L1 master node {} for program {} currency {}", 
-            nodeCode, program.getProgramCode(), currency);
-
-        return masterNode;
-    }
-
-    /**
-     * Create Exception VA for a currency (system-managed).
-     */
-    private VirtualAccount createExceptionVaIfNotExists(Program program, 
-                                                         HierarchyNode masterNode, 
+    private VirtualAccount createExceptionVaIfNotExists(Program program,
+                                                         HierarchyNode parentNode,
                                                          String currency) {
         List<VirtualAccount> programVas = virtualAccountRepository.findByProgramId(program.getId());
         Optional<VirtualAccount> existingException = programVas.stream()
-            .filter(va -> va.getSpecialType() == VirtualAccount.VaSpecialType.EXCEPTION 
+            .filter(va -> va.getSpecialType() == VirtualAccount.VaSpecialType.EXCEPTION
                        && currency.equals(va.getCurrencyCode()))
             .findFirst();
 
         if (existingException.isPresent()) {
-            log.debug("Exception VA already exists for program {} currency {}", 
+            log.debug("Exception VA already exists for program {} currency {}",
                 program.getProgramCode(), currency);
             return existingException.get();
         }
 
-        String programPrefix = program.getProgramCode().length() > 8 
+        String programPrefix = program.getProgramCode().length() > 8
             ? program.getProgramCode().substring(0, 8).toUpperCase()
             : program.getProgramCode().toUpperCase();
         String vaNumber = "EXCEPTION-" + currency + "-" + programPrefix;
@@ -1616,20 +1239,48 @@ public class HierarchyService {
             .corporateId(program.getCorporateId())
             .physicalAccountId(program.getPhysicalAccountId())
             .currencyCode(currency)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .accountCategory(VirtualAccount.AccountCategory.EXCEPTION)
             .specialType(VirtualAccount.VaSpecialType.EXCEPTION)
-            .hierarchyNodeId(masterNode.getId())
-            .hierarchyPath(masterNode.getMaterializedPath() + "/EXCEPTION")
+            .hierarchyNodeId(parentNode.getId())
+            .hierarchyPath(parentNode.getMaterializedPath() + "/EXCEPTION-" + currency)
+            .hierarchyPathVa("/EXCEPTION-" + currency)
+            .hierarchyLevel(1)
+            .parentAccountId(parentNode.getVirtualAccountId())
             .status(VirtualAccount.VaStatus.ACTIVE)
+            // Zero-initialize every numeric field the entity doesn't default
+            // on its own — omitting these previously caused NPEs downstream.
             .currentBalance(BigDecimal.ZERO)
             .availableBalance(BigDecimal.ZERO)
+            .aggregatedBalance(BigDecimal.ZERO)
+            .aggregatedBalanceBase(BigDecimal.ZERO)
+            .heldBalance(BigDecimal.ZERO)
+            .mirrorBalance(BigDecimal.ZERO)
+            .balanceInBase(BigDecimal.ZERO)
+            .dailyUsed(BigDecimal.ZERO)
+            .weeklyUsed(BigDecimal.ZERO)
+            .monthlyUsed(BigDecimal.ZERO)
+            .annualUsed(BigDecimal.ZERO)
+            .dailyTopupUsed(BigDecimal.ZERO)
+            .monthlyTopupUsed(BigDecimal.ZERO)
+            .creditLimitUtilized(BigDecimal.ZERO)
+            .pointsBalance(BigDecimal.ZERO)
+            .pendingPoints(BigDecimal.ZERO)
+            .lifetimePoints(BigDecimal.ZERO)
+            .transactionCount(0)
+            .topupCount(0)
+            .withdrawalCount(0)
+            .kycLevel(0)
+            .kycVerified(false)
+            .valueType(VirtualAccount.ValueType.FIAT)
             .build();
 
         exceptionVa = virtualAccountRepository.save(exceptionVa);
 
-        masterNode.setChildCount(masterNode.getChildCount() + 1);
-        nodeRepository.save(masterNode);
+        parentNode.setChildCount(parentNode.getChildCount() + 1);
+        nodeRepository.save(parentNode);
 
-        log.info("Created Exception VA {} for program {} currency {}", 
+        log.info("Created Exception VA {} for program {} currency {}",
             exceptionVa.getVaNumber(), program.getProgramCode(), currency);
 
         return exceptionVa;
@@ -1937,324 +1588,6 @@ public class HierarchyService {
         if (level == 1) return HierarchyNodeType.MASTER;
         if (level >= maxDepth) return HierarchyNodeType.VIRTUAL_ACCOUNT;
         return HierarchyNodeType.CONSOLIDATION;
-    }
-
-    /**
-     * Build tree structure without Currency Mirrors (legacy method).
-     */
-    private List<TreeNodeResponse> buildTreeStructure(List<HierarchyNode> nodes) {
-        return buildTreeStructureWithMirrors(nodes, Collections.emptyList(), null);
-    }
-
-    /**
-     * Build tree structure with Currency Mirrors included as children.
-     *
-     * Currency Mirrors are attached to their parent node based on:
-     * 1. hierarchyNodeId - Direct linkage to a HierarchyNode
-     * 2. parentAccountId chain - Following VA parent links to find the HierarchyNode
-     *
-     * M-Nodes appear as children of CONSOLIDATION/MASTER nodes with a special
-     * CURRENCY_MIRROR nodeType and distinctive icon/color.
-     *
-     * @param nodes List of HierarchyNode entities
-     * @param currencyMirrors List of Currency Mirror VAs
-     * @param baseCurrency Program's base currency
-     * @return Tree structure with Currency Mirrors included
-     */
-    private List<TreeNodeResponse> buildTreeStructureWithMirrors(
-            List<HierarchyNode> nodes,
-            List<VirtualAccount> currencyMirrors,
-            String baseCurrency) {
-
-        Map<UUID, TreeNodeResponse> nodeMap = new HashMap<>();
-        Map<UUID, UUID> vaIdToNodeId = new HashMap<>();  // Map VA ID to HierarchyNode ID
-        List<TreeNodeResponse> roots = new ArrayList<>();
-
-        // First pass: create tree nodes for all hierarchy nodes
-        for (HierarchyNode node : nodes) {
-            TreeNodeResponse treeNode = TreeNodeResponse.builder()
-                .id(node.getId())
-                .nodeCode(node.getNodeCode())
-                .nodeName(node.getNodeName())
-                .nodeType(node.getNodeType())
-                .levelNumber(node.getLevelNumber())
-                .currencyCode(node.getCurrencyCode())
-                .aggregatedBalance(node.getAggregatedBalance())
-                .availableBalance(node.getAvailableBalance())
-                .status(node.getStatus())
-                .icon(node.getIcon())
-                .color(node.getColor())
-                .isLeaf(node.getIsLeaf())
-                .expanded(node.getLevelNumber() <= 3)
-                .virtualAccountId(node.getVirtualAccountId())
-                .isCurrencyMirror(false)
-                .baseCurrency(baseCurrency)
-                .children(new ArrayList<>())
-                .build();
-            nodeMap.put(node.getId(), treeNode);
-
-            // Track VA ID to Node ID mapping
-            if (node.getVirtualAccountId() != null) {
-                vaIdToNodeId.put(node.getVirtualAccountId(), node.getId());
-            }
-        }
-
-        // Second pass: attach hierarchy nodes to their parents
-        for (HierarchyNode node : nodes) {
-            TreeNodeResponse treeNode = nodeMap.get(node.getId());
-            if (node.getParentId() == null) {
-                roots.add(treeNode);
-            } else {
-                TreeNodeResponse parent = nodeMap.get(node.getParentId());
-                if (parent != null) {
-                    parent.getChildren().add(treeNode);
-                }
-            }
-        }
-
-        // Third pass: create and attach Currency Mirror nodes
-        if (currencyMirrors != null && !currencyMirrors.isEmpty()) {
-            log.info("Processing {} currency mirrors for tree attachment", currencyMirrors.size());
-
-            // Group mirrors by their parent hierarchy node
-            Map<UUID, List<VirtualAccount>> mirrorsByNodeId = new HashMap<>();
-
-            // Build a map of ROOT VA IDs to MASTER node IDs for fallback lookup
-            Map<UUID, UUID> rootVaToMasterNode = new HashMap<>();
-            for (HierarchyNode node : nodes) {
-                if (node.getNodeType() == HierarchyNodeType.MASTER ||
-                    (node.getLevelNumber() != null && node.getLevelNumber() == 1 && node.getParentId() == null)) {
-                    // This is a root/master node - find its linked VA
-                    if (node.getVirtualAccountId() != null) {
-                        rootVaToMasterNode.put(node.getVirtualAccountId(), node.getId());
-                    }
-                    // Also register by program's ROOT VA
-                    List<VirtualAccount> rootVas = virtualAccountRepository
-                        .findByProgramIdAndAccountCategory(node.getProgramId(), AccountCategory.ROOT);
-                    for (VirtualAccount rootVa : rootVas) {
-                        rootVaToMasterNode.put(rootVa.getId(), node.getId());
-                    }
-                }
-            }
-            log.debug("Built rootVaToMasterNode map with {} entries", rootVaToMasterNode.size());
-
-            for (VirtualAccount mirror : currencyMirrors) {
-                UUID targetNodeId = findTargetNodeForMirror(mirror, vaIdToNodeId, nodes);
-
-                // Fallback: check if parentAccountId is a ROOT VA
-                if (targetNodeId == null && mirror.getParentAccountId() != null) {
-                    targetNodeId = rootVaToMasterNode.get(mirror.getParentAccountId());
-                    if (targetNodeId != null) {
-                        log.debug("Mirror {} found target via rootVaToMasterNode fallback: {}",
-                            mirror.getVaNumber(), targetNodeId);
-                    }
-                }
-
-                if (targetNodeId != null) {
-                    mirrorsByNodeId.computeIfAbsent(targetNodeId, k -> new ArrayList<>()).add(mirror);
-                } else {
-                    log.warn("Currency Mirror {} (parentAccountId={}, hierarchyNodeId={}) has no target hierarchy node - skipping from tree",
-                        mirror.getVaNumber(), mirror.getParentAccountId(), mirror.getHierarchyNodeId());
-                }
-            }
-
-            // Attach mirrors to their parent nodes
-            for (Map.Entry<UUID, List<VirtualAccount>> entry : mirrorsByNodeId.entrySet()) {
-                UUID nodeId = entry.getKey();
-                List<VirtualAccount> mirrors = entry.getValue();
-                TreeNodeResponse parentNode = nodeMap.get(nodeId);
-
-                if (parentNode != null) {
-                    // Sort mirrors by currency for consistent display
-                    mirrors.sort(Comparator.comparing(VirtualAccount::getCurrencyCode));
-
-                    for (VirtualAccount mirror : mirrors) {
-                        TreeNodeResponse mirrorNode = createMirrorTreeNode(mirror, parentNode, baseCurrency);
-                        // Insert mirrors at the beginning of children (before other nodes)
-                        parentNode.getChildren().add(0, mirrorNode);
-                    }
-
-                    log.debug("Attached {} currency mirrors to node {} ({})",
-                        mirrors.size(), parentNode.getNodeCode(), nodeId);
-                }
-            }
-        }
-
-        return roots;
-    }
-
-    /**
-     * Find the target HierarchyNode ID for a Currency Mirror.
-     *
-     * Strategy:
-     * 1. If mirror has hierarchyNodeId, use that directly
-     * 2. If mirror has parentAccountId, find the VA's linked HierarchyNode
-     * 3. For ROOT-level mirrors, find the ROOT/MASTER node
-     * 4. Fall back to finding via hierarchy level traversal
-     */
-    private UUID findTargetNodeForMirror(
-            VirtualAccount mirror,
-            Map<UUID, UUID> vaIdToNodeId,
-            List<HierarchyNode> nodes) {
-
-        // Strategy 1: Direct hierarchyNodeId linkage
-        if (mirror.getHierarchyNodeId() != null) {
-            log.trace("Mirror {} found target via hierarchyNodeId: {}",
-                mirror.getVaNumber(), mirror.getHierarchyNodeId());
-            return mirror.getHierarchyNodeId();
-        }
-
-        // Strategy 2: Find via parentAccountId
-        if (mirror.getParentAccountId() != null) {
-            // Direct lookup in our VA-to-Node map
-            UUID nodeId = vaIdToNodeId.get(mirror.getParentAccountId());
-            if (nodeId != null) {
-                log.trace("Mirror {} found target via vaIdToNodeId map: {}",
-                    mirror.getVaNumber(), nodeId);
-                return nodeId;
-            }
-
-            // Parent VA might have hierarchyNodeId set
-            VirtualAccount parentVa = virtualAccountRepository.findById(mirror.getParentAccountId()).orElse(null);
-            if (parentVa != null) {
-                // Check if parent has hierarchyNodeId
-                if (parentVa.getHierarchyNodeId() != null) {
-                    log.trace("Mirror {} found target via parent VA's hierarchyNodeId: {}",
-                        mirror.getVaNumber(), parentVa.getHierarchyNodeId());
-                    return parentVa.getHierarchyNodeId();
-                }
-
-                // Strategy 3: For ROOT-level mirrors, find the MASTER node
-                if (parentVa.getAccountCategory() == AccountCategory.ROOT) {
-                    for (HierarchyNode node : nodes) {
-                        if (node.getNodeType() == HierarchyNodeType.MASTER) {
-                            log.trace("Mirror {} (ROOT-level) found MASTER node: {} ({})",
-                                mirror.getVaNumber(), node.getId(), node.getNodeCode());
-                            return node.getId();
-                        }
-                    }
-                    // Also try finding by level 1
-                    for (HierarchyNode node : nodes) {
-                        if (node.getLevelNumber() != null && node.getLevelNumber() == 1) {
-                            log.trace("Mirror {} (ROOT-level) found L1 node: {} ({})",
-                                mirror.getVaNumber(), node.getId(), node.getNodeCode());
-                            return node.getId();
-                        }
-                    }
-                }
-
-                // For AGGREGATION parent, find matching node by VA ID search
-                if (parentVa.getAccountCategory() == AccountCategory.AGGREGATION) {
-                    for (HierarchyNode node : nodes) {
-                        if (parentVa.getId().equals(node.getVirtualAccountId())) {
-                            log.trace("Mirror {} found AGGREGATION node by VA match: {} ({})",
-                                mirror.getVaNumber(), node.getId(), node.getNodeCode());
-                            return node.getId();
-                        }
-                    }
-                }
-            }
-        }
-
-        // Strategy 4: Match by hierarchy level (if mirror has hierarchyLevel set)
-        if (mirror.getHierarchyLevel() != null) {
-            for (HierarchyNode node : nodes) {
-                if (node.getLevelNumber().equals(mirror.getHierarchyLevel()) &&
-                    node.getVirtualAccountId() != null) {
-                    // Found a node at same level - check if it's the parent
-                    VirtualAccount nodeVa = virtualAccountRepository.findById(node.getVirtualAccountId()).orElse(null);
-                    if (nodeVa != null &&
-                        (nodeVa.getAccountCategory() == AccountCategory.AGGREGATION ||
-                         nodeVa.getAccountCategory() == AccountCategory.ROOT)) {
-                        log.trace("Mirror {} found target via hierarchy level match: {} ({})",
-                            mirror.getVaNumber(), node.getId(), node.getNodeCode());
-                        return node.getId();
-                    }
-                }
-            }
-        }
-
-        log.debug("Mirror {} could not find target node (parentAccountId={}, hierarchyNodeId={}, level={})",
-            mirror.getVaNumber(), mirror.getParentAccountId(), mirror.getHierarchyNodeId(), mirror.getHierarchyLevel());
-        return null;
-    }
-
-    /**
-     * Create a TreeNodeResponse for a Currency Mirror VA.
-     */
-    private TreeNodeResponse createMirrorTreeNode(
-            VirtualAccount mirror,
-            TreeNodeResponse parentNode,
-            String baseCurrency) {
-
-        // Determine icon and color based on currency
-        String icon = "💱";  // Currency exchange icon
-        String color = determineMirrorColor(mirror.getCurrencyCode(), baseCurrency);
-
-        // Node code: M-{currency} or M-{parentCode}-{currency}
-        String nodeCode = "M-" + mirror.getCurrencyCode();
-        if (parentNode.getNodeCode() != null && !parentNode.getNodeCode().isEmpty()) {
-            nodeCode = "M-" + parentNode.getNodeCode() + "-" + mirror.getCurrencyCode();
-        }
-
-        // Node name
-        String nodeName = mirror.getCurrencyCode() + " Currency Mirror";
-        if (baseCurrency != null && baseCurrency.equals(mirror.getCurrencyCode())) {
-            nodeName = mirror.getCurrencyCode() + " Base Currency Mirror";
-            icon = "🏦";  // Bank icon for base currency
-        }
-
-        return TreeNodeResponse.builder()
-            .id(mirror.getId())
-            .nodeCode(nodeCode)
-            .nodeName(nodeName)
-            .nodeType(HierarchyNodeType.CURRENCY_MIRROR)
-            .levelNumber(parentNode.getLevelNumber())  // Same level as parent (shown as child visually)
-            .currencyCode(mirror.getCurrencyCode())
-            .aggregatedBalance(mirror.getAggregatedBalance())
-            .availableBalance(mirror.getAvailableBalance())
-            .status(mirror.getStatus() != null ? mirror.getStatus().name() : "ACTIVE")
-            .icon(icon)
-            .color(color)
-            .isLeaf(true)  // Currency Mirrors don't have children in the hierarchy
-            .expanded(false)
-            .virtualAccountId(mirror.getId())
-            .vaNumber(mirror.getVaNumber())
-            .isCurrencyMirror(true)
-            .baseCurrency(baseCurrency)
-            .mirrorBalance(mirror.getMirrorBalance())
-            .balanceInBase(mirror.getBalanceInBase())
-            .fxRate(mirror.getFxRate())
-            .parentMirrorId(mirror.getParentAccountId())
-            .children(new ArrayList<>())  // Empty children list
-            .build();
-    }
-
-    /**
-     * Determine color for Currency Mirror based on currency.
-     */
-    private String determineMirrorColor(String currency, String baseCurrency) {
-        if (currency == null) return "#808080";  // Gray for unknown
-
-        // Base currency gets a distinct color
-        if (currency.equals(baseCurrency)) {
-            return "#2E7D32";  // Green for base currency
-        }
-
-        // Color map for common currencies
-        return switch (currency.toUpperCase()) {
-            case "USD" -> "#1565C0";  // Blue
-            case "EUR" -> "#6A1B9A";  // Purple
-            case "GBP" -> "#C62828";  // Red
-            case "JPY" -> "#EF6C00";  // Orange
-            case "CHF" -> "#00695C";  // Teal
-            case "AUD" -> "#558B2F";  // Light Green
-            case "CAD" -> "#D84315";  // Deep Orange
-            case "SGD" -> "#00838F";  // Cyan
-            case "AED" -> "#2E7D32";  // Green (UAE)
-            case "SAR" -> "#4527A0";  // Deep Purple (Saudi)
-            default -> "#455A64";  // Blue Grey for others
-        };
     }
 
     private LevelConfigResponse toResponse(HierarchyLevelConfig config) {

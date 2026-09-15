@@ -212,35 +212,55 @@ public class SettlementVaController {
 
     /**
      * Initialize program hierarchy with auto Exception VAs.
+     *
+     * <p>Delegates to {@code HierarchyService.initializeHierarchyWithResponse}
+     * — the same full initializer {@code ProgramService}/{@code HierarchyController}
+     * use — instead of the lightweight, node-only path this used to call.
+     * That path never created a ROOT {@code VirtualAccount}, only a level-1
+     * node, but still set {@code program.rootHierarchyNodeId}; the full
+     * initializer refuses to run once that field is set ("ALREADY_INITIALIZED"),
+     * so a program bootstrapped through this endpoint could never get a
+     * real ROOT VA afterward. {@code createCurrencyMirror} stays {@code false}
+     * to preserve this endpoint's existing behavior exactly — it never
+     * created currency mirrors before, only exception VAs.
      */
     @PostMapping("/initialize")
     public ResponseEntity<ApiResponse<SettlementVaListResponse>> initializeHierarchy(
             @RequestBody InitializeHierarchyRequest request) {
-        
+
         if (request.getProgramId() == null) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Program ID is required"));
         }
-        
-        log.info("Initializing hierarchy for program {} with template {}", 
+
+        log.info("Initializing hierarchy for program {} with template {}",
             request.getProgramId(), request.getTemplateType());
-        
+
         try {
-            if (request.getCurrencies() != null && !request.getCurrencies().isEmpty()) {
-                hierarchyService.initializeProgramHierarchyMultiCurrency(
-                    request.getProgramId(),
-                    request.getTemplateType(),
-                    request.getCurrencies()
-                );
-            } else {
-                hierarchyService.initializeProgramHierarchy(
-                    request.getProgramId(),
-                    request.getTemplateType()
-                );
+            List<String> currencies = request.getCurrencies();
+            String baseCurrency = (currencies != null && !currencies.isEmpty()) ? currencies.get(0) : null;
+            List<String> additionalCurrencies = (currencies != null && currencies.size() > 1)
+                ? currencies.subList(1, currencies.size())
+                : Collections.emptyList();
+
+            com.bank.vam.dto.hierarchy.HierarchyDto.InitializeHierarchyRequest fullRequest =
+                com.bank.vam.dto.hierarchy.HierarchyDto.InitializeHierarchyRequest.builder()
+                    .baseCurrency(baseCurrency)
+                    .templateType(request.getTemplateType())
+                    .createExceptionVa(true)
+                    .createCurrencyMirror(false)
+                    .additionalExceptionCurrencies(additionalCurrencies)
+                    .build();
+
+            com.bank.vam.dto.hierarchy.HierarchyDto.InitializationResponse initResult =
+                hierarchyService.initializeHierarchyWithResponse(request.getProgramId(), fullRequest);
+
+            if (!initResult.isSuccess()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error(initResult.getMessage()));
             }
-            
+
             log.info("Hierarchy initialized successfully for program {}", request.getProgramId());
-            
+
             // Return updated list
             return getSettlementVas(request.getProgramId());
         } catch (Exception e) {

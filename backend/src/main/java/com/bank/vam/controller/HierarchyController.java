@@ -586,50 +586,13 @@ public class HierarchyController {
 
     // ------------------------------------------------------------------------
     // Tree Operations
+    //
+    // getTree/getSubtree/getChildren/getBreadcrumb/searchNodes were removed
+    // 2026-09-15 — confirmed zero callers (frontend or backend). The tree
+    // this codebase's frontend actually renders comes from
+    // BalanceStructureService.getHierarchy (a VA-only tree, independent of
+    // HierarchyNodeRepository). See the VAM Context Ledger artifact.
     // ------------------------------------------------------------------------
-
-    @GetMapping("/api/v1/programs/{programId}/hierarchy/tree")
-    @Operation(summary = "Get full hierarchy tree", description = "Get the complete hierarchy tree for a program")
-    public ResponseEntity<TreeResponse> getTree(@PathVariable UUID programId) {
-        TreeResponse tree = hierarchyService.getTree(programId);
-        return ResponseEntity.ok(tree);
-    }
-
-    @GetMapping("/api/v1/programs/{programId}/hierarchy/nodes/{nodeId}/subtree")
-    @Operation(summary = "Get subtree", description = "Get the subtree under a specific node")
-    public ResponseEntity<List<TreeNodeResponse>> getSubtree(
-            @PathVariable UUID programId,
-            @PathVariable UUID nodeId) {
-        List<TreeNodeResponse> subtree = hierarchyService.getSubtree(nodeId);
-        return ResponseEntity.ok(subtree);
-    }
-
-    @GetMapping("/api/v1/programs/{programId}/hierarchy/nodes/{nodeId}/children")
-    @Operation(summary = "Get children", description = "Get direct children of a node")
-    public ResponseEntity<List<NodeResponse>> getChildren(
-            @PathVariable UUID programId,
-            @PathVariable UUID nodeId) {
-        List<NodeResponse> children = hierarchyService.getChildren(nodeId);
-        return ResponseEntity.ok(children);
-    }
-
-    @GetMapping("/api/v1/programs/{programId}/hierarchy/nodes/{nodeId}/breadcrumb")
-    @Operation(summary = "Get breadcrumb", description = "Get the ancestor path for a node")
-    public ResponseEntity<BreadcrumbResponse> getBreadcrumb(
-            @PathVariable UUID programId,
-            @PathVariable UUID nodeId) {
-        BreadcrumbResponse breadcrumb = hierarchyService.getBreadcrumb(nodeId);
-        return ResponseEntity.ok(breadcrumb);
-    }
-
-    @GetMapping("/api/v1/programs/{programId}/hierarchy/search")
-    @Operation(summary = "Search nodes", description = "Search hierarchy nodes by name or code")
-    public ResponseEntity<List<NodeResponse>> searchNodes(
-            @PathVariable UUID programId,
-            @RequestParam String q) {
-        List<NodeResponse> results = hierarchyService.searchNodes(programId, q);
-        return ResponseEntity.ok(results);
-    }
 
     // ------------------------------------------------------------------------
     // Balance Operations
