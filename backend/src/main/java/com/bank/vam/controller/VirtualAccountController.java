@@ -2,6 +2,7 @@ package com.bank.vam.controller;
 
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.ProgramTypeConfigDto;
+import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.entity.Program;
 import com.bank.vam.entity.VirtualAccount;
@@ -12,6 +13,7 @@ import com.bank.vam.entity.hierarchy.HierarchyNode;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.ProgramRepository;
+import com.bank.vam.service.TransactionService;
 import com.bank.vam.service.VirtualAccountService;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
@@ -66,6 +68,7 @@ import java.util.stream.Collectors;
 public class VirtualAccountController {
 
     private final VirtualAccountService virtualAccountService;
+    private final TransactionService transactionService;
     private final VirtualAccountRepository virtualAccountRepository;
     private final ProgramRepository programRepository;
     private final HierarchyNodeRepository hierarchyNodeRepository;
@@ -882,16 +885,27 @@ public class VirtualAccountController {
     /**
      * Credit account
      * POST /api/v1/virtual-accounts/{id}/credit
+     *
+     * Delegates to {@link TransactionService#credit}, the audited path —
+     * this used to call {@code VirtualAccountService.credit}, which mutated
+     * the balance fields directly with no {@code Transaction} record and no
+     * active-status check, unlike every other credit path in the system.
      */
     @PostMapping("/{id}/credit")
-    @Operation(summary = "Credit account", 
+    @Operation(summary = "Credit account",
                description = "Add funds to the account")
     public ResponseEntity<ApiResponse<VirtualAccountDto.Response>> credit(
             @PathVariable UUID id,
-            @Parameter(description = "Amount to credit") 
+            @Parameter(description = "Amount to credit")
             @RequestParam BigDecimal amount) {
         log.info("Crediting VA: {} with amount: {}", id, amount);
-        VirtualAccount va = virtualAccountService.credit(id, amount);
+        transactionService.credit(TransactionDto.CreditRequest.builder()
+                .vaId(id)
+                .amount(amount)
+                .description("Manual credit via Virtual Account API")
+                .channel("ADMIN")
+                .build());
+        VirtualAccount va = virtualAccountService.getById(id);
         return ResponseEntity.ok(ApiResponse.success(
                 virtualAccountService.toResponse(va),
                 "Credited " + amount));
@@ -900,16 +914,27 @@ public class VirtualAccountController {
     /**
      * Debit account
      * POST /api/v1/virtual-accounts/{id}/debit
+     *
+     * Delegates to {@link TransactionService#debit}, the audited path — see
+     * {@link #credit} javadoc. This also gains a real funds-availability
+     * check the old path never had (it only checked
+     * {@code hasSufficientBalance}, not held/reserved amounts).
      */
     @PostMapping("/{id}/debit")
-    @Operation(summary = "Debit account", 
+    @Operation(summary = "Debit account",
                description = "Deduct funds from the account (validates sufficient balance)")
     public ResponseEntity<ApiResponse<VirtualAccountDto.Response>> debit(
             @PathVariable UUID id,
-            @Parameter(description = "Amount to debit") 
+            @Parameter(description = "Amount to debit")
             @RequestParam BigDecimal amount) {
         log.info("Debiting VA: {} with amount: {}", id, amount);
-        VirtualAccount va = virtualAccountService.debit(id, amount);
+        transactionService.debit(TransactionDto.DebitRequest.builder()
+                .vaId(id)
+                .amount(amount)
+                .description("Manual debit via Virtual Account API")
+                .channel("ADMIN")
+                .build());
+        VirtualAccount va = virtualAccountService.getById(id);
         return ResponseEntity.ok(ApiResponse.success(
                 virtualAccountService.toResponse(va),
                 "Debited " + amount));

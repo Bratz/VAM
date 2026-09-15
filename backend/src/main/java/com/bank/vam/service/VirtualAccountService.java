@@ -3749,25 +3749,12 @@ public class VirtualAccountService {
         virtualAccountRepository.save(va);
     }
 
-    @Transactional
-    public VirtualAccount credit(UUID id, BigDecimal amount) {
-        VirtualAccount va = getById(id);
-        va.credit(amount);
-        return virtualAccountRepository.save(va);
-    }
-
-    @Transactional
-    public VirtualAccount debit(UUID id, BigDecimal amount) {
-        VirtualAccount va = getById(id);
-        
-        if (!va.hasSufficientBalance(amount)) {
-            throw new BusinessException("Insufficient balance. Available: " + va.getAvailableBalance());
-        }
-        
-        va.debit(amount);
-        va.recordSpending(amount);
-        return virtualAccountRepository.save(va);
-    }
+    // credit/debit were removed 2026-09-15 — they mutated currentBalance/
+    // availableBalance directly with no Transaction record, no active-status
+    // check, and no funds-availability check, unlike every other balance
+    // mutation path in this codebase. VirtualAccountController now calls
+    // TransactionService.credit/debit instead, which creates a real ledger
+    // row. See the VAM Context Ledger artifact.
 
     // ========================================================================
     // PROGRAM TYPE CONFIGURATION (existing - unchanged)
