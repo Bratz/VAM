@@ -2,14 +2,21 @@ package com.bank.vam.service.treasury;
 
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.dto.treasury.IhbDto;
+import com.bank.vam.entity.PhysicalAccount;
+import com.bank.vam.entity.Program;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.credit.InterestConfiguration;
+import com.bank.vam.entity.hierarchy.HierarchyNode;
+import com.bank.vam.entity.hierarchy.HierarchyNode.HierarchyNodeType;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.treasury.*;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.repository.PhysicalAccountRepository;
+import com.bank.vam.repository.ProgramRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.credit.InterestConfigurationRepository;
+import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.treasury.*;
 import com.bank.vam.service.tax.TaxService;
@@ -50,6 +57,12 @@ public class IhbUnifiedService {
     // ENHANCED: For WHT calculation on cross-border interest
     private final TaxService taxService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    // Moved from VirtualAccountService 2026-09-15 along with IHB Current
+    // Account creation — this domain logic belongs here, not in a generic
+    // VA service. See the VAM Context Ledger artifact.
+    private final HierarchyNodeRepository hierarchyNodeRepository;
+    private final ProgramRepository programRepository;
+    private final PhysicalAccountRepository physicalAccountRepository;
 
     // ========================================================================
     // IHB ENTITY MANAGEMENT
@@ -1118,5 +1131,1277 @@ public class IhbUnifiedService {
             .stream()
             .findFirst()
             .orElse(null);
+    }
+
+    // ========================================================================
+    // IHB CURRENT ACCOUNT CREATION
+    // ========================================================================
+
+    /**
+     * Create IHB Current Account for a participant entity.
+     *
+     * This creates an INTERCOMPANY VA that functions as the participant's
+     * current account at the In-House Bank (Treasury Center).
+     *
+     * Features:
+     * - Running balance (can go negative for overdraft)
+     * - Credit interest on positive balance
+     * - Debit interest on negative balance
+     * - Overdraft limit from entity's IHB credit limit
+     *
+     * KEY DESIGN: Uses TRANSACTION category with ihbParticipant=true.
+     * This allows any operational VA to participate in IHB interest schemes,
+     * rather than requiring a separate INTERCOMPANY category.
+     *
+     * @param request IHB Current Account creation request
+     * @return Created VirtualAccount with accountCategory=TRANSACTION and ihbParticipant=true
+     */
+    @Transactional
+    public VirtualAccount createIhbCurrentAccount(VirtualAccountDto.IhbCurrentAccountRequest request) {
+        log.info("Creating IHB Current Account for entity: {}, parentNodeId={}, programId={}",
+            request.getParticipantEntityId(), request.getParentNodeId(), request.getProgramId());
+
+        // 1. Validate participant entity is IHB-enabled
+        LegalEntity participant = legalEntityRepository.findById(request.getParticipantEntityId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Participant entity not found: " + request.getParticipantEntityId()));
+
+        if (!participant.isIhbEnabled()) {
+            throw new BusinessException("Entity is not IHB-enabled: " + participant.getEntityCode());
+        }
+
+        // 2. Resolve or validate IHB Program
+        // IHB is a Program Type, so IHB accounts MUST belong to an IHB program
+        UUID ihbProgramId = resolveIhbProgram(participant.getCorporateId(), request.getProgramId());
+
+        // 3. Get Treasury Center for this corporate
+        LegalEntity treasury = legalEntityRepository
+            .findByCorporateIdAndCanLendTrue(participant.getCorporateId())
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new BusinessException(
+                "No Treasury Center found for corporate: " + participant.getCorporateId()));
+
+        if (!treasury.canLend()) {
+            throw new BusinessException("Treasury Center cannot lend: " + treasury.getEntityCode());
+        }
+
+        // 5. Multiple IHB accounts per entity/currency are allowed
+        // Use case: Entity may have separate IHB accounts for Operating, Payroll, Treasury Reserve, etc.
+        // Each account participates independently in interest schemes.
+        // Entity's total IHB position = sum of all their IHB-enabled VAs.
+        long existingCount = virtualAccountRepository
+            .countByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(
+                participant.getId(),
+                request.getCurrencyCode());
+
+        // 6. Resolve parent hierarchy node and VA
+        // ============================================================================
+        // IHB CONCEPTUAL MODEL:
+        // - Treasury Center IS the In-House Bank (offers accounts to subsidiaries)
+        // - Subsidiary is the CUSTOMER (has account AT the Treasury)
+        // - IHB Current Account should automatically appear under Treasury's hierarchy
+        //
+        // HIERARCHY RESOLUTION:
+        // 1. If parentNodeId provided: Use the explicitly selected parent (backward compatibility)
+        // 2. If NOT provided: Auto-discover Treasury's aggregation VA for the given currency
+        //    The IHB Current Account is placed under Treasury because:
+        //    - Treasury is the "bank" offering IHB accounts
+        //    - Subsidiaries are "customers" with accounts at this internal bank
+        // ============================================================================
+        HierarchyNode parentHierarchyNode = null;
+        VirtualAccount parentVa = null;
+
+        if (request.getParentNodeId() != null) {
+            // EXPLICIT PARENT: User selected a specific parent node
+            // Frontend sends VA ID (not hierarchy node ID) because balance structure API returns VA IDs
+            parentHierarchyNode = hierarchyNodeRepository.findByVirtualAccountId(request.getParentNodeId())
+                .orElseGet(() -> hierarchyNodeRepository.findById(request.getParentNodeId()).orElse(null));
+
+            if (parentHierarchyNode != null && parentHierarchyNode.getVirtualAccountId() != null) {
+                parentVa = virtualAccountRepository.findById(parentHierarchyNode.getVirtualAccountId()).orElse(null);
+                log.info("Found parent hierarchy node: {} with VA: {}",
+                    parentHierarchyNode.getNodeCode(), parentVa != null ? parentVa.getVaNumber() : "N/A");
+            }
+
+            // Fallback: If no hierarchy node found, try to find the VA directly by the provided ID
+            if (parentVa == null) {
+                parentVa = virtualAccountRepository.findById(request.getParentNodeId()).orElse(null);
+                if (parentVa != null) {
+                    log.info("Found parent VA directly (no hierarchy node): {}", parentVa.getVaNumber());
+                }
+            }
+        }
+
+        // AUTO-DISCOVERY: If no explicit parent, place under Treasury's hierarchy
+        // Since Treasury IS the In-House Bank, IHB Current Accounts belong under Treasury
+        if (parentVa == null) {
+            log.info("No explicit parent provided. Auto-discovering Treasury {} hierarchy for currency {}",
+                treasury.getEntityCode(), request.getCurrencyCode());
+
+            // Find Treasury's aggregation/root VA for this currency
+            List<VirtualAccount> treasuryVas = virtualAccountRepository.findByOwningEntityIdAndCurrencyCode(
+                treasury.getId(), request.getCurrencyCode());
+
+            // Prefer AGGREGATION, then ROOT, then any VA with a hierarchy node
+            parentVa = treasuryVas.stream()
+                .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.AGGREGATION)
+                .findFirst()
+                .orElseGet(() -> treasuryVas.stream()
+                    .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.ROOT)
+                    .findFirst()
+                    .orElseGet(() -> treasuryVas.stream()
+                        .filter(va -> va.getHierarchyNodeId() != null)
+                        .findFirst()
+                        .orElse(null)));
+
+            if (parentVa != null) {
+                // Try to find the hierarchy node for this Treasury VA
+                if (parentVa.getHierarchyNodeId() != null) {
+                    parentHierarchyNode = hierarchyNodeRepository.findById(parentVa.getHierarchyNodeId()).orElse(null);
+                } else {
+                    parentHierarchyNode = hierarchyNodeRepository.findByVirtualAccountId(parentVa.getId()).orElse(null);
+                }
+
+                log.info("Auto-discovered Treasury parent: VA={}, hierarchyNode={}",
+                    parentVa.getVaNumber(),
+                    parentHierarchyNode != null ? parentHierarchyNode.getNodeCode() : "N/A");
+            } else {
+                log.warn("No suitable Treasury VA found for currency {} to auto-place IHB Current Account. " +
+                    "The account will be created without hierarchy linking.", request.getCurrencyCode());
+            }
+        }
+
+        // 7. Ensure Treasury has a Settlement VA for this currency (required for IHB settlement)
+        // ============================================================================
+        // The Treasury Settlement VA is the counterparty for all IHB transactions:
+        // - Deposits: Subsidiary → Treasury Settlement VA
+        // - Loans: Treasury Settlement VA → Subsidiary
+        // - Interest Settlement: Posted via Treasury Settlement VA
+        // If Treasury doesn't have one for this currency, auto-create it.
+        // ============================================================================
+        VirtualAccount treasurySettlementVa = ensureTreasurySettlementVa(
+            treasury, request.getCurrencyCode(), ihbProgramId, parentVa, parentHierarchyNode);
+
+        // 8. IHB Current Accounts are NOTIONAL/VIRTUAL - no physical account needed
+        // ============================================================================
+        // IHB (In-House Bank) Flow:
+        // 1. Subsidiary deposits surplus cash → IHB Current Account balance increases (credit)
+        // 2. Subsidiary borrows from Treasury → IHB Current Account balance decreases (debit)
+        // 3. Daily interest accrues based on balance and configured rates
+        // 4. Monthly interest posting settles accrued amounts
+        //
+        // This is purely internal bookkeeping between Treasury and subsidiaries.
+        // No physical bank account involvement - physicalAccountId is intentionally NULL.
+        // ============================================================================
+
+        // 9. Get or create Interest Configuration for participant
+        InterestConfiguration interestConfig = getOrCreateIhbInterestConfig(
+            participant, treasury, request);
+
+        // 10. Determine credit limit
+        BigDecimal creditLimit = request.getCreditLimit() != null
+            ? request.getCreditLimit()
+            : (participant.getIhbCreditLimit() != null ? participant.getIhbCreditLimit() : BigDecimal.ZERO);
+
+        // 11. Generate IHB account number
+        String accountNumber = generateIhbCurrentAccountNumber(participant, request.getCurrencyCode());
+
+        // 12. Determine VA name
+        // If user provides a name, use it. Otherwise generate with sequence number for uniqueness.
+        String vaName;
+        if (request.getVaName() != null && !request.getVaName().isBlank()) {
+            vaName = request.getVaName();
+        } else if (existingCount > 0) {
+            // Add sequence number for additional accounts
+            vaName = "IHB Current - " + participant.getEntityName() + " (" + (existingCount + 1) + ")";
+        } else {
+            vaName = "IHB Current - " + participant.getEntityName();
+        }
+
+        // 13. Build the VA
+        // KEY: TRANSACTION category with ihbParticipant=true, always linked to IHB program
+        // NOTE: physicalAccountId is intentionally NULL - IHB accounts are notional/virtual
+        VirtualAccount va = VirtualAccount.builder()
+            // Identity
+            .vaNumber(accountNumber)
+            .vaName(vaName)
+            .corporateId(participant.getCorporateId())
+            .programId(ihbProgramId)  // Always set to resolved IHB program
+            // physicalAccountId intentionally not set - IHB is notional, no physical bank account
+            .currencyCode(request.getCurrencyCode())
+
+            // Account Classification - KEY: TRANSACTION with IHB flag
+            .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+
+            // IHB PARTICIPATION FLAG - The key change!
+            .ihbParticipant(true)
+            .ihbEnabledAt(LocalDateTime.now())
+            .ihbEnabledBy("SYSTEM")
+
+            // Ownership & Hierarchy
+            .owningEntityId(participant.getId())
+            .owningEntityCode(participant.getEntityCode())
+
+            // VA Hierarchy: Link to Treasury's aggregation VA
+            // parentVa is auto-discovered from Treasury's hierarchy if not explicitly selected
+            // This places the IHB Current Account under Treasury (the In-House Bank)
+            .parentAccountId(parentVa != null ? parentVa.getId() : null)
+
+            // Treasury Settlement VA: Omnibus Settlement VA for all IHB transactions
+            // This is the counterparty for 4-leg accounting: IHB Current Account → Treasury Settlement VA → Shadow VA
+            // Using treasuryPoolVaId field to store this reference for transaction routing
+            .treasuryPoolVaId(treasurySettlementVa != null ? treasurySettlementVa.getId() : null)
+
+            // Balances - Start at zero
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(creditLimit)
+            .heldBalance(BigDecimal.ZERO)
+
+            // Interest Configuration
+            .internalInterestConfigId(interestConfig.getId())
+            .effectiveCreditRate(interestConfig.getEffectiveCreditRate())
+            .effectiveDebitRate(interestConfig.getEffectiveDebitRate())
+            .penaltyRate(interestConfig.getPenaltyRate())
+
+            // Credit/Overdraft Limit
+            .effectiveCreditLimit(creditLimit)
+            .creditLimitAvailable(creditLimit)
+            .creditLimitUtilized(BigDecimal.ZERO)
+
+            // Interest Accrual - Start at zero
+            .accruedCreditInterest(BigDecimal.ZERO)
+            .accruedDebitInterest(BigDecimal.ZERO)
+
+            // IHB Sweep Configuration (from request or defaults)
+            .ihbSweepEnabled(Boolean.TRUE.equals(request.getIhbSweepEnabled()))
+            .targetCashBalance(request.getTargetCashBalance() != null
+                ? request.getTargetCashBalance() : BigDecimal.ZERO)
+            .ihbSweepFrequency(request.getIhbSweepFrequency() != null
+                ? request.getIhbSweepFrequency() : "DAILY")
+
+            // Status
+            .status(VirtualAccount.VaStatus.ACTIVE)
+
+            // Metadata
+            .externalReference(participant.getEntityCode() + "-IHB-" + request.getCurrencyCode())
+            .build();
+
+        va = virtualAccountRepository.save(va);
+        log.info("Created IHB Current Account: {} for entity {} (ihbParticipant=true) -> Treasury Settlement VA: {}",
+            va.getVaNumber(), participant.getEntityCode(),
+            treasurySettlementVa != null ? treasurySettlementVa.getVaNumber() : "N/A");
+
+        // 14. Create hierarchy node if parent hierarchy node was resolved earlier
+        // This enables the IHB Current Account to appear in the Treasury Hierarchy view
+        // IMPORTANT: Use parent node's programId (not IHB programId) so the VA appears in the correct hierarchy
+        if (parentHierarchyNode != null) {
+            log.info("Creating hierarchy node for IHB Current Account under parent: {} (program: {})",
+                parentHierarchyNode.getNodeCode(), parentHierarchyNode.getProgramId());
+
+            // Calculate hierarchy level
+            int newLevel = parentHierarchyNode.getLevelNumber() + 1;
+
+            // Generate unique node code
+            String nodeCode = "IHB-" + participant.getEntityCode() + "-" + request.getCurrencyCode();
+            // Check if node code already exists under this parent, add suffix if needed
+            long existingNodeCount = hierarchyNodeRepository.countByParentIdAndNodeCodeStartingWith(
+                parentHierarchyNode.getId(), nodeCode);
+            if (existingNodeCount > 0) {
+                nodeCode = nodeCode + "-" + (existingNodeCount + 1);
+            }
+            String materializedPath = parentHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+
+            // Create hierarchy node - USE PARENT'S PROGRAM ID
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(parentHierarchyNode.getProgramId())  // Use parent's program, not IHB program
+                .parentId(parentHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(va.getVaName())
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(request.getCurrencyCode())
+                .dimensionValue("IHB_CURRENT_ACCOUNT")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(va.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+            log.debug("Created hierarchy node for IHB Current Account: {} at path: {} (program: {})",
+                node.getNodeCode(), node.getMaterializedPath(), node.getProgramId());
+
+            // Update VA with hierarchy node ID, path, and PARENT'S PROGRAM
+            va.setHierarchyNodeId(node.getId());
+            va.setHierarchyPath(materializedPath);
+            va.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            va.setProgramId(parentHierarchyNode.getProgramId());  // Update VA to use parent's program
+            va = virtualAccountRepository.save(va);
+
+            // Update parent hierarchy node child count
+            parentHierarchyNode.setChildCount(parentHierarchyNode.getChildCount() != null ? parentHierarchyNode.getChildCount() + 1 : 1);
+            parentHierarchyNode.setIsLeaf(false);
+            hierarchyNodeRepository.save(parentHierarchyNode);
+
+            log.info("✓ Linked IHB Current Account {} to hierarchy at level {} under {} (program: {})",
+                va.getVaNumber(), newLevel, parentHierarchyNode.getNodeCode(), parentHierarchyNode.getProgramId());
+        } else if (parentVa != null) {
+            // Parent VA found but no hierarchy node - still set parentAccountId for VA hierarchy
+            log.info("Parent VA {} found but no hierarchy node. IHB Current Account will be linked via parentAccountId.",
+                parentVa.getVaNumber());
+        } else {
+            log.warn("Could not resolve parent hierarchy for IHB Current Account. " +
+                "Ensure Treasury {} has an aggregation VA for currency {} with a hierarchy node.",
+                treasury.getEntityCode(), request.getCurrencyCode());
+        }
+
+        // 15. Track participant's primary IHB Current Account
+        // NOTE: This stores the IHB Current Account ID (not a Settlement VA) on the participant entity.
+        // The actual Settlement VA for IHB transactions is Treasury's Settlement VA stored in va.treasuryPoolVaId.
+        // This field is used to quickly find the participant's IHB position for reporting.
+        // Only set for the FIRST IHB account created (existingCount == 0).
+        if (participant.getSettlementVaId() == null && existingCount == 0) {
+            participant.setSettlementVaId(va.getId());
+            legalEntityRepository.save(participant);
+            log.info("Set {} as primary IHB account for entity {}", va.getVaNumber(), participant.getEntityCode());
+        }
+
+        // 16. Create Cash Concentration Sweep Rule if sweep is enabled
+        // Sweep target is Treasury's Settlement VA (ensured in step 7)
+        if (Boolean.TRUE.equals(request.getIhbSweepEnabled()) && treasurySettlementVa != null) {
+            createIhbSweepRule(va, participant, treasury, treasurySettlementVa, request);
+        } else if (Boolean.TRUE.equals(request.getIhbSweepEnabled())) {
+            log.warn("Sweep enabled but no Treasury Settlement VA found for IHB Current Account {} - sweep rule not created",
+                va.getVaNumber());
+        }
+
+        // =====================================================================
+        // 17. MIRROR ACCOUNT MODEL (Option A - 6-leg POBO)
+        // Create IHB Settlement VA and IC Receivable VA for proper intercompany accounting
+        // =====================================================================
+
+        // Set mirror account type on IHB Current Account
+        va.setMirrorAccountType(VirtualAccount.MirrorAccountType.IHB_CURRENT);
+        va = virtualAccountRepository.save(va);
+
+        // 17a. Create IHB Settlement VA (sibling to IHB Current Account)
+        // This is the per-subsidiary routing point for POBO payments
+        VirtualAccount ihbSettlementVa = ensureIhbSettlementVa(va, participant, ihbProgramId, parentHierarchyNode);
+        log.info("IHB Settlement VA: {} linked to IHB Current Account {}",
+            ihbSettlementVa.getVaNumber(), va.getVaNumber());
+
+        // 17b. Create IC Receivable VA at Treasury (tracks Treasury's claim on subsidiary)
+        // This enables proper intercompany accounting and reconciliation
+        if (treasurySettlementVa != null) {
+            VirtualAccount icReceivableVa = ensureIcReceivableVa(va, participant, treasury, treasurySettlementVa, ihbProgramId);
+            log.info("IC Receivable VA: {} at Treasury for subsidiary {}",
+                icReceivableVa.getVaNumber(), participant.getEntityCode());
+
+            // 17c. Create IC Payable VA at Treasury (tracks Treasury's obligation to subsidiary)
+            // COBO counterpart of 17b — enables the same intercompany accounting for the
+            // opposite flow direction (Treasury collecting externally on the subsidiary's behalf)
+            VirtualAccount icPayableVa = ensureIcPayableVa(va, participant, treasury, treasurySettlementVa, ihbProgramId);
+            log.info("IC Payable VA: {} at Treasury for subsidiary {}",
+                icPayableVa.getVaNumber(), participant.getEntityCode());
+
+            // Mark Treasury Settlement VA as TREASURY_SETTLEMENT type if not already set
+            if (treasurySettlementVa.getMirrorAccountType() == null ||
+                treasurySettlementVa.getMirrorAccountType() == VirtualAccount.MirrorAccountType.NONE) {
+                treasurySettlementVa.setMirrorAccountType(VirtualAccount.MirrorAccountType.TREASURY_SETTLEMENT);
+                virtualAccountRepository.save(treasurySettlementVa);
+            }
+        } else {
+            log.warn("Treasury Settlement VA not available - IC Receivable VA not created for {}. " +
+                "6-leg POBO will fall back to 4-leg flow.", va.getVaNumber());
+        }
+
+        log.info("✓ IHB Current Account {} configured for Mirror Account Model (6-leg POBO ready: {})",
+            va.getVaNumber(), va.isConfiguredFor6LegPobo());
+
+        return va;
+    }
+
+    /**
+     * Create Cash Concentration Sweep Rule for IHB Current Account.
+     * Links the IHB participant account to Treasury's Settlement VA for automated sweeping.
+     *
+     * @param va The IHB current account (source)
+     * @param participant The participant entity
+     * @param treasury The treasury center entity
+     * @param treasurySettlementVa The treasury's settlement VA (target)
+     * @param request The creation request with sweep configuration
+     */
+    private void createIhbSweepRule(
+            VirtualAccount va,
+            LegalEntity participant,
+            LegalEntity treasury,
+            VirtualAccount treasurySettlementVa,
+            VirtualAccountDto.IhbCurrentAccountRequest request) {
+
+        BigDecimal targetBalance = request.getTargetCashBalance() != null ?
+            request.getTargetCashBalance() : BigDecimal.ZERO;
+
+        // Generate unique rule reference: IHB-{entityCode}-{currency}-{seq}
+        String ruleRef = "IHB-" + participant.getEntityCode() + "-" + va.getCurrencyCode();
+        if (ruleRef.length() > 20) {
+            // Truncate and add hash for uniqueness
+            String hash = String.valueOf(Math.abs(ruleRef.hashCode()) % 10000);
+            ruleRef = ruleRef.substring(0, 15) + hash;
+        }
+
+        // Check if rule already exists for this account
+        boolean ruleExists = sweepRuleRepository.existsByRuleReference(ruleRef);
+        if (ruleExists) {
+            log.info("Sweep rule {} already exists for IHB account {}", ruleRef, va.getVaNumber());
+            return;
+        }
+
+        // Create the sweep rule
+        SweepRule rule = new SweepRule();
+        rule.setRuleReference(ruleRef);
+        rule.setRuleName("IHB Sweep: " + participant.getEntityName() + " → Treasury (" + va.getCurrencyCode() + ")");
+        rule.setSweepType(targetBalance.compareTo(BigDecimal.ZERO) == 0 ?
+            SweepRule.SweepType.ZERO_BALANCE : SweepRule.SweepType.TARGET_BALANCE);
+        rule.setTargetAmount(targetBalance);
+        rule.setTargetAccountId(treasurySettlementVa.getId());
+        rule.setTargetAccountNumber(treasurySettlementVa.getVaNumber());
+        rule.setTargetEntityCode(treasury.getEntityCode());
+        rule.setFrequency(mapSweepFrequency(request.getIhbSweepFrequency()));
+        rule.setPriority(10);  // Default priority
+        rule.setStatus(SweepRule.SweepStatus.ACTIVE);
+        rule.setCurrencyCode(va.getCurrencyCode());
+
+        // Add source account
+        List<SweepRuleSource> sources = new ArrayList<>();
+        SweepRuleSource source = new SweepRuleSource();
+        source.setRule(rule);
+        source.setAccountId(va.getId());
+        source.setAccountNumber(va.getVaNumber());
+        source.setEntityCode(participant.getEntityCode());
+        source.setEntityName(participant.getEntityName());
+        source.setCurrencyCode(va.getCurrencyCode());
+        sources.add(source);
+        rule.setSourceAccounts(sources);
+
+        sweepRuleRepository.save(rule);
+        log.info("Created IHB Cash Concentration Sweep Rule: {} for account {} → Treasury {}",
+            ruleRef, va.getVaNumber(), treasurySettlementVa.getVaNumber());
+    }
+
+    // ========================================================================
+    // IHB MIRROR ACCOUNT MODEL (Option A - 6-leg POBO)
+    // ========================================================================
+
+    /**
+     * Ensure IHB Settlement VA exists for the IHB Current Account.
+     *
+     * IHB Settlement VA is a sibling to the IHB Current Account that:
+     * - Acts as the per-subsidiary routing/settlement point
+     * - Receives funds from IHB Current Account for POBO payments
+     * - Routes funds to Treasury Settlement VA
+     *
+     * 6-leg POBO flow:
+     * IHB Current Account → IHB Settlement VA → Treasury Settlement VA → IC Receivable → Shadow VA → CBS
+     *
+     * @param ihbCurrentAccount The IHB Current Account to create settlement VA for
+     * @param participant The subsidiary legal entity
+     * @param ihbProgramId The IHB program ID
+     * @param parentHierarchyNode The parent hierarchy node (same as IHB Current Account's parent)
+     * @return The IHB Settlement VA
+     */
+    @Transactional
+    public VirtualAccount ensureIhbSettlementVa(
+            VirtualAccount ihbCurrentAccount,
+            LegalEntity participant,
+            UUID ihbProgramId,
+            HierarchyNode parentHierarchyNode) {
+
+        // 1. Check if IHB Settlement VA already exists
+        if (ihbCurrentAccount.getIhbSettlementVaId() != null) {
+            Optional<VirtualAccount> existing = virtualAccountRepository.findById(ihbCurrentAccount.getIhbSettlementVaId());
+            if (existing.isPresent()) {
+                log.debug("IHB Settlement VA already exists: {}", existing.get().getVaNumber());
+                return existing.get();
+            }
+        }
+
+        // 2. Look for existing IHB Settlement VA by naming convention
+        String expectedVaNumber = "IHBS-" + participant.getEntityCode() + "-" + ihbCurrentAccount.getCurrencyCode();
+        Optional<VirtualAccount> existingByNumber = virtualAccountRepository.findByVaNumber(expectedVaNumber);
+        if (existingByNumber.isPresent()) {
+            // Link it to the IHB Current Account
+            ihbCurrentAccount.setIhbSettlementVaId(existingByNumber.get().getId());
+            virtualAccountRepository.save(ihbCurrentAccount);
+            log.debug("Found existing IHB Settlement VA: {}", existingByNumber.get().getVaNumber());
+            return existingByNumber.get();
+        }
+
+        // 3. Create new IHB Settlement VA
+        log.info("Creating IHB Settlement VA for {} in {}", participant.getEntityCode(), ihbCurrentAccount.getCurrencyCode());
+
+        String currency = ihbCurrentAccount.getCurrencyCode();
+        String vaNumber = expectedVaNumber;
+        String vaName = "IHB Settlement - " + participant.getEntityName() + " " + currency;
+
+        VirtualAccount settlementVa = VirtualAccount.builder()
+            .vaNumber(vaNumber)
+            .vaName(vaName)
+            .corporateId(participant.getCorporateId())
+            .programId(parentHierarchyNode != null ? parentHierarchyNode.getProgramId() : ihbProgramId)
+            .physicalAccountId(ihbCurrentAccount.getPhysicalAccountId())
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .mirrorAccountType(VirtualAccount.MirrorAccountType.IHB_SETTLEMENT)
+            .owningEntityId(participant.getId())
+            .owningEntityCode(participant.getEntityCode())
+            .parentAccountId(ihbCurrentAccount.getParentAccountId())  // Same parent as IHB Current Account
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("IHB-SETTLEMENT-" + participant.getEntityCode() + "-" + currency)
+            .build();
+
+        settlementVa = virtualAccountRepository.save(settlementVa);
+
+        // 4. Create hierarchy node if parent hierarchy exists
+        if (parentHierarchyNode != null) {
+            String nodeCode = "IHBS-" + participant.getEntityCode() + "-" + currency;
+            String materializedPath = parentHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+            int newLevel = parentHierarchyNode.getLevelNumber() + 1;
+
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(parentHierarchyNode.getProgramId())
+                .parentId(parentHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(vaName)
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(currency)
+                .dimensionValue("IHB_SETTLEMENT")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(settlementVa.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+
+            settlementVa.setHierarchyNodeId(node.getId());
+            settlementVa.setHierarchyPath(materializedPath);
+            settlementVa.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            settlementVa = virtualAccountRepository.save(settlementVa);
+        }
+
+        // 5. Link IHB Settlement VA to the IHB Current Account
+        ihbCurrentAccount.setIhbSettlementVaId(settlementVa.getId());
+        virtualAccountRepository.save(ihbCurrentAccount);
+
+        log.info("Created IHB Settlement VA: {} for {} (linked to IHB Current Account {})",
+            settlementVa.getVaNumber(), participant.getEntityCode(), ihbCurrentAccount.getVaNumber());
+
+        return settlementVa;
+    }
+
+    /**
+     * Ensure IC Receivable VA exists at Treasury for the subsidiary.
+     *
+     * IC Receivable VA is Treasury's intercompany receivable that:
+     * - Tracks Treasury's financial claim on the subsidiary
+     * - Mirrors the subsidiary's IHB Current Account balance (opposite sign)
+     * - Enables proper intercompany accounting and reconciliation
+     *
+     * When subsidiary uses POBO: IC Receivable balance INCREASES (Treasury is owed more)
+     * When subsidiary funds IHB: IC Receivable balance DECREASES (Treasury is owed less)
+     *
+     * @param ihbCurrentAccount The subsidiary's IHB Current Account
+     * @param participant The subsidiary legal entity
+     * @param treasury The treasury center entity
+     * @param treasurySettlementVa Treasury's settlement VA (for linking)
+     * @param ihbProgramId The IHB program ID
+     * @return The IC Receivable VA at Treasury
+     */
+    @Transactional
+    public VirtualAccount ensureIcReceivableVa(
+            VirtualAccount ihbCurrentAccount,
+            LegalEntity participant,
+            LegalEntity treasury,
+            VirtualAccount treasurySettlementVa,
+            UUID ihbProgramId) {
+
+        // 1. Check if IC Receivable VA already exists
+        if (ihbCurrentAccount.getIcReceivableVaId() != null) {
+            Optional<VirtualAccount> existing = virtualAccountRepository.findById(ihbCurrentAccount.getIcReceivableVaId());
+            if (existing.isPresent()) {
+                log.debug("IC Receivable VA already exists: {}", existing.get().getVaNumber());
+                return existing.get();
+            }
+        }
+
+        String currency = ihbCurrentAccount.getCurrencyCode();
+
+        // 2. Look for existing IC Receivable VA by naming convention
+        String expectedVaNumber = "ICR-" + treasury.getEntityCode() + "-" + participant.getEntityCode() + "-" + currency;
+        Optional<VirtualAccount> existingByNumber = virtualAccountRepository.findByVaNumber(expectedVaNumber);
+        if (existingByNumber.isPresent()) {
+            // Link it to the IHB Current Account
+            ihbCurrentAccount.setIcReceivableVaId(existingByNumber.get().getId());
+            virtualAccountRepository.save(ihbCurrentAccount);
+            log.debug("Found existing IC Receivable VA: {}", existingByNumber.get().getVaNumber());
+            return existingByNumber.get();
+        }
+
+        // 3. Create new IC Receivable VA at Treasury
+        log.info("Creating IC Receivable VA at {} for subsidiary {} in {}",
+            treasury.getEntityCode(), participant.getEntityCode(), currency);
+
+        String vaNumber = expectedVaNumber;
+        String vaName = "IC Receivable - " + participant.getEntityName() + " " + currency;
+
+        // Get Treasury's hierarchy node for placement
+        HierarchyNode treasuryHierarchyNode = null;
+        if (treasurySettlementVa.getHierarchyNodeId() != null) {
+            treasuryHierarchyNode = hierarchyNodeRepository.findById(treasurySettlementVa.getHierarchyNodeId()).orElse(null);
+        }
+
+        VirtualAccount icReceivableVa = VirtualAccount.builder()
+            .vaNumber(vaNumber)
+            .vaName(vaName)
+            .corporateId(treasury.getCorporateId())
+            .programId(treasuryHierarchyNode != null ? treasuryHierarchyNode.getProgramId() : ihbProgramId)
+            .physicalAccountId(treasurySettlementVa.getPhysicalAccountId())
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.INTERCOMPANY)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .mirrorAccountType(VirtualAccount.MirrorAccountType.IC_RECEIVABLE)
+            .mirrorsVaId(ihbCurrentAccount.getId())  // Points to the subsidiary's IHB Current Account
+            .owningEntityId(treasury.getId())
+            .owningEntityCode(treasury.getEntityCode())
+            .parentAccountId(treasurySettlementVa.getId())  // Child of Treasury Settlement VA
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("IC-RECEIVABLE-" + participant.getEntityCode() + "-" + currency)
+            .build();
+
+        icReceivableVa = virtualAccountRepository.save(icReceivableVa);
+
+        // 4. Create hierarchy node under Treasury if hierarchy exists
+        if (treasuryHierarchyNode != null) {
+            String nodeCode = "ICR-" + participant.getEntityCode() + "-" + currency;
+            String materializedPath = treasuryHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+            int newLevel = treasuryHierarchyNode.getLevelNumber() + 1;
+
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(treasuryHierarchyNode.getProgramId())
+                .parentId(treasuryHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(vaName)
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(currency)
+                .dimensionValue("IC_RECEIVABLE")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(icReceivableVa.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+
+            icReceivableVa.setHierarchyNodeId(node.getId());
+            icReceivableVa.setHierarchyPath(materializedPath);
+            icReceivableVa.setHierarchyLevel(newLevel - 1); // treasuryHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            icReceivableVa = virtualAccountRepository.save(icReceivableVa);
+        }
+
+        // 5. Link IC Receivable VA to the IHB Current Account
+        ihbCurrentAccount.setIcReceivableVaId(icReceivableVa.getId());
+        virtualAccountRepository.save(ihbCurrentAccount);
+
+        log.info("Created IC Receivable VA: {} at Treasury {} for subsidiary {} (linked to IHB Current Account {})",
+            icReceivableVa.getVaNumber(), treasury.getEntityCode(), participant.getEntityCode(), ihbCurrentAccount.getVaNumber());
+
+        return icReceivableVa;
+    }
+
+    /**
+     * Ensure Treasury has an IC Payable VA for a subsidiary (COBO counterpart of
+     * {@link #ensureIcReceivableVa}).
+     *
+     * Mirrors ensureIcReceivableVa exactly, but tracks Treasury's OBLIGATION to the
+     * subsidiary (COBO: Treasury collects externally on the subsidiary's behalf) rather
+     * than its claim (POBO: Treasury pays externally on the subsidiary's behalf).
+     *
+     * @param ihbCurrentAccount The subsidiary's IHB Current Account
+     * @param participant The subsidiary legal entity
+     * @param treasury The treasury center entity
+     * @param treasurySettlementVa Treasury's settlement VA (for linking)
+     * @param ihbProgramId The IHB program ID
+     * @return The IC Payable VA at Treasury
+     */
+    @Transactional
+    public VirtualAccount ensureIcPayableVa(
+            VirtualAccount ihbCurrentAccount,
+            LegalEntity participant,
+            LegalEntity treasury,
+            VirtualAccount treasurySettlementVa,
+            UUID ihbProgramId) {
+
+        // 1. Check if IC Payable VA already exists
+        if (ihbCurrentAccount.getIcPayableVaId() != null) {
+            Optional<VirtualAccount> existing = virtualAccountRepository.findById(ihbCurrentAccount.getIcPayableVaId());
+            if (existing.isPresent()) {
+                log.debug("IC Payable VA already exists: {}", existing.get().getVaNumber());
+                return existing.get();
+            }
+        }
+
+        String currency = ihbCurrentAccount.getCurrencyCode();
+
+        // 2. Look for existing IC Payable VA by naming convention
+        String expectedVaNumber = "ICP-" + treasury.getEntityCode() + "-" + participant.getEntityCode() + "-" + currency;
+        Optional<VirtualAccount> existingByNumber = virtualAccountRepository.findByVaNumber(expectedVaNumber);
+        if (existingByNumber.isPresent()) {
+            // Link it to the IHB Current Account
+            ihbCurrentAccount.setIcPayableVaId(existingByNumber.get().getId());
+            virtualAccountRepository.save(ihbCurrentAccount);
+            log.debug("Found existing IC Payable VA: {}", existingByNumber.get().getVaNumber());
+            return existingByNumber.get();
+        }
+
+        // 3. Create new IC Payable VA at Treasury
+        log.info("Creating IC Payable VA at {} for subsidiary {} in {}",
+            treasury.getEntityCode(), participant.getEntityCode(), currency);
+
+        String vaNumber = expectedVaNumber;
+        String vaName = "IC Payable - " + participant.getEntityName() + " " + currency;
+
+        // Get Treasury's hierarchy node for placement
+        HierarchyNode treasuryHierarchyNode = null;
+        if (treasurySettlementVa.getHierarchyNodeId() != null) {
+            treasuryHierarchyNode = hierarchyNodeRepository.findById(treasurySettlementVa.getHierarchyNodeId()).orElse(null);
+        }
+
+        VirtualAccount icPayableVa = VirtualAccount.builder()
+            .vaNumber(vaNumber)
+            .vaName(vaName)
+            .corporateId(treasury.getCorporateId())
+            .programId(treasuryHierarchyNode != null ? treasuryHierarchyNode.getProgramId() : ihbProgramId)
+            .physicalAccountId(treasurySettlementVa.getPhysicalAccountId())
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.INTERCOMPANY)
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .mirrorAccountType(VirtualAccount.MirrorAccountType.IC_PAYABLE)
+            .mirrorsVaId(ihbCurrentAccount.getId())  // Points to the subsidiary's IHB Current Account
+            .owningEntityId(treasury.getId())
+            .owningEntityCode(treasury.getEntityCode())
+            .parentAccountId(treasurySettlementVa.getId())  // Child of Treasury Settlement VA
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("IC-PAYABLE-" + participant.getEntityCode() + "-" + currency)
+            .build();
+
+        icPayableVa = virtualAccountRepository.save(icPayableVa);
+
+        // 4. Create hierarchy node under Treasury if hierarchy exists
+        if (treasuryHierarchyNode != null) {
+            String nodeCode = "ICP-" + participant.getEntityCode() + "-" + currency;
+            String materializedPath = treasuryHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+            int newLevel = treasuryHierarchyNode.getLevelNumber() + 1;
+
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(treasuryHierarchyNode.getProgramId())
+                .parentId(treasuryHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(vaName)
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(currency)
+                .dimensionValue("IC_PAYABLE")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(icPayableVa.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+
+            icPayableVa.setHierarchyNodeId(node.getId());
+            icPayableVa.setHierarchyPath(materializedPath);
+            icPayableVa.setHierarchyLevel(newLevel - 1); // treasuryHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            icPayableVa = virtualAccountRepository.save(icPayableVa);
+        }
+
+        // 5. Link IC Payable VA to the IHB Current Account
+        ihbCurrentAccount.setIcPayableVaId(icPayableVa.getId());
+        virtualAccountRepository.save(ihbCurrentAccount);
+
+        log.info("Created IC Payable VA: {} at Treasury {} for subsidiary {} (linked to IHB Current Account {})",
+            icPayableVa.getVaNumber(), treasury.getEntityCode(), participant.getEntityCode(), ihbCurrentAccount.getVaNumber());
+
+        return icPayableVa;
+    }
+
+    /**
+     * Ensure Treasury has a Settlement VA for IHB operations.
+     *
+     * This is the counterparty account for all IHB transactions:
+     * - Deposits: Subsidiary → Treasury Settlement VA
+     * - Loans: Treasury Settlement VA → Subsidiary
+     * - Interest Settlement: Posted via Treasury Settlement VA
+     *
+     * Unlike getOrCreateTreasurySettlementVa, this method:
+     * 1. Uses the provided parent hierarchy information (not TSETT- orphan)
+     * 2. Creates Settlement VA as sibling of other Treasury VAs
+     * 3. Properly links to hierarchy for display in Treasury Structure
+     *
+     * @param treasury The treasury center entity
+     * @param currency The currency code
+     * @param ihbProgramId The IHB program ID
+     * @param parentVa The parent aggregation VA (Treasury's hierarchy root)
+     * @param parentHierarchyNode The parent hierarchy node (optional, for linking)
+     * @return Treasury's Settlement VA for the specified currency
+     */
+    private VirtualAccount ensureTreasurySettlementVa(
+            LegalEntity treasury,
+            String currency,
+            UUID ihbProgramId,
+            VirtualAccount parentVa,
+            HierarchyNode parentHierarchyNode) {
+
+        // 1. Check if treasury already has a Settlement VA for this currency
+        if (treasury.getSettlementVaId() != null) {
+            Optional<VirtualAccount> configuredVa = virtualAccountRepository.findById(treasury.getSettlementVaId());
+            if (configuredVa.isPresent() && configuredVa.get().getCurrencyCode().equals(currency)) {
+                log.debug("Treasury {} already has Settlement VA: {}", treasury.getEntityCode(), configuredVa.get().getVaNumber());
+                return configuredVa.get();
+            }
+        }
+
+        // 2. Look for existing Settlement/Transaction VA owned by Treasury for this currency
+        List<VirtualAccount> treasuryVas = virtualAccountRepository.findByOwningEntityIdAndCurrencyCode(
+            treasury.getId(), currency);
+
+        // Prefer existing Settlement VA (TRANSACTION category, owned by treasury, used for settlement)
+        Optional<VirtualAccount> existingSettlement = treasuryVas.stream()
+            .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.TRANSACTION
+                       && va.getVaName() != null && va.getVaName().contains("Settlement"))
+            .findFirst();
+
+        if (existingSettlement.isPresent()) {
+            VirtualAccount settlement = existingSettlement.get();
+            log.debug("Found existing Treasury Settlement VA: {}", settlement.getVaNumber());
+            // Update treasury's settlementVaId if not set
+            if (treasury.getSettlementVaId() == null) {
+                treasury.setSettlementVaId(settlement.getId());
+                legalEntityRepository.save(treasury);
+            }
+            return settlement;
+        }
+
+        // 3. If parentVa IS the Treasury's VA, use it as the settlement target
+        if (parentVa != null && treasury.getId().equals(parentVa.getOwningEntityId())) {
+            log.debug("Using parent VA {} as Treasury Settlement VA", parentVa.getVaNumber());
+            if (treasury.getSettlementVaId() == null) {
+                treasury.setSettlementVaId(parentVa.getId());
+                legalEntityRepository.save(treasury);
+            }
+            return parentVa;
+        }
+
+        // 4. No existing Settlement VA - create one under Treasury's hierarchy
+        log.info("Creating Treasury Settlement VA for {} in {} under hierarchy",
+            treasury.getEntityCode(), currency);
+
+        String vaNumber = "SETT-" + treasury.getEntityCode() + "-" + currency;
+        String vaName = "Settlement - " + treasury.getEntityName() + " " + currency;
+
+        VirtualAccount settlementVa = VirtualAccount.builder()
+            .vaNumber(vaNumber)
+            .vaName(vaName)
+            .corporateId(treasury.getCorporateId())
+            .programId(parentHierarchyNode != null ? parentHierarchyNode.getProgramId() : ihbProgramId)
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)  // Real transactions happen
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .owningEntityId(treasury.getId())
+            .owningEntityCode(treasury.getEntityCode())
+            .parentAccountId(parentVa != null ? parentVa.getId() : null)  // Sibling of IHB accounts
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("TREASURY-SETTLEMENT-" + currency)
+            .build();
+
+        settlementVa = virtualAccountRepository.save(settlementVa);
+
+        // 5. Create hierarchy node if parent hierarchy exists
+        if (parentHierarchyNode != null) {
+            String nodeCode = "SETT-" + treasury.getEntityCode() + "-" + currency;
+            String materializedPath = parentHierarchyNode.getMaterializedPath() + "/" + nodeCode;
+            int newLevel = parentHierarchyNode.getLevelNumber() + 1;
+
+            HierarchyNode node = HierarchyNode.builder()
+                .programId(parentHierarchyNode.getProgramId())
+                .parentId(parentHierarchyNode.getId())
+                .levelNumber(newLevel)
+                .nodeCode(nodeCode)
+                .nodeName(vaName)
+                .nodeType(HierarchyNodeType.VIRTUAL_ACCOUNT)
+                .currencyCode(currency)
+                .dimensionValue("SETTLEMENT")
+                .materializedPath(materializedPath)
+                .isLeaf(true)
+                .childCount(0)
+                .status("ACTIVE")
+                .aggregatedBalance(BigDecimal.ZERO)
+                .availableBalance(BigDecimal.ZERO)
+                .virtualAccountId(settlementVa.getId())
+                .build();
+
+            node = hierarchyNodeRepository.save(node);
+
+            settlementVa.setHierarchyNodeId(node.getId());
+            settlementVa.setHierarchyPath(materializedPath);
+            settlementVa.setHierarchyLevel(newLevel - 1); // parentHierarchyNode.getLevelNumber() is 1-indexed, va.hierarchyLevel is 0-indexed
+            settlementVa = virtualAccountRepository.save(settlementVa);
+
+            log.info("Created Treasury Settlement VA {} with hierarchy node at {}",
+                settlementVa.getVaNumber(), materializedPath);
+        }
+
+        // 6. Update treasury's settlementVaId
+        treasury.setSettlementVaId(settlementVa.getId());
+        legalEntityRepository.save(treasury);
+
+        log.info("Created Treasury Settlement VA: {} for {} (category=TRANSACTION)",
+            settlementVa.getVaNumber(), treasury.getEntityCode());
+
+        return settlementVa;
+    }
+
+    /**
+     * Get or create Treasury Settlement VA for IHB operations.
+     *
+     * Strategy:
+     * 1. If treasury entity has settlementVaId set, use that VA
+     * 2. Look for existing IHB participant VA for treasury in this currency
+     * 3. Look for any active TRANSACTION VA for treasury in this currency
+     * 4. Create new Settlement VA if none found
+     *
+     * The Settlement VA serves as:
+     * - Parent account for IHB Current Accounts (via parentAccountId)
+     * - Target for sweep rules (receives swept funds)
+     * - Source/target for loan disbursements and repayments
+     * - Source/target for deposit placements and withdrawals
+     *
+     * IMPORTANT: This is a TRANSACTION VA, not AGGREGATION because:
+     * - Real fund movements happen (loans, deposits, sweeps)
+     * - Balance is real from actual transactions, not computed from children
+     * - Only structural-only VAs (ROOT) should be AGGREGATION
+     *
+     * For multi-level treasury (Regional → Global), regional treasury's Settlement VA
+     * should have parentAccountId pointing to global treasury's Settlement VA.
+     *
+     * @param treasury The treasury center entity
+     * @param currency The currency code
+     * @param ihbProgramId The IHB program ID for this settlement VA
+     * @return Treasury's Settlement VA for the specified currency
+     */
+    private VirtualAccount getOrCreateTreasurySettlementVa(LegalEntity treasury, String currency, UUID ihbProgramId) {
+        // 1. Check if treasury has a configured settlement VA in this currency
+        if (treasury.getSettlementVaId() != null) {
+            Optional<VirtualAccount> configuredVa = virtualAccountRepository.findById(treasury.getSettlementVaId());
+            if (configuredVa.isPresent() && configuredVa.get().getCurrencyCode().equals(currency)) {
+                log.debug("Using treasury's configured settlement VA: {}", configuredVa.get().getVaNumber());
+                return configuredVa.get();
+            }
+        }
+
+        // 2. Look for existing IHB-enabled VA for treasury in this currency
+        Optional<VirtualAccount> ihbVa = virtualAccountRepository
+            .findByOwningEntityIdAndIhbParticipantTrueAndCurrencyCode(treasury.getId(), currency);
+        if (ihbVa.isPresent()) {
+            log.debug("Using treasury's existing IHB VA: {}", ihbVa.get().getVaNumber());
+            return ihbVa.get();
+        }
+
+        // 3. Look for any active TRANSACTION VA for treasury in this currency
+        List<VirtualAccount> existingVas = virtualAccountRepository
+            .findByOwningEntityIdAndCurrencyCodeAndAccountCategory(
+                treasury.getId(), currency, VirtualAccount.AccountCategory.TRANSACTION);
+        if (!existingVas.isEmpty()) {
+            VirtualAccount existing = existingVas.get(0);
+            log.debug("Using treasury's existing TRANSACTION VA: {}", existing.getVaNumber());
+            // Update entity's settlementVaId if not set
+            if (treasury.getSettlementVaId() == null) {
+                treasury.setSettlementVaId(existing.getId());
+                legalEntityRepository.save(treasury);
+            }
+            return existing;
+        }
+
+        // 4. Create new Settlement VA for treasury
+        log.info("Creating Treasury Settlement VA for {} in {}", treasury.getEntityCode(), currency);
+
+        UUID physicalAccountId = resolvePhysicalAccountForTreasury(treasury, currency);
+
+        // Resolve parent VA for multi-level treasury hierarchy
+        UUID parentVaId = resolveParentTreasuryVa(treasury, currency);
+
+        // NOTE: Treasury Settlement VA is TRANSACTION category, NOT AGGREGATION because:
+        // - Real fund movements happen: loan disbursements, repayments, deposits, withdrawals
+        // - It's the target for sweep rules (receives swept funds)
+        // - Balance is real, not computed from children
+        // - Only structural-only VAs (ROOT) should be AGGREGATION
+        VirtualAccount settlementVa = VirtualAccount.builder()
+            .vaNumber("TSETT-" + treasury.getEntityCode() + "-" + currency)
+            .vaName("Treasury Settlement - " + treasury.getEntityName() + " " + currency)
+            .corporateId(treasury.getCorporateId())
+            .programId(ihbProgramId)  // Belongs to IHB program
+            .physicalAccountId(physicalAccountId)
+            .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)  // Real transactions happen
+            .accountType(VirtualAccount.AccountType.VIRTUAL)
+            .owningEntityId(treasury.getId())
+            .owningEntityCode(treasury.getEntityCode())
+            .parentAccountId(parentVaId)  // Link to parent treasury if exists
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VirtualAccount.VaStatus.ACTIVE)
+            .externalReference("TREASURY-SETTLEMENT-" + currency)
+            .build();
+
+        VirtualAccount saved = virtualAccountRepository.save(settlementVa);
+
+        // Update treasury's settlementVaId
+        treasury.setSettlementVaId(saved.getId());
+        legalEntityRepository.save(treasury);
+
+        log.info("Created Treasury Settlement VA: {} for {} (category=AGGREGATION)",
+            saved.getVaNumber(), treasury.getEntityCode());
+
+        return saved;
+    }
+
+    /**
+     * Resolve parent treasury VA for multi-level treasury hierarchy.
+     *
+     * If this treasury has a parent entity that is also a treasury center,
+     * return that parent treasury's settlement VA.
+     *
+     * Example:
+     * - EMEA Treasury (regional) → parent = Global Treasury
+     * - EMEA's Settlement VA.parentAccountId = Global's Settlement VA
+     *
+     * @param treasury The treasury center entity
+     * @param currency The currency code
+     * @return Parent treasury's settlement VA ID, or null if this is top-level treasury
+     */
+    private UUID resolveParentTreasuryVa(LegalEntity treasury, String currency) {
+        // Check if treasury has a parent entity
+        if (treasury.getParentEntityId() == null) {
+            return null;  // Top-level treasury
+        }
+
+        // Find parent entity
+        Optional<LegalEntity> parentOpt = legalEntityRepository.findById(treasury.getParentEntityId());
+        if (parentOpt.isEmpty()) {
+            return null;
+        }
+
+        LegalEntity parent = parentOpt.get();
+
+        // Check if parent is also a treasury center
+        if (!parent.canLend()) {
+            return null;  // Parent is not a treasury
+        }
+
+        // Find parent treasury's settlement VA in this currency
+        // Note: Recursive call, but limited by hierarchy depth
+        if (parent.getSettlementVaId() != null) {
+            Optional<VirtualAccount> parentVa = virtualAccountRepository.findById(parent.getSettlementVaId());
+            if (parentVa.isPresent() && parentVa.get().getCurrencyCode().equals(currency)) {
+                log.debug("Found parent treasury VA: {} for {}", parentVa.get().getVaNumber(), treasury.getEntityCode());
+                return parentVa.get().getId();
+            }
+        }
+
+        // Look for parent's VA in this currency
+        List<VirtualAccount> parentVas = virtualAccountRepository
+            .findByOwningEntityIdAndCurrencyCodeAndAccountCategory(
+                parent.getId(), currency, VirtualAccount.AccountCategory.AGGREGATION);
+        if (!parentVas.isEmpty()) {
+            return parentVas.get(0).getId();
+        }
+
+        // Also check TRANSACTION category
+        parentVas = virtualAccountRepository
+            .findByOwningEntityIdAndCurrencyCodeAndAccountCategory(
+                parent.getId(), currency, VirtualAccount.AccountCategory.TRANSACTION);
+        if (!parentVas.isEmpty()) {
+            return parentVas.get(0).getId();
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve IHB Program for the corporate.
+     *
+     * IHB is a Program Type - all IHB Current Accounts MUST belong to an IHB program.
+     *
+     * Logic:
+     * 1. If programId is provided, validate it is an active IHB program for this corporate
+     * 2. If not provided, auto-resolve the corporate's active IHB program
+     * 3. Throw error if no IHB program exists
+     *
+     * @param corporateId The corporate ID
+     * @param requestedProgramId Optional program ID from request
+     * @return Resolved IHB program ID (never null)
+     */
+    private UUID resolveIhbProgram(UUID corporateId, UUID requestedProgramId) {
+        if (requestedProgramId != null) {
+            // Validate the provided program is an active IHB program for this corporate
+            Program program = programRepository.findById(requestedProgramId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Program not found: " + requestedProgramId));
+
+            if (!program.getCorporateId().equals(corporateId)) {
+                throw new BusinessException("Program " + program.getProgramCode() +
+                    " does not belong to this corporate");
+            }
+
+            if (program.getProgramType() != Program.ProgramType.IHB) {
+                throw new BusinessException("Program " + program.getProgramCode() +
+                    " is not an IHB program (type: " + program.getProgramType() + "). " +
+                    "IHB Current Accounts must belong to an IHB program.");
+            }
+
+            if (program.getStatus() != Program.ProgramStatus.ACTIVE) {
+                throw new BusinessException("Program " + program.getProgramCode() +
+                    " is not active (status: " + program.getStatus() + ")");
+            }
+
+            log.debug("Using provided IHB program: {} ({})", program.getProgramCode(), program.getId());
+            return program.getId();
+        }
+
+        // Auto-resolve: Find the corporate's active IHB program
+        List<Program> ihbPrograms = programRepository.findActiveIhbProgramsByCorporate(corporateId);
+
+        if (ihbPrograms.isEmpty()) {
+            throw new BusinessException(
+                "No active IHB program found for corporate " + corporateId + ". " +
+                "Please create an IHB program first, or provide a programId.");
+        }
+
+        // Use the first (oldest) IHB program if multiple exist
+        Program ihbProgram = ihbPrograms.get(0);
+        if (ihbPrograms.size() > 1) {
+            log.warn("Corporate {} has {} IHB programs. Using first: {} ({})",
+                corporateId, ihbPrograms.size(), ihbProgram.getProgramCode(), ihbProgram.getId());
+        }
+
+        log.info("Auto-resolved IHB program for corporate {}: {} ({})",
+            corporateId, ihbProgram.getProgramCode(), ihbProgram.getId());
+        return ihbProgram.getId();
+    }
+
+    /**
+     * Resolve physical account for treasury center.
+     */
+    private UUID resolvePhysicalAccountForTreasury(LegalEntity treasury, String currency) {
+        // Try to find physical account for treasury in this currency
+        return physicalAccountRepository
+            .findWithFilters(treasury.getCorporateId(), null, currency,
+                PhysicalAccount.AccountStatus.ACTIVE, null, null)
+            .stream()
+            .findFirst()
+            .map(PhysicalAccount::getId)
+            .orElseThrow(() -> new BusinessException(
+                "No active physical account found for corporate " +
+                treasury.getCorporateId() + " in currency " + currency));
+    }
+
+    /**
+     * Get or create Interest Configuration for IHB participant.
+     */
+    private InterestConfiguration getOrCreateIhbInterestConfig(
+            LegalEntity participant,
+            LegalEntity treasury,
+            VirtualAccountDto.IhbCurrentAccountRequest request) {
+
+        // Check if participant has specific config
+        Optional<InterestConfiguration> participantConfig = interestConfigRepository
+            .findByTargetIdAndCurrencyCodeAndConfigType(
+                participant.getId(),
+                request.getCurrencyCode(),
+                InterestConfiguration.ConfigType.INTERNAL);
+
+        if (participantConfig.isPresent()) {
+            return participantConfig.get();
+        }
+
+        // Fall back to Treasury's default IHB config
+        if (treasury.getIhbInterestConfigId() != null) {
+            Optional<InterestConfiguration> treasuryConfig = interestConfigRepository
+                .findById(treasury.getIhbInterestConfigId());
+            if (treasuryConfig.isPresent()) {
+                return treasuryConfig.get();
+            }
+        }
+
+        // Create default config
+        BigDecimal creditRate = request.getCreditRate() != null
+            ? request.getCreditRate() : new BigDecimal("2.50");
+        BigDecimal debitRate = request.getDebitRate() != null
+            ? request.getDebitRate() : new BigDecimal("5.00");
+        BigDecimal penaltyRate = request.getPenaltyRate() != null
+            ? request.getPenaltyRate() : new BigDecimal("7.00");
+
+        InterestConfiguration config = InterestConfiguration.builder()
+            .corporateId(participant.getCorporateId())
+            .configName("IHB Rates - " + participant.getEntityCode())
+            .configType(InterestConfiguration.ConfigType.INTERNAL)
+            .targetId(participant.getId())
+            .targetType(InterestConfiguration.TargetType.LEGAL_ENTITY)
+            .currencyCode(request.getCurrencyCode())
+            .effectiveCreditRate(creditRate)
+            .effectiveDebitRate(debitRate)
+            .penaltyRate(penaltyRate)
+            .dayCountConvention("ACT/360")
+            .compoundingFrequency(InterestConfiguration.CompoundingFrequency.DAILY)
+            .postingFrequency(InterestConfiguration.PostingFrequency.MONTHLY)
+            .status(InterestConfiguration.ConfigStatus.ACTIVE)
+            .effectiveFrom(LocalDate.now())
+            .build();
+
+        return interestConfigRepository.save(config);
+    }
+
+    /**
+     * Generate IHB current account number.
+     */
+    private String generateIhbCurrentAccountNumber(LegalEntity entity, String currency) {
+        long sequence = virtualAccountRepository.countByAccountCategory(
+            VirtualAccount.AccountCategory.INTERCOMPANY) + 1;
+        return String.format("IHB-%s-%s-%04d", entity.getEntityCode(), currency, sequence);
     }
 }

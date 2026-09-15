@@ -173,7 +173,7 @@ public class IhbController {
         log.info("POST /api/v1/ihb/current-account - entity={}, currency={}, parentNodeId={}, programId={}",
             request.getParticipantEntityId(), request.getCurrencyCode(),
             request.getParentNodeId(), request.getProgramId());
-        VirtualAccount va = virtualAccountService.createIhbCurrentAccount(request);
+        VirtualAccount va = ihbUnifiedService.createIhbCurrentAccount(request);
         return ResponseEntity.ok(ApiResponse.success(
             virtualAccountService.toResponse(va),
             "IHB Current Account created"));
