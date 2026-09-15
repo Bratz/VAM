@@ -299,13 +299,66 @@ public class NettingService {
             payableRepository.save(payable);
             
             addedCount++;
-            log.debug("Added payable {} to netting cycle {}", 
+            log.debug("Added payable {} to netting cycle {}",
                 payable.getPayableNumber(), cycle.getCycleReference());
         }
-        
+
         return addedCount;
     }
-    
+
+    /**
+     * Adds one explicitly-chosen payable to an existing netting cycle,
+     * creating a real, persisted {@link NettingEntry} — the single canonical
+     * path for this operation. Callers must not fabricate a placeholder
+     * entry id and link it onto the payable themselves; that leaves
+     * {@code Payable.nettingEntryId} pointing at a row that was never saved.
+     *
+     * <p>Distinct from {@link #addIntercompanyPayables(NettingCycle, UUID)}:
+     * that method scans for every eligible payable for a corporate (a bulk
+     * auto-populate run, persisted once by its caller at the end of the
+     * scan); this method adds exactly the one payable the caller already
+     * chose, so it persists the entry and cycle immediately itself — safe to
+     * call standalone, one payable at a time, from outside that bulk flow.
+     */
+    @Transactional
+    public NettingEntry addPayableToCycle(UUID nettingCycleId, Payable payable) {
+        NettingCycle cycle = cycleRepository.findById(nettingCycleId)
+            .orElseThrow(() -> new IllegalArgumentException("Netting cycle not found: " + nettingCycleId));
+
+        if (!payable.canAddToNetting()) {
+            throw new IllegalStateException("Payable " + payable.getPayableNumber() + " is not eligible for netting");
+        }
+
+        NettingEntry entry = NettingEntry.fromIntercompanyPayable(
+            cycle,
+            payable.getId(),
+            payable.getOwningEntityId(),
+            payable.getOwningEntityCode(),
+            payable.getOwningEntityName(),
+            payable.getCounterpartyEntityId(),
+            payable.getCounterpartyEntityCode(),
+            payable.getCounterpartyEntityName(),
+            payable.getNetAmount(),
+            payable.getCurrencyCode(),
+            payable.getDueDate(),
+            payable.getPayableNumber()
+        );
+        entry.setEntryReference("ENT-" + String.format("%06d", entrySequence.getAndIncrement()));
+        applyFxConversion(entry, cycle.getBaseCurrency());
+
+        cycle.getEntries().add(entry);
+        cycle.setTotalGross(cycle.getTotalGross().add(entry.getBaseAmount()));
+        entryRepository.save(entry);
+        cycleRepository.save(cycle);
+
+        payable.addToNettingCycle(cycle.getId(), cycle.getCycleReference(), entry.getId());
+        payableRepository.save(payable);
+
+        log.debug("Added payable {} to netting cycle {} (entry {})",
+            payable.getPayableNumber(), cycle.getCycleReference(), entry.getEntryReference());
+        return entry;
+    }
+
     /**
      * Phase 4 Task 4.7: Add intercompany receivables to netting cycle.
      * 

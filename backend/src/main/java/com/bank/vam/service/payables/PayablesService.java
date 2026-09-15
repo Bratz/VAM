@@ -7,6 +7,7 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.party.Party;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.*;
+import com.bank.vam.entity.treasury.NettingEntry;
 import com.bank.vam.entity.treasury.PaymentRequest;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
@@ -14,6 +15,7 @@ import com.bank.vam.repository.party.PartyRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.treasury.PaymentRequestRepository;
 import com.bank.vam.service.TransactionService;
+import com.bank.vam.service.treasury.NettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -52,10 +54,10 @@ public class PayablesService {
     private final PaymentRequestRepository paymentRequestRepository;
     private final TransactionService transactionService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final NettingService nettingService;
 
     // TODO: Inject these when available
     // private final LegalEntityRepository legalEntityRepository;
-    // private final NettingService nettingService;
     // private final IhbUnifiedService ihbService;
     // private final IntercompanyRechargeService rechargeService;
 
@@ -1097,20 +1099,12 @@ public class PayablesService {
                 Payable payable = payableRepository.findById(payableId)
                     .orElseThrow(() -> new RuntimeException("Payable not found"));
 
-                if (!payable.canAddToNetting()) {
-                    throw new RuntimeException("Payable not eligible for netting");
-                }
-
-                UUID entryId = UUID.randomUUID(); // Would come from NettingService
-                String cycleRef = "NET-" + request.getNettingCycleId().toString().substring(0, 8);
-                
-                payable.addToNettingCycle(request.getNettingCycleId(), cycleRef, entryId);
-                payableRepository.save(payable);
+                NettingEntry entry = nettingService.addPayableToCycle(request.getNettingCycleId(), payable);
 
                 results.add(NettingAddResult.builder()
                     .payableId(payableId)
                     .payableNumber(payable.getPayableNumber())
-                    .nettingEntryId(entryId)
+                    .nettingEntryId(entry.getId())
                     .success(true)
                     .build());
 
