@@ -4,6 +4,7 @@ import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.payables.PayablesDto.*;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.party.Party;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.*;
@@ -11,10 +12,12 @@ import com.bank.vam.entity.treasury.NettingEntry;
 import com.bank.vam.entity.treasury.PaymentRequest;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.party.PartyRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.treasury.PaymentRequestRepository;
 import com.bank.vam.service.TransactionService;
+import com.bank.vam.service.pobo.PoboExecutionService;
 import com.bank.vam.service.treasury.NettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,9 +58,10 @@ public class PayablesService {
     private final TransactionService transactionService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final NettingService nettingService;
+    private final LegalEntityRepository legalEntityRepository;
+    private final PoboExecutionService poboExecutionService;
 
     // TODO: Inject these when available
-    // private final LegalEntityRepository legalEntityRepository;
     // private final IhbUnifiedService ihbService;
     // private final IntercompanyRechargeService rechargeService;
 
@@ -444,71 +448,70 @@ public class PayablesService {
     }
 
     /**
-     * Execute POBO payments.
+     * Execute POBO payments. Delegates to {@link PoboExecutionService}, the
+     * canonical POBO pipeline (authorization checks, a real persisted
+     * {@code IntercompanyRecharge}, fee posting) — this method used to skip
+     * all of that and fabricate {@code ihbLoanId}/{@code rechargeId} as
+     * random UUIDs that were never backed by any created record.
+     *
+     * <p>There is no {@code IhbLoan} entity in this codebase (IHB accrues
+     * against a current-account rate, not a discrete loan), so {@code
+     * ihbLoanId} is never populated here or in the canonical pipeline — it
+     * stays {@code null} rather than a fabricated placeholder. Recharge ids
+     * are per-payable and already persisted on their {@code
+     * IntercompanyRecharge} rows; this response's single {@code rechargeId}
+     * field can't honestly represent a whole batch, so it's left {@code
+     * null} too rather than picking one arbitrarily.
      */
     @Transactional
     public PoboExecuteResponse executePobo(PoboExecuteRequest request) {
         log.info("Executing POBO for {} payables", request.getPayableIds().size());
 
-        String batchRef = "POBO-" + System.currentTimeMillis();
-        List<PoboExecutionResult> results = new ArrayList<>();
-        int successCount = 0;
-        int failedCount = 0;
-        BigDecimal totalExecuted = BigDecimal.ZERO;
-        String currencyCode = "AED";
+        UUID payingEntityId = request.getPayingEntityId();
+        LegalEntity payingEntity = legalEntityRepository.findById(payingEntityId)
+            .orElseThrow(() -> new RuntimeException("Paying entity not found: " + payingEntityId));
 
-        // In production, would create IHB loan and recharge here
-        UUID ihbLoanId = UUID.randomUUID(); // Placeholder
-        UUID rechargeId = UUID.randomUUID(); // Placeholder
+        PoboExecutionService.BatchPoboExecuteRequest batchRequest = PoboExecutionService.BatchPoboExecuteRequest.builder()
+            .payableIds(request.getPayableIds())
+            .treasuryEntityId(payingEntityId)
+            .treasuryEntityCode(payingEntity.getEntityCode())
+            .treasuryEntityName(payingEntity.getEntityName())
+            .executedBy(request.getExecutedBy())
+            .build();
 
-        for (UUID payableId : request.getPayableIds()) {
-            try {
-                Payable payable = payableRepository.findById(payableId)
-                    .orElseThrow(() -> new RuntimeException("Payable not found"));
+        PoboExecutionService.BatchPoboResult batchResult = poboExecutionService.executeBatchPobo(batchRequest);
 
-                if (payable.getPoboRequestStatus() != PoboRequestStatus.APPROVED) {
-                    throw new RuntimeException("Payable not approved for POBO");
-                }
+        List<PoboExecutionResult> results = batchResult.getResults().stream()
+            .map(r -> PoboExecutionResult.builder()
+                .payableId(r.getPayableId())
+                .payableNumber(r.getPayableNumber())
+                .transactionRef(r.getPaymentTransactionRef())
+                .amount(r.getPaidAmount())
+                .success(r.isSuccess())
+                .errorMessage(r.getErrorMessage())
+                .build())
+            .collect(Collectors.toList());
 
-                String txnRef = batchRef + "-" + (successCount + 1);
-                payable.markPoboExecuted(txnRef, ihbLoanId, rechargeId);
-                payableRepository.save(payable);
+        String currencyCode = batchResult.getResults().stream()
+            .filter(PoboExecutionService.PoboExecutionResult::isSuccess)
+            .map(PoboExecutionService.PoboExecutionResult::getCurrency)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(marketProfile.getDefaultCurrency());
 
-                results.add(PoboExecutionResult.builder()
-                    .payableId(payableId)
-                    .payableNumber(payable.getPayableNumber())
-                    .transactionRef(txnRef)
-                    .amount(payable.getNetAmount())
-                    .success(true)
-                    .build());
-
-                successCount++;
-                totalExecuted = totalExecuted.add(payable.getNetAmount());
-                currencyCode = payable.getCurrencyCode();
-
-            } catch (Exception e) {
-                log.error("POBO execution failed for payable: {}", payableId, e);
-                results.add(PoboExecutionResult.builder()
-                    .payableId(payableId)
-                    .success(false)
-                    .errorMessage(e.getMessage())
-                    .build());
-                failedCount++;
-            }
-        }
-
-        log.info("POBO execution completed: {} success, {} failed", successCount, failedCount);
+        log.info("POBO execution completed: {} success, {} failed",
+            batchResult.getSuccessCount(), batchResult.getFailedCount());
 
         return PoboExecuteResponse.builder()
-            .batchTransactionRef(batchRef)
+            .batchTransactionRef("POBO-" + batchResult.getBatchId())
             .results(results)
-            .successCount(successCount)
-            .failedCount(failedCount)
-            .totalExecutedAmount(totalExecuted)
+            .successCount(batchResult.getSuccessCount())
+            .failedCount(batchResult.getFailedCount())
+            .totalExecutedAmount(batchResult.getTotalPaidAmount())
             .currencyCode(currencyCode)
-            .ihbLoanId(ihbLoanId)
-            .rechargeId(rechargeId)
-            .executedAt(LocalDateTime.now())
+            .ihbLoanId(null)
+            .rechargeId(null)
+            .executedAt(batchResult.getExecutedAt())
             .build();
     }
 

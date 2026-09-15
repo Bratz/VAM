@@ -4,6 +4,7 @@ import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.service.treasury.CurrencyMirrorService;
 import com.bank.vam.service.treasury.CurrencyMirrorService.CurrencyBreakdown;
+import com.bank.vam.service.treasury.HierarchyVaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,32 +49,40 @@ import java.util.stream.Collectors;
 public class CurrencyMirrorController {
 
     private final CurrencyMirrorService currencyMirrorService;
+    private final HierarchyVaService hierarchyVaService;
 
     // ========================================================================
     // CREATE APIs
     // ========================================================================
 
     /**
-     * Create a currency mirror under a parent node.
+     * Create a currency mirror under a parent node. Delegates to {@link
+     * HierarchyVaService#ensureCurrencyMirrorAtLevel} — the implementation
+     * actually exercised in production (hierarchy merge/move flows) — rather
+     * than the parallel implementation that used to live directly in {@link
+     * CurrencyMirrorService}, which nothing in this codebase's frontend
+     * ever called. Base currency is now derived from the parent VA rather
+     * than trusted from the request, matching how every other caller of
+     * this operation already works.
      */
     @PostMapping
     @Operation(summary = "Create currency mirror",
                description = "Create a CURRENCY_MIRROR VA to aggregate same-currency balances")
     public ResponseEntity<ApiResponse<CurrencyMirrorResponse>> createCurrencyMirror(
             @Valid @RequestBody CreateMirrorRequest request) {
-        
-        log.info("POST /api/v1/treasury/currency-mirrors - {} under parent {}", 
+
+        log.info("POST /api/v1/treasury/currency-mirrors - {} under parent {}",
                  request.getCurrency(), request.getParentVaId());
-        
-        VirtualAccount mirror = currencyMirrorService.createCurrencyMirror(
+
+        VirtualAccount mirror = hierarchyVaService.ensureCurrencyMirrorAtLevel(
             request.getParentVaId(),
             request.getCurrency().toUpperCase(),
-            request.getBaseCurrency().toUpperCase(),
-            request.getCorporateId()
+            request.getCorporateId(),
+            null
         );
-        
+
         return ResponseEntity.ok(ApiResponse.success(
-            toResponse(mirror), 
+            toResponse(mirror),
             "Currency mirror created for " + request.getCurrency()
         ));
     }

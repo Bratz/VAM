@@ -9,10 +9,12 @@ import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.entity.treasury.*;
 import com.bank.vam.entity.treasury.NettingEntry.FlowDirection;
 import com.bank.vam.entity.treasury.NettingEntry.SourceType;
+import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
 import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.repository.pobo.IntercompanyRechargeRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
@@ -56,6 +58,7 @@ public class NettingService {
     private final PayableRepository payableRepository;
     private final ReceivableRepository receivableRepository;
     private final IntercompanyRechargeRepository rechargeRepository;
+    private final IntercompanyTransactionRepository transactionRepository;
     private final VirtualAccountRepository virtualAccountRepository;
     private final TransactionRepository ledgerTransactionRepository;
     private final FeePostingService feePostingService;
@@ -356,6 +359,109 @@ public class NettingService {
 
         log.debug("Added payable {} to netting cycle {} (entry {})",
             payable.getPayableNumber(), cycle.getCycleReference(), entry.getEntryReference());
+        return entry;
+    }
+
+    /**
+     * Adds one explicitly-chosen intercompany transaction to an existing
+     * netting cycle, creating a real, persisted {@link NettingEntry} on the
+     * same {@code ENT-%06d} reference scheme as every other entry point.
+     *
+     * <p>Replaces {@code IntercompanyTransactionService}'s own entry-building,
+     * which used a separate {@code NE-IC-} reference scheme and never added
+     * the entry to the cycle's own collection or updated its total, so
+     * {@code cycle.totalGross} silently missed anything routed through it.
+     */
+    @Transactional
+    public NettingEntry addTransactionToCycle(UUID nettingCycleId, IntercompanyTransaction transaction) {
+        NettingCycle cycle = cycleRepository.findById(nettingCycleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
+
+        if (cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
+            throw new BusinessException("Netting cycle is not open for additions");
+        }
+
+        NettingEntry entry = NettingEntry.builder()
+            .cycle(cycle)
+            .entryReference("ENT-" + String.format("%06d", entrySequence.getAndIncrement()))
+            .flowDirection(FlowDirection.PAYABLE)
+            .payerEntityId(transaction.getBehalfEntityId())
+            .payerEntityCode(transaction.getBehalfEntityCode())
+            .payerEntityName(transaction.getBehalfEntityName())
+            .payeeEntityId(transaction.getPayingEntityId())
+            .payeeEntityCode(transaction.getPayingEntityCode())
+            .payeeEntityName(transaction.getPayingEntityName())
+            .sourceType(SourceType.INTERCOMPANY_PAYABLE)
+            .sourceReference(transaction.getTransactionRef())
+            .grossAmount(transaction.getNetAmount())
+            .currencyCode(transaction.getCurrencyCode())
+            .exchangeRate(BigDecimal.ONE)
+            .baseAmount(transaction.getNetAmount())
+            .originalCurrency(transaction.getCurrencyCode())
+            .originalAmount(transaction.getNetAmount())
+            .status(NettingEntry.EntryStatus.PENDING)
+            .build();
+
+        applyFxConversion(entry, cycle.getBaseCurrency());
+        cycle.getEntries().add(entry);
+        cycle.setTotalGross(cycle.getTotalGross().add(entry.getBaseAmount()));
+        entryRepository.save(entry);
+        cycleRepository.save(cycle);
+
+        log.debug("Added IC transaction {} to netting cycle {} (entry {})",
+            transaction.getTransactionRef(), cycle.getCycleReference(), entry.getEntryReference());
+        return entry;
+    }
+
+    /**
+     * Adds one explicitly-chosen intercompany recharge to an existing
+     * netting cycle, creating a real, persisted {@link NettingEntry} the
+     * same way {@link #addPoboRecharges(NettingCycle, UUID, boolean)} does
+     * for its bulk scan. Replaces {@code IntercompanyTransactionService}'s
+     * own duplicate entry-building for recharges (see
+     * {@link #addTransactionToCycle(UUID, IntercompanyTransaction)} javadoc
+     * for what was wrong with it).
+     */
+    @Transactional
+    public NettingEntry addRechargeToCycle(UUID nettingCycleId, IntercompanyRecharge recharge) {
+        NettingCycle cycle = cycleRepository.findById(nettingCycleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Netting cycle not found: " + nettingCycleId));
+
+        if (cycle.getStatus() != NettingCycle.CycleStatus.OPEN) {
+            throw new BusinessException("Netting cycle is not open for additions");
+        }
+
+        NettingEntry entry = NettingEntry.builder()
+            .cycle(cycle)
+            .entryReference("ENT-" + String.format("%06d", entrySequence.getAndIncrement()))
+            .flowDirection(FlowDirection.PAYABLE)
+            .payerEntityId(recharge.getBehalfEntityId())
+            .payerEntityCode(recharge.getBehalfEntityCode())
+            .payerEntityName(recharge.getBehalfEntityName())
+            .payeeEntityId(recharge.getPayerEntityId())
+            .payeeEntityCode(recharge.getPayerEntityCode())
+            .payeeEntityName(recharge.getPayerEntityName())
+            .sourceType(SourceType.POBO_RECHARGE)
+            .sourceReference(recharge.getRechargeReference())
+            .intercompanyRechargeId(recharge.getId())
+            .grossAmount(recharge.getTotalRecharge())
+            .currencyCode(recharge.getCurrencyCode())
+            .exchangeRate(BigDecimal.ONE)
+            .baseAmount(recharge.getTotalRecharge())
+            .originalCurrency(recharge.getCurrencyCode())
+            .originalAmount(recharge.getTotalRecharge())
+            .dueDate(recharge.getSettlementDate())
+            .status(NettingEntry.EntryStatus.PENDING)
+            .build();
+
+        applyFxConversion(entry, cycle.getBaseCurrency());
+        cycle.getEntries().add(entry);
+        cycle.setTotalGross(cycle.getTotalGross().add(entry.getBaseAmount()));
+        entryRepository.save(entry);
+        cycleRepository.save(cycle);
+
+        log.debug("Added recharge {} to netting cycle {} (entry {})",
+            recharge.getRechargeReference(), cycle.getCycleReference(), entry.getEntryReference());
         return entry;
     }
 

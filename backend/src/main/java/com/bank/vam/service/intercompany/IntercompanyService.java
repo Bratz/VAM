@@ -240,6 +240,15 @@ public class IntercompanyService {
                 .build();
     }
 
+    /**
+     * Ad-hoc entity-to-entity POBO transfer (distinct from
+     * {@code PayablesService.executePobo}/{@code PoboExecutionService},
+     * which execute POBO against existing {@code Payable} records — this
+     * one creates the {@code IntercompanyTransaction} from a raw amount).
+     * No discrete {@code IhbLoan} entity exists in this codebase, so
+     * {@code ihbLoanId}/{@code ihbLoanRef} are left unset rather than
+     * fabricated as random placeholders.
+     */
     public PoboResultResponse executePobo(PoboRequest request) {
         UUID payingEntityId = request.getPayingEntityId();
         UUID behalfEntityId = request.getBehalfEntityId();
@@ -255,9 +264,7 @@ public class IntercompanyService {
         BigDecimal totalAmount = amount.add(charges);
         
         String transactionRef = "POBO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String loanRef = "LOAN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        UUID ihbLoanId = UUID.randomUUID();
-        
+
         if (Boolean.TRUE.equals(behalfEntity.getIhbEnabled())) {
             behalfEntity.utilizeIhbLimit(totalAmount);
             legalEntityRepository.save(behalfEntity);
@@ -281,7 +288,6 @@ public class IntercompanyService {
                 .currencyCode(currencyCode)
                 .charges(charges)
                 .netAmount(totalAmount)
-                .ihbLoanId(ihbLoanId)
                 .status(IntercompanyTransaction.TransactionStatus.PROCESSED)
                 .processedAt(LocalDateTime.now())
                 .description(request.getDescription())
@@ -303,8 +309,6 @@ public class IntercompanyService {
                 .currencyCode(currencyCode)
                 .charges(charges)
                 .totalAmount(totalAmount)
-                .ihbLoanId(ihbLoanId)
-                .ihbLoanRef(loanRef)
                 .processedAt(LocalDateTime.now())
                 .build();
     }

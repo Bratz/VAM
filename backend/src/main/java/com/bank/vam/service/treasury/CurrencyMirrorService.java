@@ -94,107 +94,6 @@ public class CurrencyMirrorService {
     }
 
     // ========================================================================
-    // CORE: CREATE CURRENCY MIRROR (Controller API)
-    // ========================================================================
-
-    /**
-     * Create a currency mirror under a parent VA.
-     * Called by CurrencyMirrorController.createCurrencyMirror().
-     * 
-     * @param parentVaId The parent VA ID (can be another mirror or ROOT)
-     * @param currency The currency code
-     * @param baseCurrency The base currency for FX conversion
-     * @param corporateId The corporate ID
-     * @return The created Currency Mirror VA
-     */
-    @Transactional
-    public VirtualAccount createCurrencyMirror(UUID parentVaId, String currency, 
-                                                String baseCurrency, UUID corporateId) {
-        log.info("Creating Currency Mirror for {} (base: {}) under parent {} for corporate {}",
-                 currency, baseCurrency, parentVaId, corporateId);
-
-        // Get parent VA
-        VirtualAccount parentVa = vaRepository.findById(parentVaId)
-            .orElseThrow(() -> new ResourceNotFoundException("Parent VA not found: " + parentVaId));
-
-        // Validate parent is valid for Currency Mirror attachment
-        if (parentVa.getAccountCategory() != AccountCategory.CURRENCY_MIRROR 
-            && parentVa.getAccountCategory() != AccountCategory.ROOT
-            && parentVa.getAccountCategory() != AccountCategory.AGGREGATION) {
-            throw new BusinessException("Parent must be a CURRENCY_MIRROR, ROOT, or AGGREGATION account");
-        }
-
-        // Check if mirror already exists
-        Optional<VirtualAccount> existing = findMirrorByParentAndCurrency(parentVaId, currency);
-        if (existing.isPresent()) {
-            log.info("Currency Mirror already exists: {}", existing.get().getVaNumber());
-            return existing.get();
-        }
-
-        // Get program from parent
-        Program program = null;
-        if (parentVa.getProgramId() != null) {
-            program = programRepository.findById(parentVa.getProgramId()).orElse(null);
-        }
-
-        // Generate mirror code
-        String mirrorCode = generateMirrorCode(currency, parentVa);
-
-        // Calculate FX rate
-        BigDecimal fxRate = calculateFxRate(currency, baseCurrency);
-
-        // Create Currency Mirror VA
-        VirtualAccount mirrorVa = VirtualAccount.builder()
-            // Core identification
-            .vaNumber(mirrorCode)
-            .vaName(currency + " Mirror")
-            .programId(parentVa.getProgramId())
-            .corporateId(corporateId)
-            .physicalAccountId(parentVa.getPhysicalAccountId())
-            .currencyCode(currency)
-            
-            // Account classification
-            .accountType(AccountType.VIRTUAL)
-            .accountCategory(AccountCategory.CURRENCY_MIRROR)
-            
-            // Hierarchy linkage
-            .hierarchyNodeId(parentVa.getHierarchyNodeId())
-            .hierarchyPath(parentVa.getHierarchyPath())
-            .hierarchyPathVa(buildMirrorHierarchyPath(parentVa, currency))
-            .hierarchyLevel(parentVa.getHierarchyLevel() != null ? parentVa.getHierarchyLevel() + 1 : 1)
-            
-            // Parent mirror linkage (self-referencing VA tree)
-            .parentAccountId(parentVaId)
-            
-            // Multi-currency support
-            .baseCurrency(baseCurrency)
-            .mirrorBalance(BigDecimal.ZERO)
-            .fxRate(fxRate)
-            .fxRateAt(LocalDateTime.now())
-            .fxRateSource("SYSTEM")
-            .balanceInBase(BigDecimal.ZERO)
-            
-            // Standard balance fields
-            .currentBalance(BigDecimal.ZERO)
-            .availableBalance(BigDecimal.ZERO)
-            .heldBalance(BigDecimal.ZERO)
-            
-            // Status
-            .status(VaStatus.ACTIVE)
-            
-            // Initialize counters
-            .transactionCount(0)
-            .build();
-
-        mirrorVa = vaRepository.save(mirrorVa);
-
-        log.info("Created Currency Mirror VA: {} for currency {} under parent {}", 
-            mirrorVa.getVaNumber(), currency, parentVa.getVaNumber());
-
-        return mirrorVa;
-    }
-
-    // ========================================================================
     // CORE: ENSURE CURRENCY MIRROR EXISTS (for createWithHierarchy flow)
     // ========================================================================
 
@@ -241,23 +140,6 @@ public class CurrencyMirrorService {
         }
 
         return mirrorVa;
-    }
-
-    /**
-     * Ensure Currency Mirror chain exists from leaf node up to ROOT.
-     * Called when creating a new transaction VA.
-     * 
-     * This is the entry point from VirtualAccountService.createWithHierarchy().
-     * 
-     * @param leafNodeId The leaf node where VA is being created
-     * @param currency The currency of the new VA
-     * @param program The program
-     * @return The leaf-level Currency Mirror VA (immediate parent for the new VA)
-     */
-    @Transactional
-    public VirtualAccount ensureCurrencyMirrorChain(UUID leafNodeId, String currency, Program program) {
-        log.info("Ensuring Currency Mirror chain for node {} currency {}", leafNodeId, currency);
-        return ensureCurrencyMirrorVa(leafNodeId, currency, program);
     }
 
     // ========================================================================
@@ -379,47 +261,6 @@ public class CurrencyMirrorService {
         log.info("Created Exception VA: {} under root mirror {}", exceptionCode, rootMirror.getVaNumber());
 
         return exceptionVa;
-    }
-
-    /**
-     * Create Settlement VA (on-demand, not auto-created).
-     * Settlement VAs are used for contra-entries in double-entry bookkeeping.
-     */
-    @Transactional
-    public VirtualAccount createSettlementVa(VirtualAccount parentMirror, String currency, Program program) {
-        // Check if Settlement VA already exists
-        Optional<VirtualAccount> existing = vaRepository
-            .findSettlementVaByCurrency(program.getId(), currency);
-
-        if (existing.isPresent()) {
-            return existing.get();
-        }
-
-        String settlementCode = "SETTLEMENT-" + currency;
-
-        VirtualAccount settlementVa = VirtualAccount.builder()
-            .vaNumber(settlementCode)
-            .vaName(currency + " Settlement Account")
-            .programId(program.getId())
-            .corporateId(program.getCorporateId())
-            .physicalAccountId(program.getPhysicalAccountId())
-            .currencyCode(currency)
-            .accountType(AccountType.VIRTUAL)
-            .accountCategory(AccountCategory.SETTLEMENT)
-            .parentAccountId(parentMirror.getId())
-            .specialType(VaSpecialType.SETTLEMENT)
-            .baseCurrency(program.getCurrencyCode())
-            .currentBalance(BigDecimal.ZERO)
-            .availableBalance(BigDecimal.ZERO)
-            .status(VaStatus.ACTIVE)
-            .transactionCount(0)
-            .build();
-
-        settlementVa = vaRepository.save(settlementVa);
-
-        log.info("Created Settlement VA: {} under mirror {}", settlementCode, parentMirror.getVaNumber());
-
-        return settlementVa;
     }
 
     // ========================================================================

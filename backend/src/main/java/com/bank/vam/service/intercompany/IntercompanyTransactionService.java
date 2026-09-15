@@ -939,7 +939,12 @@ public class IntercompanyTransactionService {
     }
 
     /**
-     * Add transactions to netting cycle.
+     * Add transactions to netting cycle. Delegates entry creation to
+     * {@link NettingService}, the canonical owner of {@link NettingEntry}
+     * construction — this method used to build entries itself on a separate
+     * {@code NE-IC-}/{@code NE-RC-} reference scheme and never updated the
+     * cycle's own entry collection or total, so {@code cycle.totalGross}
+     * silently missed everything added this way.
      */
     @Transactional
     public AddToNettingResult addToNettingCycle(UUID cycleId, List<UUID> transactionIds, List<UUID> rechargeIds) {
@@ -953,56 +958,20 @@ public class IntercompanyTransactionService {
         int transactionsAdded = 0;
         int rechargesAdded = 0;
 
-        // Add transactions
         if (transactionIds != null) {
             for (UUID txId : transactionIds) {
                 IntercompanyTransaction tx = transactionRepository.findById(txId)
                     .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + txId));
-                
-                // Create netting entry
-                NettingEntry entry = NettingEntry.builder()
-                    .cycle(cycle)
-                    .entryReference("NE-IC-" + UUID.randomUUID().toString().substring(0, 8))
-                    .flowDirection(NettingEntry.FlowDirection.PAYABLE)
-                    .payerEntityId(tx.getBehalfEntityId())
-                    .payeeEntityId(tx.getPayingEntityId())
-                    .sourceType(NettingEntry.SourceType.INTERCOMPANY_PAYABLE)
-                    .grossAmount(tx.getNetAmount())
-                    .currencyCode(tx.getCurrencyCode())
-                    .baseAmount(tx.getNetAmount())
-                    .originalAmount(tx.getNetAmount())
-                    .originalCurrency(tx.getCurrencyCode())
-                    .status(NettingEntry.EntryStatus.PENDING)
-                    .build();
-                
-                nettingEntryRepository.save(entry);
+                nettingService.addTransactionToCycle(cycleId, tx);
                 transactionsAdded++;
             }
         }
 
-        // Add recharges
         if (rechargeIds != null) {
             for (UUID rechargeId : rechargeIds) {
                 IntercompanyRecharge recharge = rechargeRepository.findById(rechargeId)
                     .orElseThrow(() -> new ResourceNotFoundException("Recharge not found: " + rechargeId));
-                
-                NettingEntry entry = NettingEntry.builder()
-                    .cycle(cycle)
-                    .entryReference("NE-RC-" + UUID.randomUUID().toString().substring(0, 8))
-                    .flowDirection(NettingEntry.FlowDirection.PAYABLE)
-                    .payerEntityId(recharge.getBehalfEntityId())
-                    .payeeEntityId(recharge.getPayerEntityId())
-                    .sourceType(NettingEntry.SourceType.POBO_RECHARGE)
-                    .intercompanyRechargeId(rechargeId)
-                    .grossAmount(recharge.getTotalRecharge())
-                    .currencyCode(recharge.getCurrencyCode())
-                    .baseAmount(recharge.getTotalRecharge())
-                    .originalAmount(recharge.getTotalRecharge())
-                    .originalCurrency(recharge.getCurrencyCode())
-                    .status(NettingEntry.EntryStatus.PENDING)
-                    .build();
-                
-                nettingEntryRepository.save(entry);
+                nettingService.addRechargeToCycle(cycleId, recharge);
                 rechargesAdded++;
             }
         }

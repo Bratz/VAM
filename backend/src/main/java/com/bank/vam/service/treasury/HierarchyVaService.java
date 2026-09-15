@@ -974,39 +974,6 @@ public class HierarchyVaService {
         return mirror;
     }
 
-    /**
-     * Create Currency Mirror - Public API (backward compatibility).
-     */
-    @Transactional
-    public VirtualAccount createCurrencyMirror(
-            UUID parentVaId,
-            String currency,
-            String baseCurrency,
-            UUID corporateId,
-            VirtualAccount sourceVa) {
-
-        if (checkCurrencyMirrorExists(parentVaId, currency)) {
-            log.debug("Currency Mirror for {} already exists under parent", currency);
-            return vaRepository.findByParentAccountIdAndAccountCategory(parentVaId, AccountCategory.CURRENCY_MIRROR)
-                .stream()
-                .filter(m -> currency.equals(m.getCurrencyCode()))
-                .findFirst()
-                .orElseThrow();
-        }
-
-        // Get programId from source or parent
-        UUID programId = null;
-        if (sourceVa != null && sourceVa.getProgramId() != null) {
-            programId = sourceVa.getProgramId();
-        } else {
-            VirtualAccount parent = vaRepository.findById(parentVaId).orElse(null);
-            if (parent != null) {
-                programId = parent.getProgramId();
-            }
-        }
-
-        return createCurrencyMirrorInternal(parentVaId, currency, baseCurrency, corporateId, programId, sourceVa);
-    }
 
     // ════════════════════════════════════════════════════════════════════════════════
     // EXCEPTION VA
