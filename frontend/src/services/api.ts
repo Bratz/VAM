@@ -8344,14 +8344,27 @@ export interface ForecastRun {
 }
 
 export const forecastApi = {
-  getLatest: (params: { entityId?: string; currency?: string; horizonDays?: number }) =>
-    apiClient.get<ApiResponse<ForecastSummary>>('/forecasts/latest', { params }).then(r => r.data),
+  // corporateId, when given, is sent as an explicit X-Corporate-Id header
+  // rather than relying on the axios interceptor's localStorage fallback —
+  // callers that already track a page-level selected corporate (e.g. a
+  // ScopeSelector) should pass it so this can't silently diverge from what
+  // the rest of the page is scoped to.
+  getLatest: (params: { entityId?: string; currency?: string; horizonDays?: number }, corporateId?: string) =>
+    apiClient.get<ApiResponse<ForecastSummary>>('/forecasts/latest', {
+      params,
+      ...(corporateId ? { headers: { 'X-Corporate-Id': corporateId } } : {}),
+    }).then(r => r.data),
 
-  getLines: (runId: string, params: { fromDate?: string; toDate?: string; groupBy?: 'NONE' | 'CATEGORY' | 'ENTITY' | 'COUNTERPARTY' }) =>
-    apiClient.get<ApiResponse<ForecastLine[]>>(`/forecasts/${runId}/lines`, { params }).then(r => r.data),
+  getLines: (runId: string, params: { fromDate?: string; toDate?: string; groupBy?: 'NONE' | 'CATEGORY' | 'ENTITY' | 'COUNTERPARTY' }, corporateId?: string) =>
+    apiClient.get<ApiResponse<ForecastLine[]>>(`/forecasts/${runId}/lines`, {
+      params,
+      ...(corporateId ? { headers: { 'X-Corporate-Id': corporateId } } : {}),
+    }).then(r => r.data),
 
-  triggerRun: () =>
-    apiClient.post<ApiResponse<ForecastRun>>('/forecasts/run').then(r => r.data),
+  triggerRun: (corporateId?: string) =>
+    apiClient.post<ApiResponse<ForecastRun>>('/forecasts/run', undefined,
+      corporateId ? { headers: { 'X-Corporate-Id': corporateId } } : undefined,
+    ).then(r => r.data),
 
   getRun: (runId: string) =>
     apiClient.get<ApiResponse<ForecastRun>>(`/forecasts/${runId}`).then(r => r.data),

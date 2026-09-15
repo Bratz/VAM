@@ -59,4 +59,34 @@ public interface PayableForecastRepository extends JpaRepository<Payable, UUID> 
         @Param("from") LocalDate from,
         @Param("to") LocalDate to
     );
+
+    /**
+     * Open AP balances with a positive outstanding amount, used by the
+     * {@code AgingEngine} to project payment dates — the AP mirror of
+     * {@code ReceivableForecastRepository#findOpenForAging}.
+     *
+     * <p>No date filtering here: unlike {@link #findPatternCandidates}, the
+     * engine clips projected value dates to the horizon in code (a payable
+     * already past due projects to {@code today}, not its stale
+     * {@code dueDate} — the same reasoning the AR sibling documents).
+     *
+     * @param entityIds      legal entities in scope (subtree of the corporate)
+     * @param types          PayableType values the engine treats as
+     *                       aging-like (INVOICE, EXPENSE, SUBSCRIPTION, REFUND)
+     * @param closedStatuses PayableStatus values to exclude — settled rows
+     *                       that must not be forecast again
+     */
+    @Query("""
+        SELECT p FROM Payable p
+        WHERE p.owningEntityId IN :entityIds
+          AND p.payableType IN :types
+          AND p.status NOT IN :closedStatuses
+          AND p.outstandingAmount IS NOT NULL
+          AND p.outstandingAmount > 0
+        """)
+    List<Payable> findOpenForAging(
+        @Param("entityIds") Set<UUID> entityIds,
+        @Param("types") Set<PayableType> types,
+        @Param("closedStatuses") Set<PayableStatus> closedStatuses
+    );
 }

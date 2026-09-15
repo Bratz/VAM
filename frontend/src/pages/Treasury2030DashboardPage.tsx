@@ -14,6 +14,7 @@ import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
 import { EntityHierarchyTreemap, FlatBreakdownTreemap, sumBalance } from '../components/dashboard/EntityHierarchyTreemap';
 import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
 import { IntercompanyPositionChart } from '../components/dashboard/IntercompanyPositionChart';
+import { CashFlowForecastChart, CashFlowWeek } from '../components/dashboard/CashFlowForecastChart';
 import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
 import { PositionStrip } from '../components/PositionStrip';
@@ -40,6 +41,7 @@ import {
   BalanceBreakdownItem,
   intercompanyApiEnhanced,
   SubsidiaryIntercompanyPosition,
+  forecastApi,
 } from '../services/api';
 import { cockpitApi } from '../services/cockpitApi';
 import { useCopilot } from '../ai/copilot/CopilotProvider';
@@ -129,6 +131,49 @@ function useChartChrome() {
   }), [isDark]);
 }
 
+// Fetches the latest cash forecast for a corporate and buckets its raw
+// lines into Receivables (AR_COLLECTIONS) vs Payables (AP_DISBURSEMENTS)
+// per week. `/forecasts/latest`'s own weeklyBuckets carry only a single net
+// number (all categories combined) — the AR/AP split isn't available there,
+// so this fetches the underlying lines and aggregates client-side into the
+// SAME week boundaries the summary already established (not a separately
+// computed week grouping, so it can't drift from whatever convention the
+// backend uses). corporateId is passed as an explicit header (see
+// forecastApi in services/api.ts) rather than relying on the axios
+// interceptor's localStorage fallback, so this can't silently show a
+// different corporate's forecast than the rest of the page.
+interface ForecastWeeklyResult {
+  currency: string;
+  weeks: CashFlowWeek[];
+}
+
+async function fetchForecastWeekly(corporateId: string): Promise<ForecastWeeklyResult> {
+  let summary;
+  try {
+    summary = (await forecastApi.getLatest({ horizonDays: 91 }, corporateId)).data;
+  } catch (err: any) {
+    if (err?.response?.status !== 404) throw err;
+    // No forecast run yet for this corporate — kick one off (synchronous,
+    // typically <5s per the endpoint's own doc comment) and retry once.
+    await forecastApi.triggerRun(corporateId);
+    summary = (await forecastApi.getLatest({ horizonDays: 91 }, corporateId)).data;
+  }
+  if (!summary || summary.weeklyBuckets.length === 0) return { currency: summary?.currency || 'AED', weeks: [] };
+
+  const lines = (await forecastApi.getLines(summary.runId, {}, corporateId)).data;
+  const weeks = summary.weeklyBuckets.map((bucket) => {
+    let receivables = 0;
+    let payables = 0;
+    for (const line of lines) {
+      if (line.valueDate < bucket.weekStart || line.valueDate > bucket.weekEnd) continue;
+      if (line.categoryCode === 'AR_COLLECTIONS') receivables += line.amountMid;
+      else if (line.categoryCode === 'AP_DISBURSEMENTS') payables += line.amountMid;
+    }
+    return { weekStart: bucket.weekStart, weekEnd: bucket.weekEnd, receivables, payables };
+  });
+  return { currency: summary.currency, weeks };
+}
+
 type AcctView = 'currency' | 'bank';
 
 interface CcyBucket {
@@ -182,6 +227,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const [corporateBreakdown, setCorporateBreakdown] = useState<BalanceBreakdownItem[]>([]);
   const [programBreakdown, setProgramBreakdown] = useState<BalanceBreakdownItem[]>([]);
   const [icPositions, setIcPositions] = useState<SubsidiaryIntercompanyPosition[]>([]);
+  const [forecast, setForecast] = useState<ForecastWeeklyResult | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
   const [positionView, setPositionView] = useState<'corporate' | 'program' | 'entity' | 'geo' | 'intercompany'>('entity');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -202,7 +249,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const load = async (scoped?: string) => {
     const seq = ++loadSeq.current;
     const s = scoped || undefined;
-    const [mb, att, tx, rl, fx, pa, bh, cb, pb, icp] = await Promise.allSettled([
+    setForecastLoading(!!s);
+    const [mb, att, tx, rl, fx, pa, bh, cb, pb, icp, fc] = await Promise.allSettled([
       multiBankLiquidityApi.getSummary(s),
       cockpitApi.getAttentionItems(s),
       transactionsApi.getRecent(20, s),
@@ -230,8 +278,12 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       // "netted across everyone" view that would mean anything) — same
       // corporate-only gate as "By program" above.
       s ? intercompanyApiEnhanced.getPositions(s) : Promise.resolve({ data: [] as SubsidiaryIntercompanyPosition[] }),
+      // Cash forecast is per-corporate only (no firm-wide aggregate exists
+      // on the backend) — same corporate-only gate as "By program" above.
+      s ? fetchForecastWeekly(s) : Promise.resolve(null as ForecastWeeklyResult | null),
     ]);
     if (seq !== loadSeq.current) return; // a newer load() call superseded this one
+    setForecastLoading(false);
     if (mb.status === 'fulfilled' && mb.value?.data) setSummary(mb.value.data);
     if (att.status === 'fulfilled') setAttention(att.value);
     if (tx.status === 'fulfilled' && Array.isArray(tx.value?.data)) setTxns(tx.value.data);
@@ -242,6 +294,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     if (cb.status === 'fulfilled' && Array.isArray(cb.value?.data)) setCorporateBreakdown(cb.value.data);
     if (pb.status === 'fulfilled' && Array.isArray(pb.value?.data)) setProgramBreakdown(pb.value.data);
     if (icp.status === 'fulfilled' && Array.isArray(icp.value?.data)) setIcPositions(icp.value.data);
+    setForecast(fc.status === 'fulfilled' ? fc.value : null);
   };
 
   useEffect(() => {
@@ -665,6 +718,36 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="body-sm">No shadow balances available for this scope.</p>
             )}
           </div>
+
+          {/* Cash flow forecast — Receivables (AR aging) vs Payables (AP
+              aging) projected weekly, from the real forecast engine. A
+              trend view, complementary to the actionable Payments list
+              below (that's "what needs approval now"; this is "what's my
+              cash trajectory") — kept as separate cards, not a replacement. */}
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+              <p className="section-title">Cash flow forecast</p>
+              {forecast && forecast.weeks.length > 0 && (
+                <span className="caption text-neutral-500 dark:text-neutral-400">
+                  Next {forecast.weeks.length} weeks
+                </span>
+              )}
+            </div>
+            <div className="px-4 py-3">
+              <CashFlowForecastChart
+                weeklyData={forecast?.weeks ?? []}
+                loading={forecastLoading}
+                hasCorporate={!!selectedCorporateId}
+                currency={forecast?.currency || 'AED'}
+                receivableFill={chartChrome.receivableFill}
+                payableFill={chartChrome.payableFill}
+                tickFill={chartChrome.tickFill}
+                tooltipBg={chartChrome.tooltipBg}
+                tooltipText={chartChrome.tooltipText}
+                tooltipShadow={chartChrome.tooltipShadow}
+              />
+            </div>
+          </Card>
 
           {/* Payments — Awaiting approval is REAL; other states are
               nav-only. Moved ahead of the Accounts table (was after it) —
