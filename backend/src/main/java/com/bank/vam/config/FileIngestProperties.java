@@ -25,6 +25,11 @@ public class FileIngestProperties {
     /** How often IngestRetrySweepService checks AWAITING_TRANSFORM jobs for a completed transform. */
     private int retryCadenceMinutes = 2;
 
+    /** A job stuck in AWAITING_TRANSFORM with no formatSignatureId for longer than this is
+     * re-escalated (a new ticket filed) instead of skipped forever — covers a stage manually
+     * reset without formatSignatureId, or an agent-service ticket that silently never resolved. */
+    private int staleAfterMinutes = 60;
+
     private final Jira jira = new Jira();
 
     @Getter

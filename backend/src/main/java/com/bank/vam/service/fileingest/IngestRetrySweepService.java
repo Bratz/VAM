@@ -13,6 +13,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +34,7 @@ public class IngestRetrySweepService {
     private final GeneratedTransformRunner transformRunner;
     private final IngestOrchestrator orchestrator;
     private final Path workspaceRoot;
+    private final Duration staleAfter;
 
     public IngestRetrySweepService(IngestJobRepository ingestJobRepository,
                                     FormatSignatureRepository formatSignatureRepository,
@@ -43,6 +46,7 @@ public class IngestRetrySweepService {
         this.transformRunner = transformRunner;
         this.orchestrator = orchestrator;
         this.workspaceRoot = Path.of(properties.getWorkspaceDir());
+        this.staleAfter = Duration.ofMinutes(properties.getStaleAfterMinutes());
     }
 
     @Scheduled(fixedRateString = "#{${vam.fileingest.retry-cadence-minutes:2} * 60 * 1000}")
@@ -53,10 +57,20 @@ public class IngestRetrySweepService {
         int resumed = 0;
         int stillWaiting = 0;
         int failed = 0;
+        int reescalated = 0;
         for (IngestJob job : waiting) {
             attempted++;
             if (job.getFormatSignatureId() == null) {
-                stillWaiting++;
+                // No agent-worker outcome ever landed on this row (e.g. a stage manually reset
+                // without also setting formatSignatureId) -- without this, such a job sits here
+                // forever, silently skipped by every sweep cycle.
+                if (Duration.between(job.getUpdatedAt(), Instant.now()).compareTo(staleAfter) > 0) {
+                    orchestrator.escalateToAgent(job, "Still awaiting a transform after "
+                            + staleAfter.toMinutes() + " minute(s) -- re-filing a ticket.");
+                    reescalated++;
+                } else {
+                    stillWaiting++;
+                }
                 continue;
             }
             Optional<FormatSignature> signature = formatSignatureRepository.findById(job.getFormatSignatureId());
@@ -75,8 +89,8 @@ public class IngestRetrySweepService {
             }
         }
         if (attempted > 0) {
-            log.info("Ingest retry sweep: attempted={}, resumed={}, stillWaiting={}, failed={}",
-                    attempted, resumed, stillWaiting, failed);
+            log.info("Ingest retry sweep: attempted={}, resumed={}, stillWaiting={}, failed={}, reescalated={}",
+                    attempted, resumed, stillWaiting, failed, reescalated);
         }
     }
 }

@@ -136,7 +136,9 @@ public class IngestOrchestrator {
     /** Unrecognized format: file a ticket for the separate agent worker and stop — no analysis,
      * no coding agent call happens in this app. IngestRetrySweepService resumes the job once the
      * worker sets formatSignatureId (and that signature's transformRef) on the shared row. */
-    private void escalateToAgent(IngestJob job, String reason) {
+    // Package-private, not private: IngestRetrySweepService also calls this to re-file a ticket
+    // for a job that's gone stale waiting on a formatSignatureId that never arrived.
+    void escalateToAgent(IngestJob job, String reason) {
         // Deliberately doesn't claim SIGNATURE_NEW here — this app has no way to know whether the
         // shape is genuinely new or already cached (that determination happens later, inside the
         // agent worker, which is the only side that ever computes a signature hash). Claiming
