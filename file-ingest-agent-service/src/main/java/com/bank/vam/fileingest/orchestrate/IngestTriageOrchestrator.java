@@ -176,6 +176,12 @@ public class IngestTriageOrchestrator {
         }
 
         job.setFormatSignatureId(signature.getId());
+        // Explicit, not conditional: confirmed live that leaving this unset silently strands the
+        // job forever once it does. backend's IngestRetrySweepService only ever queries
+        // findByStage(AWAITING_TRANSFORM) -- if this job previously failed once (stage now
+        // BLOCKED) before a later retry succeeded, that BLOCKED value would otherwise sit here
+        // permanently even though a working transform now exists, since nothing else resets it.
+        job.setStage(IngestStage.AWAITING_TRANSFORM);
         ingestJobRepository.save(job);
 
         safeComment(issue.key(), "Transform ready (commit " + signature.getTransformRef()

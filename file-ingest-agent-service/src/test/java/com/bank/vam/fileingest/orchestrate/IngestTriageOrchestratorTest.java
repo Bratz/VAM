@@ -106,6 +106,40 @@ class IngestTriageOrchestratorTest {
         verify(jiraClient).transitionTo("KAN-2", "Done");
     }
 
+    /**
+     * Regression test for a real production bug: confirmed live that a job stuck at BLOCKED
+     * from an earlier failed attempt stayed BLOCKED forever even after a later retry actually
+     * succeeded, because the success path only ever set formatSignatureId, never the stage --
+     * and backend's IngestRetrySweepService only ever queries findByStage(AWAITING_TRANSFORM),
+     * so it silently never found the job again despite a working transform now existing.
+     */
+    @Test
+    void aJobPreviouslyBlockedGetsItsStageResetOnceARetrySucceeds() {
+        UUID jobId = UUID.randomUUID();
+        Issue issue = new Issue("KAN-5", "summary", "INGEST_JOB_ID: " + jobId);
+        IngestJob job = jobWith(jobId);
+        job.setStage(IngestStage.BLOCKED);
+        job.setBlockedReason("A previous attempt failed for an unrelated reason.");
+        when(jiraClient.findOldestOpenTicket()).thenReturn(Optional.of(issue)).thenReturn(Optional.empty());
+        when(ingestJobRepository.findById(jobId)).thenReturn(Optional.of(job));
+        when(analysisAgentClient.analyze(any(), any()))
+                .thenReturn(new AnalysisAgentClient.AnalysisResult(true, aProfile(), null));
+        when(formatSignatureService.lookup(any(), any(), any())).thenReturn(Optional.empty());
+        when(transformGenerationService.generateAndRun(any(), any(), any(), any()))
+                .thenReturn(new TransformGenerationService.GenerationResult(true, "commitsha456", null));
+        FormatSignature nowRecorded = new FormatSignature();
+        nowRecorded.setId(UUID.randomUUID());
+        nowRecorded.setTransformRef("commitsha456");
+        when(formatSignatureService.lookup(eq("DEMO-CUSTOMER-1"), eq(IngestDomain.RECEIVABLES), any()))
+                .thenReturn(Optional.empty(), Optional.of(nowRecorded));
+
+        orchestrator.tryStartProcessing();
+
+        ArgumentCaptor<IngestJob> savedJob = ArgumentCaptor.forClass(IngestJob.class);
+        verify(ingestJobRepository, atLeastOnce()).save(savedJob.capture());
+        assertThat(savedJob.getValue().getStage()).isEqualTo(IngestStage.AWAITING_TRANSFORM);
+    }
+
     @Test
     void ticketWithNoJobIdMarkerIsEscalatedInsteadOfLoopingForever() {
         Issue issue = new Issue("KAN-3", "summary", "no marker here");
