@@ -43,6 +43,7 @@ import {
   History,
 } from 'lucide-react';
 import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer } from '../components/ui';
+import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
 import { AllocationModal } from '../components/treasury/AllocationModal';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -331,16 +332,7 @@ const ExceptionDetailDrawer: React.FC<{
         )}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50 flex items-center gap-2"><History className="w-4 h-4" />Timeline</h3>
-          {loading ? <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /></div> : (
-            <div className="space-y-3">
-              {timeline.map((entry, idx) => (
-                <div key={idx} className="flex gap-3">
-                  <div className="flex flex-col items-center"><div className="w-2 h-2 rounded-full bg-primary-600" />{idx < timeline.length - 1 && <div className="w-px h-full bg-neutral-200 dark:bg-primary-800 mt-1" />}</div>
-                  <div className="pb-4"><p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entry.action}</p>{entry.actor && <p className="text-xs text-neutral-500 dark:text-neutral-400">by {entry.actor}</p>}{entry.details && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">{entry.details}</p>}<p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{new Date(entry.timestamp).toLocaleString()}</p></div>
-                </div>
-              ))}
-            </div>
-          )}
+          <EventTimeline entries={timeline} loading={loading} />
         </div>
       </div>
     </Drawer>

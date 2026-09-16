@@ -106,6 +106,7 @@ import HierarchyOperationsPage from './pages/HierarchyOperationsPage';
 import OperationHistoryPage from './pages/OperationHistoryPage';
 import Iso20022PaymentsPage from './pages/Iso20022PaymentsPage';
 import TransfersPage from './pages/TransfersPage';
+import FileIngestUploadPage from './pages/FileIngestUploadPage';
 
 // ============================================================================
 // PAGE TYPES - Complete Unified VAM Design + Phase 7 & 8
@@ -205,7 +206,10 @@ export type PageType =
   | 'iso20022'
 
   // Fund Transfers
-  | 'transfers';
+  | 'transfers'
+
+  // File Ingest Pipeline
+  | 'file-ingest';
 
 // ============================================================================
 // NAVIGATION CONTEXT
@@ -476,7 +480,7 @@ const sectionFor = (page: PageType): SectionKey => {
     'interest-accruals','settlement-vas','exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
   if (['receivables','payables','escrow','wallet','receivables-create','receivables-edit','payables-create','payables-edit',
-       'ecommerce-dashboard','ecommerce-collections','merchant-onboarding','seller-collections'].includes(page)) return 'finance';
+       'ecommerce-dashboard','ecommerce-collections','merchant-onboarding','seller-collections','file-ingest'].includes(page)) return 'finance';
   return 'core';
 };
 
@@ -558,6 +562,7 @@ const App: React.FC = () => {
       case 'payables': return <EnhancedPayablesPage />;
       case 'escrow': return <EscrowPage />;
       case 'wallet': return <WalletPage />;
+      case 'file-ingest': return <FileIngestUploadPage />;
       
       // ====================================================================
       // Finance - Create/Edit Views

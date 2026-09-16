@@ -17,6 +17,16 @@
         "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\\Temp -DVAM_MARKET_PROFILE=UK -DVAM_HOME_BANK_BIC=HBUKGB4BXXX"
       ],
       "port": 8053
+    },
+    {
+      "name": "file-ingest",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": [
+        "-f", "file-ingest-agent-service/pom.xml",
+        "spring-boot:run",
+        "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\\Temp"
+      ],
+      "port": 8091
     }
   ]
 }

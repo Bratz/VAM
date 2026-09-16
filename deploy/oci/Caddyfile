@@ -10,9 +10,14 @@
 # hostname (and GATEWAY_PUBLIC_BASE_URL in .env) both need updating to match.
 #
 # /webhooks/* additionally routes to defect-fix-service (see
-# tasks/defect-autofix-pipeline-design.md) — GitHub's webhook config should
-# point at https://161-33-9-182.sslip.io/webhooks/github. Everything else
-# keeps going to the MCP gateway, unchanged.
+# tasks/defect-autofix-pipeline-design.md). file-ingest-agent-service has no
+# route here — it's a headless worker with no public HTTP surface (see
+# tasks/file-ingest-pipeline-design.md's "Revised architecture"); the
+# file-ingest pipeline's real public endpoint is now the main backend's own
+# /api/v1/ingest/* (already routed the same way the rest of the backend is).
+# GitHub's webhook config should point at
+# https://161-33-9-182.sslip.io/webhooks/github. Everything else keeps going
+# to the MCP gateway, unchanged.
 # ============================================================================
 
 161-33-9-182.sslip.io {

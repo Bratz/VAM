@@ -334,26 +334,24 @@ public class PayablesController {
     // ========================================================================
 
     @PostMapping("/{payableId}/submit")
-    @Operation(summary = "Submit payable for approval", 
+    @Operation(summary = "Submit payable for approval",
                description = "Submit a draft payable for approval")
     public ResponseEntity<PayableResponse> submitForApproval(
             @PathVariable UUID payableId,
             @RequestParam String submittedBy
     ) {
-        // Would implement in service
-        return ResponseEntity.ok(payablesService.getPayable(payableId));
+        return ResponseEntity.ok(payablesService.submitForApproval(payableId, submittedBy));
     }
 
     @PostMapping("/{payableId}/approve")
-    @Operation(summary = "Approve payable", 
+    @Operation(summary = "Approve payable",
                description = "Approve a pending payable")
     public ResponseEntity<PayableResponse> approvePayable(
             @PathVariable UUID payableId,
             @RequestBody ApprovePayableRequest request
     ) {
         request.setPayableId(payableId);
-        // Would implement in service
-        return ResponseEntity.ok(payablesService.getPayable(payableId));
+        return ResponseEntity.ok(payablesService.approvePayable(payableId, request.getApprovedBy(), request.getNotes()));
     }
 
     @PostMapping("/{payableId}/reject")

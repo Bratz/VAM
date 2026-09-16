@@ -52,6 +52,7 @@ import {
   CircleDot,
   Shield,
   Percent,
+  Upload,
   TrendingUp,
   ShoppingCart,
   Store,
@@ -153,6 +154,7 @@ export const navSections: NavSection[] = [
       { icon: <CreditCard className="w-5 h-5" />, label: 'POBO Payments', href: 'intercompany-pobo' },
       { icon: <Wallet className="w-5 h-5" />, label: 'COBO Collections', href: 'intercompany-cobo' },
       { icon: <FileCode2 className="w-5 h-5" />, label: 'ISO 20022 Payments', href: 'iso20022' },
+      { icon: <Upload className="w-5 h-5" />, label: 'File Ingest Pipeline', href: 'file-ingest' },
       { icon: <Scale className="w-5 h-5" />, label: 'Settlement VAs', href: 'settlement-vas' },
       { icon: <AlertTriangle className="w-5 h-5" />, label: 'Exceptions', href: 'exceptions', badge: 12, badgeColor: 'warning' },
     ]
@@ -268,6 +270,7 @@ export const pageTitles: Record<string, string> = {
   'intercompany-pobo': 'POBO Payments',
   'intercompany-cobo': 'COBO Collections',
   'iso20022': 'ISO 20022 Payments',
+  'file-ingest': 'File Ingest Pipeline',
   'settlement-vas': 'Settlement VAs',
   'exceptions': 'Exception Transactions',
   // Liquidity Management

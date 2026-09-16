@@ -48,6 +48,36 @@ user choice (the session's v1 real-data rewiring is superseded).
 - `cockpit.v1` feature flag (default on); `/dashboard-classic` route preserved for 60-day overlap
 
 ## 📋 Backlog
+- **Sweep-driven cash forecast engine** _(filed 2026-09-15)_
+  The cash-flow forecast module (`forecast.engine.*`, dashboard's new "Cash
+  flow forecast" chart) only covers invoice/expense-driven AP/AR (via
+  `AgingEngine`) and a few recurring payable types — payroll/tax/rent/
+  intercompany-out (via `PatternEngine`). It has **zero visibility into
+  automated sweeps** (`sweep_rules`/`sweep_executions` — the cash-
+  concentration engine) or **standing instructions**
+  (`ExternalMandate.MandateType.STANDING_INSTRUCTION`, alongside direct
+  debit/SEPA direct debit) — confirmed via direct search, neither table is
+  referenced anywhere in `com.bank.vam.forecast`. A daily ZBA/threshold
+  sweep that moves real cash between VAs, or a standing-instruction-driven
+  debit, produces no forecast line today. Also note: two seeded categories
+  have no implementing engine at all yet regardless of this gap —
+  `FX_CONVERSION` (routed to an unbuilt `DRIVER` engine) and anything
+  meant to come from an `ML` engine.
+  Scope when picked up: a new `ForecastEngine` (`SweepForecastEngine`?)
+  reading `sweep_rules`' schedule/threshold config + recent
+  `sweep_executions` history to project future sweep amounts/dates — a
+  materially different shape of engine than AGING/PATTERN (those key off a
+  due date on an open ledger row; sweeps are threshold/schedule-triggered,
+  so projecting them means simulating the trigger condition, not just
+  reading a stored date). Needs its own category + `ForecastSource` value.
+  Files: `backend/src/main/java/com/bank/vam/forecast/engine/`,
+  `backend/src/main/java/com/bank/vam/service/treasury/SweepService.java`
+  (source of the schedule/threshold semantics to mirror),
+  `backend/src/main/java/com/bank/vam/entity/treasury/ExternalMandate.java`.
+  Not started — no effort estimate yet (needs a design pass first: how to
+  project a THRESHOLD/PERCENTAGE sweep's future trigger, not just a fixed
+  date, is a real algorithm question, not a mechanical port of AgingEngine).
+
 - **Simulator R4(d) — inline FX rate on cross-ccy rule rows** _(filed 2026-05-16)_
   Mockup shows "MYR · FX MYR/SGD 0.2811" on cross-currency rule rows.
   Deferred from R4: needs an fx resolver threaded into the pure

@@ -105,6 +105,19 @@ vam:
       enabled: ${VAM_FORECAST_SCHEDULE_ENABLED:true}
       # Spring cron: sec min hour day month weekday — 02:30 UTC daily.
       cron: ${VAM_FORECAST_SCHEDULE_CRON:0 30 2 * * *}
+  # File-ingest pipeline — the "standard" upload/staging/processing lives here; an
+  # unrecognized format files a ticket for the separate file-ingest-agent-service
+  # worker (see tasks/file-ingest-pipeline-design.md's "Revised architecture").
+  # workspace-dir and jira.* must match that worker's own config exactly — the
+  # shared filesystem and Jira project are the only two things connecting them.
+  fileingest:
+    workspace-dir: ${VAM_FILEINGEST_WORKSPACE_DIR:/data/file-ingest-workspace}
+    retry-cadence-minutes: ${VAM_FILEINGEST_RETRY_CADENCE_MINUTES:2}
+    jira:
+      base-url: ${JIRA_BASE_URL:https://vam-five.atlassian.net}
+      email: ${JIRA_EMAIL:}
+      api-token: ${JIRA_API_TOKEN:}
+      project-key: ${JIRA_PROJECT_KEY:KAN}
   # Treasury Copilot — stub-only AI prototype (no LLM connection)
   ai:
     copilot:

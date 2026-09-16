@@ -1,0 +1,45 @@
+server:
+  port: 8091
+
+spring:
+  application:
+    name: file-ingest-agent-service
+  # No multipart config, no @RestController anywhere in this app anymore — it's a headless
+  # worker (see tasks/file-ingest-pipeline-design.md's "Revised architecture"). The embedded
+  # Tomcat still boots (needed for actuator/JPA infra) but serves nothing customer-facing.
+  datasource:
+    # Same Postgres instance/database the main backend uses. Unlike before, this service no
+    # longer owns its own schema — it's a second JPA client of backend's `public` schema
+    # (ingest_job/format_signature/timeline_event), which backend's own Flyway/ddl-auto manages.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/vam_db}
+    username: ${SPRING_DATASOURCE_USERNAME:vam_user}
+    password: ${DB_PASSWORD:vam_user123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema owned by backend's own migrations/ddl-auto now, not this service
+  flyway:
+    enabled: false   # this service no longer owns any schema
+
+ingest:
+  jira:
+    base-url: ${JIRA_BASE_URL:https://vam-five.atlassian.net}
+    email: ${JIRA_EMAIL:}
+    api-token: ${JIRA_API_TOKEN:}
+    project-key: ${JIRA_PROJECT_KEY:KAN}
+  anthropic:
+    api-key: ${ANTHROPIC_API_KEY:}
+    model: ${ANTHROPIC_MODEL:claude-sonnet-5}
+  agent:
+    max-turns: ${AGENT_MAX_TURNS:10}
+    max-retries: ${AGENT_MAX_RETRIES:1}
+  # Must match backend's vam.fileingest.workspace-dir exactly — the shared filesystem (uploaded
+  # source files, the transform-handlers checkout) is one of only two things connecting the two
+  # services, the other being the shared Jira project.
+  workspace-dir: ${INGEST_WORKSPACE_DIR:/data/file-ingest-workspace}
+
+logging:
+  level:
+    com.bank.vam.fileingest: DEBUG

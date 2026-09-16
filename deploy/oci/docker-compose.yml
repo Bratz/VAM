@@ -52,6 +52,19 @@
 # above, events = "Workflow runs" and "Pull requests" (the latter auto-closes
 # a ticket to Done when its fix PR is merged).
 #
+# The file-ingest agent pipeline (see tasks/file-ingest-pipeline-design.md)
+# is likewise entirely opt-in, and shares the JIRA_* vars above (a different
+# Jira label scopes its tickets, same project). To turn it on:
+#
+#   cat >> deploy/oci/.env <<'EOF'
+#   JIRA_EMAIL=you@example.com
+#   JIRA_API_TOKEN=<your Jira API token>
+#   EOF
+#   sudo docker compose --profile fileingest up -d --build
+#
+# It reuses the shared `db` Postgres instance (its own `fileingest` schema,
+# created automatically on first run) rather than a separate database.
+#
 services:
   db:
     image: postgres:16-alpine
@@ -93,9 +106,26 @@ services:
       # Sentry error monitoring — optional, no-op when unset (see application.yml).
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      # File-ingest pipeline (see tasks/file-ingest-pipeline-design.md) — the
+      # standard upload/staging/processing path lives here now; an
+      # unrecognized format files a ticket into this same Jira project for
+      # the separate file-ingest-agent-service worker below, which must be
+      # given the identical JIRA_*/workspace values to find its way back.
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-https://vam-five.atlassian.net}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-KAN}
+      VAM_FILEINGEST_WORKSPACE_DIR: /data/file-ingest-workspace
       # On a 1GB AMD micro (see DEPLOYMENT.md "1GB fallback"), uncomment to
       # cap the heap below the container-percentage default:
       # JAVA_OPTS: "-Xmx640m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC"
+    volumes:
+      # Shared with file-ingest-agent-service below — this app stores
+      # uploaded source files here; that worker reads them (and the
+      # transform-handlers checkout it writes to) from the same path. This
+      # is one of only two things connecting the two services, the other
+      # being the shared Jira project above.
+      - fileingest_workspace:/data/file-ingest-workspace
     ports:
       - "8053:8053"
 
@@ -178,10 +208,47 @@ services:
     expose:
       - "8090"
 
+  file-ingest-agent-service:
+    build:
+      context: ../..
+      dockerfile: file-ingest-agent-service/Dockerfile
+    restart: unless-stopped
+    profiles: ["fileingest"]   # opt-in, same pattern as the mcp/defectfix profiles — off by default
+    # No dependency on `backend` — the two are fully decoupled (see
+    # tasks/file-ingest-pipeline-design.md's "Revised architecture"). This
+    # worker only ever talks to Jira and this shared database/volume.
+    depends_on:
+      db:
+        condition: service_healthy
+    # NOT `:?required` on the secrets, deliberately — same reasoning as
+    # mcp-gateway/defect-fix-service above: this block is interpolated while
+    # parsing the whole file, before `profiles:` decides what actually starts.
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/vam_db
+      SPRING_DATASOURCE_USERNAME: vam_user
+      DB_PASSWORD: ${VAM_DB_PASSWORD:?create deploy/oci/.env with VAM_DB_PASSWORD=...}
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-https://vam-five.atlassian.net}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-KAN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      INGEST_WORKSPACE_DIR: /data/file-ingest-workspace
+    volumes:
+      # Same named volume as `backend` above — this worker reads the source
+      # files backend stored and writes the transform-handlers checkout
+      # backend's retry sweep later reads from.
+      - fileingest_workspace:/data/file-ingest-workspace
+    # No port mapping at all, public or internal — this is a headless worker
+    # with no customer-facing HTTP (see the "Revised architecture" doc);
+    # nothing outside it ever calls it. Its only interfaces are Jira and
+    # this shared database/volume.
+
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    profiles: ["mcp", "defectfix"]   # starts if either dependent service is enabled
+    profiles: ["mcp", "defectfix"]   # starts if any dependent service is enabled — file-ingest-agent-service
+    # isn't listed here: it has no public HTTP surface for Caddy to route to (see above).
     # No depends_on here on purpose: mcp-gateway only exists in the compose
     # project when the "mcp" profile is active. A hard depends_on on it would
     # break `docker compose --profile defectfix up -d` run alone (Compose
@@ -201,3 +268,4 @@ volumes:
   caddy_data:
   caddy_config:
   defectfix_workspace:
+  fileingest_workspace:
