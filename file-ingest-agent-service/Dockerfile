@@ -40,6 +40,14 @@ RUN apk add --no-cache git bash maven util-linux && \
     addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
+# A system-level identity so any git command works regardless of whether it remembers per-call
+# -c user.email/-c user.name overrides (TransformWorktreeManager's commit() and merge do set
+# these explicitly too, defense-in-depth — confirmed live that at least one git operation, a
+# --no-ff merge, was missing them and failed with "Committer identity unknown"). Matches
+# defect-fix-service's own Dockerfile pattern exactly.
+RUN git config --system user.email "file-ingest-agent@vam.local" && \
+    git config --system user.name "file-ingest-agent"
+
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 COPY file-ingest-agent-service/sandbox-run.sh /app/sandbox-run.sh

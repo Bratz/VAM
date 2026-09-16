@@ -86,7 +86,11 @@ public class TransformWorktreeManager {
             return null;
         }
         commit(worktreePath, commitMessage);
-        run(baseRepoPath, "merge", "--no-ff", branchName, "-m", "Merge " + branchName);
+        // --no-ff forces a real merge commit, which needs a committer identity same as any other
+        // commit -- confirmed live: this container has no git identity configured anywhere except
+        // what `commit()` sets per-invocation, and this call never went through that helper.
+        run(baseRepoPath, "-c", "user.email=file-ingest-agent@vam.local", "-c", "user.name=file-ingest-agent",
+                "merge", "--no-ff", branchName, "-m", "Merge " + branchName);
         return run(baseRepoPath, "rev-parse", "HEAD").output().strip();
     }
 
