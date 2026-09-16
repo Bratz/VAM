@@ -106,7 +106,21 @@ public class IngestTriageOrchestrator {
             return;
         }
 
-        Optional<IngestJob> jobOpt = ingestJobRepository.findById(jobId);
+        // Deliberately its own try/catch, not folded into the one below: a lookup failure here
+        // (e.g. this service's own IngestStage enum missing a value backend wrote — confirmed
+        // live, crashed this service's entire startup via onStartup -> tryStartProcessing, since
+        // that call chain doesn't actually go through the @Async proxy for a same-class
+        // self-invocation and so runs synchronously) must never propagate past processTicket for
+        // ANY ticket, or one bad row takes down the whole service, not just this one ticket.
+        Optional<IngestJob> jobOpt;
+        try {
+            jobOpt = ingestJobRepository.findById(jobId);
+        } catch (Exception e) {
+            log.error("Could not look up ingest job {} for ticket {}", jobId, issue.key(), e);
+            io.sentry.Sentry.captureException(e);
+            safeEscalate(issue.key(), "Database error looking up ingest job " + jobId + ": " + e.getMessage());
+            return;
+        }
         if (jobOpt.isEmpty()) {
             log.error("Ticket {} references ingest job {} which no longer exists", issue.key(), jobId);
             safeEscalate(issue.key(), "Referenced ingest job " + jobId + " no longer exists.");

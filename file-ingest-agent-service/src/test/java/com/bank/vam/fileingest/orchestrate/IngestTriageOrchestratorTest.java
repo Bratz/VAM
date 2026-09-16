@@ -117,4 +117,27 @@ class IngestTriageOrchestratorTest {
         verify(jiraClient).transitionTo("KAN-3", "Blocked");
         verify(ingestJobRepository, never()).findById(any());
     }
+
+    /**
+     * Regression test for a real production crash: ingestJobRepository.findById() threw (an
+     * enum value this service's own IngestStage copy didn't have yet, written by backend's
+     * separate copy of the same enum) with no try/catch around the call. Since onStartup calling
+     * tryStartProcessing is a same-class self-invocation, @Async doesn't actually apply (Spring's
+     * well-known proxy limitation) -- the call runs synchronously, so an uncaught exception here
+     * doesn't just fail one ticket, it crashes the entire application startup. Confirmed live on
+     * the OCI VM: the service failed "Application run failed" on every restart attempt while this
+     * ticket sat as the oldest open one.
+     */
+    @Test
+    void aFindByIdFailureEscalatesTheTicketInsteadOfCrashingTheWholeService() {
+        UUID jobId = UUID.randomUUID();
+        Issue issue = new Issue("KAN-4", "summary", "INGEST_JOB_ID: " + jobId);
+        when(jiraClient.findOldestOpenTicket()).thenReturn(Optional.of(issue)).thenReturn(Optional.empty());
+        when(ingestJobRepository.findById(jobId)).thenThrow(new RuntimeException("No enum constant ..."));
+
+        orchestrator.tryStartProcessing();
+
+        verify(jiraClient).addLabel("KAN-4", "needs-human");
+        verify(jiraClient).transitionTo("KAN-4", "Blocked");
+    }
 }
