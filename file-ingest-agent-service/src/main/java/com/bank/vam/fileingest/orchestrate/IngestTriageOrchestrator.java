@@ -41,7 +41,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IngestTriageOrchestrator {
 
     private static final Logger log = LoggerFactory.getLogger(IngestTriageOrchestrator.class);
-    private static final String JOB_ID_MARKER = "INGEST_JOB_ID: ";
+
+    /** Public so IngestTicketService can write the exact same literal into every ticket it files,
+     * instead of two independently-typed strings drifting apart (as they had, undetected, until
+     * this was fixed — see JobIdMarkerRoundTripTest). */
+    public static final String JOB_ID_MARKER = "INGEST_JOB_ID: ";
 
     private final JiraClient jiraClient;
     private final IngestJobRepository ingestJobRepository;
@@ -117,6 +121,7 @@ public class IngestTriageOrchestrator {
             resolveTransform(issue, job);
         } catch (Exception e) {
             log.error("Unexpected failure processing {}", issue.key(), e);
+            io.sentry.Sentry.captureException(e);
             onFailure(issue, job, "Pipeline error: " + e.getMessage());
         }
     }
@@ -198,8 +203,9 @@ public class IngestTriageOrchestrator {
         }
     }
 
-    /** Pulls the "INGEST_JOB_ID: <uuid>" line FileIngestTicketService embeds in every ticket it files. */
-    private UUID extractJobId(String description) {
+    /** Pulls the "INGEST_JOB_ID: <uuid>" line FileIngestTicketService embeds in every ticket it files.
+     * Package-private so JobIdMarkerRoundTripTest can call it directly against a real ticket description. */
+    UUID extractJobId(String description) {
         for (String line : description.split("\\R")) {
             if (line.startsWith(JOB_ID_MARKER)) {
                 return UUID.fromString(line.substring(JOB_ID_MARKER.length()).strip());

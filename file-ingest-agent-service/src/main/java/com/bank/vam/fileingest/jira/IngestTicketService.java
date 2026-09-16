@@ -1,6 +1,7 @@
 package com.bank.vam.fileingest.jira;
 
 import com.bank.vam.fileingest.entity.IngestJob;
+import com.bank.vam.fileingest.orchestrate.IngestTriageOrchestrator;
 import org.springframework.stereotype.Service;
 
 /**
@@ -25,13 +26,14 @@ public class IngestTicketService {
                 Customer: %s
                 Domain: %s
                 File: %s
-                Ingest job id: %s
+                %s%s
 
                 This ticket tracks the file-ingestion pipeline for this upload — \
                 see tasks/file-ingest-pipeline-design.md for the stage list. It \
                 will move through statuses automatically; no action is needed \
                 unless it reaches Blocked.
-                """.formatted(job.getCustomerId(), job.getDomain(), job.getOriginalFilename(), job.getId());
+                """.formatted(job.getCustomerId(), job.getDomain(), job.getOriginalFilename(),
+                        IngestTriageOrchestrator.JOB_ID_MARKER, job.getId());
 
         String domainLabel = "domain-" + job.getDomain().name().toLowerCase();
         return jiraClient.createIssue(summary, description, domainLabel);
