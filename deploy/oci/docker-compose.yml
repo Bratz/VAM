@@ -94,6 +94,12 @@ services:
       SPRING_DATASOURCE_USERNAME: vam_user
       DB_PASSWORD: ${VAM_DB_PASSWORD:?create deploy/oci/.env with VAM_DB_PASSWORD=...}
       SEED_ON_START: "true"   # idempotent — safe to leave on
+      # WebConfig's CorsFilter defaults to localhost-only dev origins — the actual root
+      # cause of every POST from the deployed frontend 403ing with Spring's own "Invalid
+      # CORS request" (confirmed live; not a Vercel or HTTP/HTTPS routing issue, despite
+      # first appearances). Both the real frontend origin and this VM's own HTTPS domain
+      # (used directly for testing/health checks) need to be allowed.
+      APERTURE_CORS_ALLOWED_ORIGINS: "https://vam-five.vercel.app,https://161-33-9-182.sslip.io"
       VAM_MARKET_PROFILE: UK
       VAM_HOME_BANK_BIC: HBUKGB4BXXX
       # MCP off by default; both flags flip together — a signed context is
