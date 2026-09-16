@@ -10,14 +10,23 @@
 // own schedule, never called directly) resolves it and backend's retry
 // sweep notices and resumes.
 //
-// Upload control is the CsvAccountUpload precedent: click-only despite
-// dropzone styling, plain <input type="file">, no drag-and-drop library.
+// Structure borrows ClearTax's broker-statement-upload pattern (tile picker
+// for "what is this" -> a real dropzone -> a milestone-style progress view
+// -> a stat scorecard on completion) but built entirely from this app's own
+// design system (Card/Badge, ink/pacific-cyan palette, Geist) and existing
+// data — no new backend endpoints. Drag-and-drop is native HTML5 (no
+// library); the DONE-state scorecard parses the numbers already present in
+// the DONE timeline event's `detail` string instead of adding an endpoint.
 // ============================================================================
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Upload, FileText, X, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Upload, FileText, X, AlertTriangle, CheckCircle2, RefreshCw,
+  ArrowDownToLine, ArrowUpFromLine, Send, ScanSearch, Wand2, Hammer,
+  ShieldCheck, Zap, Clock, PackageCheck, Workflow, XCircle, PauseCircle,
+} from 'lucide-react';
 import { Page } from '../components/layout/Page';
-import { Card, CardHeader, Button, Badge, Select, Input } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
 import { EventTimeline, TimelineEntry } from '../components/ui/EventTimeline';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, TimelineEventResponse } from '../services/ingestApi';
@@ -37,6 +46,40 @@ const STAGE_LABELS: Record<IngestStage, string> = {
   DONE: 'Done',
   BLOCKED: 'Blocked',
 };
+
+const STAGE_DESCRIPTIONS: Record<IngestStage, string> = {
+  RECEIVED: 'File received',
+  ANALYZED: "Reading the file's structure",
+  SIGNATURE_NEW: "Haven't seen this exact layout before",
+  CODING_AGENT_RUNNING: 'Writing a parser for it',
+  TEST_GATE: "Checking the parser's output",
+  SIGNATURE_MATCHED: 'Recognized — reusing a known parser',
+  AWAITING_TRANSFORM: 'Waiting on format support',
+  STAGED: 'Rows staged for review',
+  PROCESSING: 'Posting transactions',
+  DONE: 'Complete',
+  BLOCKED: 'Needs attention',
+};
+
+const STAGE_ICONS: Record<IngestStage, React.ReactNode> = {
+  RECEIVED: <FileText className="w-4 h-4" />,
+  ANALYZED: <ScanSearch className="w-4 h-4" />,
+  SIGNATURE_NEW: <Wand2 className="w-4 h-4" />,
+  CODING_AGENT_RUNNING: <Hammer className="w-4 h-4" />,
+  TEST_GATE: <ShieldCheck className="w-4 h-4" />,
+  SIGNATURE_MATCHED: <Zap className="w-4 h-4" />,
+  AWAITING_TRANSFORM: <Clock className="w-4 h-4" />,
+  STAGED: <PackageCheck className="w-4 h-4" />,
+  PROCESSING: <Workflow className="w-4 h-4" />,
+  DONE: <CheckCircle2 className="w-4 h-4" />,
+  BLOCKED: <AlertTriangle className="w-4 h-4" />,
+};
+
+const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
+  { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <ArrowDownToLine className="w-5 h-5" /> },
+  { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
+  { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-5 h-5" /> },
+];
 
 /** The pipeline has three possible shapes depending on what actually happens for this job's
  * format — a known Receivables shape skips escalation entirely; anything else files a ticket
@@ -66,10 +109,22 @@ function toTimelineEntries(events: TimelineEventResponse[]): TimelineEntry[] {
   }));
 }
 
+/** Parses IngestOrchestrator's own DONE-summary string ("%d processed, %d quarantined, %d
+ * failed (of %d total).") into a scorecard instead of adding a dedicated summary endpoint —
+ * the numbers already exist, just inside prose. */
+function parseDoneSummary(events: TimelineEventResponse[]): { processed: number; quarantined: number; failed: number; total: number } | null {
+  const done = events.find((e) => e.stage === 'DONE');
+  const match = done?.detail?.match(/(\d+) processed, (\d+) quarantined, (\d+) failed \(of (\d+) total\)/);
+  if (!match) return null;
+  const [, processed, quarantined, failed, total] = match;
+  return { processed: Number(processed), quarantined: Number(quarantined), failed: Number(failed), total: Number(total) };
+}
+
 const FileIngestUploadPage: React.FC = () => {
   const [domain, setDomain] = useState<IngestDomain>('RECEIVABLES');
   const [customerId, setCustomerId] = useState('DEMO-CUSTOMER-1');
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [job, setJob] = useState<IngestJobResponse | null>(null);
@@ -108,6 +163,13 @@ const FileIngestUploadPage: React.FC = () => {
     if (selected) setFile(selected);
   };
 
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const dropped = e.dataTransfer.files?.[0];
+    if (dropped) setFile(dropped);
+  };
+
   const handleUpload = async () => {
     if (!file || !customerId.trim()) return;
     setUploading(true);
@@ -142,6 +204,9 @@ const FileIngestUploadPage: React.FC = () => {
       : Math.max(steps.indexOf(job.stage), 0)
     : 0;
 
+  const isLive = !!job && job.stage !== 'DONE' && job.stage !== 'BLOCKED';
+  const doneSummary = useMemo(() => (job?.stage === 'DONE' ? parseDoneSummary(timeline) : null), [job?.stage, timeline]);
+
   return (
     <Page maxWidth="narrow">
       <div>
@@ -156,35 +221,64 @@ const FileIngestUploadPage: React.FC = () => {
       <Card>
         <CardHeader title="New Upload" subtitle="Every field below stays editable until you upload." />
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Domain"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value as IngestDomain)}
-              disabled={!!job}
-              options={[
-                { value: 'RECEIVABLES', label: 'Receivables' },
-                { value: 'PAYABLES', label: 'Payables' },
-                { value: 'PAYMENTS', label: 'Payments' },
-              ]}
-            />
-            <Input
-              label="Customer ID"
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              disabled={!!job}
-              placeholder="e.g. ACME-CORP-1"
-            />
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">What are you uploading?</label>
+            <div className="grid grid-cols-3 gap-3">
+              {DOMAIN_OPTIONS.map((opt) => {
+                const selected = domain === opt.value;
+                return (
+                  <Card
+                    key={opt.value}
+                    padding="sm"
+                    interactive={!job}
+                    onClick={() => !job && setDomain(opt.value)}
+                    className={
+                      selected
+                        ? 'border-accent-500 ring-1 ring-accent-500 dark:border-accent-500'
+                        : job
+                          ? 'opacity-60'
+                          : ''
+                    }
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? 'bg-accent-500 text-white' : 'bg-neutral-100 text-neutral-500 dark:bg-primary-800 dark:text-neutral-300'}`}>
+                      {opt.icon}
+                    </div>
+                    <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{opt.label}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{opt.description}</p>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
 
+          <Input
+            label="Customer ID"
+            value={customerId}
+            onChange={(e) => setCustomerId(e.target.value)}
+            disabled={!!job}
+            placeholder="e.g. ACME-CORP-1"
+          />
+
           {!job && (
-            <div className="border-2 border-dashed border-neutral-200 dark:border-primary-800 rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+                isDragging
+                  ? 'border-accent-500 bg-accent-50/60 dark:bg-accent-500/10 scale-[1.01]'
+                  : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300'
+              }`}
+            >
               <input type="file" onChange={handleFile} className="hidden" id="ingest-file-upload" />
-              <label htmlFor="ingest-file-upload" className="cursor-pointer">
-                <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-2" />
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">Click to choose a file</p>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Any format — the pipeline figures out its structure</p>
-              </label>
+              <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 scale-110' : 'text-neutral-400 dark:text-neutral-500'}`} />
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                Drop your file here, or{' '}
+                <label htmlFor="ingest-file-upload" className="text-accent-600 dark:text-accent-400 font-medium cursor-pointer hover:underline">
+                  browse to upload
+                </label>
+              </p>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Any format — the pipeline figures out its structure</p>
             </div>
           )}
 
@@ -237,22 +331,58 @@ const FileIngestUploadPage: React.FC = () => {
                 ) : job.stage === 'BLOCKED' ? (
                   <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Blocked</Badge>
                 ) : (
-                  <Badge variant="info">{STAGE_LABELS[job.stage]}</Badge>
+                  <Badge variant="accent" dot className="animate-pulse-soft">{STAGE_LABELS[job.stage]}</Badge>
                 )
               }
             />
             {job.stage === 'BLOCKED' && job.blockedReason && (
-              <div className="mb-4 p-3 rounded-lg bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30">
+              <div className="mb-4 p-3 rounded-lg bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 flex items-start gap-2">
+                <PauseCircle className="w-4 h-4 text-error-500 mt-0.5 shrink-0" />
                 <p className="text-sm text-error-700 dark:text-error-300">{job.blockedReason}</p>
               </div>
             )}
             <div className="overflow-x-auto py-2">
               <Stepper
-                steps={steps.map((s) => ({ id: s, title: STAGE_LABELS[s] }))}
+                steps={steps.map((s) => ({
+                  id: s,
+                  title: STAGE_LABELS[s],
+                  description: STAGE_DESCRIPTIONS[s],
+                  icon: STAGE_ICONS[s],
+                }))}
                 currentStep={currentStepIndex}
               />
             </div>
+            {isLive && (
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center mt-1 flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse-soft" />
+                Updating automatically
+              </p>
+            )}
           </Card>
+
+          {doneSummary && (
+            <div className="grid grid-cols-4 gap-3">
+              <Card padding="sm" className="text-center">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Total rows</p>
+                <p className="text-xl font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
+              </Card>
+              <Card padding="sm" className="text-center">
+                <CheckCircle2 className="w-4 h-4 text-success-500 mx-auto" />
+                <p className="text-xl font-semibold text-success-700 dark:text-success-300 mt-0.5">{doneSummary.processed}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Processed</p>
+              </Card>
+              <Card padding="sm" className="text-center">
+                <AlertTriangle className="w-4 h-4 text-warning-500 mx-auto" />
+                <p className="text-xl font-semibold text-warning-700 dark:text-warning-300 mt-0.5">{doneSummary.quarantined}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Quarantined</p>
+              </Card>
+              <Card padding="sm" className="text-center">
+                <XCircle className="w-4 h-4 text-error-500 mx-auto" />
+                <p className="text-xl font-semibold text-error-700 dark:text-error-300 mt-0.5">{doneSummary.failed}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">Failed</p>
+              </Card>
+            </div>
+          )}
 
           <Card>
             <CardHeader title="Timeline" subtitle="Updates automatically every few seconds." />
