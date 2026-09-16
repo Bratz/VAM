@@ -4,6 +4,7 @@ import com.bank.vam.fileingest.agent.FileStructureProfile;
 import com.bank.vam.fileingest.entity.FormatSignature;
 import com.bank.vam.fileingest.entity.IngestDomain;
 import com.bank.vam.fileingest.repository.FormatSignatureRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class FormatSignatureService {
 
     private final FormatSignatureRepository repository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public FormatSignatureService(FormatSignatureRepository repository) {
         this.repository = repository;
@@ -48,7 +50,20 @@ public class FormatSignatureService {
         signature.setCustomerId(customerId);
         signature.setDomain(domain);
         signature.setTransformRef(transformRef);
+        signature.setAnalysisProfileJson(writeProfileJson(profile));
         return repository.save(signature);
+    }
+
+    /** Swallows a serialization failure rather than blocking the whole recordTransform — a missing
+     * profile just means GeneratedTransformRunner falls back to its existing (unverified) behavior
+     * for this signature, not that the pipeline breaks. FileStructureProfile's fields are all plain
+     * strings/a list of strings, so a real failure here would be a JDK bug, not a data problem. */
+    private String writeProfileJson(FileStructureProfile profile) {
+        try {
+            return objectMapper.writeValueAsString(profile);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /** SHA-256(customerId | domain | normalized-column-headers | delimiter) — see the design doc. */

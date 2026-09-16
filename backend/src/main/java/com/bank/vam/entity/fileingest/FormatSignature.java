@@ -38,6 +38,13 @@ public class FormatSignature {
      * until the agent worker's coding-agent/test-gate loop succeeds. */
     private String transformRef;
 
+    /** Serialized FileStructureProfile (columns, delimiter, controlTotalColumn, notes) from the
+     * agent worker's analysis — lets GeneratedTransformRunner independently re-verify a
+     * cache-hit run's reconciliation against the raw file, instead of trusting the generated
+     * transform's own reported counts. Null for signatures recorded before this existed. */
+    @Column(columnDefinition = "TEXT")
+    private String analysisProfileJson;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }

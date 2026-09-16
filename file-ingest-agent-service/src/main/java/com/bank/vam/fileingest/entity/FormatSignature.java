@@ -39,6 +39,12 @@ public class FormatSignature {
     /** Git commit SHA in the transform-handlers repo this signature resolves to. Null until step 6's test gate passes. */
     private String transformRef;
 
+    /** Serialized FileStructureProfile (columns, delimiter, controlTotalColumn, notes) — lets
+     * backend's GeneratedTransformRunner independently re-verify a cache-hit run's reconciliation
+     * against the raw file, instead of trusting the generated transform's own reported counts. */
+    @Column(columnDefinition = "TEXT")
+    private String analysisProfileJson;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 }
