@@ -14,15 +14,25 @@
 # route here — it's a headless worker with no public HTTP surface (see
 # tasks/file-ingest-pipeline-design.md's "Revised architecture"); the
 # file-ingest pipeline's real public endpoint is now the main backend's own
-# /api/v1/ingest/* (already routed the same way the rest of the backend is).
+# /api/v1/ingest/* (routed below, same as the rest of the backend).
 # GitHub's webhook config should point at
 # https://161-33-9-182.sslip.io/webhooks/github. Everything else keeps going
 # to the MCP gateway, unchanged.
+#
+# /api/* routes to backend over real HTTPS — frontend/vercel.json's rewrite
+# used to point straight at http://<ip>:8053 (plain HTTP, no TLS), which
+# Vercel's rewrite proxy silently 403s ("Invalid CORS request") for any
+# non-GET method — confirmed live: every POST in the app failed this way
+# via the Vercel-fronted URL, not just file-ingest's upload endpoint. Fixed
+# by fronting backend with Caddy's real cert too, matching the other routes.
 # ============================================================================
 
 161-33-9-182.sslip.io {
 	handle /webhooks/* {
 		reverse_proxy defect-fix-service:8090
+	}
+	handle /api/* {
+		reverse_proxy backend:8053
 	}
 	handle {
 		reverse_proxy mcp-gateway:9443
