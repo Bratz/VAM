@@ -22,10 +22,16 @@ COPY backend/src ./src
 RUN mvn clean package -DskipTests -B
 
 # ---- Stage 2: runtime ------------------------------------------------------
-FROM eclipse-temurin:21-jre-alpine
+# jdk-alpine, not jre-alpine: GeneratedTransformRunner (the file-ingest pipeline's real-data path)
+# shells out to `mvn ... exec-maven-plugin ...` to run an already-tested, agent-generated
+# transform, which needs javac + the mvn binary — neither exists in a JRE image. See
+# tasks/file-ingest-pipeline-design.md's sandboxing section.
+FROM eclipse-temurin:21-jdk-alpine
 
-# psql for the optional first-boot seeding (see docker-entrypoint.sh)
-RUN apk add --no-cache postgresql-client && \
+# psql for the optional first-boot seeding (see docker-entrypoint.sh); bash/maven for
+# GeneratedTransformRunner above; util-linux for sandbox-run.sh's `unshare` (Alpine's busybox
+# unshare applet may not support the flags used — verify on the real VM, see the design doc).
+RUN apk add --no-cache postgresql-client bash maven util-linux && \
     addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
@@ -35,7 +41,8 @@ COPY --from=build /app/target/*.jar app.jar
 # platform database itself (set SEED_ON_START=true; idempotent).
 COPY database/dump/vam_db_full.sql.gz /app/seed/vam_db_full.sql.gz
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chown -R appuser:appgroup /app && chmod +x /app/docker-entrypoint.sh
+COPY backend/sandbox-run.sh /app/sandbox-run.sh
+RUN chown -R appuser:appgroup /app && chmod +x /app/docker-entrypoint.sh /app/sandbox-run.sh
 USER appuser
 
 # App default is 8053; most PaaS inject PORT and route to it — honored in the

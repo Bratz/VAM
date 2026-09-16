@@ -25,6 +25,11 @@ final class TransformWorkspaceTools {
     private static final Set<String> EXCLUDED_DIRS = Set.of(".git", "target");
     private static final long COMMAND_TIMEOUT_SECONDS = 120;
 
+    /** Placed here by the Dockerfile, alongside app.jar (WORKDIR /app) — see this service's own
+     * Dockerfile. No --net isolation (unlike backend's copy of this script) — the coding agent's
+     * commands legitimately need network for mvn/dependency resolution. */
+    private static final String SANDBOX_SCRIPT = "/app/sandbox-run.sh";
+
     private TransformWorkspaceTools() {
     }
 
@@ -70,7 +75,12 @@ final class TransformWorkspaceTools {
         Path scriptFile = Files.createTempFile(workDir, ".run-command-", ".sh");
         try {
             Files.writeString(scriptFile, command, StandardCharsets.UTF_8);
-            ProcessBuilder builder = new ProcessBuilder(ShellCommands.bashExecutable(), scriptFile.toString())
+            // Sandboxed: clears this process's environment (DB_PASSWORD/JIRA_API_TOKEN/
+            // ANTHROPIC_API_KEY) before the agent's command runs — see this service's own
+            // sandbox-run.sh. bashExecutable() runs the actual script file inside that cleared
+            // context, same indirection runGeneratedTransform uses in backend for the same reason.
+            ProcessBuilder builder = new ProcessBuilder(
+                    ShellCommands.bashExecutable(), SANDBOX_SCRIPT, ShellCommands.bashExecutable() + " " + scriptFile)
                     .directory(workDir.toFile())
                     .redirectErrorStream(true);
             builder.environment().put("JAVA_HOME", System.getProperty("java.home"));

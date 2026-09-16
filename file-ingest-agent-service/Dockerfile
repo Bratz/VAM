@@ -34,13 +34,17 @@ RUN mvn clean package -DskipTests -B
 # ---- Stage 2: runtime --------------------------------------------------------
 FROM eclipse-temurin:21-jdk-alpine
 
-RUN apk add --no-cache git bash maven && \
+# util-linux for sandbox-run.sh's `unshare` (Alpine's busybox unshare applet may not support the
+# flags used — verify on the real VM, see tasks/file-ingest-pipeline-design.md's sandboxing section).
+RUN apk add --no-cache git bash maven util-linux && \
     addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-RUN mkdir -p /data/file-ingest-workspace && chown -R appuser:appgroup /app /data/file-ingest-workspace
+COPY file-ingest-agent-service/sandbox-run.sh /app/sandbox-run.sh
+RUN mkdir -p /data/file-ingest-workspace && chown -R appuser:appgroup /app /data/file-ingest-workspace \
+    && chmod +x /app/sandbox-run.sh
 
 USER appuser
 
