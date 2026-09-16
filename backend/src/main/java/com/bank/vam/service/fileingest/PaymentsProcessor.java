@@ -17,11 +17,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Live-processing stage for Payments — same field-reuse convention as
+ * Live-processing stage for Payments — same debtor/creditor convention as
  * {@link PayablesProcessor}, but simpler: no state machine to walk, just a
  * direct outward payment per row via the real Iso20022OutwardPaymentService.
- * {@code viban} is the source VA paying out; {@code debtorName}/
- * {@code debtorAccount} are reused to carry the creditor (beneficiary).
+ * {@code viban} is the source VA paying out (the debtor); {@code creditorName}/
+ * {@code creditorAccount} carry the beneficiary.
  */
 @Component
 public class PaymentsProcessor implements DomainProcessor {
@@ -51,10 +51,10 @@ public class PaymentsProcessor implements DomainProcessor {
                         .sourceVaId(sourceVa.getId())
                         .amount(row.amount())
                         .currency(row.currency())
-                        .creditorName(row.debtorName())
-                        .creditorAccount(row.debtorAccount())
-                        .remittanceInfo(row.remittanceInfo())
-                        .structuredRef(row.reference())
+                        .creditorName(row.creditorName())
+                        .creditorAccount(row.creditorAccount())
+                        .remittanceInfo(row.remittanceInformation())
+                        .structuredRef(row.endToEndId())
                         .build();
                 OutwardPaymentResponse response = outwardPaymentService.processOutwardPayment(request);
                 if (response.isSuccess()) {

@@ -18,13 +18,16 @@ import java.util.List;
  * else falls through to the ticket-and-wait path (IngestOrchestrator).
  *
  * <p>Known format: a CSV with header
- * {@code amount,currency,viban,debtorName,debtorAccount,remittanceInfo,reference}.
+ * {@code amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId}.
+ * This shape is Receivables-only (money arriving), so it never carries creditor data — the VA
+ * itself (viban) is always the creditor here; TransformedRow's creditorName/creditorAccount stay
+ * null for every row this produces.
  */
 @Component
 public class ReceivablesCsvTransform {
 
     private static final String EXPECTED_HEADER =
-            "amount,currency,viban,debtorName,debtorAccount,remittanceInfo,reference";
+            "amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId";
 
     public TransformOutput transform(Path sourceFile) {
         List<String> lines;
@@ -63,6 +66,8 @@ public class ReceivablesCsvTransform {
                     cols[2].strip(),
                     cols.length > 3 ? cols[3].strip() : null,
                     cols.length > 4 ? cols[4].strip() : null,
+                    null, // creditorName — this shape is Receivables-only; viban is the creditor
+                    null, // creditorAccount
                     cols.length > 5 ? cols[5].strip() : null,
                     cols.length > 6 ? cols[6].strip() : null
             ));

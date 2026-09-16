@@ -22,14 +22,13 @@ import java.util.stream.Collectors;
 /**
  * Live-processing stage for Payables. Unlike Receivables, there is no
  * existing inbound file format this maps onto — every field below is the
- * generic {@link TransformedRow} shape (built for Receivables' debtor/
- * creditor language) reinterpreted for an outbound vendor payment:
+ * generic {@link TransformedRow} shape, correctly interpreted for an
+ * outbound vendor payment (the VA is the debtor here, not the creditor):
  * <ul>
- *   <li>{@code viban} — the SOURCE Virtual Account paying the vendor.
- *   <li>{@code debtorName}/{@code debtorAccount} — reused to carry the
- *       VENDOR's name/account, the "other party" in this row.
- *   <li>{@code remittanceInfo} — the payable's description.
- *   <li>{@code reference} — the invoice number.
+ *   <li>{@code viban} — the SOURCE Virtual Account paying the vendor (the debtor).
+ *   <li>{@code creditorName}/{@code creditorAccount} — the VENDOR's name/account.
+ *   <li>{@code remittanceInformation} — the payable's description.
+ *   <li>{@code endToEndId} — the invoice number.
  * </ul>
  * Per row, this walks the real {@code Payable} state machine in-process —
  * no human clicks submit/approve, but nothing bypasses those steps either:
@@ -77,14 +76,14 @@ public class PayablesProcessor implements DomainProcessor {
         VirtualAccount sourceVa = virtualAccountService.getByViban(row.viban());
 
         CreatePayableRequest createRequest = CreatePayableRequest.builder()
-                .invoiceNumber(row.reference())
+                .invoiceNumber(row.endToEndId())
                 .grossAmount(row.amount())
                 .currencyCode(row.currency())
                 .dueDate(LocalDate.now().plusDays(30))
                 .virtualAccountId(sourceVa.getId())
-                .vendorName(row.debtorName())
-                .vendorAccount(row.debtorAccount())
-                .description(row.remittanceInfo())
+                .vendorName(row.creditorName())
+                .vendorAccount(row.creditorAccount())
+                .description(row.remittanceInformation())
                 .build();
         PayableResponse created = payablesService.createPayable(createRequest);
 

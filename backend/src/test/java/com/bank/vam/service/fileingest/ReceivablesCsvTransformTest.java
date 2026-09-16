@@ -21,7 +21,7 @@ class ReceivablesCsvTransformTest {
     void parsesRowsAndSumsTheControlTotal() throws Exception {
         Path file = tempDir.resolve("known.csv");
         Files.writeString(file, """
-                amount,currency,viban,debtorName,debtorAccount,remittanceInfo,reference
+                amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId
                 100.00,AED,VIBAN001,John Doe,ACC1,Invoice 1,REF-1
                 50.50,AED,VIBAN002,Jane Smith,ACC2,Invoice 2,REF-2
                 """);
@@ -38,7 +38,7 @@ class ReceivablesCsvTransformTest {
     void skipsBlankLines() throws Exception {
         Path file = tempDir.resolve("blanks.csv");
         Files.writeString(file, """
-                amount,currency,viban,debtorName,debtorAccount,remittanceInfo,reference
+                amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId
                 100.00,AED,VIBAN001,John Doe,ACC1,Invoice 1,REF-1
 
                 50.50,AED,VIBAN002,Jane Smith,ACC2,Invoice 2,REF-2

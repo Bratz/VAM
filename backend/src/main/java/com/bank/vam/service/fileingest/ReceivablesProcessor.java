@@ -47,8 +47,8 @@ public class ReceivablesProcessor implements DomainProcessor {
                         .creditorAccount(row.viban())
                         .debtorName(row.debtorName())
                         .debtorAccount(row.debtorAccount())
-                        .remittanceInfo(row.remittanceInfo())
-                        .structuredRef(row.reference())
+                        .remittanceInfo(row.remittanceInformation())
+                        .structuredRef(row.endToEndId())
                         .channel("FILE-INGEST")
                         .build();
                 InwardPaymentResponse response = inwardPaymentService.processInwardPayment(request);

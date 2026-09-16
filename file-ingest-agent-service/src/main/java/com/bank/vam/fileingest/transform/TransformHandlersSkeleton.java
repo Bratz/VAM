@@ -82,8 +82,12 @@ final class TransformHandlersSkeleton {
              * a separate process).
              *
              * Each row map has exactly these keys: amount (a plain decimal string), currency
-             * (3-letter code), viban, debtorName, debtorAccount, remittanceInfo, reference. Use an
-             * empty string for any field the source file doesn't actually contain.
+             * (3-letter code), viban, debtorName, debtorAccount, creditorName, creditorAccount,
+             * remittanceInformation, endToEndId (ISO 20022 vocabulary for the party/reference
+             * fields). viban is always this app's own Virtual Account in the transaction; only
+             * populate whichever of debtor*/creditor* actually applies to the row's direction and
+             * leave the other pair as empty strings. Use an empty string for any field the source
+             * file doesn't actually contain.
              */
             public interface RowTransform {
                 List<Map<String, Object>> transform(Path sourceFile) throws Exception;
