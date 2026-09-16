@@ -40,6 +40,12 @@ ingest:
   # services, the other being the shared Jira project.
   workspace-dir: ${INGEST_WORKSPACE_DIR:/data/file-ingest-workspace}
 
+# Sentry error monitoring — SDK auto-disables itself when dsn is blank, same as backend's.
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:local}
+  traces-sample-rate: 0
+
 logging:
   level:
     com.bank.vam.fileingest: DEBUG

@@ -234,6 +234,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
       INGEST_WORKSPACE_DIR: /data/file-ingest-workspace
+      # Sentry error monitoring — optional, no-op when unset (see application.yml).
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
     volumes:
       # Same named volume as `backend` above — this worker reads the source
       # files backend stored and writes the transform-handlers checkout

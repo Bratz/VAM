@@ -95,6 +95,10 @@ public class TransformGenerationService {
                     "Exhausted " + (maxRetries + 1) + " attempt(s); last test gate output:\n" + lastGate.output());
         } catch (Exception e) {
             log.error("Transform generation failed for job {}", job.getId(), e);
+            // This catch swallows the exception into a GenerationResult instead of rethrowing, so
+            // IngestTriageOrchestrator's own catch (which does report to Sentry) never sees it —
+            // needs its own explicit capture here.
+            io.sentry.Sentry.captureException(e);
             return new GenerationResult(false, null, "Pipeline error generating transform: " + e.getMessage());
         } finally {
             if (worktreePath != null) {
