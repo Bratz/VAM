@@ -8,9 +8,12 @@ import org.junit.jupiter.api.io.TempDir;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Covers independentSourceTotals directly — the actual fix for the reconciliation-is-a-tautology
@@ -86,5 +89,47 @@ class GeneratedTransformRunnerTest {
         Files.writeString(file, "amount,currency\n100.00,AED\n");
 
         assertThat(runner.independentSourceTotals(profileJson(",", "notAColumn"), file)).isNull();
+    }
+
+    private Map<String, Object> fullRow() {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("amount", "100.00");
+        row.put("currency", "AED");
+        row.put("viban", "VIBAN001");
+        row.put("debtorName", "John Doe");
+        row.put("debtorAccount", "ACC1");
+        row.put("creditorName", "");
+        row.put("creditorAccount", "");
+        row.put("remittanceInformation", "Invoice 1");
+        row.put("endToEndId", "REF-1");
+        return row;
+    }
+
+    @Test
+    void toTransformedRowsAcceptsARowWithAllNineIso20022Keys() {
+        List<TransformedRow> rows = runner.toTransformedRows(List.of(fullRow()));
+
+        assertThat(rows).hasSize(1);
+        assertThat(rows.get(0).remittanceInformation()).isEqualTo("Invoice 1");
+        assertThat(rows.get(0).endToEndId()).isEqualTo("REF-1");
+    }
+
+    /**
+     * Regression test for a real bug found while reviewing the coding agent's own prompt:
+     * TransformCodingAgentClient's SYSTEM_PROMPT drifted back to the pre-ISO-20022-rename 7-key
+     * row shape (remittanceInfo/reference, no creditor fields) after the rename shipped, which
+     * would have silently produced rows missing remittanceInformation/endToEndId/creditorName/
+     * creditorAccount -- getOrDefault(key, "") swallowed the mismatch into empty strings with zero
+     * visibility. A missing required key must now fail loudly instead.
+     */
+    @Test
+    void toTransformedRowsFailsLoudlyOnARowMissingAnIso20022Key() {
+        Map<String, Object> driftedRow = fullRow();
+        driftedRow.remove("remittanceInformation");
+        driftedRow.put("remittanceInfo", "Invoice 1"); // the old, pre-rename key name
+
+        assertThatThrownBy(() -> runner.toTransformedRows(List.of(driftedRow)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("remittanceInformation");
     }
 }

@@ -172,10 +172,27 @@ public class GeneratedTransformRunner {
         });
     }
 
-    private List<TransformedRow> toTransformedRows(List<Map<String, Object>> rawRows) {
+    /** The full RowTransform contract (transform-handlers' RowTransform.java) — every generated
+     * transform must emit all 9 keys per row (empty string when a field doesn't apply), so a
+     * prompt/contract drift like the one found in TransformCodingAgentClient's system prompt (it
+     * described the pre-ISO-20022-rename 7-key shape after the rename shipped) fails loudly here
+     * instead of silently posting empty creditor/remittance/reference data. */
+    private static final List<String> REQUIRED_ROW_KEYS = List.of(
+            "amount", "currency", "viban", "debtorName", "debtorAccount",
+            "creditorName", "creditorAccount", "remittanceInformation", "endToEndId");
+
+    /** Package-private (not private) so this is directly unit-testable without shelling out to mvn. */
+    List<TransformedRow> toTransformedRows(List<Map<String, Object>> rawRows) {
         List<TransformedRow> rows = new ArrayList<>();
         for (int i = 0; i < rawRows.size(); i++) {
             Map<String, Object> r = rawRows.get(i);
+            List<String> missing = REQUIRED_ROW_KEYS.stream().filter(key -> !r.containsKey(key)).toList();
+            if (!missing.isEmpty()) {
+                throw new IllegalStateException("Generated transform's row " + (i + 1)
+                        + " is missing required ISO 20022 key(s) " + missing + " (got keys " + r.keySet() + "). "
+                        + "The RowTransform contract requires all 9 keys, empty string when not applicable — "
+                        + "see transform-handlers' RowTransform.java.");
+            }
             rows.add(new TransformedRow(
                     i + 1,
                     new BigDecimal(String.valueOf(r.getOrDefault("amount", "0"))),
