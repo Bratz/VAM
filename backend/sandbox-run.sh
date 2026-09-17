@@ -15,13 +15,17 @@
 # Usage: sandbox-run.sh <command...>
 set -euo pipefail
 
-# Confirmed live: `ulimit -v` caps VIRTUAL address space, not physical/resident memory -- but
-# HotSpot reserves ~1GiB of virtual space by default just for CompressedClassSpaceSize, before
-# running any code, regardless of actual memory need. The wrapped command here IS a JVM (`mvn`
-# is a Java app), so a 1.5GB `-v` cap failed every real run with "Could not allocate compressed
-# class space: 1073741824 bytes" -- the JVM couldn't even finish booting. Raised well above that
-# baseline reservation + Maven's own overhead; still a real ceiling against genuinely runaway
-# allocation, just not one so tight it fails a normal JVM's own startup.
+# Confirmed live, twice: `ulimit -v` alone isn't the fix, raising it just delayed the same
+# failure. The wrapped command IS a JVM (`mvn`), and with no container-level memory limit set on
+# this service, HotSpot's own ergonomics auto-detect the HOST's full memory (23GiB on the real VM)
+# and default MaxHeapSize to ~25% of that (~5.75GiB) -- an oversized reservation attempt no
+# `ulimit -v` ceiling can reasonably accommodate, since raising the ceiling to fit it defeats the
+# point of having one. The actual fix is bounding what the JVM tries to reserve in the first
+# place via MAVEN_OPTS (this command's own JVM -- exec-maven-plugin's "java" goal runs the
+# generated transform inside Maven's own process, not a fork, so one MAVEN_OPTS covers both).
+# `ulimit -v` stays too, as a coarse outer backstop, now sized to comfortably fit the explicit
+# heap below rather than trying to guess at whatever HotSpot's ergonomics would otherwise pick.
 exec env -i \
   JAVA_HOME="${JAVA_HOME:-}" PATH=/usr/bin:/bin HOME=/tmp \
+  MAVEN_OPTS="${SANDBOX_JAVA_OPTS:--Xmx768m -XX:MaxMetaspaceSize=256m -XX:CompressedClassSpaceSize=64m}" \
   bash -c "ulimit -v ${SANDBOX_MEM_KB:-3000000} -t ${SANDBOX_CPU_SECS:-110}; $*"
