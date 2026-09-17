@@ -49,6 +49,7 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, TimelineEventResponse } from '../services/ingestApi';
+import { formatFileSize } from '../utils';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -462,42 +463,85 @@ const FileIngestUploadPage: React.FC = () => {
             </div>
           )}
 
-          {!job && file && (
-            <div className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 min-w-0">
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate">{file.name}</span>
-              </div>
-              <button onClick={() => setFile(null)} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
-                <X className="w-3.5 h-3.5 text-neutral-400" />
-              </button>
-            </div>
-          )}
-
           {uploadError && (
             <p className="text-xs text-error-600 dark:text-error-400 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" /> {uploadError}
             </p>
           )}
-
-          {!job ? (
-            <Button
-              variant="primary"
-              fullWidth
-              loading={uploading}
-              disabled={!file || !customerId.trim()}
-              leftIcon={<Upload className="w-4 h-4" />}
-              onClick={handleUpload}
-            >
-              Upload and start pipeline
-            </Button>
-          ) : (
-            <Button variant="outline" fullWidth leftIcon={<RefreshCw className="w-4 h-4" />} onClick={handleReset}>
-              Upload another file
-            </Button>
-          )}
         </div>
       </Card>
+
+      {/* Summary confirmation panel — same pattern as CreateReceivablePage's review sidebar
+          (key/value recap, a divider, then a warning-or-success readiness banner) adapted to
+          this page's single-column, much shorter form: shown once a file is picked (the dropzone
+          itself already prompts for that first step) rather than from first render. */}
+      {!job && file && (
+        <Card>
+          <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">Summary</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">Uploading</span>
+              <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                {DOMAIN_OPTIONS.find((o) => o.value === domain)?.label}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">Customer</span>
+              <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{customerId.trim() || '—'}</span>
+            </div>
+            <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">File</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
+                <span className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12rem]">{file.name}</span>
+                <button onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
+                  <X className="w-3.5 h-3.5 text-neutral-400" />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 text-right">{formatFileSize(file.size)}</p>
+          </div>
+        </Card>
+      )}
+
+      {!job && file && (
+        customerId.trim() ? (
+          <div className="p-3 rounded-lg bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-success-800 dark:text-success-300">Ready to upload</p>
+              <p className="text-xs text-success-700 dark:text-success-300 mt-0.5">
+                The pipeline starts analyzing this file the moment you upload it.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 rounded-lg bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
+              <p className="text-xs text-warning-700 dark:text-warning-300 mt-0.5">Enter a customer ID above to continue.</p>
+            </div>
+          </div>
+        )
+      )}
+
+      {!job ? (
+        <Button
+          variant="primary"
+          fullWidth
+          loading={uploading}
+          disabled={!file || !customerId.trim()}
+          leftIcon={<Upload className="w-4 h-4" />}
+          onClick={handleUpload}
+        >
+          Upload and start pipeline
+        </Button>
+      ) : (
+        <Button variant="outline" fullWidth leftIcon={<RefreshCw className="w-4 h-4" />} onClick={handleReset}>
+          Upload another file
+        </Button>
+      )}
 
       {job && (
         <>
