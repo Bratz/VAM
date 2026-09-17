@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -29,8 +30,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the file, resolves a transform (cache hit, or the full generate/test/merge loop on a miss), and
  * either closes the ticket or escalates to a human — a real structural mirror of
  * defect-fix-service's TriageOrchestrator (same {@code ApplicationReadyEvent} + async drain-loop
- * shape, same {@code AtomicBoolean busy} guard; it does NOT poll on a schedule).
+ * shape, same {@code AtomicBoolean busy} guard).
  *
+ * <p><b>Corrected design note:</b> defect-fix-service genuinely doesn't need a scheduled poll
+ * because GitHub actively pushes new work to it via GitHubWebhookController. This service has no
+ * equivalent Jira webhook, so relying on {@code onStartup} alone left every ticket filed after
+ * boot permanently stuck — confirmed live: a customer's unrecognized-format upload sat at "ticket
+ * filed" forever with the frontend correctly polling but nothing new to report, since this
+ * service never re-checked Jira after its own startup. {@link #pollForNewTickets()} below closes
+ * that gap the same way backend's own IngestRetrySweepService already closes its side of it.
+ *
+
  * <p>This is one half of the fully decoupled design (see tasks/file-ingest-pipeline-design.md):
  * backend never calls this service directly, and this service never calls backend back. The two
  * things connecting them are this ticket (found by its {@code INGEST_JOB_ID:} marker line, the
@@ -73,9 +83,18 @@ public class IngestTriageOrchestrator {
     }
 
     /** A ticket left sitting in To Do (service restarted mid-backlog) won't otherwise get picked
-     * up again until the next new ticket is filed — check once on every boot. */
+     * up again until the next scheduled poll — check immediately on every boot too, so a restart
+     * doesn't wait a full cadence before resuming a backlog. */
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
+        tryStartProcessing();
+    }
+
+    /** The only thing that notices a ticket filed after this service was already running — see
+     * the class javadoc's "Corrected design note". No-op (near-instantly, via the busy guard) if
+     * a previous run is still in flight, so overlapping polls never pile up. */
+    @Scheduled(fixedRateString = "#{${ingest.poll-cadence-minutes:2} * 60 * 1000}")
+    public void pollForNewTickets() {
         tryStartProcessing();
     }
 
