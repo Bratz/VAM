@@ -144,11 +144,20 @@ public class GeneratedTransformRunner {
         // ponytail: single quotes, not double quotes, around -Dexec.args — Java's ProcessBuilder
         // on Windows mis-escapes a command string containing embedded double quotes. Forward
         // slashes on the source path sidestep a separate exec-maven-plugin arg-splitting wrinkle.
-        // -o (offline): this run should never need the network — the .m2 cache is already warm
-        // from the test-gate run that already compiled this exact code; a loud offline-mode
-        // failure is better than silently discovering --net isolation (below) has a gap.
+        //
+        // No -o (offline) here, deliberately reverted: confirmed live it was actively wrong, not
+        // just unnecessary. Its justification ("the .m2 cache is already warm from the test-gate
+        // run") assumed that run shares a filesystem with this one -- it doesn't. The test gate
+        // runs inside file-ingest-agent-service's own container; this runs inside backend's,
+        // a completely separate .m2 cache that has never resolved exec-maven-plugin or
+        // transform-handlers' own dependencies before. -o failed every real (non-cache-hit) job
+        // with an empty-looking error (Maven's offline-resolution diagnostics land on stdout in
+        // -q mode, and the exception below only surfaced stderr — also fixed). The sandboxing
+        // rationale for -o ("loud offline failure over silently discovering --net isolation has a
+        // gap") is moot too: sandbox-run.sh dropped --net entirely earlier this session, so there
+        // is no network isolation left to accidentally paper over.
         String sourceFileArg = sourceFile.toString().replace('\\', '/');
-        String command = "mvn -q -o compile org.codehaus.mojo:exec-maven-plugin:3.1.0:java "
+        String command = "mvn -q compile org.codehaus.mojo:exec-maven-plugin:3.1.0:java "
                 + "-Dexec.mainClass=com.bank.vam.transformhandlers.TransformRunnerMain "
                 + "-Dexec.args='" + fqcn + " " + sourceFileArg + "'";
         // Sandboxed: this executes agent-generated, unreviewed code against a real uploaded file —
@@ -166,7 +175,10 @@ public class GeneratedTransformRunner {
             throw new IOException("Generated transform run timed out after " + RUN_TIMEOUT_SECONDS + "s");
         }
         if (process.exitValue() != 0) {
-            throw new IOException("Generated transform run failed (exit " + process.exitValue() + "): " + stderr);
+            // Confirmed live: Maven's actual diagnostics in -q mode land on stdout, not stderr --
+            // an error surfaced as only ": " (stderr empty) with the real cause invisible.
+            throw new IOException("Generated transform run failed (exit " + process.exitValue()
+                    + "): stdout=" + stdout + " stderr=" + stderr);
         }
         return objectMapper.readValue(stdout, new TypeReference<List<Map<String, Object>>>() {
         });
