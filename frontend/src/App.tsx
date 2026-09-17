@@ -31,6 +31,7 @@ import EnhancedReceivablesPage from './pages/EnhancedReceivablesPage';
 import EnhancedPayablesPage from './pages/EnhancedPayablesPage';
 import CreateReceivablePage from './pages/CreateReceivablePage';
 import CreatePayablePage from './pages/CreatePayablePage';
+import PayInvoicePage from './pages/PayInvoicePage';
 import EscrowPage from './pages/EscrowPage';
 import WalletPage from './pages/WalletPage';
 
@@ -135,6 +136,9 @@ export type PageType =
   | 'receivables-edit'
   | 'payables-create'
   | 'payables-edit'
+
+  // Public (unauthenticated, no internal chrome)
+  | 'pay-invoice'
   
   // BaaS Platform
   | 'baas-dashboard'
@@ -491,7 +495,14 @@ const App: React.FC = () => {
     (new URLSearchParams(window.location.search).get('page') as PageType) || 'dashboard'
   );
   const [pageHistory, setPageHistory] = useState<PageType[]>(['dashboard']);
-  const [pageParams, setPageParams] = useState<Record<string, string>>({});
+  const [pageParams, setPageParams] = useState<Record<string, string>>(() => {
+    // A payment link is opened cold from outside the app (email/SMS), so its token must come
+    // from the URL on first load too -- pageParams is otherwise only ever set by in-app navigate().
+    const initial: Record<string, string> = {};
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (token) initial.token = token;
+    return initial;
+  });
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
 
   // F4: sync data-section on <html> whenever the route changes.
@@ -530,7 +541,7 @@ const App: React.FC = () => {
     }
   };
 
-  const isFullScreenPage = ['receivables-create', 'receivables-edit', 'payables-create', 'payables-edit'].includes(currentPage);
+  const isFullScreenPage = ['receivables-create', 'receivables-edit', 'payables-create', 'payables-edit', 'pay-invoice'].includes(currentPage);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -571,6 +582,11 @@ const App: React.FC = () => {
       case 'receivables-edit': return <CreateReceivablePage receivableId={pageParams.id} />;
       case 'payables-create': return <CreatePayablePage />;
       case 'payables-edit': return <CreatePayablePage payableId={pageParams.id} />;
+
+      // ====================================================================
+      // Public (unauthenticated)
+      // ====================================================================
+      case 'pay-invoice': return <PayInvoicePage token={pageParams.token} />;
       
       // ====================================================================
       // Compliance

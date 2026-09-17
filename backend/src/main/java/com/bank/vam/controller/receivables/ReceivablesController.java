@@ -3,6 +3,7 @@ package com.bank.vam.controller.receivables;
 import com.bank.vam.dto.receivables.ReceivablesDto.*;
 import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.entity.receivables.Receivable.CollectionRoute;
+import com.bank.vam.iso20022.service.Iso20022RequestToPayService;
 import com.bank.vam.repository.receivables.ReceivableRepository;
 import com.bank.vam.service.receivables.CoboReceivableService;
 import com.bank.vam.service.receivables.IntercompanyRechargeReceivableService;
@@ -51,6 +52,7 @@ public class ReceivablesController {
     private final CoboReceivableService coboService;
     private final ReceivableNettingService nettingService;
     private final IntercompanyRechargeReceivableService rechargeService;
+    private final Iso20022RequestToPayService requestToPayService;
 
     // ========================================================================
     // STATS (Legacy + Phase 3)
@@ -124,6 +126,18 @@ public class ReceivablesController {
             @RequestBody RecordPaymentRequest request) {
         InvoiceResponse invoice = receivablesService.recordPayment(invoiceId, request);
         return ResponseEntity.ok(Map.of("success", true, "data", invoice, "message", "Payment recorded successfully"));
+    }
+
+    // ========================================================================
+    // REQUEST TO PAY (ISO 20022 pain.013)
+    // ========================================================================
+
+    @Operation(summary = "Send Request to Pay", description = "Generates and sends a pain.013 Request to Pay for this receivable")
+    @PostMapping("/{receivableId}/request-to-pay/send")
+    public ResponseEntity<Map<String, Object>> sendRequestToPay(@PathVariable UUID receivableId) {
+        log.info("API: Send Request to Pay for receivable {}", receivableId);
+        var response = requestToPayService.sendRequestToPay(receivableId);
+        return ResponseEntity.ok(Map.of("success", true, "data", response));
     }
 
     // ========================================================================

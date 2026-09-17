@@ -4,6 +4,7 @@ import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.service.Iso20022InwardPaymentService;
 import com.bank.vam.iso20022.service.Iso20022OutwardPaymentService;
+import com.bank.vam.iso20022.service.Iso20022RequestToPayService;
 import com.bank.vam.iso20022.service.Iso20022StatusService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,7 @@ public class Iso20022PaymentController {
     private final Iso20022InwardPaymentService inwardPaymentService;
     private final Iso20022OutwardPaymentService outwardPaymentService;
     private final Iso20022StatusService statusService;
+    private final Iso20022RequestToPayService requestToPayService;
 
     // ========================================================================
     // INWARD PAYMENTS (Credits via VIBAN routing)
@@ -106,6 +108,20 @@ public class Iso20022PaymentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error("Failed to parse camt.054: " + e.getMessage()));
         }
+    }
+
+    @PostMapping(value = "/inward/pain014", consumes = MediaType.APPLICATION_XML_VALUE)
+    @Operation(summary = "Process pain.014 status report",
+            description = "Parse an ISO 20022 pain.014 (CreditorPaymentActivationRequestStatusReport) and update " +
+                    "the receivable it responds to (matched by EndToEndId) with the debtor's accept/reject decision.")
+    public ResponseEntity<ApiResponse<RequestToPayStatusResult>> processPain014(
+            @RequestBody String pain014Xml) {
+        log.info("REST: Process pain.014 status report");
+        RequestToPayStatusResult result = requestToPayService.receiveStatusReport(pain014Xml);
+        if (result.isMatched()) {
+            return ResponseEntity.ok(ApiResponse.success(result, result.getMessage()));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(result.getMessage()));
     }
 
     // ========================================================================

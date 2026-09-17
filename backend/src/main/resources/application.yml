@@ -53,6 +53,12 @@ spring:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
+# App-level config (not spring.*)
+app:
+  # Base URL of the deployed frontend -- used to build real, shareable links (e.g. the
+  # public "pay this invoice" link) that point back at it.
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+
 # Server
 server:
   port: 8053

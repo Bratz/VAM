@@ -271,6 +271,37 @@ public class Receivable extends BaseEntity {
     private String coboActionedBy;
 
     // ========================================================================
+    // REQUEST TO PAY (ISO 20022 pain.013/pain.014)
+    // ========================================================================
+
+    /** Whether/how a pain.013 Request to Pay has been sent to this receivable's debtor. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "request_to_pay_status", length = 20)
+    @Builder.Default
+    private RequestToPayStatus requestToPayStatus = RequestToPayStatus.NOT_SENT;
+
+    /** The EndToEndId used in the pain.013 -- the correlation key a pain.014 status report
+     * responds against, same role EndToEndId already plays for Transaction.correlationId. */
+    @Column(name = "request_to_pay_message_id", length = 50)
+    private String requestToPayMessageId;
+
+    @Column(name = "request_to_pay_sent_at")
+    private LocalDateTime requestToPaySentAt;
+
+    @Column(name = "request_to_pay_responded_at")
+    private LocalDateTime requestToPayRespondedAt;
+
+    @Column(name = "request_to_pay_reject_reason", length = 500)
+    private String requestToPayRejectReason;
+
+    /** Opaque, unguessable token for the public "pay this invoice" page
+     * (PublicReceivablesController) -- generated unconditionally at invoice creation,
+     * deliberately not the receivable's own id (avoids exposing enumerable invoice IDs in a
+     * public URL). */
+    @Column(name = "payment_link_token", unique = true, length = 40)
+    private String paymentLinkToken;
+
+    // ========================================================================
     // PHASE 3: NETTING INTEGRATION (NEW)
     // ========================================================================
     
@@ -615,7 +646,12 @@ public class Receivable extends BaseEntity {
         /** COBO collection failed */
         FAILED
     }
-    
+
+    /** Lifecycle of a pain.013 Request to Pay sent to this receivable's debtor. */
+    public enum RequestToPayStatus {
+        NOT_SENT, SENT, ACCEPTED, REJECTED, EXPIRED
+    }
+
     /**
      * Netting participation status.
      */

@@ -1243,6 +1243,28 @@ public class ReceivablesDto {
     }
 
     // ========================================================================
+    // PUBLIC "PAY THIS INVOICE" PAGE (unauthenticated -- see PublicReceivablesController)
+    // ========================================================================
+
+    /** Deliberately narrow: only what an external payer needs to see. No customer/internal-ID
+     * fields -- this is served without authentication. */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PublicInvoiceResponse {
+        private String receivableNumber;
+        private String corporateName;
+        private BigDecimal amount;
+        private BigDecimal outstandingAmount;
+        private String currencyCode;
+        private LocalDate dueDate;
+        private String description;
+        private String status;
+        private String viban;
+    }
+
+    // ========================================================================
     // NOTE: Phase 3 Statistics Types
     // ========================================================================
     // The following types are defined in their respective service classes to avoid

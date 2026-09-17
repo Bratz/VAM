@@ -10,7 +10,7 @@
 
 import { apiClient } from './api';
 
-export type IngestDomain = 'RECEIVABLES' | 'PAYABLES' | 'PAYMENTS';
+export type IngestDomain = 'RECEIVABLES' | 'RECEIVABLES_INVOICE' | 'PAYABLES' | 'PAYMENTS';
 
 // Mirrors IngestStage.java. Not a single linear sequence — SIGNATURE_NEW ->
 // CODING_AGENT_RUNNING -> TEST_GATE only fires on a cache MISS, SIGNATURE_MATCHED

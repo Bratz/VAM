@@ -33,6 +33,7 @@ public class IngestOrchestrator {
     private final ReconciliationCheckRunner reconciliationCheckRunner;
     private final RowQuarantineService rowQuarantineService;
     private final ReceivablesProcessor receivablesProcessor;
+    private final ReceivableInvoiceProcessor receivableInvoiceProcessor;
     private final PayablesProcessor payablesProcessor;
     private final PaymentsProcessor paymentsProcessor;
     private final IngestJobRepository ingestJobRepository;
@@ -46,6 +47,7 @@ public class IngestOrchestrator {
                                ReconciliationCheckRunner reconciliationCheckRunner,
                                RowQuarantineService rowQuarantineService,
                                ReceivablesProcessor receivablesProcessor,
+                               ReceivableInvoiceProcessor receivableInvoiceProcessor,
                                PayablesProcessor payablesProcessor,
                                PaymentsProcessor paymentsProcessor,
                                IngestJobRepository ingestJobRepository,
@@ -58,6 +60,7 @@ public class IngestOrchestrator {
         this.reconciliationCheckRunner = reconciliationCheckRunner;
         this.rowQuarantineService = rowQuarantineService;
         this.receivablesProcessor = receivablesProcessor;
+        this.receivableInvoiceProcessor = receivableInvoiceProcessor;
         this.payablesProcessor = payablesProcessor;
         this.paymentsProcessor = paymentsProcessor;
         this.ingestJobRepository = ingestJobRepository;
@@ -116,6 +119,7 @@ public class IngestOrchestrator {
 
         DomainProcessor processor = switch (job.getDomain()) {
             case RECEIVABLES -> receivablesProcessor;
+            case RECEIVABLES_INVOICE -> receivableInvoiceProcessor;
             case PAYABLES -> payablesProcessor;
             case PAYMENTS -> paymentsProcessor;
         };

@@ -2,6 +2,8 @@ package com.bank.vam.iso20022.util;
 
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.entity.party.Party;
+import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -245,6 +247,77 @@ public class Iso20022XmlBuilder {
 
         xml.append("    </PmtInf>\n");
         xml.append("  </CstmrCdtTrfInitn>\n");
+        xml.append("</Document>");
+
+        return xml.toString();
+    }
+
+    // ========================================================================
+    // pain.013 - Creditor Payment Activation Request (Request to Pay)
+    // ========================================================================
+
+    public String buildPain013(Receivable receivable, Party debtor, String endToEndId) {
+        StringBuilder xml = new StringBuilder();
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.013.001.07\">\n");
+        xml.append("  <CdtrPmtActvtnReq>\n");
+
+        // Group Header -- the creditor here is this corporate (the one owed money), a role
+        // Receivable doesn't itself carry a legal name for; owningEntityName is the closest
+        // available field, same fallback style the rest of this class already uses for VAs.
+        String creditorName = receivable.getOwningEntityName() != null ? receivable.getOwningEntityName() : "Creditor";
+        xml.append("    <GrpHdr>\n");
+        xml.append("      <MsgId>").append(escape(endToEndId)).append("</MsgId>\n");
+        xml.append("      <CreDtTm>").append(LocalDateTime.now().format(ISO_DATETIME)).append("</CreDtTm>\n");
+        xml.append("      <NbOfTxs>1</NbOfTxs>\n");
+        xml.append("      <InitgPty>\n");
+        xml.append("        <Nm>").append(escape(creditorName)).append("</Nm>\n");
+        xml.append("      </InitgPty>\n");
+        xml.append("    </GrpHdr>\n");
+
+        // Payment Information
+        xml.append("    <PmtInf>\n");
+        xml.append("      <PmtInfId>").append(escape(receivable.getReceivableNumber())).append("</PmtInfId>\n");
+        xml.append("      <PmtMtd>TRF</PmtMtd>\n");
+        LocalDate dueDate = receivable.getDueDate() != null ? receivable.getDueDate() : LocalDate.now();
+        xml.append("      <ReqdExctnDt>\n");
+        xml.append("        <Dt>").append(dueDate.format(ISO_DATE)).append("</Dt>\n");
+        xml.append("      </ReqdExctnDt>\n");
+
+        xml.append("      <Cdtr>\n");
+        xml.append("        <Nm>").append(escape(creditorName)).append("</Nm>\n");
+        xml.append("      </Cdtr>\n");
+
+        if (receivable.getViban() != null) {
+            xml.append("      <CdtrAcct>\n");
+            xml.append("        <Id>\n");
+            xml.append("          <IBAN>").append(escape(receivable.getViban())).append("</IBAN>\n");
+            xml.append("        </Id>\n");
+            xml.append("      </CdtrAcct>\n");
+        }
+
+        xml.append("      <CdtTrfTxInf>\n");
+        xml.append("        <PmtId>\n");
+        xml.append("          <EndToEndId>").append(escape(endToEndId)).append("</EndToEndId>\n");
+        xml.append("        </PmtId>\n");
+
+        String currency = receivable.getCurrencyCode() != null ? receivable.getCurrencyCode() : "AED";
+        xml.append("        <Amt>\n");
+        xml.append("          <InstdAmt Ccy=\"").append(currency).append("\">").append(receivable.getOutstandingAmount()).append("</InstdAmt>\n");
+        xml.append("        </Amt>\n");
+
+        xml.append("        <Dbtr>\n");
+        xml.append("          <Nm>").append(escape(debtor.getLegalName())).append("</Nm>\n");
+        xml.append("        </Dbtr>\n");
+
+        xml.append("        <RmtInf>\n");
+        xml.append("          <Ustrd>").append(escape(receivable.getReceivableNumber()
+                + (receivable.getDescription() != null ? " - " + receivable.getDescription() : ""))).append("</Ustrd>\n");
+        xml.append("        </RmtInf>\n");
+
+        xml.append("      </CdtTrfTxInf>\n");
+        xml.append("    </PmtInf>\n");
+        xml.append("  </CdtrPmtActvtnReq>\n");
         xml.append("</Document>");
 
         return xml.toString();

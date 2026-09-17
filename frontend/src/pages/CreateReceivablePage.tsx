@@ -32,11 +32,8 @@ import {
   X,
   Plus,
   Trash2,
-  ExternalLink,
   Link2,
   Mail,
-  MessageSquare,
-  Phone,
   Bell,
   Calculator,
   Percent,
@@ -46,7 +43,6 @@ import {
   ToggleLeft,
   ToggleRight,
   Share2,
-  Download,
   Info,
   Package,
   Receipt,
@@ -58,7 +54,9 @@ import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corpora
 import { useNavigation } from '../App';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
+import { Modal } from '../components/ui/enhanced';
 import { formatCurrency } from '../utils';
+import QRCode from 'react-qr-code';
 
 // ============================================================================
 // TYPES
@@ -131,15 +129,6 @@ interface IntercompanyEntity {
   ihbBalance: number;
 }
 
-interface PaymentLinkData {
-  enabled: boolean;
-  linkId: string;
-  fullUrl: string;
-  shortUrl: string;
-  expiresAt: string;
-  qrCodeGenerated: boolean;
-}
-
 interface ReceivableFormData {
   // Customer
   customerId: string;
@@ -157,7 +146,6 @@ interface ReceivableFormData {
   // Collection
   collectionAccountId: string;
   generateViban: boolean;
-  generatedViban: string;
   
   // Line Items (Optional)
   useLineItems: boolean;
@@ -181,9 +169,6 @@ interface ReceivableFormData {
     enabled: boolean;
     percent: number;
   };
-  
-  // Payment Link (Optional)
-  paymentLink: PaymentLinkData;
   
   // COBO (Optional)
   coboEnabled: boolean;
@@ -263,23 +248,6 @@ const generateInvoiceNumber = (): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
   return `INV-${year}${month}-${random}`;
-};
-
-const generateViban = (customerId: string): string => {
-  const random = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
-  return `AE07033VIBAN${customerId.toUpperCase().replace('-', '')}${random}`;
-};
-
-const generatePaymentLink = (): PaymentLinkData => {
-  const linkId = generateId();
-  return {
-    enabled: true,
-    linkId,
-    fullUrl: `https://pay.vam.example.com/invoice/${linkId}`,
-    shortUrl: `https://pay.vam.example.com/p/${linkId.substring(0, 6)}`,
-    expiresAt: '',
-    qrCodeGenerated: true,
-  };
 };
 
 const calculateDueDate = (invoiceDate: string, paymentTerms: string): string => {
@@ -843,142 +811,21 @@ const TaxChargesTab: React.FC<{
 };
 
 // Payment Link Tab
-// TODO(categorical): decorative one-off — migrate or bless in a later pass.
-// The payment-link panel's indigo theming is feature decoration, not
-// categorical data; Phase 12 Task C left it on raw indigo by design.
-/* eslint-disable no-restricted-syntax -- decorative one-off, TODO(categorical) */
-const PaymentLinkTab: React.FC<{
-  formData: ReceivableFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ReceivableFormData>>;
-  dueDate: string;
-}> = ({ formData, setFormData, dueDate }) => {
-  const handleGenerateLink = () => {
-    const linkData = generatePaymentLink();
-    linkData.expiresAt = dueDate;
-    setFormData(prev => ({ ...prev, paymentLink: linkData }));
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg dark:bg-indigo-500/20">
-            <Link2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Payment Link & QR Code</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Generate shareable payment link for customer</p>
-          </div>
-        </div>
-        {!formData.paymentLink.enabled ? (
-          <button
-            onClick={handleGenerateLink}
-            className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Generate Link
-          </button>
-        ) : (
-          <span className="flex items-center gap-1 text-success-600 text-sm font-medium dark:text-success-300">
-            <Check className="w-4 h-4" />
-            Generated
-          </span>
-        )}
-      </div>
-
-      {formData.paymentLink.enabled && (
-        <div className="space-y-4 p-4 bg-indigo-50 rounded-lg dark:bg-indigo-500/10">
-          {/* Full URL */}
-          <div>
-            <p className="text-xs text-indigo-600 font-medium mb-1 dark:text-indigo-300">Payment Link</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-sm bg-white dark:bg-primary-900 px-3 py-2 rounded border border-indigo-200 font-mono truncate dark:border-indigo-500/30">
-                {formData.paymentLink.fullUrl}
-              </code>
-              <button
-                onClick={() => copyToClipboard(formData.paymentLink.fullUrl)}
-                className="p-2 hover:bg-indigo-100 rounded dark:hover:bg-indigo-500/20"
-              >
-                <Copy className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Short URL */}
-          <div>
-            <p className="text-xs text-indigo-600 font-medium mb-1 dark:text-indigo-300">Short Link</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-sm bg-white dark:bg-primary-900 px-3 py-2 rounded border border-indigo-200 font-mono dark:border-indigo-500/30">
-                {formData.paymentLink.shortUrl}
-              </code>
-              <button
-                onClick={() => copyToClipboard(formData.paymentLink.shortUrl)}
-                className="p-2 hover:bg-indigo-100 rounded dark:hover:bg-indigo-500/20"
-              >
-                <Copy className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* QR Code Placeholder */}
-          <div className="flex items-center justify-between p-4 bg-white dark:bg-primary-900 rounded-lg border border-indigo-200 dark:border-indigo-500/30">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 bg-neutral-100 dark:bg-primary-800 rounded-lg flex items-center justify-center border-2 border-dashed border-neutral-300 dark:border-primary-700">
-                <QrCode className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">QR Code Ready</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Scan to pay directly</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg" title="Download QR">
-                <Download className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
-              </button>
-              <button className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg" title="View Full">
-                <ExternalLink className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Share Options */}
-          <div>
-            <p className="text-xs text-indigo-600 font-medium mb-2 dark:text-indigo-300">Share via</p>
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-primary-900 border border-indigo-200 rounded-lg text-sm hover:bg-indigo-100 dark:border-indigo-500/30 dark:hover:bg-indigo-500/20">
-                <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
-                Email
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-primary-900 border border-indigo-200 rounded-lg text-sm hover:bg-indigo-100 dark:border-indigo-500/30 dark:hover:bg-indigo-500/20">
-                <MessageSquare className="w-4 h-4 text-success-600 dark:text-success-300" />
-                WhatsApp
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-primary-900 border border-indigo-200 rounded-lg text-sm hover:bg-indigo-100 dark:border-indigo-500/30 dark:hover:bg-indigo-500/20">
-                <Phone className="w-4 h-4 text-info-600 dark:text-info-300" />
-                SMS
-              </button>
-            </div>
-          </div>
-
-          {/* Accepted Methods */}
-          <div className="pt-3 border-t border-indigo-200 dark:border-indigo-500/30">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Accepted payment methods</p>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-white dark:bg-primary-900 text-xs rounded border">Credit Card</span>
-              <span className="px-2 py-1 bg-white dark:bg-primary-900 text-xs rounded border">Bank Transfer</span>
-              <span className="px-2 py-1 bg-white dark:bg-primary-900 text-xs rounded border">Apple Pay</span>
-              <span className="px-2 py-1 bg-white dark:bg-primary-900 text-xs rounded border">Google Pay</span>
-            </div>
-          </div>
-        </div>
-      )}
+// A real payment link + QR (backed by ReceivablesService.createInvoice()'s
+// paymentLink and PublicReceivablesController) only exist once the invoice is
+// actually saved -- see the post-creation confirmation Modal in handleSubmit.
+// This pre-submission tab just says so instead of faking a preview.
+const PaymentLinkTab: React.FC = () => (
+  <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800">
+    <div className="p-2 bg-indigo-100 rounded-lg dark:bg-indigo-500/20">
+      <Link2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
     </div>
-  );
-};
-/* eslint-enable no-restricted-syntax */
+    <div>
+      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Payment Link & QR Code</p>
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">A real payment link and QR code are shown after you save.</p>
+    </div>
+  </div>
+);
 
 // COBO Tab
 const CoboTab: React.FC<{
@@ -1449,7 +1296,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     description: '',
     collectionAccountId: '',
     generateViban: false,
-    generatedViban: '',
     useLineItems: false,
     lineItems: [],
     taxConfig: {
@@ -1462,7 +1308,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     charges: [],
     earlyPaymentDiscount: { enabled: false, days: 10, percent: 2 },
     latePaymentFee: { enabled: false, percent: 1.5 },
-    paymentLink: { enabled: false, linkId: '', fullUrl: '', shortUrl: '', expiresAt: '', qrCodeGenerated: false },
     coboEnabled: false,
     collectingEntityId: '',
     behalfEntityId: '',
@@ -1487,6 +1332,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [createdInvoice, setCreatedInvoice] = useState<{ invoiceNumber: string; paymentLink: string } | null>(null);
 
   // Data from APIs
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -1591,7 +1437,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const tabs = [
     { id: 'line-items', label: 'Line Items', icon: Package, badge: formData.useLineItems ? formData.lineItems.length : 0 },
     { id: 'tax-charges', label: 'Tax & Charges', icon: Calculator, badge: formData.charges.length },
-    { id: 'payment-link', label: 'Payment Link', icon: Link2, badge: formData.paymentLink.enabled ? 1 : 0 },
+    { id: 'payment-link', label: 'Payment Link', icon: Link2, badge: 0 },
     { id: 'cobo', label: 'COBO', icon: ArrowDownLeft, badge: formData.coboEnabled ? 1 : 0 },
     { id: 'hierarchy', label: 'Hierarchy', icon: FolderTree, badge: formData.hierarchyNodeId ? 1 : 0 },
     { id: 'documents', label: 'Documents', icon: Paperclip, badge: formData.attachments.length + formData.externalRefs.length },
@@ -1636,9 +1482,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   };
 
   const handleGenerateViban = () => {
-    if (!selectedCustomer) return;
-    const viban = generateViban(selectedCustomer.id);
-    setFormData(prev => ({ ...prev, generateViban: true, generatedViban: viban }));
+    if (!selectedCustomer || !formData.collectionAccountId) return;
+    setFormData(prev => ({ ...prev, generateViban: true }));
   };
 
   const validate = (): boolean => {
@@ -1736,7 +1581,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       const response = await receivablesApi.create(createRequest, effectiveCorporateId);
 
       console.log('Receivable created:', response);
-      navigation.navigate('receivables');
+      const created = response.data;
+      if (!isDraft && created?.paymentLink) {
+        // Show the real link + QR before leaving -- a draft has nothing confirmed to show yet.
+        setCreatedInvoice({ invoiceNumber: created.invoiceNumber, paymentLink: created.paymentLink });
+      } else {
+        navigation.navigate('receivables');
+      }
     } catch (error: any) {
       console.error('Submit error:', error);
       setErrors({ submit: error.message || 'Failed to create receivable' });
@@ -1751,8 +1602,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     navigator.clipboard.writeText(text);
   };
 
-  // Relaxed validation - collection account is optional for now
-  const canSubmit = formData.invoiceNumber && formData.amount && parseFloat(formData.amount) > 0;
+  // Collection account is optional in general, but required when generating a VIBAN --
+  // VibanService.createInvoiceViban() needs a real target VA to attach the VIBAN to.
+  const canSubmit = Boolean(formData.invoiceNumber) && Boolean(formData.amount) && parseFloat(formData.amount) > 0
+    && (!formData.generateViban || Boolean(formData.collectionAccountId));
 
   // Calculate totals from line items if used
   const calculatedTotal = useMemo(() => {
@@ -2069,25 +1922,18 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">Create unique virtual IBAN for auto-reconciliation</p>
                     </div>
                   </div>
-                  {!formData.generatedViban ? (
-                    <button onClick={handleGenerateViban} disabled={!selectedCustomer} className={cn('px-4 py-2 text-sm font-medium rounded-lg transition-colors', selectedCustomer ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 dark:text-neutral-500 cursor-not-allowed dark:bg-primary-800')}>
+                  {!formData.generateViban ? (
+                    <button onClick={handleGenerateViban} disabled={!selectedCustomer || !formData.collectionAccountId} className={cn('px-4 py-2 text-sm font-medium rounded-lg transition-colors', selectedCustomer && formData.collectionAccountId ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 dark:text-neutral-500 cursor-not-allowed dark:bg-primary-800')}>
                       Generate
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-success-600 text-sm font-medium dark:text-success-300"><Check className="w-4 h-4" />Generated</span>
+                    <span className="flex items-center gap-1 text-success-600 text-sm font-medium dark:text-success-300"><Check className="w-4 h-4" />Will generate on save</span>
                   )}
                 </div>
-                {formData.generatedViban && (
+                {formData.generateViban && (
                   <div className="mt-4 p-4 bg-cat-1-soft rounded-lg border border-cat-1/10 dark:bg-cat-1/15 dark:border-cat-1/30">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-cat-1 font-medium">Virtual IBAN</p>
-                        <code className="text-sm font-mono text-cat-1">{formData.generatedViban}</code>
-                      </div>
-                      <button onClick={() => copyToClipboard(formData.generatedViban)} className="p-2 hover:bg-cat-1/10 rounded-lg dark:hover:bg-cat-1/25">
-                        <Copy className="w-4 h-4 text-cat-1" />
-                      </button>
-                    </div>
+                    <p className="text-xs text-cat-1 font-medium">Virtual IBAN</p>
+                    <p className="text-sm text-cat-1">A real VIBAN will be created and shown on the receivable once you save.</p>
                   </div>
                 )}
               </div>
@@ -2127,7 +1973,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <div className="p-6">
                 {activeTab === 'line-items' && <LineItemsTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
                 {activeTab === 'tax-charges' && <TaxChargesTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
-                {activeTab === 'payment-link' && <PaymentLinkTab formData={formData} setFormData={setFormData} dueDate={formData.dueDate} />}
+                {activeTab === 'payment-link' && <PaymentLinkTab />}
                 {activeTab === 'cobo' && <CoboTab formData={formData} setFormData={setFormData} entities={entities} />}
                 {activeTab === 'hierarchy' && <HierarchyTab formData={formData} setFormData={setFormData} hierarchyNodes={hierarchyNodes} />}
                 {activeTab === 'documents' && <DocumentsTab formData={formData} setFormData={setFormData} />}
@@ -2174,21 +2020,20 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">Collection Account</p>
                     <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{selectedAccount?.accountName || '-'}</p>
                   </div>
-                  {formData.generatedViban && (
+                  {formData.generateViban && (
                     <div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">VIBAN</p>
-                      <p className="text-xs font-mono text-cat-1">{formData.generatedViban}</p>
+                      <p className="text-xs text-cat-1">Will generate on save</p>
                     </div>
                   )}
 
                   {/* Features Summary */}
-                  {(formData.useLineItems || formData.charges.length > 0 || formData.paymentLink.enabled || formData.coboEnabled || formData.hierarchyNodeId || formData.attachments.length > 0 || formData.enableDunning) && (
+                  {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.hierarchyNodeId || formData.attachments.length > 0 || formData.enableDunning) && (
                     <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
                         {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-xs rounded dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
                         {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-xs rounded dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
-                        {formData.paymentLink.enabled && <span className="px-2 py-1 bg-cat-1-soft text-cat-1 text-xs rounded dark:bg-cat-1/15">Pay Link</span>}
                         {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-xs rounded dark:bg-success-500/10 dark:text-success-300">COBO</span>}
                         {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 text-xs rounded dark:bg-cat-2/15">Hierarchy</span>}
                         {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-xs rounded">{formData.attachments.length} files</span>}
@@ -2209,7 +2054,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                         {!formData.customerId && <li>• Select a customer</li>}
                         {(!formData.amount || parseFloat(formData.amount) <= 0) && !formData.useLineItems && <li>• Enter an amount</li>}
                         {formData.useLineItems && formData.lineItems.length === 0 && <li>• Add at least one line item</li>}
-                        {!formData.collectionAccountId && <li>• Select collection account</li>}
+                        {formData.generateViban && !formData.collectionAccountId && <li>• Select collection account (required to generate a VIBAN)</li>}
                       </ul>
                     </div>
                   </div>
@@ -2268,6 +2113,48 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           </div>
         </div>
       </Page>
+
+      <Modal
+        isOpen={!!createdInvoice}
+        onClose={() => { setCreatedInvoice(null); navigation.navigate('receivables'); }}
+        title="Invoice created"
+        subtitle={createdInvoice?.invoiceNumber}
+        size="sm"
+        footer={
+          <button
+            onClick={() => { setCreatedInvoice(null); navigation.navigate('receivables'); }}
+            className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+          >
+            Done
+          </button>
+        }
+      >
+        {createdInvoice && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Payment link</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded border border-neutral-200 dark:border-primary-800 font-mono truncate">
+                  {createdInvoice.paymentLink}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(createdInvoice.paymentLink)}
+                  className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg flex-shrink-0"
+                  title="Copy link"
+                >
+                  <Copy className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="bg-white p-2 rounded-lg">
+                <QRCode value={createdInvoice.paymentLink} size={128} />
+              </div>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500">Share this link or QR with the customer</p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

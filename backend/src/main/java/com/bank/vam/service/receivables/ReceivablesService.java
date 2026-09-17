@@ -7,11 +7,16 @@ import com.bank.vam.entity.Transaction.MovementType;
 import com.bank.vam.entity.Transaction.TransactionStatus;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
+import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
 import com.bank.vam.entity.treasury.ExceptionTransaction.ExceptionType;
 import com.bank.vam.entity.treasury.ExceptionTransaction.ExceptionStatus;
 import com.bank.vam.entity.viban.Viban;
+import com.bank.vam.dto.viban.VibanDto.VibanResponse;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.repository.CorporateRepository;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
@@ -20,8 +25,10 @@ import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.service.TransactionService;
 import com.bank.vam.service.treasury.FeePostingService;
 import com.bank.vam.service.treasury.SettlementVaResolverService;
+import com.bank.vam.service.viban.VibanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +76,11 @@ public class ReceivablesService {
     private final TransactionRepository transactionRepository;
     private final VibanRepository vibanRepository;
     private final ReceivableRepository receivableRepository;
+    private final VibanService vibanService;
+    private final CorporateRepository corporateRepository;
+
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
 
     // Shared fee posting service (standardized across all domain services)
     private final FeePostingService feePostingService;
@@ -329,19 +341,16 @@ public class ReceivablesService {
 
         String invoiceNumber = "INV-" + LocalDate.now().getYear() + "-" + String.format("%04d", System.currentTimeMillis() % 10000);
 
-        // Generate VIBAN if requested
-        String vibanNumber = null;
-        UUID vibanId = null;
-        String paymentLink = null;
+        // Real, shareable "pay this invoice" link -- unconditional (unlike VIBAN generation, this
+        // costs nothing and needs no target account) -- see PublicReceivablesController.
+        String paymentLinkToken = UUID.randomUUID().toString();
+        String paymentLink = frontendBaseUrl + "/?page=pay-invoice&token=" + paymentLinkToken;
 
-        if (Boolean.TRUE.equals(request.getCreateViban()) || Boolean.TRUE.equals(request.getGenerateViban())) {
-            vibanNumber = "AE150410CORP" + String.format("%011d", System.currentTimeMillis() % 100000000000L);
-            vibanId = UUID.randomUUID();
-            paymentLink = "https://pay.bank.com/v/" + vibanNumber.substring(vibanNumber.length() - 8);
-            log.info("Generated VIBAN {} for invoice {}", vibanNumber, invoiceNumber);
-        }
-
-        // Create and persist the Receivable entity
+        // Save first, without VIBAN fields, so the real DB-generated id exists to embed as the
+        // VIBAN's referenceId below -- ReconciliationService.attemptDirectMatch() expects that to
+        // parse as this receivable's real id, not the human-readable invoice number. (Assigning
+        // the id ourselves pre-save and trusting Hibernate's UUID generator not to overwrite it
+        // would be one save cheaper, but isn't a documented guarantee -- this way doesn't need it.)
         Receivable receivable = Receivable.builder()
             .receivableNumber(invoiceNumber)
             .corporateId(effectiveCorporateId)
@@ -350,8 +359,7 @@ public class ReceivablesService {
             .customerPartyId(request.getCustomerId())
             .customerName(request.getCustomerName())
             .virtualAccountId(request.getTargetVaId())
-            .viban(vibanNumber)
-            .primaryVibanId(vibanId)
+            .paymentLinkToken(paymentLinkToken)
             .issueDate(LocalDate.now())
             .dueDate(request.getDueDate())
             .grossAmount(request.getAmount())
@@ -370,6 +378,30 @@ public class ReceivablesService {
 
         Receivable savedReceivable = receivableRepository.save(receivable);
         log.info("Created receivable {} with ID {}", invoiceNumber, savedReceivable.getId());
+
+        // Generate VIBAN if requested -- a REAL one via VibanService, persisted to the real Viban
+        // table so it can actually be matched by a later inward payment (the previous fabricated
+        // string here never was: it wasn't saved anywhere, so it could never receive money).
+        String vibanNumber = null;
+        UUID vibanId = null;
+
+        if (Boolean.TRUE.equals(request.getCreateViban()) || Boolean.TRUE.equals(request.getGenerateViban())) {
+            if (request.getTargetVaId() == null) {
+                throw new BusinessException("A collection account (targetVaId) is required to generate a VIBAN");
+            }
+            VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetVaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + request.getTargetVaId()));
+            VibanResponse createdViban = vibanService.createInvoiceViban(
+                    targetVa.getProgramId(), targetVa.getId(), savedReceivable.getId().toString(), request.getAmount(),
+                    request.getDueDate() != null ? request.getDueDate().atStartOfDay() : null);
+            vibanNumber = createdViban.getViban();
+            vibanId = createdViban.getId();
+            log.info("Generated real VIBAN {} for invoice {}", vibanNumber, invoiceNumber);
+
+            savedReceivable.setViban(vibanNumber);
+            savedReceivable.setPrimaryVibanId(vibanId);
+            savedReceivable = receivableRepository.save(savedReceivable);
+        }
 
         return InvoiceResponse.builder()
             .id(savedReceivable.getId())
@@ -394,6 +426,26 @@ public class ReceivablesService {
             .matchedPayments(Collections.emptyList())
             .createdAt(savedReceivable.getCreatedAt())
             .build();
+    }
+
+    /** For the public, unauthenticated "pay this invoice" page (PublicReceivablesController) --
+     * deliberately returns only what a payer needs to see, never customer/internal-ID fields. */
+    public Optional<PublicInvoiceResponse> getPublicInvoiceByToken(String token) {
+        return receivableRepository.findByPaymentLinkToken(token).map(r -> {
+            String corporateName = corporateRepository.findById(r.getCorporateId())
+                    .map(Corporate::getLegalName).orElse(null);
+            return PublicInvoiceResponse.builder()
+                    .receivableNumber(r.getReceivableNumber())
+                    .corporateName(corporateName)
+                    .amount(r.getGrossAmount())
+                    .outstandingAmount(r.getOutstandingAmount())
+                    .currencyCode(r.getCurrencyCode())
+                    .dueDate(r.getDueDate())
+                    .description(r.getDescription())
+                    .status(r.getStatus().name())
+                    .viban(r.getViban())
+                    .build();
+        });
     }
 
     public InvoiceResponse recordPayment(UUID invoiceId, RecordPaymentRequest request) {

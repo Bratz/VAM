@@ -380,4 +380,30 @@ public class Iso20022PaymentDto {
         private String errorCode;
         private String errorMessage;
     }
+
+    // ========================================================================
+    // REQUEST TO PAY (pain.013 outbound / pain.014 inbound status)
+    // ========================================================================
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RequestToPayResponse {
+        private UUID receivableId;
+        private String status;
+        private String messageId;
+        private String pain013Xml;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RequestToPayStatusResult {
+        private boolean matched;
+        private UUID receivableId;
+        private String status;
+        private String message;
+    }
 }

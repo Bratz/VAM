@@ -11,6 +11,7 @@ import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.service.TransactionService;
+import com.bank.vam.service.receivables.ReconciliationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -62,6 +65,7 @@ public class Iso20022InwardPaymentService {
     private final TransactionRepository transactionRepository;
     private final TransactionService transactionService;
     private final Iso20022MessageMapper messageMapper;
+    private final ReconciliationService reconciliationService;
 
     // ========================================================================
     // PROCESS INWARD PAYMENT (Main Entry Point)
@@ -89,7 +93,6 @@ public class Iso20022InwardPaymentService {
             Viban viban = null;
             VirtualAccount va = null;
             String vibanNumber = null;
-            UUID matchedReceivableId = null;
 
             // First try to find as VIBAN
             var vibanOpt = vibanRepository.findByViban(accountNumber);
@@ -110,15 +113,6 @@ public class Iso20022InwardPaymentService {
                     return buildErrorResponse(request, startTime, "AM02", "Payment amount out of allowed bounds");
                 }
 
-                // Try to parse matchedReceivableId from VIBAN's referenceId
-                if (viban.getReferenceId() != null) {
-                    try {
-                        matchedReceivableId = UUID.fromString(viban.getReferenceId());
-                    } catch (IllegalArgumentException e) {
-                        log.debug("VIBAN referenceId is not a UUID: {}", viban.getReferenceId());
-                    }
-                }
-
                 log.info("Found VIBAN {} -> VA {}", vibanNumber, va.getVaNumber());
             } else {
                 // Try to find as VA number
@@ -137,6 +131,25 @@ public class Iso20022InwardPaymentService {
                 return buildErrorResponse(request, startTime, "AC04", "Virtual account is not active");
             }
 
+            // 2b. Idempotency guard: a re-delivered message or a re-uploaded bulk file must not
+            // post the same payment twice. Keyed on endToEndId + target account + amount/currency
+            // (not endToEndId alone) so a coincidentally-reused ID against a different payment
+            // still processes normally. findAllByCorrelationId (not the singular finder) because
+            // processCollection's 4-leg accounting writes multiple Transaction rows sharing one
+            // correlationId.
+            if (request.getEndToEndId() != null && !request.getEndToEndId().isBlank()) {
+                VirtualAccount duplicateVa = va;
+                Optional<Transaction> duplicate = transactionRepository.findAllByCorrelationId(request.getEndToEndId())
+                        .stream()
+                        .filter(t -> duplicateVa.getId().equals(t.getVaId())
+                                && request.getAmount().compareTo(t.getAmount()) == 0
+                                && request.getCurrency().equalsIgnoreCase(t.getCurrencyCode()))
+                        .findFirst();
+                if (duplicate.isPresent()) {
+                    return buildDuplicateResponse(request, startTime, duplicate.get(), va, vibanNumber, viban);
+                }
+            }
+
             // 3. Build CollectionRequest for 4-leg accounting via TransactionService
             // This delegates to TransactionService.processCollection() which creates:
             // CBS → Shadow VA → Settlement VA → Target VA (4 balanced entries)
@@ -153,7 +166,6 @@ public class Iso20022InwardPaymentService {
                     .endToEndId(request.getEndToEndId())
                     .remittanceInfo(request.getRemittanceInfo())
                     .invoiceReference(request.getStructuredRef())
-                    .matchedReceivableId(matchedReceivableId)
                     .channel(request.getChannel() != null ? request.getChannel() : "ISO20022")
                     .externalReference(request.getInstructionId())
                     .build();
@@ -167,6 +179,25 @@ public class Iso20022InwardPaymentService {
                 vibanRepository.save(viban);
             }
 
+            // 5b. Attempt real reconciliation against an open Receivable -- this is what actually
+            // closes the loop so a real VIBAN payment marks its invoice PAID/PARTIAL, not just the
+            // ledger posting above. ReconciliationService requires a real vibanId (its first step
+            // is a lookup by id), so this only runs for VIBAN-routed payments -- a payment routed
+            // directly by VA number has no VIBAN to reconcile against, same ceiling as before.
+            // Known, accepted interaction: ReconciliationService.attemptAutoReconcile's DIRECT
+            // match tier internally calls its own viban.recordPayment() a second time; step 5
+            // above is kept as the one place VIBAN stats reliably update for every match tier, so
+            // a DIRECT match double-counts VIBAN stats specifically. Not fixed here -- see the
+            // build plan's note; it's a pre-existing inconsistency inside ReconciliationService
+            // itself, not something this wiring introduces.
+            ReconciliationService.ReconciliationResult reconciliation = null;
+            if (viban != null) {
+                reconciliation = reconciliationService.attemptAutoReconcile(
+                        collectionResponse.getTransactionId(), viban.getId(), request.getAmount(),
+                        request.getCurrency(), request.getDebtorName(), request.getDebtorAccount(),
+                        request.getRemittanceInfo());
+            }
+
             // 6. Map CollectionResponse to InwardPaymentResponse
             long processingTime = System.currentTimeMillis() - startTime;
             log.info("ISO 20022 inward payment completed with 4-leg accounting: txn={}, va={}, viban={}, amount={} {}, " +
@@ -176,9 +207,7 @@ public class Iso20022InwardPaymentService {
                     collectionResponse.getGrossAmount(), collectionResponse.getNetAmount(),
                     collectionResponse.getFeeAmount(), processingTime);
 
-            // Determine if auto-reconciled based on match status
-            boolean autoReconciled = "AUTO".equals(collectionResponse.getMatchStatus()) ||
-                    "PARTIAL".equals(collectionResponse.getMatchStatus());
+            boolean autoReconciled = reconciliation != null && reconciliation.isSuccess();
 
             return InwardPaymentResponse.builder()
                     .success(true)
@@ -193,6 +222,10 @@ public class Iso20022InwardPaymentService {
                     .balanceBefore(collectionResponse.getTargetBalanceBefore())
                     .balanceAfter(collectionResponse.getTargetBalanceAfter())
                     .autoReconciled(autoReconciled)
+                    .reconciledReferenceType(reconciliation != null && reconciliation.getMatchType() != null
+                            ? reconciliation.getMatchType().name() : null)
+                    .reconciledReferenceId(reconciliation != null && reconciliation.getReceivableId() != null
+                            ? reconciliation.getReceivableId().toString() : null)
                     .processingTimeMs(processingTime)
                     .build();
 
@@ -439,6 +472,29 @@ public class Iso20022InwardPaymentService {
                 .statusReason(errorMessage)
                 .errorCode(errorCode)
                 .errorMessage(errorMessage)
+                .processingTimeMs(System.currentTimeMillis() - startTime)
+                .build();
+    }
+
+    /** No new ledger entries here on purpose — this IS the idempotency guard's no-op path. */
+    private InwardPaymentResponse buildDuplicateResponse(InwardPaymentRequest request, long startTime,
+                                                          Transaction existing, VirtualAccount va,
+                                                          String vibanNumber, Viban viban) {
+        log.info("Duplicate inward payment suppressed: endToEndId={}, va={}, existingTxn={}",
+                request.getEndToEndId(), va.getVaNumber(), existing.getId());
+        return InwardPaymentResponse.builder()
+                .success(true)
+                .statusCode("ACCP")
+                .statusReason("Duplicate payment - endToEndId already processed")
+                .transactionReference(existing.getReferenceNumber())
+                .transactionId(existing.getId())
+                .virtualAccountId(va.getId())
+                .vaNumber(va.getVaNumber())
+                .vibanId(viban != null ? viban.getId() : null)
+                .viban(vibanNumber)
+                .balanceBefore(va.getCurrentBalance())
+                .balanceAfter(va.getCurrentBalance())
+                .autoReconciled(false)
                 .processingTimeMs(System.currentTimeMillis() - startTime)
                 .build();
     }

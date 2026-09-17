@@ -46,7 +46,8 @@ import {
 } from 'lucide-react';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
+import { ScopeSelector } from '../components/layout/ScopeSelector';
+import { Card, CardHeader, Button, Badge } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
 import { formatFileSize } from '../utils';
@@ -104,6 +105,7 @@ const AGENT_NAMES = {
 
 const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
   { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <ArrowDownToLine className="w-5 h-5" /> },
+  { value: 'RECEIVABLES_INVOICE', label: 'Raise Invoices', description: 'Bulk-create new invoices awaiting payment', icon: <FileText className="w-5 h-5" /> },
   { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
   { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-5 h-5" /> },
 ];
@@ -284,7 +286,9 @@ function parseDoneSummary(events: TimelineEventResponse[]): { processed: number;
 
 const FileIngestUploadPage: React.FC = () => {
   const [domain, setDomain] = useState<IngestDomain>('RECEIVABLES');
-  const [customerId, setCustomerId] = useState('DEMO-CUSTOMER-1');
+  const [customerId, setCustomerId] = useState('');
+  const [corporates, setCorporates] = useState<{ id: string; legalName?: string; tradeName?: string }[]>([]);
+  const [corporatesLoading, setCorporatesLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -304,6 +308,17 @@ const FileIngestUploadPage: React.FC = () => {
   };
 
   useEffect(() => stopPolling, []);
+
+  // Corporate picker options — same inline-fetch pattern every corporate-scoped page uses today
+  // (no shared corporateApi service exists in this codebase).
+  useEffect(() => {
+    setCorporatesLoading(true);
+    fetch('/api/v1/corporates')
+      .then((r) => r.json())
+      .then((result) => setCorporates(result.data || result || []))
+      .catch(() => setCorporates([]))
+      .finally(() => setCorporatesLoading(false));
+  }, []);
 
   // Recent-uploads list — only worth fetching while there's no active job to look at.
   useEffect(() => {
@@ -469,12 +484,12 @@ const FileIngestUploadPage: React.FC = () => {
             </div>
           </div>
 
-          <Input
-            label="Customer ID"
-            value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-            disabled={!!job}
-            placeholder="e.g. ACME-CORP-1"
+          <ScopeSelector
+            mode="corporate-only"
+            corporates={corporates}
+            selectedCorporateId={customerId}
+            onCorporateChange={(id) => setCustomerId(id || '')}
+            loading={corporatesLoading}
           />
 
           {!job && (

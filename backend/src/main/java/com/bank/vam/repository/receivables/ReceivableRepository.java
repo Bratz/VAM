@@ -58,6 +58,13 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
     Optional<Receivable> findByPrimaryVibanId(UUID vibanId);
     
     Optional<Receivable> findByViban(String viban);
+
+    /** For the public "pay this invoice" link (PublicReceivablesController). */
+    Optional<Receivable> findByPaymentLinkToken(String paymentLinkToken);
+
+    /** Correlates an inbound pain.014 status report back to the receivable whose pain.013 used
+     * this EndToEndId. */
+    Optional<Receivable> findByRequestToPayMessageId(String requestToPayMessageId);
     
     // ========================================================================
     // CORPORATE QUERIES (Preserved)

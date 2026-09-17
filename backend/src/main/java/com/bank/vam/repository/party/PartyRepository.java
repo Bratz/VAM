@@ -34,6 +34,11 @@ public interface PartyRepository extends JpaRepository<Party, UUID> {
 
     Optional<Party> findByPartyCode(String partyCode);
 
+    /** Exact-match lookup for file-ingest's bulk invoice raising -- a re-uploaded file for the
+     * same customer must reliably find the SAME Party every time, not a fuzzy nearest-match
+     * (see the fuzzy search() below, which is for the UI's search box, not this). */
+    Optional<Party> findByCorporateIdAndLegalNameIgnoreCase(UUID corporateId, String legalName);
+
     Page<Party> findByCorporateId(UUID corporateId, Pageable pageable);
 
     List<Party> findByCorporateId(UUID corporateId);
