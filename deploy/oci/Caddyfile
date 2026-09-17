@@ -9,15 +9,15 @@
 # that literal IP with zero registration. If the VM's IP ever changes, this
 # hostname (and GATEWAY_PUBLIC_BASE_URL in .env) both need updating to match.
 #
-# /webhooks/* additionally routes to defect-fix-service (see
-# tasks/defect-autofix-pipeline-design.md). file-ingest-agent-service has no
-# route here — it's a headless worker with no public HTTP surface (see
-# tasks/file-ingest-pipeline-design.md's "Revised architecture"); the
-# file-ingest pipeline's real public endpoint is now the main backend's own
-# /api/v1/ingest/* (routed below, same as the rest of the backend).
-# GitHub's webhook config should point at
-# https://161-33-9-182.sslip.io/webhooks/github. Everything else keeps going
-# to the MCP gateway, unchanged.
+# /webhooks/* routes to defect-fix-service (see tasks/defect-autofix-pipeline-design.md),
+# EXCEPT /webhooks/jira specifically, matched first (Caddy's `handle` blocks are evaluated in
+# order, first match wins) and routed to file-ingest-agent-service instead — Jira's own "Issue
+# Created" webhook (JiraWebhookController), gated by a query-param shared secret since Jira Cloud's
+# classic WebHooks feature has no HMAC signing like GitHub's. The file-ingest pipeline's other
+# public endpoints (upload/status) are the main backend's own /api/v1/ingest/* (routed below).
+# GitHub's webhook config should point at https://161-33-9-182.sslip.io/webhooks/github; Jira's at
+# https://161-33-9-182.sslip.io/webhooks/jira?token=<JIRA_WEBHOOK_SECRET>. Everything else keeps
+# going to the MCP gateway, unchanged.
 #
 # /api/* routes to backend over real HTTPS — frontend/vercel.json's rewrite
 # used to point straight at http://<ip>:8053 (plain HTTP, no TLS), which
@@ -28,6 +28,9 @@
 # ============================================================================
 
 161-33-9-182.sslip.io {
+	handle /webhooks/jira {
+		reverse_proxy file-ingest-agent-service:8091
+	}
 	handle /webhooks/* {
 		reverse_proxy defect-fix-service:8090
 	}

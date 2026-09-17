@@ -4,9 +4,10 @@ server:
 spring:
   application:
     name: file-ingest-agent-service
-  # No multipart config, no @RestController anywhere in this app anymore — it's a headless
-  # worker (see tasks/file-ingest-pipeline-design.md's "Revised architecture"). The embedded
-  # Tomcat still boots (needed for actuator/JPA infra) but serves nothing customer-facing.
+  # Still a headless worker with no customer-facing HTTP (see tasks/file-ingest-pipeline-design.md's
+  # "Revised architecture") -- the one @RestController that exists (JiraWebhookController) is an
+  # internal wake-up ping from Jira itself, not a customer-facing endpoint, and isn't routed
+  # publicly except through Caddy's /webhooks/jira path with its own shared secret.
   datasource:
     # Same Postgres instance/database the main backend uses. Unlike before, this service no
     # longer owns its own schema — it's a second JPA client of backend's `public` schema
@@ -29,6 +30,10 @@ ingest:
     email: ${JIRA_EMAIL:}
     api-token: ${JIRA_API_TOKEN:}
     project-key: ${JIRA_PROJECT_KEY:KAN}
+    # Shared secret for Jira's own "Issue Created" webhook (see JiraWebhookController) -- Jira
+    # Cloud's classic WebHooks feature has no HMAC signing like GitHub's, so this is checked as a
+    # query param on the webhook URL itself instead. Blank disables the endpoint (always 401s).
+    webhook-secret: ${JIRA_WEBHOOK_SECRET:}
   anthropic:
     api-key: ${ANTHROPIC_API_KEY:}
     model: ${ANTHROPIC_MODEL:claude-sonnet-5}

@@ -237,6 +237,11 @@ services:
       JIRA_EMAIL: ${JIRA_EMAIL:-}
       JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
       JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-KAN}
+      # Shared secret for Jira's own "Issue Created" webhook (JiraWebhookController) -- routed via
+      # Caddy's /webhooks/jira path (see the Caddyfile). Configure the matching webhook URL,
+      # https://<host>/webhooks/jira?token=<this value>, in Jira's own admin console (Settings >
+      # System > WebHooks), filtered to project = KAN AND labels = "file-ingest-pipeline".
+      JIRA_WEBHOOK_SECRET: ${JIRA_WEBHOOK_SECRET:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
       INGEST_WORKSPACE_DIR: /data/file-ingest-workspace
@@ -248,16 +253,15 @@ services:
       # files backend stored and writes the transform-handlers checkout
       # backend's retry sweep later reads from.
       - fileingest_workspace:/data/file-ingest-workspace
-    # No port mapping at all, public or internal — this is a headless worker
-    # with no customer-facing HTTP (see the "Revised architecture" doc);
-    # nothing outside it ever calls it. Its only interfaces are Jira and
-    # this shared database/volume.
+    # No host port mapping (public or otherwise) — still a headless worker with no customer-
+    # facing HTTP (see the "Revised architecture" doc). The one exception is JiraWebhookController
+    # on its internal server.port (8091), reachable only from other containers on this compose
+    # network — Caddy proxies it in over HTTPS at /webhooks/jira, gated by its own shared secret.
 
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
-    profiles: ["mcp", "defectfix"]   # starts if any dependent service is enabled — file-ingest-agent-service
-    # isn't listed here: it has no public HTTP surface for Caddy to route to (see above).
+    profiles: ["mcp", "defectfix", "fileingest"]   # starts if any dependent service is enabled
     # No depends_on here on purpose: mcp-gateway only exists in the compose
     # project when the "mcp" profile is active. A hard depends_on on it would
     # break `docker compose --profile defectfix up -d` run alone (Compose
