@@ -1,12 +1,13 @@
 import React, { useMemo } from 'react';
 import { RefreshCw, Loader2, Banknote } from 'lucide-react';
-import { cn, formatCurrency } from '../../utils';
+import { formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
   ShadowSummary,
 } from '../../services/api';
 import { FreshnessPill } from './FreshnessPill';
 import { BankSplitBar } from './BankSplitBar';
+import { FilterChips } from './FilterChips';
 import { FilterKey } from './types';
 
 // ============================================================================
@@ -114,33 +115,13 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
           8+ currency cards. (Supersedes the earlier "stays static" note —
           that rationale no longer holds.) Background matches the header
           glass recipe so the two surfaces read as one plane. */}
-      <div className="sticky top-16 z-20 py-2 -mt-2 bg-white/80 backdrop-blur-xl dark:bg-primary-900/80 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-primary-900/60">
-        <div className="flex flex-wrap gap-2">
-        {([
-          { key: 'all',      label: 'All' },
-          { key: 'home',     label: 'Home-bank' },
-          { key: 'external', label: 'External' },
-          { key: 'stale',    label: 'Stale',           count: summary.staleCount },
-          { key: 'failed',   label: 'Failed',          count: failedCount },
-          { key: 'never',    label: 'Never refreshed', count: summary.neverRefreshedCount },
-        ] as { key: FilterKey; label: string; count?: number }[]).map(({ key, label, count }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setFilter(key)}
-            aria-current={filter === key ? 'true' : undefined}
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
-              filter === key
-                ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-primary-950 dark:border-accent-500'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-800 dark:hover:bg-primary-800',
-            )}
-          >
-            {label}{typeof count === 'number' ? ` · ${count}` : ''}
-          </button>
-        ))}
-        </div>
-      </div>
+      <FilterChips
+        filter={filter}
+        setFilter={setFilter}
+        staleCount={summary.staleCount}
+        failedCount={failedCount}
+        neverCount={summary.neverRefreshedCount}
+      />
 
       {currencies.length === 0 && (
         <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-12 text-center text-neutral-500 dark:text-neutral-400">

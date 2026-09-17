@@ -6,7 +6,11 @@ import com.bank.vam.dto.treasury.MultiBankLiquidityDto.*;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.BalanceRefreshStatus;
+import com.bank.vam.entity.hierarchy.LegalEntity;
+import com.bank.vam.entity.treasury.ShadowBalanceSnapshot;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.repository.hierarchy.LegalEntityRepository;
+import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,12 +38,27 @@ public class MultiBankLiquidityViewService {
     private final VirtualAccountRepository vaRepository;
     private final HomeBankProperties homeBankProperties;
     private final MultiBankProperties multiBankProperties;
+    private final LegalEntityRepository legalEntityRepository;
+    private final ShadowBalanceSnapshotRepository snapshotRepository;
 
     @Transactional(readOnly = true)
     public LiquiditySummary getSummary(UUID corporateId) {
         List<VirtualAccount> shadows = corporateId != null
                 ? vaRepository.findByCorporateIdAndAccountCategory(corporateId, AccountCategory.PHYSICAL_MIRROR)
                 : vaRepository.findByAccountCategory(AccountCategory.PHYSICAL_MIRROR);
+
+        // Bulk-resolve owning entities once (not per-shadow) — the real FK is
+        // owningEntityId; owningEntityCode below is a denormalized display
+        // label only. Shadows with no owning entity (nullable, no DB
+        // constraint) fall back to "Unassigned" in toShadowSummary().
+        Set<UUID> entityIds = shadows.stream()
+                .map(VirtualAccount::getOwningEntityId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<UUID, LegalEntity> entitiesById = entityIds.isEmpty()
+                ? Collections.emptyMap()
+                : legalEntityRepository.findAllById(entityIds).stream()
+                        .collect(Collectors.toMap(LegalEntity::getId, e -> e));
 
         String homeBic = homeBankProperties.getBic();
         // Home-bank display name resolved from the actual account data by BIC
@@ -57,7 +77,7 @@ public class MultiBankLiquidityViewService {
         Map<String, Map<String, List<ShadowSummary>>> grouped = new LinkedHashMap<>();
 
         for (VirtualAccount s : shadows) {
-            ShadowSummary summary = toShadowSummary(s);
+            ShadowSummary summary = toShadowSummary(s, entitiesById);
             if (summary.isHomeBankHeld()) homeShadowCount++;
             else externalShadowCount++;
             if (summary.isStale()) staleCount++;
@@ -132,9 +152,10 @@ public class MultiBankLiquidityViewService {
                 .build();
     }
 
-    private ShadowSummary toShadowSummary(VirtualAccount s) {
+    private ShadowSummary toShadowSummary(VirtualAccount s, Map<UUID, LegalEntity> entitiesById) {
         String homeBic = homeBankProperties.getBic();
         boolean isHome = s.isHomeBankHeld(homeBic);
+        LegalEntity entity = s.getOwningEntityId() != null ? entitiesById.get(s.getOwningEntityId()) : null;
         return ShadowSummary.builder()
                 .vaId(s.getId() != null ? s.getId().toString() : null)
                 .vaNumber(s.getVaNumber())
@@ -146,6 +167,10 @@ public class MultiBankLiquidityViewService {
                 .bankIban(s.getBankIban())
                 .homeBankHeld(isHome)
                 .owningEntityCode(s.getOwningEntityCode())
+                .owningEntityId(s.getOwningEntityId() != null ? s.getOwningEntityId().toString() : null)
+                .owningEntityName(entity != null ? entity.getEntityName() : "Unassigned")
+                .owningEntityCountry(entity != null ? entity.getCountryCode() : null)
+                .owningEntityJurisdiction(entity != null ? entity.getJurisdiction() : null)
                 .bankBalance(s.getBankBalance())
                 .bankAvailableBalance(s.getBankAvailableBalance())
                 .bankBalanceCommitted(s.getBankBalanceCommitted())
@@ -156,6 +181,25 @@ public class MultiBankLiquidityViewService {
                         ? s.getLastBalanceRefreshStatus().name() : BalanceRefreshStatus.NEVER.name())
                 .stale(isStale(s))
                 .build();
+    }
+
+    /**
+     * Daily bank-balance trend per currency, from {@link ShadowBalanceSnapshot}
+     * rows captured by {@code BalanceRefreshService} on every successful
+     * refresh (plus the demo history seeded by V18). Per-currency, not
+     * FX-converted — same honesty rule as the rest of this view.
+     */
+    @Transactional(readOnly = true)
+    public List<TrendPoint> getTrend(UUID corporateId, int days) {
+        LocalDate from = LocalDate.now().minusDays(Math.max(days, 1) - 1L);
+        return snapshotRepository.findTrend(corporateId, from).stream()
+                .map(r -> TrendPoint.builder()
+                        .asOf(r.getAsOf())
+                        .currencyCode(r.getCurrencyCode())
+                        .totalBankBalance(nz(r.getTotalBankBalance()))
+                        .totalEffective(nz(r.getTotalEffective()))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private boolean isStale(VirtualAccount s) {

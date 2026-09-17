@@ -6,9 +6,10 @@
 // one path (`./types`) instead of digging out from ByBankView.
 // ============================================================================
 
-export type ViewKey = 'overview' | 'by-bank' | 'by-currency';
+export type ViewKey = 'overview' | 'by-bank' | 'by-currency' | 'by-entity' | 'by-country' | 'trend';
 
-export const VALID_VIEWS: readonly ViewKey[] = ['overview', 'by-bank', 'by-currency'] as const;
+export const VALID_VIEWS: readonly ViewKey[] =
+  ['overview', 'by-bank', 'by-currency', 'by-entity', 'by-country', 'trend'] as const;
 
 export const parseView = (s: string | null): ViewKey =>
   (VALID_VIEWS as readonly string[]).includes(s ?? '') ? (s as ViewKey) : 'overview';

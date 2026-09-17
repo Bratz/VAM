@@ -2,6 +2,7 @@ package com.bank.vam.controller.treasury;
 
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.MultiBankLiquidityDto.LiquiditySummary;
+import com.bank.vam.dto.treasury.MultiBankLiquidityDto.TrendPoint;
 import com.bank.vam.entity.VirtualAccount.BalanceRefreshStatus;
 import com.bank.vam.service.treasury.MultiBankLiquidityViewService;
 import com.bank.vam.service.treasury.refresh.BalanceRefreshService;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,6 +38,16 @@ public class MultiBankLiquidityController {
             @RequestParam(required = false) UUID corporateId) {
         LiquiditySummary summary = viewService.getSummary(corporateId);
         return ResponseEntity.ok(ApiResponse.success(summary));
+    }
+
+    @GetMapping("/trend")
+    @Operation(summary = "Multi-bank liquidity trend",
+               description = "Daily per-currency bank-balance trend from captured shadow snapshots (not FX-converted).")
+    public ResponseEntity<ApiResponse<List<TrendPoint>>> getTrend(
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam(defaultValue = "90") int days) {
+        List<TrendPoint> trend = viewService.getTrend(corporateId, days);
+        return ResponseEntity.ok(ApiResponse.success(trend));
     }
 
     @PostMapping("/shadows/{shadowVaId}/refresh")

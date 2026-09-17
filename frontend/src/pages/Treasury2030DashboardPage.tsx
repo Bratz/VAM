@@ -300,37 +300,36 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   useEffect(() => {
     let alive = true;
     (async () => {
+      const cRes = await corporatesApi.getAll().catch(() => null);
+      const cData: any = (cRes as any)?.data ?? cRes;
+      if (alive && Array.isArray(cData)) setCorporates(cData);
+      else if (alive && Array.isArray(cData?.content)) setCorporates(cData.content);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // Single owner of load(): fires on mount (selectedCorporateId === '') and
+  // again on every scope change, including back to "All Corporates". A
+  // separate mount-time load() plus a "skip first run" ref guard used to
+  // live here, but the ref persists across React 18 StrictMode's dev-only
+  // double-invoke of a single effect, so the "skip" flag was already true
+  // by the guard's own second (synthetic) invocation, making it fire for
+  // real AT mount instead of skipping it — three load() calls per page
+  // visit instead of one (confirmed live: /dashboard/pending-approvals
+  // fired 3x on a single Dashboard mount, with the extra in-flight
+  // responses still landing after navigating away, looking like polling on
+  // whatever page came next). load()'s own loadSeq guard already discards
+  // a stale response, so one plain effect is safe under StrictMode too.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
       try {
-        const cRes = await corporatesApi.getAll().catch(() => null);
-        const cData: any = (cRes as any)?.data ?? cRes;
-        if (alive && Array.isArray(cData)) setCorporates(cData);
-        else if (alive && Array.isArray(cData?.content)) setCorporates(cData.content);
-        await load();
+        await load(selectedCorporateId || undefined);
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, []);
-
-  // Skips only its first (mount-time) run: this effect fires on mount
-  // regardless of whether selectedCorporateId "changed" from its initial
-  // '', which — before this guard — fired load('') a second time
-  // immediately after the mount effect above already called load()
-  // unscoped, doubling every request on the page (confirmed live:
-  // /ihb/loans, /dashboard/pending-approvals, /treasury/multi-bank/summary
-  // and /sweeping/rules each fired 2-3x on a single page load). The mount
-  // effect already covers that initial unscoped load. A ref (not an
-  // `if (!selectedCorporateId) return`) so switching the scope selector
-  // back to "All Corporates" (also selectedCorporateId === '') still
-  // reloads instead of silently keeping stale scoped data on screen.
-  const didMountScopeLoad = useRef(false);
-  useEffect(() => {
-    if (!didMountScopeLoad.current) {
-      didMountScopeLoad.current = true;
-      return;
-    }
-    void load(selectedCorporateId);
   }, [selectedCorporateId]);
 
   // Program-scoped hierarchy for the Position breakdown's "By entity" view

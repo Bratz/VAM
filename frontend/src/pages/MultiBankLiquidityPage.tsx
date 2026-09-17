@@ -16,6 +16,9 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { ByBankView, FilterKey } from '../components/multiBank/ByBankView';
 import { OverviewView } from '../components/multiBank/OverviewView';
 import { ByCurrencyView } from '../components/multiBank/ByCurrencyView';
+import { ByEntityView } from '../components/multiBank/ByEntityView';
+import { ByCountryView } from '../components/multiBank/ByCountryView';
+import { TrendView } from '../components/multiBank/TrendView';
 import { ViewSwitcher } from '../components/multiBank/ViewSwitcher';
 import { ViewKey, parseView } from '../components/multiBank/types';
 
@@ -342,6 +345,29 @@ const MultiBankLiquidityPage: React.FC = () => {
           refresh={refresh}
           failedCount={failedCount}
         />
+      )}
+      {view === 'by-entity' && (
+        <ByEntityView
+          summary={summary}
+          filter={filter}
+          setFilter={setFilter}
+          refreshingIds={refreshingIds}
+          refresh={refresh}
+          failedCount={failedCount}
+        />
+      )}
+      {view === 'by-country' && (
+        <ByCountryView
+          summary={summary}
+          filter={filter}
+          setFilter={setFilter}
+          refreshingIds={refreshingIds}
+          refresh={refresh}
+          failedCount={failedCount}
+        />
+      )}
+      {view === 'trend' && (
+        <TrendView corporateId={selectedCorporateId || undefined} />
       )}
     </Page>
   );

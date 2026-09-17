@@ -5,7 +5,8 @@ import { ViewKey } from './types';
 // ============================================================================
 // Multi-Bank Liquidity — view switcher.
 //
-// Segmented control offering three options (Overview / By Bank / By Currency).
+// Segmented control offering six options (Overview / By Bank / By Currency /
+// By Entity / By Country / Trend).
 // Mounted in the page toolbar via `usePageHeaderActions`, sitting to the left
 // of the Refresh stale and Reload view buttons.
 //
@@ -24,6 +25,9 @@ const OPTIONS: { key: ViewKey; label: string }[] = [
   { key: 'overview',    label: 'Overview' },
   { key: 'by-bank',     label: 'By Bank' },
   { key: 'by-currency', label: 'By Currency' },
+  { key: 'by-entity',   label: 'By Entity' },
+  { key: 'by-country',  label: 'By Country' },
+  { key: 'trend',       label: 'Trend' },
 ];
 
 export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ value, onChange }) => (

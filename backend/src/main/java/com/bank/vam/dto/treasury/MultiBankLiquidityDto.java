@@ -66,6 +66,10 @@ public class MultiBankLiquidityDto {
         private String bankIban;
         private boolean homeBankHeld;
         private String owningEntityCode;
+        private String owningEntityId;
+        private String owningEntityName;
+        private String owningEntityCountry;
+        private String owningEntityJurisdiction;
         private BigDecimal bankBalance;
         private BigDecimal bankAvailableBalance;
         private BigDecimal bankBalanceCommitted;
@@ -74,5 +78,15 @@ public class MultiBankLiquidityDto {
         private LocalDateTime lastBalanceRefreshAt;
         private String lastBalanceRefreshStatus;
         private boolean stale;
+    }
+
+    /** One day's aggregated bank balance for a currency, for the liquidity trend chart. */
+    @Data
+    @Builder
+    public static class TrendPoint {
+        private java.time.LocalDate asOf;
+        private String currencyCode;
+        private BigDecimal totalBankBalance;
+        private BigDecimal totalEffective;
     }
 }

@@ -8200,6 +8200,10 @@ export interface ShadowSummary {
   bankIban?: string;
   homeBankHeld: boolean;
   owningEntityCode?: string;
+  owningEntityId?: string;
+  owningEntityName?: string;
+  owningEntityCountry?: string;
+  owningEntityJurisdiction?: string;
   bankBalance: number;
   bankAvailableBalance?: number;
   bankBalanceCommitted: number;
@@ -8238,6 +8242,13 @@ export interface MultiBankLiquiditySummary {
   banks: MultiBankBankBucket[];
 }
 
+export interface TrendPoint {
+  asOf: string;
+  currencyCode: string;
+  totalBankBalance: number;
+  totalEffective: number;
+}
+
 export const multiBankLiquidityApi = {
   getSummary: (corporateId?: string) =>
     apiClient.get<ApiResponse<MultiBankLiquiditySummary>>('/treasury/multi-bank/summary', {
@@ -8249,6 +8260,11 @@ export const multiBankLiquidityApi = {
 
   refreshIfStale: (shadowVaId: string) =>
     apiClient.post<ApiResponse<string>>(`/treasury/multi-bank/shadows/${shadowVaId}/refresh-if-stale`).then(r => r.data),
+
+  getTrend: (corporateId?: string, days = 90) =>
+    apiClient.get<ApiResponse<TrendPoint[]>>('/treasury/multi-bank/trend', {
+      params: { corporateId: corporateId || undefined, days }
+    }).then(r => r.data),
 };
 
 // ============================================================================

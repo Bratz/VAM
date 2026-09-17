@@ -6,9 +6,11 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.BalanceDataSource;
 import com.bank.vam.entity.VirtualAccount.BalanceRefreshStatus;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
+import com.bank.vam.entity.treasury.ShadowBalanceSnapshot;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.treasury.ExceptionTransactionRepository;
+import com.bank.vam.repository.treasury.ShadowBalanceSnapshotRepository;
 import com.bank.vam.service.treasury.SettlementVaResolverService;
 import com.bank.vam.service.treasury.refresh.ShadowBalanceAdapter.RefreshResult;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -47,6 +50,7 @@ public class BalanceRefreshService {
     private final StubAdapter stub;
     private final SettlementVaResolverService settlementVaResolverService;
     private final ExceptionTransactionRepository exceptionRepository;
+    private final ShadowBalanceSnapshotRepository snapshotRepository;
     private final Map<BalanceDataSource, ShadowBalanceAdapter> adapters =
             new EnumMap<>(BalanceDataSource.class);
 
@@ -55,12 +59,14 @@ public class BalanceRefreshService {
                                  List<ShadowBalanceAdapter> dedicatedAdapters,
                                  StubAdapter stub,
                                  SettlementVaResolverService settlementVaResolverService,
-                                 ExceptionTransactionRepository exceptionRepository) {
+                                 ExceptionTransactionRepository exceptionRepository,
+                                 ShadowBalanceSnapshotRepository snapshotRepository) {
         this.vaRepository = vaRepository;
         this.multiBankProperties = multiBankProperties;
         this.stub = stub;
         this.settlementVaResolverService = settlementVaResolverService;
         this.exceptionRepository = exceptionRepository;
+        this.snapshotRepository = snapshotRepository;
         for (ShadowBalanceAdapter a : dedicatedAdapters) {
             // Only index real adapters; the stub is the fallback (skip self-registration).
             if (a != stub) {
@@ -165,6 +171,7 @@ public class BalanceRefreshService {
             }
             shadow.setLastBalanceRefreshStatus(BalanceRefreshStatus.SUCCESS);
             postReconciliationVarianceIfAny(shadow);
+            captureSnapshot(shadow);
         } else {
             shadow.setLastBalanceRefreshStatus(BalanceRefreshStatus.FAILED);
             log.warn("Refresh failed for shadow {} ({}): {}",
@@ -172,6 +179,28 @@ public class BalanceRefreshService {
         }
         vaRepository.save(shadow);
         return shadow.getLastBalanceRefreshStatus();
+    }
+
+    /**
+     * Upserts today's {@link ShadowBalanceSnapshot} for this shadow (one row per shadow
+     * per day — a same-day re-refresh updates the existing row instead of duplicating it,
+     * per the unique (shadow_va_id, as_of) index from V18). Feeds the Multi-Bank
+     * Liquidity page's historical trend view.
+     */
+    private void captureSnapshot(VirtualAccount shadow) {
+        LocalDate today = LocalDate.now();
+        ShadowBalanceSnapshot snapshot = snapshotRepository
+                .findByShadowVaIdAndAsOf(shadow.getId(), today)
+                .orElseGet(() -> ShadowBalanceSnapshot.builder()
+                        .shadowVaId(shadow.getId())
+                        .corporateId(shadow.getCorporateId())
+                        .currencyCode(shadow.getCurrencyCode())
+                        .asOf(today)
+                        .build());
+        snapshot.setBankBalance(shadow.getBankBalance());
+        snapshot.setBankAvailableBalance(shadow.getBankAvailableBalance());
+        snapshot.setBankBalanceEffective(shadow.getBankBalanceEffective());
+        snapshotRepository.save(snapshot);
     }
 
     /**

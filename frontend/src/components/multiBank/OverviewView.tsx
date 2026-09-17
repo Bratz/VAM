@@ -1,13 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  RefreshCw, AlertTriangle, Clock, Layers,
+  RefreshCw, AlertTriangle, Clock, Layers, Info,
 } from 'lucide-react';
 import { cn, formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
   MultiBankBankBucket,
+  fxRateApi,
 } from '../../services/api';
 import { Card, StatusIconBadge, Button, Badge } from '../ui';
+import { CurrencyPicker } from '../ui/CurrencyPicker';
+import { useMarket } from '../../context/MarketContext';
 import { StatStrip } from '../layout/StatStrip';
 import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
@@ -86,6 +89,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     type CurAgg = {
       currencyCode: string;
       totalEffective: number;
+      totalAvailable: number;
       shadowCount: number;
       bankShares: BankShare[];
       homeBankShare: number;
@@ -97,12 +101,17 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         const cur = map.get(c.currencyCode) ?? {
           currencyCode: c.currencyCode,
           totalEffective: 0,
+          totalAvailable: 0,
           shadowCount: 0,
           bankShares: [],
           homeBankShare: 0,
           homeBankAmount: 0,
         };
         cur.totalEffective += c.totalEffective || 0;
+        // bankAvailableBalance lives per-shadow, not on the currency bucket
+        // itself (unlike totalEffective/totalCommitted, which the backend
+        // pre-aggregates) — sum it here for the Available-vs-trapped tiles.
+        cur.totalAvailable += c.shadows.reduce((a, s) => a + (s.bankAvailableBalance || 0), 0);
         cur.shadowCount += c.shadowCount || 0;
         cur.bankShares.push({
           bankBic: b.bankBic,
@@ -122,6 +131,59 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       }))
       .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
   }, [visibleBanks]);
+
+  // Consolidated cross-currency total — the one deliberate exception to the
+  // FX-honesty rule above. Unlike the per-currency figures (which sum
+  // directly off the payload), this converts each currency's total via the
+  // backend's fxRateApi.convert() (full rate-resolution fallback chain:
+  // direct → inverse → multi-hop → default table) into a user-picked
+  // reporting currency, so it's always labelled as an indicative conversion,
+  // never presented as a second source of truth for the per-currency totals.
+  const { profile } = useMarket();
+  const [reportingCurrency, setReportingCurrency] = useState(profile.defaultCurrency || 'AED');
+  const [consolidated, setConsolidated] = useState<{
+    total: number; available: number; loading: boolean; excluded: number;
+  }>({ total: 0, available: 0, loading: false, excluded: 0 });
+
+  useEffect(() => {
+    if (compact || currencies.length === 0) return;
+    let alive = true;
+    setConsolidated((prev) => ({ ...prev, loading: true }));
+    Promise.allSettled(
+      currencies.map((c) =>
+        c.currencyCode === reportingCurrency
+          ? Promise.resolve({ currencyCode: c.currencyCode, total: c.totalEffective, available: c.totalAvailable })
+          : Promise.all([
+              fxRateApi.convert(c.totalEffective, c.currencyCode, reportingCurrency),
+              fxRateApi.convert(c.totalAvailable, c.currencyCode, reportingCurrency),
+            ]).then(([totalRes, availRes]) => {
+              if (!totalRes.success || !availRes.success || !totalRes.data || !availRes.data) {
+                throw new Error(`No rate ${c.currencyCode} → ${reportingCurrency}`);
+              }
+              return {
+                currencyCode: c.currencyCode,
+                total: totalRes.data.convertedAmount,
+                available: availRes.data.convertedAmount,
+              };
+            })
+      )
+    ).then((results) => {
+      if (!alive) return;
+      let total = 0;
+      let available = 0;
+      let excluded = 0;
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          total += r.value.total;
+          available += r.value.available;
+        } else {
+          excluded++;
+        }
+      }
+      setConsolidated({ total, available, loading: false, excluded });
+    });
+    return () => { alive = false; };
+  }, [currencies, reportingCurrency, compact]);
 
   // Currency chip row for the hero `sub` slot.
   const currencyChipRow = currencies.length > 0 ? (
@@ -273,6 +335,58 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* 1b. Consolidated cross-currency total + available/trapped cash —
+          the one place this page blends currencies, always paired with the
+          "indicative rates" badge so it never reads as a second source of
+          truth for the honest per-currency figures above. Skipped in
+          compact mode (the cockpit band stays a glance-surface). */}
+      {!compact && currencies.length > 0 && (
+        <Card padding="sm">
+          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="label">Consolidated position</p>
+                <span
+                  title="Converted using this platform's stored FX rates, which are seeded reference data — not a live market feed. Treat this total as indicative, not a live mark."
+                  className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
+                >
+                  <Info className="w-3 h-3" />
+                  Indicative rates
+                </span>
+              </div>
+              <p className="stat-value-sm mt-1">
+                {consolidated.loading ? '…' : formatCurrency(consolidated.total, reportingCurrency)}
+              </p>
+              {consolidated.excluded > 0 && (
+                <p className="body-sm text-warning-600 dark:text-warning-400 mt-0.5">
+                  {consolidated.excluded} currenc{consolidated.excluded === 1 ? 'y' : 'ies'} excluded — no rate available
+                </p>
+              )}
+            </div>
+            <div className="w-28">
+              <CurrencyPicker value={reportingCurrency} onChange={setReportingCurrency} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200/70 dark:border-primary-800/60">
+            <div>
+              <p className="label">Available to move</p>
+              <p className="body mt-0.5">
+                {consolidated.loading ? '…' : formatCurrency(consolidated.available, reportingCurrency)}
+              </p>
+            </div>
+            <div>
+              <p className="label">Committed / held</p>
+              <p className="body mt-0.5">
+                {/* bankBalanceEffective = bankAvailableBalance - bankBalanceCommitted
+                    (see VirtualAccount.getBankBalanceEffective()), so committed is
+                    available minus effective, not the other way round. */}
+                {consolidated.loading ? '…' : formatCurrency(Math.max(0, consolidated.available - consolidated.total), reportingCurrency)}
+              </p>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* 2. Shadow distribution (count-based, FX-honest). */}

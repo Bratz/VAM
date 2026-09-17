@@ -11,6 +11,7 @@ import {
 } from '../../services/api';
 import { MetricCard } from './MetricCard';
 import { FreshnessPill } from './FreshnessPill';
+import { FilterChips } from './FilterChips';
 
 // ============================================================================
 // Multi-Bank Liquidity — By Bank view (per-bank cards).
@@ -180,36 +181,13 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
           sticky at top-0 z-30). Recipe mirrors the app-shell header bg so the
           two surfaces read as the same glass plane. z-20 sits below the
           header so the header always paints over chips when they collide. */}
-      <div className="sticky top-16 z-20 py-2 -mt-2 bg-white/80 backdrop-blur-xl dark:bg-primary-900/80 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-primary-900/60">
-        <div className="flex flex-wrap gap-2">
-          {([
-            { key: 'all',      label: 'All' },
-            { key: 'home',     label: 'Home-bank' },
-            { key: 'external', label: 'External' },
-            { key: 'stale',    label: 'Stale',           count: summary.staleCount },
-            { key: 'failed',   label: 'Failed',          count: failedCount },
-            { key: 'never',    label: 'Never refreshed', count: summary.neverRefreshedCount },
-          ] as { key: FilterKey; label: string; count?: number }[]).map(({ key, label, count }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              // aria-current is more accurate than aria-pressed for a
-              // mutually-exclusive filter set: chips select one of N, they
-              // aren't independent toggles.
-              aria-current={filter === key ? 'true' : undefined}
-              className={cn(
-                'px-3 py-1 rounded-full text-xs font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
-                filter === key
-                  ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-primary-950 dark:border-accent-500'
-                  : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-800 dark:hover:bg-primary-800',
-              )}
-            >
-              {label}{typeof count === 'number' ? ` · ${count}` : ''}
-            </button>
-          ))}
-        </div>
-      </div>
+      <FilterChips
+        filter={filter}
+        setFilter={setFilter}
+        staleCount={summary.staleCount}
+        failedCount={failedCount}
+        neverCount={summary.neverRefreshedCount}
+      />
 
       {/* Per-bank cards (filtered) */}
       <div className="space-y-4">
