@@ -157,7 +157,9 @@ public class IngestOrchestrator {
         }
     }
 
-    private void blockJob(IngestJob job, String reason) {
+    // Package-private, not private: IngestRetrySweepService also calls this when a resume
+    // attempt fails, so the failure is visible to the customer instead of retried silently.
+    void blockJob(IngestJob job, String reason) {
         job.setStage(IngestStage.BLOCKED);
         job.setBlockedReason(reason);
         ingestJobRepository.save(job);

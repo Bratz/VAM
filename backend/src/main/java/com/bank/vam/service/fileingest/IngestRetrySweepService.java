@@ -84,7 +84,13 @@ public class IngestRetrySweepService {
                 orchestrator.runPipelineFrom(job, output);
                 resumed++;
             } catch (Exception e) {
+                // Confirmed live: this used to only log + count, leaving the job in
+                // AWAITING_TRANSFORM forever -- every sweep cycle (every retryCadenceMinutes)
+                // retried the identical failing operation with zero customer-visible signal, no
+                // BLOCKED transition, no timeline event. formatSignatureId/transformRef are left
+                // untouched, so resetting the stage back to AWAITING_TRANSFORM safely retries.
                 log.error("Failed to resume ingest job {} after transform became available", job.getId(), e);
+                orchestrator.blockJob(job, "Failed to resume after a transform became available: " + e.getMessage());
                 failed++;
             }
         }
