@@ -15,6 +15,13 @@
 # Usage: sandbox-run.sh <command...>
 set -euo pipefail
 
+# Confirmed live: `ulimit -v` caps VIRTUAL address space, not physical/resident memory -- but
+# HotSpot reserves ~1GiB of virtual space by default just for CompressedClassSpaceSize, before
+# running any code, regardless of actual memory need. The wrapped command here IS a JVM (`mvn`
+# is a Java app), so a 1.5GB `-v` cap failed every real run with "Could not allocate compressed
+# class space: 1073741824 bytes" -- the JVM couldn't even finish booting. Raised well above that
+# baseline reservation + Maven's own overhead; still a real ceiling against genuinely runaway
+# allocation, just not one so tight it fails a normal JVM's own startup.
 exec env -i \
   JAVA_HOME="${JAVA_HOME:-}" PATH=/usr/bin:/bin HOME=/tmp \
-  bash -c "ulimit -v ${SANDBOX_MEM_KB:-1500000} -t ${SANDBOX_CPU_SECS:-110}; $*"
+  bash -c "ulimit -v ${SANDBOX_MEM_KB:-3000000} -t ${SANDBOX_CPU_SECS:-110}; $*"
