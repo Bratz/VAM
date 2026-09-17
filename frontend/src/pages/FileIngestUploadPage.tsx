@@ -2,13 +2,19 @@
 // FileIngestUploadPage — lets a customer upload a payables/receivables/
 // payment file in any format and watch it move through the file-ingest
 // pipeline (a standard backend feature — see tasks/file-ingest-pipeline-
-// design.md's "Revised architecture") via the Stepper + EventTimeline
-// components, polled every ~3s (no WebSocket/SSE exists anywhere in this
-// frontend today — interval polling matches the rest of the app). An
-// unrecognized format files a Jira ticket for a separate agent worker and
-// the job sits at AWAITING_TRANSFORM until that worker (polling Jira on its
-// own schedule, never called directly) resolves it and backend's retry
-// sweep notices and resumes.
+// design.md's "Revised architecture") via the Stepper, polled every ~3s (no
+// WebSocket/SSE exists anywhere in this frontend today — interval polling
+// matches the rest of the app). An unrecognized format files a Jira ticket
+// for a separate agent worker and the job sits at AWAITING_TRANSFORM until
+// that worker (polling Jira on its own schedule, never called directly)
+// resolves it and backend's retry sweep notices and resumes.
+//
+// Title/description register via the shared PageHeader (renders into
+// Layout's sticky header, not an in-page <h1>) — matches every other page in
+// this app; this page was previously the one outlier hand-rolling its own
+// heading. The raw per-event timeline was intentionally dropped (UI review,
+// 2026-09) — the Issue Status view below already tells the same story in
+// plain language for the one case (a filed ticket) it actually mattered.
 //
 // Structure borrows ClearTax's broker-statement-upload pattern (tile picker
 // for "what is this" -> a real dropzone -> a milestone-style progress view
@@ -39,9 +45,9 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Page } from '../components/layout/Page';
+import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
-import { EventTimeline, TimelineEntry } from '../components/ui/EventTimeline';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, TimelineEventResponse } from '../services/ingestApi';
 
 const POLL_INTERVAL_MS = 3000;
@@ -95,20 +101,6 @@ const AGENT_NAMES = {
   coding: 'Rohan · Format Engineering',
 };
 
-function actorForStage(stage: IngestStage): string {
-  switch (stage) {
-    case 'ANALYZED':
-    case 'SIGNATURE_MATCHED':
-      return AGENT_NAMES.analysis;
-    case 'SIGNATURE_NEW':
-    case 'CODING_AGENT_RUNNING':
-    case 'TEST_GATE':
-      return AGENT_NAMES.coding;
-    default:
-      return 'Aperture Pipeline';
-  }
-}
-
 const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
   { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <ArrowDownToLine className="w-5 h-5" /> },
   { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
@@ -132,15 +124,6 @@ function stepsForEvents(events: TimelineEventResponse[]): IngestStage[] {
     return ['RECEIVED', 'AWAITING_TRANSFORM', 'ANALYZED', 'SIGNATURE_NEW', 'CODING_AGENT_RUNNING', 'TEST_GATE', 'STAGED', 'PROCESSING', 'DONE'];
   }
   return ['RECEIVED', 'STAGED', 'PROCESSING', 'DONE'];
-}
-
-function toTimelineEntries(events: TimelineEventResponse[]): TimelineEntry[] {
-  return events.map((e) => ({
-    timestamp: e.occurredAt,
-    action: `${STAGE_LABELS[e.stage] ?? e.stage} — ${e.status}`,
-    actor: actorForStage(e.stage),
-    details: e.detail ?? undefined,
-  }));
 }
 
 type IssueStepStatus = 'done' | 'active' | 'blocked' | 'pending';
@@ -404,14 +387,10 @@ const FileIngestUploadPage: React.FC = () => {
 
   return (
     <Page maxWidth="narrow">
-      <div>
-        <h1 className="text-2xl font-semibold text-primary-900 dark:text-neutral-50 tracking-tight">File Ingest Pipeline</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-          Upload a payables/receivables/payment file in any format — an analysis agent profiles it,
-          a coding agent builds a transform for shapes it hasn't seen before, and the result is
-          reconciled, staged and processed automatically.
-        </p>
-      </div>
+      <PageHeader
+        title="File Ingest Pipeline"
+        description="Upload a payables/receivables/payment file in any format — an analysis agent profiles it, a coding agent builds a transform for shapes it hasn't seen before, and the result is reconciled, staged and processed automatically."
+      />
 
       <Card>
         <CardHeader title="New Upload" subtitle="Every field below stays editable until you upload." />
@@ -475,7 +454,7 @@ const FileIngestUploadPage: React.FC = () => {
               <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 scale-110' : 'text-neutral-400 dark:text-neutral-500'}`} />
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
                 Drop your file here, or{' '}
-                <label htmlFor="ingest-file-upload" className="text-accent-600 dark:text-accent-400 font-medium cursor-pointer hover:underline">
+                <label htmlFor="ingest-file-upload" className="text-accent-600 dark:text-accent-300 font-medium cursor-pointer hover:underline">
                   browse to upload
                 </label>
               </p>
@@ -532,7 +511,7 @@ const FileIngestUploadPage: React.FC = () => {
                 ) : job.stage === 'BLOCKED' ? (
                   <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Blocked</Badge>
                 ) : (
-                  <Badge variant="accent" dot className="animate-pulse-soft">{STAGE_LABELS[job.stage]}</Badge>
+                  <Badge variant="info" dot className="animate-pulse-soft">{STAGE_LABELS[job.stage]}</Badge>
                 )
               }
             />
@@ -588,15 +567,6 @@ const FileIngestUploadPage: React.FC = () => {
               </Card>
             </div>
           )}
-
-          <Card>
-            <CardHeader title="Timeline" subtitle="Updates automatically every few seconds." />
-            {timeline.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Waiting for the first event…</p>
-            ) : (
-              <EventTimeline entries={toTimelineEntries(timeline)} />
-            )}
-          </Card>
         </>
       )}
     </Page>
