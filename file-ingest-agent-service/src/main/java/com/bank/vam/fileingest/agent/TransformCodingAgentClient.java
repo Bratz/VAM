@@ -54,8 +54,11 @@ public class TransformCodingAgentClient {
             com.bank.vam.transformhandlers.generated.<package> (the exact package name is given in
             the task), as a class named GeneratedTransform implementing RowTransform. Each output
             row is a Map with exactly these keys: amount (a plain decimal string), currency
-            (3-letter code), viban, debtorName, debtorAccount, remittanceInfo, reference — use an
-            empty string for any field the source file doesn't actually contain. Write a JUnit 5
+            (3-letter code), viban, debtorName, debtorAccount, creditorName, creditorAccount,
+            remittanceInformation, endToEndId (ISO 20022 vocabulary — viban is always this app's
+            own Virtual Account in the transaction; only populate whichever of debtor*/creditor*
+            actually applies to the row's direction, leave the other pair as empty strings) — use
+            an empty string for any field the source file doesn't actually contain. Write a JUnit 5
             test for it (GeneratedTransformTest, same package, under src/test/java) against the
             sample fixture, and run `mvn -q test` yourself via run_command before you finish to
             confirm it passes — the caller runs the same command again independently afterward as
