@@ -59,6 +59,26 @@ class ReceivablesCsvTransformTest {
                 .hasMessageContaining("Unrecognized format");
     }
 
+    /**
+     * Regression test for a real production bug: uploading a JPEG to Receivables threw
+     * UncheckedIOException (MalformedInputException from Files.readAllLines's UTF-8 decoding),
+     * which IngestOrchestrator.runJob's catch(IllegalArgumentException) doesn't catch -- so it
+     * skipped the escalate-to-agent path entirely and dead-ended the job at BLOCKED with a raw
+     * file-path error and no ticket ever filed. A non-text file is just another unrecognized
+     * shape and must throw the same exception type as a bad header does.
+     */
+    @Test
+    void unreadableBinaryContentIsTreatedAsAnUnrecognizedFormat() throws Exception {
+        Path file = tempDir.resolve("photo.jpeg");
+        // Invalid UTF-8 byte sequences (a lone continuation byte, an overlong encoding) --
+        // Files.readAllLines(path, UTF_8) throws MalformedInputException on these.
+        Files.write(file, new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, (byte) 0x80, (byte) 0x80 });
+
+        assertThatThrownBy(() -> transform.transform(file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unrecognized format");
+    }
+
     @Test
     void emptyFileProducesEmptyOutput() throws Exception {
         Path file = tempDir.resolve("empty.csv");

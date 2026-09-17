@@ -465,7 +465,13 @@ const FileIngestUploadPage: React.FC = () => {
                   : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300'
               }`}
             >
-              <input type="file" onChange={handleFile} className="hidden" id="ingest-file-upload" />
+              <input
+                type="file"
+                accept=".csv,.txt,.tsv,.xlsx,.xls,.xml,.dat"
+                onChange={handleFile}
+                className="hidden"
+                id="ingest-file-upload"
+              />
               <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 scale-110' : 'text-neutral-400 dark:text-neutral-500'}`} />
               <p className="text-sm text-neutral-600 dark:text-neutral-300">
                 Drop your file here, or{' '}

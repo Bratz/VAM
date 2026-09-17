@@ -3,7 +3,6 @@ package com.bank.vam.service.fileingest;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +33,16 @@ public class ReceivablesCsvTransform {
         try {
             lines = Files.readAllLines(sourceFile, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read source file " + sourceFile, e);
+            // Confirmed live: a non-text upload (e.g. a JPEG) isn't invalid input, it's just
+            // another shape of "unrecognized format" -- Files.readAllLines throws
+            // MalformedInputException for it. Must stay an IllegalArgumentException (not
+            // UncheckedIOException) so IngestOrchestrator.runJob's catch escalates it to the
+            // agent-service ticket path like any other unrecognized shape, instead of dead-ending
+            // in a BLOCKED job with no ticket and a raw file-path error shown to the customer.
+            throw new IllegalArgumentException(
+                    "Unrecognized format — could not read " + sourceFile + " as text (" + e.getMessage() + "). "
+                            + "(This hand-written transform only understands one CSV shape; anything else is "
+                            + "escalated to the file-ingest-agent-service worker via a Jira ticket.)", e);
         }
         if (lines.isEmpty()) {
             return new TransformOutput(0, BigDecimal.ZERO, List.of());
