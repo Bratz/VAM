@@ -17,6 +17,18 @@
 // data — no new backend endpoints. Drag-and-drop is native HTML5 (no
 // library); the DONE-state scorecard parses the numbers already present in
 // the DONE timeline event's `detail` string instead of adding an endpoint.
+//
+// Whenever a ticket actually gets filed (an unrecognized format), the
+// horizontal Stepper is swapped for a vertical "Issue Status" timeline —
+// modeled on ClearTax's own "Import from Bajaj" issue-resolution screen
+// (ticket filed -> named reviewer -> named engineer -> resolved), including
+// giving the two backend agents human display names (AGENT_NAMES below —
+// purely a frontend label; the backend's own `actor` column is always the
+// literal string "system" today, see TimelineEvent.java, so there's no
+// per-agent identity to preserve server-side). The reference's countdown
+// ("we'll fix this in 09:17") is deliberately NOT copied verbatim — there's
+// no real ETA to promise, so this counts elapsed time instead ("working on
+// it — 02:14") to stay honest rather than fabricate a deadline.
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,6 +36,7 @@ import {
   Upload, FileText, X, AlertTriangle, CheckCircle2, RefreshCw,
   ArrowDownToLine, ArrowUpFromLine, Send, ScanSearch, Wand2, Hammer,
   ShieldCheck, Zap, Clock, PackageCheck, Workflow, XCircle, PauseCircle,
+  Loader2,
 } from 'lucide-react';
 import { Page } from '../components/layout/Page';
 import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
@@ -75,6 +88,27 @@ const STAGE_ICONS: Record<IngestStage, React.ReactNode> = {
   BLOCKED: <AlertTriangle className="w-4 h-4" />,
 };
 
+/** Human-facing display names for the two backend agents — a purely cosmetic frontend label,
+ * see the file header comment. Change these two strings to rename them. */
+const AGENT_NAMES = {
+  analysis: 'Asha · Format Analysis',
+  coding: 'Rohan · Format Engineering',
+};
+
+function actorForStage(stage: IngestStage): string {
+  switch (stage) {
+    case 'ANALYZED':
+    case 'SIGNATURE_MATCHED':
+      return AGENT_NAMES.analysis;
+    case 'SIGNATURE_NEW':
+    case 'CODING_AGENT_RUNNING':
+    case 'TEST_GATE':
+      return AGENT_NAMES.coding;
+    default:
+      return 'Aperture Pipeline';
+  }
+}
+
 const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
   { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <ArrowDownToLine className="w-5 h-5" /> },
   { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
@@ -104,10 +138,141 @@ function toTimelineEntries(events: TimelineEventResponse[]): TimelineEntry[] {
   return events.map((e) => ({
     timestamp: e.occurredAt,
     action: `${STAGE_LABELS[e.stage] ?? e.stage} — ${e.status}`,
-    actor: e.actor,
+    actor: actorForStage(e.stage),
     details: e.detail ?? undefined,
   }));
 }
+
+type IssueStepStatus = 'done' | 'active' | 'blocked' | 'pending';
+
+interface IssueStep {
+  key: string;
+  title: string;
+  subtitle?: string;
+  status: IssueStepStatus;
+  timestamp?: string;
+}
+
+/** Builds the 4-step "Issue Status" timeline for a job that actually filed a ticket (known
+ * format or not — a cache hit just resolves steps 2-3 near-instantly). Mirrors the shape of
+ * ClearTax's own issue-resolution screen: ticket filed -> a named reviewer -> a named engineer
+ * -> resolved, each derived from real timeline events rather than invented checklist copy. */
+function buildIssueSteps(job: IngestJobResponse, timeline: TimelineEventResponse[]): IssueStep[] {
+  const find = (stage: IngestStage, status: string) => timeline.find((e) => e.stage === stage && e.status === status);
+
+  const filed = find('AWAITING_TRANSFORM', 'COMPLETE');
+  const analyzed = find('ANALYZED', 'COMPLETE');
+  const testGate = find('TEST_GATE', 'COMPLETE');
+  const signatureMatched = find('SIGNATURE_MATCHED', 'COMPLETE');
+  const codingStarted = find('CODING_AGENT_RUNNING', 'STARTED');
+  const staged = find('STAGED', 'COMPLETE');
+
+  const engineeringDone = !!testGate || !!signatureMatched;
+  const engineeringActive = !engineeringDone && (!!codingStarted || !!analyzed);
+  const processingDone = job.stage === 'STAGED' || job.stage === 'PROCESSING' || job.stage === 'DONE';
+
+  // Nothing is genuinely "in progress" once the job is BLOCKED — whichever step was active when
+  // it failed should read as stopped, not still-pulsing (confirmed visually: without this, the
+  // step that failed kept showing the same amber "working on it" animation as a live job).
+  const activeStatus: IssueStepStatus = job.stage === 'BLOCKED' ? 'blocked' : 'active';
+
+  return [
+    {
+      key: 'filed',
+      title: 'Ticket filed for this format',
+      status: filed ? 'done' : 'pending',
+      timestamp: filed?.occurredAt,
+    },
+    {
+      key: 'review',
+      title: `${AGENT_NAMES.analysis} is reviewing your file`,
+      subtitle: analyzed?.detail ?? (filed ? "Reading the file's structure…" : undefined),
+      status: analyzed ? 'done' : filed ? activeStatus : 'pending',
+      timestamp: analyzed?.occurredAt,
+    },
+    {
+      key: 'engineer',
+      title: signatureMatched
+        ? `${AGENT_NAMES.analysis} recognized this format`
+        : `${AGENT_NAMES.coding} builds support for this format`,
+      subtitle: testGate?.detail ?? (engineeringActive ? 'Writing and testing a parser for this layout…' : undefined),
+      status: engineeringDone ? 'done' : engineeringActive ? activeStatus : 'pending',
+      timestamp: (testGate ?? signatureMatched)?.occurredAt,
+    },
+    {
+      key: 'process',
+      title: 'File gets staged and processed',
+      subtitle: job.stage === 'DONE' ? 'Complete' : engineeringDone ? 'Posting your transactions…' : undefined,
+      status: processingDone ? 'done' : engineeringDone ? activeStatus : 'pending',
+      timestamp: staged?.occurredAt,
+    },
+  ];
+}
+
+function formatElapsed(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: string; tone: 'live' | 'success' | 'error' } | null }> = ({ steps, elapsedLabel }) => (
+  <div>
+    {elapsedLabel && (
+      <div className={`mb-5 flex items-center justify-center gap-2 rounded-full py-2 text-sm font-medium ${
+        elapsedLabel.tone === 'live'
+          ? 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300'
+          : elapsedLabel.tone === 'error'
+            ? 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-300'
+            : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300'
+      }`}>
+        {elapsedLabel.tone === 'live' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+        {elapsedLabel.text}
+      </div>
+    )}
+    <div className="space-y-0">
+      {steps.map((step, idx) => (
+        <div key={step.key} className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+              step.status === 'done'
+                ? 'bg-success-500 text-white'
+                : step.status === 'active'
+                  ? 'border-2 border-warning-500 text-warning-600 dark:text-warning-300'
+                  : step.status === 'blocked'
+                    ? 'bg-error-500 text-white'
+                    : 'border-2 border-neutral-200 text-neutral-400 dark:border-primary-700'
+            }`}>
+              {step.status === 'done' ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : step.status === 'active' ? (
+                <span className="w-2 h-2 rounded-full bg-warning-500 animate-pulse-soft" />
+              ) : step.status === 'blocked' ? (
+                <XCircle className="w-4 h-4" />
+              ) : (
+                <span className="text-xs font-semibold">{idx + 1}</span>
+              )}
+            </div>
+            {idx < steps.length - 1 && (
+              <div className={`w-0.5 flex-1 min-h-[1.5rem] ${step.status === 'done' ? 'bg-success-500' : 'bg-neutral-200 dark:bg-primary-800'}`} />
+            )}
+          </div>
+          <div className="pb-5 min-w-0">
+            <p className={`text-sm ${step.status === 'pending' ? 'text-neutral-400 dark:text-neutral-500' : 'font-semibold text-primary-900 dark:text-neutral-50'}`}>
+              {step.title}
+            </p>
+            {step.subtitle && (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{step.subtitle}</p>
+            )}
+            {step.timestamp && (
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">{new Date(step.timestamp).toLocaleString()}</p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 /** Parses IngestOrchestrator's own DONE-summary string ("%d processed, %d quarantined, %d
  * failed (of %d total).") into a scorecard instead of adding a dedicated summary endpoint —
@@ -129,6 +294,7 @@ const FileIngestUploadPage: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [job, setJob] = useState<IngestJobResponse | null>(null);
   const [timeline, setTimeline] = useState<TimelineEventResponse[]>([]);
+  const [now, setNow] = useState(() => Date.now());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
@@ -206,6 +372,35 @@ const FileIngestUploadPage: React.FC = () => {
 
   const isLive = !!job && job.stage !== 'DONE' && job.stage !== 'BLOCKED';
   const doneSummary = useMemo(() => (job?.stage === 'DONE' ? parseDoneSummary(timeline) : null), [job?.stage, timeline]);
+
+  // A ticket was filed -> render the ClearTax-style "Issue Status" timeline instead of the plain
+  // Stepper (a known-shape upload never files a ticket, so it keeps the simpler Stepper).
+  const hasTicket = !!job?.jiraTicketKey;
+  const issueSteps = useMemo(() => (job && hasTicket ? buildIssueSteps(job, timeline) : []), [job, hasTicket, timeline]);
+
+  useEffect(() => {
+    if (!isLive || !hasTicket) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [isLive, hasTicket]);
+
+  const elapsedLabel = useMemo(() => {
+    if (!job || !hasTicket) return null;
+    const filedAt = timeline.find((e) => e.stage === 'AWAITING_TRANSFORM' && e.status === 'COMPLETE')?.occurredAt ?? job.createdAt;
+    const startMs = new Date(filedAt).getTime();
+    if (isLive) {
+      return { text: `Working on it — ${formatElapsed((now - startMs) / 1000)} elapsed`, tone: 'live' as const };
+    }
+    const endEvent = [...timeline].reverse().find((e) => e.stage === job.stage);
+    const endMs = endEvent ? new Date(endEvent.occurredAt).getTime() : now;
+    if (job.stage === 'DONE') {
+      return { text: `Resolved in ${formatElapsed((endMs - startMs) / 1000)}`, tone: 'success' as const };
+    }
+    if (job.stage === 'BLOCKED') {
+      return { text: `Escalated after ${formatElapsed((endMs - startMs) / 1000)}`, tone: 'error' as const };
+    }
+    return null;
+  }, [job, hasTicket, isLive, now, timeline]);
 
   return (
     <Page maxWidth="narrow">
@@ -341,17 +536,21 @@ const FileIngestUploadPage: React.FC = () => {
                 <p className="text-sm text-error-700 dark:text-error-300">{job.blockedReason}</p>
               </div>
             )}
-            <div className="overflow-x-auto py-2">
-              <Stepper
-                steps={steps.map((s) => ({
-                  id: s,
-                  title: STAGE_LABELS[s],
-                  description: STAGE_DESCRIPTIONS[s],
-                  icon: STAGE_ICONS[s],
-                }))}
-                currentStep={currentStepIndex}
-              />
-            </div>
+            {hasTicket ? (
+              <IssueStatusTimeline steps={issueSteps} elapsedLabel={elapsedLabel} />
+            ) : (
+              <div className="overflow-x-auto py-2">
+                <Stepper
+                  steps={steps.map((s) => ({
+                    id: s,
+                    title: STAGE_LABELS[s],
+                    description: STAGE_DESCRIPTIONS[s],
+                    icon: STAGE_ICONS[s],
+                  }))}
+                  currentStep={currentStepIndex}
+                />
+              </div>
+            )}
             {isLive && (
               <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center mt-1 flex items-center justify-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse-soft" />
