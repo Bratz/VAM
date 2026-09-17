@@ -12,4 +12,6 @@ public interface StagedTransactionRepository extends JpaRepository<StagedTransac
     List<StagedTransaction> findByIngestJobId(UUID ingestJobId);
 
     List<StagedTransaction> findByIngestJobIdAndStatus(UUID ingestJobId, RowStatus status);
+
+    List<StagedTransaction> findByIngestJobIdOrderBySourceRowNumberAsc(UUID ingestJobId);
 }

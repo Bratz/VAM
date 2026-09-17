@@ -48,7 +48,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
-import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, TimelineEventResponse } from '../services/ingestApi';
+import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
 import { formatFileSize } from '../utils';
 
 const POLL_INTERVAL_MS = 3000;
@@ -258,6 +258,19 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
   </div>
 );
 
+const ROW_STATUS_BADGE: Record<RowStatus, { variant: 'success' | 'error' | 'warning' | 'neutral'; label: string }> = {
+  PROCESSED: { variant: 'success', label: 'Processed' },
+  FAILED: { variant: 'error', label: 'Failed' },
+  QUARANTINED: { variant: 'warning', label: 'Quarantined' },
+  READY: { variant: 'neutral', label: 'Ready' },
+  STAGED: { variant: 'neutral', label: 'Staged' },
+};
+
+/** Rows only exist once staging has actually happened — fetching earlier would just 404/empty. */
+function hasRows(stage: IngestStage): boolean {
+  return stage === 'STAGED' || stage === 'PROCESSING' || stage === 'DONE';
+}
+
 /** Parses IngestOrchestrator's own DONE-summary string ("%d processed, %d quarantined, %d
  * failed (of %d total).") into a scorecard instead of adding a dedicated summary endpoint —
  * the numbers already exist, just inside prose. */
@@ -278,6 +291,8 @@ const FileIngestUploadPage: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [job, setJob] = useState<IngestJobResponse | null>(null);
   const [timeline, setTimeline] = useState<TimelineEventResponse[]>([]);
+  const [rows, setRows] = useState<StagedRowResponse[]>([]);
+  const [history, setHistory] = useState<IngestJobResponse[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -290,6 +305,14 @@ const FileIngestUploadPage: React.FC = () => {
 
   useEffect(() => stopPolling, []);
 
+  // Recent-uploads list — only worth fetching while there's no active job to look at.
+  useEffect(() => {
+    if (job) return;
+    ingestApi.listJobs().then(setHistory).catch(() => {
+      // A failed history fetch just leaves the list empty; the upload form itself still works.
+    });
+  }, [job]);
+
   const poll = async (jobId: string) => {
     try {
       const [latestJob, latestTimeline] = await Promise.all([
@@ -298,12 +321,31 @@ const FileIngestUploadPage: React.FC = () => {
       ]);
       setJob(latestJob);
       setTimeline(latestTimeline);
+      if (hasRows(latestJob.stage)) {
+        ingestApi.getRows(jobId).then(setRows).catch(() => {});
+      }
       if (latestJob.stage === 'DONE' || latestJob.stage === 'BLOCKED') {
         stopPolling();
       }
     } catch {
       // A transient poll failure isn't fatal — the next tick tries again.
       // Stopping here would strand the UI on a stale stage forever.
+    }
+  };
+
+  const handleSelectPastJob = async (pastJob: IngestJobResponse) => {
+    stopPolling();
+    setJob(pastJob);
+    setRows([]);
+    const jobTimeline = await ingestApi.getTimeline(pastJob.id).catch(() => []);
+    setTimeline(jobTimeline);
+    if (hasRows(pastJob.stage)) {
+      ingestApi.getRows(pastJob.id).then(setRows).catch(() => {});
+    }
+    // Rare case: clicking into a job that's still mid-flight (e.g. opened in another tab) —
+    // resume polling exactly like a fresh upload would.
+    if (pastJob.stage !== 'DONE' && pastJob.stage !== 'BLOCKED') {
+      pollRef.current = setInterval(() => poll(pastJob.id), POLL_INTERVAL_MS);
     }
   };
 
@@ -342,6 +384,7 @@ const FileIngestUploadPage: React.FC = () => {
     stopPolling();
     setJob(null);
     setTimeline([]);
+    setRows([]);
     setFile(null);
     setUploadError(null);
   };
@@ -543,6 +586,38 @@ const FileIngestUploadPage: React.FC = () => {
         </Button>
       )}
 
+      {!job && history.length > 0 && (
+        <Card>
+          <CardHeader title="Recent Uploads" subtitle="Pick one to see its record-by-record status." />
+          <div className="space-y-1 -mx-2">
+            {history.map((pastJob) => (
+              <button
+                key={pastJob.id}
+                onClick={() => handleSelectPastJob(pastJob)}
+                className="w-full flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-left hover:bg-neutral-50 dark:hover:bg-primary-950 transition-colors"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{pastJob.originalFilename}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {pastJob.domain} · {pastJob.customerId} · {new Date(pastJob.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                {pastJob.stage === 'DONE' ? (
+                  <Badge variant="success" size="sm">Done</Badge>
+                ) : pastJob.stage === 'BLOCKED' ? (
+                  <Badge variant="error" size="sm">Blocked</Badge>
+                ) : (
+                  <Badge variant="info" size="sm">{STAGE_LABELS[pastJob.stage]}</Badge>
+                )}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {job && (
         <>
           <Card>
@@ -610,6 +685,44 @@ const FileIngestUploadPage: React.FC = () => {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">Failed</p>
               </Card>
             </div>
+          )}
+
+          {rows.length > 0 && (
+            <Card padding="none">
+              <div className="p-6 pb-0">
+                <CardHeader title="Rows" subtitle={`${rows.length} row(s) from ${job.originalFilename}.`} />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-t border-neutral-100 dark:border-primary-800/60 text-xs text-neutral-500 dark:text-neutral-400">
+                      <th className="text-left font-medium px-6 py-2">Row</th>
+                      <th className="text-left font-medium px-3 py-2">Status</th>
+                      <th className="text-right font-medium px-3 py-2">Amount</th>
+                      <th className="text-left font-medium px-3 py-2">Account</th>
+                      <th className="text-left font-medium px-6 py-2">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr key={row.sourceRowNumber} className="border-t border-neutral-100 dark:border-primary-800/60">
+                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 font-mono text-xs">{row.sourceRowNumber}</td>
+                        <td className="px-3 py-2">
+                          <Badge variant={ROW_STATUS_BADGE[row.status].variant} size="sm">{ROW_STATUS_BADGE[row.status].label}</Badge>
+                        </td>
+                        <td className="px-3 py-2 text-right text-primary-900 dark:text-neutral-50 font-mono">
+                          {row.amount != null ? `${row.amount} ${row.currency ?? ''}` : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300 font-mono text-xs truncate max-w-[10rem]">
+                          {row.targetAccountReference ?? '—'}
+                        </td>
+                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 text-xs">{row.reason ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </>
       )}

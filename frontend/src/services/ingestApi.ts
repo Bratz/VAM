@@ -51,7 +51,30 @@ export interface TimelineEventResponse {
   occurredAt: string;
 }
 
+// Mirrors RowStatus.java.
+export type RowStatus = 'STAGED' | 'READY' | 'QUARANTINED' | 'PROCESSED' | 'FAILED';
+
+export interface StagedRowResponse {
+  sourceRowNumber: number;
+  status: RowStatus;
+  reason: string | null;
+  amount: number | null;
+  currency: string | null;
+  targetAccountReference: string | null;
+  processedEntityId: string | null;
+}
+
 export const ingestApi = {
+  listJobs: async (): Promise<IngestJobResponse[]> => {
+    const res = await apiClient.get<IngestJobResponse[]>('/ingest/jobs');
+    return res.data;
+  },
+
+  getRows: async (jobId: string): Promise<StagedRowResponse[]> => {
+    const res = await apiClient.get<StagedRowResponse[]>(`/ingest/jobs/${jobId}/rows`);
+    return res.data;
+  },
+
   upload: async (domain: IngestDomain, customerId: string, file: File): Promise<IngestJobResponse> => {
     const formData = new FormData();
     formData.append('file', file);
