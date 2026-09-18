@@ -31,10 +31,12 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
+  Loader2,
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, EmptyState, Skeleton , StatusIconBadge, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, formatRelativeTime, getStatusVariant, cn } from '../utils';
+import toast from 'react-hot-toast';
 import {
   transactionsApi,
   virtualAccountsApi,
@@ -1804,6 +1806,8 @@ const TransactionsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [reverseTargetId, setReverseTargetId] = useState<string | null>(null);
+  const [reversing, setReversing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -1956,15 +1960,24 @@ const TransactionsPage: React.FC = () => {
   };
 
   // Handle reverse
-  const handleReverse = async (id: string) => {
-    if (window.confirm('Are you sure you want to reverse this transaction?')) {
-      try {
-        await transactionsApi.reverse(id, 'User requested reversal');
-        setSelectedTransaction(null);
-        fetchData();
-      } catch (error) {
-        console.error('Reversal failed:', error);
-      }
+  const handleReverse = (id: string) => {
+    setReverseTargetId(id);
+  };
+
+  const confirmReverse = async () => {
+    if (!reverseTargetId) return;
+    setReversing(true);
+    try {
+      await transactionsApi.reverse(reverseTargetId, 'User requested reversal');
+      toast.success('Transaction reversed successfully');
+      setSelectedTransaction(null);
+      setReverseTargetId(null);
+      fetchData();
+    } catch (error: any) {
+      console.error('Reversal failed:', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to reverse transaction');
+    } finally {
+      setReversing(false);
     }
   };
 
@@ -2344,6 +2357,27 @@ const TransactionsPage: React.FC = () => {
         onClose={() => setSelectedTransaction(null)}
         onReverse={handleReverse}
       />
+
+      {/* Reverse Confirmation Modal */}
+      <Modal
+        isOpen={!!reverseTargetId}
+        onClose={() => setReverseTargetId(null)}
+        title="Reverse Transaction"
+        size="sm"
+      >
+        <div className="space-y-6">
+          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            Are you sure you want to reverse this transaction? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <Button variant="secondary" onClick={() => setReverseTargetId(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmReverse} disabled={reversing}>
+              {reversing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Reverse
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* New Transaction Modal */}
       <NewTransactionModal

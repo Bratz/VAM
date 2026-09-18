@@ -24,6 +24,7 @@ import {
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
+import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { useNavigation } from '../App';
 import { 
@@ -618,6 +619,61 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
   );
 };
 
+interface PayNowConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  payable: PayablePhase2 | null;
+  onConfirm: () => Promise<void>;
+  loading?: boolean;
+}
+
+const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
+  isOpen, onClose, payable, onConfirm, loading
+}) => {
+  if (!isOpen || !payable) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
+      <div className="space-y-6">
+        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
+              <p className="font-medium">{payable.invoiceNumber || payable.payableNumber}</p>
+            </div>
+            <div>
+              <p className="text-neutral-500 dark:text-neutral-400">Vendor</p>
+              <p className="font-medium">{payable.vendorName}</p>
+            </div>
+            <div>
+              <p className="text-neutral-500 dark:text-neutral-400">Amount</p>
+              <p className="font-semibold text-primary-600 dark:text-primary-200">
+                {formatCurrency(payable.netAmount, payable.currencyCode)}
+              </p>
+            </div>
+            <div>
+              <p className="text-neutral-500 dark:text-neutral-400">Due Date</p>
+              <p className="font-medium">{formatDate(payable.dueDate)}</p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          This will execute the payment immediately. This action cannot be undone.
+        </p>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={onConfirm} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Execute Payment
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 // ============================================================================
 // PAYABLE ACTIONS CELL (DataTable "Actions" column)
 // ============================================================================
@@ -758,6 +814,10 @@ const EnhancedPayablesPage: React.FC = () => {
   // Netting Cycle Picker Modal state
   const [showNettingPicker, setShowNettingPicker] = useState(false);
   const [nettingPayable, setNettingPayable] = useState<PayablePhase2 | null>(null);
+
+  // Pay Now confirmation modal state
+  const [payNowTarget, setPayNowTarget] = useState<PayablePhase2 | null>(null);
+  const [payNowLoading, setPayNowLoading] = useState(false);
 
   // Approval modal state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -1021,22 +1081,27 @@ const EnhancedPayablesPage: React.FC = () => {
     navigate('payables-edit', { id: payable.id, mode: 'schedule' });
   };
 
-  const handlePayNow = async (payable: PayablePhase2) => {
-    if (!confirm(`Execute payment of ${payable.netAmount} ${payable.currencyCode} to ${payable.vendorName}?`)) {
-      return;
-    }
+  const handlePayNow = (payable: PayablePhase2) => {
+    setPayNowTarget(payable);
+  };
 
+  const handleConfirmPayNow = async () => {
+    if (!payNowTarget) return;
+    setPayNowLoading(true);
     try {
       const currentUser = 'current-user'; // TODO: Get from auth context
-      await payablesApiPhase2.executePayment(payable.id, currentUser);
+      await payablesApiPhase2.executePayment(payNowTarget.id, currentUser);
 
       // Refresh data after payment
       await loadPayables();
       await loadStats();
-      alert('Payment executed successfully!');
+      toast.success('Payment executed successfully');
+      setPayNowTarget(null);
     } catch (error: any) {
       console.error('Failed to execute payment:', error);
-      alert(`Failed to execute payment: ${error?.response?.data?.message || error?.message || 'Unknown error'}`);
+      toast.error(`Failed to execute payment: ${error?.response?.data?.message || error?.message || 'Unknown error'}`);
+    } finally {
+      setPayNowLoading(false);
     }
   };
 
@@ -1076,7 +1141,7 @@ const EnhancedPayablesPage: React.FC = () => {
       setApprovalPayable(null);
     } catch (error: any) {
       console.error(`Failed to ${action} payable:`, error);
-      alert(`Failed to ${action} payable: ${error?.response?.data?.message || error?.message || 'Unknown error'}`);
+      toast.error(`Failed to ${action} payable: ${error?.response?.data?.message || error?.message || 'Unknown error'}`);
     } finally {
       setApprovalLoading(false);
     }
@@ -1304,6 +1369,15 @@ const EnhancedPayablesPage: React.FC = () => {
         action={approvalAction}
         onConfirm={handleApprovalAction}
         loading={approvalLoading}
+      />
+
+      {/* Pay Now Confirmation Modal */}
+      <PayNowConfirmModal
+        isOpen={!!payNowTarget}
+        onClose={() => setPayNowTarget(null)}
+        payable={payNowTarget}
+        onConfirm={handleConfirmPayNow}
+        loading={payNowLoading}
       />
 
       {/* Netting Cycle Picker Modal */}
