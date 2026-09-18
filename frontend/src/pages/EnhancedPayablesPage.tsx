@@ -19,7 +19,7 @@ import {
   Search, Filter, Plus, Send, Clock, FileText, Building, Eye,
   AlertTriangle, RefreshCw, Loader2, X, Building2, ChevronDown,
   Landmark, Calculator, ArrowRight, GitBranch, ExternalLink, Layers,
-  CheckCircle, XCircle, PlayCircle, MoreVertical, Calendar,
+  CheckCircle, XCircle, PlayCircle, MoreVertical, Calendar, Edit,
 } from 'lucide-react';
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
@@ -643,15 +643,17 @@ interface PayableActionsCellProps {
   onApprove: (payable: PayablePhase2) => void;
   onReject: (payable: PayablePhase2) => void;
   onSubmit: (payable: PayablePhase2) => void;
+  onEdit: (payable: PayablePhase2) => void;
   onPayNow: (payable: PayablePhase2) => void;
 }
 
 const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
-  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onPayNow
+  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onEdit, onPayNow
 }) => {
   const canSubmit = payable.status === 'DRAFT';
   const canApprove = payable.status === 'PENDING_APPROVAL';
   const canReject = payable.status === 'PENDING_APPROVAL';
+  const canEdit = payable.status === 'DRAFT' || payable.status === 'REJECTED';
   const canPayNow = payable.status === 'APPROVED' || payable.status === 'SCHEDULED';
 
   return (
@@ -670,6 +672,15 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           title="Submit for Approval"
         >
           <Send className="w-4 h-4" />
+        </button>
+      )}
+      {canEdit && (
+        <button
+          onClick={() => onEdit(payable)}
+          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
+          title="Edit"
+        >
+          <Edit className="w-4 h-4" />
         </button>
       )}
       {canApprove && (
@@ -997,6 +1008,10 @@ const EnhancedPayablesPage: React.FC = () => {
     setShowApprovalModal(true);
   };
 
+  const handleEdit = (payable: PayablePhase2) => {
+    navigate('payables-edit', { id: payable.id });
+  };
+
   const handleSchedule = (payable: PayablePhase2) => {
     // For now, just navigate to edit page with schedule mode
     // Could also implement a schedule modal later
@@ -1239,6 +1254,7 @@ const EnhancedPayablesPage: React.FC = () => {
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onSubmit={handleSubmitForApproval}
+                  onEdit={handleEdit}
                   onPayNow={handlePayNow}
                 />
               ),

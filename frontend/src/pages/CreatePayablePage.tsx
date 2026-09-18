@@ -1010,6 +1010,8 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPayable, setLoadingPayable] = useState(isEditMode);
+  const [payableNumber, setPayableNumber] = useState('');
   const [legalEntities, setLegalEntities] = useState<Array<{ id: string; entityName: string; entityCode: string; entityType: string; }>>([]);
   const [corporateName, setCorporateName] = useState<string>('');
   const [virtualAccounts, setVirtualAccounts] = useState<Array<{ id: string; vaNumber: string; name: string; currentBalance: number; currencyCode: string; }>>([]);
@@ -1166,6 +1168,104 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     loadVirtualAccounts();
   }, [effectiveCorporateId]);
 
+  // Edit mode: fetch the existing payable and populate the form from it.
+  // Without this the page silently opens blank -- see CreatePayablePage bug history.
+  useEffect(() => {
+    if (!payableId) return;
+    let cancelled = false;
+
+    const loadPayable = async () => {
+      setLoadingPayable(true);
+      try {
+        const payable = await payablesApiPhase2.getById(payableId);
+        if (cancelled) return;
+
+        const grossAmount = payable.grossAmount || 0;
+        const taxAmount = payable.taxAmount || 0;
+        const withholdingAmount = payable.withholdingTax || 0;
+        const matchingTerm = PAYMENT_TERMS.find(t => t.days === payable.paymentTermsDays);
+
+        setPayableNumber(payable.payableNumber || '');
+        setFormData(prev => ({
+          ...prev,
+          vendorId: payable.partyId || payable.vendorId || '',
+          vendorName: payable.vendorName || '',
+          vendorCode: payable.partyCode || '',
+          selectedBankAccountId: payable.partyBankAccountId || '',
+          sourceVirtualAccountId: payable.virtualAccountId || '',
+          invoiceNumber: payable.invoiceNumber || '',
+          invoiceDate: payable.invoiceDate || prev.invoiceDate,
+          receivedDate: payable.receivedDate || payable.invoiceDate || prev.receivedDate,
+          dueDate: payable.dueDate || prev.dueDate,
+          paymentTerms: matchingTerm ? matchingTerm.value : prev.paymentTerms,
+          currencyCode: payable.currencyCode || prev.currencyCode,
+          amount: grossAmount,
+          description: payable.description || '',
+          applyVat: taxAmount > 0,
+          vatRate: taxAmount > 0 && grossAmount > 0 ? Math.round((taxAmount / grossAmount) * 100) : prev.vatRate,
+          withholdingTax: withholdingAmount > 0,
+          withholdingRate: withholdingAmount > 0 && grossAmount > 0 ? Math.round((withholdingAmount / grossAmount) * 100) : prev.withholdingRate,
+          hierarchyNodeId: payable.hierarchyNodeId || '',
+          hierarchyPath: payable.hierarchyPath || '',
+          internalNotes: payable.notes || '',
+          scheduledDate: payable.scheduledDate || '',
+          paymentPriority: payable.paymentPriority || prev.paymentPriority,
+          paymentChannel: payable.paymentChannel || '',
+        }));
+
+        // Rebuild the vendor card (search result + bank accounts) so the
+        // page shows who this payable is for instead of an empty search box.
+        const partyId = payable.partyId || payable.vendorId;
+        if (partyId) {
+          try {
+            const detail = await partiesApi.getDetail(partyId);
+            if (cancelled) return;
+            const party = detail?.party || detail;
+            const bankAccounts = detail?.bankAccounts || [];
+            setSelectedVendor({
+              id: party?.id || partyId,
+              name: party?.displayName || party?.legalName || payable.vendorName || 'Unknown',
+              legalName: party?.legalName || party?.displayName || '',
+              partyCode: party?.partyCode || payable.partyCode || '',
+              taxRegistration: party?.taxId || '',
+              category: party?.partyType || 'VENDOR',
+              status: party?.status || 'ACTIVE',
+              email: party?.contactEmail || '',
+              phone: party?.contactPhone || '',
+              defaultPaymentTerms: 'NET30',
+              creditLimit: 0,
+              outstandingBalance: 0,
+              bankAccounts: (bankAccounts || []).map((ba: any) => ({
+                id: ba.id,
+                accountNumber: ba.accountNumber || '',
+                accountName: ba.accountHolderName || '',
+                bankName: ba.bankName || '',
+                swift: ba.swiftBic || '',
+                iban: ba.iban || '',
+                currencyCode: ba.currencyCode || 'AED',
+                isPrimary: ba.isPrimary || false,
+                paymentMethods: ['DIRECT', 'SCHEDULED', 'BATCH', 'IMMEDIATE']
+              })),
+            });
+            if (party?.taxId) {
+              setFormData(prev => ({ ...prev, vendorTrn: party.taxId }));
+            }
+          } catch (error) {
+            console.error('Failed to load vendor details for payable edit:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load payable for editing:', error);
+        alert('Failed to load payable for editing.');
+      } finally {
+        if (!cancelled) setLoadingPayable(false);
+      }
+    };
+
+    loadPayable();
+    return () => { cancelled = true; };
+  }, [payableId]);
+
   const canSubmit = !!(formData.vendorId && formData.invoiceNumber && formData.selectedBankAccountId && formData.paymentChannel && formData.sourceVirtualAccountId && (formData.amount > 0 || formData.lineItems.length > 0));
   
   useEffect(() => {
@@ -1202,6 +1302,30 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     if (!isDraft && !canSubmit) return;
     setLoading(true);
     try {
+      if (isEditMode && payableId) {
+        // Update the existing payable in place -- must NOT call create(),
+        // which would leave the original untouched and spawn a duplicate.
+        const updateRequest = {
+          invoiceNumber: formData.invoiceNumber,
+          partyId: formData.vendorId || undefined,
+          vendorName: formData.vendorName,
+          currencyCode: formData.currencyCode,
+          invoiceDate: formData.invoiceDate,
+          dueDate: formData.dueDate,
+          grossAmount: totalAmount,
+          taxAmount: totalTax > 0 ? totalTax : 0,
+          withholdingTax: formData.withholdingTax ? (totalAmount * formData.withholdingRate) / 100 : 0,
+          paymentChannel: formData.paymentChannel || undefined,
+          description: formData.description,
+          notes: formData.internalNotes || undefined,
+        };
+        console.log('Updating payable', payableId, updateRequest);
+        const result = await payablesApiPhase2.update(payableId, updateRequest);
+        console.log('Payable updated successfully:', result);
+        navigation.navigate('payables');
+        return;
+      }
+
       // Build the payable request matching backend CreatePayableRequest
       // Use effective IDs from navigation params or form data for POBO
       const request = {
@@ -1242,7 +1366,15 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   };
   
   const goBack = () => navigation.navigate('payables');
-  
+
+  if (loadingPayable) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     // Phase 10 Design System Unification (2026-05-13): the page's content
     // is now wrapped in <Page maxWidth="narrow"> (~1024px) — forms-first
@@ -1261,7 +1393,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"><ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" /></button>
               <PageHeader
                 title={isEditMode ? 'Edit Payable' : 'Create Payable'}
-                description={isEditMode ? `Editing ${payableId}` : 'Record vendor invoice for payment'}
+                description={isEditMode ? `Editing ${payableNumber || payableId}` : 'Record vendor invoice for payment'}
               />
             </div>
             {/* Hidden below sm: this page also has an always-visible action
