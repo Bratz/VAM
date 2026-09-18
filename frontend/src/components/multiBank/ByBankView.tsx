@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import {
-  Globe, Building2, RefreshCw, AlertTriangle,
-  Clock, Loader2, Layers, Banknote,
+  Building2, RefreshCw, Loader2, Banknote,
 } from 'lucide-react';
 import { formatCurrency, cn } from '../../utils';
 import {
@@ -9,7 +8,6 @@ import {
   MultiBankBankBucket,
   ShadowSummary,
 } from '../../services/api';
-import { MetricCard } from './MetricCard';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 
@@ -21,10 +19,11 @@ import { FilterChips } from './FilterChips';
 // only — no network calls, no URL surgery; all state and side-effects stay on
 // the page controller and flow in via props.
 //
-// Visual contract: must render byte-for-byte identically to the prior page
-// body. The five-tile MetricCard strip, the sticky filter chip row, the
-// per-bank cards with currency tables + freshness pills, and the
-// "Effective by currency" footer all live here and only here.
+// The five-tile MetricCard strip this view used to lead with was dropped —
+// it duplicated Overview's own StatStrip (Total Shadows/Stale/Failed/Never
+// Refreshed) and its Home-Bank-Held/External tiles did nothing FilterChips'
+// own Home-bank/External chips didn't already do. FilterChips (with live
+// counts) is this view's sole filter surface now.
 // ============================================================================
 
 const VALID_FILTERS = ['all', 'home', 'external', 'stale', 'failed', 'never'] as const;
@@ -129,54 +128,6 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
 
   return (
     <>
-      {/* Top-line metrics, responsive. Filter-tiles set the chip; Total Shadows
-          is a pure summary (no onClick) so the strip doesn't always have one
-          tile lit and trained as the "selected" state. */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <MetricCard
-          icon={<Layers className="w-5 h-5" />}
-          tone="primary"
-          label="Total Shadows"
-          value={summary.totalShadows.toString()}
-        />
-        <MetricCard
-          icon={<Building2 className="w-5 h-5" />}
-          tone="success"
-          label="Home-Bank Held"
-          value={summary.homeBankShadows.toString()}
-          sub="Currency-pool subject to rules"
-          onClick={() => setFilter('home')}
-          active={filter === 'home'}
-        />
-        <MetricCard
-          icon={<Globe className="w-5 h-5" />}
-          tone="accent"
-          label="External"
-          value={summary.externalShadows.toString()}
-          sub="Sweep source only"
-          onClick={() => setFilter('external')}
-          active={filter === 'external'}
-        />
-        <MetricCard
-          icon={<AlertTriangle className="w-5 h-5" />}
-          tone={summary.staleCount > 0 ? 'warning' : 'neutral'}
-          label="Stale"
-          value={summary.staleCount.toString()}
-          sub="Exceeds threshold"
-          onClick={() => setFilter('stale')}
-          active={filter === 'stale'}
-        />
-        <MetricCard
-          icon={<Clock className="w-5 h-5" />}
-          tone={summary.neverRefreshedCount > 0 ? 'danger' : 'neutral'}
-          label="Never Refreshed"
-          value={summary.neverRefreshedCount.toString()}
-          sub="No fetch attempted"
-          onClick={() => setFilter('never')}
-          active={filter === 'never'}
-        />
-      </div>
-
       {/* Sticky filter chips. top-16 clears the 64px app-shell header (also
           sticky at top-0 z-30). Recipe mirrors the app-shell header bg so the
           two surfaces read as the same glass plane. z-20 sits below the

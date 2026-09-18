@@ -7,18 +7,17 @@ import { cn, formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
   MultiBankBankBucket,
-  fxRateApi,
   multiBankLiquidityApi,
   TrendPoint,
 } from '../../services/api';
 import { Card, StatusIconBadge, Button, Badge } from '../ui';
 import { HeroMetricCard } from '../ui/HeroMetricCard';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
-import { useMarket } from '../../context/MarketContext';
 import { StatStrip } from '../layout/StatStrip';
 import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
 import { BankSplitBar, BankShare, HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './BankSplitBar';
+import { ReportingRates } from './useReportingRates';
 import { FilterKey, ViewKey } from './types';
 
 // ============================================================================
@@ -62,6 +61,14 @@ interface OverviewViewProps {
   /** Scopes the hero's trend fetch. Optional in `compact` mode (no fetch runs there). */
   corporateId?: string;
   /**
+   * Reporting currency + rate map, owned by the page so By Country's map
+   * shares the same fetch. Optional in `compact` mode, which never reads
+   * them (no hero, no rate-derived figures in the inline strip).
+   */
+  reportingCurrency?: string;
+  setReportingCurrency?: (c: string) => void;
+  rateState?: ReportingRates;
+  /**
    * When true, render a slimmer composition suitable for embedding inside
    * another `<Card>` wrapper (the cockpit's Multi-Bank Band). Defaults to
    * false (the standalone /treasury/multi-bank page).
@@ -84,6 +91,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onBulkRefreshStale,
   bulkRefreshing = false,
   corporateId,
+  reportingCurrency = 'AED',
+  setReportingCurrency = () => {},
+  rateState = { rates: new Map(), excluded: [], loading: false },
   compact = false,
 }) => {
   // Apply bank-level filter (home / external) to the slice we render per-
@@ -146,45 +156,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       }))
       .sort((a, b) => (b.totalEffective || 0) - (a.totalEffective || 0));
   }, [visibleBanks]);
-
-  // ==========================================================================
-  // Reporting-currency rate map — the single conversion primitive every
-  // hero/distribution number below multiplies against locally. One rate per
-  // unique currency (not one convert() call per figure) via
-  // fxRateApi.convert(1, code, reportingCurrency); a currency equal to the
-  // reporting currency short-circuits to rate 1 with no network call.
-  // ==========================================================================
-  const { profile } = useMarket();
-  const [reportingCurrency, setReportingCurrency] = useState(profile.defaultCurrency || 'AED');
-  const [rateState, setRateState] = useState<{
-    rates: Map<string, number>; excluded: string[]; loading: boolean;
-  }>({ rates: new Map(), excluded: [], loading: false });
-
-  useEffect(() => {
-    if (compact || currencies.length === 0) return;
-    let alive = true;
-    setRateState((prev) => ({ ...prev, loading: true }));
-    Promise.allSettled(
-      currencies.map((c) =>
-        c.currencyCode === reportingCurrency
-          ? Promise.resolve({ code: c.currencyCode, rate: 1 })
-          : fxRateApi.convert(1, c.currencyCode, reportingCurrency).then((res) => {
-              if (!res.success || !res.data) throw new Error(`No rate ${c.currencyCode} → ${reportingCurrency}`);
-              return { code: c.currencyCode, rate: res.data.convertedAmount };
-            })
-      )
-    ).then((results) => {
-      if (!alive) return;
-      const rates = new Map<string, number>();
-      const excluded: string[] = [];
-      results.forEach((r, i) => {
-        if (r.status === 'fulfilled') rates.set(r.value.code, r.value.rate);
-        else excluded.push(currencies[i].currencyCode);
-      });
-      setRateState({ rates, excluded, loading: false });
-    });
-    return () => { alive = false; };
-  }, [currencies, reportingCurrency, compact]);
 
   // Consolidated total + available — the one deliberate cross-currency blend
   // on this page, always paired with the "indicative rates" badge.
@@ -269,8 +240,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     [sortedDates, rateState],
   );
 
-  // Currency chip row — compact mode only (the expanded per-currency card
-  // below already covers this for the standalone page).
+  // Currency chip row — used in compact mode's inline strip and, in expanded
+  // mode, as the slim body of the "Liquidity by currency" card below (the
+  // By Currency tab is where the detailed bank-by-bank breakdown lives now).
   const currencyChipRow = currencies.length > 0 ? (
     <div className="flex flex-wrap gap-1.5">
       {currencies.map((c) => (
@@ -278,7 +250,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           key={c.currencyCode}
           className="amount text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
         >
-          {c.currencyCode} {formatCurrency(c.totalEffective, c.currencyCode)}
+          {formatCurrency(c.totalEffective, c.currencyCode)}
         </span>
       ))}
     </div>
@@ -462,32 +434,17 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             />
           )}
 
-          {/* 2. Per-currency breakdown — supporting detail, demoted from the
-              hero treatment it used to carry. Sorted by size (see the
-              `currencies` memo above) to match the Dashboard's own
-              currency-bar ordering. */}
+          {/* 2. Per-currency breakdown — a compact chip row, not the full
+              grid this used to be (that duplicated the By Currency tab's own
+              detailed bank-by-bank tables). The footer strip below (total
+              shadows / home-bank held / home bank name) isn't shown anywhere
+              else, so it stays. */}
           <Card padding="sm">
             <p className="label mb-3">Liquidity by currency</p>
             {currencies.length === 0 ? (
               <p className="body-sm">No shadow balances available.</p>
             ) : (
-              <div className="flex flex-wrap gap-x-8 gap-y-4">
-                {currencies.map((c) => (
-                  <div key={c.currencyCode} className="min-w-[8rem]">
-                    <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                      {c.currencyCode}
-                    </p>
-                    <p className="stat-value-sm">
-                      {formatCurrency(c.totalEffective, c.currencyCode)}
-                    </p>
-                    <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-                      {c.shadowCount} mirror{c.shadowCount === 1 ? '' : 's'}
-                      {' · '}
-                      {c.bankShares.length} bank{c.bankShares.length === 1 ? '' : 's'}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              currencyChipRow
             )}
             <div className="mt-5 pt-4 border-t border-neutral-200/70 dark:border-primary-800/60 flex flex-wrap gap-x-8 gap-y-2">
               <div>
@@ -544,7 +501,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <span className={cn('w-2 h-2 rounded-sm', colour)} />
               <span className={cn(
                 bank.homeBank
-                  ? 'text-success-700 dark:text-success-300 font-medium'
+                  ? 'text-accent-700 dark:text-accent-300 font-medium'
                   : 'text-neutral-600 dark:text-neutral-300'
               )}>
                 {bank.bankName ?? bank.bankBic}

@@ -7,13 +7,17 @@ import { formatPct } from './format';
 //
 // Within a single currency, summing bank balances is FX-honest, so a
 // value-weighted horizontal bar accurately answers "where does this currency
-// sit?". The same composition rule (home bank first in `success` tones,
-// externals after in `info` tones in descending share order) drives both
-// Overview's per-currency cards and ByCurrencyView's headers.
+// sit?". The same composition rule (home bank first, externals after in
+// descending share order) drives both Overview's per-currency cards and
+// ByCurrencyView's headers.
 //
 // The bar itself is a 12px-high stack of width-proportional segments. The
-// legend underneath lists each bank with amount + percentage, home-bank rows
-// coloured with the `success` ramp and externals with neutral text.
+// legend underneath lists each bank with amount + percentage. Colours are
+// plain categorical identity (this app's teal `accent` for home, a neutral
+// gray ramp for externals) — NOT the success/info semantic tokens, which
+// this app reserves for status; a bank being home or external isn't a
+// status judgement, and `accent` already matches the "HOME BANK" badge used
+// alongside this bar in ByBankView/ByCurrencyView.
 // ============================================================================
 
 export interface BankShare {
@@ -30,16 +34,18 @@ interface BankSplitBarProps {
   total?: number;
 }
 
-// Info ramp slots so multiple external banks each get a distinct shade
-// within the `info` family — no new colour vocabulary. Exported so every
-// bank/currency distribution visual on this page (Overview's shadow-count
+// Neutral gray ramp slots so multiple external banks each get a distinct
+// shade without borrowing the `info` status family. Exported so every
+// bank/currency distribution visual on this page (Overview's distribution
 // bar included) draws from the same ramp instead of a copy that can drift.
-export const HOME_BANK_COLOUR = 'bg-success-500 dark:bg-success-400';
+export const HOME_BANK_COLOUR = 'bg-accent-500 dark:bg-accent-400';
 export const EXTERNAL_BANK_RAMP = [
-  'bg-info-500 dark:bg-info-400',
-  'bg-info-400 dark:bg-info-300',
-  'bg-info-600 dark:bg-info-500',
-  'bg-info-300 dark:bg-info-200',
+  'bg-primary-400 dark:bg-primary-500',
+  'bg-primary-600 dark:bg-primary-300',
+  'bg-neutral-400 dark:bg-neutral-500',
+  'bg-primary-300 dark:bg-primary-600',
+  'bg-neutral-500 dark:bg-neutral-400',
+  'bg-primary-500 dark:bg-primary-400',
 ];
 
 export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total }) => {
@@ -84,7 +90,7 @@ export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total })
             <span className={cn('w-2 h-2 rounded-sm', s.colour)} />
             <span className={cn(
               s.homeBank
-                ? 'text-success-700 dark:text-success-300 font-medium'
+                ? 'text-accent-700 dark:text-accent-300 font-medium'
                 : 'text-neutral-600 dark:text-neutral-300'
             )}>
               {s.bankName ?? s.bankBic}

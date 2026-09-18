@@ -5,6 +5,10 @@ import {
   MultiBankLiquiditySummary,
   ShadowSummary,
 } from '../../services/api';
+import { Card } from '../ui';
+import { CurrencyPicker } from '../ui/CurrencyPicker';
+import { CountryExposureMap } from './CountryExposureMap';
+import { ReportingRates } from './useReportingRates';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 import { FilterKey } from './types';
@@ -28,6 +32,9 @@ interface ByCountryViewProps {
   refreshingIds: Set<string>;
   refresh: (shadow: ShadowSummary) => void;
   failedCount: number;
+  reportingCurrency: string;
+  setReportingCurrency: (c: string) => void;
+  rateState: ReportingRates;
 }
 
 type CountryCurrencyRow = {
@@ -104,11 +111,44 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
   refreshingIds,
   refresh,
   failedCount,
+  reportingCurrency,
+  setReportingCurrency,
+  rateState,
 }) => {
   const countries = useMemo(() => buildCountryView(summary, filter), [summary, filter]);
 
+  // Per-country totals converted to the shared reporting currency, for the
+  // map's bubble sizes. "Unknown" (no owningEntityCountry on file) can't be
+  // plotted and is excluded here — it stays visible in the table below.
+  const countryTotals = useMemo(() => {
+    return countries
+      .filter((g) => g.country !== UNKNOWN)
+      .map((g) => {
+        let amount = 0;
+        for (const c of g.currencies) {
+          const rate = rateState.rates.get(c.currencyCode);
+          if (rate === undefined) continue;
+          amount += c.totalEffective * rate;
+        }
+        return { code: g.country, amount };
+      })
+      .filter((c) => c.amount > 0);
+  }, [countries, rateState]);
+
   return (
     <>
+      {countryTotals.length > 0 && (
+        <Card padding="sm">
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <p className="label">Liquidity by country</p>
+            <div className="w-24">
+              <CurrencyPicker value={reportingCurrency} onChange={setReportingCurrency} />
+            </div>
+          </div>
+          <CountryExposureMap countryTotals={countryTotals} currency={reportingCurrency} />
+        </Card>
+      )}
+
       <FilterChips
         filter={filter}
         setFilter={setFilter}

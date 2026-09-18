@@ -9,6 +9,7 @@ import {
   corporatesApi,
   Corporate,
 } from '../services/api';
+import { useMarket } from '../context/MarketContext';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -20,6 +21,7 @@ import { ByEntityView } from '../components/multiBank/ByEntityView';
 import { ByCountryView } from '../components/multiBank/ByCountryView';
 import { TrendView } from '../components/multiBank/TrendView';
 import { ViewSwitcher } from '../components/multiBank/ViewSwitcher';
+import { useReportingRates } from '../components/multiBank/useReportingRates';
 import { ViewKey, parseView } from '../components/multiBank/types';
 
 // ============================================================================
@@ -95,6 +97,18 @@ const MultiBankLiquidityPage: React.FC = () => {
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
   const [loadingCorporates, setLoadingCorporates] = useState(false);
+
+  // Reporting currency + rate map — owned here (not inside OverviewView) so
+  // Overview and By Country's map agree on "the selected currency" and share
+  // one fetch instead of each picking/fetching it separately.
+  const { profile } = useMarket();
+  const [reportingCurrency, setReportingCurrency] = useState(profile.defaultCurrency || 'AED');
+  const currencyCodes = useMemo(() => {
+    const codes = new Set<string>();
+    for (const b of summary?.banks ?? []) for (const c of b.currencies) codes.add(c.currencyCode);
+    return Array.from(codes);
+  }, [summary]);
+  const rateState = useReportingRates(currencyCodes, reportingCurrency);
 
   useEffect(() => {
     const u = new URL(window.location.href);
@@ -325,6 +339,9 @@ const MultiBankLiquidityPage: React.FC = () => {
           onBulkRefreshStale={bulkRefreshStale}
           bulkRefreshing={bulkRefreshing}
           corporateId={selectedCorporateId || undefined}
+          reportingCurrency={reportingCurrency}
+          setReportingCurrency={setReportingCurrency}
+          rateState={rateState}
         />
       )}
       {view === 'by-bank' && (
@@ -365,6 +382,9 @@ const MultiBankLiquidityPage: React.FC = () => {
           refreshingIds={refreshingIds}
           refresh={refresh}
           failedCount={failedCount}
+          reportingCurrency={reportingCurrency}
+          setReportingCurrency={setReportingCurrency}
+          rateState={rateState}
         />
       )}
       {view === 'trend' && (
