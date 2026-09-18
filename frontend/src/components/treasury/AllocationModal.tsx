@@ -601,13 +601,17 @@ const allocationApi = {
             message: 'Exception or target VA not found',
           };
         }
-        
-        // Mock success for development when API not available
+
+        // Any other failure (500, gateway errors, etc.) must be reported as a real
+        // failure. This used to fall through to a "Mock success for development"
+        // response — the UI showed "Allocation Successful" and closed the modal
+        // even though the backend never moved any money or changed the exception's
+        // status, so a real failure (e.g. a transient DB error) looked resolved
+        // until the next page load reloaded real data and the exception reappeared
+        // as OPEN with no explanation.
         return {
-          success: true,
-          message: 'Exception allocated successfully',
-          transactionId: `TXN-${Date.now()}`,
-          timestamp: new Date().toISOString(),
+          success: false,
+          message: `Allocation failed (HTTP ${response.status}). Please try again or contact support.`,
         };
       }
       
