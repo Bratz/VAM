@@ -355,27 +355,26 @@ public class PayablesController {
     }
 
     @PostMapping("/{payableId}/reject")
-    @Operation(summary = "Reject payable", 
+    @Operation(summary = "Reject payable",
                description = "Reject a pending payable")
     public ResponseEntity<PayableResponse> rejectPayable(
             @PathVariable UUID payableId,
             @RequestBody RejectPayableRequest request
     ) {
-        request.setPayableId(payableId);
-        // Would implement in service
-        return ResponseEntity.ok(payablesService.getPayable(payableId));
+        return ResponseEntity.ok(payablesService.rejectPayable(
+            payableId, request.getRejectedBy(), request.getRejectionReason()));
     }
 
     @PostMapping("/{payableId}/schedule")
-    @Operation(summary = "Schedule payment", 
+    @Operation(summary = "Schedule payment",
                description = "Schedule an approved payable for payment")
     public ResponseEntity<PayableResponse> schedulePayment(
             @PathVariable UUID payableId,
             @RequestBody SchedulePaymentRequest request
     ) {
-        request.setPayableId(payableId);
-        // Would implement in service
-        return ResponseEntity.ok(payablesService.getPayable(payableId));
+        return ResponseEntity.ok(payablesService.schedulePayment(
+            payableId, request.getScheduledDate(), request.getPaymentPriority(),
+            request.getPaymentMethod(), request.getScheduledBy()));
     }
 
     @PostMapping("/{payableId}/record-payment")
@@ -386,8 +385,7 @@ public class PayablesController {
             @RequestBody RecordPaymentRequest request
     ) {
         request.setPayableId(payableId);
-        // Would implement in service
-        return ResponseEntity.ok(payablesService.getPayable(payableId));
+        return ResponseEntity.ok(payablesService.recordPayment(payableId, request));
     }
 
     @PostMapping("/{payableId}/execute")

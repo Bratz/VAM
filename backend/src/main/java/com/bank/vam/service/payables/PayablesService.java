@@ -1264,6 +1264,42 @@ public class PayablesService {
         return mapToResponse(saved);
     }
 
+    /**
+     * Record a manual/external payment against a payable. Reuses {@link Payable#recordPayment}
+     * (the same entity method {@link #executePayment} already applies for POBO/direct execution) so
+     * paidAmount/outstandingAmount/status stay consistent between the two paths.
+     */
+    @Transactional
+    public PayableResponse recordPayment(UUID payableId, RecordPaymentRequest request) {
+        log.info("Recording payment of {} for payable {} by {}",
+                request.getAmount(), payableId, request.getRecordedBy());
+
+        Payable payable = payableRepository.findById(payableId)
+            .orElseThrow(() -> new RuntimeException("Payable not found: " + payableId));
+
+        if (payable.getStatus() != PayableStatus.APPROVED
+                && payable.getStatus() != PayableStatus.SCHEDULED
+                && payable.getStatus() != PayableStatus.PARTIAL) {
+            throw new RuntimeException(
+                "Only approved, scheduled, or partially-paid payables can record a payment. Current status: "
+                    + payable.getStatus());
+        }
+
+        payable.recordPayment(request.getAmount());
+        if (request.getPaymentReference() != null) {
+            String note = "Payment " + request.getPaymentReference()
+                + (request.getNotes() != null ? " - " + request.getNotes() : "");
+            payable.setNotes(payable.getNotes() != null ? payable.getNotes() + "\n" + note : note);
+        }
+        payable.setUpdatedBy(request.getRecordedBy());
+        payable.setUpdatedAt(LocalDateTime.now());
+
+        Payable saved = payableRepository.save(payable);
+        log.info("Payable {} recorded payment, new status {}", saved.getPayableNumber(), saved.getStatus());
+
+        return mapToResponse(saved);
+    }
+
     // ========================================================================
     // STATISTICS
     // ========================================================================
