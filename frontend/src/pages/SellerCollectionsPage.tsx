@@ -91,7 +91,7 @@ const SellerCollectionsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
             </div>
-            <p className="stat-value-sm mt-3 text-success-600 dark:text-success-300">{formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0), 'AED')}</p>
+            <p className="stat-value-sm mt-3 text-success-600 dark:text-success-300">{formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0))}</p>
             <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Amount</p>
           </div>
         </Card>
@@ -109,7 +109,7 @@ const SellerCollectionsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <StatusIconBadge tone="info" icon={CheckCircle} className="dark:bg-info-500/20" />
             </div>
-            <p className="stat-value-sm mt-3">{formatCurrency(settlements.filter(s => s.status === 'COMPLETED').reduce((sum, s) => sum + (s.netAmount || 0), 0), 'AED')}</p>
+            <p className="stat-value-sm mt-3">{formatCurrency(settlements.filter(s => s.status === 'COMPLETED').reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
             <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Settled Amount</p>
           </div>
         </Card>
@@ -208,9 +208,9 @@ const SellerCollectionsPage: React.FC = () => {
               columns={[
                 { key: 'settlementRef', header: 'Settlement Ref', render: (_, s) => <span className="font-mono text-sm">{s.settlementRef}</span> },
                 { key: 'merchantName', header: 'Seller', render: (_, s) => <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{s.merchantName}</span> },
-                { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount, 'AED')}</span> },
-                { key: 'commission', header: 'Commission', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission, 'AED')}</span> },
-                { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount, 'AED')}</span> },
+                { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount)}</span> },
+                { key: 'commission', header: 'Commission', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission)}</span> },
+                { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount)}</span> },
                 { key: 'status', header: 'Status', render: (_, s) => getStatusBadge(s.status) },
                 { key: 'settlementDate', header: 'Date', render: (_, s) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{s.settlementDate}</span> },
               ]}

@@ -175,7 +175,7 @@ const MerchantOnboardingPage: React.FC = () => {
             },
             { key: 'category', header: 'Category', render: (_, m) => <Badge variant="neutral">{m.category}</Badge> },
             { key: 'commissionRate', header: 'Commission', render: (_, m) => <span className="text-sm font-medium">{m.commissionRate}%</span> },
-            { key: 'monthlyVolume', header: 'Monthly Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.monthlyVolume, 'AED')}</span> },
+            { key: 'monthlyVolume', header: 'Monthly Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.monthlyVolume)}</span> },
             { key: 'status', header: 'Status', render: (_, m) => getStatusBadge(m.status) },
             { key: 'onboardedAt', header: 'Onboarded', render: (_, m) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(m.onboardedAt).toLocaleDateString()}</span> },
             {
@@ -305,7 +305,7 @@ const MerchantDetail: React.FC<{ merchant: any }> = ({ merchant }) => (
         <div className="grid grid-cols-4 gap-4">
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Volume</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.volume, 'AED')}</p>
+            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.volume)}</p>
           </div>
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Transactions</p>
@@ -313,7 +313,7 @@ const MerchantDetail: React.FC<{ merchant: any }> = ({ merchant }) => (
           </div>
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Avg Ticket</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.avgTicket, 'AED')}</p>
+            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.avgTicket)}</p>
           </div>
           <div>
             <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Chargebacks</p>

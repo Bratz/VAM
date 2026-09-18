@@ -77,9 +77,9 @@ const EcommerceDashboardPage: React.FC = () => {
                 <StatusIconBadge tone="success" icon={CreditCard} className="dark:bg-success-500/20" />
                 <Badge variant="success">+8%</Badge>
               </div>
-              <p className="stat-value-sm mt-3">{formatCurrency(stats.totalCollections, 'AED')}</p>
+              <p className="stat-value-sm mt-3">{formatCurrency(stats.totalCollections)}</p>
               <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Collections</p>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Today: {formatCurrency(stats.todayCollections, 'AED')}</p>
+              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Today: {formatCurrency(stats.todayCollections)}</p>
             </div>
           </Card>
 
@@ -90,7 +90,7 @@ const EcommerceDashboardPage: React.FC = () => {
               </div>
               <p className="stat-value-sm mt-3">{stats.transactionsToday}</p>
               <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Transactions Today</p>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Avg: {formatCurrency(stats.averageTicketSize, 'AED')}</p>
+              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Avg: {formatCurrency(stats.averageTicketSize)}</p>
             </div>
           </Card>
 
@@ -101,7 +101,7 @@ const EcommerceDashboardPage: React.FC = () => {
               </div>
               <p className="stat-value-sm mt-3">{stats.successRate}%</p>
               <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Success Rate</p>
-              <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">Pending: {formatCurrency(stats.pendingSettlements, 'AED')}</p>
+              <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">Pending: {formatCurrency(stats.pendingSettlements)}</p>
             </div>
           </Card>
         </div>

@@ -387,7 +387,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Total Limit</p>
-                <p className="text-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit, 'AED')}</p>
+                <p className="text-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit)}</p>
               </div>
               <StatusIconBadge tone="accent" icon={Shield} className="dark:bg-accent-500/20" />
             </div>
@@ -398,7 +398,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Outstanding</p>
-                <p className="text-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding, 'AED')}</p>
+                <p className="text-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding)}</p>
               </div>
               <StatusIconBadge tone="warning" icon={TrendingUp} className="dark:bg-warning-500/20" />
             </div>

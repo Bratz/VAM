@@ -198,7 +198,7 @@ const SummaryCard: React.FC<{
     icon={<Icon className="w-5 h-5" />}
     label={title}
     value={count}
-    sub={detail ? `${formatCurrency(amount, 'AED')} · ${detail}` : formatCurrency(amount, 'AED')}
+    sub={detail ? `${formatCurrency(amount)} · ${detail}` : formatCurrency(amount)}
     onClick={onClick}
     active={isActive}
     delay={`${delay}s`}

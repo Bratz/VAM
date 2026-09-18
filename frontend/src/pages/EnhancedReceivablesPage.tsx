@@ -1133,7 +1133,7 @@ const EnhancedReceivablesPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <StatsCard
             title="Total Receivables"
-            value={formatCurrency(stats.totalReceivables, 'AED')}
+            value={formatCurrency(stats.totalReceivables)}
             subtitle={`${stats.invoiceCount} invoices`}
             icon={<FileText className="w-5 h-5" />}
             color="indigo"
@@ -1141,7 +1141,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Open / Partial"
-            value={formatCurrency(stats.openInvoices, 'AED')}
+            value={formatCurrency(stats.openInvoices)}
             subtitle={`${stats.openCount + stats.partialCount} invoices`}
             icon={<Clock className="w-5 h-5" />}
             color="blue"
@@ -1149,7 +1149,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Overdue"
-            value={formatCurrency(stats.overdueAmount, 'AED')}
+            value={formatCurrency(stats.overdueAmount)}
             subtitle={`${stats.overdueCount} invoices`}
             icon={<AlertTriangle className="w-5 h-5" />}
             color="rose"
@@ -1157,7 +1157,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="COBO Pending"
-            value={formatCurrency(stats.coboPendingAmount || 0, 'AED')}
+            value={formatCurrency(stats.coboPendingAmount || 0)}
             subtitle={`${stats.coboPendingCount || 0} awaiting treasury`}
             icon={<ArrowDownLeft className="w-5 h-5" />}
             color="amber"
@@ -1165,7 +1165,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Intercompany"
-            value={formatCurrency(stats.intercompanyAmount || 0, 'AED')}
+            value={formatCurrency(stats.intercompanyAmount || 0)}
             subtitle={`${stats.intercompanyCount || 0} IC invoices`}
             icon={<Building2 className="w-5 h-5" />}
             color="purple"
@@ -1173,7 +1173,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="In Netting"
-            value={formatCurrency(stats.nettingIncludedAmount || 0, 'AED')}
+            value={formatCurrency(stats.nettingIncludedAmount || 0)}
             subtitle={`${stats.nettingIncludedCount || 0} in cycle`}
             icon={<GitMerge className="w-5 h-5" />}
             color="emerald"

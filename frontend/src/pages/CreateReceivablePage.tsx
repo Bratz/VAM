@@ -289,9 +289,10 @@ const LineItemRow: React.FC<{
   item: LineItem;
   index: number;
   taxConfigs: TaxConfig[];
+  currency: string;
   onChange: (index: number, field: keyof LineItem, value: any) => void;
   onRemove: (index: number) => void;
-}> = ({ item, index, taxConfigs, onChange, onRemove }) => {
+}> = ({ item, index, taxConfigs, currency, onChange, onRemove }) => {
   const taxRate = taxConfigs.find(t => t.code === item.taxCode)?.rate || 0;
   const subtotal = item.quantity * item.unitPrice;
   const discount = subtotal * (item.discountPercent / 100);
@@ -368,7 +369,7 @@ const LineItemRow: React.FC<{
       </div>
       <div className="col-span-2 flex items-center justify-between">
         <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-          {formatCurrency(lineTotal, 'AED')}
+          {formatCurrency(lineTotal, currency)}
         </span>
         <button
           onClick={() => onRemove(index)}
@@ -524,6 +525,7 @@ const LineItemsTab: React.FC<{
                 item={item}
                 index={index}
                 taxConfigs={TAX_CONFIGS}
+                currency={formData.currency}
                 onChange={updateLineItem}
                 onRemove={removeLineItem}
               />

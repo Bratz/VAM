@@ -677,7 +677,7 @@ const AccountAttachmentsPage: React.FC = () => {
               header: 'Limits',
               render: (_, att) => (
                 <>
-                  {att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-xs">Max: {formatCurrency(att.maxTransactionAmount, 'AED')}</span>}
+                  {att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-xs">Max: {formatCurrency(att.maxTransactionAmount)}</span>}
                   {att.relationshipType === 'COLLATERAL' && att.collateralPercent && <span className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" />{att.collateralPercent}%</span>}
                 </>
               ),
@@ -721,8 +721,8 @@ const AccountAttachmentsPage: React.FC = () => {
               <div className="bg-cat-2-soft rounded-lg p-4 dark:bg-cat-2/15">
                 <h4 className="text-sm font-medium text-cat-2 mb-3">Authorization Limits</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-xs text-cat-2">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount, 'AED') : 'Unlimited'}</p></div>
-                  <div><p className="text-xs text-cat-2">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit, 'AED') : 'Unlimited'}</p></div>
+                  <div><p className="text-xs text-cat-2">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount) : 'Unlimited'}</p></div>
+                  <div><p className="text-xs text-cat-2">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit) : 'Unlimited'}</p></div>
                 </div>
               </div>
             )}

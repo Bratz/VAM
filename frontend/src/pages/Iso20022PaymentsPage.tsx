@@ -859,7 +859,7 @@ function BulkPaymentForm({
                 Total ({instructions.length} payments)
               </td>
               <td className="px-4 py-2 text-right">
-                {formatCurrency(totalAmount, 'AED')}
+                {formatCurrency(totalAmount)}
               </td>
               <td></td>
             </tr>

@@ -442,7 +442,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
         {selectedVendor.outstandingBalance !== undefined && (
           <div className="mt-4 pt-4 border-t border-primary-100 flex items-center justify-between dark:border-primary-700/60">
             <span className="text-sm text-neutral-600 dark:text-neutral-300">Outstanding Balance</span>
-            <span className="font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(selectedVendor.outstandingBalance, 'AED')}</span>
+            <span className="font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(selectedVendor.outstandingBalance)}</span>
           </div>
         )}
       </div>

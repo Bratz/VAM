@@ -866,13 +866,13 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
           {result.balanceBefore !== undefined && (
             <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
               <span className="text-neutral-600 dark:text-neutral-300">Balance Before</span>
-              <span className="font-semibold">{formatCurrency(result.balanceBefore, 'AED')}</span>
+              <span className="font-semibold">{formatCurrency(result.balanceBefore, result.currencyCode || result.currency)}</span>
             </div>
           )}
           {result.balanceAfter !== undefined && (
             <div className="flex justify-between items-center p-4 bg-success-50 rounded-xl border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
               <span className="text-success-700 dark:text-success-300">Balance After</span>
-              <span className="font-bold text-success-700 dark:text-success-300">{formatCurrency(result.balanceAfter, 'AED')}</span>
+              <span className="font-bold text-success-700 dark:text-success-300">{formatCurrency(result.balanceAfter, result.currencyCode || result.currency)}</span>
             </div>
           )}
           {(result.feeAmount > 0 || result.totalFee > 0) && (
@@ -2560,7 +2560,7 @@ export default function TransfersPage() {
         />
         <StatCard
           title="Volume Today"
-          value={formatCurrency(todayVolume, 'AED')}
+          value={formatCurrency(todayVolume)}
           subtitle="Total transferred"
           icon={<TrendingUp className="w-5 h-5" />}
           variant="success"
@@ -2576,7 +2576,7 @@ export default function TransfersPage() {
         />
         <StatCard
           title="Total Balance"
-          value={formatCurrency(accounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0), 'AED')}
+          value={formatCurrency(accounts.reduce((sum, a) => sum + (a.currentBalance || 0), 0))}
           subtitle="Transaction VAs only"
           icon={<CreditCard className="w-5 h-5" />}
           variant="warning"

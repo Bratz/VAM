@@ -334,7 +334,7 @@ const CreditAgreementsPage: React.FC = () => {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <p className="label">Total Limit</p>
-              <p className="stat-value-xs mt-1">{formatCurrency(stats.totalLimit, 'AED')}</p>
+              <p className="stat-value-xs mt-1">{formatCurrency(stats.totalLimit)}</p>
             </div>
             <StatusIconBadge tone="accent" icon={Shield} className="dark:bg-accent-500/20" />
           </div>
