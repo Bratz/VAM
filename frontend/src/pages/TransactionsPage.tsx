@@ -1826,8 +1826,6 @@ const TransactionsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped'); // Default to grouped
   const [groupedTransactions, setGroupedTransactions] = useState<GroupedTransaction[]>([]);
   const [expandedCorrelationIds, setExpandedCorrelationIds] = useState<Set<string>>(new Set());
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedGroupedTransaction, setSelectedGroupedTransaction] = useState<GroupedTransaction | null>(null);
 
   const pageSize = 10;
 
@@ -2014,17 +2012,19 @@ const TransactionsPage: React.FC = () => {
     });
   };
 
-  // Handle view of grouped transaction (fetch full details)
+  // Handle view of grouped transaction: opens the same TransactionDetails
+  // modal individual-view rows use, fetched via the group's primary leg.
   const handleViewGroupedTransaction = async (txn: GroupedTransaction) => {
     try {
-      const res = await transactionsApi.getGroupedByCorrelationId(txn.correlationId);
+      const res = await transactionsApi.getById(txn.primaryTransactionId);
       if (res.success && res.data) {
-        setSelectedGroupedTransaction(res.data);
+        setSelectedTransaction(res.data);
+      } else {
+        toast.error('Failed to load transaction details');
       }
-    } catch (error) {
-      console.error('Failed to fetch grouped transaction details:', error);
-      // Fallback to showing what we have
-      setSelectedGroupedTransaction(txn);
+    } catch (error: any) {
+      console.error('Failed to fetch transaction details:', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to load transaction details');
     }
   };
 
