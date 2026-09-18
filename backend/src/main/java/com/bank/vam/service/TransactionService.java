@@ -3333,8 +3333,6 @@ public class TransactionService {
         List<TransactionDto.AccountingEntryResponse> accountingEntries =
             buildAccountingEntries(allLegs, includeInternal);
 
-        // Entry count shows all legs, but visible entries depends on includeInternal
-        int totalLegCount = allLegs.size();
         int visibleEntryCount = accountingEntries.size();
 
         return TransactionDto.GroupedTransactionResponse.builder()
@@ -3366,7 +3364,9 @@ public class TransactionService {
             .behalfOfVaId(primaryTxn.getBehalfOfVaId())
             .externalReference(primaryTxn.getExternalReference())
             .bankReference(primaryTxn.getBancsReference())
-            .entryCount(totalLegCount)  // Total accounting legs (including internal)
+            .entryCount(visibleEntryCount)  // Must match accountingEntries.size(), not the raw leg count --
+                                             // otherwise the UI shows e.g. "2 entries" with an empty/undercounted list
+                                             // whenever includeInternal=false filters out Shadow/Settlement VA legs.
             .accountingEntries(accountingEntries)  // Filtered based on includeInternal
             .build();
     }
