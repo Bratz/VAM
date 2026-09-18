@@ -297,6 +297,7 @@ public class ReceivablesService {
             .nettingEligible(r.getNettingEligible())
             .nettingStatus(r.getNettingStatus() != null ? r.getNettingStatus().name() : "NOT_INCLUDED")
             .collectionRoute(r.getCollectionRoute() != null ? r.getCollectionRoute().name() : "DIRECT")
+            .matchedPayments(Collections.emptyList())
             .build();
     }
 
@@ -308,10 +309,9 @@ public class ReceivablesService {
     }
 
     public InvoiceResponse getInvoice(UUID invoiceId) {
-        return buildDemoInvoices().stream()
-            .filter(i -> i.getId().toString().contains("1"))
-            .findFirst()
-            .orElse(buildDemoInvoices().get(0));
+        return receivableRepository.findById(invoiceId)
+            .map(this::mapReceivableToInvoiceResponse)
+            .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
     }
 
     @Transactional
@@ -448,14 +448,26 @@ public class ReceivablesService {
         });
     }
 
+    @Transactional
     public InvoiceResponse recordPayment(UUID invoiceId, RecordPaymentRequest request) {
-        InvoiceResponse invoice = getInvoice(invoiceId);
-        
-        BigDecimal newPaidAmount = invoice.getPaidAmount().add(request.getAmount());
-        String newStatus = newPaidAmount.compareTo(invoice.getAmount()) >= 0 ? "PAID" : "PARTIAL";
-        
-        List<MatchedPaymentResponse> payments = new ArrayList<>(invoice.getMatchedPayments());
-        payments.add(MatchedPaymentResponse.builder()
+        Receivable receivable = receivableRepository.findById(invoiceId)
+            .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+
+        BigDecimal newPaidAmount = receivable.getPaidAmount().add(request.getAmount());
+        BigDecimal newOutstanding = receivable.getNetAmount().subtract(newPaidAmount);
+        Receivable.ReceivableStatus newStatus = newOutstanding.compareTo(BigDecimal.ZERO) <= 0
+            ? Receivable.ReceivableStatus.PAID
+            : Receivable.ReceivableStatus.PARTIAL;
+
+        receivable.setPaidAmount(newPaidAmount);
+        receivable.setOutstandingAmount(newOutstanding);
+        receivable.setStatus(newStatus);
+        Receivable saved = receivableRepository.save(receivable);
+        log.info("Recorded payment {} of {} against invoice {}, new status {}",
+            request.getPaymentReference(), request.getAmount(), saved.getReceivableNumber(), newStatus);
+
+        InvoiceResponse response = mapReceivableToInvoiceResponse(saved);
+        response.setMatchedPayments(List.of(MatchedPaymentResponse.builder()
             .paymentRef(request.getPaymentReference())
             .amount(request.getAmount())
             .matchDate(LocalDateTime.now())
@@ -463,23 +475,8 @@ public class ReceivablesService {
             .confidence(request.getMatchType().equals("AUTO") ? 95 : null)
             .vibanId(request.getVibanId())
             .autoMatched("AUTO".equals(request.getMatchType()))
-            .build());
-        
-        return InvoiceResponse.builder()
-            .id(invoice.getId())
-            .invoiceNumber(invoice.getInvoiceNumber())
-            .customerName(invoice.getCustomerName())
-            .customerId(invoice.getCustomerId())
-            .customerVaNumber(invoice.getCustomerVaNumber())
-            .invoiceDate(invoice.getInvoiceDate())
-            .dueDate(invoice.getDueDate())
-            .amount(invoice.getAmount())
-            .paidAmount(newPaidAmount)
-            .outstandingAmount(invoice.getAmount().subtract(newPaidAmount))
-            .currencyCode(invoice.getCurrencyCode())
-            .status(newStatus)
-            .matchedPayments(payments)
-            .build();
+            .build()));
+        return response;
     }
 
     // ========================================================================
