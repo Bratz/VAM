@@ -8,10 +8,6 @@ import {
   ArrowLeftRight,
   RefreshCw,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
   Clock,
   CheckCircle,
   XCircle,
@@ -33,7 +29,8 @@ import {
   TrendingDown,
   Loader2,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, EmptyState, Skeleton , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable } from '../components/ui';
+import type { Column } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, formatRelativeTime, getStatusVariant, cn } from '../utils';
 import toast from 'react-hot-toast';
@@ -211,127 +208,6 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
 // `text-xl font-bold` value) replaced by the shared <StatTile layout="row">
 // (components/ui/StatTile) — see the stats strip in the page body.
 
-// Transaction Row - Desktop
-interface TransactionRowProps {
-  transaction: Transaction;
-  onView: (t: Transaction) => void;
-}
-
-const TransactionRow: React.FC<TransactionRowProps> = ({ transaction, onView }) => {
-  // Use utility functions for consistent credit/debit detection
-  const isCreditTxn = isCredit(transaction.movementType);
-
-  return (
-    <tr
-      className="hover:bg-neutral-50 transition-colors cursor-pointer group dark:hover:bg-primary-800/50"
-      onClick={() => onView(transaction)}
-    >
-      <td className="px-4 lg:px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110',
-            getMovementBgClass(transaction.movementType)
-          )}>
-            <MovementIcon type={transaction.movementType} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{transaction.referenceNumber}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{transaction.movementType.replace(/_/g, ' ')}</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{transaction.vaName}</p>
-          <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{transaction.vaNumber}</p>
-        </div>
-      </td>
-      <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
-        <div className="min-w-0">
-          <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{transaction.counterpartyName || '-'}</p>
-          {transaction.counterpartyAccount && (
-            <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">
-              {transaction.counterpartyAccount}
-            </p>
-          )}
-        </div>
-      </td>
-      <td className="px-4 lg:px-6 py-4">
-        <p className={cn('text-sm font-semibold', getAmountColorClass(transaction.movementType))}>
-          {isCreditTxn ? '+' : '-'}{formatCurrency(transaction.amount, transaction.currencyCode)}
-        </p>
-      </td>
-      <td className="px-4 lg:px-6 py-4">
-        <div className="flex items-center gap-2">
-          <StatusIcon status={transaction.status} />
-          <Badge variant={getStatusVariant(transaction.status)} size="sm">
-            {transaction.status}
-          </Badge>
-        </div>
-      </td>
-      <td className="px-4 lg:px-6 py-4 hidden xl:table-cell">
-        <div>
-          <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(transaction.transactionDate)}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {transaction.valueDate ? formatDate(transaction.valueDate) : '-'}</p>
-        </div>
-      </td>
-      <td className="px-4 lg:px-6 py-4 hidden xl:table-cell">
-        <Badge variant="neutral" size="sm">{transaction.channel || 'N/A'}</Badge>
-      </td>
-      <td className="px-4 lg:px-6 py-4">
-        <button
-          className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
-          onClick={(e) => { e.stopPropagation(); onView(transaction); }}
-        >
-          <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-        </button>
-      </td>
-    </tr>
-  );
-};
-
-// Mobile Transaction Card
-const TransactionMobileCard: React.FC<TransactionRowProps> = ({ transaction, onView }) => {
-  const isCreditTxn = isCredit(transaction.movementType);
-
-  return (
-    <Card
-      className="animate-fade-in"
-      interactive
-      onClick={() => onView(transaction)}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={cn(
-            'w-11 h-11 rounded-xl flex items-center justify-center shrink-0',
-            getMovementBgClass(transaction.movementType)
-          )}>
-            <MovementIcon type={transaction.movementType} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{transaction.counterpartyName || transaction.vaName}</p>
-            <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{transaction.referenceNumber}</p>
-          </div>
-        </div>
-        <div className="text-right shrink-0 ml-3">
-          <p className={cn('text-sm font-semibold', getAmountColorClass(transaction.movementType))}>
-            {isCreditTxn ? '+' : '-'}{formatCurrency(transaction.amount, transaction.currencyCode)}
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatRelativeTime(transaction.transactionDate)}</p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-        <div className="flex items-center gap-2">
-          <StatusIcon status={transaction.status} />
-          <Badge variant={getStatusVariant(transaction.status)} size="sm">
-            {transaction.status}
-          </Badge>
-        </div>
-        <Badge variant="neutral" size="sm">{transaction.channel || 'N/A'}</Badge>
-      </div>
-    </Card>
-  );
-};
 
 // ============================================================================
 // GROUPED TRANSACTION COMPONENTS (Option B - Simplified Business View)
@@ -356,273 +232,6 @@ const OperationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
       <Icon className="w-3 h-3 mr-1" />
       {cfg.label}
     </Badge>
-  );
-};
-
-// Grouped Transaction Row - Desktop
-interface GroupedTransactionRowProps {
-  transaction: GroupedTransaction;
-  onView: (t: GroupedTransaction) => void;
-  expanded: boolean;
-  onToggleExpand: () => void;
-}
-
-const GroupedTransactionRow: React.FC<GroupedTransactionRowProps> = ({
-  transaction,
-  onView,
-  expanded,
-  onToggleExpand,
-}) => {
-  return (
-    <>
-      {/* Main Row */}
-      <tr
-        className="hover:bg-neutral-50 transition-colors cursor-pointer group dark:hover:bg-primary-800/50"
-        onClick={() => onView(transaction)}
-      >
-        <td className="px-4 lg:px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110',
-              transaction.isCredit ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10'
-            )}>
-              {transaction.isCredit ? (
-                <ArrowDownLeft className="w-5 h-5 text-success-600 dark:text-success-300" />
-              ) : (
-                <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{transaction.primaryReferenceNumber}</p>
-                <OperationTypeBadge type={transaction.operationType} />
-              </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                {transaction.entryCount} accounting {transaction.entryCount === 1 ? 'entry' : 'entries'}
-              </p>
-            </div>
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{transaction.userVaName || '-'}</p>
-            <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{transaction.userVaNumber}</p>
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
-          <div className="min-w-0">
-            <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{transaction.counterpartyName || '-'}</p>
-            {transaction.counterpartyAccount && (
-              <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">
-                {transaction.counterpartyAccount}
-              </p>
-            )}
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4">
-          <div>
-            <p className={cn('text-sm font-semibold', transaction.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-              {transaction.isCredit ? '+' : '-'}{formatCurrency(transaction.netAmount, transaction.currencyCode)}
-            </p>
-            {transaction.feeAmount > 0 && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Gross: {formatCurrency(transaction.grossAmount, transaction.currencyCode)} | Fee: {formatCurrency(transaction.feeAmount, transaction.currencyCode)}
-              </p>
-            )}
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4">
-          <div className="flex items-center gap-2">
-            <StatusIcon status={transaction.status} />
-            <Badge variant={getStatusVariant(transaction.status)} size="sm">
-              {transaction.status}
-            </Badge>
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4 hidden xl:table-cell">
-          <div>
-            <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(transaction.transactionDate)}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {transaction.valueDate ? formatDate(transaction.valueDate) : '-'}</p>
-          </div>
-        </td>
-        <td className="px-4 lg:px-6 py-4 hidden xl:table-cell">
-          <Badge variant="neutral" size="sm">{transaction.channel || 'N/A'}</Badge>
-        </td>
-        <td className="px-4 lg:px-6 py-4">
-          <div className="flex items-center gap-1">
-            <button
-              className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
-              onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-              title={expanded ? 'Hide accounting entries' : 'Show accounting entries'}
-            >
-              {expanded ? (
-                <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-              )}
-            </button>
-            <button
-              className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
-              onClick={(e) => { e.stopPropagation(); onView(transaction); }}
-            >
-              <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-            </button>
-          </div>
-        </td>
-      </tr>
-
-      {/* Expanded Accounting Entries */}
-      {expanded && transaction.accountingEntries && (
-        <tr>
-          <td colSpan={8} className="px-4 lg:px-6 py-0">
-            <div className="bg-neutral-50 rounded-xl p-4 mb-4 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-              <div className="flex items-center gap-2 mb-3">
-                <Layers className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                <span className="field-label">Accounting Entries</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-neutral-200 dark:border-primary-800">
-                      <th className="pb-2 text-left font-medium text-neutral-500 uppercase dark:text-neutral-400">Leg</th>
-                      <th className="pb-2 text-left font-medium text-neutral-500 uppercase dark:text-neutral-400">Account</th>
-                      <th className="pb-2 text-left font-medium text-neutral-500 uppercase dark:text-neutral-400">Type</th>
-                      <th className="pb-2 text-left font-medium text-neutral-500 uppercase dark:text-neutral-400">Movement</th>
-                      <th className="pb-2 text-right font-medium text-neutral-500 uppercase dark:text-neutral-400">Amount</th>
-                      <th className="pb-2 text-right font-medium text-neutral-500 uppercase dark:text-neutral-400">Balance Before</th>
-                      <th className="pb-2 text-right font-medium text-neutral-500 uppercase dark:text-neutral-400">Balance After</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transaction.accountingEntries.map((entry, idx) => (
-                      <tr key={idx} className="border-b border-neutral-100 last:border-0 dark:border-primary-800/60">
-                        <td className="py-2 text-neutral-600 dark:text-neutral-300">#{entry.legNumber}</td>
-                        <td className="py-2">
-                          <div>
-                            <span className="font-medium text-neutral-900 dark:text-neutral-50">{entry.vaName}</span>
-                            <span className="text-neutral-500 ml-1 font-mono dark:text-neutral-400">({entry.vaNumber})</span>
-                          </div>
-                        </td>
-                        <td className="py-2">
-                          <Badge variant="neutral" size="sm">{entry.accountType}</Badge>
-                        </td>
-                        <td className="py-2">
-                          <span className={cn(
-                            'font-medium',
-                            entry.movementType?.includes('CREDIT') ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
-                          )}>
-                            {entry.movementType?.replace(/_/g, ' ')}
-                          </span>
-                        </td>
-                        <td className="py-2 text-right amount text-neutral-900 dark:text-neutral-50">
-                          {formatCurrency(entry.amount, entry.currencyCode)}
-                        </td>
-                        <td className="py-2 text-right amount text-neutral-500 dark:text-neutral-400">
-                          {formatCurrency(entry.balanceBefore, entry.currencyCode)}
-                        </td>
-                        <td className="py-2 text-right amount text-neutral-900 dark:text-neutral-50">
-                          {formatCurrency(entry.balanceAfter, entry.currencyCode)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {transaction.accountingEntries[0]?.processingNotes && (
-                <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    <span className="font-medium">Notes:</span> {transaction.accountingEntries[0].processingNotes}
-                  </p>
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
-    </>
-  );
-};
-
-// Grouped Transaction Mobile Card
-const GroupedTransactionMobileCard: React.FC<{
-  transaction: GroupedTransaction;
-  onView: (t: GroupedTransaction) => void;
-  expanded: boolean;
-  onToggleExpand: () => void;
-}> = ({ transaction, onView, expanded, onToggleExpand }) => {
-  return (
-    <Card className="animate-fade-in" interactive onClick={() => onView(transaction)}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-            transaction.isCredit ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10'
-          )}>
-            {transaction.isCredit ? (
-              <ArrowDownLeft className="w-5 h-5 text-success-600 dark:text-success-300" />
-            ) : (
-              <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{transaction.primaryReferenceNumber}</p>
-            <OperationTypeBadge type={transaction.operationType} />
-          </div>
-        </div>
-        <div className="text-right">
-          <p className={cn('text-sm font-semibold', transaction.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-            {transaction.isCredit ? '+' : '-'}{formatCurrency(transaction.netAmount, transaction.currencyCode)}
-          </p>
-          {transaction.feeAmount > 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Fee: {formatCurrency(transaction.feeAmount, transaction.currencyCode)}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-neutral-500 mb-2 dark:text-neutral-400">
-        <span className="truncate">{transaction.counterpartyName || transaction.userVaName}</span>
-        <span>{formatRelativeTime(transaction.transactionDate)}</span>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <StatusIcon status={transaction.status} />
-          <Badge variant={getStatusVariant(transaction.status)} size="sm">
-            {transaction.status}
-          </Badge>
-        </div>
-        <button
-          className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 dark:text-primary-200 dark:hover:text-neutral-200"
-          onClick={(e) => { e.stopPropagation(); onToggleExpand(); }}
-        >
-          <Layers className="w-3 h-3" />
-          {expanded ? 'Hide' : 'Show'} {transaction.entryCount} entries
-        </button>
-      </div>
-
-      {/* Expanded Entries */}
-      {expanded && transaction.accountingEntries && (
-        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
-          <p className="text-xs font-medium text-neutral-700 mb-2 dark:text-neutral-200">Accounting Entries:</p>
-          <div className="space-y-2">
-            {transaction.accountingEntries.map((entry, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs bg-neutral-50 rounded-lg p-2 dark:bg-primary-950">
-                <div>
-                  <span className="font-medium text-neutral-900 dark:text-neutral-50">#{entry.legNumber} {entry.vaName}</span>
-                  <span className="text-neutral-500 ml-1 dark:text-neutral-400">({entry.accountType})</span>
-                </div>
-                <div className={cn(
-                  'amount',
-                  entry.movementType?.includes('CREDIT') ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
-                )}>
-                  {formatCurrency(entry.amount, entry.currencyCode)}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </Card>
   );
 };
 
@@ -1810,7 +1419,6 @@ const TransactionsPage: React.FC = () => {
   const [reversing, setReversing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [showNewModal, setShowNewModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
@@ -1825,7 +1433,6 @@ const TransactionsPage: React.FC = () => {
   // Grouped View State (Option B - Simplified Business View)
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped'); // Default to grouped
   const [groupedTransactions, setGroupedTransactions] = useState<GroupedTransaction[]>([]);
-  const [expandedCorrelationIds, setExpandedCorrelationIds] = useState<Set<string>>(new Set());
 
   const pageSize = 10;
 
@@ -1867,11 +1474,9 @@ const TransactionsPage: React.FC = () => {
 
           if (groupedRes.success && groupedRes.data) {
             setGroupedTransactions(groupedRes.data.content || []);
-            setTotalPages(groupedRes.data.totalPages || 1);
             setTotalElements(groupedRes.data.totalElements || 0);
           } else {
             setGroupedTransactions([]);
-            setTotalPages(1);
             setTotalElements(0);
           }
         } catch (err) {
@@ -1898,14 +1503,12 @@ const TransactionsPage: React.FC = () => {
       if (txnRes.success && txnRes.data) {
         setTransactions(txnRes.data.content || []);
         if (viewMode === 'individual') {
-          setTotalPages(txnRes.data.totalPages || 1);
           setTotalElements(txnRes.data.totalElements || 0);
         }
       } else {
         // Use demo data on failure
         setTransactions(demoTransactions);
         if (viewMode === 'individual') {
-          setTotalPages(1);
           setTotalElements(demoTransactions.length);
         }
       }
@@ -1999,19 +1602,6 @@ const TransactionsPage: React.FC = () => {
     }
   };
 
-  // Toggle expanded state for a grouped transaction
-  const toggleExpanded = (correlationId: string) => {
-    setExpandedCorrelationIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(correlationId)) {
-        newSet.delete(correlationId);
-      } else {
-        newSet.add(correlationId);
-      }
-      return newSet;
-    });
-  };
-
   // Handle view of grouped transaction: opens the same TransactionDetails
   // modal individual-view rows use, fetched via the group's primary leg.
   const handleViewGroupedTransaction = async (txn: GroupedTransaction) => {
@@ -2034,6 +1624,204 @@ const TransactionsPage: React.FC = () => {
     { id: 'credit', label: 'Credits', count: stats?.completedCount || 0 },
     { id: 'debit', label: 'Debits', count: stats?.completedCount || 0 },
     { id: 'pending', label: 'Pending', count: stats?.pendingCount || 0 },
+  ];
+
+  // Ledger (individual) view columns
+  const transactionColumns: Column<Transaction>[] = [
+    {
+      key: 'referenceNumber', header: 'Reference', mobileLabel: true,
+      render: (_, t) => (
+        <div className="flex items-center gap-3">
+          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', getMovementBgClass(t.movementType))}>
+            <MovementIcon type={t.movementType} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.referenceNumber}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t.movementType.replace(/_/g, ' ')}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'vaName', header: 'Account', mobileHidden: true,
+      render: (_, t) => (
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.vaName}</p>
+          <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{t.vaNumber}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'counterpartyName', header: 'Counterparty',
+      render: (_, t) => (
+        <div className="min-w-0">
+          <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
+          {t.counterpartyAccount && (
+            <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'amount', header: 'Amount', align: 'right', mobileValue: true,
+      render: (_, t) => (
+        <p className={cn('text-sm font-semibold', getAmountColorClass(t.movementType))}>
+          {isCredit(t.movementType) ? '+' : '-'}{formatCurrency(t.amount, t.currencyCode)}
+        </p>
+      ),
+    },
+    {
+      key: 'status', header: 'Status',
+      render: (_, t) => (
+        <div className="flex items-center gap-2">
+          <StatusIcon status={t.status} />
+          <Badge variant={getStatusVariant(t.status)} size="sm">{t.status}</Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'transactionDate', header: 'Date', mobileHidden: true,
+      render: (_, t) => (
+        <div>
+          <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'channel', header: 'Channel', mobileHidden: true,
+      render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
+    },
+    {
+      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true,
+      render: (_, t) => (
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
+            onClick={() => setSelectedTransaction(t)}
+            title="View details"
+          >
+            <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+          </button>
+          {t.status === 'COMPLETED' && (
+            <button
+              className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
+              onClick={() => handleReverse(t.id)}
+              title="Reverse transaction"
+            >
+              <RefreshCw className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  // Business (grouped) view columns
+  const groupedColumns: Column<GroupedTransaction>[] = [
+    {
+      key: 'primaryReferenceNumber', header: 'Operation', mobileLabel: true,
+      render: (_, t) => (
+        <div className="flex items-center gap-3">
+          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', t.isCredit ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10')}>
+            {t.isCredit ? (
+              <ArrowDownLeft className="w-5 h-5 text-success-600 dark:text-success-300" />
+            ) : (
+              <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.primaryReferenceNumber}</p>
+              <OperationTypeBadge type={t.operationType} />
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {t.entryCount} accounting {t.entryCount === 1 ? 'entry' : 'entries'}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'userVaName', header: 'Account', mobileHidden: true,
+      render: (_, t) => (
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.userVaName || '-'}</p>
+          <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{t.userVaNumber}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'counterpartyName', header: 'Counterparty',
+      render: (_, t) => (
+        <div className="min-w-0">
+          <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
+          {t.counterpartyAccount && (
+            <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'netAmount', header: 'Net Amount', align: 'right', mobileValue: true,
+      render: (_, t) => (
+        <div>
+          <p className={cn('text-sm font-semibold', t.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+            {t.isCredit ? '+' : '-'}{formatCurrency(t.netAmount, t.currencyCode)}
+          </p>
+          {t.feeAmount > 0 && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Gross: {formatCurrency(t.grossAmount, t.currencyCode)} | Fee: {formatCurrency(t.feeAmount, t.currencyCode)}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status', header: 'Status',
+      render: (_, t) => (
+        <div className="flex items-center gap-2">
+          <StatusIcon status={t.status} />
+          <Badge variant={getStatusVariant(t.status)} size="sm">{t.status}</Badge>
+        </div>
+      ),
+    },
+    {
+      key: 'transactionDate', header: 'Date', mobileHidden: true,
+      render: (_, t) => (
+        <div>
+          <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'channel', header: 'Channel', mobileHidden: true,
+      render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
+    },
+    {
+      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true,
+      render: (_, t) => (
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
+            onClick={() => handleViewGroupedTransaction(t)}
+            title="View details"
+          >
+            <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+          </button>
+          {t.status === 'COMPLETED' && (
+            <button
+              className="p-2 hover:bg-neutral-100 rounded-xl transition-colors dark:hover:bg-primary-800"
+              onClick={() => handleReverse(t.primaryTransactionId)}
+              title="Reverse transaction"
+            >
+              <RefreshCw className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -2188,167 +1976,52 @@ const TransactionsPage: React.FC = () => {
             <Info className="w-4 h-4 text-info-600 shrink-0 mt-0.5 dark:text-info-300" />
             <div className="text-xs text-info-800 dark:text-info-300">
               <span className="font-medium">Business View:</span> Multi-leg accounting entries are grouped into single business transactions.
-              Click the expand button to view all accounting entries.
+              Click a row to view all accounting entries.
             </div>
           </div>
         )}
 
-        {/* Table - Desktop */}
-        {loading ? (
-          <div className="p-8">
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="w-10 h-10 rounded-xl" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-3 w-1/4" />
-                  </div>
-                  <Skeleton className="h-6 w-20" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : viewMode === 'grouped' && groupedTransactions.length > 0 ? (
-          <>
-            {/* Grouped View - Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50/80 border-b border-neutral-200 dark:border-primary-800">
-                  <tr>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Operation</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell dark:text-neutral-400">Account</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden lg:table-cell dark:text-neutral-400">Counterparty</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Net Amount</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Status</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden xl:table-cell dark:text-neutral-400">Date</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden xl:table-cell dark:text-neutral-400">Channel</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider w-20 dark:text-neutral-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {groupedTransactions.map((txn) => (
-                    <GroupedTransactionRow
-                      key={txn.correlationId}
-                      transaction={txn}
-                      onView={handleViewGroupedTransaction}
-                      expanded={expandedCorrelationIds.has(txn.correlationId)}
-                      onToggleExpand={() => toggleExpanded(txn.correlationId)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Grouped View - Mobile Cards */}
-            <div className="md:hidden p-4 space-y-3">
-              {groupedTransactions.map((txn) => (
-                <GroupedTransactionMobileCard
-                  key={txn.correlationId}
-                  transaction={txn}
-                  onView={handleViewGroupedTransaction}
-                  expanded={expandedCorrelationIds.has(txn.correlationId)}
-                  onToggleExpand={() => toggleExpanded(txn.correlationId)}
-                />
-              ))}
-            </div>
-          </>
-        ) : transactions.length > 0 ? (
-          <>
-            {/* Individual/Ledger View - Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50/80 border-b border-neutral-200 dark:border-primary-800">
-                  <tr>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Reference</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell dark:text-neutral-400">Account</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden lg:table-cell dark:text-neutral-400">Counterparty</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Amount</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Status</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden xl:table-cell dark:text-neutral-400">Date</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden xl:table-cell dark:text-neutral-400">Channel</th>
-                    <th className="px-4 lg:px-6 py-3.5 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider w-16 dark:text-neutral-400">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
-                  {transactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction.id}
-                      transaction={transaction}
-                      onView={setSelectedTransaction}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Individual/Ledger View - Mobile Cards */}
-            <div className="md:hidden p-4 space-y-3">
-              {transactions.map((transaction) => (
-                <TransactionMobileCard
-                  key={transaction.id}
-                  transaction={transaction}
-                  onView={setSelectedTransaction}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 lg:px-6 py-4 border-t border-neutral-200 gap-4 dark:border-primary-800">
-              <p className="text-sm text-neutral-500 text-center sm:text-left dark:text-neutral-400">
-                Showing {currentPage * pageSize + 1} to{' '}
-                {Math.min((currentPage + 1) * pageSize, totalElements)} of{' '}
-                {totalElements} transactions
-              </p>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 0}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <div className="hidden sm:flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? 'primary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page + 1}
-                    </Button>
-                  ))}
-                </div>
-                <span className="sm:hidden text-sm text-neutral-500 px-2 dark:text-neutral-400">
-                  {currentPage + 1} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage >= totalPages - 1}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="p-8">
-            <EmptyState
-              icon={<ArrowLeftRight className="w-8 h-8" />}
-              title="No transactions found"
-              description="Try adjusting your search or filters."
-              action={
+        {/* Table */}
+        <div className="p-4 lg:p-6">
+          {viewMode === 'grouped' ? (
+            <DataTable
+              data={groupedTransactions}
+              columns={groupedColumns}
+              keyExtractor={(t) => t.correlationId}
+              onRowClick={handleViewGroupedTransaction}
+              loading={loading}
+              emptyIcon={<ArrowLeftRight className="w-8 h-8" />}
+              emptyTitle="No transactions found"
+              emptyDescription="Try adjusting your search or filters."
+              emptyAction={
                 <Button variant="outline" onClick={() => { setSearchQuery(''); setActiveTab('all'); }}>
                   Clear Filters
                 </Button>
               }
             />
-          </div>
-        )}
+          ) : (
+            <DataTable
+              data={transactions}
+              columns={transactionColumns}
+              keyExtractor={(t) => t.id}
+              onRowClick={setSelectedTransaction}
+              loading={loading}
+              pagination
+              pageSize={pageSize}
+              currentPage={currentPage + 1}
+              totalCount={totalElements}
+              onPageChange={(page) => setCurrentPage(page - 1)}
+              emptyIcon={<ArrowLeftRight className="w-8 h-8" />}
+              emptyTitle="No transactions found"
+              emptyDescription="Try adjusting your search or filters."
+              emptyAction={
+                <Button variant="outline" onClick={() => { setSearchQuery(''); setActiveTab('all'); }}>
+                  Clear Filters
+                </Button>
+              }
+            />
+          )}
+        </div>
       </Card>
 
       {/* Transaction Details Modal */}
