@@ -1103,7 +1103,7 @@ const DocumentsTab: React.FC<{
       </div>
 
       {/* Notes */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="field-label block mb-2">Customer Notes</label>
           <textarea
@@ -1617,12 +1617,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
   return (
     // Phase 10 Design System Unification (2026-05-13): page body wrapped
-    // in <Page maxWidth="narrow"> (~1024px). Sticky header inner wrapper
-    // narrowed to max-w-5xl to align. Horizontal padding comes from <main>.
-    <div className="min-h-screen bg-neutral-50 dark:bg-primary-950">
+    // in <Page maxWidth="narrow"> (~1024px). Renders inside Layout (not
+    // full-screen), so this in-page header is a plain bordered bar, not
+    // sticky -- Layout's own header already occupies `sticky top-0`, and a
+    // second sticky element at the same offset would overlap it.
+    <div>
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-primary-900 border-b border-neutral-200 dark:border-primary-800 shadow-sm">
-        <div className="max-w-5xl mx-auto py-4">
+      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl shadow-sm mb-6">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors">
@@ -1633,7 +1635,11 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 description={formData.invoiceNumber}
               />
             </div>
-            <div className="flex items-center gap-3">
+            {/* Hidden below sm: this page also has an always-visible bottom
+                action bar (Cancel/Save Draft/Create Invoice) with the same
+                buttons -- on narrow screens there isn't room for both, and
+                the bottom bar already covers it. */}
+            <div className="hidden sm:flex items-center gap-3">
               <button
                 onClick={() => handleSubmit(true)}
                 disabled={loading}
@@ -1661,7 +1667,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       <Page maxWidth="narrow" className="py-8">
         {/* Corporate & Entity Context Banner */}
         <div className="mb-6 p-4 bg-gradient-to-r from-info-50 to-cat-1-soft border border-info-200 rounded-xl dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
                 <Building className="w-5 h-5 text-info-600 dark:text-info-300" />
@@ -1673,7 +1679,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 </p>
               </div>
             </div>
-            <div className="w-px h-10 bg-info-200" />
+            <div className="hidden sm:block w-px h-10 bg-info-200" />
             <div className="flex items-center gap-3">
               <div className="p-2 bg-cat-1/10 rounded-lg dark:bg-cat-1/15">
                 <Landmark className="w-5 h-5 text-cat-1" />
@@ -1693,7 +1699,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
             {!corporateIdFromParams && (
               <>
-                <div className="w-px h-10 bg-warning-200" />
+                <div className="hidden sm:block w-px h-10 bg-warning-200" />
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 border border-warning-300 rounded-lg dark:bg-warning-500/20">
                   <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                   <span className="text-xs font-medium text-warning-700 dark:text-warning-300">Using default corporate</span>
@@ -1711,9 +1717,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Left Column - Main Form */}
-          <div className="col-span-2 space-y-6">
+          <div className="md:col-span-2 space-y-6">
             {/* Customer Selection */}
             <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
               <SectionHeader
@@ -1781,7 +1787,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                     <div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">Credit Limit</p>
                       <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(selectedCustomer.creditLimit, selectedCustomer.currency)}</p>
@@ -1818,7 +1824,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 title="Invoice Details"
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="field-label block mb-1">Invoice Number *</label>
                   <input
@@ -2082,14 +2088,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             already centers at max-w-5xl. Phase 10 Design System Unification. */}
         <div className="mt-8 border-t border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900">
           <div className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 onClick={goBack}
                 className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50"
               >
                 Cancel
               </button>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <button
                   onClick={() => handleSubmit(true)}
                   disabled={loading}

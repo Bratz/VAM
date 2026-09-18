@@ -541,7 +541,15 @@ const App: React.FC = () => {
     }
   };
 
-  const isFullScreenPage = ['receivables-create', 'receivables-edit', 'payables-create', 'payables-edit', 'pay-invoice'].includes(currentPage);
+  // Only the public, unauthenticated pay-invoice page skips the app shell.
+  // receivables-create/edit and payables-create/edit used to be listed here
+  // too, which meant the sidebar (and all other navigation) disappeared
+  // entirely while filling out an invoice or payable -- both pages already
+  // build their own content assuming Layout's chrome via <Page maxWidth=
+  // "narrow"> and <PageHeader> (which registers into Layout's header rather
+  // than rendering its own), so this was a straightforward regression, not
+  // an intentional "focused wizard" design.
+  const isFullScreenPage = ['pay-invoice'].includes(currentPage);
 
   const renderPage = () => {
     switch (currentPage) {

@@ -512,7 +512,7 @@ const BankAccountSelector: React.FC<{
     <div className="space-y-4">
       <div>
         <label className="field-label block mb-2">Payment Channel</label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {PAYMENT_CHANNELS.map((channel) => {
             const Icon = channel.icon;
             const isAvailable = accounts.some(acc => acc.paymentMethods.includes(channel.value));
@@ -671,7 +671,7 @@ const InvoiceLookup: React.FC<{
             <div className="flex items-center gap-2"><FileCheck className="w-5 h-5 text-success-600 dark:text-success-300" /><span className="font-medium text-success-800 dark:text-success-300">Invoice Found</span></div>
             <Badge variant="success">Auto-populated</Badge>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-4">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div><p className="text-xs text-success-600 dark:text-success-300">Amount</p><p className="font-semibold text-success-900">{formatCurrency(matchedInvoice.amount, matchedInvoice.currencyCode)}</p></div>
             <div><p className="text-xs text-success-600 dark:text-success-300">Invoice Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.invoiceDate)}</p></div>
             <div><p className="text-xs text-success-600 dark:text-success-300">Due Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.dueDate)}</p></div>
@@ -698,7 +698,7 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
     <div className="space-y-6">
       <div>
         <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-4 flex items-center gap-2"><Calculator className="w-4 h-4" />Tax Configuration</h4>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select label="Tax Jurisdiction" value={formData.taxJurisdiction} onChange={(v) => updateField('taxJurisdiction', v)} options={[{ value: 'UAE', label: 'UAE - VAT 5%' }, { value: 'KSA', label: 'KSA - VAT 15%' }]} />
           <div className="space-y-3">
             <Toggle label="Apply VAT" checked={formData.applyVat} onChange={(v) => updateField('applyVat', v)} size="sm" />
@@ -801,7 +801,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
         </div>
       </div>
       {formData.poboEnabled && (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="field-label block mb-2">Paying Entity (Treasury)</label>
             {entities.filter(e => e.type === 'HEADQUARTERS').map((entity) => (
@@ -867,7 +867,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
     </div>
     <div>
       <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3">Reference Links</h4>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Input label="Purchase Order" value={formData.linkedPurchaseOrder} onChange={(v) => updateField('linkedPurchaseOrder', v)} placeholder="PO-2024-XXXXX" prefix={<LinkIcon className="w-4 h-4" />} />
         <Input label="Contract" value={formData.linkedContract} onChange={(v) => updateField('linkedContract', v)} placeholder="CON-2024-XXXXX" prefix={<LinkIcon className="w-4 h-4" />} />
         <Input label="GRN / Receipt" value={formData.linkedGrn} onChange={(v) => updateField('linkedGrn', v)} placeholder="GRN-2024-XXXXX" prefix={<LinkIcon className="w-4 h-4" />} />
@@ -901,7 +901,7 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
         })}
       </div>
     </div>
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <Select label="Payment Priority" value={formData.paymentPriority} onChange={(v) => updateField('paymentPriority', v)} options={[{ value: 'LOW', label: '🟢 Low' }, { value: 'NORMAL', label: '🔵 Normal' }, { value: 'HIGH', label: '🟠 High' }, { value: 'URGENT', label: '🔴 Urgent' }]} />
       <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg text-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
     </div>
@@ -1246,16 +1246,16 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
   return (
     // Phase 10 Design System Unification (2026-05-13): the page's content
     // is now wrapped in <Page maxWidth="narrow"> (~1024px) — forms-first
-    // surfaces don't need the full 1280px width. The sticky header stays
-    // OUTSIDE <Page> because <Page> applies `space-y-6` vertical rhythm
-    // that would mis-flow with sticky chrome. The sticky header's inner
-    // wrapper narrows to max-w-5xl to match.
-    <div className="min-h-screen bg-neutral-50 dark:bg-primary-950">
-      {/* Sticky Header. Inner wrapper uses max-w-5xl to match the
-          <Page maxWidth="narrow"> below. Horizontal padding comes from
-          the <main> shell (p-4 lg:p-8) — the inner wrapper just centers. */}
-      <div className="bg-white dark:bg-primary-900 border-b border-neutral-200 dark:border-primary-800 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto py-4">
+    // surfaces don't need the full 1280px width. The header stays OUTSIDE
+    // <Page> because <Page> applies `space-y-6` vertical rhythm that would
+    // mis-flow with it. Renders inside Layout (not full-screen), so this
+    // header is a plain bordered bar, not sticky -- Layout's own header
+    // already occupies `sticky top-0`, and a second sticky element at the
+    // same offset would overlap it. Inner wrapper narrows to max-w-5xl to
+    // match <Page maxWidth="narrow"> below.
+    <div>
+      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl mb-6">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"><ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" /></button>
@@ -1264,7 +1264,11 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 description={isEditMode ? `Editing ${payableId}` : 'Record vendor invoice for payment'}
               />
             </div>
-            <div className="flex items-center gap-3">
+            {/* Hidden below sm: this page also has an always-visible action
+                bar at the bottom of the form (Cancel/Save Draft/Submit)
+                with the same buttons -- on narrow screens there isn't room
+                for both, and the bottom bar already covers it. */}
+            <div className="hidden sm:flex items-center gap-3">
               <Button variant="secondary" onClick={() => handleSubmit(true)} disabled={loading} leftIcon={<Save className="w-4 h-4" />}>Save Draft</Button>
               <Button variant="primary" onClick={() => handleSubmit(false)} disabled={loading || !canSubmit} loading={loading} leftIcon={<Send className="w-4 h-4" />}>{isEditMode ? 'Update Payable' : 'Submit for Approval'}</Button>
             </div>
@@ -1276,8 +1280,8 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
       <Page maxWidth="narrow" className="py-6">
         {/* Corporate/Entity Context Banner */}
         <div className="mb-6 bg-gradient-to-r from-primary-50 to-white border border-primary-200 rounded-xl p-4 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="p-2 bg-primary-100 dark:bg-primary-700 rounded-lg">
                 <Building className="w-5 h-5 text-primary-600 dark:text-primary-200" />
               </div>
@@ -1287,7 +1291,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               </div>
               {selectedLegalEntity && (
                 <>
-                  <div className="w-px h-10 bg-primary-200" />
+                  <div className="hidden sm:block w-px h-10 bg-primary-200" />
                   <div>
                     <p className="text-xs font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Legal Entity</p>
                     <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedLegalEntity.entityCode} - {selectedLegalEntity.entityName}</p>
@@ -1304,7 +1308,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           </div>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-6">
             {/* Step 1: Vendor */}
             <Card padding="lg">
@@ -1324,7 +1328,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 </div>
                 <div className="space-y-4">
                   <InvoiceLookup vendorId={formData.vendorId} invoiceNumber={formData.invoiceNumber} onInvoiceSelect={handleInvoiceSelect} onManualEntry={(inv) => updateField('invoiceNumber', inv)} />
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <Input label="Amount" type="number" value={formData.amount} onChange={(v) => updateField('amount', parseFloat(v) || 0)} prefix={<DollarSign className="w-4 h-4" />} required size="lg" />
                     <Select label="Currency" value={formData.currencyCode} onChange={(v) => updateField('currencyCode', v)} options={CURRENCIES.map(c => ({ value: c, label: c }))} />
                     <Input label="Invoice Date" type="date" value={formData.invoiceDate} onChange={(v) => updateField('invoiceDate', v)} />
@@ -1466,7 +1470,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           </div>
           
           {/* Summary Sidebar */}
-          <div className="w-80 flex-shrink-0">
+          <div className="w-full md:w-80 md:flex-shrink-0">
             <SummarySidebar formData={formData} totalAmount={totalAmount} totalTax={totalTax} totalCharges={totalCharges} grandTotal={grandTotal} loading={loading} canSubmit={canSubmit} />
           </div>
         </div>
@@ -1477,11 +1481,11 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             Kept the border-t / bg / -mx wrapper around the buttons so the
             divider still extends beyond Page's content column. */}
         <div className="mt-8 border-t border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button onClick={goBack} className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50">
               Cancel
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Button variant="secondary" size="lg" onClick={() => handleSubmit(true)} disabled={loading} leftIcon={<Save className="w-4 h-4" />}>
                 Save Draft
               </Button>
