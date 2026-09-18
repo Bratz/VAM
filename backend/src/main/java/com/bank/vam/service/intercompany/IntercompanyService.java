@@ -1,11 +1,17 @@
 package com.bank.vam.service.intercompany;
 
 import com.bank.vam.dto.intercompany.IntercompanyDto.*;
+import com.bank.vam.dto.viban.VibanDto.VibanCreateRequest;
+import com.bank.vam.dto.viban.VibanDto.VibanResponse;
+import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.intercompany.IntercompanyTransaction;
+import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.intercompany.IntercompanyTransactionRepository;
+import com.bank.vam.service.viban.VibanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,6 +40,8 @@ public class IntercompanyService {
 
     private final IntercompanyTransactionRepository transactionRepository;
     private final LegalEntityRepository legalEntityRepository;
+    private final VirtualAccountRepository virtualAccountRepository;
+    private final VibanService vibanService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     // ========================================================================
@@ -388,8 +396,26 @@ public class IntercompanyService {
         String viban = null;
         UUID vibanId = null;
         if (request.isGenerateViban()) {
-            viban = "AE" + String.format("%021d", System.nanoTime() % 1000000000000000000L);
-            vibanId = UUID.randomUUID();
+            // Issued through the real VIBAN allocation service against the collecting entity's
+            // own collection account -- the previous "AE" + System.nanoTime() string was never
+            // saved anywhere, so no payment could ever be matched to it.
+            VirtualAccount collectionVa = virtualAccountRepository
+                .findByOwningEntityIdAndAccountCategoryAndCurrencyCode(
+                    collectingEntityId, VirtualAccount.AccountCategory.COLLECTION, currencyCode)
+                .orElseThrow(() -> new BusinessException(
+                    "No active collection virtual account found for entity " +
+                    collectingEntity.getEntityCode() + " in " + currencyCode));
+
+            VibanResponse createdViban = vibanService.createViban(collectionVa.getProgramId(), VibanCreateRequest.builder()
+                .virtualAccountId(collectionVa.getId())
+                .vibanType(Viban.VibanType.TEMPORARY)
+                .referenceType("COBO")
+                .referenceId(transactionRef)
+                .expectedAmount(amount)
+                .singleUse(true)
+                .build());
+            viban = createdViban.getViban();
+            vibanId = createdViban.getId();
         }
         
         IntercompanyTransaction transaction = IntercompanyTransaction.builder()
