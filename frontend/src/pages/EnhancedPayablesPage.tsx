@@ -1,6 +1,6 @@
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { Select, StatusIconBadge } from '../components/ui';
+import { Select, StatusIconBadge, StatTile } from '../components/ui';
 /**
  * EnhancedPayablesPage.tsx - Phase 2 Complete Implementation
  * 
@@ -188,26 +188,13 @@ interface StatsProps {
 }
 
 const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
-  if (loading) {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} hover className="animate-fade-in" style={{ animationDelay: `${0.1 + i * 0.05}s` }}>
-            <div className="h-4 bg-neutral-200 rounded w-20 mb-2 animate-pulse dark:bg-primary-800" />
-            <div className="h-8 bg-neutral-200 rounded w-16 animate-pulse dark:bg-primary-800" />
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
   const statItems = [
-    { label: 'Total Payables', value: stats?.totalCount || 0, color: 'text-primary-600 dark:text-primary-200', iconBg: 'bg-primary-100 dark:bg-primary-700 text-primary-600 dark:text-primary-200', icon: FileText },
-    { label: 'Pending', value: stats?.pendingCount || 0, color: 'text-warning-600 dark:text-warning-300', iconBg: 'bg-warning-100 dark:bg-warning-50 dark:bg-warning-500/20 text-warning-600 dark:text-warning-300 dark:bg-warning-500/20', icon: Clock },
-    { label: 'Overdue', value: stats?.overdueCount || 0, color: 'text-error-600 dark:text-error-300', iconBg: 'bg-error-100 dark:bg-error-50 dark:bg-error-500/20 text-error-600 dark:text-error-300 dark:bg-error-500/20', icon: AlertTriangle },
-    { label: 'POBO', value: stats?.poboRequestedCount || 0, color: 'text-info-600 dark:text-info-300', iconBg: 'bg-info-100 dark:bg-info-50 dark:bg-info-500/20 text-info-600 dark:text-info-300 dark:bg-info-500/20', icon: Landmark },
-    { label: 'Intercompany', value: stats?.intercompanyCount || 0, color: 'text-accent-600 dark:text-accent-300', iconBg: 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300', icon: Building2 },
-    { label: 'In Netting', value: stats?.nettingIncludedCount || 0, color: 'text-success-600 dark:text-success-300', iconBg: 'bg-success-100 dark:bg-success-50 dark:bg-success-500/20 text-success-600 dark:text-success-300 dark:bg-success-500/20', icon: GitBranch },
+    { label: 'Total Payables', value: stats?.totalCount || 0, tone: 'primary' as const, icon: FileText },
+    { label: 'Pending', value: stats?.pendingCount || 0, tone: 'warning' as const, icon: Clock },
+    { label: 'Overdue', value: stats?.overdueCount || 0, tone: 'danger' as const, icon: AlertTriangle },
+    { label: 'POBO', value: stats?.poboRequestedCount || 0, tone: 'info' as const, icon: Landmark },
+    { label: 'Intercompany', value: stats?.intercompanyCount || 0, tone: 'accent' as const, icon: Building2 },
+    { label: 'In Netting', value: stats?.nettingIncludedCount || 0, tone: 'success' as const, icon: GitBranch },
   ];
 
   return (
@@ -215,17 +202,15 @@ const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
       {statItems.map((item, idx) => {
         const Icon = item.icon;
         return (
-          <Card key={idx} hover className="animate-fade-in" style={{ animationDelay: `${0.1 + idx * 0.05}s` }}>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="label">{item.label}</p>
-                <p className="stat-value-sm mt-1">{item.value}</p>
-              </div>
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", item.iconBg)}>
-                <Icon className="w-5 h-5" />
-              </div>
-            </div>
-          </Card>
+          <StatTile
+            key={idx}
+            tone={item.tone}
+            icon={<Icon className="w-5 h-5" />}
+            label={item.label}
+            value={item.value}
+            loading={loading}
+            delay={`${0.1 + idx * 0.05}s`}
+          />
         );
       })}
     </div>

@@ -23,6 +23,7 @@ import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
+import { Page } from '../components/layout/Page';
 import {
   iso20022Api,
   virtualAccountsApi,
@@ -98,7 +99,7 @@ export default function Iso20022PaymentsPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <Page>
       {/* Header */}
       <PageHeader
         title="ISO 20022 Payment Processing"
@@ -303,7 +304,7 @@ export default function Iso20022PaymentsPage() {
           </pre>
         </div>
       </Modal>
-    </div>
+    </Page>
   );
 }
 

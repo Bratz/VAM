@@ -42,7 +42,7 @@ import {
   Target,
   History,
 } from 'lucide-react';
-import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer } from '../components/ui';
+import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
 import { AllocationModal } from '../components/treasury/AllocationModal';
@@ -192,39 +192,18 @@ const SummaryCard: React.FC<{
   onClick?: () => void;
   isActive?: boolean;
   delay?: number;
-}> = ({ title, count, amount, icon: Icon, color, detail, onClick, isActive, delay = 0 }) => {
-  const colorMap = {
-    warning: { bg: 'bg-white dark:bg-primary-900', border: 'border-neutral-200 dark:border-primary-800', text: 'text-warning-600 dark:text-warning-300', iconBg: 'bg-warning-100 dark:bg-warning-500/20 text-warning-600 dark:text-warning-300', activeBorder: 'border-warning-500 ring-2 ring-warning-100 dark:ring-warning-500/20' },
-    info: { bg: 'bg-white dark:bg-primary-900', border: 'border-neutral-200 dark:border-primary-800', text: 'text-info-600 dark:text-info-300', iconBg: 'bg-info-100 dark:bg-info-500/20 text-info-600 dark:text-info-300', activeBorder: 'border-info-500 ring-2 ring-info-100 dark:ring-info-500/20' },
-    success: { bg: 'bg-white dark:bg-primary-900', border: 'border-neutral-200 dark:border-primary-800', text: 'text-success-600 dark:text-success-300', iconBg: 'bg-success-100 dark:bg-success-500/20 text-success-600 dark:text-success-300', activeBorder: 'border-success-500 ring-2 ring-success-100 dark:ring-success-500/20' },
-    neutral: { bg: 'bg-white dark:bg-primary-900', border: 'border-neutral-200 dark:border-primary-800', text: 'text-neutral-600 dark:text-neutral-300', iconBg: 'bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300', activeBorder: 'border-neutral-500 ring-2 ring-neutral-100 dark:ring-primary-800' },
-  };
-  const colors = colorMap[color];
-
-  return (
-    <Card
-      hover
-      className={cn(
-        'cursor-pointer transition-all animate-fade-in',
-        isActive && colors.activeBorder
-      )}
-      style={{ animationDelay: `${delay}s` }}
-      onClick={onClick}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{title}</p>
-          <p className="stat-value-sm mt-1">{count}</p>
-          <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{formatCurrency(amount, 'AED')}</p>
-          {detail && <p className={cn('text-xs mt-2', colors.text)}>{detail}</p>}
-        </div>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', colors.iconBg)}>
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-    </Card>
-  );
-};
+}> = ({ title, count, amount, icon: Icon, color, detail, onClick, isActive, delay = 0 }) => (
+  <StatTile
+    tone={color}
+    icon={<Icon className="w-5 h-5" />}
+    label={title}
+    value={count}
+    sub={detail ? `${formatCurrency(amount, 'AED')} · ${detail}` : formatCurrency(amount, 'AED')}
+    onClick={onClick}
+    active={isActive}
+    delay={`${delay}s`}
+  />
+);
 
 // ============================================================================
 // EXCEPTION ROW

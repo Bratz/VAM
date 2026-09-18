@@ -21,7 +21,7 @@ import {
   Building2, Landmark, Calculator, GitMerge,
   ThumbsUp, ThumbsDown, Play,
 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -203,6 +203,15 @@ const getNettingStatusBadge = (status: string) => {
 };
 
 // Stats Card Component
+const STAT_TONE_BY_COLOR: Record<'emerald' | 'amber' | 'rose' | 'blue' | 'purple' | 'indigo', 'success' | 'warning' | 'danger' | 'info' | 'accent' | 'primary'> = {
+  emerald: 'success',
+  amber: 'warning',
+  rose: 'danger',
+  blue: 'info',
+  purple: 'accent',
+  indigo: 'primary',
+};
+
 const StatsCard: React.FC<{
   title: string;
   value: string | number;
@@ -211,32 +220,16 @@ const StatsCard: React.FC<{
   trend?: { value: number; positive: boolean };
   color?: 'emerald' | 'amber' | 'rose' | 'blue' | 'purple' | 'indigo';
   delay?: number;
-}> = ({ title, value, subtitle, icon, trend, color = 'blue', delay = 0 }) => {
-  const colorClasses = {
-    emerald: 'bg-success-100 text-success-600 dark:bg-success-500/20 dark:text-success-300',
-    amber: 'bg-warning-100 text-warning-600 dark:bg-warning-500/20 dark:text-warning-300',
-    rose: 'bg-error-100 text-error-600 dark:bg-error-500/20 dark:text-error-300',
-    blue: 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300',
-    purple: 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300',
-    indigo: 'bg-primary-100 text-primary-600 dark:bg-primary-700 dark:text-primary-200',
-  };
-
+}> = ({ title, value, subtitle, icon, color = 'blue', delay = 0 }) => {
   return (
-    <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">{title}</p>
-          <p className="stat-value-sm mt-1">{value}</p>
-          {subtitle && <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{subtitle}</p>}
-          {trend && (
-            <div className={cn('flex items-center gap-1 text-xs mt-1', trend.positive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-              <span>{trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%</span>
-            </div>
-          )}
-        </div>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', colorClasses[color])}>{icon}</div>
-      </div>
-    </Card>
+    <StatTile
+      tone={STAT_TONE_BY_COLOR[color]}
+      icon={icon}
+      label={title}
+      value={value}
+      sub={subtitle}
+      delay={`${delay}s`}
+    />
   );
 };
 

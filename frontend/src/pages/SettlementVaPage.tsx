@@ -11,7 +11,7 @@ import {
   FolderTree, GitBranch, CreditCard, Wallet, Shield, Banknote, Hash,
   CheckCircle, XCircle, Trash2, ChevronDown,
 } from 'lucide-react';
-import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer } from '../components/ui';
+import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, Tabs } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -136,42 +136,35 @@ const SettlementVaCard: React.FC<{ va: SettlementVa; onView: (va: SettlementVa) 
 
 const SummaryStats: React.FC<{ data: SettlementVaListResponse; currency: string }> = ({ data, currency }) => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-    <Card hover className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">Settlement VAs</p>
-          <p className="stat-value-sm mt-1">{data.summary.totalSettlementVas}</p>
-        </div>
-        <StatusIconBadge tone="accent" icon={Scale} className="dark:bg-accent-500/20" />
-      </div>
-    </Card>
-    <Card hover className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">Settlement Balance</p>
-          <p className="stat-value-sm mt-1 text-success-600 dark:text-success-300">{formatCurrency(data.summary.totalSettlementBalance || 0, currency)}</p>
-        </div>
-        <StatusIconBadge tone="success" icon={DollarSign} className="dark:bg-success-500/20" />
-      </div>
-    </Card>
-    <Card hover className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">Exception VAs</p>
-          <p className="stat-value-sm mt-1">{data.summary.totalExceptionVas}</p>
-        </div>
-        <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
-      </div>
-    </Card>
-    <Card hover className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="label">Exception Balance</p>
-          <p className="stat-value-sm mt-1 text-error-600 dark:text-error-300">{formatCurrency(data.summary.totalExceptionBalance || 0, currency)}</p>
-        </div>
-        <StatusIconBadge tone="error" icon={Clock} className="dark:bg-error-500/20" />
-      </div>
-    </Card>
+    <StatTile
+      tone="accent"
+      icon={<Scale className="w-5 h-5" />}
+      label="Settlement VAs"
+      value={data.summary.totalSettlementVas}
+      delay="0.15s"
+    />
+    <StatTile
+      tone="success"
+      icon={<DollarSign className="w-5 h-5" />}
+      label="Settlement Balance"
+      value={formatCurrency(data.summary.totalSettlementBalance || 0, currency)}
+      delay="0.2s"
+    />
+    <StatTile
+      tone="warning"
+      valueTone="neutral"
+      icon={<AlertTriangle className="w-5 h-5" />}
+      label="Exception VAs"
+      value={data.summary.totalExceptionVas}
+      delay="0.25s"
+    />
+    <StatTile
+      tone="danger"
+      icon={<Clock className="w-5 h-5" />}
+      label="Exception Balance"
+      value={formatCurrency(data.summary.totalExceptionBalance || 0, currency)}
+      delay="0.3s"
+    />
   </div>
 );
 
