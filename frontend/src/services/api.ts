@@ -951,6 +951,7 @@ export interface PaymentPreviewResponse {
 }
 
 export interface TransactionSearchParams {
+  corporateId?: string;
   query?: string;
   movementType?: string;
   status?: string;
@@ -977,15 +978,17 @@ export const transactionsApi = {
   getByReference: (ref: string) =>
     apiClient.get<ApiResponse<TransactionDetail>>(`/transactions/reference/${ref}`).then(r => r.data),
 
+  // corporateId goes as a query param, not an X-Corporate-Id header: TransactionController
+  // reads @RequestParam UUID corporateId and never looks at the header, so the header
+  // version silently returned platform-wide data for a "scoped" call.
   getRecent: (limit = 10, corporateId?: string) =>
     apiClient.get<ApiResponse<Transaction[]>>('/transactions/recent', {
-      params: { limit },
-      headers: corporateId ? { 'X-Corporate-Id': corporateId } : undefined
+      params: { limit, ...(corporateId ? { corporateId } : {}) },
     }).then(r => r.data),
 
   getStats: (corporateId?: string) =>
     apiClient.get<ApiResponse<TransactionStats>>('/transactions/stats', {
-      headers: corporateId ? { 'X-Corporate-Id': corporateId } : undefined
+      params: corporateId ? { corporateId } : undefined,
     }).then(r => r.data),
 
   // VA-specific

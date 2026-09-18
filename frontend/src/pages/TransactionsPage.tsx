@@ -38,12 +38,14 @@ import {
   transactionsApi,
   virtualAccountsApi,
   vibanApi,
+  corporatesApi,
   type Transaction,
   type TransactionStats,
   type GroupedTransaction,
 } from '../services/api';
 import { isCredit, isDebit, getAmountColorClass, getMovementBgClass } from '../utils/transactionUtils';
 import { Page } from '../components/layout/Page';
+import { ScopeSelector, type ScopeCorporate } from '../components/layout/ScopeSelector';
 
 // ============================================================================
 // DEMO DATA (Fallback)
@@ -1479,14 +1481,28 @@ const TransactionsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped'); // Default to grouped
   const [groupedTransactions, setGroupedTransactions] = useState<GroupedTransaction[]>([]);
 
+  // Corporate scope. Empty = "All Corporates" (platform-wide, same as before the picker existed).
+  const [corporates, setCorporates] = useState<ScopeCorporate[]>([]);
+  const [selectedCorporateId, setSelectedCorporateId] = useState('');
+  const [loadingCorporates, setLoadingCorporates] = useState(true);
+
+  useEffect(() => {
+    corporatesApi.getAll()
+      .then((res) => { if (res.success) setCorporates(res.data as unknown as ScopeCorporate[]); })
+      .catch(() => {})
+      .finally(() => setLoadingCorporates(false));
+  }, []);
+
   const pageSize = 10;
 
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      const corporateId = selectedCorporateId || undefined;
+
       // Fetch stats
-      const statsRes = await transactionsApi.getStats();
+      const statsRes = await transactionsApi.getStats(corporateId);
       if (statsRes.success && statsRes.data) {
         setStats(statsRes.data);
       } else {
@@ -1512,6 +1528,7 @@ const TransactionsPage: React.FC = () => {
         // Fetch grouped transactions
         try {
           const groupedRes = await transactionsApi.getGrouped({
+            corporateId,
             direction: direction,
             page: currentPage,
             pageSize,
@@ -1533,6 +1550,7 @@ const TransactionsPage: React.FC = () => {
 
       // Always fetch individual transactions (for fallback and stats)
       const txnRes = await transactionsApi.getAll({
+        corporateId,
         page: currentPage,
         pageSize,
         query: searchQuery || undefined,
@@ -1564,11 +1582,18 @@ const TransactionsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, activeTab, filters, viewMode]);
+  }, [currentPage, searchQuery, activeTab, filters, viewMode, selectedCorporateId]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Changing corporate scope invalidates the current page number (page 7 of "All
+  // Corporates" may not exist for a single corporate).
+  const handleCorporateChange = (id: string) => {
+    setSelectedCorporateId(id);
+    setCurrentPage(0);
+  };
 
   // Handle new transaction
   const handleNewTransaction = async (type: 'credit' | 'debit' | 'transfer', data: any) => {
@@ -1896,6 +1921,15 @@ const TransactionsPage: React.FC = () => {
           New Transaction
         </Button>
       </div>
+
+      {/* Corporate scope */}
+      <ScopeSelector
+        mode="corporate-only"
+        corporates={corporates}
+        selectedCorporateId={selectedCorporateId}
+        onCorporateChange={handleCorporateChange}
+        loading={loadingCorporates}
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
