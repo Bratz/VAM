@@ -1735,6 +1735,22 @@ export const receivablesApi = {
   },
   recordPayment: (id: string, data: any) => apiClient.post<ApiResponse<any>>(`/receivables/${id}/record-payment`, data).then(r => r.data),
   getStats: (corporateId?: string) => apiClient.get<ApiResponse<any>>('/receivables/stats', { params: { corporateId } }).then(r => r.data),
+
+  // Payment VIBANs -- real VIBANs issued via VibanService, linked to a receivable
+  getPaymentVibans: (corporateId?: string, status?: string) =>
+    apiClient.get<ApiResponse<any[]>>('/receivables/vibans', {
+      headers: corporateId ? { 'X-Corporate-Id': corporateId } : undefined,
+      params: { status },
+    }).then(r => r.data),
+  createPaymentViban: (data: {
+    receivableId?: string; customerName?: string; expectedAmount?: number; currency?: string;
+    purpose?: string; expiresInHours?: number; virtualAccountId?: string; programId?: string;
+  }, corporateId?: string) =>
+    apiClient.post<ApiResponse<any>>('/receivables/vibans', data, {
+      headers: corporateId ? { 'X-Corporate-Id': corporateId } : undefined,
+    }).then(r => r.data),
+  cancelPaymentViban: (vibanId: string) =>
+    apiClient.post<ApiResponse<any>>(`/receivables/vibans/${vibanId}/cancel`).then(r => r.data),
 };
 
 // ============================================================================

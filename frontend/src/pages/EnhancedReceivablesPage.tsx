@@ -25,7 +25,8 @@ import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { formatCurrency, formatDate, cn } from '../utils';
-import { 
+import {
+  receivablesApi,
   receivablesApiPhase3,
   corporatesApi,
   programsApi,
@@ -146,24 +147,6 @@ interface CoboPreview {
     estimatedMonthlyInterest: number;
   };
 }
-
-// ============================================================================
-// MOCK API - vibanApi not yet available
-// ============================================================================
-
-const mockVibanApi = {
-  getAll: async () => ({
-    success: true,
-    data: [
-      { id: '1', virtualIban: 'AE07NBAD00010010123456', reference: 'INV-2024-001', customerName: 'Acme Corp', expectedAmount: 50000, receivedAmount: 0, currency: 'AED', status: 'ACTIVE' as const, createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(), purpose: 'Invoice Payment', invoiceId: '1' },
-      { id: '2', virtualIban: 'AE15NBAD00010010789012', reference: 'INV-2024-002', customerName: 'Global Ltd', expectedAmount: 75000, receivedAmount: 75000, currency: 'AED', status: 'PAID' as const, createdAt: new Date(Date.now() - 7*24*60*60*1000).toISOString(), expiresAt: new Date(Date.now() + 23*24*60*60*1000).toISOString(), purpose: 'Project Payment', invoiceId: '2' },
-    ]
-  }),
-  generate: async (invoiceId: string) => ({
-    success: true,
-    data: { virtualIban: 'AE' + Math.random().toString().slice(2, 24), invoiceId, status: 'ACTIVE' }
-  })
-};
 
 // ============================================================================
 // STATUS CONFIGURATIONS
@@ -811,9 +794,22 @@ const EnhancedReceivablesPage: React.FC = () => {
       });
 
       // Fetch VIBANs
-      const vibanResponse = await mockVibanApi.getAll();
+      const vibanResponse = await receivablesApi.getPaymentVibans(selectedCorporateId || undefined);
       if (vibanResponse.success && vibanResponse.data) {
-        setVibans(vibanResponse.data);
+        setVibans(vibanResponse.data.map((v: any) => ({
+          id: v.id,
+          virtualIban: v.virtualIban,
+          reference: v.reference,
+          customerName: v.customerName,
+          expectedAmount: v.expectedAmount,
+          receivedAmount: v.receivedAmount,
+          currency: v.currency,
+          status: v.status as VibanRecord['status'],
+          createdAt: v.createdAt,
+          expiresAt: v.expiresAt,
+          purpose: v.purpose,
+          invoiceId: v.linkedReceivableId,
+        })));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load receivables');
@@ -988,10 +984,19 @@ const EnhancedReceivablesPage: React.FC = () => {
   const handleGenerateViban = async (invoice: InvoicePhase3) => {
     setProcessing(true);
     try {
-      await mockVibanApi.generate(invoice.id);
+      await receivablesApi.createPaymentViban({
+        receivableId: invoice.id,
+        customerName: invoice.customerName,
+        expectedAmount: invoice.outstandingAmount,
+        currency: invoice.currencyCode,
+        purpose: 'Invoice Payment',
+      }, selectedCorporateId || undefined);
       await fetchData();
     } catch (err: any) {
-      setError(err.message || 'Failed to generate VIBAN');
+      // Unlike the mock this replaced, this call can genuinely fail (e.g. no collection VA
+      // on the receivable) -- err.message alone is just Axios's generic "Request failed with
+      // status code 400", not the real reason the backend gave.
+      setError(err?.response?.data?.message || err.message || 'Failed to generate VIBAN');
     } finally {
       setProcessing(false);
     }

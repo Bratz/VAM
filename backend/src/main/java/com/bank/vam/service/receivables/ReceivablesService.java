@@ -14,6 +14,7 @@ import com.bank.vam.entity.treasury.ExceptionTransaction.ExceptionType;
 import com.bank.vam.entity.treasury.ExceptionTransaction.ExceptionStatus;
 import com.bank.vam.entity.viban.Viban;
 import com.bank.vam.dto.viban.VibanDto.VibanResponse;
+import com.bank.vam.dto.viban.VibanDto.VibanCreateRequest;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.CorporateRepository;
@@ -1496,57 +1497,145 @@ public class ReceivablesService {
     // PAYMENT VIBANS (Existing - Preserved for backward compatibility)
     // ========================================================================
 
+    /**
+     * A "Payment VIBAN" is just an invoice-linked {@link Viban} -- the same real VIBAN a
+     * receivable gets at creation time via {@code createInvoice}'s generateViban flag. Listed
+     * here by walking the corporate's receivables rather than querying vibanRepository directly,
+     * since Viban itself carries no corporateId (only virtualAccountId) and Receivable already
+     * has the corporate-scoped lookup this method needs.
+     */
     public List<PaymentVibanResponse> getAllPaymentVibans(UUID corporateId, String status) {
-        List<PaymentVibanResponse> vibans = buildDemoPaymentVibans();
-        
-        if (status != null && !status.isEmpty() && !"all".equals(status)) {
+        List<Receivable> receivables = corporateId != null
+            ? receivableRepository.findByCorporateId(corporateId)
+            : receivableRepository.findAll();
+
+        List<PaymentVibanResponse> vibans = receivables.stream()
+            .filter(r -> r.getPrimaryVibanId() != null)
+            .map(r -> vibanRepository.findById(r.getPrimaryVibanId()).map(v -> toPaymentVibanResponse(v, r)))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+
+        if (status != null && !status.isEmpty() && !"all".equalsIgnoreCase(status)) {
             vibans = vibans.stream()
                 .filter(v -> status.equalsIgnoreCase(v.getStatus()))
                 .collect(Collectors.toList());
         }
-        
+
         return vibans;
     }
 
+    /**
+     * Issues a real VIBAN via VibanService against either the explicitly given
+     * virtualAccountId, or -- for the common case of "generate a VIBAN for this receivable" --
+     * the receivable's own collection VA. Never fabricates one: with neither a usable VA nor a
+     * receivable to resolve one from, this fails loudly instead of returning a string nobody
+     * could ever pay into.
+     */
+    @Transactional
     public PaymentVibanResponse createPaymentViban(UUID corporateId, CreatePaymentVibanRequest request) {
-        String viban = "AE150410CORP" + String.format("%011d", System.currentTimeMillis() % 100000000000L);
-        String reference = "VIBAN-" + LocalDate.now().getYear() + "-" + String.format("%03d", System.currentTimeMillis() % 1000);
-        
+        Receivable receivable = request.getReceivableId() != null
+            ? receivableRepository.findById(request.getReceivableId())
+                .orElseThrow(() -> new ResourceNotFoundException("Receivable not found: " + request.getReceivableId()))
+            : null;
+
+        UUID virtualAccountId = request.getVirtualAccountId() != null
+            ? request.getVirtualAccountId()
+            : (receivable != null ? receivable.getVirtualAccountId() : null);
+        if (virtualAccountId == null) {
+            throw new BusinessException(receivable != null
+                ? "Receivable " + receivable.getReceivableNumber() + " has no collection Virtual Account assigned -- cannot generate a VIBAN against it."
+                : "A virtualAccountId or a receivableId with a collection VA is required to generate a VIBAN.");
+        }
+
+        VirtualAccount va = virtualAccountRepository.findById(virtualAccountId)
+            .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + virtualAccountId));
+        UUID programId = request.getProgramId() != null ? request.getProgramId() : va.getProgramId();
+
         int expiresInHours = request.getExpiresInHours() != null ? request.getExpiresInHours() : 168;
-        
-        return PaymentVibanResponse.builder()
-            .id(UUID.randomUUID())
-            .virtualIban(viban)
-            .reference(reference)
-            .customerName(request.getCustomerName())
+
+        // Reuse the receivable's existing pay-invoice link if it already has one, rather than
+        // fabricating a second, unrelated URL for the same invoice.
+        String paymentLink = null;
+        if (receivable != null) {
+            if (receivable.getPaymentLinkToken() == null) {
+                receivable.setPaymentLinkToken(UUID.randomUUID().toString());
+                receivable = receivableRepository.save(receivable);
+            }
+            paymentLink = frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken();
+        }
+
+        VibanResponse created = vibanService.createViban(programId, VibanCreateRequest.builder()
+            .virtualAccountId(virtualAccountId)
+            .vibanType(Viban.VibanType.INVOICE)
+            .referenceType(receivable != null ? Viban.REF_TYPE_INVOICE : request.getReceivableType())
+            .referenceId(receivable != null ? receivable.getId().toString() : null)
             .expectedAmount(request.getExpectedAmount())
-            .receivedAmount(BigDecimal.ZERO)
-            .currency(request.getCurrency())
-            .status("ACTIVE")
-            .createdAt(LocalDateTime.now())
-            .expiresAt(LocalDateTime.now().plusHours(expiresInHours))
+            .amountTolerancePercent(request.getAmountTolerancePercent())
+            .minAmount(request.getMinAmount())
+            .maxAmount(request.getMaxAmount())
+            .currencyCode(request.getCurrency())
+            .validUntil(LocalDateTime.now().plusHours(expiresInHours))
+            .singleUse(false)
+            .customerName(request.getCustomerName())
             .purpose(request.getPurpose())
-            .paymentLink("https://pay.bank.com/v/" + viban.substring(viban.length() - 8))
-            .linkedReceivableId(request.getReceivableId())
-            .autoReconcile(request.getAutoReconcile())
-            .build();
+            .build());
+
+        if (receivable != null) {
+            receivable.setPrimaryVibanId(created.getId());
+            receivable.setViban(created.getViban());
+            receivableRepository.save(receivable);
+        }
+
+        return toPaymentVibanResponse(created, paymentLink, receivable);
     }
 
     public PaymentVibanResponse cancelPaymentViban(UUID vibanId) {
-        PaymentVibanResponse viban = buildDemoPaymentVibans().get(1);
+        VibanResponse cancelled = vibanService.updateStatus(vibanId, Viban.STATUS_CANCELLED);
+        Receivable receivable = receivableRepository.findByPrimaryVibanId(vibanId).orElse(null);
+        return toPaymentVibanResponse(cancelled, null, receivable);
+    }
+
+    private PaymentVibanResponse toPaymentVibanResponse(Viban v, Receivable r) {
+        String paymentLink = r != null && r.getPaymentLinkToken() != null
+            ? frontendBaseUrl + "/?page=pay-invoice&token=" + r.getPaymentLinkToken()
+            : null;
         return PaymentVibanResponse.builder()
-            .id(vibanId)
-            .virtualIban(viban.getVirtualIban())
-            .reference(viban.getReference())
-            .customerName(viban.getCustomerName())
-            .expectedAmount(viban.getExpectedAmount())
-            .receivedAmount(viban.getReceivedAmount())
-            .currency(viban.getCurrency())
-            .status("CANCELLED")
-            .createdAt(viban.getCreatedAt())
-            .expiresAt(viban.getExpiresAt())
-            .purpose(viban.getPurpose())
-            .paymentLink(null)
+            .id(v.getId())
+            .virtualIban(v.getViban())
+            .reference(r != null ? r.getReceivableNumber() : v.getReferenceId())
+            .customerName(v.getCustomerName())
+            .expectedAmount(v.getExpectedAmount())
+            .receivedAmount(v.getTotalAmountReceived() != null ? v.getTotalAmountReceived() : BigDecimal.ZERO)
+            .currency(v.getCurrencyCode())
+            .status(v.getStatus())
+            .createdAt(v.getCreatedAt())
+            .expiresAt(v.getValidUntil())
+            .purpose(v.getPurpose())
+            .paymentLink(paymentLink)
+            .linkedReceivableId(r != null ? r.getId() : null)
+            .linkedReceivableNumber(r != null ? r.getReceivableNumber() : null)
+            .autoReconcile(r != null ? r.getAutoReconcile() : null)
+            .build();
+    }
+
+    private PaymentVibanResponse toPaymentVibanResponse(VibanResponse v, String paymentLink, Receivable r) {
+        return PaymentVibanResponse.builder()
+            .id(v.getId())
+            .virtualIban(v.getViban())
+            .reference(r != null ? r.getReceivableNumber() : v.getReferenceId())
+            .customerName(v.getCustomerName())
+            .expectedAmount(v.getExpectedAmount())
+            .receivedAmount(v.getTotalAmountReceived() != null ? v.getTotalAmountReceived() : BigDecimal.ZERO)
+            .currency(v.getCurrencyCode())
+            .status(v.getStatus())
+            .createdAt(v.getCreatedAt())
+            .expiresAt(v.getValidUntil())
+            .purpose(v.getPurpose())
+            .paymentLink(paymentLink)
+            .linkedReceivableId(r != null ? r.getId() : null)
+            .linkedReceivableNumber(r != null ? r.getReceivableNumber() : null)
+            .autoReconcile(r != null ? r.getAutoReconcile() : null)
             .build();
     }
 
@@ -1885,56 +1974,6 @@ public class ReceivablesService {
                 .paymentReceivedAt(LocalDateTime.of(2024, 2, 11, 16, 50))
                 .deliveredAt(LocalDateTime.of(2024, 2, 12, 10, 0))
                 .releasedAt(null)
-                .build()
-        );
-    }
-
-    private List<PaymentVibanResponse> buildDemoPaymentVibans() {
-        return Arrays.asList(
-            PaymentVibanResponse.builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000021"))
-                .virtualIban("AE150410CORP00001234567")
-                .reference("VIBAN-2024-001")
-                .customerName("Al Futtaim Group")
-                .expectedAmount(BigDecimal.valueOf(75000))
-                .receivedAmount(BigDecimal.valueOf(75000))
-                .currency("AED")
-                .status("PAID")
-                .createdAt(LocalDateTime.of(2024, 2, 10, 8, 0))
-                .expiresAt(LocalDateTime.of(2024, 2, 17, 8, 0))
-                .purpose("Q1 Subscription Payment")
-                .paymentLink("https://pay.bank.com/v/1234567")
-                .autoReconcile(true)
-                .build(),
-            PaymentVibanResponse.builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000022"))
-                .virtualIban("AE150410CORP00001234568")
-                .reference("VIBAN-2024-002")
-                .customerName("Majid Al Futtaim")
-                .expectedAmount(BigDecimal.valueOf(120000))
-                .receivedAmount(BigDecimal.ZERO)
-                .currency("AED")
-                .status("ACTIVE")
-                .createdAt(LocalDateTime.of(2024, 2, 12, 10, 0))
-                .expiresAt(LocalDateTime.now().plusDays(5))
-                .purpose("Service Agreement Payment")
-                .paymentLink("https://pay.bank.com/v/1234568")
-                .autoReconcile(true)
-                .build(),
-            PaymentVibanResponse.builder()
-                .id(UUID.fromString("00000000-0000-0000-0000-000000000023"))
-                .virtualIban("AE150410CORP00001234569")
-                .reference("VIBAN-2024-003")
-                .customerName("Dubai Holdings")
-                .expectedAmount(BigDecimal.valueOf(250000))
-                .receivedAmount(BigDecimal.ZERO)
-                .currency("AED")
-                .status("EXPIRED")
-                .createdAt(LocalDateTime.of(2024, 2, 1, 9, 0))
-                .expiresAt(LocalDateTime.of(2024, 2, 8, 9, 0))
-                .purpose("Project Milestone Payment")
-                .paymentLink(null)
-                .autoReconcile(false)
                 .build()
         );
     }
