@@ -223,9 +223,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
      * Get distinct correlation IDs for a VA, ordered by most recent transaction date.
      * Used to paginate grouped business transactions.
      */
-    @Query("SELECT DISTINCT t.correlationId FROM Transaction t " +
+    // GROUP BY (not DISTINCT): Postgres rejects SELECT DISTINCT with an ORDER BY aggregate
+    // that isn't in the select list, and the aggregate needs the GROUP BY anyway.
+    @Query("SELECT t.correlationId FROM Transaction t " +
            "WHERE t.vaId = :vaId AND t.correlationId IS NOT NULL " +
-           "ORDER BY MAX(t.transactionDate) DESC")
+           "GROUP BY t.correlationId ORDER BY MAX(t.transactionDate) DESC")
     List<String> findDistinctCorrelationIdsByVaId(@Param("vaId") UUID vaId, Pageable pageable);
 
     /**
@@ -248,7 +250,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     /**
      * Get distinct correlation IDs for corporate with pagination.
      */
-    @Query("SELECT DISTINCT t.correlationId FROM Transaction t " +
+    @Query("SELECT t.correlationId FROM Transaction t " +
            "WHERE t.corporateId = :corporateId AND t.correlationId IS NOT NULL " +
            "GROUP BY t.correlationId ORDER BY MAX(t.transactionDate) DESC")
     List<String> findDistinctCorrelationIdsByCorporateId(
