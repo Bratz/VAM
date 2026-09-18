@@ -246,8 +246,12 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
   const [activeTab, setActiveTab] = useState<'details' | 'accounting'>('details');
   const [groupedData, setGroupedData] = useState<GroupedTransaction | null>(null);
   const [loadingEntries, setLoadingEntries] = useState(false);
+  // Off by default: bank-internal Shadow VA / Settlement VA legs are noise for
+  // the corporate's day-to-day view. On demand only, for reconciliation/audit.
+  const [showInternalAccounts, setShowInternalAccounts] = useState(false);
 
-  // Fetch grouped transaction data when modal opens and transaction has correlationId
+  // Fetch grouped transaction data when modal opens, transaction has correlationId,
+  // or the "show internal accounts" toggle changes.
   useEffect(() => {
     const fetchGroupedData = async () => {
       if (!transaction?.correlationId) {
@@ -259,7 +263,8 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
       try {
         const response = await transactionsApi.getGroupedByCorrelationId(
           transaction.correlationId,
-          transaction.vaId
+          transaction.vaId,
+          showInternalAccounts
         );
         if (response.data) {
           setGroupedData(response.data);
@@ -275,7 +280,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
     if (transaction) {
       fetchGroupedData();
     }
-  }, [transaction]);
+  }, [transaction, showInternalAccounts]);
 
   if (!transaction) return null;
 
@@ -347,7 +352,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
           </p>
         </div>
 
-        {/* Tab Navigation - only show if there are accounting entries */}
+        {/* Tab Navigation - only show if fund movement detail is available */}
         {hasAccountingEntries && (
           <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg dark:bg-primary-800">
             <button
@@ -372,7 +377,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               )}
             >
               <Layers className="w-4 h-4 inline mr-2" />
-              Accounting Entries
+              Fund Movements
               {groupedData?.entryCount && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-neutral-200 rounded-full dark:bg-primary-800">
                   {groupedData.entryCount}
@@ -436,9 +441,25 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
           </div>
         )}
 
-        {/* Accounting Entries Tab Content */}
+        {/* Fund Movements Tab Content */}
         {activeTab === 'accounting' && (
           <div className="space-y-4">
+            {/* Show internal accounts toggle — off by default; bank-internal
+                Shadow VA / Settlement VA legs are noise for day-to-day use,
+                but reconciliation/audit needs the full picture on demand. */}
+            <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">Show internal settlement accounts</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showInternalAccounts}
+                  onChange={(e) => setShowInternalAccounts(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-info-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all dark:bg-primary-800" />
+              </label>
+            </div>
+
             {loadingEntries ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
@@ -474,7 +495,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                     <div className="flex items-center gap-2">
                       <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
                       <span className="text-sm font-medium text-info-900">
-                        Multi-Leg Transaction • {groupedData.operationType.replace(/_/g, ' ')}
+                        Fund Movement • {groupedData.operationType.replace(/_/g, ' ')}
                       </span>
                     </div>
                     <Badge variant={groupedData.direction === 'INBOUND' ? 'success' : groupedData.direction === 'OUTBOUND' ? 'error' : 'neutral'}>
@@ -482,12 +503,11 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                     </Badge>
                   </div>
                   <p className="text-xs text-info-700 dark:text-info-300">
-                    This transaction is part of a {groupedData.entryCount}-leg accounting operation.
-                    Each leg represents a balance movement in the virtual account structure.
+                    This transaction involved {groupedData.entryCount} fund {groupedData.entryCount === 1 ? 'movement' : 'movements'} across your account structure.
                   </p>
                 </div>
 
-                {/* Accounting Entries List */}
+                {/* Fund Movements List */}
                 <div className="space-y-3">
                   {groupedData.accountingEntries.map((entry) => {
                     const entryIsCredit = entry.movementType.includes('CREDIT') ||
@@ -576,13 +596,21 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
                 {!!groupedData?.feeAmount && groupedData.feeAmount > 0 ? (
                   <>
-                    <p className="font-medium">No entries on your operating accounts</p>
-                    <p className="text-sm mt-1">This fee was processed entirely through internal settlement accounts.</p>
+                    <p className="font-medium">No movements on your accounts</p>
+                    <p className="text-sm mt-1">
+                      {showInternalAccounts
+                        ? 'This fee was processed entirely through internal settlement accounts.'
+                        : 'This fee was processed through internal settlement accounts — switch on "Show internal settlement accounts" above to see them.'}
+                    </p>
                   </>
                 ) : (
                   <>
-                    <p className="font-medium">No accounting entries found</p>
-                    <p className="text-sm mt-1">This transaction may not be part of a multi-leg operation</p>
+                    <p className="font-medium">No fund movements to show</p>
+                    <p className="text-sm mt-1">
+                      {showInternalAccounts
+                        ? "This transaction didn't involve any other fund movements."
+                        : 'This transaction only moved funds through internal settlement accounts — switch on "Show internal settlement accounts" above to see them.'}
+                    </p>
                   </>
                 )}
               </div>
@@ -1753,7 +1781,7 @@ const TransactionsPage: React.FC = () => {
               <OperationTypeBadge type={t.operationType} />
             </div>
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              {t.entryCount} accounting {t.entryCount === 1 ? 'entry' : 'entries'}
+              {t.entryCount} fund {t.entryCount === 1 ? 'movement' : 'movements'}
             </p>
           </div>
         </div>
@@ -1955,7 +1983,7 @@ const TransactionsPage: React.FC = () => {
                       : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
                   )}
                   onClick={() => { setViewMode('grouped'); setCurrentPage(0); }}
-                  title="Business View - Groups multi-leg transactions"
+                  title="Business View - Groups related fund movements into one transaction"
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Business</span>
@@ -1992,8 +2020,8 @@ const TransactionsPage: React.FC = () => {
           <div className="mx-4 mt-4 flex items-start gap-2 p-3 bg-info-50 border border-info-100 rounded-xl dark:bg-info-500/10 dark:border-info-500/30">
             <Info className="w-4 h-4 text-info-600 shrink-0 mt-0.5 dark:text-info-300" />
             <div className="text-xs text-info-800 dark:text-info-300">
-              <span className="font-medium">Business View:</span> Multi-leg accounting entries are grouped into single business transactions.
-              Click a row to view all accounting entries.
+              <span className="font-medium">Business View:</span> Related fund movements are grouped into a single business transaction.
+              Click a row to see the full breakdown.
             </div>
           </div>
         )}

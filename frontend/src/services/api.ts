@@ -1049,10 +1049,12 @@ export const transactionsApi = {
 
   /**
    * Get a single grouped transaction with all accounting entries.
+   * includeInternal=true also returns Shadow VA / Settlement VA legs
+   * (bank-internal plumbing, hidden by default from the corporate view).
    */
-  getGroupedByCorrelationId: (correlationId: string, userVaId?: string) =>
+  getGroupedByCorrelationId: (correlationId: string, userVaId?: string, includeInternal?: boolean) =>
     apiClient.get<ApiResponse<GroupedTransaction>>(`/transactions/grouped/${correlationId}`, {
-      params: userVaId ? { userVaId } : undefined
+      params: { ...(userVaId ? { userVaId } : {}), ...(includeInternal ? { includeInternal } : {}) }
     }).then(r => r.data),
 };
 
