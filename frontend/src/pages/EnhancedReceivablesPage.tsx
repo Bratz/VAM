@@ -708,6 +708,14 @@ const EnhancedReceivablesPage: React.FC = () => {
         }
         if (selectedEntityId) {
           headers['X-Legal-Entity-Id'] = selectedEntityId;
+        } else {
+          // This page has its own "All Entities" selector -- without this
+          // marker, the global axios interceptor silently backfills
+          // X-Legal-Entity-Id from whatever entity another page's picker
+          // last cached in localStorage, re-scoping "All Entities" down to
+          // one entity's invoices (same bug the marker already fixes for
+          // payablesApiPhase2.search()/getStats() in services/api.ts).
+          headers['X-No-Entity-Scope'] = '1';
         }
         console.log('Fetching invoices with headers:', headers);
 
