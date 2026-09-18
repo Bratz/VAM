@@ -1597,7 +1597,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'customerName',
                       header: 'Customer',
                       render: (_, viban) => (
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{viban.customerName}</span>
+                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{viban.customerName || '—'}</span>
                       ),
                     },
                     {
@@ -1632,7 +1632,11 @@ const EnhancedReceivablesPage: React.FC = () => {
                     {
                       key: 'expiresAt',
                       header: 'Expires',
-                      render: (_, viban) => <span className="text-sm">{formatDate(viban.expiresAt)}</span>,
+                      render: (_, viban) => (
+                        <span className="text-sm">
+                          {viban.expiresAt ? formatDate(viban.expiresAt) : <span className="text-neutral-400 dark:text-neutral-500">No expiry</span>}
+                        </span>
+                      ),
                     },
                   ]}
                 />

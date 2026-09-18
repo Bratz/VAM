@@ -392,9 +392,22 @@ public class ReceivablesService {
             }
             VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetVaId())
                     .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + request.getTargetVaId()));
-            VibanResponse createdViban = vibanService.createInvoiceViban(
-                    targetVa.getProgramId(), targetVa.getId(), savedReceivable.getId().toString(), request.getAmount(),
-                    request.getDueDate() != null ? request.getDueDate().atStartOfDay() : null);
+            // Not vibanService.createInvoiceViban() -- that helper's fixed parameter list has no
+            // room for customerName, which left every invoice-created VIBAN showing a blank
+            // customer in the VIBANs tab. validUntil also falls back to 30 days out rather than
+            // null when the invoice has no due date, so the tab doesn't show "Invalid Date".
+            VibanResponse createdViban = vibanService.createViban(targetVa.getProgramId(), VibanCreateRequest.builder()
+                    .virtualAccountId(targetVa.getId())
+                    .vibanType(Viban.VibanType.INVOICE)
+                    .referenceType(Viban.REF_TYPE_INVOICE)
+                    .referenceId(savedReceivable.getId().toString())
+                    .expectedAmount(request.getAmount())
+                    .currencyCode(savedReceivable.getCurrencyCode())
+                    .validUntil(request.getDueDate() != null
+                        ? request.getDueDate().atStartOfDay() : LocalDateTime.now().plusDays(30))
+                    .singleUse(false)
+                    .customerName(savedReceivable.getCustomerName())
+                    .build());
             vibanNumber = createdViban.getViban();
             vibanId = createdViban.getId();
             log.info("Generated real VIBAN {} for invoice {}", vibanNumber, invoiceNumber);
