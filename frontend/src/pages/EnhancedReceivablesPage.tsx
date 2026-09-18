@@ -18,7 +18,7 @@ import {
   Search, Download, RefreshCw, AlertCircle,
   Clock, ArrowDownLeft, FileText, Eye, X,
   AlertTriangle, Copy, Plus, QrCode, Loader2, 
-  Building2, Landmark, Calculator, Edit2, GitMerge, Layers,
+  Building2, Landmark, Calculator, GitMerge, Layers,
   ThumbsUp, ThumbsDown, Play,
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
@@ -628,6 +628,7 @@ const EnhancedReceivablesPage: React.FC = () => {
   // Treasury Approval Modal state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalInvoice, setApprovalInvoice] = useState<InvoicePhase3 | null>(null);
+  const [viewInvoice, setViewInvoice] = useState<InvoicePhase3 | null>(null);
   const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | 'execute' | null>(null);
   const [approvalLoading, setApprovalLoading] = useState(false);
 
@@ -999,12 +1000,8 @@ const EnhancedReceivablesPage: React.FC = () => {
     navigate('receivables-create', Object.keys(params).length > 0 ? params : undefined);
   };
 
-  const handleEditInvoice = (invoice: InvoicePhase3) => {
-    console.log('Edit invoice:', invoice.id);
-  };
-
   const handleViewInvoice = (invoice: InvoicePhase3) => {
-    console.log('View invoice:', invoice.id);
+    setViewInvoice(invoice);
   };
 
   const handleViewNettingCycle = (cycleId: string) => {
@@ -1370,9 +1367,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                             <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)} title="View Details">
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)} title="Edit Invoice">
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
                             {canRequestCobo && (
                               <Button
                                 variant="outline"
@@ -1480,9 +1474,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
                             <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditInvoice(invoice)}>
-                            <Edit2 className="w-4 h-4" />
                           </Button>
                           {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
                             <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)}>
@@ -1789,6 +1780,72 @@ const EnhancedReceivablesPage: React.FC = () => {
         onConfirm={handleApprovalConfirm}
         loading={approvalLoading}
       />
+
+      {/* Invoice Detail Modal */}
+      <Modal isOpen={!!viewInvoice} onClose={() => setViewInvoice(null)} title={viewInvoice?.invoiceNumber || 'Invoice'} size="md">
+        {viewInvoice && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Customer</p>
+                <p className="font-medium">{viewInvoice.customerName}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Status</p>
+                <p className="font-medium">{viewInvoice.status}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Invoice Date</p>
+                <p className="font-medium">{formatDate(viewInvoice.invoiceDate)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Due Date</p>
+                <p className="font-medium">{formatDate(viewInvoice.dueDate)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Invoice Amount</p>
+                <p className="font-medium">{formatCurrency(viewInvoice.invoiceAmount, viewInvoice.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Paid</p>
+                <p className="font-medium">{formatCurrency(viewInvoice.paidAmount, viewInvoice.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Outstanding</p>
+                <p className="font-medium">{formatCurrency(viewInvoice.outstandingAmount, viewInvoice.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Owning Entity</p>
+                <p className="font-medium">{viewInvoice.owningEntityName || viewInvoice.owningEntityCode || '—'}</p>
+              </div>
+              {viewInvoice.assignedViban && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">VIBAN</p>
+                  <p className="font-mono font-medium">{viewInvoice.assignedViban}</p>
+                </div>
+              )}
+              {viewInvoice.isCobo && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">COBO Status</p>
+                  <p className="font-medium">{viewInvoice.coboRequestStatus}</p>
+                </div>
+              )}
+              {viewInvoice.nettingEligible && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">Netting Status</p>
+                  <p className="font-medium">{viewInvoice.nettingStatus}</p>
+                </div>
+              )}
+            </div>
+            {viewInvoice.description && (
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400 text-sm">Description</p>
+                <p className="text-sm">{viewInvoice.description}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </Page>
   );
 };

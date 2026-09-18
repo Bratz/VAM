@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter,
   Download,
   Eye,
   ArrowUpRight,
@@ -2037,13 +2036,6 @@ const TransactionsPage: React.FC = () => {
         </Button>
         <Button
           variant="outline"
-          leftIcon={<Download className="w-4 h-4" />}
-          className="hidden sm:inline-flex"
-        >
-          Export
-        </Button>
-        <Button
-          variant="outline"
           leftIcon={<ArrowDownLeft className="w-4 h-4" />}
           onClick={() => setShowCollectionModal(true)}
           className="hidden md:inline-flex"
@@ -2164,13 +2156,6 @@ const TransactionsPage: React.FC = () => {
                   <span className="hidden sm:inline">Ledger</span>
                 </button>
               </div>
-              <Button
-                variant="outline"
-                leftIcon={<Filter className="w-4 h-4" />}
-                className="shrink-0"
-              >
-                <span className="hidden sm:inline">Filters</span>
-              </Button>
               <Button
                 variant="ghost"
                 leftIcon={<RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />}
