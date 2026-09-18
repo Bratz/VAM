@@ -260,32 +260,41 @@ public class TransactionService {
     // ========================================================================
 
     /**
-     * Get all transactions with pagination.
-     * Used by TransactionController for GET /transactions without filters.
+     * Get all transactions with pagination, optionally scoped to a corporate.
+     * Used by TransactionController for GET /transactions without movementType/status filters.
      */
     @Transactional(readOnly = true)
-    public Page<Transaction> getAll(Pageable pageable) {
-        log.debug("Getting all transactions, page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+    public Page<Transaction> getAll(UUID corporateId, Pageable pageable) {
+        log.debug("Getting all transactions, corporateId={}, page={}, size={}", corporateId, pageable.getPageNumber(), pageable.getPageSize());
+        if (corporateId != null) {
+            return transactionRepository.findByCorporateId(corporateId, pageable);
+        }
         return transactionRepository.findAll(pageable);
     }
 
     /**
-     * Get transactions by movement type.
+     * Get transactions by movement type, optionally scoped to a corporate.
      * Used by TransactionController for GET /transactions?movementType=POBO_DEBIT
      */
     @Transactional(readOnly = true)
-    public Page<Transaction> getByMovementType(Transaction.MovementType movementType, Pageable pageable) {
-        log.debug("Getting transactions by movementType={}, page={}", movementType, pageable.getPageNumber());
+    public Page<Transaction> getByMovementType(UUID corporateId, Transaction.MovementType movementType, Pageable pageable) {
+        log.debug("Getting transactions by corporateId={}, movementType={}, page={}", corporateId, movementType, pageable.getPageNumber());
+        if (corporateId != null) {
+            return transactionRepository.findByCorporateIdAndMovementType(corporateId, movementType, pageable);
+        }
         return transactionRepository.findByMovementType(movementType, pageable);
     }
 
     /**
-     * Get transactions by status.
+     * Get transactions by status, optionally scoped to a corporate.
      * Used by TransactionController for GET /transactions?status=PENDING
      */
     @Transactional(readOnly = true)
-    public Page<Transaction> getByStatus(Transaction.TransactionStatus status, Pageable pageable) {
-        log.debug("Getting transactions by status={}, page={}", status, pageable.getPageNumber());
+    public Page<Transaction> getByStatus(UUID corporateId, Transaction.TransactionStatus status, Pageable pageable) {
+        log.debug("Getting transactions by corporateId={}, status={}, page={}", corporateId, status, pageable.getPageNumber());
+        if (corporateId != null) {
+            return transactionRepository.findByCorporateIdAndStatus(corporateId, status, pageable);
+        }
         return transactionRepository.findByStatus(status, pageable);
     }
 

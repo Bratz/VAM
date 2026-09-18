@@ -90,6 +90,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
      */
     long countByMovementType(Transaction.MovementType movementType);
 
+    /**
+     * Find transactions by corporate and movement type with pagination.
+     * Used by TransactionController's GET /transactions?corporateId=...&movementType=...
+     */
+    Page<Transaction> findByCorporateIdAndMovementType(UUID corporateId, Transaction.MovementType movementType, Pageable pageable);
+
     // ============================================================================
     // DASHBOARD METHODS
     // ============================================================================

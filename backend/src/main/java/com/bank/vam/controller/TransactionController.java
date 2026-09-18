@@ -47,37 +47,38 @@ public class TransactionController {
     @GetMapping
     @Operation(summary = "List transactions with optional filtering")
     public ResponseEntity<ApiResponse<TransactionDto.TransactionListResponse>> getAllTransactions(
+            @RequestParam(required = false) UUID corporateId,
             @RequestParam(required = false) String movementType,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int pageSize,
             @RequestParam(defaultValue = "transactionDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder) {
-        
-        log.debug("GET /transactions - movementType={}, status={}, page={}", movementType, status, page);
-        
-        Sort sort = sortOrder.equalsIgnoreCase("asc") ? 
+
+        log.debug("GET /transactions - corporateId={}, movementType={}, status={}, page={}", corporateId, movementType, status, page);
+
+        Sort sort = sortOrder.equalsIgnoreCase("asc") ?
             Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, pageSize, sort);
-        
+
         Page<Transaction> transactions;
-        
+
         if (movementType != null && !movementType.isEmpty()) {
             try {
                 Transaction.MovementType type = Transaction.MovementType.valueOf(movementType);
-                transactions = transactionService.getByMovementType(type, pageable);
+                transactions = transactionService.getByMovementType(corporateId, type, pageable);
             } catch (IllegalArgumentException e) {
-                transactions = transactionService.getAll(pageable);
+                transactions = transactionService.getAll(corporateId, pageable);
             }
         } else if (status != null && !status.isEmpty()) {
             try {
                 Transaction.TransactionStatus txnStatus = Transaction.TransactionStatus.valueOf(status);
-                transactions = transactionService.getByStatus(txnStatus, pageable);
+                transactions = transactionService.getByStatus(corporateId, txnStatus, pageable);
             } catch (IllegalArgumentException e) {
-                transactions = transactionService.getAll(pageable);
+                transactions = transactionService.getAll(corporateId, pageable);
             }
         } else {
-            transactions = transactionService.getAll(pageable);
+            transactions = transactionService.getAll(corporateId, pageable);
         }
         
         TransactionDto.TransactionListResponse response = TransactionDto.TransactionListResponse.builder()
