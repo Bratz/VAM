@@ -656,7 +656,10 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
   const canApprove = payable.status === 'PENDING_APPROVAL';
   const canReject = payable.status === 'PENDING_APPROVAL';
   const canEdit = payable.status === 'DRAFT' || payable.status === 'REJECTED';
-  const canPayNow = payable.status === 'APPROVED' || payable.status === 'SCHEDULED';
+  // canBePaid is server-computed and also requires a source VA to be assigned -- a payable
+  // can be in the right status and still be unpayable (no VA), so re-deriving from status
+  // alone here would show "Pay Now" for payables that are guaranteed to fail on click.
+  const canPayNow = payable.canBePaid && (payable.status === 'APPROVED' || payable.status === 'SCHEDULED');
 
   return (
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
