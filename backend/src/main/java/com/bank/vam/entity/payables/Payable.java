@@ -818,10 +818,12 @@ public class Payable extends BaseEntity {
             || status == PayableStatus.POBO_APPROVED;
         boolean isEligible = Boolean.TRUE.equals(nettingEligible) 
             || Boolean.TRUE.equals(isIntercompany);
-        boolean notAlreadyInNetting = nettingCycleId == null 
+        boolean notAlreadyInNetting = nettingCycleId == null
             && nettingStatus == NettingStatus.NOT_INCLUDED;
-        
-        return isApproved && isEligible && notAlreadyInNetting;
+        // netting_entries.payer_entity_id/payer_entity_code are NOT NULL; both must be set together
+        boolean hasOwningEntity = owningEntityId != null && owningEntityCode != null;
+
+        return isApproved && isEligible && notAlreadyInNetting && hasOwningEntity;
     }
     
     /**
