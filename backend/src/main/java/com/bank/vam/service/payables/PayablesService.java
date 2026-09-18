@@ -178,6 +178,68 @@ public class PayablesService {
         return mapToResponse(payable);
     }
 
+    /**
+     * Update an existing payable's editable fields.
+     * Only DRAFT/REJECTED payables can be edited -- anything already submitted
+     * for approval or beyond has moved past the point where a silent field
+     * change would be safe.
+     */
+    @Transactional
+    public PayableResponse updatePayable(UUID payableId, UpdatePayableRequest request) {
+        log.info("Updating payable {}", payableId);
+
+        Payable payable = payableRepository.findById(payableId)
+            .orElseThrow(() -> new RuntimeException("Payable not found: " + payableId));
+
+        if (payable.getStatus() != PayableStatus.DRAFT && payable.getStatus() != PayableStatus.REJECTED) {
+            throw new RuntimeException("Only DRAFT or REJECTED payables can be edited. Current status: " + payable.getStatus());
+        }
+
+        if (request.getInvoiceNumber() != null) payable.setInvoiceNumber(request.getInvoiceNumber());
+        if (request.getExternalReference() != null) payable.setExternalReference(request.getExternalReference());
+        if (request.getPartyId() != null) {
+            payable.setPartyId(request.getPartyId());
+            payable.setVendorId(request.getPartyId());
+        }
+        if (request.getPartyBankAccountId() != null) payable.setPartyBankAccountId(request.getPartyBankAccountId());
+        if (request.getVendorName() != null) payable.setVendorName(request.getVendorName());
+        if (request.getVendorAccount() != null) payable.setVendorAccount(request.getVendorAccount());
+        if (request.getVendorBank() != null) payable.setVendorBank(request.getVendorBank());
+        if (request.getCurrencyCode() != null) payable.setCurrencyCode(request.getCurrencyCode());
+        if (request.getInvoiceDate() != null) payable.setInvoiceDate(request.getInvoiceDate());
+        if (request.getDueDate() != null) payable.setDueDate(request.getDueDate());
+        if (request.getPaymentTermsDays() != null) payable.setPaymentTermsDays(request.getPaymentTermsDays());
+        if (request.getHierarchyNodeId() != null) payable.setHierarchyNodeId(request.getHierarchyNodeId());
+        if (request.getHierarchyPath() != null) payable.setHierarchyPath(request.getHierarchyPath());
+        if (request.getScheduledDate() != null) payable.setScheduledDate(request.getScheduledDate());
+        if (request.getPaymentPriority() != null) payable.setPaymentPriority(PaymentPriority.valueOf(request.getPaymentPriority()));
+        if (request.getPaymentMethod() != null) payable.setPaymentMethod(PaymentMethod.valueOf(request.getPaymentMethod()));
+        if (request.getPaymentChannel() != null) payable.setPaymentChannel(PaymentChannel.valueOf(request.getPaymentChannel()));
+        if (request.getDescription() != null) payable.setDescription(request.getDescription());
+        if (request.getNotes() != null) payable.setNotes(request.getNotes());
+
+        if (request.getGrossAmount() != null) payable.setGrossAmount(request.getGrossAmount());
+        if (request.getDiscountAmount() != null) payable.setDiscountAmount(request.getDiscountAmount());
+        if (request.getTaxAmount() != null) payable.setTaxAmount(request.getTaxAmount());
+        if (request.getWithholdingTax() != null) payable.setWithholdingTax(request.getWithholdingTax());
+
+        // Recompute net/outstanding from whatever amount fields are now on the payable
+        BigDecimal netAmount = payable.getGrossAmount()
+            .subtract(payable.getDiscountAmount() != null ? payable.getDiscountAmount() : BigDecimal.ZERO)
+            .add(payable.getTaxAmount() != null ? payable.getTaxAmount() : BigDecimal.ZERO)
+            .subtract(payable.getWithholdingTax() != null ? payable.getWithholdingTax() : BigDecimal.ZERO);
+        payable.setNetAmount(netAmount);
+        payable.setOutstandingAmount(netAmount);
+
+        if (request.getUpdatedBy() != null) payable.setUpdatedBy(request.getUpdatedBy());
+        payable.setUpdatedAt(LocalDateTime.now());
+
+        Payable saved = payableRepository.save(payable);
+        log.info("Updated payable: {}", saved.getPayableNumber());
+
+        return mapToResponse(saved);
+    }
+
     @Transactional(readOnly = true)
     public PayableListResponse getPayablesByEntity(UUID owningEntityId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());

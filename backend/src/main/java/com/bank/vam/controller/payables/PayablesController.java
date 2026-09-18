@@ -52,12 +52,22 @@ public class PayablesController {
     }
 
     @GetMapping("/{payableId}")
-    @Operation(summary = "Get payable by ID", 
+    @Operation(summary = "Get payable by ID",
                description = "Returns full payable details including POBO, IC, and netting status")
     public ResponseEntity<PayableResponse> getPayable(
             @PathVariable UUID payableId
     ) {
         return ResponseEntity.ok(payablesService.getPayable(payableId));
+    }
+
+    @PutMapping("/{payableId}")
+    @Operation(summary = "Update payable",
+               description = "Update editable fields of a DRAFT or REJECTED payable")
+    public ResponseEntity<PayableResponse> updatePayable(
+            @PathVariable UUID payableId,
+            @RequestBody UpdatePayableRequest request
+    ) {
+        return ResponseEntity.ok(payablesService.updatePayable(payableId, request));
     }
 
     @GetMapping
