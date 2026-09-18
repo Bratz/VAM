@@ -18,7 +18,7 @@ import {
   Search, Download, RefreshCw, AlertCircle,
   Clock, ArrowDownLeft, FileText, Eye, X,
   AlertTriangle, Copy, Plus, QrCode, Loader2, 
-  Building2, Landmark, Calculator, GitMerge, Layers,
+  Building2, Landmark, Calculator, GitMerge,
   ThumbsUp, ThumbsDown, Play,
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
@@ -26,7 +26,6 @@ import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { 
   receivablesApiPhase3,
-  nettingApi,
   corporatesApi,
   programsApi,
   legalEntityApi,
@@ -956,24 +955,10 @@ const EnhancedReceivablesPage: React.FC = () => {
     }
   };
 
-  const handleAddToNetting = async (invoice: InvoicePhase3) => {
-    setProcessing(true);
-    try {
-      // Use addEntry with cycle id and entry data
-      await nettingApi.addEntry('default-cycle', { receivableId: invoice.id, amount: invoice.outstandingAmount });
-      await fetchData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to add to netting');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const handleRemoveFromNetting = async (invoice: InvoicePhase3) => {
     setProcessing(true);
     try {
-      // Note: nettingApi doesn't have removeReceivable - use API client directly
-      await apiClient.delete(`/receivables/${invoice.id}/netting/remove`);
+      await receivablesApiPhase3.removeFromNettingCycle(invoice.id, 'current-user');
       await fetchData();
     } catch (err: any) {
       setError(err.message || 'Failed to remove from netting');
@@ -1010,10 +995,6 @@ const EnhancedReceivablesPage: React.FC = () => {
 
   const handleViewInvoice = (invoice: InvoicePhase3) => {
     setViewInvoice(invoice);
-  };
-
-  const handleViewNettingCycle = (cycleId: string) => {
-    console.log('View netting cycle:', cycleId);
   };
 
   const handleExport = () => {
@@ -1386,16 +1367,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                                 COBO
                               </Button>
                             )}
-                            {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddToNetting(invoice)}
-                                title="Add to Netting Cycle"
-                              >
-                                <GitMerge className="w-4 h-4" />
-                              </Button>
-                            )}
                             {!invoice.assignedViban && isSelectable && (
                               <Button
                                 variant="outline"
@@ -1483,11 +1454,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                           <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
-                            <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)}>
-                              <GitMerge className="w-4 h-4" />
-                            </Button>
-                          )}
                         </div>
                       ),
                     },
@@ -1554,16 +1520,6 @@ const EnhancedReceivablesPage: React.FC = () => {
                           >
                             <X className="w-4 h-4" />
                           </Button>
-                          {invoice.nettingCycleId && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewNettingCycle(invoice.nettingCycleId!)}
-                              title="View Cycle"
-                            >
-                              <Layers className="w-4 h-4" />
-                            </Button>
-                          )}
                         </div>
                       ),
                     },
