@@ -675,24 +675,40 @@ public class IntercompanyService {
     }
 
     @Transactional(readOnly = true)
-    public IntercompanyStatsResponse getStats() {
+    public IntercompanyStatsResponse getStats(UUID corporateId) {
         List<IntercompanyTransaction> all = transactionRepository.findAll();
-        
+
+        // Same corporate-scoping pattern as getTransactions(): a transaction belongs to this
+        // corporate if either side of it is one of the corporate's legal entities.
+        List<LegalEntity> scopedEntities = corporateId != null
+                ? legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId)
+                : legalEntityRepository.findAll();
+
+        if (corporateId != null) {
+            Set<UUID> corporateEntityIds = scopedEntities.stream()
+                    .map(LegalEntity::getId)
+                    .collect(Collectors.toSet());
+            all = all.stream()
+                    .filter(tx -> corporateEntityIds.contains(tx.getPayingEntityId())
+                               || corporateEntityIds.contains(tx.getBehalfEntityId()))
+                    .collect(Collectors.toList());
+        }
+
         long totalPobo = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO_PAYMENT).count();
         long totalCobo = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO_COLLECTION).count();
         long pending = all.stream().filter(t -> t.getStatus() == IntercompanyTransaction.TransactionStatus.PROCESSED).count();
-        
+
         BigDecimal poboVol = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.POBO_PAYMENT)
                 .map(t -> t.getNetAmount() != null ? t.getNetAmount() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal coboVol = all.stream().filter(t -> t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO || t.getTransactionType() == IntercompanyTransaction.TransactionType.COBO_COLLECTION)
                 .map(t -> t.getNetAmount() != null ? t.getNetAmount() : BigDecimal.ZERO).reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        // Count IHB-enabled entities + treasury centers
-        long activeEntities = legalEntityRepository.findByIhbEnabledTrue().stream()
-                .filter(e -> e.getStatus() == LegalEntity.EntityStatus.ACTIVE).count();
-        activeEntities += legalEntityRepository.findByCanLendTrue().stream()
-                .filter(e -> e.getStatus() == LegalEntity.EntityStatus.ACTIVE && !Boolean.TRUE.equals(e.getIhbEnabled())).count();
-        
+
+        // Count IHB-enabled entities + treasury centers, scoped to the same entity set as above
+        long activeEntities = scopedEntities.stream()
+                .filter(e -> e.getStatus() == LegalEntity.EntityStatus.ACTIVE)
+                .filter(e -> Boolean.TRUE.equals(e.getIhbEnabled()) || Boolean.TRUE.equals(e.getCanLend()))
+                .count();
+
         return IntercompanyStatsResponse.builder()
                 .totalPoboTransactions((int) totalPobo)
                 .totalCoboTransactions((int) totalCobo)

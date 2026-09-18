@@ -387,7 +387,7 @@ public class IntercompanyController {
     public ResponseEntity<ApiResponse<IntercompanyStatsResponse>> getStats(
             @RequestParam(required = false) UUID corporateId) {
         return ResponseEntity.ok(ApiResponse.success(
-            intercompanyService.getStats()));
+            intercompanyService.getStats(corporateId)));
     }
 
     @GetMapping("/activity-report")
