@@ -2,6 +2,8 @@ package com.bank.vam.service.payables;
 
 import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.payables.PayablesDto.*;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
@@ -615,22 +617,22 @@ public class PayablesService {
         log.info("Executing payment for payable: {}", request.getPayableId());
 
         Payable payable = payableRepository.findById(request.getPayableId())
-            .orElseThrow(() -> new RuntimeException("Payable not found: " + request.getPayableId()));
+            .orElseThrow(() -> new ResourceNotFoundException("Payable not found: " + request.getPayableId()));
 
         // Validate payable can be paid
         if (!payable.canBePaid()) {
-            throw new RuntimeException("Payable cannot be paid. Status: " + payable.getStatus() +
+            throw new BusinessException("Payable cannot be paid. Status: " + payable.getStatus() +
                 ", Payment Status: " + payable.getPaymentStatus());
         }
 
         // Validate source VA exists
         if (payable.getVirtualAccountId() == null) {
-            throw new RuntimeException("Payable has no source Virtual Account assigned. " +
+            throw new BusinessException("Payable has no source Virtual Account assigned. " +
                 "Please select a source account when creating the payable.");
         }
 
         VirtualAccount sourceVa = virtualAccountRepository.findById(payable.getVirtualAccountId())
-            .orElseThrow(() -> new RuntimeException("Source VA not found: " + payable.getVirtualAccountId()));
+            .orElseThrow(() -> new ResourceNotFoundException("Source VA not found: " + payable.getVirtualAccountId()));
 
         // Generate payment reference
         String paymentRef = "PMT-" + System.currentTimeMillis();
@@ -669,12 +671,12 @@ public class PayablesService {
             // Resolve Treasury's Settlement VA (the payer in POBO)
             UUID treasurySettlementVaId = sourceVa.getTreasuryPoolVaId();
             if (treasurySettlementVaId == null) {
-                throw new RuntimeException("IHB Current Account " + sourceVa.getVaNumber() +
+                throw new BusinessException("IHB Current Account " + sourceVa.getVaNumber() +
                     " has no Treasury Settlement VA configured. Cannot execute POBO payment.");
             }
 
             VirtualAccount treasurySettlementVa = virtualAccountRepository.findById(treasurySettlementVaId)
-                .orElseThrow(() -> new RuntimeException("Treasury Settlement VA not found: " + treasurySettlementVaId));
+                .orElseThrow(() -> new ResourceNotFoundException("Treasury Settlement VA not found: " + treasurySettlementVaId));
 
             // Build POBO request
             TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
