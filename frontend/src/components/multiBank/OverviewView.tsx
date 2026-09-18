@@ -1,14 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  RefreshCw, AlertTriangle, Clock, Layers, Info,
+  RefreshCw, AlertTriangle, Clock, Layers, Info, Banknote,
 } from 'lucide-react';
+import { ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { cn, formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
   MultiBankBankBucket,
   fxRateApi,
+  multiBankLiquidityApi,
+  TrendPoint,
 } from '../../services/api';
 import { Card, StatusIconBadge, Button, Badge } from '../ui';
+import { HeroMetricCard } from '../ui/HeroMetricCard';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { useMarket } from '../../context/MarketContext';
 import { StatStrip } from '../layout/StatStrip';
@@ -21,27 +25,27 @@ import { FilterKey, ViewKey } from './types';
 // Multi-Bank Liquidity — Overview (default landing view).
 //
 // Morning-glance read on portfolio-wide liquidity health, anchored by the
-// FX-honesty rule: never present a single cross-currency total (the payload
-// carries no FX rates). Where a dominant figure is needed, use a count or
-// per-currency chip rows; where proportion is shown, only aggregate over
-// shadow count (currency-agnostic) or within a single currency.
+// FX-honesty rule: the per-currency figures below never blend currencies
+// (the payload carries no FX rates on its own). The one deliberate exception
+// is the hero — a consolidated, FX-converted total — always paired with an
+// "indicative rates" badge so it never reads as a second source of truth for
+// the honest per-currency numbers underneath it.
 //
 // Composition (top to bottom, expanded mode):
-//   1. Per-currency liquidity hero (balance by currency; shadow counts
-//      demoted to a footer strip — Phase 11 morning-glance reframe)
-//   2. Shadow distribution bar — count-based, cross-bank
-//   3. Operational StatStrip — 4 filter tiles (total, stale, failed, never)
-//   4. Conditional freshness banner — refresh-all CTA when work exists
-//   5. Per-currency cards — bank split bar per currency
-//   6. Filter chip row — selecting stale/failed/never bounces to By Bank
+//   1. Hero — consolidated position (HeroMetricCard): total, available,
+//      1D/7D/30D delta + sparkline, currency picker, in-transit figure.
+//   2. Per-currency breakdown — demoted supporting detail, sorted by size
+//      (matches the Dashboard's own currency-bar ordering).
+//   3. Liquidity distribution across banks — value-weighted, not count-based.
+//   4. Operational StatStrip — 4 filter tiles (total, stale, failed, never)
+//   5. Conditional freshness banner — refresh-all CTA when work exists
+//   6. Per-currency cards — bank split bar per currency
+//   7. Filter chip row — selecting stale/failed/never bounces to By Bank
 //
-// `compact` mode (consumed by the cockpit's Multi-Bank Band):
-//   - Hero swapped for an inline strip (numbers, no large display text).
-//   - Op Strip tiles render read-only (no onClick / not filter toggles).
-//   - Distribution bar drops its Card wrapper (parent already provides one).
-//   - Freshness banner omitted (the cockpit's attention inbox covers it).
-//   - Per-currency cards capped at top-4 by total effective; lighter chrome.
-//   - Filter chip row omitted.
+// `compact` mode (consumed by the cockpit's Multi-Bank Band) skips the hero,
+// the rate map, and the trend fetch entirely — it stays the lightweight
+// inline strip it always was; only the count-based currency chip row + op
+// tiles render.
 // ============================================================================
 
 interface OverviewViewProps {
@@ -55,6 +59,8 @@ interface OverviewViewProps {
   onBulkRefreshStale?: () => void;
   /** Optional in `compact` mode. */
   bulkRefreshing?: boolean;
+  /** Scopes the hero's trend fetch. Optional in `compact` mode (no fetch runs there). */
+  corporateId?: string;
   /**
    * When true, render a slimmer composition suitable for embedding inside
    * another `<Card>` wrapper (the cockpit's Multi-Bank Band). Defaults to
@@ -62,6 +68,12 @@ interface OverviewViewProps {
    */
   compact?: boolean;
 }
+
+const PERIODS: { key: 1 | 7 | 30; label: string }[] = [
+  { key: 1, label: '1D' },
+  { key: 7, label: '7D' },
+  { key: 30, label: '30D' },
+];
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
   summary,
@@ -71,6 +83,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   failedCount,
   onBulkRefreshStale,
   bulkRefreshing = false,
+  corporateId,
   compact = false,
 }) => {
   // Apply bank-level filter (home / external) to the slice we render per-
@@ -84,7 +97,9 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   }, [summary, filter]);
 
   // Per-currency aggregation across visibleBanks. Within a single currency
-  // we can sum amounts directly — FX-honest.
+  // we can sum amounts directly — FX-honest. Sorted by size descending to
+  // match the Dashboard's own currency-bar ordering (it used to sort
+  // alphabetically here, which disagreed with the Dashboard for no reason).
   const currencies = useMemo(() => {
     type CurAgg = {
       currencyCode: string;
@@ -129,63 +144,133 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         ...cur,
         homeBankShare: cur.totalEffective > 0 ? cur.homeBankAmount / cur.totalEffective : 0,
       }))
-      .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
+      .sort((a, b) => (b.totalEffective || 0) - (a.totalEffective || 0));
   }, [visibleBanks]);
 
-  // Consolidated cross-currency total — the one deliberate exception to the
-  // FX-honesty rule above. Unlike the per-currency figures (which sum
-  // directly off the payload), this converts each currency's total via the
-  // backend's fxRateApi.convert() (full rate-resolution fallback chain:
-  // direct → inverse → multi-hop → default table) into a user-picked
-  // reporting currency, so it's always labelled as an indicative conversion,
-  // never presented as a second source of truth for the per-currency totals.
+  // ==========================================================================
+  // Reporting-currency rate map — the single conversion primitive every
+  // hero/distribution number below multiplies against locally. One rate per
+  // unique currency (not one convert() call per figure) via
+  // fxRateApi.convert(1, code, reportingCurrency); a currency equal to the
+  // reporting currency short-circuits to rate 1 with no network call.
+  // ==========================================================================
   const { profile } = useMarket();
   const [reportingCurrency, setReportingCurrency] = useState(profile.defaultCurrency || 'AED');
-  const [consolidated, setConsolidated] = useState<{
-    total: number; available: number; loading: boolean; excluded: number;
-  }>({ total: 0, available: 0, loading: false, excluded: 0 });
+  const [rateState, setRateState] = useState<{
+    rates: Map<string, number>; excluded: string[]; loading: boolean;
+  }>({ rates: new Map(), excluded: [], loading: false });
 
   useEffect(() => {
     if (compact || currencies.length === 0) return;
     let alive = true;
-    setConsolidated((prev) => ({ ...prev, loading: true }));
+    setRateState((prev) => ({ ...prev, loading: true }));
     Promise.allSettled(
       currencies.map((c) =>
         c.currencyCode === reportingCurrency
-          ? Promise.resolve({ currencyCode: c.currencyCode, total: c.totalEffective, available: c.totalAvailable })
-          : Promise.all([
-              fxRateApi.convert(c.totalEffective, c.currencyCode, reportingCurrency),
-              fxRateApi.convert(c.totalAvailable, c.currencyCode, reportingCurrency),
-            ]).then(([totalRes, availRes]) => {
-              if (!totalRes.success || !availRes.success || !totalRes.data || !availRes.data) {
-                throw new Error(`No rate ${c.currencyCode} → ${reportingCurrency}`);
-              }
-              return {
-                currencyCode: c.currencyCode,
-                total: totalRes.data.convertedAmount,
-                available: availRes.data.convertedAmount,
-              };
+          ? Promise.resolve({ code: c.currencyCode, rate: 1 })
+          : fxRateApi.convert(1, c.currencyCode, reportingCurrency).then((res) => {
+              if (!res.success || !res.data) throw new Error(`No rate ${c.currencyCode} → ${reportingCurrency}`);
+              return { code: c.currencyCode, rate: res.data.convertedAmount };
             })
       )
     ).then((results) => {
       if (!alive) return;
-      let total = 0;
-      let available = 0;
-      let excluded = 0;
-      for (const r of results) {
-        if (r.status === 'fulfilled') {
-          total += r.value.total;
-          available += r.value.available;
-        } else {
-          excluded++;
-        }
-      }
-      setConsolidated({ total, available, loading: false, excluded });
+      const rates = new Map<string, number>();
+      const excluded: string[] = [];
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') rates.set(r.value.code, r.value.rate);
+        else excluded.push(currencies[i].currencyCode);
+      });
+      setRateState({ rates, excluded, loading: false });
     });
     return () => { alive = false; };
   }, [currencies, reportingCurrency, compact]);
 
-  // Currency chip row for the hero `sub` slot.
+  // Consolidated total + available — the one deliberate cross-currency blend
+  // on this page, always paired with the "indicative rates" badge.
+  const consolidated = useMemo(() => {
+    let total = 0;
+    let available = 0;
+    for (const c of currencies) {
+      const rate = rateState.rates.get(c.currencyCode);
+      if (rate === undefined) continue;
+      total += c.totalEffective * rate;
+      available += c.totalAvailable * rate;
+    }
+    return { total, available, loading: rateState.loading, excluded: rateState.excluded.length };
+  }, [currencies, rateState]);
+
+  // ==========================================================================
+  // Historical trend (for the delta chip + sparkline) — fetched once per
+  // corporate scope, independent of the rate map so switching reporting
+  // currency doesn't re-fetch history, only re-converts it.
+  // ==========================================================================
+  const [period, setPeriod] = useState<1 | 7 | 30>(1);
+  const [trendPoints, setTrendPoints] = useState<TrendPoint[]>([]);
+
+  useEffect(() => {
+    if (compact) return;
+    let alive = true;
+    multiBankLiquidityApi.getTrend(corporateId, 31)
+      .then((res) => { if (alive) setTrendPoints(res.success && Array.isArray(res.data) ? res.data : []); })
+      .catch(() => { if (alive) setTrendPoints([]); });
+    return () => { alive = false; };
+  }, [corporateId, compact]);
+
+  const trendByDate = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const p of trendPoints) {
+      const day = m.get(p.asOf) ?? new Map<string, number>();
+      day.set(p.currencyCode, p.totalEffective);
+      m.set(p.asOf, day);
+    }
+    return m;
+  }, [trendPoints]);
+
+  const sortedDates = useMemo(() => Array.from(trendByDate.keys()).sort(), [trendByDate]);
+
+  // Converts one historical day's per-currency totals through the CURRENT
+  // rate map (no historical FX is tracked — same "indicative" honesty as
+  // everything else here). Returns null if none of that day's currencies
+  // have a rate yet.
+  const convertDay = (dateKey: string): number | null => {
+    const day = trendByDate.get(dateKey);
+    if (!day) return null;
+    let total = 0;
+    let any = false;
+    for (const [code, amt] of day.entries()) {
+      const rate = rateState.rates.get(code);
+      if (rate === undefined) continue;
+      total += amt * rate;
+      any = true;
+    }
+    return any ? total : null;
+  };
+
+  const delta = useMemo(() => {
+    if (rateState.loading || sortedDates.length === 0) return null;
+    const target = new Date();
+    target.setDate(target.getDate() - period);
+    const targetKey = target.toISOString().slice(0, 10);
+    let dateKey: string | undefined;
+    for (const d of sortedDates) {
+      if (d <= targetKey) dateKey = d; else break;
+    }
+    if (!dateKey) return null;
+    const past = convertDay(dateKey);
+    if (!past) return null;
+    return ((consolidated.total - past) / past) * 100;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedDates, period, rateState, consolidated.total]);
+
+  const sparklineData = useMemo(
+    () => sortedDates.slice(-30).map((d) => ({ date: d, value: convertDay(d) ?? 0 })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortedDates, rateState],
+  );
+
+  // Currency chip row — compact mode only (the expanded per-currency card
+  // below already covers this for the standalone page).
   const currencyChipRow = currencies.length > 0 ? (
     <div className="flex flex-wrap gap-1.5">
       {currencies.map((c) => (
@@ -199,38 +284,48 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     </div>
   ) : null;
 
-  // Shadow-count distribution across banks (currency-agnostic — FX-honest).
-  const totalShadows = summary.totalShadows;
-  const orderedBanks = useMemo(() => {
-    const banks = [...summary.banks];
-    return banks.sort((a, b) => {
-      if (a.homeBank && !b.homeBank) return -1;
-      if (!a.homeBank && b.homeBank) return 1;
-      return (b.shadowCount || 0) - (a.shadowCount || 0);
+  // ==========================================================================
+  // Liquidity distribution across banks — value-weighted (% of converted
+  // cash value), not the account-count split this used to be. Counting
+  // accounts answers "where are my accounts"; a treasurer opening this bar
+  // wants "where is my money" — a real counterparty-concentration read,
+  // which account-count silently wasn't.
+  // ==========================================================================
+  const bankDistribution = useMemo(() => {
+    const withValue = summary.banks.map((bank) => {
+      let value = 0;
+      let hasValue = false;
+      for (const c of bank.currencies) {
+        const rate = rateState.rates.get(c.currencyCode);
+        if (rate === undefined) continue;
+        value += (c.totalEffective || 0) * rate;
+        hasValue = true;
+      }
+      return { bank, value, hasValue };
+    }).sort((a, b) => {
+      if (a.bank.homeBank && !b.bank.homeBank) return -1;
+      if (!a.bank.homeBank && b.bank.homeBank) return 1;
+      return b.value - a.value;
     });
-  }, [summary.banks]);
-
-  const externals = orderedBanks.filter((b) => !b.homeBank);
-  const topExternalBank = externals[0];
-  const topExternalPct = topExternalBank && totalShadows > 0
-    ? Math.round((topExternalBank.shadowCount / totalShadows) * 100)
-    : 0;
-
-  let extIdx = 0;
-  const distributionSegments = orderedBanks.map((b) => ({
-    bank: b,
-    pct: totalShadows > 0 ? (b.shadowCount / totalShadows) * 100 : 0,
-    colour: b.homeBank ? HOME_BANK_COLOUR : EXTERNAL_BANK_RAMP[extIdx++ % EXTERNAL_BANK_RAMP.length],
-  }));
+    const totalValue = withValue.reduce((a, x) => a + x.value, 0);
+    let extIdx = 0;
+    const segments = withValue.map(({ bank, value, hasValue }) => ({
+      bank,
+      value,
+      hasValue,
+      pct: totalValue > 0 ? (value / totalValue) * 100 : 0,
+      colour: bank.homeBank ? HOME_BANK_COLOUR : EXTERNAL_BANK_RAMP[extIdx++ % EXTERNAL_BANK_RAMP.length],
+    }));
+    const topExternal = segments.find((s) => !s.bank.homeBank && s.hasValue);
+    return { segments, topExternal };
+  }, [summary.banks, rateState]);
 
   const hasWork = summary.staleCount + summary.neverRefreshedCount + failedCount > 0;
 
   // In compact mode the per-currency rail is capped at the top-4 by total
   // effective so the band stays a glance-surface. The standalone page passes
-  // the full set.
-  const visibleCurrencies = compact
-    ? [...currencies].sort((a, b) => (b.totalEffective || 0) - (a.totalEffective || 0)).slice(0, 4)
-    : currencies;
+  // the full set (already sorted by size above).
+  const visibleCurrencies = compact ? currencies.slice(0, 4) : currencies;
 
   // Distribution panel — outer container differs in compact mode (no Card to
   // avoid a card-in-card visual).
@@ -239,14 +334,17 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       ? <div className="rounded-lg border border-neutral-200 dark:border-primary-800 p-4">{children}</div>
       : <Card padding="sm">{children}</Card>;
 
+  // In transit (pending sweeps) — bankBalanceEffective = bankAvailableBalance
+  // - bankBalanceCommitted (see VirtualAccount.getBankBalanceEffective()), so
+  // this is available minus effective, not the other way round. It's
+  // outstanding sweep instructions not yet reflected on the bank statement —
+  // a settlement-timing float, not a structural liquidity restriction (no
+  // regulatory-minimum/FX-control data model exists in this app) — hence the
+  // label and tooltip below, not "Committed / held".
+  const inTransit = Math.max(0, consolidated.available - consolidated.total);
+
   return (
     <>
-      {/* 1. Hero — per-currency liquidity strip in expanded mode; an inline
-          count strip in compact mode (cockpit Band; same numbers, no large
-          display text, no gold lens). Phase 11 morning-glance reframe: the
-          expanded hero leads with balance-by-currency (the question a
-          treasurer opens this page to answer) rather than shadow counts,
-          which demote to the footer strip. */}
       {compact ? (
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-6 flex-wrap">
@@ -265,29 +363,111 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           {currencyChipRow}
         </div>
       ) : (
-        <div className={cn(
-          'relative rounded-2xl overflow-hidden animate-fade-in',
-          'border border-neutral-200/70 dark:border-primary-800/60',
-          // Brand-moment hero gradient — deliberately retains the gold-lens
-          // treatment of the shared app-wide hero metric primitive this
-          // replaces (a sanctioned brand pattern). Not an incidental
-          // data-surface gradient (those were flattened in the
-          // de-gradient passes).
-          'bg-gradient-to-br from-white via-white to-accent-50/40',
-          'dark:from-primary-900/60 dark:via-primary-900/40 dark:to-accent-500/[0.06]',
-          'p-6',
-        )}>
-          {/* Same gold lens accent the prior hero metric primitive used;
-              pulls from --section-accent-warm so the hue shifts per route. */}
-          <div
-            aria-hidden
-            className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-50 dark:opacity-70 blur-3xl pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgb(var(--section-accent-warm) / 0.20) 0%, transparent 70%)' }}
-          />
+        <>
+          {/* 1. Hero — consolidated position. The one deliberate cross-
+              currency blend on this page; HeroMetricCard is the shared
+              dominant-metric primitive other pages already use for their
+              own headline figure. */}
+          {currencies.length > 0 && (
+            <HeroMetricCard
+              icon={<Banknote className="w-6 h-6 text-accent-700 dark:text-accent-300" />}
+              primary={{
+                label: 'Consolidated position',
+                value: consolidated.loading ? '…' : formatCurrency(consolidated.total, reportingCurrency),
+                trend: delta !== null ? `${delta >= 0 ? '▲' : '▼'} ${formatPct(Math.abs(delta))} · ${period}D` : undefined,
+                trendTone: delta === null ? 'neutral' : delta >= 0 ? 'success' : 'error',
+                sub: (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      title="Converted using this platform's stored FX rates, which are seeded reference data — not a live market feed. Treat this total as indicative, not a live mark."
+                      className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
+                    >
+                      <Info className="w-3 h-3" />
+                      Indicative rates
+                    </span>
+                    {consolidated.excluded > 0 && (
+                      <span className="text-xs text-warning-600 dark:text-warning-400">
+                        {consolidated.excluded} currenc{consolidated.excluded === 1 ? 'y' : 'ies'} excluded — no rate available
+                      </span>
+                    )}
+                    <span
+                      title="Outstanding sweep instructions not yet reflected on the bank statement — a settlement-timing float, not a structural liquidity restriction."
+                      className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"
+                    >
+                      In transit (pending sweeps)
+                      <Info className="w-3 h-3" />
+                      <span className="amount">{consolidated.loading ? '…' : formatCurrency(inTransit, reportingCurrency)}</span>
+                    </span>
+                  </div>
 
-          <div className="relative">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="w-24">
+                      <CurrencyPicker value={reportingCurrency} onChange={setReportingCurrency} />
+                    </div>
+                    <div
+                      role="tablist"
+                      aria-label="Trend period"
+                      className="inline-flex border border-neutral-300 dark:border-primary-700 rounded-lg overflow-hidden"
+                    >
+                      {PERIODS.map(({ key, label }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          role="tab"
+                          aria-selected={period === key}
+                          onClick={() => setPeriod(key)}
+                          className={cn(
+                            'px-2.5 py-1 text-xs font-medium transition-colors',
+                            period === key
+                              ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                              : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-primary-800',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {sparklineData.length > 1 && (
+                    <div style={{ height: 40 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={sparklineData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+                          <defs>
+                            <linearGradient id="mbl-sparkline-fill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="rgb(var(--section-accent-warm))" stopOpacity={0.35} />
+                              <stop offset="100%" stopColor="rgb(var(--section-accent-warm))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            stroke="rgb(var(--section-accent-warm))"
+                            strokeWidth={1.5}
+                            fill="url(#mbl-sparkline-fill)"
+                            isAnimationActive={false}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+                ),
+              }}
+              secondary={{
+                label: 'Available to move',
+                value: consolidated.loading ? '…' : formatCurrency(consolidated.available, reportingCurrency),
+              }}
+            />
+          )}
+
+          {/* 2. Per-currency breakdown — supporting detail, demoted from the
+              hero treatment it used to carry. Sorted by size (see the
+              `currencies` memo above) to match the Dashboard's own
+              currency-bar ordering. */}
+          <Card padding="sm">
             <p className="label mb-3">Liquidity by currency</p>
-
             {currencies.length === 0 ? (
               <p className="body-sm">No shadow balances available.</p>
             ) : (
@@ -309,9 +489,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 ))}
               </div>
             )}
-
-            {/* Pool-eligible + total shadow counts demoted to a footer strip —
-                still visible, no longer competing for hero attention. */}
             <div className="mt-5 pt-4 border-t border-neutral-200/70 dark:border-primary-800/60 flex flex-wrap gap-x-8 gap-y-2">
               <div>
                 <p className="label">Total shadows</p>
@@ -333,88 +510,36 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </Card>
+        </>
       )}
 
-      {/* 1b. Consolidated cross-currency total + available/trapped cash —
-          the one place this page blends currencies, always paired with the
-          "indicative rates" badge so it never reads as a second source of
-          truth for the honest per-currency figures above. Skipped in
-          compact mode (the cockpit band stays a glance-surface). */}
-      {!compact && currencies.length > 0 && (
-        <Card padding="sm">
-          <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="label">Consolidated position</p>
-                <span
-                  title="Converted using this platform's stored FX rates, which are seeded reference data — not a live market feed. Treat this total as indicative, not a live mark."
-                  className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
-                >
-                  <Info className="w-3 h-3" />
-                  Indicative rates
-                </span>
-              </div>
-              <p className="stat-value-sm mt-1">
-                {consolidated.loading ? '…' : formatCurrency(consolidated.total, reportingCurrency)}
-              </p>
-              {consolidated.excluded > 0 && (
-                <p className="body-sm text-warning-600 dark:text-warning-400 mt-0.5">
-                  {consolidated.excluded} currenc{consolidated.excluded === 1 ? 'y' : 'ies'} excluded — no rate available
-                </p>
-              )}
-            </div>
-            <div className="w-28">
-              <CurrencyPicker value={reportingCurrency} onChange={setReportingCurrency} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200/70 dark:border-primary-800/60">
-            <div>
-              <p className="label">Available to move</p>
-              <p className="body mt-0.5">
-                {consolidated.loading ? '…' : formatCurrency(consolidated.available, reportingCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="label">Committed / held</p>
-              <p className="body mt-0.5">
-                {/* bankBalanceEffective = bankAvailableBalance - bankBalanceCommitted
-                    (see VirtualAccount.getBankBalanceEffective()), so committed is
-                    available minus effective, not the other way round. */}
-                {consolidated.loading ? '…' : formatCurrency(Math.max(0, consolidated.available - consolidated.total), reportingCurrency)}
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* 2. Shadow distribution (count-based, FX-honest). */}
+      {/* 3. Liquidity distribution across banks (value-weighted). */}
       <DistributionWrap>
         <div className="flex items-start justify-between gap-3 mb-3">
-          <p className="label">Shadow distribution across banks</p>
-          {topExternalBank && (
+          <p className="label">Liquidity distribution across banks</p>
+          {bankDistribution.topExternal && (
             <p className="body-sm text-neutral-500 dark:text-neutral-400">
-              Top external · {topExternalBank.bankName ?? topExternalBank.bankBic} {topExternalPct}%
+              Top external · {bankDistribution.topExternal.bank.bankName ?? bankDistribution.topExternal.bank.bankBic} {formatPct(bankDistribution.topExternal.pct)}
             </p>
           )}
         </div>
         <div
           className="flex h-3 rounded-md overflow-hidden border border-neutral-200 dark:border-primary-800"
           role="img"
-          aria-label="Shadow distribution"
+          aria-label="Liquidity distribution by bank"
         >
-          {distributionSegments.map(({ bank, pct, colour }) => (
+          {bankDistribution.segments.map(({ bank, pct, colour }) => (
             <div
               key={bank.bankBic}
               className={cn('h-full', colour)}
               style={{ width: `${pct}%` }}
-              title={`${bank.bankName ?? bank.bankBic} · ${bank.shadowCount} shadows`}
+              title={`${bank.bankName ?? bank.bankBic} · ${bank.shadowCount} shadows · ${formatPct(pct)} of value`}
             />
           ))}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
-          {distributionSegments.map(({ bank, pct, colour }) => (
+          {bankDistribution.segments.map(({ bank, pct, hasValue, colour }) => (
             <span key={bank.bankBic} className="inline-flex items-center gap-1.5 text-xs">
               <span className={cn('w-2 h-2 rounded-sm', colour)} />
               <span className={cn(
@@ -425,14 +550,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 {bank.bankName ?? bank.bankBic}
               </span>
               <span className="text-neutral-500 dark:text-neutral-400">
-                {bank.shadowCount} shadows · {formatPct(pct)}
+                {hasValue ? formatPct(pct) : 'value unavailable'}
               </span>
             </span>
           ))}
         </div>
       </DistributionWrap>
 
-      {/* 3. Operational stat strip — four filter tiles. In compact mode the
+      {/* 4. Operational stat strip — four filter tiles. In compact mode the
           tiles render read-only (the cockpit's attention inbox is the place
           for action; the band is just a glance-surface). */}
       <StatStrip columns={4}>
@@ -471,7 +596,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         />
       </StatStrip>
 
-      {/* 4. Freshness banner — only when there's work. Suppressed in compact
+      {/* 5. Freshness banner — only when there's work. Suppressed in compact
           mode because the cockpit's attention inbox already surfaces
           stale balances as their own attention items. */}
       {!compact && hasWork && (
@@ -497,7 +622,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </Card>
       )}
 
-      {/* 5. Per-currency rail — bank split bar within each currency. In compact
+      {/* 6. Per-currency rail — bank split bar within each currency. In compact
           mode the rail is capped to the top-4 currencies and uses lighter
           chrome (bordered div instead of nested Card). */}
       {visibleCurrencies.length > 0 && (
@@ -553,7 +678,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </div>
       )}
 
-      {/* 6. Filter chips at the bottom — shadow-level filters bounce to By
+      {/* 7. Filter chips at the bottom — shadow-level filters bounce to By
           Bank where the rows live; bank-level chips stay on Overview and
           narrow the per-currency cards. Suppressed in compact mode (the
           band is a glance-surface, not a filter UI). */}

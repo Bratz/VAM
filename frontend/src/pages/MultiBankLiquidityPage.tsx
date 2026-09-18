@@ -324,6 +324,7 @@ const MultiBankLiquidityPage: React.FC = () => {
           failedCount={failedCount}
           onBulkRefreshStale={bulkRefreshStale}
           bulkRefreshing={bulkRefreshing}
+          corporateId={selectedCorporateId || undefined}
         />
       )}
       {view === 'by-bank' && (
