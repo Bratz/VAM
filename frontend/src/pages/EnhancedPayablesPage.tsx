@@ -19,7 +19,7 @@ import {
   Search, Filter, Plus, Send, Clock, FileText, Building, Eye,
   AlertTriangle, RefreshCw, Loader2, X, Building2, ChevronDown,
   Landmark, Calculator, ArrowRight, GitBranch, ExternalLink, Layers,
-  CheckCircle, XCircle, PlayCircle, Edit, MoreVertical, Calendar,
+  CheckCircle, XCircle, PlayCircle, MoreVertical, Calendar,
 } from 'lucide-react';
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
@@ -300,16 +300,16 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
         currencyCode: payablesList[0]?.currencyCode || 'AED',
         charges: [{ chargeCode: 'POBO-FEE', chargeName: 'POBO Service Fee', chargeType: 'PERCENTAGE', calculatedAmount: fees, waived: false }],
         totalCharges: fees,
-        netRechargeAmount: total + fees,
+        netPaymentAmount: total + fees,
         ihbLoanPreview: {
-          lendingEntityId: payingEntityId,
-          borrowingEntityId: payablesList[0]?.owningEntityId || '',
           principalAmount: total + fees,
-          currencyCode: payablesList[0]?.currencyCode || 'AED',
           interestRate: 5.0,
-          expectedTenorDays: 30,
-          estimatedInterest: (total + fees) * 0.05 / 12,
+          estimatedDailyInterest: (total + fees) * 0.05 / 365,
+          estimatedMonthlyInterest: (total + fees) * 0.05 / 12,
+          tenor: 'ON_DEMAND',
         },
+        warnings: [],
+        isValid: true,
       });
     } finally {
       setLoading(false);
@@ -447,8 +447,8 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
                 </div>
               ))}
               <div className="flex justify-between text-sm font-semibold border-t border-neutral-200 dark:border-primary-800 pt-2">
-                <span>Net Recharge Amount</span>
-                <span>{formatCurrency(preview.netRechargeAmount, preview.currencyCode)}</span>
+                <span>Net Payment Amount</span>
+                <span>{formatCurrency(preview.netPaymentAmount, preview.currencyCode)}</span>
               </div>
             </div>
 
@@ -456,10 +456,10 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
               <div className="bg-info-50 dark:bg-info-500/10 rounded-lg p-3 mt-4">
                 <h5 className="text-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Details</h5>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-info-600 dark:text-info-300">Principal:</span> {formatCurrency(preview.ihbLoanPreview.principalAmount, preview.ihbLoanPreview.currencyCode)}</div>
+                  <div><span className="text-info-600 dark:text-info-300">Principal:</span> {formatCurrency(preview.ihbLoanPreview.principalAmount, preview.currencyCode)}</div>
                   <div><span className="text-info-600 dark:text-info-300">Rate:</span> {preview.ihbLoanPreview.interestRate}%</div>
-                  <div><span className="text-info-600 dark:text-info-300">Tenor:</span> {preview.ihbLoanPreview.expectedTenorDays} days</div>
-                  <div><span className="text-info-600 dark:text-info-300">Est. Interest:</span> {formatCurrency(preview.ihbLoanPreview.estimatedInterest || 0, preview.ihbLoanPreview.currencyCode)}</div>
+                  <div><span className="text-info-600 dark:text-info-300">Tenor:</span> {preview.ihbLoanPreview.tenor}</div>
+                  <div><span className="text-info-600 dark:text-info-300">Est. Monthly Interest:</span> {formatCurrency(preview.ihbLoanPreview.estimatedMonthlyInterest || 0, preview.currencyCode)}</div>
                 </div>
               </div>
             )}
@@ -643,17 +643,15 @@ interface PayableActionsCellProps {
   onApprove: (payable: PayablePhase2) => void;
   onReject: (payable: PayablePhase2) => void;
   onSubmit: (payable: PayablePhase2) => void;
-  onEdit: (payable: PayablePhase2) => void;
   onPayNow: (payable: PayablePhase2) => void;
 }
 
 const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
-  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onEdit, onPayNow
+  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onPayNow
 }) => {
   const canSubmit = payable.status === 'DRAFT';
   const canApprove = payable.status === 'PENDING_APPROVAL';
   const canReject = payable.status === 'PENDING_APPROVAL';
-  const canEdit = payable.status === 'DRAFT' || payable.status === 'REJECTED';
   const canPayNow = payable.status === 'APPROVED' || payable.status === 'SCHEDULED';
 
   return (
@@ -672,15 +670,6 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           title="Submit for Approval"
         >
           <Send className="w-4 h-4" />
-        </button>
-      )}
-      {canEdit && (
-        <button
-          onClick={() => onEdit(payable)}
-          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
-          title="Edit"
-        >
-          <Edit className="w-4 h-4" />
         </button>
       )}
       {canApprove && (
@@ -719,14 +708,6 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           <Landmark className="w-4 h-4" />
         </button>
       )}
-      {payable.canAddToNetting && (
-        <button
-          className="p-1.5 text-neutral-500 hover:text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-success-500/10"
-          title="Add to Netting"
-        >
-          <GitBranch className="w-4 h-4" />
-        </button>
-      )}
     </div>
   );
 };
@@ -762,6 +743,7 @@ const EnhancedPayablesPage: React.FC = () => {
   const [showPoboModal, setShowPoboModal] = useState(false);
   const [poboPayables, setPoboPayables] = useState<PayablePhase2[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [viewPayable, setViewPayable] = useState<PayablePhase2 | null>(null);
 
   // Approval modal state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -1021,10 +1003,6 @@ const EnhancedPayablesPage: React.FC = () => {
     navigate('payables-edit', { id: payable.id, mode: 'schedule' });
   };
 
-  const handleEdit = (payable: PayablePhase2) => {
-    navigate('payables-edit', { id: payable.id });
-  };
-
   const handlePayNow = async (payable: PayablePhase2) => {
     if (!confirm(`Execute payment of ${payable.netAmount} ${payable.currencyCode} to ${payable.vendorName}?`)) {
       return;
@@ -1184,7 +1162,7 @@ const EnhancedPayablesPage: React.FC = () => {
           selectable
           selectedKeys={selectedIds}
           onSelectionChange={(keys) => setSelectedIds(keys as Set<string>)}
-          onRowClick={(payable) => navigate(`/payables/${payable.id}`)}
+          onRowClick={(payable) => setViewPayable(payable)}
           pagination={totalPages > 1}
           pageSize={20}
           currentPage={currentPage + 1}
@@ -1256,12 +1234,11 @@ const EnhancedPayablesPage: React.FC = () => {
               render: (_, payable) => (
                 <PayableActionsCell
                   payable={payable}
-                  onViewDetails={(p) => navigate(`/payables/${p.id}`)}
+                  onViewDetails={(p) => setViewPayable(p)}
                   onRequestPobo={handleRequestPobo}
                   onApprove={handleApprove}
                   onReject={handleReject}
                   onSubmit={handleSubmitForApproval}
-                  onEdit={handleEdit}
                   onPayNow={handlePayNow}
                 />
               ),
@@ -1292,6 +1269,70 @@ const EnhancedPayablesPage: React.FC = () => {
         onConfirm={handleApprovalAction}
         loading={approvalLoading}
       />
+
+      {/* View Details Modal */}
+      <Modal isOpen={!!viewPayable} onClose={() => setViewPayable(null)} title={viewPayable?.payableNumber || 'Payable'} size="md">
+        {viewPayable && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {getStatusBadge(viewPayable.status)}
+              {getPaymentRouteBadge(viewPayable.paymentRoute, viewPayable.isIntercompany, viewPayable.nettingStatus)}
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Vendor</p>
+                <p className="font-medium">{viewPayable.vendorName}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
+                <p className="font-medium">{viewPayable.invoiceNumber}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Invoice Date</p>
+                <p className="font-medium">{formatDate(viewPayable.invoiceDate)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Due Date</p>
+                <p className="font-medium">{formatDate(viewPayable.dueDate)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Gross Amount</p>
+                <p className="font-medium">{formatCurrency(viewPayable.grossAmount, viewPayable.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Paid</p>
+                <p className="font-medium">{formatCurrency(viewPayable.paidAmount, viewPayable.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Outstanding</p>
+                <p className="font-medium">{formatCurrency(viewPayable.outstandingAmount, viewPayable.currencyCode)}</p>
+              </div>
+              <div>
+                <p className="text-neutral-500 dark:text-neutral-400">Owning Entity</p>
+                <p className="font-medium">{viewPayable.owningEntityName || viewPayable.owningEntityCode || '—'}</p>
+              </div>
+              {viewPayable.isIntercompany && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">Counterparty</p>
+                  <p className="font-medium">{viewPayable.counterpartyEntityName || viewPayable.counterpartyEntityCode || '—'}</p>
+                </div>
+              )}
+              {viewPayable.poboRequestStatus && (
+                <div>
+                  <p className="text-neutral-500 dark:text-neutral-400">POBO Status</p>
+                  <p className="font-medium">{viewPayable.poboRequestStatus}</p>
+                </div>
+              )}
+              {viewPayable.rejectionReason && (
+                <div className="col-span-2">
+                  <p className="text-neutral-500 dark:text-neutral-400">Rejection Reason</p>
+                  <p className="font-medium text-error-600 dark:text-error-300">{viewPayable.rejectionReason}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </Page>
   );
 };
