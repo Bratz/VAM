@@ -448,7 +448,25 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                   </div>
                 ))}
               </div>
-            ) : groupedData?.accountingEntries && groupedData.accountingEntries.length > 0 ? (
+            ) : (
+              <>
+                {/* Fee Applied — shown whenever a fee exists, even when the per-leg
+                    entries below are empty (e.g. a fee settled entirely through
+                    internal Shadow/Settlement VAs). The fee is a real cost to the
+                    corporate regardless of whether any of its operating VAs were
+                    touched directly. */}
+                {!!groupedData?.feeAmount && groupedData.feeAmount > 0 && (
+                  <div className="bg-warning-50 rounded-xl p-4 border border-warning-100 dark:bg-warning-500/10 dark:border-warning-500/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-warning-800 dark:text-warning-300">Fee Applied</span>
+                      <span className="font-bold text-warning-900">
+                        {formatCurrency(groupedData.feeAmount, groupedData.currencyCode)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {groupedData?.accountingEntries && groupedData.accountingEntries.length > 0 ? (
               <>
                 {/* Summary Header */}
                 <div className="bg-gradient-to-r from-info-50 to-cat-1-soft rounded-xl p-4 border border-info-100 dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
@@ -552,25 +570,24 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                     );
                   })}
                 </div>
-
-                {/* Totals Summary */}
-                {groupedData.feeAmount > 0 && (
-                  <div className="bg-warning-50 rounded-xl p-4 border border-warning-100 dark:bg-warning-500/10 dark:border-warning-500/30">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-warning-800 dark:text-warning-300">Fee Applied</span>
-                      <span className="font-bold text-warning-900">
-                        {formatCurrency(groupedData.feeAmount, groupedData.currencyCode)}
-                      </span>
-                    </div>
-                  </div>
-                )}
               </>
             ) : (
               <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                 <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
-                <p className="font-medium">No accounting entries found</p>
-                <p className="text-sm mt-1">This transaction may not be part of a multi-leg operation</p>
+                {!!groupedData?.feeAmount && groupedData.feeAmount > 0 ? (
+                  <>
+                    <p className="font-medium">No entries on your operating accounts</p>
+                    <p className="text-sm mt-1">This fee was processed entirely through internal settlement accounts.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">No accounting entries found</p>
+                    <p className="text-sm mt-1">This transaction may not be part of a multi-leg operation</p>
+                  </>
+                )}
               </div>
+            )}
+              </>
             )}
           </div>
         )}
