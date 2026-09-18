@@ -1875,9 +1875,13 @@ export interface CoboApprovalRequest {
 
 export interface CoboExecuteRequest {
   receivableId: string;
-  executedBy: string;
+  // Treasury's collecting VA -- omit to let the backend resolve it from the
+  // receivable's already-approved COBO collector entity.
+  treasuryVaId?: string;
+  subsidiaryVaId?: string;
+  amount?: number;
   paymentReference?: string;
-  paymentDate?: string;
+  notes?: string;
 }
 
 export interface CoboPreviewResponse {

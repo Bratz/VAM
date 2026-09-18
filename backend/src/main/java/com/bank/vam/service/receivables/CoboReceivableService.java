@@ -195,19 +195,39 @@ public class CoboReceivableService {
                 receivable.getCoboRequestStatus());
         }
         
-        // Get treasury VA (collector's account)
-        VirtualAccount treasuryVa = virtualAccountRepository.findById(request.getTreasuryVaId())
-            .orElseThrow(() -> new IllegalArgumentException("Treasury VA not found: " + request.getTreasuryVaId()));
-        
+        // Get treasury VA (collector's account). The confirmation UI doesn't ask the user to
+        // pick one -- the collecting entity was already fixed when COBO was requested/approved
+        // (receivable.coboCollectorEntityId), so resolve that entity's collection VA here rather
+        // than trusting the caller to supply it.
+        UUID resolvedTreasuryVaId = request.getTreasuryVaId();
+        if (resolvedTreasuryVaId == null) {
+            // `receivable` is reassigned later in this method (after the save()), so it can't be
+            // captured by a lambda -- pull out the fields this one needs first.
+            final String collectorEntityCode = receivable.getCoboCollectorEntityCode();
+            final UUID collectorEntityId = receivable.getCoboCollectorEntityId();
+            final String currencyCode = receivable.getCurrencyCode();
+            resolvedTreasuryVaId = virtualAccountRepository
+                .findByOwningEntityIdAndAccountCategoryAndCurrencyCode(
+                    collectorEntityId, VirtualAccount.AccountCategory.COLLECTION, currencyCode)
+                .map(VirtualAccount::getId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "No active COLLECTION virtual account found for treasury entity " +
+                    collectorEntityCode + " in " + currencyCode));
+        }
+        final UUID treasuryVaId = resolvedTreasuryVaId;
+        VirtualAccount treasuryVa = virtualAccountRepository.findById(treasuryVaId)
+            .orElseThrow(() -> new IllegalArgumentException("Treasury VA not found: " + treasuryVaId));
+
         if (treasuryVa.getStatus() != VaStatus.ACTIVE) {
             throw new IllegalStateException("Treasury VA not active: " + treasuryVa.getStatus());
         }
-        
-        // Get subsidiary VA (owning entity's account for forwarding)
-        VirtualAccount subsidiaryVa = null;
-        if (request.getSubsidiaryVaId() != null) {
-            subsidiaryVa = virtualAccountRepository.findById(request.getSubsidiaryVaId()).orElse(null);
-        }
+
+        // Get subsidiary VA (owning entity's account for forwarding) -- defaults to the
+        // receivable's own linked VA when the caller doesn't override it.
+        UUID subsidiaryVaId = request.getSubsidiaryVaId() != null
+            ? request.getSubsidiaryVaId() : receivable.getVirtualAccountId();
+        VirtualAccount subsidiaryVa = subsidiaryVaId != null
+            ? virtualAccountRepository.findById(subsidiaryVaId).orElse(null) : null;
         
         BigDecimal collectionAmount = request.getAmount() != null ? 
             request.getAmount() : receivable.getOutstandingAmount();
@@ -242,7 +262,7 @@ public class CoboReceivableService {
             .externalReference(request.getPaymentReference())
             .isRobo(true)
             .behalfOfEntity(receivable.getOwningEntityName())
-            .behalfOfVaId(request.getSubsidiaryVaId())
+            .behalfOfVaId(subsidiaryVaId)
             .status(TransactionStatus.COMPLETED)
             .transactionDate(LocalDateTime.now())
             .valueDate(LocalDate.now())
@@ -402,7 +422,7 @@ public class CoboReceivableService {
             .netAmount(netAmount)
             .treasuryVaId(treasuryVa.getId())
             .treasuryVaNumber(treasuryVa.getVaNumber())
-            .subsidiaryVaId(request.getSubsidiaryVaId())
+            .subsidiaryVaId(subsidiaryVaId)
             .settlementVaId(settlementVaId)
             .settlementVaNumber(settlementVaNumber)
             .ihbDepositId(ihbDepositId)

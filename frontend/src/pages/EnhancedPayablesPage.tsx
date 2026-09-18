@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
+import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { useNavigation } from '../App';
 import { 
@@ -644,10 +645,11 @@ interface PayableActionsCellProps {
   onReject: (payable: PayablePhase2) => void;
   onSubmit: (payable: PayablePhase2) => void;
   onPayNow: (payable: PayablePhase2) => void;
+  onAddToNetting: (payable: PayablePhase2) => void;
 }
 
 const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
-  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onPayNow
+  payable, onViewDetails, onRequestPobo, onApprove, onReject, onSubmit, onPayNow, onAddToNetting
 }) => {
   const canSubmit = payable.status === 'DRAFT';
   const canApprove = payable.status === 'PENDING_APPROVAL';
@@ -708,6 +710,15 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           <Landmark className="w-4 h-4" />
         </button>
       )}
+      {payable.nettingEligible && payable.nettingStatus === 'NOT_INCLUDED' && (
+        <button
+          onClick={() => onAddToNetting(payable)}
+          className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
+          title="Add to Netting Cycle"
+        >
+          <GitBranch className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };
@@ -744,6 +755,10 @@ const EnhancedPayablesPage: React.FC = () => {
   const [poboPayables, setPoboPayables] = useState<PayablePhase2[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [viewPayable, setViewPayable] = useState<PayablePhase2 | null>(null);
+
+  // Netting Cycle Picker Modal state
+  const [showNettingPicker, setShowNettingPicker] = useState(false);
+  const [nettingPayable, setNettingPayable] = useState<PayablePhase2 | null>(null);
 
   // Approval modal state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -1022,6 +1037,22 @@ const EnhancedPayablesPage: React.FC = () => {
     }
   };
 
+  const handleAddToNetting = (payable: PayablePhase2) => {
+    setNettingPayable(payable);
+    setShowNettingPicker(true);
+  };
+
+  const handleConfirmAddToNetting = async (cycleId: string) => {
+    if (!nettingPayable) return;
+    await payablesApiPhase2.addToNetting({
+      payableIds: [nettingPayable.id],
+      nettingCycleId: cycleId,
+      addedBy: 'current-user',
+    });
+    await loadPayables();
+    await loadStats();
+  };
+
   const handleApprovalAction = async (payableId: string, action: string, reason?: string) => {
     setApprovalLoading(true);
     try {
@@ -1240,6 +1271,7 @@ const EnhancedPayablesPage: React.FC = () => {
                   onReject={handleReject}
                   onSubmit={handleSubmitForApproval}
                   onPayNow={handlePayNow}
+                  onAddToNetting={handleAddToNetting}
                 />
               ),
             },
@@ -1268,6 +1300,19 @@ const EnhancedPayablesPage: React.FC = () => {
         action={approvalAction}
         onConfirm={handleApprovalAction}
         loading={approvalLoading}
+      />
+
+      {/* Netting Cycle Picker Modal */}
+      <NettingCyclePickerModal
+        isOpen={showNettingPicker}
+        onClose={() => { setShowNettingPicker(false); setNettingPayable(null); }}
+        items={nettingPayable ? [{
+          id: nettingPayable.id,
+          label: nettingPayable.payableNumber,
+          amount: nettingPayable.outstandingAmount,
+          currencyCode: nettingPayable.currencyCode,
+        }] : []}
+        onConfirm={handleConfirmAddToNetting}
       />
 
       {/* View Details Modal */}

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
+import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { 
   receivablesApiPhase3,
@@ -114,7 +115,6 @@ interface InvoicePhase3 {
   paymentLink?: string;
   qrCodeUrl?: string;
   subsidiaryVaId?: string;
-  treasuryVaId?: string;
 }
 
 interface VibanRecord {
@@ -623,6 +623,10 @@ const EnhancedReceivablesPage: React.FC = () => {
   // COBO Modal state
   const [showCoboModal, setShowCoboModal] = useState(false);
   const [coboReceivables, setCoboReceivables] = useState<InvoicePhase3[]>([]);
+
+  // Netting Cycle Picker Modal state
+  const [showNettingPicker, setShowNettingPicker] = useState(false);
+  const [nettingInvoice, setNettingInvoice] = useState<InvoicePhase3 | null>(null);
   
   // Treasury Approval Modal state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -773,7 +777,6 @@ const EnhancedReceivablesPage: React.FC = () => {
             paymentLink: inv.paymentLink,
             qrCodeUrl: inv.qrCodeUrl,
             subsidiaryVaId: inv.virtualAccountId,
-            treasuryVaId: inv.coboCollectorEntityId,
           }));
         }
       } catch (apiErr) {
@@ -938,9 +941,9 @@ const EnhancedReceivablesPage: React.FC = () => {
       } else if (approvalAction === 'execute') {
         await receivablesApiPhase3.executeCoboCollection({
           receivableId: approvalInvoice.id,
-          executedBy: 'treasury-user',
+          subsidiaryVaId: approvalInvoice.subsidiaryVaId,
+          amount: approvalInvoice.outstandingAmount,
           paymentReference: `COBO-${Date.now()}`,
-          paymentDate: new Date().toISOString().split('T')[0],
         });
       }
       
@@ -953,6 +956,21 @@ const EnhancedReceivablesPage: React.FC = () => {
     } finally {
       setApprovalLoading(false);
     }
+  };
+
+  const handleAddToNetting = (invoice: InvoicePhase3) => {
+    setNettingInvoice(invoice);
+    setShowNettingPicker(true);
+  };
+
+  const handleConfirmAddToNetting = async (cycleId: string) => {
+    if (!nettingInvoice) return;
+    await receivablesApiPhase3.addToNettingCycle({
+      receivableId: nettingInvoice.id,
+      nettingCycleId: cycleId,
+      addedBy: 'current-user',
+    });
+    await fetchData();
   };
 
   const handleRemoveFromNetting = async (invoice: InvoicePhase3) => {
@@ -1377,6 +1395,16 @@ const EnhancedReceivablesPage: React.FC = () => {
                                 <QrCode className="w-4 h-4" />
                               </Button>
                             )}
+                            {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddToNetting(invoice)}
+                                title="Add to Netting Cycle"
+                              >
+                                <GitMerge className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         );
                       },
@@ -1454,6 +1482,11 @@ const EnhancedReceivablesPage: React.FC = () => {
                           <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
                             <Eye className="w-4 h-4" />
                           </Button>
+                          {invoice.nettingEligible && invoice.nettingStatus === 'NOT_INCLUDED' && (
+                            <Button variant="outline" size="sm" onClick={() => handleAddToNetting(invoice)} title="Add to Netting Cycle">
+                              <GitMerge className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       ),
                     },
@@ -1743,6 +1776,19 @@ const EnhancedReceivablesPage: React.FC = () => {
         action={approvalAction}
         onConfirm={handleApprovalConfirm}
         loading={approvalLoading}
+      />
+
+      {/* Netting Cycle Picker Modal */}
+      <NettingCyclePickerModal
+        isOpen={showNettingPicker}
+        onClose={() => { setShowNettingPicker(false); setNettingInvoice(null); }}
+        items={nettingInvoice ? [{
+          id: nettingInvoice.id,
+          label: nettingInvoice.invoiceNumber,
+          amount: nettingInvoice.outstandingAmount,
+          currencyCode: nettingInvoice.currencyCode,
+        }] : []}
+        onConfirm={handleConfirmAddToNetting}
       />
 
       {/* Invoice Detail Modal */}
