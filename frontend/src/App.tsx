@@ -88,7 +88,6 @@ import InterestAccrualReportsPage from './pages/InterestAccrualReportsPage';
 // ============================================================================
 // SETTLEMENT & EXCEPTION PAGES (Phase 3)
 // ============================================================================
-import SettlementVaPage from './pages/SettlementVaPage';
 import ExceptionDashboardPage from './pages/ExceptionDashboardPage';
 
 // ============================================================================
@@ -105,7 +104,6 @@ import TaxChargesSetupPage from './pages/TaxChargeSetupPage';
 
 import HierarchyOperationsPage from './pages/HierarchyOperationsPage';
 import OperationHistoryPage from './pages/OperationHistoryPage';
-import Iso20022PaymentsPage from './pages/Iso20022PaymentsPage';
 import TransfersPage from './pages/TransfersPage';
 import FileIngestUploadPage from './pages/FileIngestUploadPage';
 
@@ -183,7 +181,6 @@ export type PageType =
   | 'interest-accruals'
   
   // Settlement & Exception (Phase 3)
-  | 'settlement-vas'
   | 'exceptions'
   
   // Phase 8: Intercompany Management
@@ -205,9 +202,6 @@ export type PageType =
   | 'integrations'
   | 'tax-charges'
   | 'settings'
-
-  // ISO 20022 Payments
-  | 'iso20022'
 
   // Fund Transfers
   | 'transfers'
@@ -473,7 +467,7 @@ const BaaSTransactionsPage: React.FC = () => (
 // See styles/index.css [data-section="..."] rules.
 type SectionKey = 'core' | 'finance' | 'compliance' | 'treasury' | 'baas' | 'intercompany' | 'admin' | 'payments';
 const sectionFor = (page: PageType): SectionKey => {
-  if (page === 'iso20022' || page === 'transfers') return 'payments';
+  if (page === 'transfers') return 'payments';
   if (page.startsWith('baas-')) return 'baas';
   if (page === 'kycc' || page === 'viban') return 'compliance';
   if (page === 'sync-admin' || page === 'integrations' || page === 'tax-charges' || page === 'settings' || page === 'operation-history') return 'admin';
@@ -481,7 +475,7 @@ const sectionFor = (page: PageType): SectionKey => {
   const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
     'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
-    'interest-accruals','settlement-vas','exceptions','hierarchy-operations'];
+    'interest-accruals','exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
   if (['receivables','payables','escrow','wallet','receivables-create','receivables-edit','payables-create','payables-edit',
        'ecommerce-dashboard','ecommerce-collections','merchant-onboarding','seller-collections','file-ingest'].includes(page)) return 'finance';
@@ -536,7 +530,6 @@ const App: React.FC = () => {
     } else {
       if (currentPage.includes('receivables')) setCurrentPage('receivables');
       else if (currentPage.includes('payables')) setCurrentPage('payables');
-      else if (currentPage === 'settlement-vas') { setCurrentPage('programs'); setSelectedProgramId(null); }
       else setCurrentPage('dashboard');
     }
   };
@@ -645,7 +638,6 @@ const App: React.FC = () => {
       // ====================================================================
       // Settlement & Exception (Phase 3)
       // ====================================================================
-      case 'settlement-vas': return <SettlementVaPage programId={selectedProgramId || pageParams.programId || undefined} onBack={goBack} />;
       case 'exceptions': return <ExceptionDashboardPage />;
       
       // ====================================================================
@@ -675,9 +667,6 @@ const App: React.FC = () => {
       case 'integrations': return <IntegrationsPage />;
       case 'tax-charges': return <TaxChargesSetupPage />;
       case 'settings': return <div className="p-8 text-center text-neutral-500">Settings page coming soon...</div>;
-
-      // ISO 20022 Payments
-      case 'iso20022': return <Iso20022PaymentsPage />;
 
       // Fund Transfers
       case 'transfers': return <TransfersPage />;

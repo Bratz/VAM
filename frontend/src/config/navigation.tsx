@@ -36,7 +36,6 @@ import {
   FolderKanban,
   CreditCard,
   Globe,
-  Scale,
   AlertTriangle,
   GitBranch,
   Building,
@@ -58,7 +57,6 @@ import {
   Store,
   DollarSign,
   Sparkles,    // Insights section / Treasury Copilot
-  FileCode2,   // ISO 20022 Payments
   Droplets,    // Multi-Bank Liquidity (water metaphor differentiates from Globe used for Currency Mirrors)
   Briefcase,   // Legal Entities (differentiates from Bank Accounts which uses Building)
   FlaskConical, // Simulator (sandbox — the lab-flask metaphor; reserved for the Simulator only)
@@ -153,9 +151,7 @@ export const navSections: NavSection[] = [
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Payables (AP)', href: 'payables', badge: 1 },
       { icon: <CreditCard className="w-5 h-5" />, label: 'POBO Payments', href: 'intercompany-pobo' },
       { icon: <Wallet className="w-5 h-5" />, label: 'COBO Collections', href: 'intercompany-cobo' },
-      { icon: <FileCode2 className="w-5 h-5" />, label: 'ISO 20022 Payments', href: 'iso20022' },
       { icon: <Upload className="w-5 h-5" />, label: 'File Ingest Pipeline', href: 'file-ingest' },
-      { icon: <Scale className="w-5 h-5" />, label: 'Settlement VAs', href: 'settlement-vas' },
       { icon: <AlertTriangle className="w-5 h-5" />, label: 'Exceptions', href: 'exceptions', badge: 12, badgeColor: 'warning' },
     ]
   },
@@ -269,9 +265,7 @@ export const pageTitles: Record<string, string> = {
   'payables': 'Accounts Payable',
   'intercompany-pobo': 'POBO Payments',
   'intercompany-cobo': 'COBO Collections',
-  'iso20022': 'ISO 20022 Payments',
   'file-ingest': 'File Ingest Pipeline',
-  'settlement-vas': 'Settlement VAs',
   'exceptions': 'Exception Transactions',
   // Liquidity Management
   'forecasting': 'Cash Forecast',

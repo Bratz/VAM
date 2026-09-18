@@ -1,7 +1,7 @@
 // ============================================================================
 // HIERARCHY TEMPLATES CONFIGURATION
 // Path: src/config/templateHierarchy.ts
-// Required by: ProgramsPage.tsx, SettlementVaPage.tsx
+// Required by: ProgramsPage.tsx
 // ============================================================================
 
 import {
