@@ -33,13 +33,14 @@ import { FilterKey, ViewKey } from './types';
 // Composition (top to bottom, expanded mode):
 //   1. Hero — consolidated position (HeroMetricCard): total, available,
 //      1D/7D/30D delta + sparkline, currency picker, in-transit figure.
-//   2. Per-currency breakdown — demoted supporting detail, sorted by size
-//      (matches the Dashboard's own currency-bar ordering).
-//   3. Liquidity distribution across banks — value-weighted, not count-based.
-//   4. Operational StatStrip — 4 filter tiles (total, stale, failed, never)
-//   5. Conditional freshness banner — refresh-all CTA when work exists
-//   6. Per-currency cards — bank split bar per currency
-//   7. Filter chip row — selecting stale/failed/never bounces to By Bank
+//   2. Liquidity distribution across banks — value-weighted, not count-based.
+//   3. Operational StatStrip — 4 filter tiles (total incl. home-bank/home
+//      bank name as its sub-line, stale, failed, never)
+//   4. Conditional freshness banner — refresh-all CTA when work exists
+//   5. Per-currency cards — bank split bar per currency (the page's one
+//      per-currency-totals section; a separate summary card used to repeat
+//      these same totals higher up and was removed)
+//   6. Filter chip row — selecting stale/failed/never bounces to By Bank
 //
 // `compact` mode (consumed by the cockpit's Multi-Bank Band) skips the hero,
 // the rate map, and the trend fetch entirely — it stays the lightweight
@@ -434,44 +435,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             />
           )}
 
-          {/* 2. Per-currency breakdown — a compact chip row, not the full
-              grid this used to be (that duplicated the By Currency tab's own
-              detailed bank-by-bank tables). The footer strip below (total
-              shadows / home-bank held / home bank name) isn't shown anywhere
-              else, so it stays. */}
-          <Card padding="sm">
-            <p className="label mb-3">Liquidity by currency</p>
-            {currencies.length === 0 ? (
-              <p className="body-sm">No shadow balances available.</p>
-            ) : (
-              currencyChipRow
-            )}
-            <div className="mt-5 pt-4 border-t border-neutral-200/70 dark:border-primary-800/60 flex flex-wrap gap-x-8 gap-y-2">
-              <div>
-                <p className="label">Total shadows</p>
-                <p className="body mt-0.5">{summary.totalShadows}</p>
-              </div>
-              <div>
-                <p className="label">Held at home bank</p>
-                <p className="body mt-0.5">
-                  {summary.homeBankShadows}
-                  <span className="body-sm text-neutral-500 dark:text-neutral-400 ml-2">
-                    of {summary.totalShadows}
-                  </span>
-                </p>
-              </div>
-              {summary.homeBankName && (
-                <div>
-                  <p className="label">Home bank</p>
-                  <p className="body mt-0.5">{summary.homeBankName}</p>
-                </div>
-              )}
-            </div>
-          </Card>
         </>
       )}
 
-      {/* 3. Liquidity distribution across banks (value-weighted). */}
+      {/* 2. Liquidity distribution across banks (value-weighted). */}
       <DistributionWrap>
         <div className="flex items-start justify-between gap-3 mb-3">
           <p className="label">Liquidity distribution across banks</p>
@@ -514,7 +481,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </div>
       </DistributionWrap>
 
-      {/* 4. Operational stat strip — four filter tiles. In compact mode the
+      {/* 3. Operational stat strip — four filter tiles. In compact mode the
           tiles render read-only (the cockpit's attention inbox is the place
           for action; the band is just a glance-surface). */}
       <StatStrip columns={4}>
@@ -523,6 +490,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           tone="primary"
           label="Total Shadows"
           value={summary.totalShadows.toString()}
+          sub={`${summary.homeBankShadows} at home bank${summary.homeBankName ? ` · ${summary.homeBankName}` : ''}`}
         />
         <MetricCard
           icon={<AlertTriangle className="w-5 h-5" />}
@@ -553,7 +521,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         />
       </StatStrip>
 
-      {/* 5. Freshness banner — only when there's work. Suppressed in compact
+      {/* 4. Freshness banner — only when there's work. Suppressed in compact
           mode because the cockpit's attention inbox already surfaces
           stale balances as their own attention items. */}
       {!compact && hasWork && (
@@ -579,7 +547,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </Card>
       )}
 
-      {/* 6. Per-currency rail — bank split bar within each currency. In compact
+      {/* 5. Per-currency rail — bank split bar within each currency. In compact
           mode the rail is capped to the top-4 currencies and uses lighter
           chrome (bordered div instead of nested Card). */}
       {visibleCurrencies.length > 0 && (
@@ -635,7 +603,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </div>
       )}
 
-      {/* 7. Filter chips at the bottom — shadow-level filters bounce to By
+      {/* 6. Filter chips at the bottom — shadow-level filters bounce to By
           Bank where the rows live; bank-level chips stay on Overview and
           narrow the per-currency cards. Suppressed in compact mode (the
           band is a glance-surface, not a filter UI). */}

@@ -64,10 +64,22 @@ function MyComponent() {
 ### Colors
 
 #### Primitive Colors (Raw Values)
-- **Navy** (Primary Brand): 11-shade scale from `navy-50` to `navy-950`
-- **Gold** (Accent): 10-shade scale for highlights and CTAs
+> Updated 2026-09 — this section previously described the original Navy/Gold
+> palette. A later palette swap (`tailwind.config.js`, Phase 12) replaced both;
+> the names below are current.
+- **Primary** (grey-slate "ink" family, replaces the original Navy): 11-shade
+  scale, `primary-50` to `primary-950`. Named roles: 800 = banner slate, 900 =
+  ink (main dark text), 950 = nav/deep surface (sidebar + dark-mode background).
+- **Accent** (pacific cyan family, replaces the original Gold): 10-shade
+  scale, `accent-50` to `accent-900` (`#1985a1` at 500) — fills, chart series,
+  borders, CTAs.
 - **Neutral**: Gray scale for text, backgrounds, borders
-- **Semantic**: Green (success), Amber (warning), Red (error), Blue (info)
+- **Semantic**: Green (success), Orange (warning — repalettised off Tailwind's
+  amber so it no longer shares hex values with the gold-era accent), Red
+  (error), Blue (info)
+- **Categorical** (`cat-1`…`cat-8`): a separate 8-hue palette for
+  typed-but-not-semantic data (account types, hierarchy levels, currency
+  identity) — explicitly not for status, which stays success/warning/error/info.
 
 #### Semantic Colors (Use These)
 - **Brand**: `primary`, `primaryHover`, `accent`, `accentSubtle`
@@ -79,20 +91,25 @@ function MyComponent() {
 ### Typography
 
 #### Font Families
+> Updated 2026-09 — this section previously documented a Fraunces-for-titles
+> scheme that has since been fully retired (see below); the block below is
+> current (`design-system/variables.css`).
 ```css
 --font-sans:    'Geist', system-ui, sans-serif;        /* body, UI */
 --font-numeric: 'Geist', system-ui, sans-serif;        /* stat values, amounts */
---font-title:   'Fraunces', Georgia, ui-serif, serif;      /* page titles only */
---font-mono:    'Geist Mono', 'Fira Code', monospace;  /* IBANs, references, code */
+--font-title:   'Geist', system-ui, sans-serif;        /* page titles too — see note below */
+--font-mono:    'Geist Mono', ui-monospace, monospace; /* identifiers only: IBANs, VIBANs, reference codes, entity IDs — never monetary amounts */
 ```
 
-Tier 3 stack (Phase 12, 2026-06-12): Geist carries body, UI **and** numeric
-display — it replaced both Bricolage Grotesque (body) and IBM Plex Sans
-(numerics). Fraunces (variable serif by Undercase Type) remains on page titles
-only as the brand moment; Geist Mono on identifiers only. The historical
-`--font-display` alias is retired — stat utilities read `--font-numeric`
-directly. Loaded via Google Fonts in `styles/index.css`. See `CLAUDE.md`
-"Frontend Aesthetics".
+Geist is now the only typeface app-wide — `--font-sans`/`--font-title`/
+`--font-numeric` all resolve to the same stack. This is the end state of a
+multi-step migration: titles and figures ran on Fraunces (a variable serif),
+then briefly Newsreader Variable, before both were dropped in favor of Geist
+everywhere so no page carries a second serif identity alongside it. The
+historical `--font-display` alias is retired — stat utilities read
+`--font-numeric` directly. Fonts are self-hosted via `@fontsource` packages
+(not a Google Fonts `@import`) — see the top of `styles/index.css`. See
+`CLAUDE.md` "Frontend Aesthetics".
 
 #### Text Styles (Composite)
 | Token | Size | Weight | Use Case |

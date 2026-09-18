@@ -192,7 +192,13 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Banknote className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                      <span className="font-semibold text-primary-900 dark:text-neutral-50">{ccy.currencyCode}</span>
+                      {/* Currency code as an identifier label (not a section
+                          heading, which is what .section-title's Fraunces
+                          treatment is reserved for elsewhere on this tab) —
+                          font-mono matches how the same code renders in
+                          Overview's "By currency" rail and the By Entity/By
+                          Country tables, instead of a plain sans weight. */}
+                      <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{ccy.currencyCode}</span>
                       <span className="text-xs text-neutral-500 dark:text-neutral-400">({ccy.shadowCount} mirror{ccy.shadowCount !== 1 ? 's' : ''})</span>
                     </div>
                     <div className="text-right">
