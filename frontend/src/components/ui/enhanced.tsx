@@ -73,6 +73,9 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={typeof title === 'string' ? title : undefined}
         className={cn(
           'relative bg-surface-card rounded-lg shadow-xl w-full mx-4 flex flex-col',
           'animate-scale-in max-h-[90vh]',
@@ -88,6 +91,8 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
             {showCloseButton && (
               <button
+                type="button"
+                aria-label="Close"
                 onClick={onClose}
                 className="p-2 -mr-2 -mt-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
               >
@@ -119,7 +124,7 @@ interface Tab {
   id: string;
   label: string;
   icon?: React.ReactNode;
-  badge?: number;
+  badge?: number | string;
   disabled?: boolean;
 }
 

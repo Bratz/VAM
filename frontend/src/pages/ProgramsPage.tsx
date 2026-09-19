@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Percent, Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Copy, Landmark, Trash2, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, Badge, Button , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
+import { Card, Badge, Button , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs, Alert } from '../components/ui/enhanced';
+import toast from 'react-hot-toast';
+import { useMarket } from '../context/MarketContext';
+import { useReportingRates } from '../components/multiBank/useReportingRates';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { HIERARCHY_TEMPLATES, getTemplatesForProgramType, getRecommendedTemplate, HierarchyLevelConfig } from '../config/templateHierarchy';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
-import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 // ============================================================================
@@ -151,7 +153,9 @@ interface WalletChargesRequest {
 }
 
 // Mock wallet charges for fallback
-const mockWalletCharges: WalletChargesResponse = {
+// Standard ChargeConfiguration base rates, shown only while creating a program (a program has no
+// fee record until it exists). Never used as a fallback when a real program's fees fail to load.
+const STANDARD_WALLET_BASE_RATES: WalletChargesResponse = {
   programId: '',
   programCode: '',
   topup: { chargeCode: 'WALLET_TOPUP', chargeName: 'Wallet Topup Fee', percentage: 1.5, fixed: 0, minimum: 1, maximum: 100, isWaived: false, hasOverride: false, source: 'BASE' },
@@ -422,6 +426,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
   // Wallet Charges state
   const [walletCharges, setWalletCharges] = useState<WalletChargesResponse | null>(null);
   const [walletChargesLoading, setWalletChargesLoading] = useState(false);
+  const [walletChargesError, setWalletChargesError] = useState(false);
 
   useEffect(() => {
     if (program) {
@@ -471,12 +476,9 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
       setWalletChargesLoading(true);
       fetchApi<WalletChargesResponse>(`/programs/${program.id}/wallet`, {}, CHARGES_API_BASE)
         .then(res => {
-          if (res.success && res.data) {
-            setWalletCharges(res.data);
-          } else {
-            // Use mock data as fallback
-            setWalletCharges({ ...mockWalletCharges, programId: program.id, programCode: program.programCode });
-          }
+          // No invented fallback: a failed load shows an error state, never made-up fees.
+          setWalletCharges(res.success && res.data ? res.data : null);
+          setWalletChargesError(!(res.success && res.data));
         })
         .finally(() => setWalletChargesLoading(false));
     } else {
@@ -501,7 +503,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
   ].filter(tab => tab.show !== false);
 
   return (
-    <Modal isOpen={!!program} onClose={onClose} size="xl" title="">
+    <Modal isOpen={!!program} onClose={onClose} size="xl" showCloseButton={false}>
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-edge">
@@ -528,7 +530,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => onEdit(program)} leftIcon={<Pencil className="w-4 h-4" />}>Edit</Button>
-            <Button variant="outline" size="sm" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <Button variant="outline" size="sm" aria-label="Close" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>
         </div>
 
@@ -543,7 +545,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             <p className="caption">Active VAs</p>
           </div>
           <div className="text-center">
-            <p className="stat-value-sm">{formatCurrency(program.totalBalance, program.currencyCode)}</p>
+            <p className="stat-value-xs whitespace-nowrap">{formatCurrency(program.totalBalance, program.currencyCode)}</p>
             <p className="caption">Total Balance</p>
           </div>
           <div className="text-center">
@@ -553,19 +555,18 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-edge">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={cn('py-3 px-1 text-body-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5',
-                activeTab === tab.id ? 'border-primary-500 text-primary-900 dark:text-neutral-50' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
-              {tab.id === 'hierarchy' && <GitBranch className="w-4 h-4" />}
-              {tab.id === 'viban' && <Hash className="w-4 h-4" />}
-              {tab.label}
-              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-surface-muted rounded-md">{tab.count}</span>}
-              {tab.badge && <Badge variant="warning" size="sm">{tab.badge}</Badge>}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          variant="underline"
+          size="sm"
+          activeTab={activeTab}
+          onChange={(id) => setActiveTab(id as typeof activeTab)}
+          tabs={tabs.map((tab) => ({
+            id: tab.id,
+            label: tab.label,
+            icon: tab.id === 'hierarchy' ? <GitBranch className="w-4 h-4" /> : tab.id === 'viban' ? <Hash className="w-4 h-4" /> : undefined,
+            badge: tab.badge ?? tab.count,
+          }))}
+        />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto py-4">
@@ -1233,6 +1234,10 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     </div>
                   </div>
                 </>
+              ) : walletChargesError ? (
+                <Alert variant="error" title="Couldn't load wallet fees">
+                  The fee configuration for this program could not be loaded. No fees are shown rather than guessing them.
+                </Alert>
               ) : (
                 <div className="text-center py-12">
                   <Wallet className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
@@ -1478,6 +1483,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
   const [loadingPools, setLoadingPools] = useState(false);
     // Wallet Charges from ChargeConfiguration API
   const [walletCharges, setWalletCharges] = useState<WalletChargesResponse | null>(null);
+  const [chargesLoadFailed, setChargesLoadFailed] = useState(false);
   const [loadingCharges, setLoadingCharges] = useState(false);
 
   
@@ -1651,6 +1657,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
   useEffect(() => {
     if (isOpen && program && needsWalletConfig) {
       setLoadingCharges(true);
+      setChargesLoadFailed(false);
       fetchApi<WalletChargesResponse>(`/programs/${program.id}/wallet`, {}, CHARGES_API_BASE)
         .then(res => {
           if (res.success && res.data) {
@@ -1685,7 +1692,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               },
             });
           } else {
-            setWalletCharges(mockWalletCharges);
+            // No invented fallback when the program's real rates can't be loaded.
+            setWalletCharges(null);
+            setChargesLoadFailed(true);
             // Reset overrides to defaults
             setChargeOverrides({
               topup: { waived: false },
@@ -1699,7 +1708,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
         })
         .finally(() => setLoadingCharges(false));
     } else if (isOpen && !program && needsWalletConfig) {
-      setWalletCharges(mockWalletCharges);
+      setWalletCharges(STANDARD_WALLET_BASE_RATES);
       // Reset overrides for new program
       setChargeOverrides({
         topup: { waived: false },
@@ -1924,7 +1933,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
     // Validate corporate ID for new programs
     if (!isEdit && !resolvedCorporateId) {
       console.error('Corporate ID is required for new programs');
-      alert('Please select a corporate before creating a program.');
+      toast.error('Select a corporate before creating a program.');
       return;
     }
 
@@ -3131,6 +3140,10 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   onFlatChange={v => setChargeOverrides({ ...chargeOverrides, transfer: { ...chargeOverrides.transfer, flat: v } })}
                   onWaiverChange={w => setChargeOverrides({ ...chargeOverrides, transfer: { ...chargeOverrides.transfer, waived: w } })} />
               </div>
+            ) : chargesLoadFailed ? (
+              <Alert variant="error" title="Couldn't load this program's wallet fees">
+                Base rates are unavailable, so fee overrides can't be edited right now. Try again later.
+              </Alert>
             ) : null}
 
             {/* Fixed Fees */}
@@ -3558,6 +3571,21 @@ const ProgramsPage: React.FC = () => {
   const [_error, setError] = useState<string | null>(null);
   // Action menu state
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await programApi.delete(deleteTarget.id);
+    setDeleting(false);
+    if (res.success) {
+      setPrograms(prev => prev.filter(p => p.id !== deleteTarget.id));
+      toast.success(`Deleted ${deleteTarget.programName}`);
+      setDeleteTarget(null);
+    } else {
+      toast.error('Failed to delete program: ' + (res.message || 'Unknown error'));
+    }
+  };
 
   // Corporate context state
   const [corporates, setCorporates] = useState<Corporate[]>([]);
@@ -3635,7 +3663,7 @@ const ProgramsPage: React.FC = () => {
         setEditProgram(null);
       } else {
         console.error('Update failed:', res);
-        alert('Failed to update program: ' + (res.message || 'Unknown error'));
+        toast.error('Failed to update program: ' + (res.message || 'Unknown error'));
         throw new Error(res.message || 'Update failed');
       }
     } else {
@@ -3646,7 +3674,7 @@ const ProgramsPage: React.FC = () => {
         setShowCreateModal(false);
       } else {
         console.error('Create failed:', res);
-        alert('Failed to create program: ' + (res.message || 'Unknown error'));
+        toast.error('Failed to create program: ' + (res.message || 'Unknown error'));
         throw new Error(res.message || 'Create failed');
       }
     }
@@ -3698,6 +3726,20 @@ const ProgramsPage: React.FC = () => {
     totalVirtualAccounts: programs.reduce((s, p) => s + (p.virtualAccountCount || 0), 0),
     totalBalance: programs.reduce((s, p) => s + (p.totalBalance || 0), 0),
   };
+
+  // Programs hold balances in different currencies, so the headline converts each program's
+  // balance to the market's reporting currency instead of adding raw amounts together.
+  const { profile } = useMarket();
+  const reportingCurrency = profile.defaultCurrency;
+  const currencyCodes = React.useMemo(
+    () => [...new Set(programs.map(p => p.currencyCode).filter(Boolean))].sort(),
+    [programs],
+  );
+  const { rates, excluded: excludedCurrencies, loading: ratesLoading } = useReportingRates(currencyCodes, reportingCurrency);
+  const consolidatedBalance = programs.reduce(
+    (sum, p) => sum + (p.totalBalance || 0) * (rates.get(p.currencyCode) ?? (p.currencyCode === reportingCurrency ? 1 : 0)),
+    0,
+  );
 
   const typeTabs: { id: ProgramType | 'ALL'; label: string; count: number; icon: React.ElementType }[] = [
     { id: 'ALL', label: 'All', count: displayStats.totalPrograms, icon: Layers },
@@ -3770,30 +3812,26 @@ const ProgramsPage: React.FC = () => {
       <HeroMetricCard
         primary={{
           label: 'Total Balance',
-          value: <TileAmount value={displayStats.totalBalance} currency="AED" />,
-          sub: `${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active`,
+          value: ratesLoading ? '…' : <TileAmount value={consolidatedBalance} currency={reportingCurrency} />,
+          sub: `${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active · ${displayStats.totalVirtualAccounts} virtual accounts`
+            + (currencyCodes.length > 1 ? ` · converted to ${reportingCurrency} at live rates` : '')
+            + (excludedCurrencies.length ? ` · excludes ${excludedCurrencies.join(', ')} (no rate)` : ''),
         }}
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
-
-      {/* Operational metrics — secondary strip below the hero. */}
-      <StatStrip>
-        <StatTile layout="row" tone="primary" label="Total Programs" value={displayStats.totalPrograms} icon={<Layers className="w-5 h-5" />} delay="0.15s" />
-        <StatTile layout="row" tone="success" label="Active" value={displayStats.activePrograms} icon={<CheckCircle className="w-5 h-5" />} delay="0.2s" />
-        <StatTile layout="row" tone="info" label="Virtual Accounts" value={displayStats.totalVirtualAccounts} icon={<CreditCard className="w-5 h-5" />} delay="0.25s" />
-      </StatStrip>
 
       {/* Type Filter Tabs */}
       <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
         {typeTabs.map(tab => {
           const Icon = tab.icon;
           return (
-            <div key={tab.id} onClick={() => setTypeFilter(tab.id)} className="cursor-pointer">
+            <button key={tab.id} type="button" aria-pressed={typeFilter === tab.id} onClick={() => setTypeFilter(tab.id)}
+              className="text-left rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-accent-400">
               <Card padding="sm" className={cn('transition-all hover:shadow-md', typeFilter === tab.id && 'ring-2 ring-primary-500')}>
                 <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption truncate">{tab.label}</span></div>
                 <p className="text-body-lg font-semibold text-primary-900 mt-1 dark:text-neutral-50">{tab.count}</p>
               </Card>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -3936,13 +3974,7 @@ const ProgramsPage: React.FC = () => {
                         <button
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
                           onClick={() => {
-                            if (confirm(`Are you sure you want to delete "${program.programName}"? This action cannot be undone.`)) {
-                              programApi.delete(program.id).then(res => {
-                                if (res.success) {
-                                  setPrograms(prev => prev.filter(p => p.id !== program.id));
-                                }
-                              });
-                            }
+                            setDeleteTarget(program);
                             setActionMenuId(null);
                           }}
                         >
@@ -3986,6 +4018,22 @@ const ProgramsPage: React.FC = () => {
       </Card>
 
       {/* Modals */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        size="sm"
+        title="Delete program?"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDelete} loading={deleting} leftIcon={<Trash2 className="w-4 h-4" />}>Delete</Button>
+          </>
+        }
+      >
+        <p className="body-sm">
+          <span className="body-strong">{deleteTarget?.programName}</span> will be deleted. This action cannot be undone.
+        </p>
+      </Modal>
       <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onStatusChange={handleStatusChange} />
       <ProgramFormModal
         isOpen={showCreateModal || !!editProgram}
