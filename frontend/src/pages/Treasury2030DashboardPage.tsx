@@ -592,7 +592,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
+      <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px] xl:[html[data-sidebar=collapsed]_&]:grid-cols-[minmax(0,1fr)_320px] gap-4 items-start">
         {/* ─── Main column ─── */}
         <div className="space-y-4 min-w-0">
 
@@ -1144,7 +1144,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
         </div>
 
         {/* ─── Right rail ─── */}
-        <div className="space-y-4 xl:sticky xl:top-5">
+        <div className="space-y-4 2xl:sticky 2xl:top-5 xl:[html[data-sidebar=collapsed]_&]:sticky xl:[html[data-sidebar=collapsed]_&]:top-5">
 
           {/* Action queue — REAL */}
           <Card padding="none" className="overflow-hidden">

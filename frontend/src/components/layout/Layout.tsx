@@ -19,6 +19,8 @@ import {
   FileText,         // mobile quick-action: Statement
   Moon,
   Sun,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { cn } from '../../utils';
 import { Avatar } from '../ui';
@@ -58,9 +60,12 @@ interface SidebarProps {
   currentPath: string;
   onNavigate: (page: string) => void;
   onClose: () => void;
+  /** Desktop-only icon rail. Below lg the sidebar is a drawer and ignores this. */
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onClose, collapsed, onToggleCollapse }) => {
   // Sections start collapsed on open. The useEffect below pops the active
   // section back open so the user sees a highlighted active item in context.
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
@@ -148,18 +153,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
 
       <aside className={cn(
         'fixed top-0 left-0 h-full w-60 z-50 flex flex-col',
+        collapsed && 'lg:w-16',
         // Premium glass effect — flips to elevated navy panel in dark mode
         'bg-white/95 backdrop-blur-xl border-r border-neutral-200/60',
         'dark:bg-primary-900/95 dark:border-primary-800/60',
         // Premium shadow
         'shadow-xl lg:shadow-2xl dark:shadow-none',
         // Animation
-        'transform transition-transform duration-300 ease-out',
+        'transform transition-[transform,width] duration-300 ease-out',
         'lg:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo Header - Premium */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-neutral-200/60 dark:border-primary-800/60">
+        <div className={cn(
+          'h-20 flex items-center justify-between px-6 border-b border-neutral-200/60 dark:border-primary-800/60',
+          collapsed && 'lg:px-0 lg:justify-center'
+        )}>
           <div className="flex items-center gap-3">
             {/* Logo tile — Phase 8 post-review (2026-05-13). The previous
                 three-stop gradient + colored drop-shadow + dark-only ring
@@ -169,10 +178,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 an always-on gold ring — quieter, and the gold ring ties
                 the brand monogram to the same accent we use on focus
                 rings, page-title underlines, and the active-nav rule. */}
-            <div className="w-11 h-11 bg-primary-900 dark:bg-primary-800 rounded-lg flex items-center justify-center ring-1 ring-accent-500/60 dark:ring-accent-400/60">
+            <div
+              className={cn(
+                'w-11 h-11 bg-primary-900 dark:bg-primary-800 rounded-lg flex items-center justify-center ring-1 ring-accent-500/60 dark:ring-accent-400/60',
+                collapsed && 'lg:cursor-pointer'
+              )}
+              onClick={collapsed ? onToggleCollapse : undefined}
+              title={collapsed ? 'Expand sidebar' : undefined}
+            >
               <Layers className="w-5 h-5 text-white" />
             </div>
-            <div>
+            <div className={cn(collapsed && 'lg:hidden')}>
               {/* Brand wordmark in Fraunces — ties the sidebar to the serif accent used on page titles.
                   Pulled from src/branding.ts so a rebrand is a single-file change. */}
               <h1
@@ -193,10 +209,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
           >
             <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
           </button>
+          <button
+            onClick={onToggleCollapse}
+            className={cn(
+              'hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-xl transition-colors',
+              !collapsed && 'lg:inline-flex'
+            )}
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+          >
+            <PanelLeftClose className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+          </button>
         </div>
 
         {/* Search */}
-        <div className="px-4 py-4">
+        <div className={cn('px-4 py-4', collapsed && 'lg:hidden')}>
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
             <input
@@ -217,13 +244,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         </div>
 
         {/* Navigation - Scrollable */}
-        <nav className="flex-1 overflow-y-auto px-3 pb-4 scrollbar-thin">
+        <nav className={cn('flex-1 overflow-y-auto px-3 pb-4 scrollbar-thin', collapsed && 'lg:px-2 lg:pt-3')}>
           {filteredSections.map((section, sectionIdx) => (
             <div key={sectionIdx} className="mb-2">
+              {collapsed && sectionIdx > 0 && (
+                <div className="hidden lg:block h-px mx-2 mb-2 bg-neutral-200/70 dark:bg-primary-800/70" aria-hidden />
+              )}
               {section.title && (
                 <button
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
+                    collapsed && 'lg:hidden',
                     'flex items-center justify-between w-full px-3 py-1.5 mt-2',
                     // neutral-400/dark:neutral-500 measured at 2.20:1 (light)
                     // and 1.45:1 (dark) against the sidebar background — both
@@ -248,7 +279,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 'space-y-1 overflow-hidden transition-all duration-200',
                 // When searching, override the collapse so matching items
                 // surface regardless of which sections the user has closed.
-                section.title && collapsedSections.has(section.title) && !searchQuery && 'h-0 opacity-0'
+                section.title && collapsedSections.has(section.title) && !searchQuery && 'h-0 opacity-0',
+                // Icon rail shows every item's icon; section folding only applies to the full sidebar.
+                collapsed && 'lg:h-auto lg:opacity-100'
               )}>
                 {section.items.map((item) => {
                   const isActive = currentPath === item.href;
@@ -258,8 +291,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       key={item.href}
                       onClick={() => handleItemClick(item)}
                       disabled={isComingSoon}
-                      title={isComingSoon ? 'Coming soon' : undefined}
+                      title={isComingSoon ? 'Coming soon' : collapsed ? item.label : undefined}
                       className={cn(
+                        'relative',
+                        collapsed && 'lg:justify-center lg:px-0 lg:gap-0',
                         // Phase 6 Design System Unification: active state calmed
                         // down from "gradient + colored shadow + dark-only left
                         // rule" to "solid navy fill + 2px gold left rule" in
@@ -286,9 +321,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       )}>
                         {item.icon}
                       </span>
-                      <span className="flex-1 text-left truncate">{item.label}</span>
+                      <span className={cn('flex-1 text-left truncate', collapsed && 'lg:hidden')}>{item.label}</span>
                       {item.isNew && !isComingSoon && (
                         <span className={cn(
+                          collapsed && 'lg:hidden',
                           'text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide',
                           isActive ? 'bg-white/25 text-white' : 'bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300'
                         )}>
@@ -296,17 +332,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         </span>
                       )}
                       {isComingSoon && (
-                        <span className="text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
+                        <span className={cn(collapsed && 'lg:hidden', 'text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400')}>
                           Soon
                         </span>
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
+                          collapsed && 'lg:hidden',
                           'text-xs font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
                           getBadgeStyle(isActive, item.badgeColor)
                         )}>
                           {item.badge}
                         </span>
+                      )}
+                      {collapsed && item.badge && !isComingSoon && (
+                        <span className="hidden lg:block absolute top-1 right-2 w-2 h-2 rounded-full bg-accent-500" aria-hidden />
                       )}
                     </button>
                   );
@@ -319,7 +359,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         {/* Sidebar footer — slim row instead of the old 120px-tall help card.
             Frees the bottom of the sidebar for menu items on shorter viewports.
             Tooltip on the icon explains the destination; clicking still goes to docs. */}
-        <div className="px-4 py-3 border-t border-neutral-200/60 dark:border-primary-800/60 flex items-center justify-between gap-2">
+        <div className={cn(
+          'px-4 py-3 border-t border-neutral-200/60 dark:border-primary-800/60 flex items-center justify-between gap-2',
+          collapsed && 'lg:flex-col lg:px-2 lg:justify-center'
+        )}>
           <button
             type="button"
             title="Documentation & support"
@@ -331,11 +374,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             )}
           >
             <HelpCircle className="w-4 h-4" />
-            <span>Docs</span>
+            <span className={cn(collapsed && 'lg:hidden')}>Docs</span>
           </button>
+          {collapsed && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              title="Expand sidebar"
+              aria-label="Expand sidebar"
+              className="hidden lg:inline-flex p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-primary-800/60 transition-colors"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+          )}
           {/* Same neutral-400/dark:neutral-500 contrast failure as the
               section headers above (2.20:1 light, 1.45:1 dark) — same fix. */}
-          <span className="text-xs text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
+          <span className={cn('text-xs text-neutral-500 dark:text-neutral-300 uppercase tracking-wider', collapsed && 'lg:hidden')}>
             {BRAND.name} v1.0
           </span>
         </div>
@@ -877,6 +931,27 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
+  // Desktop icon rail. With no saved choice it starts collapsed on screens under 1440 CSS px
+  // (a 1920px display at 150% scaling is 1280), where a 240px sidebar leaves too little room.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sidebar:collapsed');
+      if (saved === '1' || saved === '0') return saved === '1';
+    } catch { /* storage unavailable: fall through to the width default */ }
+    return window.innerWidth < 1440;
+  });
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar:collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  // Lets pages that reserve side columns (e.g. the dashboard's Action queue) know how much room there is.
+  useEffect(() => {
+    document.documentElement.dataset.sidebar = sidebarCollapsed ? 'collapsed' : 'expanded';
+  }, [sidebarCollapsed]);
+
   // Close sidebar on route change
   useEffect(() => {
     setSidebarOpen(false);
@@ -907,12 +982,15 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
         currentPath={currentPage}
         onNavigate={onNavigate}
         onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={toggleSidebarCollapsed}
       />
 
       {/* Main Content Area */}
       <div className={cn(
         'min-h-screen flex flex-col',
-        'lg:pl-60', // Sidebar width on desktop
+        sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-60', // Sidebar width on desktop
+        'transition-[padding] duration-300',
         'pb-20 lg:pb-0' // Bottom nav padding on mobile
       )}>
         {/* Header */}
