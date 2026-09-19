@@ -51,7 +51,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-caption font-medium',
             'transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
             active
-              ? 'bg-white text-primary-900 dark:bg-primary-900 dark:text-neutral-50'
+              ? 'bg-surface-card text-primary-900 dark:text-neutral-50'
               : 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300 dark:hover:text-neutral-50',
           )}
         >

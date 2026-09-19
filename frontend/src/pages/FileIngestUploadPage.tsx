@@ -468,7 +468,7 @@ const FileIngestUploadPage: React.FC = () => {
                           : ''
                     }
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? 'bg-accent-500 text-white' : 'bg-neutral-100 text-neutral-500 dark:bg-primary-800 dark:text-neutral-300'}`}>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? 'bg-accent-500 text-white' : 'bg-surface-muted text-neutral-500 dark:text-neutral-300'}`}>
                       {opt.icon}
                     </div>
                     <p className="body-strong font-semibold">{opt.label}</p>
@@ -495,7 +495,7 @@ const FileIngestUploadPage: React.FC = () => {
               className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
                 isDragging
                   ? 'border-accent-500 bg-accent-50/60 dark:bg-accent-500/10 scale-[1.01]'
-                  : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300'
+                  : 'border-edge hover:border-primary-300'
               }`}
             >
               <input
@@ -542,7 +542,7 @@ const FileIngestUploadPage: React.FC = () => {
               <span className="caption">Customer</span>
               <span className="body-strong">{customerId.trim() || '—'}</span>
             </div>
-            <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between pt-3 border-t border-edge-subtle">
               <span className="caption">File</span>
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
@@ -705,7 +705,7 @@ const FileIngestUploadPage: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-body-sm">
                   <thead>
-                    <tr className="border-t border-neutral-100 dark:border-primary-800/60 caption">
+                    <tr className="border-t border-edge-subtle caption">
                       <th className="text-left font-medium px-6 py-2">Row</th>
                       <th className="text-left font-medium px-3 py-2">Status</th>
                       <th className="text-right font-medium px-3 py-2">Amount</th>
@@ -715,7 +715,7 @@ const FileIngestUploadPage: React.FC = () => {
                   </thead>
                   <tbody>
                     {rows.map((row) => (
-                      <tr key={row.sourceRowNumber} className="border-t border-neutral-100 dark:border-primary-800/60">
+                      <tr key={row.sourceRowNumber} className="border-t border-edge-subtle">
                         <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 font-mono text-caption">{row.sourceRowNumber}</td>
                         <td className="px-3 py-2">
                           <Badge variant={ROW_STATUS_BADGE[row.status].variant} size="sm">{ROW_STATUS_BADGE[row.status].label}</Badge>

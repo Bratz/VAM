@@ -138,7 +138,7 @@ export const ViewRuleModal: React.FC<ViewRuleModalProps> = ({ isOpen, onClose, r
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-neutral-200 dark:border-primary-800">
+        <div className="grid grid-cols-2 gap-4 pt-6 border-t border-edge">
           <Card padding="sm" className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30">
             <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Total Swept</p>
             <p className="stat-value-sm text-success-700 dark:text-success-300">
@@ -154,7 +154,7 @@ export const ViewRuleModal: React.FC<ViewRuleModalProps> = ({ isOpen, onClose, r
         </div>
       </div>
 
-      <div className="flex justify-end mt-8 pt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end mt-8 pt-6 border-t border-edge">
         <Button onClick={onClose}>Close</Button>
       </div>
     </Modal>

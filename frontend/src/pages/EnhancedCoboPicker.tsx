@@ -115,7 +115,7 @@ const VibanDisplay: React.FC<{
 
       <div className="space-y-3">
         {/* VIBAN Display */}
-        <div className="bg-white dark:bg-primary-900 rounded-lg p-4 border border-info-200 dark:border-info-500/30">
+        <div className="bg-surface-card rounded-lg p-4 border border-info-200 dark:border-info-500/30">
           <div className="flex items-center justify-between">
             <div>
               <p className="caption mb-1">Virtual IBAN for Collection</p>
@@ -146,12 +146,12 @@ const VibanDisplay: React.FC<{
 
         {/* Payment Details */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white dark:bg-primary-900 rounded-lg p-3">
+          <div className="bg-surface-card rounded-lg p-3">
             <p className="caption">Expected Amount</p>
             <p className="body-strong font-semibold">{formatCurrency(amount, currencyCode)}</p>
           </div>
           {customerName && (
-            <div className="bg-white dark:bg-primary-900 rounded-lg p-3">
+            <div className="bg-surface-card rounded-lg p-3">
               <p className="caption">Customer Reference</p>
               <p className="body-strong">{customerName}</p>
             </div>
@@ -159,7 +159,7 @@ const VibanDisplay: React.FC<{
         </div>
 
         {validUntil && (
-          <div className="flex items-center gap-2 text-caption text-info-700 dark:text-info-300 bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="flex items-center gap-2 text-caption text-info-700 dark:text-info-300 bg-surface-card rounded-md p-2">
             <Clock className="w-4 h-4" />
             <span>VIBAN valid until: {formatDate(validUntil)}</span>
           </div>
@@ -190,9 +190,9 @@ const VibanDisplay: React.FC<{
       {showQr && qrCodeData && (
         <Modal isOpen={showQr} onClose={() => setShowQr(false)} title="Payment QR Code" size="sm">
           <div className="text-center p-4">
-            <div className="w-48 h-48 mx-auto bg-white p-4 rounded-lg border dark:bg-primary-900">
+            <div className="w-48 h-48 mx-auto bg-surface-card p-4 rounded-lg border">
               {/* QR Code would be rendered here - using placeholder */}
-              <div className="w-full h-full bg-neutral-100 dark:bg-primary-800 flex items-center justify-center rounded-md">
+              <div className="w-full h-full bg-surface-muted flex items-center justify-center rounded-md">
                 <QrCode className="w-24 h-24 text-neutral-400" />
               </div>
             </div>
@@ -230,7 +230,7 @@ const IhbDepositPreview: React.FC<{
 
       <div className="space-y-3">
         {/* Flow Diagram */}
-        <div className="flex items-center justify-between bg-white dark:bg-primary-900 rounded-lg p-3">
+        <div className="flex items-center justify-between bg-surface-card rounded-lg p-3">
           <div className="text-center">
             <Landmark className="w-6 h-6 text-success-600 dark:text-success-300 mx-auto mb-1" />
             <p className="text-caption font-medium text-primary-900 dark:text-neutral-50">{collectingEntity.entityCode}</p>
@@ -257,21 +257,21 @@ const IhbDepositPreview: React.FC<{
 
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Amount</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-caption text-success-700 dark:text-success-300 bg-white dark:bg-primary-900 rounded-md p-2">
+        <div className="flex items-center gap-2 text-caption text-success-700 dark:text-success-300 bg-surface-card rounded-md p-2">
           <Info className="w-4 h-4" />
           <span>Funds will be deposited to {behalfEntity.entityName} during settlement</span>
         </div>
@@ -289,7 +289,7 @@ const EntityCard: React.FC<{
   role: 'COLLECTOR' | 'BENEFICIARY';
 }> = ({ entity, role }) => {
   return (
-    <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3 space-y-2">
+    <div className="bg-surface-card rounded-lg border border-edge p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {role === 'COLLECTOR' ? (
@@ -410,7 +410,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
   }, [enabled, generateViban, collectingEntityId, behalfEntityId, amount, generatedViban, handleGenerateViban]);
 
   return (
-    <Card className={cn('transition-colors', enabled ? 'bg-info-50 dark:bg-info-500/10 border-info-200 dark:border-info-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
+    <Card className={cn('transition-colors', enabled ? 'bg-info-50 dark:bg-info-500/10 border-info-200 dark:border-info-500/30' : 'bg-surface-page')}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -424,7 +424,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
           onClick={() => onToggle(!enabled)}
           className={cn('w-12 h-6 rounded-full transition-colors relative', enabled ? 'bg-info-500' : 'bg-neutral-300')}
         >
-          <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform dark:bg-primary-900', enabled ? 'translate-x-6' : 'translate-x-0.5')} />
+          <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-surface-card shadow transition-transform', enabled ? 'translate-x-6' : 'translate-x-0.5')} />
         </button>
       </div>
 
@@ -444,7 +444,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                 </label>
                 <button
                   onClick={() => setShowCollectorPicker(!showCollectorPicker)}
-                  className="w-full flex items-center justify-between p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white hover:border-info-400 transition-colors dark:bg-primary-900"
+                  className="w-full flex items-center justify-between p-3 border border-edge-strong rounded-lg bg-surface-card hover:border-info-400 transition-colors"
                 >
                   {collectingEntity ? (
                     <div className="flex items-center gap-2">
@@ -461,7 +461,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                 </button>
 
                 {showCollectorPicker && (
-                  <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {entities
                       .filter(e => e.entityType === 'PARENT' || e.entityType === 'SUBSIDIARY')
                       .map((entity) => (
@@ -473,7 +473,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                             setGeneratedViban(null); // Reset VIBAN when entity changes
                           }}
                           className={cn(
-                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0',
+                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-edge-subtle last:border-b-0',
                             collectingEntityId === entity.id && 'bg-info-50 dark:bg-info-500/10'
                           )}
                         >
@@ -502,7 +502,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                 </label>
                 <button
                   onClick={() => setShowBehalfPicker(!showBehalfPicker)}
-                  className="w-full flex items-center justify-between p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white hover:border-info-400 transition-colors dark:bg-primary-900"
+                  className="w-full flex items-center justify-between p-3 border border-edge-strong rounded-lg bg-surface-card hover:border-info-400 transition-colors"
                 >
                   {behalfEntity ? (
                     <div className="flex items-center gap-2">
@@ -519,7 +519,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                 </button>
 
                 {showBehalfPicker && (
-                  <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {entities
                       .filter(e => e.id !== collectingEntityId)
                       .map((entity) => (
@@ -531,7 +531,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                             setGeneratedViban(null);
                           }}
                           className={cn(
-                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0',
+                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-edge-subtle last:border-b-0',
                             behalfEntityId === entity.id && 'bg-info-50 dark:bg-info-500/10'
                           )}
                         >
@@ -615,7 +615,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
 
               {/* COBO Summary */}
               {collectingEntity && behalfEntity && (
-                <div className="bg-white dark:bg-primary-900 rounded-lg p-3 border border-info-200 dark:border-info-500/30">
+                <div className="bg-surface-card rounded-lg p-3 border border-info-200 dark:border-info-500/30">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-info-600 dark:text-info-300" />
                     <span className="text-body-sm font-medium text-info-900 dark:text-info-300">

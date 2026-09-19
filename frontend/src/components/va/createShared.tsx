@@ -32,7 +32,7 @@ export const PurposeSelect: React.FC<{
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className={className || 'w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm'}
+    className={className || 'w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm'}
   >
     {PURPOSE_OPTIONS.map((o) => (
       <option key={o.value} value={o.value}>{o.label}</option>

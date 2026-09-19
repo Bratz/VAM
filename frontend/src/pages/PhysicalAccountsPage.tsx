@@ -339,7 +339,7 @@ const getCategoryColor = (category: string) => {
   switch (category) {
     case 'ROOT': return 'bg-cat-2-soft border-cat-2/20 dark:bg-cat-2/15 dark:border-cat-2/30';
     case 'AGGREGATION': return 'bg-cat-1-soft border-cat-1/20 dark:bg-cat-1/15 dark:border-cat-1/30';
-    default: return 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800';
+    default: return 'bg-surface-page border-edge';
   }
 };
 
@@ -417,7 +417,7 @@ const BankCard: React.FC<{ bank: BankSummary; isSelected: boolean; onClick: () =
   return (
     <Card className={cn("cursor-pointer hover:shadow-md transition-all", isSelected && "ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-800/40")} onClick={onClick}>
       <div className="flex items-center gap-4">
-        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-neutral-100 dark:bg-primary-800")}>
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-surface-muted")}>
           {isHomeBank ? <Building2 className="w-6 h-6 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-6 h-6 text-neutral-600 dark:text-neutral-300" />}
         </div>
         <div className="flex-1 min-w-0">
@@ -621,7 +621,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
           </label>
           
           {loadingNodes ? (
-            <div className="flex items-center justify-center py-8 bg-neutral-50 rounded-lg border border-dashed dark:bg-primary-950">
+            <div className="flex items-center justify-center py-8 bg-surface-page rounded-lg border border-dashed">
               <Loader2 className="w-6 h-6 animate-spin text-primary-600 mr-2 dark:text-primary-200" />
               <span className="text-neutral-600 dark:text-neutral-300">Loading hierarchy...</span>
             </div>
@@ -854,7 +854,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
           </div>
         )}
 
-        <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+        <div className="p-3 bg-surface-page border border-edge rounded-lg">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="info" icon={Layers} rounded="lg" />
             <div className="flex-1">
@@ -878,7 +878,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                 const typeConfig = RELATIONSHIP_TYPE_CONFIG[att.relationshipType];
                 const TypeIcon = typeConfig?.icon || User;
                 return (
-                  <div key={att.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                  <div key={att.id} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
                     <div className="flex items-center gap-2">
                       <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} size="sm" subtle />
                       <div>
@@ -905,7 +905,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
               return (
                 <button key={type} onClick={() => setFormData(prev => ({ ...prev, relationshipType: type as any }))}
                   className={cn("p-3 rounded-lg border-2 text-left transition-all",
-                    isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700" : "border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50")}>
+                    isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700" : "border-edge hover:border-neutral-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50")}>
                   <div className="flex items-center gap-2">
                     <StatusIconBadge tone={config.tone} icon={TypeIcon} size="sm" subtle />
                     <p className="text-body-sm font-medium">{config.label}</p>
@@ -935,11 +935,11 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                 return (
                   <div key={entity.id} onClick={() => !isAlreadyAttached && setFormData(prev => ({ ...prev, legalEntityId: entity.id }))}
                     className={cn("p-3 rounded-lg border-2 transition-all",
-                      isAlreadyAttached ? "border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950 opacity-50 cursor-not-allowed" :
+                      isAlreadyAttached ? "border-edge bg-surface-page opacity-50 cursor-not-allowed" :
                       isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700 cursor-pointer" :
                       "border-transparent hover:border-neutral-200 dark:hover:border-primary-800 hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer")}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-100 dark:bg-primary-800">{getEntityTypeIcon(entity.entityType)}</div>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface-muted">{getEntityTypeIcon(entity.entityType)}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.shortName || entity.entityName}</span>
@@ -1074,11 +1074,11 @@ const CreateAccountModal: React.FC<{
         <div>
           <label className="field-label block mb-1">Legal Entity <span className="text-error-500 dark:text-error-300">*</span></label>
           {eligibleEntities.length > 0 ? (
-            <select required value={formData.legalEntityId} onChange={(e) => handleEntityChange(e.target.value)} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" disabled={!corporateId}>
+            <select required value={formData.legalEntityId} onChange={(e) => handleEntityChange(e.target.value)} className="w-full px-3 py-2 border border-edge-strong rounded-lg" disabled={!corporateId}>
               <option value="">Select Legal Entity...</option>
               {eligibleEntities.map(entity => <option key={entity.id} value={entity.id}>{entity.entityCode} - {entity.entityName}{entity.isTreasuryCenter ? ' ⭐' : ''} [{entity.functionalCurrency}]</option>)}
             </select>
-          ) : <div className="p-3 bg-neutral-50 border rounded-lg body-sm dark:bg-primary-950">{corporateId ? 'No eligible entities.' : 'Select a corporate first.'}</div>}
+          ) : <div className="p-3 bg-surface-page border rounded-lg body-sm">{corporateId ? 'No eligible entities.' : 'Select a corporate first.'}</div>}
         </div>
         
         {selectedEntity && (
@@ -1491,7 +1491,7 @@ const PhysicalAccountsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input type="text" placeholder="Search accounts..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" />
+            <input type="text" placeholder="Search accounts..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg" />
           </div>
           <div className="flex gap-2 flex-wrap">
             <select value={currencyFilter} onChange={(e) => { setCurrencyFilter(e.target.value); setPage(0); }} className="px-3 py-2 border rounded-lg text-body-sm">
@@ -1550,7 +1550,7 @@ const PhysicalAccountsPage: React.FC = () => {
                       {account.syncStatus}
                     </Badge>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+                  <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
                     <div>
                       <p className="label">Balance</p>
                       <p className="stat-value-xs">

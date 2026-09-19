@@ -164,12 +164,12 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
 
           {/* Expanded Details */}
           {expanded && (
-            <div className="mt-3 pt-3 border-t border-neutral-200 grid grid-cols-2 gap-3 text-body-sm dark:border-primary-800">
-              <div className="p-2 bg-white rounded-md dark:bg-primary-900">
+            <div className="mt-3 pt-3 border-t border-edge grid grid-cols-2 gap-3 text-body-sm">
+              <div className="p-2 bg-surface-card rounded-md">
                 <p className="text-neutral-500 dark:text-neutral-400">External Limit</p>
                 <p className="font-medium">{formatCurrency(result.externalLimitAvailable, result.vaCurrency)}</p>
               </div>
-              <div className="p-2 bg-white rounded-md dark:bg-primary-900">
+              <div className="p-2 bg-surface-card rounded-md">
                 <p className="text-neutral-500 dark:text-neutral-400">Internal Limit</p>
                 <p className="font-medium">{formatCurrency(result.internalLimitAvailable, result.vaCurrency)}</p>
               </div>
@@ -244,7 +244,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
       </div>
 
       {/* Level-by-Level Results */}
-      <div className="bg-white rounded-lg border p-4 dark:bg-primary-900">
+      <div className="bg-surface-card rounded-lg border p-4">
         <h4 className="body-strong font-semibold mb-4 flex items-center gap-2">
           <Layers className="w-4 h-4" />
           Hierarchy Check ({result.levelsChecked} levels)
@@ -485,7 +485,7 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
               <CurrencyPicker
                 value={currency}
                 onChange={(c) => setCurrency(c)}
-                className="bg-white text-body-sm font-medium dark:bg-primary-900"
+                className="bg-surface-card text-body-sm font-medium"
               />
             </div>
           </div>

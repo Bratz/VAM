@@ -158,7 +158,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
       />
 
       {countries.length === 0 && (
-        <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-12 text-center text-neutral-500 dark:text-neutral-400">
+        <div className="bg-surface-card rounded-lg border border-edge p-12 text-center text-neutral-500 dark:text-neutral-400">
           No shadows match the current filter.
         </div>
       )}
@@ -167,9 +167,9 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
         {countries.map((group) => (
           <div
             key={group.country}
-            className="rounded-lg shadow-sm border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900"
+            className="rounded-lg shadow-sm border border-edge bg-surface-card"
           >
-            <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between gap-3 flex-wrap">
+            <div className="p-5 border-b border-edge-subtle flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 min-w-0">
                 <StatusIconBadge tone="neutral" icon={Globe2} />
                 <div>
@@ -197,7 +197,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
                   {group.currencies.flatMap((c) => c.shadows.map((s, i) => (
                     <tr
                       key={s.vaId}
-                      className="border-t border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200"
+                      className="border-t border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200"
                     >
                       <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">
                         {i === 0 ? c.currencyCode : ''}

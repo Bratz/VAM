@@ -37,7 +37,7 @@ const RATE_TYPE_CONFIG: Record<string, { label: string; color: string; bgColor: 
   FIXING:     { label: 'Fixing',     color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   INTERNAL:   { label: 'Internal',   color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   CONTRACT:   { label: 'Contract',   color: 'text-primary-700 dark:text-primary-200', bgColor: 'bg-primary-100 dark:bg-primary-800/60' },
-  INDICATIVE: { label: 'Indicative', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
+  INDICATIVE: { label: 'Indicative', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted' },
 };
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: any }> = {
@@ -276,7 +276,7 @@ const ConverterBody: React.FC = () => {
         <select
           value={fromCurrency}
           onChange={(e) => setFromCurrency(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
         >
           {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -306,7 +306,7 @@ const ConverterBody: React.FC = () => {
         <select
           value={toCurrency}
           onChange={(e) => setToCurrency(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
         >
           {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -571,7 +571,7 @@ const FxRatesPage: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
           >
             <option value="">All types</option>
             {Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => (
@@ -581,7 +581,7 @@ const FxRatesPage: React.FC = () => {
           <select
             value={filterSource}
             onChange={(e) => setFilterSource(e.target.value)}
-            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-edge-strong rounded-md bg-surface-card text-body-sm field-label"
           >
             <option value="">All sources</option>
             {Object.entries(SOURCE_CONFIG).map(([key, val]) => (
@@ -619,8 +619,8 @@ const FxRatesPage: React.FC = () => {
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Add FX Rate" size="lg">
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label block mb-1">From Currency *</label><select value={createForm.fromCurrency} onChange={(e) => setCreateForm(prev => ({ ...prev, fromCurrency: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700">{CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-            <div><label className="field-label block mb-1">To Currency *</label><select value={createForm.toCurrency} onChange={(e) => setCreateForm(prev => ({ ...prev, toCurrency: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700">{CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label className="field-label block mb-1">From Currency *</label><select value={createForm.fromCurrency} onChange={(e) => setCreateForm(prev => ({ ...prev, fromCurrency: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label className="field-label block mb-1">To Currency *</label><select value={createForm.toCurrency} onChange={(e) => setCreateForm(prev => ({ ...prev, toCurrency: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
           </div>
           <div>
             <label className="field-label block mb-1">Rate *</label>
@@ -630,8 +630,8 @@ const FxRatesPage: React.FC = () => {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label block mb-1">Rate Type</label><select value={createForm.rateType} onChange={(e) => setCreateForm(prev => ({ ...prev, rateType: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700">{Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
-            <div><label className="field-label block mb-1">Source</label><select value={createForm.rateSource} onChange={(e) => setCreateForm(prev => ({ ...prev, rateSource: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700">{Object.entries(SOURCE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
+            <div><label className="field-label block mb-1">Rate Type</label><select value={createForm.rateType} onChange={(e) => setCreateForm(prev => ({ ...prev, rateType: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
+            <div><label className="field-label block mb-1">Source</label><select value={createForm.rateSource} onChange={(e) => setCreateForm(prev => ({ ...prev, rateSource: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{Object.entries(SOURCE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
@@ -669,7 +669,7 @@ const FxRatesPage: React.FC = () => {
         {selectedRate && (
           <div className="p-6 space-y-6">
             {/* Hero rate value */}
-            <div className="text-center py-6 border-y border-neutral-200 dark:border-primary-800">
+            <div className="text-center py-6 border-y border-edge">
               <p className="stat-value">{formatFxRate(selectedRate.rate, selectedRate.fromCurrency, selectedRate.toCurrency)}</p>
               <p className="body-sm mt-2">
                 1 {selectedRate.fromCurrency} = {formatFxRate(selectedRate.rate, selectedRate.fromCurrency, selectedRate.toCurrency)} {selectedRate.toCurrency}
@@ -715,7 +715,7 @@ const FxRatesPage: React.FC = () => {
             {/* 7-day movement. fxRateApi.getHistoricalRates exists, but wiring
                 a sparkline is out of scope for this lookup-first redesign —
                 surfaced as an explicit next step rather than fake data. */}
-            <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-6 text-center">
+            <div className="border border-edge rounded-lg p-6 text-center">
               <p className="label">7-day movement</p>
               <p className="body-sm mt-2">Historical rate trend will appear here (a getHistoricalRates-backed sparkline is the next enhancement).</p>
             </div>

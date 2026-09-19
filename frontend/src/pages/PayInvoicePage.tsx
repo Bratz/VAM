@@ -58,7 +58,7 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-primary-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface-page flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {loading ? (
           <Card padding="lg" className="text-center text-neutral-500 dark:text-neutral-400">

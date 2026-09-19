@@ -34,7 +34,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ value, onChange }) =
   <div
     role="tablist"
     aria-label="View"
-    className="inline-flex border border-neutral-300 dark:border-primary-700 rounded-lg overflow-hidden"
+    className="inline-flex border border-edge-strong rounded-lg overflow-hidden"
   >
     {OPTIONS.map(({ key, label }) => {
       const active = value === key;

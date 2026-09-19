@@ -91,7 +91,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
       <div
         style={style}
         className={cn(
-          'flex items-center gap-3 px-3 border-b border-neutral-100 dark:border-primary-800/60 text-body-sm',
+          'flex items-center gap-3 px-3 border-b border-edge-subtle text-body-sm',
           selectable && 'cursor-pointer',
           isSelected ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-900/60'
         )}
@@ -104,7 +104,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
               'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200',
               isSelected
                 ? 'bg-primary-600 border-primary-600'
-                : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'
+                : 'border-edge-strong hover:border-primary-400'
             )}
           >
             {isSelected && <Check className="w-3 h-3 text-white" />}
@@ -121,8 +121,8 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
   };
 
   return (
-    <div className="border border-neutral-200 dark:border-primary-800 rounded-lg overflow-hidden bg-white dark:bg-primary-900">
-      <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-neutral-200 dark:border-primary-800 bg-neutral-50/80 dark:bg-primary-950/40">
+    <div className="border border-edge rounded-lg overflow-hidden bg-surface-card">
+      <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-edge bg-neutral-50/80 dark:bg-primary-950/40">
         <div className="flex items-center gap-3 min-w-0">
           {selectable && (
             <button
@@ -131,7 +131,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
                 'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200',
                 allFilteredSelected
                   ? 'bg-primary-600 border-primary-600'
-                  : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'
+                  : 'border-edge-strong hover:border-primary-400'
               )}
               title={allFilteredSelected ? 'Deselect all' : 'Select all'}
             >
@@ -150,7 +150,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search VA number or name…"
-              className="w-full h-8 pl-8 pr-3 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-caption placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-300"
+              className="w-full h-8 pl-8 pr-3 rounded-lg border border-edge bg-surface-card text-caption placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-300"
             />
           </div>
         )}

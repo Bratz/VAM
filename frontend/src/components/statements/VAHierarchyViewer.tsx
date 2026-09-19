@@ -403,7 +403,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
   return (
     <Card padding="none" className={className}>
       {/* Header */}
-      <div className="p-4 border-b border-neutral-200 dark:border-primary-800 bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
+      <div className="p-4 border-b border-edge bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="cat-2" icon={Layers} subtle />
@@ -443,7 +443,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="p-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
+      <div className="p-3 border-t border-edge-subtle bg-surface-page">
         <div className="flex flex-wrap items-center gap-3 text-caption">
           <span className="font-medium text-neutral-600 dark:text-neutral-300">Types:</span>
           {Object.entries(accountCategoryConfig).slice(0, 4).map(([key, config]) => {

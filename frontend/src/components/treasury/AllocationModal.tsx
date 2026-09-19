@@ -301,7 +301,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     >
       <div className="space-y-4">
           {/* Transfer Summary */}
-          <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+          <div className="bg-surface-page rounded-lg p-4">
             <div className="flex items-center justify-between mb-3">
               <span className="body-sm">Amount to Transfer</span>
               <span className="stat-value-sm text-primary-900 dark:text-neutral-50">
@@ -310,14 +310,14 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             </div>
             
             <div className="flex items-center gap-2 text-body-sm">
-              <div className="flex-1 p-2 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800">
+              <div className="flex-1 p-2 bg-surface-card rounded-lg border border-edge">
                 <p className="caption">From</p>
                 <p className="font-mono font-medium text-primary-900 dark:text-neutral-50 truncate">
                   {exception.exceptionVaNumber || 'Exception VA'}
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-neutral-400 shrink-0" />
-              <div className="flex-1 p-2 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800">
+              <div className="flex-1 p-2 bg-surface-card rounded-lg border border-edge">
                 <p className="caption">To</p>
                 <p className="font-mono font-medium text-primary-900 dark:text-neutral-50 truncate">
                   {targetVa.vaNumber}
@@ -838,7 +838,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       case 'VIRTUAL_ACCOUNT':
         return { bg: 'bg-success-100 dark:bg-success-500/20', text: 'text-success-700 dark:text-success-300', icon: Wallet };
       default:
-        return { bg: 'bg-neutral-100 dark:bg-primary-800', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet };
+        return { bg: 'bg-surface-muted', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet };
     }
   };
 
@@ -1400,7 +1400,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           )}
 
           {/* Exception Summary */}
-          <div className="flex items-center gap-4 p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+          <div className="flex items-center gap-4 p-4 bg-surface-page rounded-lg">
             <div className="p-3 bg-warning-100 dark:bg-warning-500/20 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-warning-700 dark:text-warning-300" />
             </div>
@@ -1421,7 +1421,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex border-b border-neutral-200 dark:border-primary-800">
+          <div className="flex border-b border-edge">
             <button
               className={cn(
                 'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
@@ -1492,7 +1492,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                             'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
                             isSelected
                               ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200 dark:bg-primary-800/40'
-                              : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                              : 'border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                           )}
                           onClick={() => handleSelectSuggested(va)}
                         >
@@ -1541,7 +1541,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   <input
                     type="text"
                     placeholder="Search by VA number, name, or entity..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
@@ -1560,7 +1560,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
                           selectedVa?.id === va.id
                             ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200 dark:bg-primary-800/40'
-                            : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                            : 'border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                         )}
                         onClick={() => setSelectedVa(va)}
                       >
@@ -1612,7 +1612,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   <input
                     type="text"
                     placeholder="Filter hierarchy..."
-                    className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
+                    className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
                     value={hierarchySearch}
                     onChange={(e) => setHierarchySearch(e.target.value)}
                   />
@@ -1628,7 +1628,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 </div>
 
                 {/* Hierarchy Tree */}
-                <div className="border border-neutral-200 dark:border-primary-800 rounded-lg bg-white dark:bg-primary-900">
+                <div className="border border-edge rounded-lg bg-surface-card">
                   {hierarchyLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
@@ -1656,7 +1656,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
 
                   {/* Expand/Collapse Controls */}
                   {hierarchy && (
-                    <div className="flex justify-between border-t border-neutral-200 dark:border-primary-800 p-2 bg-neutral-50 dark:bg-primary-950">
+                    <div className="flex justify-between border-t border-edge p-2 bg-surface-page">
                       <Button variant="ghost" size="sm" onClick={expandAll}>
                         Expand All
                       </Button>
@@ -1701,7 +1701,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               Allocation Notes <span className="text-neutral-400 font-normal">(optional)</span>
             </label>
             <textarea
-              className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-primary-700 text-primary-900 dark:text-neutral-50 resize-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
+              className="w-full px-4 py-2.5 rounded-lg border border-edge-strong text-primary-900 dark:text-neutral-50 resize-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
               rows={3}
               placeholder="e.g., Payment matched to invoice INV-2024-001"
               value={notes}

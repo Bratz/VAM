@@ -604,7 +604,7 @@ const ProgramCard: React.FC<{
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex items-center justify-between pt-4 border-t border-edge">
         <div className="flex items-center gap-2 body-sm">
           <Building2 className="w-4 h-4" />
           <span>{program.operatorName}</span>
@@ -709,7 +709,7 @@ const WalletRow: React.FC<{
           {showActions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-primary-900 rounded-lg shadow-lg border py-1 z-20">
+              <div className="absolute right-0 top-full mt-1 w-52 bg-surface-card rounded-lg shadow-lg border py-1 z-20">
                 <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                   <Eye className="w-4 h-4" /> View Details
                 </button>
@@ -1116,7 +1116,7 @@ const WalletPage: React.FC = () => {
             <span className="font-medium text-primary-800 dark:text-neutral-100">Partner View</span>
           </div>
           <select
-            className="flex-1 max-w-xs border border-primary-300 rounded-lg px-3 py-2 bg-white dark:bg-primary-900 text-body-sm"
+            className="flex-1 max-w-xs border border-primary-300 rounded-lg px-3 py-2 bg-surface-card text-body-sm"
             value={selectedPartnerId}
             onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}
           >
@@ -1189,19 +1189,19 @@ const WalletPage: React.FC = () => {
       {/* Wallets Tab */}
       {activeTab === 'wallets' && (
         <Card padding="none">
-          <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+          <div className="p-4 border-b border-edge">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <Input placeholder="Search by name, mobile, or wallet reference..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} leftIcon={<Search className="w-4 h-4" />} />
               </div>
               <div className="flex gap-2">
-                <select className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">All Status</option>
                   <option value="ACTIVE">Active</option>
                   <option value="SUSPENDED">Suspended</option>
                   <option value="BLOCKED">Blocked</option>
                 </select>
-                <select className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
+                <select className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
                   <option value="">All KYC</option>
                   <option value="verified">Verified</option>
                   <option value="pending">Pending</option>
@@ -1219,7 +1219,7 @@ const WalletPage: React.FC = () => {
           ) : filteredWallets.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-neutral-50 dark:bg-primary-950 border-b border-neutral-200 dark:border-primary-800">
+                <thead className="bg-surface-page border-b border-edge">
                   <tr>
                     <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Holder</th>
                     <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Wallet</th>
@@ -1230,7 +1230,7 @@ const WalletPage: React.FC = () => {
                     <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                <tbody className="divide-y divide-edge-subtle">
                   {filteredWallets.map(wallet => (
                     <WalletRow key={wallet.id} wallet={wallet} onView={() => handleViewWallet(wallet)} onEdit={() => handleEditWallet(wallet)} onAction={(action) => handleWalletAction(action, wallet)} />
                   ))}
@@ -1244,7 +1244,7 @@ const WalletPage: React.FC = () => {
           )}
           
           {totalPages > 1 && (
-            <div className="p-4 border-t border-neutral-200 dark:border-primary-800 flex items-center justify-between">
+            <div className="p-4 border-t border-edge flex items-center justify-between">
               <p className="body-sm">Showing {currentPage * 20 + 1} to {Math.min((currentPage + 1) * 20, totalWallets)} of {totalWallets}</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
@@ -1265,14 +1265,14 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="field-label block mb-1">Select Program *</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={issueForm.programId} onChange={(e) => setIssueForm({ ...issueForm, programId: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={issueForm.programId} onChange={(e) => setIssueForm({ ...issueForm, programId: e.target.value })}>
               <option value="">Choose a wallet program...</option>
               {programs.map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
             </select>
           </div>
           <div>
             <label className="field-label block mb-1">Wallet Type</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={issueForm.walletType} onChange={(e) => setIssueForm({ ...issueForm, walletType: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={issueForm.walletType} onChange={(e) => setIssueForm({ ...issueForm, walletType: e.target.value })}>
               <option value="CONSUMER">Consumer</option><option value="MERCHANT">Merchant</option><option value="AGENT">Agent</option><option value="CORPORATE">Corporate</option>
             </select>
           </div>
@@ -1349,7 +1349,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Input label="Amount *" placeholder="0.00" type="number" value={loadForm.amount} onChange={(e) => setLoadForm({ ...loadForm, amount: e.target.value })} />
           <div><label className="field-label block mb-1">Source</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={loadForm.source} onChange={(e) => setLoadForm({ ...loadForm, source: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={loadForm.source} onChange={(e) => setLoadForm({ ...loadForm, source: e.target.value })}>
               <option value="BANK_TRANSFER">Bank Transfer</option><option value="CARD">Card</option><option value="CASH">Cash</option><option value="VIBAN">VIBAN</option><option value="INTERNAL">Internal</option>
             </select>
           </div>
@@ -1363,7 +1363,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Input label="Amount *" placeholder="0.00" type="number" value={withdrawForm.amount} onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })} />
           <div><label className="field-label block mb-1">Destination</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={withdrawForm.destination} onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={withdrawForm.destination} onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })}>
               <option value="BANK_TRANSFER">Bank Transfer</option><option value="CASH">Cash</option><option value="INTERNAL">Internal</option>
             </select>
           </div>
@@ -1388,13 +1388,13 @@ const WalletPage: React.FC = () => {
         footer={<><Button variant="outline" onClick={() => setShowBulkLoadModal(false)}>Cancel</Button><Button onClick={handleBulkLoad} disabled={actionLoading}>{actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Process Bulk Load</Button></>}>
         <div className="space-y-4">
           <div><label className="field-label block mb-1">Program (Optional)</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={bulkLoadForm.programId} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, programId: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={bulkLoadForm.programId} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, programId: e.target.value })}>
               <option value="">All Programs</option>
               {programs.map(p => <option key={p.id} value={p.id}>{p.programName}</option>)}
             </select>
           </div>
           <div><label className="field-label block mb-1">Wallet Data (CSV Format) *</label>
-            <textarea className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-40 font-mono text-body-sm" placeholder="walletReference,amount&#10;WAL-FINTA-00012345,100&#10;WAL-FINTA-00012346,250" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
+            <textarea className="w-full border border-edge-strong rounded-lg px-3 py-2 h-40 font-mono text-body-sm" placeholder="walletReference,amount&#10;WAL-FINTA-00012345,100&#10;WAL-FINTA-00012346,250" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
             <p className="caption mt-1">One entry per line. Format: walletReference,amount</p>
           </div>
           <Input label="Description" placeholder="Bulk load description" value={bulkLoadForm.description} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, description: e.target.value })} />
@@ -1407,12 +1407,12 @@ const WalletPage: React.FC = () => {
         footer={<><Button variant="outline" onClick={() => setShowKycVerifyModal(false)}>Cancel</Button><Button onClick={handleVerifyKyc} disabled={actionLoading}>{actionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}Verify KYC</Button></>}>
         <div className="space-y-4">
           <div><label className="field-label block mb-1">Verification Method</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={kycVerifyForm.verificationMethod} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, verificationMethod: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={kycVerifyForm.verificationMethod} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, verificationMethod: e.target.value })}>
               <option value="DOCUMENT">Document Verification</option><option value="BIOMETRIC">Biometric</option><option value="MANUAL">Manual Review</option>
             </select>
           </div>
           <div><label className="field-label block mb-1">Document Type</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={kycVerifyForm.documentType} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, documentType: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={kycVerifyForm.documentType} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, documentType: e.target.value })}>
               <option value="EMIRATES_ID">Emirates ID</option><option value="PASSPORT">Passport</option><option value="DRIVING_LICENSE">Driving License</option>
             </select>
           </div>
@@ -1459,7 +1459,7 @@ const WalletPage: React.FC = () => {
               <Card padding="sm" className="bg-primary-50 dark:bg-primary-800/40"><p className="caption">Current Balance</p><p className="section-title">{formatCurrency(walletDetail.currentBalance)}</p></Card>
               {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-semibold` hand-rolls. */}
               <Card padding="sm" className="bg-success-50 dark:bg-success-500/10"><p className="caption">Available Balance</p><p className="stat-value-xs text-success-600 dark:text-success-300">{formatCurrency(walletDetail.availableBalance)}</p></Card>
-              <Card padding="sm" className="bg-neutral-50 dark:bg-primary-950"><p className="caption">Monthly Spent</p><p className="stat-value-xs text-neutral-700 dark:text-neutral-200">{formatCurrency(walletDetail.monthlySpent || 0)}</p></Card>
+              <Card padding="sm" className="bg-surface-page"><p className="caption">Monthly Spent</p><p className="stat-value-xs text-neutral-700 dark:text-neutral-200">{formatCurrency(walletDetail.monthlySpent || 0)}</p></Card>
             </div>
             
             <div>
@@ -1477,7 +1477,7 @@ const WalletPage: React.FC = () => {
                 <h4 className="font-medium text-primary-900 dark:text-neutral-50 mb-3">Recent Transactions</h4>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {walletDetail.recentTransactions.map(txn => (
-                    <div key={txn.id} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                    <div key={txn.id} className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
                       <div className="flex items-center gap-3">
                         {txn.type.includes('CREDIT') || txn.type.includes('TOPUP') || txn.type.includes('IN') ? <ArrowDownRight className="w-5 h-5 text-success-600 dark:text-success-300" /> : <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />}
                         <div><p className="body-strong">{txn.description || txn.type}</p><p className="caption">{new Date(txn.transactionDate).toLocaleString()}</p></div>

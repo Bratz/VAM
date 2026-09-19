@@ -136,7 +136,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="h-5 bg-neutral-200 rounded-md w-32 animate-pulse dark:bg-primary-800" />
         </div>
-        <div className="h-32 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+        <div className="h-32 bg-surface-muted rounded-md animate-pulse" />
       </Card>
     );
   }
@@ -167,7 +167,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
                 if (payload && payload.length > 0) {
                   const item = payload[0].payload;
                   return (
-                    <div className="bg-white dark:bg-primary-900 p-2 rounded-md shadow-lg border border-neutral-200 dark:border-primary-800 text-caption">
+                    <div className="bg-surface-card p-2 rounded-md shadow-lg border border-edge text-caption">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{item.name}</p>
                       <p className="text-neutral-600 dark:text-neutral-300">{item.size} nodes</p>
                       <p className="text-primary-600 dark:text-primary-200 font-medium">
@@ -238,7 +238,7 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
         <div className="h-5 bg-neutral-200 rounded-md w-32 mb-4 animate-pulse dark:bg-primary-800" />
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-10 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+            <div key={i} className="h-10 bg-surface-muted rounded-md animate-pulse" />
           ))}
         </div>
       </Card>
@@ -265,7 +265,7 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
               index === 0 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
               index === 1 ? 'bg-neutral-200 text-neutral-600 dark:text-neutral-300 dark:bg-primary-800' :
               index === 2 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
-              'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
+              'bg-surface-muted text-neutral-500 dark:text-neutral-400'
             )}>
               {index + 1}
             </div>
@@ -341,10 +341,10 @@ export const VibanCollectionsWidget: React.FC<VibanCollectionsWidgetProps> = ({
       <Card padding="md" className={className}>
         <div className="h-5 bg-neutral-200 rounded-md w-32 mb-4 animate-pulse dark:bg-primary-800" />
         <div className="space-y-3">
-          <div className="h-16 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+          <div className="h-16 bg-surface-muted rounded-md animate-pulse" />
           <div className="grid grid-cols-2 gap-2">
-            <div className="h-12 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
-            <div className="h-12 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+            <div className="h-12 bg-surface-muted rounded-md animate-pulse" />
+            <div className="h-12 bg-surface-muted rounded-md animate-pulse" />
           </div>
         </div>
       </Card>
@@ -372,11 +372,11 @@ export const VibanCollectionsWidget: React.FC<VibanCollectionsWidgetProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Active VIBANs</p>
           <p className="body-strong font-semibold">{stats.activeVibans.toLocaleString()}</p>
         </div>
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Pending Match</p>
           <p className={cn(
             'text-body-sm font-semibold',
@@ -433,10 +433,10 @@ export const PoboActivityWidget: React.FC<PoboActivityWidgetProps> = ({
       <Card padding="md" className={className}>
         <div className="h-5 bg-neutral-200 rounded-md w-32 mb-4 animate-pulse dark:bg-primary-800" />
         <div className="space-y-3">
-          <div className="h-16 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+          <div className="h-16 bg-surface-muted rounded-md animate-pulse" />
           <div className="grid grid-cols-2 gap-2">
-            <div className="h-12 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
-            <div className="h-12 bg-neutral-100 dark:bg-primary-800 rounded-md animate-pulse" />
+            <div className="h-12 bg-surface-muted rounded-md animate-pulse" />
+            <div className="h-12 bg-surface-muted rounded-md animate-pulse" />
           </div>
         </div>
       </Card>
@@ -464,7 +464,7 @@ export const PoboActivityWidget: React.FC<PoboActivityWidgetProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Pending Recharge</p>
           <p className={cn(
             'text-body-sm font-semibold',
@@ -473,7 +473,7 @@ export const PoboActivityWidget: React.FC<PoboActivityWidgetProps> = ({
             {stats.pendingRecharge}
           </p>
         </div>
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Authorizations</p>
           <p className="body-strong font-semibold">{stats.activeAuthorizations}</p>
         </div>

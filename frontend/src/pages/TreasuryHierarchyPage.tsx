@@ -425,7 +425,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
         </div>
         
         {parentNode && (
-          <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+          <div className="p-3 bg-surface-page border border-edge rounded-lg">
             <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
@@ -469,7 +469,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
             <select 
               value={formData.owningEntityId} 
               onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value }))} 
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg"
             >
               <option value="">No specific entity</option>
               {entities.filter(e => e.status === 'ACTIVE').map(entity => (
@@ -547,7 +547,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 </div>
                 
                 {/* EOD Sweep Configuration */}
-                <div className="flex items-center justify-between p-3 bg-white dark:bg-primary-900 rounded-lg border border-info-100 dark:border-info-500/30">
+                <div className="flex items-center justify-between p-3 bg-surface-card rounded-lg border border-info-100 dark:border-info-500/30">
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-5 h-5 text-info-600 dark:text-info-300" />
                     <div>
@@ -562,7 +562,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ...prev,
                         ihbConfig: { ...prev.ihbConfig, sweepFrequency: e.target.value as 'DAILY' | 'REAL_TIME' }
                       }))}
-                      className="px-2 py-1 border border-neutral-300 rounded-md text-body-sm dark:border-primary-700"
+                      className="px-2 py-1 border border-edge-strong rounded-md text-body-sm"
                       disabled={!formData.ihbConfig.enableSweep}
                     >
                       <option value="DAILY">Daily @ 6PM</option>
@@ -714,7 +714,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
         </div>
         
         {parentNode ? (
-          <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+          <div className="p-3 bg-surface-page border border-edge rounded-lg">
             <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
@@ -766,7 +766,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
           <select
             value={formData.owningEntityId}
             onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value }))}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg"
           >
             <option value="">Inherit from parent</option>
             {entities.filter(e => e.status === 'ACTIVE').map(entity => (
@@ -999,7 +999,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
 
         {/* Parent Node Info */}
         {parentNode && (
-          <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+          <div className="p-3 bg-surface-page border border-edge rounded-lg">
             <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
@@ -1011,7 +1011,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
 
         {/* Treasury Rates Preview */}
         {treasuryRates && (
-          <div className="bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg p-3">
+          <div className="bg-surface-page border border-edge rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div>
                 <p className="label">Treasury Rates</p>
@@ -1052,7 +1052,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 creditLimit: entity?.ihbCreditLimit?.toString() || prev.creditLimit,
               }));
             }}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg"
           >
             <option value="">Select participant entity...</option>
             {ihbParticipantEntities.map(entity => (
@@ -1157,7 +1157,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 <select
                   value={formData.ihbSweepFrequency}
                   onChange={(e) => setFormData(prev => ({ ...prev, ihbSweepFrequency: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   disabled={!formData.ihbSweepEnabled}
                 >
                   <option value="DAILY">Daily</option>
@@ -1315,7 +1315,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
 
   if (loading || loadingLevels) {
     return (
-      <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-primary-900 rounded-lg shadow-xl border border-neutral-200 dark:border-primary-800 p-4 z-50">
+      <div className="absolute right-0 top-full mt-2 w-72 bg-surface-card rounded-lg shadow-xl border border-edge p-4 z-50">
         <div className="flex items-center justify-center py-4">
           <Loader2 className="w-5 h-5 animate-spin text-cyan-600 dark:text-cyan-300" />
         </div>
@@ -1324,8 +1324,8 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
   }
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-primary-900 rounded-lg shadow-xl border border-neutral-200 dark:border-primary-800 z-50" onClick={(e) => e.stopPropagation()}>
-      <div className="px-4 py-3 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
+    <div className="absolute right-0 top-full mt-2 w-80 bg-surface-card rounded-lg shadow-xl border border-edge z-50" onClick={(e) => e.stopPropagation()}>
+      <div className="px-4 py-3 border-b border-edge-subtle flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
           <span className="body-strong font-semibold">Currency Breakdown</span>
@@ -1337,13 +1337,13 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
 
       {/* Level Selector - only show if multiple levels available */}
       {levels.length > 1 && (
-        <div className="px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
+        <div className="px-4 py-2 border-b border-edge-subtle bg-surface-page">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(Number(e.target.value))}
-              className="flex-1 text-caption bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-md px-2 py-1 focus:ring-1 focus:ring-cyan-500"
+              className="flex-1 text-caption bg-surface-card border border-edge rounded-md px-2 py-1 focus:ring-1 focus:ring-cyan-500"
             >
               {levels.map((lvl) => (
                 <option key={lvl.level} value={lvl.level}>
@@ -1360,7 +1360,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
           <p className="body-sm text-center py-4">No currency mirrors found at this level</p>
         ) : (
           breakdown.map((cb) => (
-            <div key={cb.currency} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+            <div key={cb.currency} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
               <div className="flex items-center gap-2">
                 <Badge variant="neutral" size="sm">{cb.currency}</Badge>
                 <span className="text-body-sm font-medium">{formatCurrency(cb.originalBalance, cb.currency)}</span>
@@ -1377,7 +1377,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
           ))
         )}
       </div>
-      <div className="px-4 py-2 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950 rounded-b-lg">
+      <div className="px-4 py-2 border-t border-edge-subtle bg-surface-page rounded-b-lg">
         <div className="flex items-center justify-between">
           <span className="caption">Total in {baseCurrency}</span>
           <span className="text-body-sm font-bold text-cyan-700 dark:text-cyan-300">
@@ -1598,7 +1598,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       case 'ENTITY': return { bg: 'bg-cat-1/10 dark:bg-cat-1/15', text: 'text-cat-1 dark:text-cat-1-fg', icon: Building2, border: '' };
       case 'VIRTUAL_ACCOUNT': return { bg: 'bg-success-50 dark:bg-success-500/10', text: 'text-success-700 dark:text-success-300', icon: Wallet, border: '' };
       case 'SHADOW_ACCOUNT': return { bg: 'bg-warning-100 dark:bg-warning-500/20', text: 'text-warning-800 dark:text-warning-300', icon: Layers, border: 'border-2 border-dashed border-warning-400' };
-      default: return { bg: 'bg-neutral-100 dark:bg-primary-800', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet, border: '' };
+      default: return { bg: 'bg-surface-muted', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet, border: '' };
     }
   };
 
@@ -1653,7 +1653,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 // internal ellipsis ("MN…") reads as truncation, unlike a
                 // hard container clip ("M").
                 badges.push({ key: 'entity', label: node.owningEntity.entityCode, el: (
-                  <Badge key="entity" variant="neutral" size="sm" className="text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-primary-950 shrink min-w-[40px]">
+                  <Badge key="entity" variant="neutral" size="sm" className="text-neutral-600 dark:text-neutral-300 bg-surface-page shrink min-w-[40px]">
                     <span className="truncate">{node.owningEntity.entityCode}</span>
                   </Badge>
                 )});
@@ -1783,7 +1783,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           </button>
           {showContextMenu && (
             <div className={cn(
-              'absolute right-0 w-52 bg-white dark:bg-primary-900 rounded-lg shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-50',
+              'absolute right-0 w-52 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-50',
               menuUp ? 'bottom-full mb-1' : 'top-full mt-1'
             )}>
               {canAddChildren && onAddChild && (
@@ -1813,7 +1813,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               {/* ENHANCED: IHB Context Menu Items */}
               {node.owningEntity && (
                 <>
-                  <div className="border-t border-neutral-100 dark:border-primary-800/60 my-1" />
+                  <div className="border-t border-edge-subtle my-1" />
                   {node.ihb?.enabled ? (
                     <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
                       className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
@@ -1828,7 +1828,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 </>
               )}
               
-              <div className="border-t border-neutral-100 dark:border-primary-800/60 my-1" />
+              <div className="border-t border-edge-subtle my-1" />
               <button onClick={(e) => { e.stopPropagation(); onSelect(node); setShowContextMenu(false); }}
                 className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />View Details
@@ -1840,7 +1840,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
       {hasChildren && isExpanded && (
         <div className="relative">
-          <div className="absolute left-0 top-0 bottom-4 border-l-2 border-dashed border-neutral-200 dark:border-primary-800" style={{ marginLeft: `${(node.level + 1) * 28 + 12}px` }} />
+          <div className="absolute left-0 top-0 bottom-4 border-l-2 border-dashed border-edge" style={{ marginLeft: `${(node.level + 1) * 28 + 12}px` }} />
           {(filteredChildren as ExtendedHierarchyNode[]).map((child) => (
             <TreeNode
               key={child.id}
@@ -2007,13 +2007,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className={cn('rounded-lg p-3', isCurrencyMirror ? 'bg-cyan-50 dark:bg-cyan-500/10' : 'bg-neutral-50 dark:bg-primary-950')}>
+        <div className={cn('rounded-lg p-3', isCurrencyMirror ? 'bg-cyan-50 dark:bg-cyan-500/10' : 'bg-surface-page')}>
           <p className="caption">{isCurrencyMirror ? 'Mirror Balance' : 'Local Balance'}</p>
           <p className={cn('text-body-lg font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
             {formatCurrency(isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : displayData.localBalance, displayData.currencyCode)}
           </p>
         </div>
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
+        <div className="bg-surface-page rounded-lg p-3">
           <p className="caption">{isCurrencyMirror ? 'In Base Currency' : 'Available'}</p>
           <p className="section-title">
             {isCurrencyMirror
@@ -2042,7 +2042,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <Loader2 className="w-5 h-5 animate-spin text-cyan-600 dark:text-cyan-300" />
             </div>
           ) : currencyBreakdown.length === 0 ? (
-            <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+            <div className="p-3 bg-surface-page rounded-lg">
               <p className="body-sm text-center">No currency mirrors at this level</p>
             </div>
           ) : (
@@ -2050,7 +2050,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               {currencyBreakdown.map((cb) => (
                 <div key={cb.currency} className="flex items-center justify-between p-2.5 bg-gradient-to-r from-cyan-50 to-neutral-50 rounded-lg border border-cyan-100 dark:border-cyan-500/30 dark:from-cyan-500/15 dark:to-neutral-500/15">
                   <div className="flex items-center gap-2">
-                    <Badge variant="neutral" size="sm" className="bg-white dark:bg-primary-900 border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-mono">
+                    <Badge variant="neutral" size="sm" className="bg-surface-card border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-mono">
                       {cb.currency}
                     </Badge>
                     <span className="text-body-sm font-semibold text-neutral-800 dark:text-neutral-100">
@@ -2089,7 +2089,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </h4>
             <Button variant="ghost" size="sm" onClick={() => onAssignEntity?.(node)}>Change</Button>
           </div>
-          <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div className="p-3 bg-surface-page rounded-lg">
             <div className="flex items-center gap-2">
               <span className="font-medium text-primary-900 dark:text-neutral-50">{node.owningEntity.entityName}</span>
             </div>
@@ -2149,7 +2149,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           {node.ihb?.enabled ? (
             <IhbDetailSection ihb={node.ihb} currency={node.currencyCode} treasuryRates={treasuryRates} />
           ) : (
-            <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+            <div className="p-3 bg-surface-page rounded-lg">
               <p className="body-sm">IHB not enabled for this entity</p>
               <p className="caption mt-1">Enable to participate in intercompany loans, deposits, and EOD sweeps</p>
               <Button 
@@ -2257,7 +2257,7 @@ const AssignEntityModal: React.FC<AssignEntityModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Assign Legal Entity" size="md">
       <div className="p-4 space-y-4">
         {node && (
-          <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div className="p-3 bg-surface-page rounded-lg">
             <p className="body-sm">Account:</p>
             <p className="font-medium">{node.name}</p>
             {node.accountNumber && <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{node.accountNumber}</p>}
@@ -2271,7 +2271,7 @@ const AssignEntityModal: React.FC<AssignEntityModalProps> = ({
           <select
             value={selectedEntityId}
             onChange={(e) => setSelectedEntityId(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg"
           >
             <option value="">-- Select Entity --</option>
             {entities.filter(e => e.status === 'ACTIVE').map(entity => (
@@ -2581,7 +2581,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     Interest Rate Configuration
                   </label>
                   {loadingConfigs ? (
-                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-primary-900 rounded-md border">
+                    <div className="flex items-center gap-2 p-2 bg-surface-card rounded-md border">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span className="body-sm">Loading configurations...</span>
                     </div>
@@ -2589,7 +2589,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <select
                       value={selectedConfigId}
                       onChange={(e) => setSelectedConfigId(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 rounded-lg text-body-sm"
+                      className="w-full px-3 py-2 bg-surface-card border border-warning-200 dark:border-warning-500/30 rounded-lg text-body-sm"
                     >
                       <option value="">-- Select Rate Configuration --</option>
                       {interestConfigs.map(cfg => (
@@ -2611,7 +2611,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                 {/* Show Selected Config Details */}
                 {selectedConfig && (
                   <div className="grid grid-cols-2 gap-3 mt-3">
-                    <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
+                    <div className="p-3 bg-surface-card rounded-lg border border-error-100 dark:border-error-500/30">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
                         <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Lending Rate</span>
@@ -2626,7 +2626,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                         {selectedConfig.debitSpread || 0}%
                       </p>
                     </div>
-                    <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
+                    <div className="p-3 bg-surface-card rounded-lg border border-success-100 dark:border-success-500/30">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
                         <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
@@ -2658,7 +2658,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 
             {/* Create New Config Form */}
             {showCreateConfig && (
-              <div className="space-y-4 p-4 bg-white dark:bg-primary-900 rounded-lg border border-warning-200 dark:border-warning-500/30">
+              <div className="space-y-4 p-4 bg-surface-card rounded-lg border border-warning-200 dark:border-warning-500/30">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium text-neutral-900 dark:text-neutral-50">Create New Rate Configuration</h4>
                   <Button variant="ghost" size="sm" onClick={() => setShowCreateConfig(false)}>
@@ -2672,7 +2672,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     type="text"
                     value={newConfigForm.configName}
                     onChange={(e) => setNewConfigForm(prev => ({ ...prev, configName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
                     placeholder="e.g., IHB Treasury Rate - ACME-TC"
                   />
                 </div>
@@ -2843,7 +2843,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
             
             <div className="grid grid-cols-2 gap-4">
               {/* Borrowing Rates */}
-              <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
+              <div className="p-3 bg-surface-card rounded-lg border border-error-100 dark:border-error-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
                   <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Borrowing Rate</span>
@@ -2858,7 +2858,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               </div>
               
               {/* Deposit Rates */}
-              <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
+              <div className="p-3 bg-surface-card rounded-lg border border-success-100 dark:border-success-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
                   <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
@@ -2881,7 +2881,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 
         {/* Loading rates indicator */}
         {isEnabling && !willBeTreasuryCenter && loadingRates && (
-          <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border animate-pulse">
+          <div className="p-4 bg-surface-page rounded-lg border animate-pulse">
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
               <span className="body-sm">Loading Treasury rates...</span>
@@ -2920,7 +2920,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 
         {/* IHB Status Summary when already enabled */}
         {!isEnabling && entity?.ihbEnabled && (
-          <div className="grid grid-cols-2 gap-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div className="grid grid-cols-2 gap-3 p-3 bg-surface-page rounded-lg">
             <div>
               <p className="caption">Credit Limit</p>
               <p className="font-medium">{formatCurrency(entity.ihbCreditLimit || 0, currency)}</p>
@@ -2959,7 +2959,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
             type="number"
             value={config.creditLimit}
             onChange={(e) => setConfig(prev => ({ ...prev, creditLimit: Number(e.target.value) }))}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
           />
         </div>
         
@@ -2971,7 +2971,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               type="number"
               value={config.targetCashBalance}
               onChange={(e) => setConfig(prev => ({ ...prev, targetCashBalance: Number(e.target.value) }))}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
             />
             <p className="caption mt-1">0 = sweep all surplus to/from Treasury Center</p>
           </div>
@@ -2979,7 +2979,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         
         {/* Sweep Toggle */}
         {isEnabling && (
-          <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-info-600 dark:text-info-300" />
               <span className="text-body-sm">Enable EOD Auto-Sweep</span>
@@ -4001,8 +4001,8 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hierarchy Tree */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-primary-900 rounded-lg shadow-sm border border-neutral-100 dark:border-primary-800/60">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
+          <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">
+            <div className="flex items-center justify-between p-4 border-b border-edge">
               <h2 className="section-title">Virtual Account Hierarchy</h2>
               <div className="flex items-center gap-2">
                 <Checkbox size="sm" label="System VAs" checked={showSystemVas} onChange={setShowSystemVas} className="body-sm" />
@@ -4055,7 +4055,7 @@ const TreasuryHierarchyPage: React.FC = () => {
 
         {/* Detail Panel */}
         <div>
-          <div className="bg-white dark:bg-primary-900 rounded-lg shadow-sm border border-neutral-100 dark:border-primary-800/60 p-4">
+          <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle p-4">
             <h3 className="section-title mb-4">Entity Details</h3>
             <DetailPanel
               node={selectedNode}
@@ -4075,7 +4075,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="bg-white dark:bg-primary-900 rounded-lg p-4 shadow-sm border border-neutral-100 dark:border-primary-800/60">
+      <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle">
         <div className="flex flex-wrap items-center gap-6">
           <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
@@ -4166,7 +4166,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <Modal isOpen={showCreateViban} onClose={() => setShowCreateViban(false)} title="Add VIBAN" size="md">
         <div className="p-4 space-y-4">
           <div><label className="field-label block mb-1">VIBAN Type</label>
-            <select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700">
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2">
               <option value="PRIMARY">Primary</option><option value="INVOICE">Invoice</option><option value="CUSTOMER">Customer</option>
             </select>
           </div>

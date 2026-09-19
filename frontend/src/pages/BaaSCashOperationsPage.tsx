@@ -715,7 +715,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       {activeTab === 'operations' && (
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
           {/* Filters */}
-          <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+          <div className="p-4 border-b border-edge">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Input
@@ -727,7 +727,7 @@ const BaaSCashOperationsPage: React.FC = () => {
               </div>
               <div className="flex gap-2 flex-wrap">
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
+                  className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                 >
@@ -739,7 +739,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="TRANSFER">Transfer</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
+                  className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -749,7 +749,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="FAILED">Failed</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
+                  className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm"
                   value={channelFilter}
                   onChange={(e) => setChannelFilter(e.target.value)}
                 >
@@ -760,7 +760,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="MOBILE">Mobile</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
+                  className="border border-edge-strong rounded-lg px-3 py-2 text-body-sm"
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
                 >
@@ -793,7 +793,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                     <th className="data-table-header-cell">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                <tbody className="divide-y divide-edge-subtle">
                   {filteredOperations.map((op) => {
                     const typeConf = operationTypeConfig[op.type];
                     const channelConf = channelConfig[op.channel];
@@ -868,7 +868,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       {/* Agents Tab */}
       {activeTab === 'agents' && (
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="p-4 border-b border-neutral-200 dark:border-primary-800 flex items-center justify-between">
+          <div className="p-4 border-b border-edge flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Phase 12 Task G: flat tonal medallion (gradient + white-icon
                   recipe retired in Phase 8). */}
@@ -890,7 +890,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <th className="data-table-header-cell">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+              <tbody className="divide-y divide-edge-subtle">
                 {agents.map((agent) => (
                   <tr key={agent.id} className="data-table-row group">
                     <td className="data-table-cell">
@@ -945,7 +945,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="field-label block mb-1">Program (Optional)</label>
-                <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2">
+                <select className="w-full border border-edge-strong rounded-lg px-3 py-2">
                   <option value="">All Programs</option>
                   <option value="1">Fintech Partner A</option>
                   <option value="2">Fintech Partner B</option>
@@ -956,7 +956,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   Wallet Data (CSV Format)
                 </label>
                 <textarea
-                  className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-40 font-mono text-body-sm"
+                  className="w-full border border-edge-strong rounded-lg px-3 py-2 h-40 font-mono text-body-sm"
                   placeholder="walletReference,amount&#10;WAL-FINTA-00012345,100&#10;WAL-FINTA-00012346,250"
                   value={bulkLoadForm.csvData}
                   onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })}
@@ -992,7 +992,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                 { id: 2, date: '2024-02-11', count: 200, total: 100000, status: 'Completed', success: 200 },
                 { id: 3, date: '2024-02-10', count: 50, total: 25000, status: 'Partial', success: 47 },
               ].map((op) => (
-                <div key={op.id} className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors">
+                <div key={op.id} className="p-4 bg-surface-page rounded-lg hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <span className="body-sm">{op.date}</span>
                     <Badge variant={op.status === 'Completed' ? 'success' : 'warning'}>{op.status}</Badge>
@@ -1089,7 +1089,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                     "p-3 border rounded-lg text-center transition-colors",
                     cashInForm.channel === ch
                       ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 text-primary-700 dark:text-neutral-200"
-                      : "border-neutral-300 dark:border-primary-700 hover:border-neutral-400"
+                      : "border-edge-strong hover:border-neutral-400"
                   )}
                 >
                   {channelConfig[ch]?.icon}
@@ -1103,7 +1103,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <div>
               <label className="field-label block mb-1">Select Agent</label>
               <select
-                className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2"
+                className="w-full border border-edge-strong rounded-lg px-3 py-2"
                 value={cashInForm.agentId}
                 onChange={(e) => setCashInForm({ ...cashInForm, agentId: e.target.value })}
               >
@@ -1171,7 +1171,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
           {/* Wallet Info */}
           {walletLookup && (
-            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+            <div className="p-4 bg-surface-page border border-edge rounded-lg">
               <div className="flex items-center gap-3">
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
@@ -1209,7 +1209,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                     "p-3 border rounded-lg text-center transition-colors",
                     cashOutForm.channel === ch
                       ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 text-primary-700 dark:text-neutral-200"
-                      : "border-neutral-300 dark:border-primary-700 hover:border-neutral-400"
+                      : "border-edge-strong hover:border-neutral-400"
                   )}
                 >
                   {channelConfig[ch]?.icon}
@@ -1223,7 +1223,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <div>
               <label className="field-label block mb-1">Select Agent</label>
               <select
-                className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2"
+                className="w-full border border-edge-strong rounded-lg px-3 py-2"
                 value={cashOutForm.agentId}
                 onChange={(e) => setCashOutForm({ ...cashOutForm, agentId: e.target.value })}
               >
@@ -1283,7 +1283,7 @@ const BaaSCashOperationsPage: React.FC = () => {
           </div>
 
           {walletLookup && (
-            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+            <div className="p-4 bg-surface-page border border-edge rounded-lg">
               <div className="flex items-center gap-3">
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
@@ -1331,7 +1331,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       >
         {selectedOperation && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-surface-page rounded-lg">
               <div className="flex items-center gap-3">
                 <span className={cn(
                   "p-3 rounded-lg",
@@ -1404,7 +1404,7 @@ const BaaSCashOperationsPage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex gap-2 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="flex gap-2 pt-4 border-t border-edge">
               <Button variant="outline" leftIcon={<Printer className="w-4 h-4" />} className="flex-1">
                 Print Receipt
               </Button>

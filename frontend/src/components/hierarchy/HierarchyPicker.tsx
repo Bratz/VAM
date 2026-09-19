@@ -143,7 +143,7 @@ const PickerNode: React.FC<PickerNodeProps> = ({
       case 'VIRTUAL_ACCOUNT':
         return { bg: 'bg-success-50 dark:bg-success-500/10', text: 'text-success-700 dark:text-success-300', icon: Wallet };
       default:
-        return { bg: 'bg-neutral-100 dark:bg-primary-800', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet };
+        return { bg: 'bg-surface-muted', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet };
     }
   };
 
@@ -373,10 +373,10 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
         disabled={disabled}
         className={cn(
           'w-full flex items-center justify-between gap-2 px-3 py-2.5 border rounded-lg text-left transition-all',
-          'bg-white hover:bg-neutral-50 dark:bg-primary-900 dark:hover:bg-primary-800/50',
-          isOpen ? 'border-primary-500 ring-2 ring-primary-100' : 'border-neutral-300 dark:border-primary-700',
+          'bg-surface-card hover:bg-neutral-50 dark:hover:bg-primary-800/50',
+          isOpen ? 'border-primary-500 ring-2 ring-primary-100' : 'border-edge-strong',
           error ? 'border-error-500' : '',
-          disabled ? 'opacity-50 cursor-not-allowed bg-neutral-100 dark:bg-primary-800' : 'cursor-pointer'
+          disabled ? 'opacity-50 cursor-not-allowed bg-surface-muted' : 'cursor-pointer'
         )}
       >
         {selectedNode ? (
@@ -415,7 +415,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
       {isOpen && (
         <Card className="absolute z-50 w-full mt-1 shadow-lg max-h-[400px] overflow-hidden" padding="none">
           {/* Search */}
-          <div className="p-2 border-b border-neutral-200 dark:border-primary-800">
+          <div className="p-2 border-b border-edge">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
@@ -423,7 +423,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
                 placeholder="Search hierarchy..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-body-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800"
+                className="w-full pl-9 pr-3 py-2 text-body-sm border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 autoFocus
               />
             </div>
@@ -458,7 +458,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="p-2 border-t border-neutral-200 flex justify-between dark:border-primary-800">
+          <div className="p-2 border-t border-edge flex justify-between">
             <Button
               variant="ghost"
               size="sm"

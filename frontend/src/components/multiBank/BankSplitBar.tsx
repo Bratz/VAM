@@ -71,7 +71,7 @@ export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total })
   return (
     <div>
       <div
-        className="flex h-3 rounded-md overflow-hidden border border-neutral-200 dark:border-primary-800"
+        className="flex h-3 rounded-md overflow-hidden border border-edge"
         role="img"
         aria-label="Bank distribution"
       >

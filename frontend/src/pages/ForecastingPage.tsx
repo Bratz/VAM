@@ -679,7 +679,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200 dark:border-primary-800/60">
-                <th className="sticky left-0 bg-white dark:bg-primary-900 text-left py-2 pr-3 label">
+                <th className="sticky left-0 bg-surface-card text-left py-2 pr-3 label">
                   Category
                 </th>
                 {weeklyBuckets.map((b) => (
@@ -698,7 +698,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
             <tbody>
               {table.map((row) => (
                 <tr key={row.code} className="border-b border-neutral-100 dark:border-primary-800/40 hover:bg-neutral-50 dark:hover:bg-primary-800/30">
-                  <td className="sticky left-0 bg-white dark:bg-primary-900 text-left py-2 pr-3 font-medium text-primary-900 dark:text-neutral-100">
+                  <td className="sticky left-0 bg-surface-card text-left py-2 pr-3 font-medium text-primary-900 dark:text-neutral-100">
                     {row.label}
                   </td>
                   {row.cells.map((v, i) => (
@@ -782,7 +782,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                         </span>
                         <span className={cn(
                           'text-caption font-semibold px-1.5 py-0 leading-4 rounded-full',
-                          SOURCE_LABELS[line.source]?.tone ?? 'bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300'
+                          SOURCE_LABELS[line.source]?.tone ?? 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
                         )}>
                           {SOURCE_LABELS[line.source]?.label ?? line.source}
                         </span>

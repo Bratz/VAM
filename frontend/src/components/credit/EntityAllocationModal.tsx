@@ -111,7 +111,7 @@ export const entityTypeConfig: Record<EntityType, { label: string; icon: React.E
   HOLDING: { label: 'Holding', icon: Crown, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
   SUBSIDIARY: { label: 'Subsidiary', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   BRANCH: { label: 'Branch', icon: Building2, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
+  REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted' },
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
   SPV: { label: 'SPV', icon: FlaskConical, color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10' },
@@ -331,7 +331,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                       'px-4 py-3 rounded-lg border-2 transition-premium text-left',
                       isSelected
                         ? 'border-primary-500 bg-primary-50/80 dark:bg-primary-500/15 dark:border-primary-400 backdrop-blur-sm'
-                        : 'border-neutral-200 dark:border-primary-800 dark:border-primary-700 hover:border-neutral-300 dark:hover:border-primary-600 bg-white dark:bg-primary-900/40 dark:hover:border-primary-700',
+                        : 'border-edge dark:border-primary-700 hover:border-neutral-300 dark:hover:border-primary-600 bg-white dark:bg-primary-900/40 dark:hover:border-primary-700',
                       isEditing && 'cursor-not-allowed opacity-50'
                     )}
                   >
@@ -462,7 +462,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                           min={0}
                           max={100}
                           aria-label="Approval threshold percent"
-                          className="w-16 px-2 py-1.5 border border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800/50 dark:text-neutral-50 rounded-lg text-body-sm tabular-nums"
+                          className="w-16 px-2 py-1.5 border border-edge-strong dark:border-primary-600 dark:bg-primary-800/50 dark:text-neutral-50 rounded-lg text-body-sm tabular-nums"
                         />
                         <span className="body-sm">%</span>
                       </div>
@@ -569,7 +569,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 border-2 border-neutral-300 dark:border-primary-700 dark:border-primary-600 rounded-lg text-body-sm font-medium text-primary-900 dark:text-neutral-50 dark:text-neutral-200 hover:bg-neutral-50 dark:bg-primary-950 dark:hover:bg-primary-800/50 dark:hover:bg-primary-800 transition-premium tracking-wide"
+              className="px-4 py-2.5 border-2 border-edge-strong dark:border-primary-600 rounded-lg text-body-sm font-medium text-primary-900 dark:text-neutral-50 dark:text-neutral-200 hover:bg-neutral-50 dark:bg-primary-950 dark:hover:bg-primary-800/50 dark:hover:bg-primary-800 transition-premium tracking-wide"
             >
               Cancel
             </button>

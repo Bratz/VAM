@@ -140,7 +140,7 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
             </div>
             {getRiskBadge(kyc.riskLevel)}
           </div>
-          <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+          <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div>
               <p className="caption">Documents</p>
               <p className="body-strong">
@@ -179,13 +179,13 @@ const RejectForm: React.FC<RejectFormProps> = ({ onSubmit, loading, onCancel }) 
       <div>
         <label className="form-label">Rejection Reason *</label>
         <textarea
-          className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-body-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
+          className="w-full px-4 py-3 border border-edge-strong rounded-lg text-body-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Enter reason for rejection..."
         />
       </div>
-      <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end gap-3 pt-4 border-t border-edge">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button
           variant="danger"
@@ -408,7 +408,7 @@ const KyccPage: React.FC = () => {
 
       {/* Pending KYC Table */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="px-6 py-4 border-b border-edge">
           <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Pending Review ({pendingKyc.length})</h3>
         </div>
 
@@ -494,7 +494,7 @@ const KyccPage: React.FC = () => {
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-edge">
               <div>
                 <p className="label">Entity Name</p>
                 <p className="body-strong mt-1">{selectedKyc.entityName}</p>
@@ -517,11 +517,11 @@ const KyccPage: React.FC = () => {
 
             {/* Documents */}
             {selectedKyc.documents && (
-              <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-4 border-t border-edge">
                 <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Documents</h4>
                 <div className="space-y-2">
                   {selectedKyc.documents.map((doc: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                         <span className="text-body-sm text-primary-900 dark:text-neutral-50">{doc.type} - {doc.fileName}</span>
@@ -537,22 +537,22 @@ const KyccPage: React.FC = () => {
 
             {/* Screening Results */}
             {selectedKyc.screeningResults && (
-              <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-4 border-t border-edge">
                 <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Screening Results</h4>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
+                  <div className="p-3 bg-surface-page rounded-lg text-center">
                     <p className="caption mb-1">Sanctions</p>
                     <Badge variant={selectedKyc.screeningResults.sanctionsHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.sanctionsHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
+                  <div className="p-3 bg-surface-page rounded-lg text-center">
                     <p className="caption mb-1">PEP</p>
                     <Badge variant={selectedKyc.screeningResults.pepHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.pepHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
+                  <div className="p-3 bg-surface-page rounded-lg text-center">
                     <p className="caption mb-1">Adverse Media</p>
                     <Badge variant={selectedKyc.screeningResults.adverseMedia ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.adverseMedia ? 'HIT' : 'CLEAR'}
@@ -563,7 +563,7 @@ const KyccPage: React.FC = () => {
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="flex justify-end gap-3 pt-4 border-t border-edge">
               <Button variant="outline" onClick={() => setShowDetailModal(false)}>
                 Close
               </Button>

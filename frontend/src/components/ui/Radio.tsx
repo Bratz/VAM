@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- native input primitive: the one place raw checkbox/radio inputs are allowed */
 import React from 'react';
 import { cn } from '../../utils';
 
@@ -33,7 +34,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
           <span
             aria-hidden="true"
             className={cn(
-              'flex items-center justify-center rounded-full border border-neutral-300 bg-white transition-colors dark:border-primary-700 dark:bg-primary-900',
+              'flex items-center justify-center rounded-full border border-edge-strong bg-surface-card transition-colors',
               'peer-checked:border-primary-900 dark:peer-checked:border-accent-500',
               'peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-primary-500 dark:peer-focus-visible:ring-accent-400',
               '[&>span]:scale-0 peer-checked:[&>span]:scale-100',

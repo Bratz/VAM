@@ -77,7 +77,7 @@ export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClos
       <div className="flex items-center gap-2 mb-6">
         <div className={cn(
           'flex items-center gap-2 px-3 py-1.5 rounded-full text-body-sm font-medium',
-          step === 1 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
+          step === 1 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-500 dark:text-neutral-400'
         )}>
           <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-caption">1</span>
           Pool Details
@@ -85,7 +85,7 @@ export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClos
         <ArrowRight className="w-4 h-4 text-neutral-300 dark:text-neutral-400" />
         <div className={cn(
           'flex items-center gap-2 px-3 py-1.5 rounded-full text-body-sm font-medium',
-          step === 2 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
+          step === 2 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-500 dark:text-neutral-400'
         )}>
           <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-caption">2</span>
           Add Members

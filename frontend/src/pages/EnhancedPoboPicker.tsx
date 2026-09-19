@@ -61,7 +61,7 @@ const EntityPositionCard: React.FC<{
   const hasCapacity = (entity.creditAvailable || 0) >= (amount || 0);
 
   return (
-    <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3 space-y-2">
+    <div className="bg-surface-card rounded-lg border border-edge p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {role === 'PAYER' ? (
@@ -139,7 +139,7 @@ const IhbLoanPreview: React.FC<{
 
       <div className="space-y-3">
         {/* Flow Diagram */}
-        <div className="flex items-center justify-between bg-white dark:bg-primary-900 rounded-lg p-3">
+        <div className="flex items-center justify-between bg-surface-card rounded-lg p-3">
           <div className="text-center">
             <Landmark className="w-6 h-6 text-primary-600 mx-auto mb-1 dark:text-primary-200" />
             <p className="text-caption font-medium text-primary-900 dark:text-neutral-50">{payingEntity.entityCode}</p>
@@ -166,21 +166,21 @@ const IhbLoanPreview: React.FC<{
 
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Principal</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
+          <div className="bg-surface-card rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-caption text-primary-700 bg-white dark:bg-primary-900 rounded-md p-2 dark:text-neutral-200">
+        <div className="flex items-center gap-2 text-caption text-primary-700 bg-surface-card rounded-md p-2 dark:text-neutral-200">
           <Info className="w-4 h-4" />
           <span>Loan will be automatically settled during monthly intercompany netting</span>
         </div>
@@ -319,7 +319,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
   }, [enabled, payingEntityId, behalfEntityId, amount, currencyCode, onPreviewUpdate]);
 
   return (
-    <Card className={cn('transition-colors', enabled ? 'bg-accent-50 dark:bg-accent-500/10 border-accent-200 dark:border-accent-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
+    <Card className={cn('transition-colors', enabled ? 'bg-accent-50 dark:bg-accent-500/10 border-accent-200 dark:border-accent-500/30' : 'bg-surface-page')}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -333,7 +333,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
           onClick={() => onToggle(!enabled)}
           className={cn('w-12 h-6 rounded-full transition-colors relative', enabled ? 'bg-accent-500' : 'bg-neutral-300')}
         >
-          <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform dark:bg-primary-900', enabled ? 'translate-x-6' : 'translate-x-0.5')} />
+          <div className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-surface-card shadow transition-transform', enabled ? 'translate-x-6' : 'translate-x-0.5')} />
         </button>
       </div>
 
@@ -353,7 +353,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                 </label>
                 <button
                   onClick={() => setShowPayingPicker(!showPayingPicker)}
-                  className="w-full flex items-center justify-between p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white hover:border-accent-400 transition-colors dark:bg-primary-900"
+                  className="w-full flex items-center justify-between p-3 border border-edge-strong rounded-lg bg-surface-card hover:border-accent-400 transition-colors"
                 >
                   {payingEntity ? (
                     <div className="flex items-center gap-2">
@@ -370,7 +370,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                 </button>
 
                 {showPayingPicker && (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-primary-900">
+                  <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {entities
                       .filter(e => e.entityType === 'PARENT' || e.entityType === 'SUBSIDIARY')
                       .map((entity) => (
@@ -381,7 +381,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                             setShowPayingPicker(false);
                           }}
                           className={cn(
-                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0',
+                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-edge-subtle last:border-b-0',
                             payingEntityId === entity.id && 'bg-accent-50 dark:bg-accent-500/10'
                           )}
                         >
@@ -417,7 +417,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                 </label>
                 <button
                   onClick={() => setShowBehalfPicker(!showBehalfPicker)}
-                  className="w-full flex items-center justify-between p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white hover:border-accent-400 transition-colors dark:bg-primary-900"
+                  className="w-full flex items-center justify-between p-3 border border-edge-strong rounded-lg bg-surface-card hover:border-accent-400 transition-colors"
                 >
                   {behalfEntity ? (
                     <div className="flex items-center gap-2">
@@ -434,7 +434,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                 </button>
 
                 {showBehalfPicker && (
-                  <div className="absolute z-20 mt-1 w-full bg-white border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto dark:bg-primary-900">
+                  <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {entities
                       .filter(e => e.id !== payingEntityId)
                       .map((entity) => (
@@ -445,7 +445,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                             setShowBehalfPicker(false);
                           }}
                           className={cn(
-                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0',
+                            'w-full p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors text-left border-b border-edge-subtle last:border-b-0',
                             behalfEntityId === entity.id && 'bg-accent-50 dark:bg-accent-500/10'
                           )}
                         >
@@ -504,7 +504,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
 
               {/* POBO Summary */}
               {payingEntity && behalfEntity && (
-                <div className="bg-white dark:bg-primary-900 rounded-lg p-3 border border-accent-200 dark:border-accent-500/30">
+                <div className="bg-surface-card rounded-lg p-3 border border-accent-200 dark:border-accent-500/30">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-accent-600 dark:text-accent-300" />
                     <span className="text-body-sm font-medium text-accent-900">

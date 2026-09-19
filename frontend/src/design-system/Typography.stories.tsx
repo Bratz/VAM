@@ -54,7 +54,7 @@ function Specimen() {
         <p className="caption mb-4">Use these first — they bundle size, weight, colour, family and dark mode.</p>
         <table className="w-full">
           <thead><tr><th className={th}>Class</th><th className={th}>Use</th><th className={th}>Sample</th></tr></thead>
-          <tbody className="divide-y divide-neutral-200 dark:divide-primary-800">
+          <tbody className="divide-y divide-edge">
             {CLASSES.map((c) => (
               <tr key={c.cls}>
                 <td className="py-3 pr-6 align-baseline"><code className="code">.{c.cls}</code></td>
@@ -71,7 +71,7 @@ function Specimen() {
         <p className="caption mb-4">For inherited-colour text where no semantic class fits. This is the entire scale.</p>
         <table className="w-full">
           <thead><tr><th className={th}>Utility</th><th className={th}>px / line-height</th><th className={th}>Replaces</th><th className={th}>Sample</th></tr></thead>
-          <tbody className="divide-y divide-neutral-200 dark:divide-primary-800">
+          <tbody className="divide-y divide-edge">
             {SIZES.map((s) => (
               <tr key={s.util}>
                 <td className="py-3 pr-6 align-baseline"><code className="code">{s.util}</code></td>

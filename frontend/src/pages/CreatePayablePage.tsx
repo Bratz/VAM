@@ -278,7 +278,7 @@ const Input: React.FC<{
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full border rounded-lg transition-colors ${sizes[size]} ${prefix ? 'pl-10' : ''} ${suffix ? 'pr-10' : ''} ${error ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700'} ${disabled ? 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed' : 'bg-white dark:bg-primary-900'} focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500`}
+          className={`w-full border rounded-lg transition-colors ${sizes[size]} ${prefix ? 'pl-10' : ''} ${suffix ? 'pr-10' : ''} ${error ? 'border-error-300' : 'border-edge-strong'} ${disabled ? 'bg-surface-muted cursor-not-allowed' : 'bg-surface-card'} focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500`}
         />
         {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">{suffix}</span>}
       </div>
@@ -304,7 +304,7 @@ const Select: React.FC<{
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none ${disabled ? 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed' : ''}`}
+      className={`w-full border border-edge-strong rounded-lg px-3 py-2 text-body-sm bg-surface-card focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none ${disabled ? 'bg-surface-muted cursor-not-allowed' : ''}`}
     >
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -432,21 +432,21 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
           onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
           placeholder="Search vendors by name or code..."
-          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-lg text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-400 transition-all"
+          className="w-full pl-12 pr-4 py-4 border-2 border-edge rounded-lg text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-400 transition-all"
         />
         {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-neutral-400" />}
       </div>
       {showDropdown && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-          <div className="absolute z-20 mt-2 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+          <div className="absolute z-20 mt-2 w-full bg-surface-card border border-edge rounded-lg shadow-xl max-h-80 overflow-y-auto">
             {results.length === 0 ? (
               <div className="p-4 text-center text-neutral-500 dark:text-neutral-400"><Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" /><p>No vendors found</p></div>
             ) : results.map((vendor) => (
               <button
                 key={vendor.id}
                 onClick={() => { onSelect(vendor); setShowDropdown(false); setQuery(''); }}
-                className="w-full flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0 transition-colors"
+                className="w-full flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 text-left border-b border-edge-subtle last:border-b-0 transition-colors"
               >
                 <StatusIconBadge tone="neutral" icon={Building2} className="flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -493,7 +493,7 @@ const BankAccountSelector: React.FC<{
                 key={channel.value}
                 onClick={() => isAvailable && onChannelChange(channel.value)}
                 disabled={!isAvailable}
-                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : isAvailable ? 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900' : 'border-neutral-100 bg-neutral-50 dark:bg-primary-950 opacity-50 cursor-not-allowed'}`}
+                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : isAvailable ? 'border-edge hover:border-neutral-300 dark:hover:border-primary-700 bg-surface-card' : 'border-neutral-100 bg-surface-page opacity-50 cursor-not-allowed'}`}
               >
                 <Icon className={`w-5 h-5 ${isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400'}`} />
                 <div>
@@ -516,7 +516,7 @@ const BankAccountSelector: React.FC<{
               <button
                 key={account.id}
                 onClick={() => onSelect(account.id)}
-                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${selectedId === account.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900'} dark:bg-primary-800/40 dark:bg-primary-900`}
+                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${selectedId === account.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700 bg-surface-card'} dark:bg-primary-800/40 dark:bg-primary-900`}
               >
                 <StatusIconBadge tone={selectedId === account.id ? 'primary' : 'neutral'} icon={Landmark} />
                 <div className="flex-1">
@@ -602,7 +602,7 @@ const InvoiceLookup: React.FC<{
           onChange={(e) => { onManualEntry(e.target.value); setShowSuggestions(true); }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="Enter or select invoice number..."
-          className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none"
+          className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none"
         />
         {matchedInvoice && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success-500 dark:text-success-300" />}
       </div>
@@ -610,15 +610,15 @@ const InvoiceLookup: React.FC<{
       {showSuggestions && filteredInvoices.length > 0 && !matchedInvoice && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowSuggestions(false)} />
-          <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-            <div className="p-2 border-b border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
+          <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            <div className="p-2 border-b border-edge-subtle bg-surface-page">
               <p className="label-cased">Pending invoices from this vendor</p>
             </div>
             {filteredInvoices.map((inv) => (
               <button
                 key={inv.id}
                 onClick={() => { onManualEntry(inv.invoiceNumber); onInvoiceSelect(inv); setShowSuggestions(false); }}
-                className="w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0"
+                className="w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 text-left border-b border-edge-subtle last:border-b-0"
               >
                 <div>
                   <p className="font-medium text-neutral-900 dark:text-neutral-50 font-mono">{inv.invoiceNumber}</p>
@@ -675,10 +675,10 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
           </div>
         </div>
       </div>
-      <div className="border-t border-neutral-200 dark:border-primary-800 pt-6">
+      <div className="border-t border-edge pt-6">
         <h4 className="body-strong font-semibold mb-4">Additional Charges</h4>
         {formData.additionalCharges.map((charge, index) => (
-          <div key={charge.id} className="flex items-center gap-3 mb-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div key={charge.id} className="flex items-center gap-3 mb-3 p-3 bg-surface-page rounded-lg">
             <span className="flex-1 text-body-sm font-medium">{charge.description}</span>
             <span className="font-semibold">{formatCurrency(charge.amount, formData.currencyCode)}</span>
             <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded-md text-error-500 dark:text-error-300 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
@@ -712,9 +712,9 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
   if (!poboEligibility.eligible) {
     return (
       <div className="space-y-4">
-        <div className="border-2 border-neutral-200 dark:border-primary-800 rounded-lg p-5 bg-neutral-50 dark:bg-primary-950">
+        <div className="border-2 border-edge rounded-lg p-5 bg-surface-page">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-neutral-100 dark:bg-primary-800">
+            <div className="p-3 rounded-lg bg-surface-muted">
               <ArrowLeftRight className="w-6 h-6 text-neutral-400" />
             </div>
             <div className="flex-1">
@@ -748,10 +748,10 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
 
   return (
     <div className="space-y-6">
-      <div className={`border-2 rounded-lg p-5 transition-all ${formData.poboEnabled ? 'border-accent-500 bg-accent-50/30' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:hover:border-primary-700`}>
+      <div className={`border-2 rounded-lg p-5 transition-all ${formData.poboEnabled ? 'border-accent-500 bg-accent-50/30' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'} dark:hover:border-primary-700`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-lg ${formData.poboEnabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-neutral-100 dark:bg-primary-800'}`}>
+            <div className={`p-3 rounded-lg ${formData.poboEnabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-surface-muted'}`}>
               <ArrowLeftRight className={`w-6 h-6 ${formData.poboEnabled ? 'text-accent-600 dark:text-accent-300' : 'text-neutral-500 dark:text-neutral-400'}`} />
             </div>
             <div>
@@ -777,7 +777,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
             <label className="field-label block mb-2">Paying Entity (Treasury)</label>
             {entities.filter(e => e.type === 'HEADQUARTERS').map((entity) => (
               <button key={entity.id} onClick={() => { updateField('payingEntityId', entity.id); updateField('payingEntityName', entity.name); }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.payingEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.payingEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
                 <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                 <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="caption">{entity.code}</p></div>
               </button>
@@ -787,7 +787,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
             <label className="field-label block mb-2">On Behalf Of (Subsidiary)</label>
             {entities.filter(e => e.type === 'SUBSIDIARY').map((entity) => (
               <button key={entity.id} onClick={() => { updateField('onBehalfOfEntityId', entity.id); updateField('onBehalfOfEntityName', entity.name); }}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.onBehalfOfEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
+                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.onBehalfOfEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
                 <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                 <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="caption">{entity.code}</p></div>
               </button>
@@ -809,7 +809,7 @@ const HierarchyTab: React.FC<{ formData: PayableFormData; updateField: (field: k
   return (
     <div className="space-y-4">
       <label className="field-label block mb-2">Allocate to Entity / Cost Center</label>
-      <div className="border border-neutral-200 dark:border-primary-800 rounded-lg max-h-64 overflow-y-auto">
+      <div className="border border-edge rounded-lg max-h-64 overflow-y-auto">
         {hierarchy.map((node) => (
           <button key={node.id} onClick={() => { updateField('hierarchyNodeId', node.id); updateField('hierarchyNodeName', node.name); updateField('hierarchyPath', `MEA > UAE > ${node.name}`); }}
             className={`w-full flex items-center gap-2 p-3 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0 transition-colors ${formData.hierarchyNodeId === node.id ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'}`}
@@ -830,7 +830,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
   <div className="space-y-6">
     <div>
       <label className="field-label block mb-2">Attachments</label>
-      <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
+      <div className="border-2 border-dashed border-edge-strong rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
         <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-3" />
         <p className="text-neutral-600 dark:text-neutral-300 font-medium">Drop files here or click to upload</p>
         <p className="text-body-sm text-neutral-400 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
@@ -846,7 +846,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
     </div>
     <div>
       <label className="field-label block mb-2">Internal Notes</label>
-      <textarea value={formData.internalNotes} onChange={(e) => updateField('internalNotes', e.target.value)} placeholder="Add internal notes..." rows={4} className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none" />
+      <textarea value={formData.internalNotes} onChange={(e) => updateField('internalNotes', e.target.value)} placeholder="Add internal notes..." rows={4} className="w-full border border-edge-strong rounded-lg px-3 py-2 text-body-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none" />
     </div>
   </div>
 );
@@ -868,9 +868,9 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <Select label="Payment Priority" value={formData.paymentPriority} onChange={(v) => updateField('paymentPriority', v)} options={[{ value: 'LOW', label: '🟢 Low' }, { value: 'NORMAL', label: '🔵 Normal' }, { value: 'HIGH', label: '🟠 High' }, { value: 'URGENT', label: '🔴 Urgent' }]} />
-      <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg text-body-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
+      <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-surface-muted rounded-lg text-body-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
     </div>
-    <div className="border-t border-neutral-200 dark:border-primary-800 pt-4">
+    <div className="border-t border-edge pt-4">
       <Toggle layout="split" label="Notify Vendor" description="Send payment notification when processed" checked={formData.notifyVendor} onChange={(v) => updateField('notifyVendor', v)} />
     </div>
   </div>
@@ -892,13 +892,13 @@ const SummarySidebar: React.FC<{
   const daysUntilDue = formData.dueDate ? Math.ceil((new Date(formData.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
   
   return (
-    <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 shadow-sm sticky top-24">
-      <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
+    <div className="bg-surface-card rounded-lg border border-edge shadow-sm sticky top-24">
+      <div className="p-4 border-b border-edge-subtle">
         <h3 className="section-title flex items-center gap-2"><Receipt className="w-5 h-5 text-primary-600 dark:text-primary-200" />Payment Summary</h3>
       </div>
       <div className="p-4 space-y-4">
         {formData.vendorName && (
-          <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
+          <div className="pb-4 border-b border-edge-subtle">
             <p className="label">Vendor</p>
             <p className="font-semibold text-neutral-900 dark:text-neutral-50 mt-1">{formData.vendorName}</p>
             {formData.invoiceNumber && <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono mt-1">{formData.invoiceNumber}</p>}
@@ -908,10 +908,10 @@ const SummarySidebar: React.FC<{
           <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">Amount</span><span className="text-neutral-900 dark:text-neutral-50 font-medium">{formatCurrency(totalAmount, formData.currencyCode)}</span></div>
           {formData.applyVat && totalTax > 0 && <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">VAT ({formData.vatRate}%)</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalTax, formData.currencyCode)}</span></div>}
           {totalCharges > 0 && <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">Additional Charges</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalCharges, formData.currencyCode)}</span></div>}
-          <div className="flex justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="font-semibold text-neutral-900 dark:text-neutral-50">Total Payable</span><span className="font-bold text-heading-sm text-primary-600 dark:text-primary-200">{formatCurrency(grandTotal, formData.currencyCode)}</span></div>
+          <div className="flex justify-between pt-3 border-t border-edge"><span className="font-semibold text-neutral-900 dark:text-neutral-50">Total Payable</span><span className="font-bold text-heading-sm text-primary-600 dark:text-primary-200">{formatCurrency(grandTotal, formData.currencyCode)}</span></div>
         </div>
         {formData.dueDate && (
-          <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
+          <div className="bg-surface-page rounded-lg p-3">
             <div className="flex justify-between items-center"><span className="body-sm">Due Date</span><span className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(formData.dueDate)}</span></div>
             {daysUntilDue !== null && <p className={`inline-flex items-center gap-1 text-caption mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? <><AlertTriangle className="w-3 h-3" /> {Math.abs(daysUntilDue)} days overdue</> : daysUntilDue === 0 ? <><Clock className="w-3 h-3" /> Due today</> : <><Check className="w-3 h-3" /> {daysUntilDue} days remaining</>}</p>}
           </div>
@@ -1351,7 +1351,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     // same offset would overlap it. Inner wrapper narrows to max-w-5xl to
     // match <Page maxWidth="narrow"> below.
     <div>
-      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg mb-6">
+      <div className="bg-surface-card border border-edge rounded-lg mb-6">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1466,7 +1466,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                           <button
                             key={va.id}
                             onClick={() => updateField('sourceVirtualAccountId', va.id)}
-                            className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : hasSufficientBalance ? 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900' : 'border-neutral-200 bg-neutral-50 dark:bg-primary-950 opacity-60'}`}
+                            className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : hasSufficientBalance ? 'border-edge hover:border-neutral-300 dark:hover:border-primary-700 bg-surface-card' : 'border-neutral-200 bg-surface-page opacity-60'}`}
                             disabled={!hasSufficientBalance}
                           >
                             <StatusIconBadge tone={isSelected ? 'primary' : 'neutral'} icon={CreditCard} />
@@ -1501,7 +1501,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 </div>
 
                 {/* Vendor Bank Account Selection */}
-                <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+                <div className="pt-4 border-t border-edge">
                   <label className="field-label block mb-2">Vendor Bank Account (Pay To)</label>
                   <BankAccountSelector accounts={selectedVendor.bankAccounts} selectedId={formData.selectedBankAccountId} paymentChannel={formData.paymentChannel} onSelect={handleBankSelect} onChannelChange={handleChannelChange} />
                 </div>
@@ -1511,7 +1511,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             {/* Optional Tabs */}
             {selectedVendor && formData.invoiceNumber && formData.selectedBankAccountId && (
               <Card padding="none">
-                <div className="border-b border-neutral-200 dark:border-primary-800 px-4 pt-4">
+                <div className="border-b border-edge px-4 pt-4">
                   <div className="flex items-center gap-2 mb-4">
                     <Settings className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                     <h2 className="font-semibold text-neutral-900 dark:text-neutral-50">Optional Configuration</h2>
@@ -1575,7 +1575,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             max-w-5xl above; the action bar now naturally fills that width.
             Kept the border-t / bg / -mx wrapper around the buttons so the
             divider still extends beyond Page's content column. */}
-        <div className="mt-8 border-t border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 py-4">
+        <div className="mt-8 border-t border-edge bg-surface-card py-4">
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button onClick={goBack} className="px-4 py-2 text-body-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50">
               Cancel

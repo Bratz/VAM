@@ -300,7 +300,7 @@ const MerchantDetail: React.FC<{ merchant: any }> = ({ merchant }) => (
     </div>
     {merchant.monthlyStats && (
       <>
-        <hr className="border-neutral-200 dark:border-primary-800" />
+        <hr className="border-edge" />
         <h4 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Monthly Statistics</h4>
         <div className="grid grid-cols-4 gap-4">
           <div>

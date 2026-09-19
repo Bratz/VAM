@@ -534,7 +534,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           "OFFER" tag. min-h-11 keeps the common single-line case at the
           same 44px while letting a wrapped second line push the banner down
           instead of overlapping it. */}
-      <div className="lg:min-h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-neutral-200 dark:border-primary-800 -mt-1">
+      <div className="lg:min-h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-edge -mt-1">
         <div className="flex items-center gap-1">
           {TABS.map((t, i) => {
             const active = i === 0;
@@ -634,10 +634,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* Currency breakdown — hairline, no card. FX-honest: per-currency
               only, deliberately no synthetic cross-currency grand total. */}
-          <div className="border-b border-neutral-200 dark:border-primary-800 pb-4">
+          <div className="border-b border-edge pb-4">
             <div className="flex items-center justify-between gap-3 pb-2">
               <p className="section-title">Currency breakdown</p>
-              <div className="inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden">
+              <div className="inline-flex rounded-sm border border-edge overflow-hidden">
                 {(['currency', 'bank'] as AcctView[]).map((v) => (
                   <button
                     key={v}
@@ -722,7 +722,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               below (that's "what needs approval now"; this is "what's my
               cash trajectory") — kept as separate cards, not a replacement. */}
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
               <p className="section-title">Cash flow forecast</p>
               {forecast && forecast.weeks.length > 0 && (
                 <span className="caption text-neutral-500 dark:text-neutral-400">
@@ -754,7 +754,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               consistently places right after the headline number, not
               buried under a reference table. */}
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
               <p className="section-title">
                 Payments
                 <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-caption font-medium tabular-nums">
@@ -774,7 +774,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 <p className="body-sm px-4 py-6 text-center">Nothing to approve or pay.</p>
               ) : (
                 pending!.payables.slice(0, 5).map((p) => (
-                  <div key={p.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                  <div key={p.id} className="px-4 py-2.5 border-b border-edge-subtle last:border-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{p.vendorName}</p>
@@ -824,7 +824,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                         <th
                           key={h || i}
                           className={cn(
-                            'label px-3 py-[9px] border-b border-neutral-300 dark:border-primary-700',
+                            'label px-3 py-[9px] border-b border-edge-strong',
                             (i === 3 || i === 4) && 'text-right',
                             i === 5 && 'text-center',
                           )}
@@ -913,7 +913,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               bank balances across countries that hold different currencies
               would be exactly the synthetic cross-currency total this page
               elsewhere refuses to fabricate. */}
-          <div className="border-b border-neutral-200 dark:border-primary-800 pb-4">
+          <div className="border-b border-edge pb-4">
             <div className="flex items-center justify-between gap-3 pb-2">
               <p className="section-title">
                 Position breakdown
@@ -940,7 +940,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   </span>
                 )}
               </p>
-              <div className="inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden">
+              <div className="inline-flex rounded-sm border border-edge overflow-hidden">
                 {([['corporate', 'By corporate'], ['program', 'By program'], ['entity', 'By entity'], ['geo', 'By country'], ['intercompany', 'By intercompany']] as const).map(([v, label]) => (
                   <button
                     key={v}
@@ -1048,7 +1048,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               rather than giving a usually-empty section its own card. */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
               <p className="section-title">Sweeps &amp; pooling</p>
               <button
                 type="button"
@@ -1065,12 +1065,12 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   <BankSplitBar bankShares={model.bankShares} />
                 </div>
               )}
-              <div className="border-t border-neutral-100 dark:border-primary-800/60 pt-2">
+              <div className="border-t border-edge-subtle pt-2">
                 {sweepRows.length === 0 ? (
                   <p className="body-sm py-3 text-center">No sweep rules in scope.</p>
                 ) : (
                   sweepRows.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                    <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-edge-subtle last:border-0">
                       <div className="min-w-0">
                         <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
                         <p className="caption">{r.sweepType} · {r.frequency}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
@@ -1092,7 +1092,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* Recent statement activity — REAL */}
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
               <p className="section-title">Recent statement activity</p>
               <button
                 type="button"
@@ -1109,7 +1109,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   txns.slice(0, 7).map((t) => {
                     const cr = CREDIT_MOVES.has(t.movementType);
                     return (
-                      <div key={t.id} className="flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                      <div key={t.id} className="flex items-center gap-3 px-4 py-2 border-b border-edge-subtle last:border-0">
                         <span className="caption tabular-nums shrink-0 w-12">{fmtTime(t.transactionDate)}</span>
                         <div className="min-w-0 flex-1">
                           <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">
@@ -1144,7 +1144,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* Action queue — REAL */}
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge-subtle">
               <span className="section-title">Action queue</span>
               <span className={cn('text-caption font-medium tabular-nums', attention.length ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-400')}>
                 {attention.length}
@@ -1157,7 +1157,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 attention.slice(0, 6).map((it) => {
                   const tri = TRIAGE[it.severity] ?? TRIAGE.medium;
                   return (
-                    <div key={it.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/40">
+                    <div key={it.id} className="px-4 py-2.5 border-b border-edge-subtle last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/40">
                       <div className="flex items-center gap-2">
                         <span className={cn('rounded-full px-1.5 py-0 leading-4 text-caption font-medium uppercase tracking-[0.08em]', tri.cls)}>{tri.label}</span>
                         <span className="ml-auto caption">{it.timePressure?.displayText}</span>
@@ -1178,7 +1178,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* FX · rates — REAL (no fabricated 1d move: no historical source) */}
           <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge-subtle">
               <span className="section-title">FX rates</span>
               <button
                 type="button"
@@ -1193,7 +1193,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 <p className="body-sm px-4 py-6 text-center">No active FX rates.</p>
               ) : (
                 fxRows.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between gap-2 px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+                  <div key={r.id} className="flex items-center justify-between gap-2 px-4 py-2 border-b border-edge-subtle last:border-0">
                     <span className="font-mono text-body-sm text-primary-900 dark:text-neutral-50">{r.fromCurrency}/{r.toCurrency}</span>
                     <span className="tabular-nums text-body-sm text-primary-900 dark:text-neutral-50">{r.rate}</span>
                     <span className="caption shrink-0 w-20 text-right truncate">{r.rateSource}</span>
@@ -1205,7 +1205,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
 
           {/* Quick actions — nav + Copilot */}
           <Card padding="none" className="overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="px-4 py-2.5 border-b border-edge-subtle">
               <span className="section-title">Quick actions</span>
             </div>
             <div className="grid grid-cols-2 gap-px bg-neutral-100 dark:bg-primary-800/60">
@@ -1221,7 +1221,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   key={q.label}
                   type="button"
                   onClick={q.act}
-                  className="bg-white dark:bg-primary-900 p-3 text-left hover:bg-neutral-50 dark:hover:bg-primary-800/40 transition-colors"
+                  className="bg-surface-card p-3 text-left hover:bg-neutral-50 dark:hover:bg-primary-800/40 transition-colors"
                 >
                   <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-50 dark:bg-accent-500/15 text-accent-700 dark:text-accent-300">
                     {q.ic}
@@ -1236,7 +1236,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       </div>
 
       {/* Footer stamps — honest: real connectivity, no unverifiable certs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 caption pt-2 border-t border-neutral-100 dark:border-primary-800/60">
+      <div className="flex flex-wrap items-center justify-between gap-3 caption pt-2 border-t border-edge-subtle">
         <div className="flex flex-wrap gap-4">
           <span className="inline-flex items-center gap-1.5">
             <Wallet className="w-4 h-4" /> {bankCount} banks · {acctCount} accounts connected

@@ -20,7 +20,7 @@ const TONES: StatusTone[] = ['success', 'warning', 'error', 'info'];
 const BADGE_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
 const BTN_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 const th = 'text-left label pb-2 pr-4';
-const rows = 'divide-y divide-neutral-200 dark:divide-primary-800';
+const rows = 'divide-y divide-edge';
 const iconColor = 'text-primary-700 dark:text-neutral-200';
 
 function Grid() {
@@ -81,7 +81,7 @@ function Status() {
 function DoDont() {
   const good = ICONS.find((i) => i.name === 'CheckCircle')!.icon;
   const Good = good;
-  const box = 'rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 p-4 space-y-3';
+  const box = 'rounded-lg border border-edge bg-surface-card p-4 space-y-3';
   return (
     <section className="grid md:grid-cols-2 gap-4">
       <div className={box}>
@@ -126,7 +126,7 @@ function Buttons() {
 
 function Page() {
   return (
-    <div className="p-8 space-y-12 max-w-6xl bg-neutral-50 dark:bg-primary-950 min-h-screen">
+    <div className="p-8 space-y-12 max-w-6xl bg-surface-page min-h-screen">
       <Grid /><Status /><DoDont /><Buttons />
     </div>
   );

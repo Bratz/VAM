@@ -40,7 +40,7 @@ interface FilterState {
 
 const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 'info' | 'purple' | 'orange'; children: React.ReactNode; size?: 'sm' | 'md' }> = ({ variant = 'default', children, size = 'sm' }) => {
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200', success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
+    default: 'bg-surface-muted text-neutral-700 dark:text-neutral-200', success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300', error: 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300',
     info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300', purple: 'bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15',
     orange: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
@@ -51,15 +51,15 @@ const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 
 
 const Card: React.FC<{ children: React.ReactNode; className?: string; padding?: 'none' | 'sm' | 'md' }> = ({ children, className, padding = 'md' }) => {
   const paddings = { none: '', sm: 'p-4', md: 'p-6' };
-  return <div className={cn('bg-white rounded-lg shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>{children}</div>;
+  return <div className={cn('bg-surface-card rounded-lg shadow-sm border border-edge', paddings[padding], className)}>{children}</div>;
 };
 
 const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'secondary' | 'ghost' | 'outline'; size?: 'sm' | 'md'; onClick?: () => void; disabled?: boolean; className?: string }> = ({ children, variant = 'primary', size = 'md', onClick, disabled, className }) => {
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-300',
-    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-200',
+    secondary: 'bg-surface-muted text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:text-neutral-200',
     ghost: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300',
-    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-200',
+    outline: 'border border-edge-strong text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:text-neutral-200',
   };
   const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm' };
   return <button onClick={onClick} disabled={disabled} className={cn('rounded-lg font-medium transition-colors flex items-center gap-2 disabled:cursor-not-allowed', variants[variant], sizes[size], className)}>{children}</button>;
@@ -110,7 +110,7 @@ const OperationDetailModal: React.FC<OperationDetailModalProps> = ({ operation, 
       size="md"
       title={
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon(operation.operationType)}</div>
+          <div className="p-2 bg-surface-muted rounded-lg">{getOperationIcon(operation.operationType)}</div>
           <span>{operation.operationType.replace(/_/g, ' ')}</span>
         </div>
       }
@@ -145,7 +145,7 @@ const OperationDetailModal: React.FC<OperationDetailModalProps> = ({ operation, 
             </div>
 
             {operation.details && (
-              <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+              <div className="p-4 bg-surface-page rounded-lg">
                 <span className="field-label">Additional Details</span>
                 <dl className="mt-2 space-y-2 text-body-sm">
                   {operation.details.sourceNode && (
@@ -200,7 +200,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
               value={filters.searchQuery}
               onChange={(e) => onChange({ ...filters, searchQuery: e.target.value })}
               placeholder="Search operations..."
-              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+              className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
@@ -210,7 +210,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           <select
             value={filters.operationType}
             onChange={(e) => onChange({ ...filters, operationType: e.target.value as OperationType | 'ALL' })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             {operationTypes.map((type) => (
               <option key={type} value={type}>{type === 'ALL' ? 'All Types' : type.replace(/_/g, ' ')}</option>
@@ -223,7 +223,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           <select
             value={filters.status}
             onChange={(e) => onChange({ ...filters, status: e.target.value as OperationStatus | 'ALL' })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             {statuses.map((status) => (
               <option key={status} value={status}>{status === 'ALL' ? 'All Statuses' : status}</option>
@@ -237,7 +237,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onChange({ ...filters, dateFrom: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
@@ -247,7 +247,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
             type="date"
             value={filters.dateTo}
             onChange={(e) => onChange({ ...filters, dateTo: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
@@ -379,7 +379,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
           <select
             value={selectedCorporateId}
             onChange={(e) => { setSelectedCorporateId(e.target.value); setPage(0); }}
-            className="px-4 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700 dark:bg-primary-900"
+            className="px-4 py-2 border border-edge-strong rounded-lg text-body-sm bg-surface-card focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             {corporates.map((corp) => (<option key={corp.id} value={corp.id}>{corp.name}</option>))}
           </select>
@@ -424,7 +424,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
                 header: 'Operation',
                 render: (_, op) => (
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon(op.operationType)}</div>
+                    <div className="p-2 bg-surface-muted rounded-lg">{getOperationIcon(op.operationType)}</div>
                     <div>
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{op.operationType.replace(/_/g, ' ')}</p>
                       <p className="text-body-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{op.summary}</p>

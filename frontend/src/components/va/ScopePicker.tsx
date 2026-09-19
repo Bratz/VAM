@@ -181,7 +181,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
 
   return (
     <div className="space-y-2">
-      <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-2 max-h-80 overflow-y-auto">
+      <div className="border border-edge rounded-lg p-2 max-h-80 overflow-y-auto">
         {roots.length === 0 ? (
           <p className="body-sm p-2">No nodes found.</p>
         ) : (

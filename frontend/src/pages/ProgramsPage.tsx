@@ -504,7 +504,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
     <Modal isOpen={!!program} onClose={onClose} size="xl" title="">
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
-        <div className="flex items-start gap-4 pb-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="flex items-start gap-4 pb-4 border-b border-edge">
           <StatusIconBadge tone={programTypeConfig[program.programType]?.tone || 'neutral'} icon={TypeIcon} size="lg" subtle />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -533,7 +533,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-4 py-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="grid grid-cols-4 gap-4 py-4 border-b border-edge">
           <div className="text-center">
             <p className="stat-value-sm">{program.virtualAccountCount}</p>
             <p className="caption">Virtual Accounts</p>
@@ -553,7 +553,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="flex gap-4 border-b border-edge">
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={cn('py-3 px-1 text-body-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5',
@@ -561,7 +561,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               {tab.id === 'hierarchy' && <GitBranch className="w-4 h-4" />}
               {tab.id === 'viban' && <Hash className="w-4 h-4" />}
               {tab.label}
-              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-100 rounded-md dark:bg-primary-800">{tab.count}</span>}
+              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-surface-muted rounded-md">{tab.count}</span>}
               {tab.badge && <Badge variant="warning" size="sm">{tab.badge}</Badge>}
             </button>
           ))}
@@ -886,7 +886,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
 
                       {/* Sample VIBAN Preview */}
                       <h3 className="body-strong font-semibold">Sample VIBAN Format</h3>
-                      <Card padding="sm" className="bg-neutral-50 dark:bg-primary-950">
+                      <Card padding="sm" className="bg-surface-page">
                         <div className="font-mono text-body-lg text-center text-primary-900 tracking-wider dark:text-neutral-50">
                           {program.vibanPrefix || 'AE'}{program.vibanBankCode || '00'}-
                           {program.vibanGenerationStrategy === 'SEQUENTIAL' && '0000-0001'}
@@ -1030,7 +1030,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       <div className={cn(
                         'flex items-center justify-between p-3 rounded-lg border',
                         walletCharges.topup.isWaived ? 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30' :
-                        walletCharges.topup.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800'
+                        walletCharges.topup.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="success" icon={Plus} rounded="lg" className="dark:bg-success-500/20" />
@@ -1060,7 +1060,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       <div className={cn(
                         'flex items-center justify-between p-3 rounded-lg border',
                         walletCharges.withdrawal.isWaived ? 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30' :
-                        walletCharges.withdrawal.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800'
+                        walletCharges.withdrawal.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="error" icon={Banknote} rounded="lg" className="dark:bg-error-500/20" />
@@ -1090,7 +1090,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       <div className={cn(
                         'flex items-center justify-between p-3 rounded-lg border',
                         walletCharges.transfer.isWaived ? 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30' :
-                        walletCharges.transfer.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800'
+                        walletCharges.transfer.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="info" icon={TrendingUp} rounded="lg" className="dark:bg-info-500/20" />
@@ -1191,7 +1191,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   </div>
 
                   {/* Fee Summary */}
-                  <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+                  <div className="bg-surface-page rounded-lg p-4">
                     <h4 className="label mb-3">Fee Status Summary</h4>
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
@@ -1364,7 +1364,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
           {!loading && activeTab === 'history' && detail && (
             <div className="space-y-3">
               {detail.activityLog.length === 0 ? <p className="text-center py-8 text-neutral-500 dark:text-neutral-400">No activity</p> : detail.activityLog.map((item, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div key={i} className="flex items-start gap-3 p-3 bg-surface-page rounded-lg">
                   <StatusIconBadge tone="success" icon={CheckCircle} size="sm" rounded="full" />
                   <div className="flex-1">
                     <p className="body-strong">{item.action}</p>
@@ -1405,7 +1405,7 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
     <div className={cn(
       'flex items-center gap-4 p-3 rounded-lg transition-all',
       isWaived ? 'bg-warning-50 border border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30' : 
-      hasOverride ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950'
+      hasOverride ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page'
     )}>
       <div className="w-36">
         <p className="body-strong">{charge.chargeName}</p>
@@ -1424,13 +1424,13 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       <ChevronRight className="w-4 h-4 text-neutral-400" />
       
       <div className="flex-1 flex items-center gap-2">
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
         <span className="caption">%</span>
         <span className="caption">+</span>
         <span className="caption">{currencyCode}</span>
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
@@ -2092,7 +2092,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Corporate Selection - First (most important context) */}
             {!isEdit && (
-              <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-3 bg-surface-page rounded-lg border border-edge">
                 <label className="field-label block mb-1">Corporate *</label>
                 {defaultCorporateId ? (
                   // Corporate is pre-selected from page picker - show as read-only
@@ -2106,7 +2106,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 ) : (
                   // No corporate pre-selected - allow selection
                   <select
-                    className={cn('w-full px-3 py-2 border rounded-lg bg-white dark:bg-primary-900', !formData.corporateId ? 'border-warning-300' : 'border-neutral-300 dark:border-primary-700')}
+                    className={cn('w-full px-3 py-2 border rounded-lg bg-surface-card', !formData.corporateId ? 'border-warning-300' : 'border-edge-strong')}
                     value={formData.corporateId}
                     onChange={e => setFormData({ ...formData, corporateId: e.target.value, physicalAccountId: '' })}
                     disabled={loadingCorporates}
@@ -2144,7 +2144,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       disabled={isEdit}
                       className={cn(
                         'p-2.5 border rounded-lg text-left transition-all',
-                        formData.programType === type ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700',
+                        formData.programType === type ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700',
                         isEdit && 'opacity-60 cursor-not-allowed'
                       )}
                     >
@@ -2164,7 +2164,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Program Code *</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg font-mono dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
                   placeholder="e.g., COLL-001"
                   value={formData.programCode}
                   onChange={e => setFormData({ ...formData, programCode: e.target.value.toUpperCase() })}
@@ -2175,7 +2175,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Program Name *</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   placeholder="e.g., Main Collection Program"
                   value={formData.programName}
                   onChange={e => setFormData({ ...formData, programName: e.target.value })}
@@ -2199,7 +2199,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Max Virtual Accounts</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   placeholder="Unlimited"
                   value={formData.maxVirtualAccounts || ''}
                   onChange={e => setFormData({ ...formData, maxVirtualAccounts: e.target.value ? parseInt(e.target.value) : undefined })}
@@ -2211,7 +2211,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div>
               <label className="field-label block mb-1">Description</label>
               <textarea
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                 rows={2}
                 placeholder="Brief description of the program purpose..."
                 value={formData.description}
@@ -2226,7 +2226,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   Physical Account <span className="text-neutral-400 font-normal dark:text-neutral-400">(Optional)</span>
                 </label>
                 <select
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   value={formData.physicalAccountId}
                   onChange={e => setFormData({ ...formData, physicalAccountId: e.target.value })}
                   disabled={!formData.corporateId || loadingAccounts}
@@ -2448,7 +2448,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               }}
                               className={cn(
                                 'p-4 border rounded-lg text-left transition-all relative',
-                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700'
+                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
                               )}
                             >
                               {isRecommended && (
@@ -2457,7 +2457,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                 </span>
                               )}
                               <div className="flex items-center gap-2 mb-2">
-                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : template.color)} />
+                                <StatusIconBadge tone={isSelected ? 'cat-2' : template.tone} icon={Icon} size="sm" />
                                 <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
                               <p className="caption mb-2">{template.description}</p>
@@ -2489,7 +2489,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               }}
                               className={cn(
                                 'p-3 border rounded-lg text-left transition-all',
-                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700'
+                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
                               )}
                             >
                               <div className="flex items-center gap-2">
@@ -2522,11 +2522,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               }}
                               className={cn(
                                 'p-4 border rounded-lg text-left transition-all',
-                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700'
+                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
                               )}
                             >
                               <div className="flex items-center gap-2 mb-2">
-                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : template.color)} />
+                                <StatusIconBadge tone={isSelected ? 'cat-2' : template.tone} icon={Icon} size="sm" />
                                 <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
                               <p className="caption truncate" title={levelPath}>{levelPath}</p>
@@ -2563,7 +2563,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Hierarchy Level Configuration - Expandable UI */}
             {formData.defaultHierarchyTemplate && hierarchyLevelConfigs.length > 0 && (
-              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="field-label flex items-center gap-2">
                     <Settings className="w-4 h-4" />
@@ -2588,7 +2588,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     return (
                       <div key={idx} className={cn(
                         'border rounded-lg transition-all',
-                        isExpanded ? 'border-cat-2/30 bg-white dark:bg-primary-900' : 'border-neutral-200 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950'
+                        isExpanded ? 'border-cat-2/30 bg-surface-card' : 'border-edge bg-surface-page'
                       )}>
                         {/* Level Header - Always visible */}
                         <button
@@ -2621,7 +2621,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
                         {/* Level Details - Expanded */}
                         {isExpanded && (
-                          <div className="px-3 pb-3 border-t border-neutral-200 pt-3 space-y-3 dark:border-primary-800">
+                          <div className="px-3 pb-3 border-t border-edge pt-3 space-y-3">
                             {/* Level Name Edit */}
                             <div>
                               <label className="block label-cased mb-1">Level Name</label>
@@ -2633,7 +2633,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], levelName: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded-md dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md"
                               />
                             </div>
 
@@ -2647,7 +2647,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], dimensionType: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded-md dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md"
                               >
                                 <option value="CURRENCY">💱 Currency</option>
                                 <option value="REGION">🌍 Region</option>
@@ -2739,7 +2739,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                 <input
                                   type="text"
                                   placeholder="Add value..."
-                                  className="flex-1 px-2 py-1 text-caption border border-neutral-300 rounded-md dark:border-primary-700"
+                                  className="flex-1 px-2 py-1 text-caption border border-edge-strong rounded-md"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -2793,7 +2793,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 </div>
 
                 {/* Summary */}
-                <div className="mt-3 pt-3 border-t border-neutral-200 flex items-center justify-between caption dark:border-primary-800">
+                <div className="mt-3 pt-3 border-t border-edge flex items-center justify-between caption">
                   <span>
                     {hierarchyLevelConfigs.slice(0, formData.hierarchyDepth).filter(l => l.allowedValues && l.allowedValues.length > 0).length} of {formData.hierarchyDepth} levels have restrictions
                   </span>
@@ -2848,7 +2848,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       onClick={() => setFormData({ ...formData, vibanGenerationStrategy: key as VibanGenerationStrategy })}
                       className={cn(
                         'p-4 border rounded-lg text-left transition-all',
-                        isSelected ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700'
+                        isSelected ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
                       )}
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -2866,7 +2866,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div>
               <label className="field-label block mb-1">VIBAN Pool</label>
               <select
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                 value={formData.defaultVibanPoolId}
                 onChange={e => setFormData({ ...formData, defaultVibanPoolId: e.target.value })}
                 disabled={loadingPools}
@@ -2879,7 +2879,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 ))}
               </select>
               {selectedPool && (
-                <div className="mt-2 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="mt-2 p-3 bg-surface-page rounded-lg">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="section-title">{selectedPool.totalVibans}</p>
@@ -2904,7 +2904,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">VIBAN Prefix</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg font-mono dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
                   placeholder="e.g., AE"
                   maxLength={4}
                   value={formData.vibanPrefix}
@@ -2915,7 +2915,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Bank Code</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg font-mono dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
                   placeholder="e.g., 033"
                   maxLength={4}
                   value={formData.vibanBankCode}
@@ -2925,7 +2925,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             </div>
 
             {/* Sample VIBAN Preview */}
-            <div className="bg-neutral-100 rounded-lg p-4 dark:bg-primary-800">
+            <div className="bg-surface-muted rounded-lg p-4">
               <p className="caption mb-2 text-center">Sample VIBAN Format</p>
               <p className="font-mono text-heading-sm text-center text-primary-900 tracking-wider dark:text-neutral-50">
                 {formData.vibanPrefix || 'AE'}{formData.vibanBankCode || '00'}-
@@ -2958,7 +2958,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
                       placeholder="50,000"
                       value={formData.defaultPerTransactionLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultPerTransactionLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -2971,7 +2971,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
                       placeholder="200,000"
                       value={formData.defaultDailyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultDailyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -2984,7 +2984,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
                       placeholder="1,000,000"
                       value={formData.defaultMonthlyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMonthlyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -3004,7 +3004,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
                       placeholder="500,000"
                       value={formData.defaultMaxBalance ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMaxBalance: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -3018,7 +3018,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
                       placeholder="0"
                       value={formData.minBalanceThreshold ?? ''}
                       onChange={e => setFormData({ ...formData, minBalanceThreshold: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -3043,7 +3043,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Minimum KYC Level</label>
                   <select
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                     value={formData.minKycLevel ?? 1}
                     onChange={e => setFormData({ ...formData, minKycLevel: parseInt(e.target.value) })}
                     disabled={!formData.kycRequired}
@@ -3136,7 +3136,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             {/* Fixed Fees */}
             {walletCharges && (
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.issuance.chargeName}</span>
                     <Checkbox size="sm" label="Waive" checked={chargeOverrides.issuance.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: checked } })} className="text-caption" />
@@ -3144,13 +3144,13 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.issuance.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
                   </div>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.monthly.chargeName}</span>
                     <Checkbox size="sm" label="Waive" checked={chargeOverrides.monthly.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: checked } })} className="text-caption" />
@@ -3158,13 +3158,13 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.monthly.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
                   </div>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.inactivity.chargeName}</span>
                     <Checkbox size="sm" label="Waive" checked={chargeOverrides.inactivity.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: checked } })} className="text-caption" />
@@ -3172,7 +3172,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />
@@ -3205,7 +3205,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">VA Prefix</label>
                 <input 
                   type="text" 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg font-mono dark:border-primary-700" 
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono" 
                   placeholder="e.g., VA"
                   value={formData.vaPrefix} 
                   onChange={e => setFormData({ ...formData, vaPrefix: e.target.value.toUpperCase() })} 
@@ -3215,7 +3215,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">VA Format</label>
                 <input 
                   type="text" 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg font-mono dark:border-primary-700" 
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono" 
                   placeholder="{PREFIX}{SEQ:8}"
                   value={formData.vaFormat} 
                   onChange={e => setFormData({ ...formData, vaFormat: e.target.value })} 
@@ -3227,7 +3227,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               <div>
                 <label className="field-label block mb-1">Settlement Frequency</label>
                 <select 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" 
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
                   value={formData.settlementFrequency}
                   onChange={e => setFormData({ ...formData, settlementFrequency: e.target.value })}
                 >
@@ -3240,7 +3240,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Settlement Time</label>
                 <input 
                   type="time" 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   value={formData.settlementTime} 
                   onChange={e => setFormData({ ...formData, settlementTime: e.target.value })} 
                 />
@@ -3252,7 +3252,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Min Balance Threshold</label>
                 <input 
                   type="number" 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" 
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
                   placeholder="0.00"
                   value={formData.minBalanceThreshold || ''} 
                   onChange={e => setFormData({ ...formData, minBalanceThreshold: e.target.value ? parseFloat(e.target.value) : undefined })} 
@@ -3262,7 +3262,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <label className="field-label block mb-1">Balance Aggregation Interval (min)</label>
                 <input 
                   type="number" 
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" 
+                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
                   placeholder="5"
                   value={formData.balanceAggregationIntervalMinutes} 
                   onChange={e => setFormData({ ...formData, balanceAggregationIntervalMinutes: parseInt(e.target.value) || 5 })} 
@@ -3295,7 +3295,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               Review & Confirm
             </h3>
 
-            <div className="bg-neutral-50 rounded-lg p-4 space-y-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4 space-y-4">
               {/* Basic Info */}
               <div>
                 <h4 className="label mb-2">Basic Information</h4>
@@ -3345,25 +3345,25 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <h4 className="label mb-2">Wallet Limits</h4>
                   <div className="grid grid-cols-3 gap-2 text-caption">
                     {formData.defaultPerTransactionLimit && (
-                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                      <div className="p-2 bg-surface-muted rounded-md">
                         <span className="text-neutral-500 dark:text-neutral-400">Per Txn:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultPerTransactionLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultDailyLimit && (
-                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                      <div className="p-2 bg-surface-muted rounded-md">
                         <span className="text-neutral-500 dark:text-neutral-400">Daily:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultDailyLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultMonthlyLimit && (
-                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                      <div className="p-2 bg-surface-muted rounded-md">
                         <span className="text-neutral-500 dark:text-neutral-400">Monthly:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultMonthlyLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultMaxBalance && (
-                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                      <div className="p-2 bg-surface-muted rounded-md">
                         <span className="text-neutral-500 dark:text-neutral-400">Max Balance:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultMaxBalance, formData.currencyCode)}</span>
                       </div>
@@ -3399,7 +3399,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </h4>
                   {/* Transaction Fees */}
                   <div className="grid grid-cols-3 gap-2 text-caption mb-2">
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Topup:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.topup.waived ? 'Waived' : 
@@ -3407,7 +3407,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       </span>
                       {(chargeOverrides.topup.percent !== undefined || chargeOverrides.topup.flat !== undefined) && !chargeOverrides.topup.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Withdrawal:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.withdrawal.waived ? 'Waived' : 
@@ -3415,7 +3415,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       </span>
                       {(chargeOverrides.withdrawal.percent !== undefined || chargeOverrides.withdrawal.flat !== undefined) && !chargeOverrides.withdrawal.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Transfer:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.transfer.waived ? 'Waived' : 
@@ -3426,21 +3426,21 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                   {/* Fixed Fees */}
                   <div className="grid grid-cols-3 gap-2 text-caption">
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Issuance:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.issuance.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.issuance.flat ?? walletCharges.issuance.fixed}`}
                       </span>
                       {chargeOverrides.issuance.flat !== undefined && !chargeOverrides.issuance.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Monthly:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.monthly.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.monthly.flat ?? walletCharges.monthly.fixed}`}
                       </span>
                       {chargeOverrides.monthly.flat !== undefined && !chargeOverrides.monthly.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
+                    <div className="p-2 bg-surface-muted rounded-md">
                       <span className="text-neutral-500 dark:text-neutral-400">Inactivity:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.inactivity.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.inactivity.flat ?? walletCharges.inactivity.fixed}`}
@@ -3524,7 +3524,7 @@ const CorporateSelector: React.FC<{
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     disabled={loading}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
+    className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px]"
   >
     {loading ? (
       <option value="">Loading corporates...</option>
@@ -3803,9 +3803,9 @@ const ProgramsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input type="text" placeholder="Search programs..." className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder="Search programs..." className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <select className="px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ProgramStatus | 'ALL')}>
+          <select className="px-3 py-2 border border-edge-strong rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ProgramStatus | 'ALL')}>
             <option value="ALL">All Statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="SUSPENDED">Suspended</option><option value="PENDING_APPROVAL">Pending</option>
           </select>
           <Button variant="outline" leftIcon={<RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />} onClick={loadData} disabled={loading}>
@@ -3818,7 +3818,7 @@ const ProgramsPage: React.FC = () => {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-neutral-50 border-b dark:bg-primary-950">
+            <thead className="bg-surface-page border-b">
               <tr>
                 <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Program</th>
                 <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Type</th>
@@ -3887,7 +3887,7 @@ const ProgramsPage: React.FC = () => {
                               {/* Backdrop to close menu when clicking outside */}
                               <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} />
                               {/* Dropdown Menu */}
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg z-20 py-1 dark:bg-primary-900 dark:border-primary-800">
+                              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1">
                                 {/* Status Actions */}
                                 {program.status === 'ACTIVE' && (
                                   <button
@@ -3929,7 +3929,7 @@ const ProgramsPage: React.FC = () => {
                                   Clone Program
                                 </button>
                                 {/* Divider */}
-                                <div className="border-t border-neutral-100 my-1 dark:border-primary-800/60" />
+                                <div className="border-t border-edge-subtle my-1" />
                                 {/* Delete Action */}
                                 <button
                                   className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"

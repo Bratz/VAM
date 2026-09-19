@@ -363,7 +363,7 @@ const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementT
   HOLDING: { label: 'Holding Company', icon: Crown, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
   SUBSIDIARY: { label: 'Subsidiary', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
   BRANCH: { label: 'Branch', icon: Building2, color: 'text-cyan-700 dark:text-cyan-300', bgColor: 'bg-cyan-100 dark:bg-cyan-500/20' },
-  REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
+  REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted' },
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   SPV: { label: 'SPV', icon: FlaskConical, color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-100 dark:bg-error-500/20' },
@@ -372,7 +372,7 @@ const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementT
 
 const statusConfig: Record<EntityStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   ACTIVE: { label: 'Active', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20', icon: CheckCircle },
-  INACTIVE: { label: 'Inactive', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800', icon: XCircle },
+  INACTIVE: { label: 'Inactive', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted', icon: XCircle },
   SUSPENDED: { label: 'Suspended', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20', icon: AlertTriangle },
   PENDING_APPROVAL: { label: 'Pending', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20', icon: Clock },
   CLOSED: { label: 'Closed', color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-100 dark:bg-error-500/20', icon: Lock },
@@ -519,7 +519,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Entity Code" required error={errors.entityCode} hint="Unique ID (e.g., ACME-UK)">
-                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-body-sm', isEditMode && 'bg-neutral-100 dark:bg-primary-800')} placeholder="ACME-UK" />
+                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-body-sm', isEditMode && 'bg-surface-muted')} placeholder="ACME-UK" />
                 </FormField>
                 <FormField label="Entity Name" required error={errors.entityName}>
                   <input type="text" value={formData.entityName} onChange={(e) => updateField('entityName', e.target.value)} maxLength={200} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="ACME Corporation UK Ltd" />
@@ -710,7 +710,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
           )}
         </form>
 
-        <div className="border-t px-6 py-4 flex justify-between items-center bg-neutral-50 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border-t px-6 py-4 flex justify-between items-center bg-surface-page dark:border-primary-800">
           <div className="body-sm">{isEditMode && entity && `Last updated: ${new Date(entity.updatedAt || entity.createdAt).toLocaleDateString()}`}</div>
           <div className="flex gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-body-sm">Cancel</button>
@@ -816,7 +816,7 @@ const HierarchyTreeNode: React.FC<{
         className={cn(
           'flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-all',
           isSelected ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50',
-          entity.isTreasuryCenter && 'border-l-4 border-l-cat-2'
+          entity.isTreasuryCenter && 'border-l-2 border-l-cat-2'
         )} 
         style={{ marginLeft: `${level * 28}px` }} 
         onClick={() => onSelect(entity)}
@@ -943,8 +943,8 @@ const EntityDetailPanel: React.FC<{
   const availableGroupCurrencies = groupLimits.filter(g => !existingCurrencies.has(g.currency));
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-neutral-100 h-full flex flex-col dark:bg-primary-900 dark:border-primary-800/60">
-      <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+    <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle h-full flex flex-col">
+      <div className="p-4 border-b border-edge">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className={cn('p-3 rounded-lg', typeConfig.bgColor)}><TypeIcon className={cn('w-6 h-6', typeConfig.color)} /></div>
@@ -954,7 +954,7 @@ const EntityDetailPanel: React.FC<{
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <span className={cn('px-2 py-1 rounded-full text-caption', statusCfg.bgColor, statusCfg.color)}><StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}</span>
-          <span className="px-2 py-1 rounded-full text-caption bg-neutral-100 dark:bg-primary-800">{typeConfig.label}</span>
+          <span className="px-2 py-1 rounded-full text-caption bg-surface-muted">{typeConfig.label}</span>
           {entity.isBankCustomer && <span className="px-2 py-1 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank Customer</span>}
           {entity.isTreasuryCenter && <span className="px-2 py-1 rounded-full text-caption bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15"><Crown className="w-3 h-3 inline" /> Treasury</span>}
           {entity.ihbEnabled && <span className="px-2 py-1 rounded-full text-caption bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300"><PiggyBank className="w-3 h-3 inline" /> IHB</span>}
@@ -962,7 +962,7 @@ const EntityDetailPanel: React.FC<{
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <div className={cn('rounded-lg p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950')}>
+        <div className={cn('rounded-lg p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page')}>
           <h4 className="text-body-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400')} />Internal Credit Limits</h4>
           {hasLimits ? (
             <div className="space-y-3">
@@ -1049,7 +1049,7 @@ const EntityDetailPanel: React.FC<{
           )}
         </div>
 
-        <div className={cn('rounded-lg p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
+        <div className={cn('rounded-lg p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-surface-page')}>
           <h4 className="text-body-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />Banking Relationship</h4>
           {entity.isBankCustomer ? (
             <div className="space-y-2">
@@ -1080,7 +1080,7 @@ const EntityDetailPanel: React.FC<{
               { enabled: entity.isTreasuryCenter, label: 'Treasury Center', icon: Landmark },
               { enabled: entity.ihbEnabled, label: 'IHB Enabled', icon: Zap },
             ].map(cap => (
-              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-body-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-400')}>
+              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-body-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-surface-muted text-neutral-400 dark:text-neutral-400')}>
                 <cap.icon className="w-4 h-4" /><span className="flex-1">{cap.label}</span>{cap.enabled ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
               </div>
             ))}
@@ -1088,7 +1088,7 @@ const EntityDetailPanel: React.FC<{
         </div>
       </div>
 
-      <div className="p-4 border-t border-neutral-200 flex gap-2 dark:border-primary-800">
+      <div className="p-4 border-t border-edge flex gap-2">
         <Button variant="outline" className="flex-1" onClick={() => onEdit(entity)}><Pencil className="w-4 h-4 mr-1" />Edit</Button>
         <Button className="flex-1" onClick={() => onAllocateLimit(entity)}><CreditCard className="w-4 h-4 mr-1" />{hasLimits ? 'Update' : 'Allocate'} Limit</Button>
       </div>
@@ -1321,7 +1321,7 @@ const LegalEntitiesPage: React.FC = () => {
     [loadData, loading]
   );
 
-  if (initialLoading) return <div className="min-h-screen bg-neutral-50 flex items-center justify-center dark:bg-primary-950"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>;
+  if (initialLoading) return <div className="min-h-screen bg-surface-page flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>;
 
   return (
     <Page>
@@ -1336,7 +1336,7 @@ const LegalEntitiesPage: React.FC = () => {
             <div className="flex flex-col">
               <span className="caption">Corporate</span>
               <select
-                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm bg-white min-w-[240px] focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800 dark:bg-primary-900"
+                className="px-3 py-1.5 border border-edge rounded-lg text-body-sm bg-surface-card min-w-[240px] focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 value={selectedCorporateId}
                 onChange={(e) => setSelectedCorporateId(e.target.value)}
               >
@@ -1400,7 +1400,7 @@ const LegalEntitiesPage: React.FC = () => {
         {/* Hierarchy Tree */}
         <div className="lg:col-span-2">
           <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
+            <div className="flex items-center justify-between p-4 border-b border-edge">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
                   <GitBranch className="w-5 h-5 text-white" />
@@ -1421,7 +1421,7 @@ const LegalEntitiesPage: React.FC = () => {
             </div>
 
             {/* Search & Filters */}
-            <div className="px-4 py-3 border-b border-neutral-200 flex flex-wrap gap-4 dark:border-primary-800">
+            <div className="px-4 py-3 border-b border-edge flex flex-wrap gap-4">
               <div className="flex-1 relative min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input 
@@ -1429,11 +1429,11 @@ const LegalEntitiesPage: React.FC = () => {
                   placeholder="Search entities..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
-                  className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+                  className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg text-body-sm" 
                 />
               </div>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm" 
                 value={filterType} 
                 onChange={(e) => setFilterType(e.target.value)}
               >
@@ -1441,7 +1441,7 @@ const LegalEntitiesPage: React.FC = () => {
                 {Object.entries(entityTypeConfig).map(([t, c]) => <option key={t} value={t}>{c.label}</option>)}
               </select>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm" 
                 value={filterStatus} 
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -1449,7 +1449,7 @@ const LegalEntitiesPage: React.FC = () => {
                 {Object.entries(statusConfig).map(([s, c]) => <option key={s} value={s}>{c.label}</option>)}
               </select>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm" 
                 value={filterBankCustomer} 
                 onChange={(e) => setFilterBankCustomer(e.target.value)}
               >

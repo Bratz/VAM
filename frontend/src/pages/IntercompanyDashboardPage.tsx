@@ -416,7 +416,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
               'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium',
               step === s ? 'bg-primary-600 text-white' : 
               ['form', 'preview', 'result'].indexOf(step) > i ? 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300' : 
-              'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-400'
+              'bg-surface-muted text-neutral-400 dark:text-neutral-400'
             )}>
               {i + 1}
             </div>
@@ -517,7 +517,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       {/* Preview Step */}
       {step === 'preview' && preview && (
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+          <div className="p-4 bg-surface-page rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="text-center">
                 <p className="body-sm">{isPOBO ? 'Payer' : 'Collector'}</p>
@@ -581,7 +581,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           <StatusIconBadge tone="success" icon={CheckCircle} size="xl" rounded="full" className="mx-auto mb-4" />
           <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Transaction Successful</h3>
           <p className="text-neutral-600 mb-4 dark:text-neutral-300">{mode} transaction executed successfully</p>
-          <div className="p-3 bg-neutral-50 rounded-lg inline-block dark:bg-primary-950">
+          <div className="p-3 bg-surface-page rounded-lg inline-block">
             <p className="body-sm">Reference</p>
             <p className="font-mono font-medium text-primary-600 dark:text-primary-200">{result.transactionRef}</p>
           </div>
@@ -692,7 +692,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
           </div>
         </div>
 
-        <div className="body-sm text-center mb-4 p-2 bg-neutral-50 rounded-lg dark:bg-primary-950">
+        <div className="body-sm text-center mb-4 p-2 bg-surface-page rounded-lg">
           <span className="font-medium text-success-600 dark:text-success-300">{netCreditor}</span>
           {' receives '}
           <span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCompactCurrency(Math.abs(pair.netPosition), 'AED')}</span>
@@ -700,7 +700,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
           <span className="font-medium text-error-600 dark:text-error-300">{netDebtor}</span>
         </div>
 
-        <div className="flex gap-2 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+        <div className="flex gap-2 pt-3 border-t border-edge-subtle">
           <Button size="sm" variant="outline" onClick={onViewDetails} className="flex-1 opacity-70 group-hover:opacity-100 transition-opacity">
             <Eye className="w-4 h-4 mr-1" /> Details
           </Button>
@@ -744,7 +744,7 @@ const TransactionRow: React.FC<{ transaction: IntercompanyTransaction; onView: (
         <p className="caption">{formatDate(transaction.createdAt)}</p>
       </td>
       <td className="data-table-cell">
-        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', typeColors[transaction.transactionType] || 'bg-neutral-100 dark:bg-primary-800')}>
+        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', typeColors[transaction.transactionType] || 'bg-surface-muted')}>
           {transaction.transactionType.replace('_', ' ')}
         </span>
       </td>
@@ -766,7 +766,7 @@ const TransactionRow: React.FC<{ transaction: IntercompanyTransaction; onView: (
         )}
       </td>
       <td className="data-table-cell">
-        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', statusColors[transaction.status] || 'bg-neutral-100 dark:bg-primary-800')}>
+        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', statusColors[transaction.status] || 'bg-surface-muted')}>
           {transaction.status}
         </span>
       </td>
@@ -1120,7 +1120,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
       )}
 
       {/* Premium Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200 animate-fade-in dark:border-primary-800" style={{ animationDelay: '0.45s' }}>
+      <div className="flex gap-1 border-b border-edge animate-fade-in" style={{ animationDelay: '0.45s' }}>
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -1137,7 +1137,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             {tab.count !== undefined && (
               <span className={cn(
                 'px-1.5 py-0.5 text-caption rounded-full font-medium',
-                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
               )}>{tab.count}</span>
             )}
           </button>
@@ -1161,7 +1161,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatTile tone="primary" label="Net Position" value={<TileAmount value={positionSummary.netPosition} currency={positionSummary.currency} />} />
                 </StatStrip>
 
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="flex items-center justify-between p-4 bg-surface-page rounded-lg">
                   <div className="flex items-center gap-6">
                     <div>
                       <p className="label">Pending Transactions</p>
@@ -1249,7 +1249,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-            <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+            <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-primary-700" />
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">POBO Transactions</h4>
@@ -1353,7 +1353,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-            <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+            <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">COBO Collections</h4>
@@ -1459,7 +1459,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {/* Entity Pairs for Settlement */}
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-            <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="p-4 border-b border-edge-subtle">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" className="dark:bg-success-500/20" />
                 <div>
@@ -1468,7 +1468,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 </div>
               </div>
             </div>
-            <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+            <div className="divide-y divide-edge-subtle">
               {entityPairs.filter(p => p.pendingTransactions > 0).length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
@@ -1521,7 +1521,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {/* Intercompany Virtual Accounts */}
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-            <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
+            <div className="p-4 border-b border-edge-subtle">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
@@ -1533,7 +1533,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <Badge variant="info">{intercompanyVas.length} Accounts</Badge>
               </div>
             </div>
-            <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+            <div className="divide-y divide-edge-subtle">
               {intercompanyVas.length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
@@ -1543,7 +1543,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                   {intercompanyVas.map((va: any) => (
-                    <div key={va.id} className="p-4 rounded-lg border border-neutral-200 hover:border-info-300 hover:shadow-sm transition-all bg-white dark:border-primary-800 dark:bg-primary-900">
+                    <div key={va.id} className="p-4 rounded-lg border border-edge hover:border-info-300 hover:shadow-sm transition-all bg-surface-card">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-info-500/20" />
@@ -1592,8 +1592,8 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <h4 className="font-medium">Recent Settlements</h4>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-neutral-200 dark:divide-primary-800">
-                <thead className="bg-neutral-50 dark:bg-primary-950">
+              <table className="min-w-full divide-y divide-edge">
+                <thead className="bg-surface-page">
                   <tr>
                     <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Reference</th>
                     <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Type</th>
@@ -1603,7 +1603,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Settled At</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-200 dark:divide-primary-800">
+                <tbody className="divide-y divide-edge">
                   {transactions.filter(tx => tx.transactionType === 'SETTLEMENT' || tx.status === 'SETTLED').length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400">
@@ -1656,7 +1656,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {/* Pending Recharges Table */}
           <Card hover>
             <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-primary-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
-            <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+            <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
               <h3 className="section-title">Pending POBO Recharges</h3>
               <Button variant="outline" size="sm" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>
                 Refresh
@@ -1768,16 +1768,16 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
           {/* Premium Gradient Header */}
           <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
-          <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+          <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
             <h3 className="section-title">Recent Transactions</h3>
             <div className="flex items-center gap-2">
-              <select className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
+              <select className="text-body-sm border border-edge rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300">
                 <option value="">All Types</option>
                 <option value="POBO">POBO</option>
                 <option value="COBO">COBO</option>
                 <option value="SETTLEMENT">Settlement</option>
               </select>
-              <select className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
+              <select className="text-body-sm border border-edge rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300">
                 <option value="">All Status</option>
                 <option value="PENDING">Pending</option>
                 <option value="PROCESSED">Processed</option>
@@ -1852,7 +1852,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         {entity.creditLimit ? ((entity.currentExposure / entity.creditLimit) * 100).toFixed(0) : 0}%
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden dark:bg-primary-800">
+                    <div className="w-full h-2 bg-surface-muted rounded-full overflow-hidden">
                       <div
                         className={cn(
                           'h-full rounded-full transition-all duration-500',
@@ -1865,7 +1865,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-body-sm">
-                    <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="p-3 bg-surface-page rounded-lg">
                       <p className="label">Limit</p>
                       <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency="AED" /></p>
                     </div>

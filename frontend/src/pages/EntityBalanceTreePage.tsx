@@ -171,8 +171,8 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
     label: 'Aggregation Nodes',
     icon: GitBranch,
     color: 'text-neutral-600 dark:text-neutral-300',
-    bgColor: 'bg-neutral-100 dark:bg-primary-800',
-    borderColor: 'border-neutral-200 dark:border-primary-800',
+    bgColor: 'bg-surface-muted',
+    borderColor: 'border-edge',
     description: 'Hierarchy grouping nodes',
     isLeaf: false, // Aggregation - don't double count
   },
@@ -384,13 +384,13 @@ const EntityCard: React.FC<EntityCardProps> = ({
       sum + (acc.localBalance || acc.mirrorBalance || 0), 0);
 
     return (
-      <div key={type} className="border-t border-neutral-100 dark:border-primary-800/60">
+      <div key={type} className="border-t border-edge-subtle">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleSection(sectionId); }}
           className={cn(
             'w-full flex items-center gap-3 px-4 py-3 transition-all duration-200',
             'hover:bg-neutral-50 group dark:hover:bg-primary-800/50',
-            `border-l-4 ${config.borderColor}`
+            `border-l-2 ${config.borderColor}`
           )}
         >
           <div className={cn(
@@ -426,7 +426,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
         </button>
 
         {isSectionExpanded && (
-          <div className="bg-white divide-y divide-neutral-50 animate-fade-in dark:bg-primary-900">
+          <div className="bg-surface-card divide-y divide-neutral-50 animate-fade-in">
             {accounts.map((account, idx) => (
               <AccountRow
                 key={account.id}
@@ -542,7 +542,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
       {/* Account Sections */}
       {isExpanded && (
-        <div className="divide-y divide-neutral-100 animate-fade-in dark:divide-primary-800/60">
+        <div className="divide-y divide-edge-subtle animate-fade-in">
           {renderAccountSection('shadow', entity.accounts.shadow)}
           {renderAccountSection('currencyMirrors', entity.accounts.currencyMirrors)}
           {renderAccountSection('ihbAccounts', entity.accounts.ihbAccounts)}
@@ -816,7 +816,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
         };
       default:
         return {
-          bg: 'bg-neutral-100 dark:bg-primary-800',
+          bg: 'bg-surface-muted',
           icon: <Building2 className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />,
           badge: 'neutral' as const,
         };
@@ -840,13 +840,13 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
       sum + (acc.localBalance || acc.mirrorBalance || 0), 0);
 
     return (
-      <div key={type} className="border-t border-neutral-100 dark:border-primary-800/60">
+      <div key={type} className="border-t border-edge-subtle">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleSection(sectionId); }}
           className={cn(
             'w-full flex items-center gap-3 px-4 py-2.5 transition-all duration-200',
             'hover:bg-neutral-50 group dark:hover:bg-primary-800/50',
-            `border-l-4 ${config.borderColor}`
+            `border-l-2 ${config.borderColor}`
           )}
           style={{ paddingLeft: `${(depth + 1) * 24 + 16}px` }}
         >
@@ -882,7 +882,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
         </button>
 
         {isSectionExpanded && (
-          <div className="bg-neutral-50/50 dark:bg-primary-950/50 divide-y divide-neutral-100 animate-fade-in dark:divide-primary-800/60">
+          <div className="bg-neutral-50/50 dark:bg-primary-950/50 divide-y divide-edge-subtle animate-fade-in">
             {accounts.map((account, idx) => (
               <AccountRow
                 key={account.id}
@@ -905,7 +905,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
       {/* Entity Header */}
       <div
         className={cn(
-          'border-b border-neutral-100 hover:bg-neutral-50/70 dark:hover:bg-primary-800/50 transition-all duration-200 dark:border-primary-800/60',
+          'border-b border-edge-subtle hover:bg-neutral-50/70 dark:hover:bg-primary-800/50 transition-all duration-200',
           depth === 0 && 'bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
           entity.isTreasuryCenter && 'bg-gradient-to-r from-warning-50/30 via-white to-warning-50/30 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900'
         )}
@@ -1014,7 +1014,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
         <div className="animate-fade-in">
           {/* Account Sections */}
           {hasAccounts && (
-            <div className="bg-white border-l-2 border-neutral-200 dark:bg-primary-900 dark:border-primary-800" style={{ marginLeft: `${depth * 24 + 36}px` }}>
+            <div className="bg-surface-card border-l-2 border-edge" style={{ marginLeft: `${depth * 24 + 36}px` }}>
               {renderAccountSection('shadow', entity.accounts.shadow)}
               {renderAccountSection('currencyMirrors', entity.accounts.currencyMirrors)}
               {renderAccountSection('ihbAccounts', entity.accounts.ihbAccounts)}
@@ -1557,8 +1557,8 @@ const EntityBalanceTreePage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
-                'w-64 h-10 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-primary-800',
-                'bg-white text-body-sm placeholder:text-neutral-400 dark:bg-primary-900',
+                'w-64 h-10 pl-10 pr-4 rounded-lg border border-edge',
+                'bg-surface-card text-body-sm placeholder:text-neutral-400',
                 'focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10',
                 'transition-all duration-200'
               )}
@@ -1576,14 +1576,14 @@ const EntityBalanceTreePage: React.FC = () => {
             Collapse
           </Button>
 
-          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 ml-2 dark:bg-primary-800">
+          <div className="flex items-center gap-1 bg-surface-muted rounded-lg p-1 ml-2">
             <button
               onClick={() => setViewMode('hierarchy')}
               title="Hierarchy View"
               className={cn(
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'hierarchy'
-                  ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
+                  ? 'bg-surface-card shadow-sm text-primary-700 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
@@ -1595,7 +1595,7 @@ const EntityBalanceTreePage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'flat'
-                  ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
+                  ? 'bg-surface-card shadow-sm text-primary-700 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
@@ -1607,7 +1607,7 @@ const EntityBalanceTreePage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'pyramid'
-                  ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
+                  ? 'bg-surface-card shadow-sm text-primary-700 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
@@ -1697,7 +1697,7 @@ const EntityBalanceTreePage: React.FC = () => {
           ) : viewMode === 'hierarchy' ? (
             /* Hierarchical Tree View */
             <Card className="overflow-hidden animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <div className="p-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:border-primary-800/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
+              <div className="p-4 border-b border-edge-subtle bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-700">
                     <TreeDeciduous className="w-5 h-5 text-primary-600 dark:text-primary-200" />
@@ -1711,7 +1711,7 @@ const EntityBalanceTreePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+              <div className="divide-y divide-edge-subtle">
                 {filteredHierarchy.map(entity => (
                   <EntityHierarchyNode
                     key={entity.id}
@@ -1774,19 +1774,19 @@ const EntityBalanceTreePage: React.FC = () => {
         >
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <p className="label-cased">Account Name</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.name}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <p className="label-cased">Account Number</p>
                   <p className="font-mono text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.accountNumber || 'N/A'}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <p className="label-cased">Currency</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.currencyCode}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="p-3 bg-surface-page rounded-lg">
                   <p className="label-cased">Category</p>
                   <Badge className="mt-1">{selectedAccount.accountCategory || selectedAccount.type}</Badge>
                 </div>
@@ -1803,7 +1803,7 @@ const EntityBalanceTreePage: React.FC = () => {
               </div>
 
               {selectedAccount.mirrorAccountType && selectedAccount.mirrorAccountType !== 'NONE' && (
-                <div className="pt-4 border-t border-neutral-100 dark:border-primary-800/60">
+                <div className="pt-4 border-t border-edge-subtle">
                   <p className="text-body-sm text-neutral-500 font-medium mb-2 dark:text-neutral-400">Mirror Account Type</p>
                   <Badge variant="info" size="md">{selectedAccount.mirrorAccountType}</Badge>
                 </div>

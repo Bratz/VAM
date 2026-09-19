@@ -86,7 +86,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
       {showActions && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+          <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20 animate-fade-in">
             <button
               onClick={() => { onView(beneficiary); setShowActions(false); }}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:text-neutral-50"
@@ -102,7 +102,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
                 <CheckCircle className="w-4 h-4" /> Verify Beneficiary
               </button>
             )}
-            <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
+            <hr className="my-1 border-edge-subtle" />
             <button
               onClick={() => { onDelete(beneficiary.id); setShowActions(false); }}
               disabled={processing}
@@ -166,7 +166,7 @@ const BeneficiaryMobileCard: React.FC<BeneficiaryMobileCardProps> = ({
             </Badge>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+          <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div>
               <p className="caption">Account</p>
               <p className="text-body-sm font-mono text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
@@ -257,7 +257,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
       </div>
 
       {/* Bank Details Section */}
-      <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
+      <div className="space-y-4 pt-4 border-t border-edge">
         <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
           Bank Details
         </h4>
@@ -314,7 +314,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end gap-3 pt-4 border-t border-edge">
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
@@ -706,7 +706,7 @@ const BeneficiariesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-edge">
               <div>
                 <p className="label">Bank Name</p>
                 <p className="body-strong mt-1">
@@ -745,7 +745,7 @@ const BeneficiariesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="flex justify-end gap-3 pt-4 border-t border-edge">
               {selectedBeneficiary.validationStatus !== 'VERIFIED' && (
                 <Button
                   variant="outline"

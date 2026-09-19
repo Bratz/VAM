@@ -263,7 +263,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
                     <select
                       value={growValues[l.levelNumber] || ''}
                       onChange={(e) => setGrowValue(l.levelNumber, e.target.value)}
-                      className="flex-1 px-2 py-1 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg bg-white dark:bg-primary-900"
+                      className="flex-1 px-2 py-1 text-body-sm border border-edge-strong rounded-lg bg-surface-card"
                     >
                       <option value="">Select…</option>
                       {l.allowedValues.map(v => <option key={v} value={v}>{v}</option>)}
@@ -316,7 +316,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
   }
 
   return (
-    <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-2 max-h-80 overflow-y-auto">
+    <div className="border border-edge rounded-lg p-2 max-h-80 overflow-y-auto">
       {roots.map(r => renderNode(r, 0))}
     </div>
   );

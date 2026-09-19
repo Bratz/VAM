@@ -172,3 +172,8 @@ Build failure: `Expected "as" but found "{"`. Cascade: had to manually repair tw
 **Rule:** Radii: sm/md/lg/full. Shadows: sm/md/lg/xl. Icons: lucide only, canonical name per concept, size scale 12/16/20/24/32(+48 hero), medallions via StatusIconBadge. ESLint (no-restricted-syntax / no-restricted-imports) rejects the retired names. Specimens: Storybook -> Design System.
 **Why:** Renaming to match reality was pixel-identical; drift is prevented by removing the old names from Tailwind so they cannot silently no-op.
 **How to apply:** Removing a Tailwind key needs a top-level `theme.*` override (not `extend`), a full-source codemod first, and a dev-server restart. Codemod with the TypeScript AST for identifiers (regex renames corrupt JSX text such as the word "Edit"), and never rewrite a bare word like `rounded` outside class contexts.
+
+## L-surfaces — Theme surfaces and borders with variables, not dark: pairs
+**Trigger:** 2026-09-19. `bg-white dark:bg-primary-900`-style pairs appeared ~1,700 times; forgetting the dark half caused the dark-mode contrast bugs.
+**Rule:** Use `bg-surface-page|card|muted` and `border-edge|edge-subtle|edge-strong` (and `divide-edge*`); they are themed by CSS variables in `design-system/variables.css`.
+**How to apply:** Only exact light+dark pairs in the same class string were migrated; pairs split by other tokens or built from template literals remain and can be migrated when touched.

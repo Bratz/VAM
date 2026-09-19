@@ -46,6 +46,18 @@ export default {
     extend: {
       // Swiss Minimalist Design System
       colors: {
+        // Semantic surfaces and borders — themed by CSS variables (design-system/variables.css), so no
+        // dark: counterpart is needed: bg-surface-card, border-edge, divide-edge-subtle, ...
+        surface: {
+          page: 'rgb(var(--surface-page) / <alpha-value>)',
+          card: 'rgb(var(--surface-card) / <alpha-value>)',
+          muted: 'rgb(var(--surface-muted) / <alpha-value>)',
+        },
+        edge: {
+          DEFAULT: 'rgb(var(--edge) / <alpha-value>)',
+          subtle: 'rgb(var(--edge-subtle) / <alpha-value>)',
+          strong: 'rgb(var(--edge-strong) / <alpha-value>)',
+        },
         // Primary — grey-slate "ink" family (palette swap, replaces navy).
         // 800/900/950 are named roles from the spec: 800 = banner slate
         // (#4c5c68), 900 = ink (#46494c, main dark text), 950 = nav/deep

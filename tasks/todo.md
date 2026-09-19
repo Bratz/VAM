@@ -2840,3 +2840,10 @@ Decisions (user): keep the 34 ConnectorIcons brand SVGs; canonical error icon = 
 ## Review
 - Steps 1-5 done, uncommitted. Runtime sweep of 41 pages: radii resolve only to 4/8/12/9999px; icons 12/16/20/24/32/48 (+3 stragglers fixed). tsc non-unused errors unchanged (158); vite + storybook builds pass; eslint bans clean.
 - Left: ~90 ad-hoc medallions (no bg / gradient / non-canonical box) not migrated; text glyphs inside strings (Copilot messages, toasts, trend arrows) kept; toggles/checkboxes/radios primitives exist but call sites (73 native inputs) not migrated; surface tokens (step 4 of the proposal) deferred.
+
+## Follow-ups (review) — looped every 2 min
+- [x] 1. Shapes story dark contrast + stale shadow-strong comments
+- [x] 2. Stories (+a11y) for StatTile, DataTable, Skeleton, Alert, CurrencyPicker, HeroMetricCard, Avatar, Tooltip, ProgressBar, Drawer
+- [x] 3. ESLint: widen scope; ban raw checkbox/radio inputs outside ui, border-l-4
+- [x] 4. CI: storybook job (build + scripts/storybook-check.mjs render + axe contrast; 87 stories, 0 render failures, 465 AA-contrast findings report-only)
+- [x] 5. Surface/border tokens (bg-surface-*, border-edge*; 1,666 pairs migrated across 124 files, ~24 split/template pairs left) + templateHierarchy tone -> TemplateSelectorModal/ProgramsPage StatusIconBadge

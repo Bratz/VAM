@@ -33,7 +33,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
     <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-neutral-50 dark:bg-primary-950 border-b border-neutral-100 dark:border-primary-800/60">
+          <thead className="bg-surface-page border-b border-edge-subtle">
             <tr>
               <th className="text-left p-4 label">Reference</th>
               <th className="text-left p-4 label">Rule</th>
@@ -44,7 +44,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
               <th className="text-center p-4 label">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+          <tbody className="divide-y divide-edge-subtle">
             {executions.map((exec) => (
               <tr key={exec.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors">
                 {/* Reference */}

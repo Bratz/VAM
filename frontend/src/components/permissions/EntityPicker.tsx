@@ -90,7 +90,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
       )}
 
       {showRoleBadge && currentEntity && (
-        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-caption font-medium ${currentEntity.isTreasuryCenter ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-300'}`}>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-caption font-medium ${currentEntity.isTreasuryCenter ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-700 dark:text-neutral-300'}`}>
           <Building2 className="w-3 h-3" />
           {currentEntity.isTreasuryCenter ? 'Treasury' : 'Subsidiary'}
         </div>

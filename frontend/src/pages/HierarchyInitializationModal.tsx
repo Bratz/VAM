@@ -72,7 +72,7 @@ const STEPS = [
 // ============================================================================
 
 const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
-  <div className="flex items-center justify-center gap-2 py-4 border-b border-neutral-200 dark:border-primary-800">
+  <div className="flex items-center justify-center gap-2 py-4 border-b border-edge">
     {STEPS.map((step, index) => (
       <React.Fragment key={step.id}>
         <div className="flex items-center gap-2">
@@ -313,7 +313,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     value={rootName}
                     onChange={(e) => setRootName(e.target.value)}
                     placeholder="e.g., Group Treasury"
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
 
@@ -327,7 +327,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     value={rootCode}
                     onChange={(e) => setRootCode(e.target.value.toUpperCase())}
                     placeholder="e.g., ROOT"
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
                   />
                   <p className="caption mt-1">
                     Short identifier used in hierarchy paths
@@ -342,7 +342,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <select
                     value={baseCurrency}
                     onChange={(e) => setBaseCurrency(e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -448,7 +448,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                             'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors',
                             additionalCurrencies.includes(currency.code)
                               ? 'bg-primary-600 text-white'
-                              : 'bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-primary-800'
+                              : 'bg-surface-muted text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-primary-800'
                           )}
                         >
                           {currency.code}
@@ -456,7 +456,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                       ))}
                     </div>
                     {additionalCurrencies.length > 0 && (
-                      <div className="mt-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                      <div className="mt-3 p-3 bg-surface-page rounded-lg">
                         <p className="text-caption font-medium text-neutral-700 dark:text-neutral-200">
                           Selected: {allCurrencies.join(', ')}
                         </p>
@@ -484,43 +484,43 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
             {/* Step 3: Review */}
             {step === 3 && (
               <div className="space-y-6">
-                <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                <div className="p-4 bg-surface-page rounded-lg">
                   <h3 className="body-strong font-semibold mb-4">
                     Configuration Summary
                   </h3>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm">Program</span>
                       <span className="body-strong">
                         {programName} ({programCode})
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm">ROOT Name</span>
                       <span className="body-strong">
                         {rootName}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm">ROOT Code</span>
                       <span className="text-body-sm font-mono font-medium text-neutral-900 dark:text-neutral-50">
                         {rootCode}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm">Base Currency</span>
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-info-100 dark:bg-info-500/20 text-info-700 dark:text-info-300 text-body-sm font-medium">
                         {baseCurrency}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm">Template</span>
                       <span className="body-strong">
                         {TEMPLATES.find((t) => t.code === templateType)?.name ||
                           'None'}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between items-center py-2 border-b border-edge">
                       <span className="body-sm flex items-center gap-1">
                         <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
                         Currency Mirrors
@@ -609,7 +609,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
           </div>
 
           {/* Footer */}
-          <div className="flex justify-between items-center px-6 py-4 border-t border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950">
+          <div className="flex justify-between items-center px-6 py-4 border-t border-edge bg-surface-page">
             <button
               onClick={() => (step > 1 ? setStep(step - 1) : onClose())}
               className="px-4 py-2 field-label hover:bg-neutral-200 dark:hover:bg-primary-800 rounded-lg transition-colors"

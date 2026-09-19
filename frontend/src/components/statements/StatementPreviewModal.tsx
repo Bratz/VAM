@@ -301,10 +301,10 @@ const SectionCard: React.FC<SectionCardProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={cn('bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 overflow-hidden', className)}>
+    <div className={cn('bg-surface-card rounded-lg border border-edge overflow-hidden', className)}>
       <div
         className={cn(
-          'flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-primary-950',
+          'flex items-center justify-between px-4 py-3 bg-surface-page',
           collapsible && 'cursor-pointer hover:bg-neutral-100 dark:hover:bg-primary-800 dark:bg-primary-800 transition-colors'
         )}
         onClick={collapsible ? () => setIsOpen(!isOpen) : undefined}
@@ -326,7 +326,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           </button>
         )}
       </div>
-      {isOpen && <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60">{children}</div>}
+      {isOpen && <div className="px-4 py-3 border-t border-edge-subtle">{children}</div>}
     </div>
   );
 };
@@ -356,10 +356,10 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
   const typeColors: Record<StatementBalanceType, string> = {
     OPBD: 'bg-primary-50 border-primary-200 dark:bg-primary-800/40',
     CLBD: 'bg-info-50 border-info-200 dark:bg-info-500/10 dark:border-info-500/30',
-    OPAV: 'bg-neutral-50 dark:bg-primary-950 border-neutral-200 dark:border-primary-800',
+    OPAV: 'bg-surface-page border-edge',
     CLAV: 'bg-success-50 border-success-200 dark:bg-success-500/10 dark:border-success-500/30',
     FWAV: 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30',
-    INFO: 'bg-neutral-50 dark:bg-primary-950 border-neutral-200 dark:border-primary-800',
+    INFO: 'bg-surface-page border-edge',
   };
 
   const isDebit = creditDebit === 'DBIT';
@@ -400,7 +400,7 @@ const TransactionSummaryCard: React.FC<TransactionSummaryProps> = ({ summary, to
       icon={<Receipt className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="text-center p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+        <div className="text-center p-3 bg-surface-page rounded-lg">
           <p className="stat-value-sm">{totalEntries}</p>
           <p className="caption">Total Entries</p>
         </div>
@@ -480,8 +480,8 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
   return (
     <div
       className={cn(
-        'border-b border-neutral-100 dark:border-primary-800/60 last:border-0 animate-fade-in',
-        expanded && 'bg-neutral-50 dark:bg-primary-950'
+        'border-b border-edge-subtle last:border-0 animate-fade-in',
+        expanded && 'bg-surface-page'
       )}
       style={{ animationDelay: `${index * 0.02}s` }}
     >
@@ -563,7 +563,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         <div className="px-4 pb-4 ml-14 animate-fade-in">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Transaction References */}
-            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+            <div className="bg-surface-card rounded-lg border border-edge p-3">
               <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                 <Hash className="w-4 h-4" />
                 Transaction References
@@ -585,7 +585,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Bank Transaction Code */}
             {(entry.bankTransactionCode || details?.bankTransactionCode) && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4" />
                   Bank Transaction Code
@@ -607,7 +607,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Related Parties - Debtor */}
             {details?.debtor && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <User className="w-4 h-4" />
                   Debtor
@@ -623,7 +623,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Related Parties - Creditor */}
             {details?.creditor && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <User className="w-4 h-4" />
                   Creditor
@@ -639,7 +639,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Remittance Information */}
             {details?.remittanceInfo && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <FileText className="w-4 h-4" />
                   Remittance Info
@@ -661,7 +661,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Additional Info / Return Info */}
             {(details?.additionalInfo || details?.returnInfo || entry.additionalEntryInfo) && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <Info className="w-4 h-4" />
                   Additional Info
@@ -685,7 +685,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Charges */}
             {details?.charges && details.charges.length > 0 && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <Banknote className="w-4 h-4" />
                   Charges
@@ -705,7 +705,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
 
             {/* Exchange Rate */}
             {details?.exchangeRate && (
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <TrendingUp className="w-4 h-4" />
                   Exchange Rate
@@ -745,8 +745,8 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
   return (
     <div
       className={cn(
-        'border-b border-neutral-100 dark:border-primary-800/60 last:border-0 animate-fade-in',
-        expanded && 'bg-neutral-50 dark:bg-primary-950'
+        'border-b border-edge-subtle last:border-0 animate-fade-in',
+        expanded && 'bg-surface-page'
       )}
       style={{ animationDelay: `${index * 0.02}s` }}
     >
@@ -818,7 +818,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
           {entry.entryDetails && (
             <>
               {/* Transaction References */}
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">References</h5>
                 <div className="space-y-1">
                   <InfoRow label="Entry Ref" value={entry.entryReference} copyable />
@@ -829,7 +829,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
 
               {/* Counterparty */}
               {(entry.entryDetails.debtor || entry.entryDetails.creditor) && (
-                <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">
                     {isCredit ? 'Debtor' : 'Creditor'}
                   </h5>
@@ -851,7 +851,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
 
               {/* Remittance Info */}
               {entry.entryDetails.remittanceInfo?.unstructured && (
-                <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">Remittance Info</h5>
                   {entry.entryDetails.remittanceInfo.unstructured.map((info, idx) => (
                     <p key={idx} className="caption">{info}</p>
@@ -1179,7 +1179,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
               {/* Filters */}
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Type Filter */}
-                <div className="flex bg-neutral-100 dark:bg-primary-800 rounded-lg p-1">
+                <div className="flex bg-surface-muted rounded-lg p-1">
                   {(['ALL', 'CRDT', 'DBIT'] as const).map((type) => (
                     <button
                       key={type}
@@ -1187,7 +1187,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                       className={cn(
                         'px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors',
                         filterType === type
-                          ? 'bg-white dark:bg-primary-900 shadow-sm text-primary-900 dark:text-neutral-50'
+                          ? 'bg-surface-card shadow-sm text-primary-900 dark:text-neutral-50'
                           : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-900 dark:text-neutral-50 dark:hover:text-neutral-50'
                       )}
                     >
@@ -1197,7 +1197,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 </div>
 
                 {/* Status Filter */}
-                <div className="flex bg-neutral-100 dark:bg-primary-800 rounded-lg p-1">
+                <div className="flex bg-surface-muted rounded-lg p-1">
                   {(['ALL', 'BOOK', 'PDNG', 'INFO'] as const).map((status) => (
                     <button
                       key={status}
@@ -1205,7 +1205,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                       className={cn(
                         'px-2 py-1.5 text-caption font-medium rounded-md transition-colors',
                         filterStatus === status
-                          ? 'bg-white dark:bg-primary-900 shadow-sm text-primary-900 dark:text-neutral-50'
+                          ? 'bg-surface-card shadow-sm text-primary-900 dark:text-neutral-50'
                           : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-900 dark:text-neutral-50 dark:hover:text-neutral-50'
                       )}
                     >
@@ -1240,7 +1240,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             <div className="hidden md:block border rounded-lg overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {/* Table Header */}
-                <div className="bg-neutral-50 dark:bg-primary-950 px-4 py-3 border-b border-neutral-200 dark:border-primary-800 sticky top-0 z-10">
+                <div className="bg-surface-page px-4 py-3 border-b border-edge sticky top-0 z-10">
                   <div className="flex items-center gap-4 text-caption font-medium text-neutral-500 dark:text-neutral-400 uppercase">
                     <div className="w-8"></div>
                     <div className="w-9"></div>
@@ -1324,7 +1324,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             )}
 
             {/* Export Options */}
-            <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+            <div className="pt-4 border-t border-edge">
               <p className="field-label mb-3">Export Statement</p>
               <div className="flex flex-wrap gap-2">
                 <Button

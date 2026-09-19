@@ -68,11 +68,11 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     padding="none"
     className={cn(
       'flex flex-col overflow-hidden',
-      illustrative && 'border-dashed border-neutral-300 dark:border-primary-700',
+      illustrative && 'border-dashed border-edge-strong',
       className,
     )}
   >
-    <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
+    <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
       <div className="min-w-0">
         <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 leading-snug">
           {question}
@@ -85,7 +85,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     <div className={cn('flex-1 p-4', bodyClassName)}>{children}</div>
 
     {(footLeft || footRight) && (
-      <div className="flex items-center justify-between gap-2 px-4 py-2 border-t border-neutral-100 dark:border-primary-800/60 caption">
+      <div className="flex items-center justify-between gap-2 px-4 py-2 border-t border-edge-subtle caption">
         <span className="min-w-0 truncate">{footLeft}</span>
         {footRight && (
           <span className="shrink-0 text-primary-600 dark:text-accent-400">{footRight}</span>

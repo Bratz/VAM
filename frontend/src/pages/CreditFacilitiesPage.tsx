@@ -39,7 +39,7 @@ const FACILITY_TYPE_CONFIG: Record<string, { label: string; icon: any; color: st
   ASSET_BASED: { label: 'Asset Based', icon: Building2, tone: 'warning', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   CASH_POOLING: { label: 'Cash Pooling', icon: PiggyBank, tone: 'success', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   NOTIONAL_POOLING: { label: 'Notional Pooling', icon: Landmark, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  OTHER: { label: 'Other', icon: Wallet, tone: 'neutral', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
+  OTHER: { label: 'Other', icon: Wallet, tone: 'neutral', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted' },
 };
 
 // Helper
@@ -425,7 +425,7 @@ const CreditFacilitiesPage: React.FC = () => {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-edge-strong rounded-lg bg-surface-card text-body-sm font-medium"
         >
           <option value="">All Types</option>
           {Object.entries(FACILITY_TYPE_CONFIG).map(([key, val]) => (
@@ -435,7 +435,7 @@ const CreditFacilitiesPage: React.FC = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-edge-strong rounded-lg bg-surface-card text-body-sm font-medium"
         >
           <option value="">All Status</option>
           {Object.entries(STATUS_CONFIG).map(([key, val]) => (
@@ -485,7 +485,7 @@ const CreditFacilitiesPage: React.FC = () => {
               <select
                 value={createForm.facilityType}
                 onChange={(e) => setCreateForm(prev => ({ ...prev, facilityType: e.target.value as any }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
               >
                 {Object.entries(FACILITY_TYPE_CONFIG).map(([key, val]) => (
                   <option key={key} value={key}>{val.label}</option>
@@ -543,7 +543,7 @@ const CreditFacilitiesPage: React.FC = () => {
               <select
                 value={createForm.interestRateType}
                 onChange={(e) => setCreateForm(prev => ({ ...prev, interestRateType: e.target.value as any }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
+                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
               >
                 <option value="FIXED">Fixed</option>
                 <option value="FLOATING">Floating</option>

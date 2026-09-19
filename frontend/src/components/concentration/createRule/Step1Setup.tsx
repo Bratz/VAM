@@ -74,7 +74,7 @@ export const Step1Setup: React.FC<Step1SetupProps> = ({
               'p-4 border-2 rounded-lg cursor-pointer transition-all duration-200',
               formData.sweepType === type
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 shadow-sm'
-                : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                : 'border-edge hover:border-primary-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
             )}
           >
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{SWEEP_TYPES[type].label}</p>

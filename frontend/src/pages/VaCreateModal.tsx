@@ -166,7 +166,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
             "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
             selectedId === corp.id
               ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40"
-              : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
+              : "border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
           )}
         >
           <StatusIconBadge tone={selectedId === corp.id ? 'primary' : 'neutral'} icon={Building2} size="lg" />
@@ -251,7 +251,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
               "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
               selectedId === program.id
                 ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40"
-                : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
+                : "border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
             )}
           >
             <StatusIconBadge tone={selectedId === program.id ? 'primary' : 'neutral'} icon={Layers} size="lg" />
@@ -415,7 +415,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
     <div className="space-y-6">
       {/* Placement card — the wizard's counterpart to the tree modal's
           "Parent:" card: the final confirmation of WHERE this VA lands. */}
-      <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+      <div className="p-3 bg-surface-page border border-edge rounded-lg">
         <div className="flex items-center gap-2 text-body-sm mb-1">
           <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           <span className="text-neutral-600 dark:text-neutral-300">Will be created under:</span>
@@ -446,7 +446,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
           <select
             value={owningEntityId}
             onChange={(e) => onOwningEntityChange(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
           >
             <option value="">Inherit from parent</option>
             {entities.filter(e => !e.status || e.status === 'ACTIVE').map(entity => (
@@ -761,7 +761,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                   "w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium",
                   currentStep === step.id ? "bg-primary-600 text-white" :
                   currentStep > step.id ? "bg-primary-100 text-primary-600 dark:text-primary-200 dark:bg-primary-700" :
-                  "bg-neutral-100 text-neutral-400 dark:bg-primary-800"
+                  "bg-surface-muted text-neutral-400"
                 )}>
                   {currentStep > step.id ? (
                     <CheckCircle className="w-5 h-5" />
@@ -788,7 +788,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
 
         {/* Selection Summary */}
         {currentStep > 1 && (
-          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg text-body-sm">
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-surface-page rounded-lg text-body-sm">
             {selectedCorporateId && (
               <Badge variant="neutral" size="sm">
                 <Building2 className="w-3 h-3 mr-1" />
@@ -865,7 +865,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex items-center justify-between pt-4 mt-4 border-t border-edge">
           <div className="body-sm">
             Step {currentStep} of {steps.length}
           </div>

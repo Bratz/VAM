@@ -559,7 +559,7 @@ const PartyPicker: React.FC<{
   return (
     <div ref={containerRef} className="relative">
       {value ? (
-        <div className="flex items-center gap-3 p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white dark:bg-primary-900">
+        <div className="flex items-center gap-3 p-3 border border-edge-strong rounded-lg bg-surface-card">
           <StatusIconBadge tone={partyTypeConfig[value.partyType]?.tone ?? 'neutral'} icon={partyTypeConfig[value.partyType]?.icon || User} rounded="full" subtle />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{value.legalName}</p>
@@ -576,7 +576,7 @@ const PartyPicker: React.FC<{
         <div className="relative">
           <input
             type="text"
-            className="w-full px-10 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-10 py-2.5 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             placeholder={placeholder}
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
@@ -588,7 +588,7 @@ const PartyPicker: React.FC<{
       )}
 
       {isOpen && !value && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-96 overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-surface-card border border-edge rounded-lg shadow-lg max-h-96 overflow-hidden">
           {showCreateForm ? (
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
@@ -602,7 +602,7 @@ const PartyPicker: React.FC<{
                   return (
                     <button key={type} type="button" onClick={() => setCreateForm({ ...createForm, partyType: type })}
                       className={cn('flex items-center gap-2 p-2 rounded-lg border text-body-sm',
-                        createForm.partyType === type ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700')}>
+                        createForm.partyType === type ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700')}>
                       <Icon className={cn('w-4 h-4', config.color)} /><span>{config.label}</span>
                     </button>
                   );
@@ -610,16 +610,16 @@ const PartyPicker: React.FC<{
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Full Name *"
+                  <input type="text" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" placeholder="Full Name *"
                     value={createForm.legalName || ''} onChange={(e) => setCreateForm({ ...createForm, legalName: e.target.value })} />
                 </div>
-                <input type="tel" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Mobile *"
+                <input type="tel" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" placeholder="Mobile *"
                   value={createForm.contactPhone || ''} onChange={(e) => setCreateForm({ ...createForm, contactPhone: e.target.value })} />
-                <input type="email" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Email"
+                <input type="email" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" placeholder="Email"
                   value={createForm.contactEmail || ''} onChange={(e) => setCreateForm({ ...createForm, contactEmail: e.target.value })} />
-                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Emirates ID"
+                <input type="text" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" placeholder="Emirates ID"
                   value={createForm.emiratesId || ''} onChange={(e) => setCreateForm({ ...createForm, emiratesId: e.target.value })} />
-                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="City"
+                <input type="text" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" placeholder="City"
                   value={createForm.city || ''} onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })} />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t">
@@ -667,7 +667,7 @@ const PartyPicker: React.FC<{
                 )}
               </div>
               {allowCreate && (
-                <div className="border-t border-neutral-200 dark:border-primary-800 p-2">
+                <div className="border-t border-edge p-2">
                   <button type="button" onClick={() => { setShowCreateForm(true); setCreateForm({ ...createForm, legalName: searchQuery }); }}
                     className="w-full flex items-center gap-2 p-3 text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg dark:hover:bg-primary-800/40">
                     <Plus className="w-5 h-5" /><span className="font-medium">Create New Customer</span>
@@ -724,7 +724,7 @@ const ProgramCard: React.FC<{
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex items-center justify-between pt-4 border-t border-edge">
         <div className="flex items-center gap-2 body-sm">
           <Building2 className="w-4 h-4" />
           <span>{program.operatorName}</span>
@@ -811,14 +811,14 @@ const WalletRow: React.FC<{
           {showActions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-primary-900 rounded-lg shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-20">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20">
                 <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
                 <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Pencil className="w-4 h-4" /> Edit Limits</button>
-                <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
+                <hr className="my-1 border-edge-subtle" />
                 <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
                 <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
                 <button onClick={() => { onAction('transfer'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Send className="w-4 h-4" /> Transfer</button>
-                <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
+                <hr className="my-1 border-edge-subtle" />
                 {!wallet.kycVerified && <button onClick={() => { onAction('verify-kyc'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><UserCheck className="w-4 h-4" /> Verify KYC</button>}
                 {wallet.status === 'ACTIVE' ? (
                   <>
@@ -848,7 +848,7 @@ const WalletMobileCard: React.FC<{
   const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
 
   return (
-    <div className="p-4 border border-neutral-200 dark:border-primary-800 rounded-lg hover:border-primary-200 hover:shadow-sm transition-all" onClick={onView}>
+    <div className="p-4 border border-edge rounded-lg hover:border-primary-200 hover:shadow-sm transition-all" onClick={onView}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
@@ -864,17 +864,17 @@ const WalletMobileCard: React.FC<{
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Balance</p>
           <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
         </div>
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
+        <div className="bg-surface-page rounded-lg p-2">
           <p className="caption">Available</p>
           <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(wallet.availableBalance)}</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+      <div className="flex items-center justify-between pt-3 border-t border-edge-subtle">
         <p className="caption">{wallet.transactionCount} transactions</p>
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); onAction('load'); }} className="p-1.5 hover:bg-success-50 dark:bg-success-500/10 rounded-lg dark:hover:bg-success-500/10" title="Load">
@@ -1228,7 +1228,7 @@ const WalletPage: React.FC = () => {
             <StatusIconBadge tone="primary" icon={Building2} size="sm" rounded="lg" />
             <span className="font-medium text-primary-800 dark:text-neutral-100">Partner View</span>
           </div>
-          <select className="flex-1 max-w-xs border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 bg-white dark:bg-primary-900 text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={selectedPartnerId} onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}>
+          <select className="flex-1 max-w-xs border border-edge rounded-lg px-3 py-2 bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={selectedPartnerId} onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}>
             <option value="">All Partners</option>
             {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -1257,19 +1257,19 @@ const WalletPage: React.FC = () => {
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
+              <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
                 <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="group-hover:bg-primary-200 transition-colors" />
                 <span className="field-label">Issue Wallet</span>
               </button>
-              <button onClick={() => setShowBulkLoadModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-success-300 hover:bg-success-50 dark:bg-success-500/10 transition-all group dark:hover:bg-success-500/10">
+              <button onClick={() => setShowBulkLoadModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-success-300 hover:bg-success-50 dark:bg-success-500/10 transition-all group dark:hover:bg-success-500/10">
                 <StatusIconBadge tone="success" icon={Upload} rounded="lg" className="group-hover:bg-success-200 transition-colors" />
                 <span className="field-label">Bulk Load</span>
               </button>
-              <button onClick={navigateToProgramsPage} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-info-300 hover:bg-info-50 dark:bg-info-500/10 transition-all group dark:hover:bg-info-500/10">
+              <button onClick={navigateToProgramsPage} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-info-300 hover:bg-info-50 dark:bg-info-500/10 transition-all group dark:hover:bg-info-500/10">
                 <StatusIconBadge tone="info" icon={Settings} rounded="lg" className="group-hover:bg-info-200 transition-colors" />
                 <span className="field-label">Programs</span>
               </button>
-              <button onClick={() => setActiveTab('wallets')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 transition-all group dark:hover:bg-warning-500/10">
+              <button onClick={() => setActiveTab('wallets')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 transition-all group dark:hover:bg-warning-500/10">
                 <StatusIconBadge tone="warning" icon={Search} rounded="lg" className="group-hover:bg-warning-200 transition-colors" />
                 <span className="field-label">Search</span>
               </button>
@@ -1296,19 +1296,19 @@ const WalletPage: React.FC = () => {
       {activeTab === 'wallets' && (
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           {/* Filters */}
-          <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
+          <div className="p-4 border-b border-edge-subtle">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <Input placeholder="Search by name, mobile or wallet ref..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} leftIcon={<Search className="w-4 h-4" />} />
               </div>
               <div className="flex flex-wrap gap-2">
-                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <select className="border border-edge rounded-lg px-3 py-2 text-body-sm bg-surface-card focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">All Status</option>
                   <option value="ACTIVE">Active</option>
                   <option value="SUSPENDED">Suspended</option>
                   <option value="BLOCKED">Blocked</option>
                 </select>
-                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
+                <select className="border border-edge rounded-lg px-3 py-2 text-body-sm bg-surface-card focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
                   <option value="">All KYC</option>
                   <option value="verified">Verified</option>
                   <option value="pending">Pending</option>
@@ -1377,7 +1377,7 @@ const WalletPage: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="p-4 border-t border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
+            <div className="p-4 border-t border-edge-subtle flex items-center justify-between">
               <p className="body-sm">Page {currentPage + 1} of {totalPages} <span className="hidden sm:inline">({totalWallets} total wallets)</span></p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)} leftIcon={<ChevronLeft className="w-4 h-4" />}>
@@ -1404,7 +1404,7 @@ const WalletPage: React.FC = () => {
               <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">1</div>
               <span className="font-medium">Select Program</span>
             </div>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2.5" value={issueForm.programId} onChange={(e) => setIssueForm({ ...issueForm, programId: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2.5" value={issueForm.programId} onChange={(e) => setIssueForm({ ...issueForm, programId: e.target.value })}>
               <option value="">Choose program...</option>
               {programs.filter(p => p.status === 'ACTIVE').map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
             </select>
@@ -1452,9 +1452,9 @@ const WalletPage: React.FC = () => {
               <span className="caption">(Optional)</span>
             </div>
             {issueForm.programId ? (
-              <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-3">
+              <div className="border border-edge rounded-lg p-3">
                 <div className="flex items-center gap-2 body-sm mb-2"><GitBranch className="w-4 h-4" />Place in hierarchy for reporting</div>
-                <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm" value={issueForm.hierarchyNodeId || ''} onChange={(e) => setIssueForm({ ...issueForm, hierarchyNodeId: e.target.value })}>
+                <select className="w-full border border-edge-strong rounded-lg px-3 py-2 text-body-sm" value={issueForm.hierarchyNodeId || ''} onChange={(e) => setIssueForm({ ...issueForm, hierarchyNodeId: e.target.value })}>
                   <option value="">No hierarchy (flat)</option>
                   <option value="node-uae">UAE Region</option>
                   <option value="node-dubai">├── Dubai</option>
@@ -1476,23 +1476,23 @@ const WalletPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label block mb-1">Type</label>
-                <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={issueForm.walletType || 'CONSUMER'} onChange={(e) => setIssueForm({ ...issueForm, walletType: e.target.value })}>
+                <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={issueForm.walletType || 'CONSUMER'} onChange={(e) => setIssueForm({ ...issueForm, walletType: e.target.value })}>
                   <option value="CONSUMER">Consumer</option><option value="MERCHANT">Merchant</option><option value="AGENT">Agent</option><option value="CORPORATE">Corporate</option>
                 </select>
               </div>
               <div>
                 <label className="field-label block mb-1">Initial Load</label>
-                <input type="number" className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" placeholder="0.00" value={issueForm.initialLoadAmount || ''} onChange={(e) => setIssueForm({ ...issueForm, initialLoadAmount: e.target.value })} />
+                <input type="number" className="w-full border border-edge-strong rounded-lg px-3 py-2" placeholder="0.00" value={issueForm.initialLoadAmount || ''} onChange={(e) => setIssueForm({ ...issueForm, initialLoadAmount: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label block mb-1">Daily Limit</label>
-                <input type="number" className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" placeholder={selectedProgramForIssue ? `Default: ${selectedProgramForIssue.dailySpendLimit}` : 'Default'} value={issueForm.dailyLimit || ''} onChange={(e) => setIssueForm({ ...issueForm, dailyLimit: e.target.value })} />
+                <input type="number" className="w-full border border-edge-strong rounded-lg px-3 py-2" placeholder={selectedProgramForIssue ? `Default: ${selectedProgramForIssue.dailySpendLimit}` : 'Default'} value={issueForm.dailyLimit || ''} onChange={(e) => setIssueForm({ ...issueForm, dailyLimit: e.target.value })} />
               </div>
               <div>
                 <label className="field-label block mb-1">Monthly Limit</label>
-                <input type="number" className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" placeholder={selectedProgramForIssue ? `Default: ${selectedProgramForIssue.monthlySpendLimit}` : 'Default'} value={issueForm.monthlyLimit || ''} onChange={(e) => setIssueForm({ ...issueForm, monthlyLimit: e.target.value })} />
+                <input type="number" className="w-full border border-edge-strong rounded-lg px-3 py-2" placeholder={selectedProgramForIssue ? `Default: ${selectedProgramForIssue.monthlySpendLimit}` : 'Default'} value={issueForm.monthlyLimit || ''} onChange={(e) => setIssueForm({ ...issueForm, monthlyLimit: e.target.value })} />
               </div>
             </div>
             <Checkbox variant="card" size="sm" checked={issueForm.autoTriggerKyc || false} onChange={(checked) => setIssueForm({ ...issueForm, autoTriggerKyc: checked })} label="Auto-trigger KYC" description="Start KYC if customer has ID" />
@@ -1506,7 +1506,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Input label="Amount *" type="number" placeholder="0.00" value={loadForm.amount || ''} onChange={(e) => setLoadForm({ ...loadForm, amount: e.target.value })} />
           <div><label className="field-label block mb-1">Source</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={loadForm.source} onChange={(e) => setLoadForm({ ...loadForm, source: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={loadForm.source} onChange={(e) => setLoadForm({ ...loadForm, source: e.target.value })}>
               <option value="BANK_TRANSFER">Bank Transfer</option><option value="CARD">Card</option><option value="CASH">Cash</option>
             </select>
           </div>
@@ -1520,7 +1520,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Input label="Amount *" type="number" placeholder="0.00" value={withdrawForm.amount || ''} onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })} />
           <div><label className="field-label block mb-1">Destination</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={withdrawForm.destination} onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={withdrawForm.destination} onChange={(e) => setWithdrawForm({ ...withdrawForm, destination: e.target.value })}>
               <option value="BANK_TRANSFER">Bank Transfer</option><option value="CASH">Cash</option>
             </select>
           </div>
@@ -1544,12 +1544,12 @@ const WalletPage: React.FC = () => {
         footer={<><Button variant="outline" onClick={() => setShowBulkLoadModal(false)}>Cancel</Button><Button onClick={handleBulkLoad} disabled={actionLoading}>{actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Process</Button></>}>
         <div className="space-y-4">
           <div><label className="field-label block mb-1">Program</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={bulkLoadForm.programId} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, programId: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={bulkLoadForm.programId} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, programId: e.target.value })}>
               <option value="">All</option>{programs.map(p => <option key={p.id} value={p.id}>{p.programName}</option>)}
             </select>
           </div>
           <div><label className="field-label block mb-1">Data (CSV) *</label>
-            <textarea className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-32 font-mono text-body-sm" placeholder="walletRef,amount" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
+            <textarea className="w-full border border-edge-strong rounded-lg px-3 py-2 h-32 font-mono text-body-sm" placeholder="walletRef,amount" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
           </div>
         </div>
       </Modal>
@@ -1559,12 +1559,12 @@ const WalletPage: React.FC = () => {
         footer={<><Button variant="outline" onClick={() => setShowKycVerifyModal(false)}>Cancel</Button><Button onClick={handleVerifyKyc} disabled={actionLoading}>{actionLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Verify</Button></>}>
         <div className="space-y-4">
           <div><label className="field-label block mb-1">Method</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={kycVerifyForm.verificationMethod} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, verificationMethod: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={kycVerifyForm.verificationMethod} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, verificationMethod: e.target.value })}>
               <option value="DOCUMENT">Document</option><option value="BIOMETRIC">Biometric</option><option value="MANUAL">Manual</option>
             </select>
           </div>
           <div><label className="field-label block mb-1">Document Type</label>
-            <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" value={kycVerifyForm.documentType} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, documentType: e.target.value })}>
+            <select className="w-full border border-edge-strong rounded-lg px-3 py-2" value={kycVerifyForm.documentType} onChange={(e) => setKycVerifyForm({ ...kycVerifyForm, documentType: e.target.value })}>
               <option value="EMIRATES_ID">Emirates ID</option><option value="PASSPORT">Passport</option>
             </select>
           </div>
@@ -1631,7 +1631,7 @@ const WalletPage: React.FC = () => {
                 <h4 className="font-medium mb-3">Recent Transactions</h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {walletDetail.recentTransactions.map(txn => (
-                    <div key={txn.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-md">
+                    <div key={txn.id} className="flex items-center justify-between p-2 bg-surface-page rounded-md">
                       <div className="flex items-center gap-2">
                         {txn.type.includes('CREDIT') || txn.type.includes('TOPUP') ? <ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> : <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" />}
                         <div><p className="text-body-sm">{txn.description || txn.type}</p><p className="caption">{new Date(txn.transactionDate).toLocaleString()}</p></div>

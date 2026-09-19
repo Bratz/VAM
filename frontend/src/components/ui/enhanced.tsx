@@ -74,14 +74,14 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         className={cn(
-          'relative bg-white rounded-lg shadow-xl w-full mx-4 flex flex-col dark:bg-primary-900',
+          'relative bg-surface-card rounded-lg shadow-xl w-full mx-4 flex flex-col',
           'animate-scale-in max-h-[90vh]',
           sizes[size]
         )}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-start justify-between p-6 border-b border-neutral-200 shrink-0 dark:border-primary-800">
+          <div className="flex items-start justify-between p-6 border-b border-edge shrink-0">
             <div>
               {title && <h2 className="section-title">{title}</h2>}
               {subtitle && <p className="body-sm mt-1">{subtitle}</p>}
@@ -104,7 +104,7 @@ export const Modal: React.FC<ModalProps> = ({
         
         {/* Footer - Fixed at bottom */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg shrink-0 dark:border-primary-800 dark:bg-primary-950">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-edge bg-surface-page rounded-b-lg shrink-0">
             {footer}
           </div>
         )}
@@ -142,19 +142,19 @@ export const Tabs: React.FC<TabsProps> = ({
 }) => {
   const variants = {
     default: {
-      container: 'bg-neutral-100 p-1 rounded-lg dark:bg-primary-800',
+      container: 'bg-surface-muted p-1 rounded-lg',
       tab: 'rounded-lg',
-      active: 'bg-white shadow-sm text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
+      active: 'bg-surface-card shadow-sm text-primary-900 dark:text-neutral-50',
       inactive: 'text-neutral-600 hover:text-primary-900 dark:hover:text-neutral-50 dark:text-neutral-300',
     },
     pills: {
       container: 'gap-2',
       tab: 'rounded-full border',
       active: 'bg-primary-900 text-white border-primary-900',
-      inactive: 'text-neutral-600 border-neutral-300 hover:border-primary-300 dark:text-neutral-300 dark:border-primary-700',
+      inactive: 'text-neutral-600 border-edge-strong hover:border-primary-300 dark:text-neutral-300',
     },
     underline: {
-      container: 'border-b border-neutral-200 dark:border-primary-800',
+      container: 'border-b border-edge',
       tab: 'border-b-2 -mb-px',
       active: 'border-primary-900 text-primary-900 dark:text-neutral-50',
       inactive: 'border-transparent text-neutral-500 hover:text-primary-900 dark:hover:text-neutral-50 hover:border-neutral-300 dark:text-neutral-400',
@@ -252,7 +252,7 @@ export const Stepper: React.FC<StepperProps> = ({
                 size === 'sm' ? 'w-8 h-8' : 'w-10 h-10',
                 isCompleted && 'bg-success-500 border-success-500 text-white',
                 isActive && 'bg-primary-900 border-primary-900 text-white',
-                !isCompleted && !isActive && 'border-neutral-300 text-neutral-400 dark:border-primary-700'
+                !isCompleted && !isActive && 'border-edge-strong text-neutral-400'
               )}>
                 {isCompleted ? (
                   <Check className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />

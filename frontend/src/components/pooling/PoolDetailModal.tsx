@@ -185,7 +185,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           <select
             value={removeTargetId}
             onChange={(e) => setRemoveTargetId(e.target.value)}
-            className="flex-1 h-9 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-body-sm px-2 text-neutral-700 dark:text-neutral-200"
+            className="flex-1 h-9 rounded-lg border border-edge bg-surface-card text-body-sm px-2 text-neutral-700 dark:text-neutral-200"
           >
             <option value="">Select a member to remove…</option>
             {pool.members.map((member) => (

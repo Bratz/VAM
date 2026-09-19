@@ -38,7 +38,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ filter, setFilter, sta
             'px-3 py-1 rounded-full text-caption font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
             filter === key
               ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-white dark:border-accent-500'
-              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-800 dark:hover:bg-primary-800',
+              : 'bg-surface-card text-neutral-700 border-edge hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
           )}
         >
           {label}{typeof count === 'number' ? ` · ${count}` : ''}

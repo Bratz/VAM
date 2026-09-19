@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- native input primitive: the one place raw checkbox/radio inputs are allowed */
 import React from 'react';
 import { Check, Minus } from 'lucide-react';
 import { cn } from '../../utils';
@@ -38,7 +39,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           htmlFor={inputId}
           className={cn(
             variant === 'card'
-              ? 'flex w-full items-start gap-3 rounded-lg border border-neutral-200 bg-white p-3 transition-colors dark:border-primary-800 dark:bg-primary-900 has-[:checked]:border-primary-300 has-[:checked]:bg-primary-50 dark:has-[:checked]:border-primary-600 dark:has-[:checked]:bg-primary-800/40'
+              ? 'flex w-full items-start gap-3 rounded-lg border border-edge bg-surface-card p-3 transition-colors has-[:checked]:border-primary-300 has-[:checked]:bg-primary-50 dark:has-[:checked]:border-primary-600 dark:has-[:checked]:bg-primary-800/40'
               : 'inline-flex items-start gap-3',
             disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
           )}
@@ -59,7 +60,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             <span
               aria-hidden="true"
               className={cn(
-                'flex items-center justify-center rounded-sm border border-neutral-300 bg-white text-white transition-colors dark:border-primary-700 dark:bg-primary-900',
+                'flex items-center justify-center rounded-sm border border-edge-strong bg-surface-card text-white transition-colors',
                 'peer-checked:border-primary-900 peer-checked:bg-primary-900 dark:peer-checked:border-accent-500 dark:peer-checked:bg-accent-500',
                 'peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-primary-500 dark:peer-focus-visible:ring-accent-400',
                 '[&>svg]:opacity-0 peer-checked:[&>svg]:opacity-100',

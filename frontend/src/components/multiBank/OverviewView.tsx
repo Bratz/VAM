@@ -304,7 +304,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   // avoid a card-in-card visual).
   const DistributionWrap: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     compact
-      ? <div className="rounded-lg border border-neutral-200 dark:border-primary-800 p-4">{children}</div>
+      ? <div className="rounded-lg border border-edge p-4">{children}</div>
       : <Card padding="sm">{children}</Card>;
 
   // In transit (pending sweeps) — bankBalanceEffective = bankAvailableBalance
@@ -381,7 +381,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                     <div
                       role="tablist"
                       aria-label="Trend period"
-                      className="inline-flex border border-neutral-300 dark:border-primary-700 rounded-lg overflow-hidden"
+                      className="inline-flex border border-edge-strong rounded-lg overflow-hidden"
                     >
                       {PERIODS.map(({ key, label }) => (
                         <button
@@ -449,7 +449,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           )}
         </div>
         <div
-          className="flex h-3 rounded-md overflow-hidden border border-neutral-200 dark:border-primary-800"
+          className="flex h-3 rounded-md overflow-hidden border border-edge"
           role="img"
           aria-label="Liquidity distribution by bank"
         >
@@ -592,7 +592,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             return compact ? (
               <div
                 key={c.currencyCode}
-                className="rounded-lg border border-neutral-200 dark:border-primary-800 p-4"
+                className="rounded-lg border border-edge p-4"
               >
                 {inner}
               </div>
@@ -629,7 +629,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               'px-3 py-1 rounded-full text-caption font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
               filter === key
                 ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-white dark:border-accent-500'
-                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-800 dark:hover:bg-primary-800',
+                : 'bg-surface-card text-neutral-700 border-edge hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
             )}
           >
             {label}{typeof count === 'number' ? ` · ${count}` : ''}

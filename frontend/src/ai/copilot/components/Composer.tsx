@@ -46,7 +46,7 @@ export const Composer: React.FC = () => {
     <form
       className={[
         'flex items-end gap-2 p-3',
-        'border-t border-neutral-200 dark:border-primary-800',
+        'border-t border-edge',
         'bg-white/95 dark:bg-primary-950/80',
         'backdrop-blur-sm',
       ].join(' ')}

@@ -8,7 +8,7 @@ import { Loader2, Check, ChevronDown, XCircle } from 'lucide-react';
 export { StatusIconBadge } from './StatusIconBadge';
 
 // Slide-in side drawer. Context-preserving counterpart to <Modal> (same
-// shadow-strong / scrim chrome). Used for detail panels and tools that
+// shadow-xl / scrim chrome). Used for detail panels and tools that
 // should keep the underlying table/list in view.
 export { Drawer } from './Drawer';
 export type { DrawerProps } from './Drawer';
@@ -87,7 +87,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         'focus-visible:ring-primary-500'
       ),
       outline: cn(
-        'border-2 border-primary-200 bg-white text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
+        'border-2 border-primary-200 bg-surface-card text-primary-900 dark:text-neutral-50',
         'hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800/50 hover:shadow-md',
         'active:bg-primary-100',
         'focus-visible:ring-primary-500'
@@ -304,7 +304,7 @@ export const Card: React.FC<CardProps> = ({
         // Background — dark variant flips to elevated navy panel
         gradient
           ? 'bg-gradient-to-br from-white via-white to-neutral-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-950/60'
-          : 'bg-white dark:bg-primary-900',
+          : 'bg-surface-card',
         // Shadow
         'shadow-sm dark:shadow-none',
         // Transitions
@@ -419,12 +419,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             disabled={disabled}
             className={cn(
               // Base styles
-              'w-full rounded-lg border bg-white dark:bg-primary-900',
+              'w-full rounded-lg border bg-surface-card',
               'text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
               // Transitions
               'transition-all duration-200',
               // Default border
-              'border-neutral-300 dark:border-primary-700',
+              'border-edge-strong',
               // Hover state
               'hover:border-neutral-400',
               // Focus state
@@ -434,7 +434,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               // Success state
               success && 'border-success-500 focus:border-success-500 focus:ring-success-500/20',
               // Disabled state
-              disabled && 'bg-neutral-100 text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:bg-primary-800 dark:text-neutral-400',
+              disabled && 'bg-surface-muted text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:text-neutral-400',
               // Size
               sizeStyles[inputSize],
               // Icon padding
@@ -523,15 +523,15 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           disabled={disabled}
           className={cn(
             // Base (mirrors Input)
-            'w-full rounded-lg border bg-white dark:bg-primary-900',
+            'w-full rounded-lg border bg-surface-card',
             'text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
             'transition-all duration-200',
-            'border-neutral-300 dark:border-primary-700',
+            'border-edge-strong',
             'hover:border-neutral-400',
             'focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
             error && 'border-error-500 focus:border-error-500 focus:ring-error-500/20',
             success && 'border-success-500 focus:border-success-500 focus:ring-success-500/20',
-            disabled && 'bg-neutral-100 text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:bg-primary-800 dark:text-neutral-400',
+            disabled && 'bg-surface-muted text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:text-neutral-400',
             sizeStyles[textareaSize],
             className,
           )}
@@ -603,7 +603,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             disabled={disabled}
             className={cn(
               // Base styles
-              'w-full rounded-lg border bg-white appearance-none cursor-pointer dark:bg-primary-900',
+              'w-full rounded-lg border bg-surface-card appearance-none cursor-pointer',
               'text-primary-900 dark:text-neutral-50',
               // Dark mode surface — flips to navy panel with light text and softer border.
               // Note: native <option> elements still render with the OS theme; that's a browser limitation.
@@ -611,7 +611,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               // Transitions
               'transition-all duration-200',
               // Default border
-              'border-neutral-300 dark:border-primary-700',
+              'border-edge-strong',
               // Hover state
               'hover:border-neutral-400 dark:hover:border-primary-600',
               // Focus state
@@ -620,7 +620,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               // Error state
               error && 'border-error-500 focus:border-error-500 focus:ring-error-500/20',
               // Disabled state
-              disabled && 'bg-neutral-100 text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:bg-primary-800 dark:text-neutral-400',
+              disabled && 'bg-surface-muted text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:text-neutral-400',
               // Size
               sizeStyles[selectSize],
               className
@@ -747,7 +747,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   )}>
     {icon && (
       <div className={cn(
-        'rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-400 mb-5 dark:bg-primary-800',
+        'rounded-lg bg-surface-muted flex items-center justify-center text-neutral-400 mb-5',
         compact ? 'w-14 h-14' : 'w-20 h-20'
       )}>
         {icon}

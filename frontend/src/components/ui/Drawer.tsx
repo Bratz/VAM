@@ -14,10 +14,10 @@ import { cn } from '../../utils';
  * Backdrop click + Escape close. Body scroll is locked while open.
  * Right-aligned (slides in from the right edge).
  *
- * Visual chrome is deliberately aligned with <Modal>: same `shadow-strong`
+ * Visual chrome is deliberately aligned with <Modal>: same `shadow-xl`
  * elevation token and `bg-primary-950/60 backdrop-blur-sm` scrim, so the two
  * overlay primitives feel like one system. (`shadow-modal` is NOT a
- * configured token — `shadow-strong` is the design-system overlay elevation.)
+ * configured token — `shadow-xl` is the design-system overlay elevation.)
  */
 export interface DrawerProps {
   isOpen: boolean;
@@ -60,13 +60,13 @@ export const Drawer: React.FC<DrawerProps> = ({
       />
       <div
         className={cn(
-          'relative bg-white dark:bg-primary-900 w-full h-full flex flex-col',
+          'relative bg-surface-card w-full h-full flex flex-col',
           'shadow-xl animate-slide-in-right',
           sizes[size],
         )}
       >
         {/* Header always renders so the close affordance is always present. */}
-        <div className="flex items-start justify-between p-6 border-b border-neutral-200 dark:border-primary-800 shrink-0">
+        <div className="flex items-start justify-between p-6 border-b border-edge shrink-0">
           <div className="min-w-0">
             {title && (
               <h2 className="section-title">{title}</h2>
@@ -88,7 +88,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           {children}
         </div>
         {footer && (
-          <div className="border-t border-neutral-200 dark:border-primary-800 p-4 shrink-0">
+          <div className="border-t border-edge p-4 shrink-0">
             {footer}
           </div>
         )}

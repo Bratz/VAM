@@ -275,7 +275,7 @@ export const CreateRuleModal: React.FC<CreateRuleModalProps> = ({ isOpen, onClos
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between mt-8 pt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-between mt-8 pt-6 border-t border-edge">
         <Button variant="outline" onClick={() => step > 1 ? setStep(step - 1) : onClose()}>
           {step > 1 ? 'Back' : 'Cancel'}
         </Button>

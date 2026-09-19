@@ -317,7 +317,7 @@ const accountCategoryConfig: Record<AccountCategory, {
   DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   SETTLEMENT: { label: 'Settlement', icon: Banknote, tone: 'info', color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   EXCEPTION: { label: 'Exception', icon: AlertTriangle, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  SUSPENSE: { label: 'Suspense', icon: Clock, tone: 'neutral', color: 'text-neutral-600 dark:text-neutral-300', bgColor: 'bg-neutral-50 dark:bg-primary-950' },
+  SUSPENSE: { label: 'Suspense', icon: Clock, tone: 'neutral', color: 'text-neutral-600 dark:text-neutral-300', bgColor: 'bg-surface-page' },
   ROOT: { label: 'Root', icon: Layers, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
   AGGREGATION: { label: 'Aggregation', icon: Layers, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
   PHYSICAL_MIRROR: { label: 'Shadow', icon: Building2, tone: 'info', color: 'text-cyan-600 dark:text-cyan-300', bgColor: 'bg-cyan-50 dark:bg-cyan-500/10' },
@@ -537,7 +537,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
           {showActions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20 animate-fade-in">
                 <button
                   onClick={() => { onView(account); setShowActions(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
@@ -550,7 +550,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
                 >
                   <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
                 </button>
-                <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
+                <hr className="my-1 border-edge-subtle" />
                 {account.status === 'ACTIVE' && (
                   <>
                     <button
@@ -624,7 +624,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
             </Badge>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+          <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div>
               <p className="caption">Balance</p>
               <p className={cn(
@@ -804,7 +804,7 @@ const TreeView: React.FC<TreeViewProps> = ({ accounts, loading, onView }) => {
   }
 
   return (
-    <div className="border border-neutral-200 rounded-lg divide-y divide-neutral-100 dark:border-primary-800 dark:divide-primary-800/60">
+    <div className="border border-edge rounded-lg divide-y divide-edge-subtle">
       {treeData.map(account => (
         <TreeNode key={account.id} account={account} level={0} expanded={expanded} onToggle={toggleExpand} onView={onView} />
       ))}
@@ -939,7 +939,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
     >
     <div className="flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex border-b border-neutral-200 dark:border-primary-800">
+      <div className="flex border-b border-edge">
         {[
           { id: 'overview' as DetailTab, label: 'Overview', icon: Eye },
           { id: 'statements' as DetailTab, label: 'Statements', icon: FileText },
@@ -968,7 +968,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
           <div className="space-y-6">
             {/* Status & Balance */}
             <div className="grid grid-cols-2 gap-4">
-              <Card className="bg-neutral-50 dark:bg-primary-950">
+              <Card className="bg-surface-page">
                 <p className="caption mb-1">Status</p>
                 <Badge variant={statusCfg?.variant as any} size="md">
                   {statusCfg?.label}
@@ -979,7 +979,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                   </p>
                 )}
               </Card>
-              <Card className="bg-neutral-50 dark:bg-primary-950">
+              <Card className="bg-surface-page">
                 <p className="caption mb-1">Category</p>
                 <div className="flex items-center gap-2">
                   <CategoryIcon className={cn("w-4 h-4", categoryConfig.color)} />
@@ -1030,7 +1030,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               {/* Show aggregated balance details for hierarchy nodes */}
               {(account.accountCategory === 'ROOT' || account.accountCategory === 'AGGREGATION') &&
                account.aggregatedBalanceBase !== undefined && account.baseCurrency && (
-                <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                <div className="mt-3 pt-3 border-t border-edge-subtle">
                   <p className="caption">Aggregated (Base Currency)</p>
                   <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">
                     {formatCurrency(account.aggregatedBalanceBase, account.baseCurrency)}
@@ -1039,7 +1039,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               )}
               {account.accountCategory === 'CURRENCY_MIRROR' &&
                account.balanceInBase !== undefined && account.baseCurrency && (
-                <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                <div className="mt-3 pt-3 border-t border-edge-subtle">
                   <p className="caption">Balance in Base Currency</p>
                   <p className="text-body-sm font-semibold text-cat-5 dark:text-cat-5-fg">
                     {formatCurrency(account.balanceInBase, account.baseCurrency)}
@@ -1138,7 +1138,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         {activeTab === 'statements' && (
           <div className="space-y-4">
             {/* Date Range */}
-            <Card className="bg-neutral-50 dark:bg-primary-950">
+            <Card className="bg-surface-page">
               <div className="flex flex-wrap items-end gap-4">
                 <div>
                   <label className="block label-cased mb-1">From</label>
@@ -1176,7 +1176,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             {statement && (
               <>
                 <div className="grid grid-cols-4 gap-3">
-                  <Card className="bg-neutral-50 p-3 dark:bg-primary-950">
+                  <Card className="bg-surface-page p-3">
                     <p className="caption">Opening</p>
                     <p className="font-bold text-primary-900 dark:text-neutral-50">{formatCurrency(statement.openingBalance, statement.currencyCode)}</p>
                   </Card>
@@ -1198,7 +1198,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 <Card padding="none">
                   <div className="overflow-x-auto max-h-64">
                     <table className="w-full text-body-sm">
-                      <thead className="bg-neutral-50 sticky top-0 dark:bg-primary-950">
+                      <thead className="bg-surface-page sticky top-0">
                         <tr>
                           <th className="text-left p-2 font-medium text-neutral-600 dark:text-neutral-300">Date</th>
                           <th className="text-left p-2 font-medium text-neutral-600 dark:text-neutral-300">Description</th>
@@ -1207,7 +1207,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                           <th className="text-right p-2 font-medium text-neutral-600 dark:text-neutral-300">Balance</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                      <tbody className="divide-y divide-edge-subtle">
                         {statement.transactions?.map((tx, idx) => {
                           const isDebitTxn = isDebit(tx.movementType);
                           const isCreditTxn = isCredit(tx.movementType);
@@ -1313,7 +1313,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               value={statusReason}
               onChange={(e) => setStatusReason(e.target.value)}
               placeholder="Enter reason..."
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm resize-none h-24 dark:border-primary-700"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm resize-none h-24"
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setStatusReasonModal(null)}>Cancel</Button>
@@ -1348,7 +1348,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
   if (!isOpen) return null;
 
   return (
-    <div className="border-b border-neutral-200 p-4 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+    <div className="border-b border-edge p-4 bg-surface-page">
       <div className="flex items-center justify-between mb-4">
         <h3 className="body-strong font-semibold">Filters</h3>
         <button onClick={onClose}><X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" /></button>
@@ -1357,7 +1357,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
         <div>
           <label className="field-label block mb-1.5">Status</label>
           <select 
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" 
             value={filters.status} 
             onChange={(e) => onFilterChange({ ...filters, status: e.target.value })}
           >
@@ -1370,7 +1370,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
         <div>
           <label className="field-label block mb-1.5">Account Type</label>
           <select 
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" 
             value={filters.accountCategory} 
             onChange={(e) => onFilterChange({ ...filters, accountCategory: e.target.value })}
           >
@@ -1651,7 +1651,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
       {/* Main Content */}
       <Card padding="none">
         {/* Toolbar */}
-        <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="p-4 border-b border-edge">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -1664,12 +1664,12 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 dark:bg-primary-800">
+            <div className="flex items-center gap-1 bg-surface-muted rounded-lg p-1">
               <button
                 onClick={() => setViewMode('table')}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'table' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
+                  viewMode === 'table' ? "bg-surface-card text-primary-600 shadow-sm dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
                 )}
               >
                 <CreditCard className="w-4 h-4" /> Table
@@ -1678,7 +1678,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 onClick={() => setViewMode('tree')}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'tree' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
+                  viewMode === 'tree' ? "bg-surface-card text-primary-600 shadow-sm dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
                 )}
               >
                 <FolderTree className="w-4 h-4" /> Tree
@@ -1742,7 +1742,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                         <th className="data-table-header-cell w-16">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                    <tbody className="divide-y divide-edge-subtle">
                       {accounts.map((a) => (
                         <AccountRow
                           key={a.id}
@@ -1769,7 +1769,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 </div>
 
                 {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-neutral-200 dark:border-primary-800">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-edge">
                   <p className="body-sm order-2 sm:order-1">
                     Showing{' '}
                     <span className="font-medium text-primary-900 dark:text-neutral-50">
@@ -1860,7 +1860,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
       </Card>
 
       {/* Legend */}
-      <Card className="bg-neutral-50 dark:bg-primary-950">
+      <Card className="bg-surface-page">
         <div className="flex flex-wrap items-center gap-4 text-caption">
           <span className="font-medium text-neutral-600 dark:text-neutral-300">Account Types:</span>
           {(['TRANSACTION', 'COLLECTION', 'DISBURSEMENT', 'CURRENCY_MIRROR', 'INTERCOMPANY'] as AccountCategory[]).map(cat => {

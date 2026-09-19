@@ -157,12 +157,12 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                   'w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left',
                   isSelected
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-500'
-                    : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                    : 'border-edge hover:border-primary-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                 )}
               >
                 <div className={cn(
                   'w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0',
-                  isSelected ? 'border-primary-500 bg-primary-500' : 'border-neutral-300 dark:border-primary-700'
+                  isSelected ? 'border-primary-500 bg-primary-500' : 'border-edge-strong'
                 )}>
                   {isSelected && <Check className="w-3 h-3 text-white" />}
                 </div>

@@ -239,11 +239,11 @@ const EscrowPage: React.FC = () => {
 
       {/* Contracts Table */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="p-4 border-b border-edge">
           <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
         </div>
 
-        <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="p-4 border-b border-edge">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <Input

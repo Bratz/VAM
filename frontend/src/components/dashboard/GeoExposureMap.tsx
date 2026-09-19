@@ -140,7 +140,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
             there's actually something to zoom to; with zero colored
             countries there's nothing for "fit" to mean. */}
         {hasData && (
-          <div className="absolute top-2 right-2 inline-flex rounded-sm border border-neutral-200 dark:border-primary-800 overflow-hidden bg-white/90 dark:bg-primary-950/90 backdrop-blur-sm">
+          <div className="absolute top-2 right-2 inline-flex rounded-sm border border-edge overflow-hidden bg-white/90 dark:bg-primary-950/90 backdrop-blur-sm">
             <button
               type="button"
               onClick={() => setZoomToFit(false)}

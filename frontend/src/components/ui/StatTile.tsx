@@ -91,10 +91,10 @@ export const StatTile: React.FC<StatTileProps> = ({
   const baseClass = cn(
     // shadow-sm aliases to --shadow-rest; dark-mode shadows were retired in
     // Phase 8 so no `dark:shadow-none` override is needed.
-    'bg-white dark:bg-primary-900 rounded-lg p-5 shadow-sm border transition-colors',
+    'bg-surface-card rounded-lg p-5 shadow-sm border transition-colors',
     active
       ? 'border-primary-400 dark:border-accent-500/60 ring-2 ring-primary-200 dark:ring-accent-500/30'
-      : 'border-neutral-200 dark:border-primary-800',
+      : 'border-edge',
     onClick && !active && 'hover:border-primary-300 dark:hover:border-accent-500/40 cursor-pointer',
     delay && 'animate-fade-in',
   );

@@ -538,7 +538,7 @@ const InterestAccrualReportsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4">
                 <h4 className="label mb-3">Entity Information</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Entity</span><span className="font-medium">{selectedAccrual.entityName || '-'}</span></div>
@@ -546,7 +546,7 @@ const InterestAccrualReportsPage: React.FC = () => {
                   {selectedAccrual.loanReference && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Loan Ref</span><span className="font-mono">{selectedAccrual.loanReference}</span></div>}
                 </div>
               </div>
-              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4">
                 <h4 className="label mb-3">Period Details</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Period Start</span><span className="font-medium">{formatDate(selectedAccrual.periodStart)}</span></div>

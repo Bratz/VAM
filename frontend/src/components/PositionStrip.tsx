@@ -33,7 +33,7 @@ const toneClass: Record<NonNullable<PositionStripCell['tone']>, string> = {
  * vertical (between cells) to horizontal (between stacked rows).
  */
 export const PositionStrip: React.FC<{ cells: PositionStripCell[] }> = ({ cells }) => (
-  <div className="grid grid-cols-2 lg:flex border-b border-neutral-200 dark:border-primary-800">
+  <div className="grid grid-cols-2 lg:flex border-b border-edge">
     {cells.map((cell, i) => (
       <div
         key={cell.label}
@@ -43,7 +43,7 @@ export const PositionStrip: React.FC<{ cells: PositionStripCell[] }> = ({ cells 
           // Vertical divider between lg-row cells; horizontal between
           // stacked grid rows below lg (every cell from index 2 on stacks
           // onto a new row in the 2-col grid, so border-t there).
-          i > 0 && 'border-l border-neutral-200 dark:border-primary-800',
+          i > 0 && 'border-l border-edge',
           i >= 2 && 'lg:border-t-0 border-t'
         )}
       >

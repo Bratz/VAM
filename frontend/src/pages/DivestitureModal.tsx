@@ -33,7 +33,7 @@ interface MovePolicyOption {
 
 const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 'info' | 'orange'; children: React.ReactNode }> = ({ variant = 'default', children }) => {
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200', success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
+    default: 'bg-surface-muted text-neutral-700 dark:text-neutral-200', success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300', error: 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300',
     info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300', orange: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
   };
@@ -77,7 +77,7 @@ const AggregationNode: React.FC<AggregationNodeProps> = ({ node, selectedId, onS
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-5" />}
-        <div className={cn('w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', isSelected ? 'border-warning-600 bg-warning-600' : 'border-neutral-300 dark:border-primary-700')}>
+        <div className={cn('w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0', isSelected ? 'border-warning-600 bg-warning-600' : 'border-edge-strong')}>
           {isSelected && <Check className="w-3 h-3 text-white" />}
         </div>
         <Folder className="w-4 h-4 text-info-600 dark:text-info-300" />
@@ -209,7 +209,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                   </div>
                 </div>
 
-                <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800">
+                <div className="p-4 bg-surface-page rounded-lg border border-edge">
                   <p className="field-label mb-2">Source Corporate</p>
                   <div className="flex items-center gap-3">
                     <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
@@ -220,12 +220,12 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                 <div>
                   <label className="field-label block mb-2">Select Aggregation to Divest *</label>
                   {aggregations.length === 0 ? (
-                    <div className="text-center py-8 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                    <div className="text-center py-8 bg-surface-page rounded-lg">
                       <Folder className="w-12 h-12 text-neutral-300 dark:text-neutral-400 mx-auto mb-3" />
                       <p className="text-neutral-500 dark:text-neutral-400">No aggregations available for divestiture</p>
                     </div>
                   ) : (
-                    <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-3 max-h-48 overflow-y-auto">
+                    <div className="border border-edge rounded-lg p-3 max-h-48 overflow-y-auto">
                       {aggregations.map((agg) => (
                         <AggregationNode key={agg.id} node={agg} selectedId={selectedAggregation?.id || null} onSelect={setSelectedAggregation} expandedIds={expandedIds} onToggle={handleToggle} />
                       ))}
@@ -237,17 +237,17 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                   <>
                     <div>
                       <label className="field-label block mb-2">New Corporate Name *</label>
-                      <input type="text" value={newCorporateName} onChange={(e) => setNewCorporateName(e.target.value)} placeholder="e.g., Divested Entity Holdings" className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-warning-500" />
+                      <input type="text" value={newCorporateName} onChange={(e) => setNewCorporateName(e.target.value)} placeholder="e.g., Divested Entity Holdings" className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-warning-500" />
                     </div>
 
                     <div>
                       <label className="field-label block mb-2">Corporate Code (Optional)</label>
-                      <input type="text" value={newCorporateCode} onChange={(e) => setNewCorporateCode(e.target.value.toUpperCase())} placeholder="e.g., DIV-2024" className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-warning-500" />
+                      <input type="text" value={newCorporateCode} onChange={(e) => setNewCorporateCode(e.target.value.toUpperCase())} placeholder="e.g., DIV-2024" className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-warning-500" />
                     </div>
 
                     <div>
                       <label className="field-label block mb-2">Limit Transfer Policy</label>
-                      <select value={selectedPolicy} onChange={(e) => setSelectedPolicy(e.target.value as MoveLimitPolicy)} className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-warning-500">
+                      <select value={selectedPolicy} onChange={(e) => setSelectedPolicy(e.target.value as MoveLimitPolicy)} className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-warning-500">
                         {policies.map((policy) => (<option key={policy.policy} value={policy.policy}>{policy.name}</option>))}
                       </select>
                       <p className="caption mt-1">{policies.find((p) => p.policy === selectedPolicy)?.description}</p>
@@ -257,14 +257,14 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                     <div className="p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
                       <p className="text-body-sm font-medium text-warning-700 dark:text-warning-300 mb-3">Post-Divestiture Structure:</p>
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-white dark:bg-primary-900 rounded-lg">
+                        <div className="p-3 bg-surface-card rounded-lg">
                           <p className="label-cased mb-2">Before</p>
                           <div className="font-mono text-caption space-y-1">
                             <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-primary-700 dark:text-neutral-200" /><span className="text-primary-700 dark:text-neutral-200">Parent Corporate</span></div>
                             <div className="ml-4 flex items-center gap-1 text-info-600 dark:text-info-300">└─ <Folder className="w-3 h-3" /> {selectedAggregation.name}</div>
                           </div>
                         </div>
-                        <div className="p-3 bg-white dark:bg-primary-900 rounded-lg">
+                        <div className="p-3 bg-surface-card rounded-lg">
                           <p className="label-cased mb-2">After</p>
                           <div className="font-mono text-caption space-y-1">
                             <div className="flex items-center gap-1"><Globe className="w-3 h-3 text-warning-700 dark:text-warning-300" /><span className="text-warning-700 dark:text-warning-300 font-medium">{newCorporateName || '[New Corp]'}</span><Badge variant="success">New</Badge></div>
@@ -297,7 +297,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                       </div>
                     </div>
 
-                    <Checkbox size="sm" label="I confirm this divestiture has been approved and all requirements have been met." checked={confirmApproval} onChange={setConfirmApproval} className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
+                    <Checkbox size="sm" label="I confirm this divestiture has been approved and all requirements have been met." checked={confirmApproval} onChange={setConfirmApproval} className="bg-surface-card border border-edge rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
@@ -311,7 +311,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950 flex justify-between">
+          <div className="px-6 py-4 border-t border-edge bg-surface-page flex justify-between">
             <button onClick={onClose} className="px-4 py-2 field-label hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg">Cancel</button>
             <button onClick={handleSubmit} disabled={!canSubmit || submitting} className={cn('px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2', canSubmit && !submitting ? 'bg-warning-600 text-white hover:bg-warning-700' : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed')}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}Execute Divestiture

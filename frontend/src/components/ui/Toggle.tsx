@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- native input primitive: the one place raw checkbox/radio inputs are allowed */
 import React from 'react';
 import { cn } from '../../utils';
 

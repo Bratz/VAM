@@ -173,7 +173,7 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({ isOpen, onClose, r
         )}
       </div>
 
-      <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-edge">
         <Button variant="outline" onClick={onClose}>Cancel</Button>
         <Button
           onClick={handleSubmit}

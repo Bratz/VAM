@@ -363,7 +363,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={cycle.cycleName} size="xl">
       {/* Premium Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-neutral-200 dark:border-primary-800">
+      <div className="flex gap-1 mb-6 border-b border-edge">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -380,7 +380,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             {tab.count !== undefined && (
               <span className={cn(
                 'px-1.5 py-0.5 text-caption rounded-full font-medium',
-                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
               )}>{tab.count}</span>
             )}
           </button>
@@ -395,7 +395,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             'p-4 rounded-lg flex items-center justify-between',
             cycle.status === 'SETTLED' ? 'bg-success-50 dark:bg-success-500/10' : 
             cycle.status === 'APPROVED' ? 'bg-info-50 dark:bg-info-500/10' :
-            cycle.status === 'PENDING_APPROVAL' ? 'bg-warning-50 dark:bg-warning-500/10' : 'bg-neutral-50 dark:bg-primary-950'
+            cycle.status === 'PENDING_APPROVAL' ? 'bg-warning-50 dark:bg-warning-500/10' : 'bg-surface-page'
           )}>
             <div className="flex items-center gap-3">
               <GitMerge className="w-6 h-6 text-primary-600 dark:text-primary-200" />
@@ -507,7 +507,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
           </div>
 
           {entries.length === 0 ? (
-            <div className="text-center py-12 bg-neutral-50 rounded-lg dark:bg-primary-950">
+            <div className="text-center py-12 bg-surface-page rounded-lg">
               <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-4 dark:bg-primary-800" />
               <h4 className="body-lg mb-1">No entries yet</h4>
               <p className="caption mb-4">
@@ -706,7 +706,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
   canPopulate = false, canApprove = false, canSettle = false
 }) => {
   const statusColors: Record<string, string> = {
-    DRAFT: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200',
+    DRAFT: 'bg-surface-muted text-neutral-700 dark:text-neutral-200',
     OPEN: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300',
     CALCULATING: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
     PENDING_APPROVAL: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
@@ -744,7 +744,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
+          <div className="bg-surface-page rounded-lg p-3">
             <p className="label">Gross</p>
             <p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">
               <TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />
@@ -789,7 +789,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+        <div className="flex gap-2 pt-3 border-t border-edge-subtle">
           {/* DRAFT: Show Populate button */}
           {cycle.status === 'DRAFT' && canPopulate && (
             <Button size="sm" variant="outline" onClick={onPopulate} disabled={isProcessing} className="flex-1">
@@ -1018,7 +1018,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800"
+          className="text-body-sm border border-edge rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300"
         >
           <option value="all">All Cycles</option>
           <option value="DRAFT">Draft</option>

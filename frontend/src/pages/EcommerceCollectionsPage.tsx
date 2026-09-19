@@ -80,7 +80,7 @@ const EcommerceCollectionsPage: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <Input className="pl-9" placeholder="Search by reference or merchant..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <select className="border border-neutral-200 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select className="border border-edge rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="ALL">All Status</option>
             <option value="COMPLETED">Completed</option>
             <option value="PENDING">Pending</option>

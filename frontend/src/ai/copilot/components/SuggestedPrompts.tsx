@@ -90,7 +90,7 @@ export const SuggestedPrompts: React.FC = () => {
       {/* Honest framing for the stub: this router is regex/intent-matching over
           a fixed prompt set, not a real model. Text-only per product decision —
           no button, since wiring an actual MCP connection is a separate task. */}
-      <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-dashed border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-900/30 px-3 py-2.5">
+      <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-dashed border-edge bg-neutral-50 dark:bg-primary-900/30 px-3 py-2.5">
         <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-accent-500 dark:text-accent-300" />
         <p className="text-caption text-neutral-500 dark:text-neutral-400 leading-relaxed">
           This is a lightweight intent router, not a full model — it only understands the prompts above.

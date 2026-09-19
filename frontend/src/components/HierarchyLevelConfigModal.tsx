@@ -136,7 +136,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
   return (
     <div className={cn(
       'border rounded-lg transition-all',
-      isExpanded ? 'border-primary-300 bg-primary-50/50 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800'
+      isExpanded ? 'border-primary-300 bg-primary-50/50 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300'
     )}>
       {/* Header */}
       <div
@@ -180,7 +180,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-neutral-200 space-y-4 dark:border-primary-800">
+        <div className="px-4 pb-4 pt-2 border-t border-edge space-y-4">
           {/* Level Name & Dimension Type */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -243,7 +243,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
               {(level.allowedValues || []).map((value) => (
                 <span
                   key={value}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-neutral-200 rounded-md text-body-sm dark:bg-primary-900 dark:border-primary-800"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-surface-card border border-edge rounded-md text-body-sm"
                 >
                   {value}
                   <button
@@ -263,7 +263,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
+                className="flex-1 px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
                 placeholder="Add allowed value..."
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
@@ -289,7 +289,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
                           ...level,
                           allowedValues: [...(level.allowedValues || []), value],
                         })}
-                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 dark:hover:bg-primary-800/50 rounded-md transition-colors dark:bg-primary-800"
+                        className="px-2 py-0.5 text-caption bg-surface-muted hover:bg-primary-100 dark:hover:bg-primary-800/50 rounded-md transition-colors"
                       >
                         + {value}
                       </button>
@@ -411,7 +411,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
     >
       <div className="p-4 space-y-4">
         {/* Header Info */}
-        <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
+        <div className="bg-surface-page rounded-lg p-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="body-strong">{programName || 'Program'}</p>

@@ -144,7 +144,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
       {/* Per-bank cards (filtered) */}
       <div className="space-y-4">
         {filteredBanks.length === 0 && (
-          <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-12 text-center text-neutral-500 dark:text-neutral-400">
+          <div className="bg-surface-card rounded-lg border border-edge p-12 text-center text-neutral-500 dark:text-neutral-400">
             {emptyCopy}
           </div>
         )}
@@ -156,8 +156,8 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
           <div
             key={bank.bankBic}
             className={cn(
-              'rounded-lg shadow-sm border border-neutral-200 dark:border-primary-800',
-              'bg-white dark:bg-primary-900',
+              'rounded-lg shadow-sm border border-edge',
+              'bg-surface-card',
               // Home-bank emphasis: 2px gold/accent left rule. Pairs with the
               // HOME BANK pill below — those are the two semantic signals.
               // The ring, border-color shift, and medallion tone shift were
@@ -165,7 +165,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
               bank.homeBank && 'border-l-2 border-l-accent-500 dark:border-l-accent-400',
             )}
           >
-            <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
+            <div className="p-5 border-b border-edge-subtle flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="neutral" icon={Building2} />
                 <div>
@@ -185,7 +185,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
               <div className="body-sm">{shadowCountLabel}</div>
             </div>
 
-            <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+            <div className="divide-y divide-edge-subtle">
               {bank.currencies.map((ccy) => (
                 <div key={ccy.currencyCode} className="p-5">
                   <div className="flex items-center justify-between mb-3">
@@ -235,7 +235,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                         // The vaNumber (identifier) and Effective (dominant
                         // column) override back to primary-900 — hierarchy via
                         // tone, not weight.
-                        <tr key={s.vaId} className="border-t border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200">
+                        <tr key={s.vaId} className="border-t border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200">
                           <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">{s.vaNumber}</td>
                           <td className="py-2.5">
                             <FreshnessPill shadow={s} />
@@ -278,7 +278,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
 
       {/* Per-currency effective totals — section, not stray pill row. */}
       {currencyTotals.length > 0 && (
-        <div className="border-t border-neutral-200 dark:border-primary-800 pt-4">
+        <div className="border-t border-edge pt-4">
           <p className="label mb-2">Effective by currency</p>
           <div className="flex flex-wrap gap-2">
             {currencyTotals.map(({ code, effective }) => (

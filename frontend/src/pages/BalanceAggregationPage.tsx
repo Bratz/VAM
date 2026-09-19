@@ -109,8 +109,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
     <div>
       <div
         className={cn(
-          "flex items-center py-2 px-3 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 dark:hover:bg-primary-800/50 dark:border-primary-800/60",
-          level === 0 && "bg-neutral-50 font-semibold dark:bg-primary-950"
+          "flex items-center py-2 px-3 hover:bg-neutral-50 cursor-pointer border-b border-edge-subtle dark:hover:bg-primary-800/50",
+          level === 0 && "bg-surface-page font-semibold"
         )}
         style={{ paddingLeft: `${indent + 12}px` }}
         onClick={() => onSelect(node)}
@@ -505,7 +505,7 @@ const BalanceAggregationPage: React.FC = () => {
         title="Balance Aggregation"
         actions={
           <>
-            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 rounded-lg dark:bg-primary-800">
+            <div className="flex items-center gap-2 px-3 py-2 bg-surface-muted rounded-lg">
               <span className="body-sm">Base:</span>
               <select
                 value={baseCurrency}
@@ -539,7 +539,7 @@ const BalanceAggregationPage: React.FC = () => {
               <select
                 value={selectedCorporateId}
                 onChange={(e) => handleCorporateChange(e.target.value)}
-                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-primary-900 dark:border-primary-700"
+                className="w-full mt-0.5 px-2 py-1.5 bg-surface-card border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                 disabled={loadingCorporates}
               >
                 <option value="">Select Corporate...</option>
@@ -560,7 +560,7 @@ const BalanceAggregationPage: React.FC = () => {
               <select
                 value={selectedProgramId}
                 onChange={(e) => handleProgramChange(e.target.value)}
-                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-info-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-info-500 dark:bg-primary-900 dark:border-info-500/30"
+                className="w-full mt-0.5 px-2 py-1.5 bg-surface-card border border-info-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-info-500 dark:border-info-500/30"
                 disabled={loadingPrograms || activePrograms.length === 0}
               >
                 <option value="">Select Program...</option>

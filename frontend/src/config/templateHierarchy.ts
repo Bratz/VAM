@@ -36,8 +36,8 @@ export interface TemplateConfig {
   name: string;
   description: string;
   icon: LucideIcon;
-  color: string;
-  bgColor: string;
+  /** StatusIconBadge tone for this template's icon tile. */
+  tone: 'success' | 'warning' | 'error' | 'info' | 'primary' | 'neutral' | 'accent' | 'cat-1' | 'cat-2' | 'cat-3' | 'cat-4' | 'cat-5' | 'cat-6' | 'cat-7' | 'cat-8';
   forProgramTypes: string[];
   recommended?: boolean;
   levels: HierarchyLevelConfig[];
@@ -56,8 +56,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Collection Program',
     description: 'For receivables collection with channel-based hierarchy',
     icon: CreditCard,
-    color: 'text-info-600',
-    bgColor: 'bg-info-50',
+    tone: 'info',
     forProgramTypes: ['COLLECTION'],
     recommended: true,
     levels: [
@@ -119,8 +118,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'In-House Bank',
     description: 'For intercompany cash management and treasury',
     icon: Building2,
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
+    tone: 'primary',
     forProgramTypes: ['IHB'],
     recommended: true,
     levels: [
@@ -181,8 +179,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Digital Wallet',
     description: 'For consumer and merchant wallet programs',
     icon: Wallet,
-    color: 'text-warning-600',
-    bgColor: 'bg-warning-50',
+    tone: 'warning',
     forProgramTypes: ['WALLET'],
     recommended: true,
     levels: [
@@ -244,8 +241,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Digital Escrow',
     description: 'For escrow and trust account management',
     icon: Shield,
-    color: 'text-success-600',
-    bgColor: 'bg-success-50',
+    tone: 'success',
     forProgramTypes: ['ESCROW'],
     recommended: true,
     levels: [
@@ -294,8 +290,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Virtual IBAN',
     description: 'For VIBAN issuance and management',
     icon: Hash,
-    color: 'text-accent-600',
-    bgColor: 'bg-accent-50',
+    tone: 'accent',
     forProgramTypes: ['VIBAN'],
     recommended: true,
     levels: [
@@ -344,8 +339,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Payables Management',
     description: 'For accounts payable and vendor payments',
     icon: Banknote,
-    color: 'text-warning-600',
-    bgColor: 'bg-warning-50',
+    tone: 'warning',
     forProgramTypes: ['PAYABLES'],
     recommended: true,
     levels: [
@@ -399,8 +393,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Loyalty & Rewards',
     description: 'For loyalty points and rewards programs',
     icon: TrendingUp,
-    color: 'text-cat-4',
-    bgColor: 'bg-cat-4-soft',
+    tone: 'cat-4',
     forProgramTypes: ['WALLET', 'LOYALTY'],
     recommended: false,
     levels: [
@@ -462,8 +455,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Gift Card Program',
     description: 'For gift card issuance and management',
     icon: Gift,
-    color: 'text-cat-2',
-    bgColor: 'bg-cat-2-soft',
+    tone: 'cat-2',
     forProgramTypes: ['WALLET', 'GIFT_CARD'],
     recommended: false,
     levels: [
@@ -524,8 +516,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     name: 'Corporate Card',
     description: 'For corporate card expense management',
     icon: CardIcon,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-50',
+    tone: 'neutral',
     forProgramTypes: ['WALLET', 'CORPORATE_CARD'],
     recommended: false,
     levels: [

@@ -283,10 +283,10 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
               type="button"
               onClick={() => setShowFormatDropdown(!showFormatDropdown)}
               className={cn(
-                'w-full h-11 px-4 rounded-lg border bg-white dark:bg-primary-900',
+                'w-full h-11 px-4 rounded-lg border bg-surface-card',
                 'flex items-center justify-between',
                 'text-primary-900 text-body dark:text-neutral-50',
-                'border-neutral-300 hover:border-neutral-400 dark:border-primary-700',
+                'border-edge-strong hover:border-neutral-400',
                 'focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
                 'transition-all duration-200'
               )}
@@ -307,7 +307,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
                   className="fixed inset-0 z-10"
                   onClick={() => setShowFormatDropdown(false)}
                 />
-                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-surface-card rounded-lg shadow-lg border border-edge py-1 animate-fade-in">
                   {FORMAT_OPTIONS.map((format) => {
                     const Icon = format.icon;
                     return (
@@ -372,7 +372,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
 
       {/* Include Child Accounts Option (for aggregation accounts) */}
       {isAggregationAccount && (
-        <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-primary-800/60">
+        <div className="mt-4 pt-4 border-t border-edge-subtle">
           <Checkbox
             checked={includeChildAccounts}
             onChange={setIncludeChildAccounts}
@@ -384,13 +384,13 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
 
       {/* Preview Summary */}
       {previewSummary && (
-        <div className="mt-4 pt-4 border-t border-neutral-100 animate-fade-in dark:border-primary-800/60">
+        <div className="mt-4 pt-4 border-t border-edge-subtle animate-fade-in">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
             <span className="body-strong">Statement Preview</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-3">
               <p className="caption mb-1">Opening Balance</p>
               <p className="text-body-sm font-bold text-primary-900 dark:text-neutral-50">
                 {formatCurrency(previewSummary.openingBalance, currencyCode)}

@@ -312,9 +312,9 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
         {/* Selected Payables */}
         <div>
           <h4 className="field-label mb-2">Selected Payables ({payablesList.length})</h4>
-          <div className="max-h-40 overflow-y-auto border border-neutral-200 dark:border-primary-800 rounded-lg">
+          <div className="max-h-40 overflow-y-auto border border-edge rounded-lg">
             {payablesList.map(p => (
-              <div key={p.id} className="flex justify-between items-center px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
+              <div key={p.id} className="flex justify-between items-center px-3 py-2 border-b border-edge-subtle last:border-0">
                 <div>
                   <p className="font-medium text-body-sm">{p.invoiceNumber}</p>
                   <p className="caption">{p.vendorName}</p>
@@ -331,7 +331,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
           <select
             value={payingEntityId}
             onChange={(e) => setPayingEntityId(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-2 border border-edge rounded-lg focus:ring-2 focus:ring-primary-500"
           >
             {treasuryEntities.length === 0 ? (
               <option value="">No treasury entities available</option>
@@ -351,7 +351,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
             <Loader2 className="w-8 h-8 text-primary-600 dark:text-primary-200 animate-spin" />
           </div>
         ) : preview ? (
-          <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4 space-y-4">
+          <div className="bg-surface-page rounded-lg p-4 space-y-4">
             <h4 className="font-medium text-neutral-900 dark:text-neutral-50">Payment Preview</h4>
             
             <div className="grid grid-cols-2 gap-4 text-body-sm">
@@ -373,7 +373,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
 
             {/* Balance & Credit Limit Info */}
             {(preview.payingVaBalance !== undefined || preview.behalfVaBalance !== undefined) && (
-              <div className="grid grid-cols-2 gap-4 text-caption bg-neutral-100 dark:bg-primary-800 rounded-lg p-3 mt-2">
+              <div className="grid grid-cols-2 gap-4 text-caption bg-surface-muted rounded-lg p-3 mt-2">
                 {/* Paying Entity Balance */}
                 <div className="space-y-1">
                   <p className="font-medium text-neutral-700 dark:text-neutral-200">Treasury Balance</p>
@@ -417,7 +417,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
               </div>
             )}
 
-            <div className="border-t border-neutral-200 dark:border-primary-800 pt-4 space-y-2">
+            <div className="border-t border-edge pt-4 space-y-2">
               <div className="flex justify-between text-body-sm">
                 <span>Total Payment Amount</span>
                 <span className="font-medium">{formatCurrency(preview.totalPaymentAmount, preview.currencyCode)}</span>
@@ -428,7 +428,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
                   <span>{charge.waived ? <span className="text-success-600 dark:text-success-300">Waived</span> : formatCurrency(charge.calculatedAmount, preview.currencyCode)}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-body-sm font-semibold border-t border-neutral-200 dark:border-primary-800 pt-2">
+              <div className="flex justify-between text-body-sm font-semibold border-t border-edge pt-2">
                 <span>Net Payment Amount</span>
                 <span>{formatCurrency(preview.netPaymentAmount, preview.currencyCode)}</span>
               </div>
@@ -455,7 +455,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
         ) : null}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button 
             variant="primary" 
@@ -526,7 +526,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={titles[action]} size="md">
       <div className="space-y-6">
         {/* Payable Details */}
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4">
+        <div className="bg-surface-page rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
@@ -560,7 +560,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Please provide a reason for rejection..."
               rows={3}
-              className="w-full px-3 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-edge rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         ) : (
@@ -573,7 +573,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add any notes..."
               rows={2}
-              className="w-full px-3 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-edge rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         )}
@@ -590,7 +590,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button
             variant={action === 'reject' ? 'danger' : action === 'approve' ? 'success' : 'primary'}
@@ -630,7 +630,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
       <div className="space-y-6">
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4">
+        <div className="bg-surface-page rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
@@ -657,7 +657,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
           This will execute the payment immediately. This action cannot be undone.
         </p>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={onConfirm} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
@@ -1216,7 +1216,7 @@ const EnhancedPayablesPage: React.FC = () => {
         <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-lg dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
 
         {/* Tabs & Search */}
-        <div className="flex items-center justify-between gap-4 px-4 pt-4 pb-2 border-b border-neutral-200 dark:border-primary-800">
+        <div className="flex items-center justify-between gap-4 px-4 pt-4 pb-2 border-b border-edge">
           <div className="flex gap-1">
             {[
               { key: 'all', label: 'All', count: tabCounts.all },
@@ -1238,7 +1238,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 {tab.label}
                 <span className={cn(
                   "ml-2 px-2 py-0.5 text-caption rounded-full transition-colors",
-                  activeTab === tab.key ? "bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200" : "bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300"
+                  activeTab === tab.key ? "bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200" : "bg-surface-muted text-neutral-600 dark:text-neutral-300"
                 )}>{tab.count}</span>
               </button>
             ))}
@@ -1252,7 +1252,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all w-64"
+                className="pl-9 pr-4 py-2 border border-edge rounded-lg text-body-sm bg-surface-card focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all w-64"
               />
             </div>
             {selectedIds.size > 0 && (

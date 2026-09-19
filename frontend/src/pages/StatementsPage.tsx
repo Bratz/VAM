@@ -321,10 +321,10 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
   const typeColors: Record<StatementBalanceType, string> = {
     OPBD: 'bg-primary-50 border-primary-200 dark:bg-primary-800/40',
     CLBD: 'bg-info-50 border-info-200 dark:bg-info-500/10 dark:border-info-500/30',
-    OPAV: 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800',
+    OPAV: 'bg-surface-page border-edge',
     CLAV: 'bg-success-50 border-success-200 dark:bg-success-500/10 dark:border-success-500/30',
     FWAV: 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30',
-    INFO: 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800',
+    INFO: 'bg-surface-page border-edge',
   };
 
   const isDebit = creditDebit === 'DBIT';
@@ -418,7 +418,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
       <tr
         className={cn(
           "data-table-row group cursor-pointer transition-colors",
-          expanded && "bg-neutral-50 dark:bg-primary-950"
+          expanded && "bg-surface-page"
         )}
         onClick={() => setExpanded(!expanded)}
         style={{ animationDelay: `${index * 0.02}s` }}
@@ -531,10 +531,10 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
       {/* Expanded Details Row */}
       {expanded && (
         <tr className="animate-fade-in">
-          <td colSpan={8} className="px-4 py-3 bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+          <td colSpan={8} className="px-4 py-3 bg-surface-page border-b border-edge">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 ml-10">
               {/* Transaction References */}
-              <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+              <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                   <Hash className="w-4 h-4" />
                   Transaction References
@@ -581,7 +581,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
               {/* Bank Transaction Code */}
               {entry.bankTransactionCode && (
-                <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                     <CreditCard className="w-4 h-4" />
                     Bank Transaction Code
@@ -605,7 +605,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
               {/* Debtor Info */}
               {relatedParties?.debtor && (
-                <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                     <User className="w-4 h-4" />
                     Debtor
@@ -635,7 +635,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
               {/* Creditor Info */}
               {relatedParties?.creditor && (
-                <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                     <User className="w-4 h-4" />
                     Creditor
@@ -665,7 +665,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
               {/* Remittance Information */}
               {remittanceInfo && (
-                <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                     <FileText className="w-4 h-4" />
                     Remittance Info
@@ -692,7 +692,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
               {/* Additional Info */}
               {entry.additionalEntryInfo && (
-                <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
+                <div className="bg-surface-card rounded-lg border border-edge p-3">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
                     <Info className="w-4 h-4" />
                     Additional Info
@@ -811,8 +811,8 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
   return (
     <div
       className={cn(
-        "p-4 border-b border-neutral-100 last:border-0 animate-fade-in dark:border-primary-800/60",
-        expanded && "bg-neutral-50 dark:bg-primary-950"
+        "p-4 border-b border-edge-subtle last:border-0 animate-fade-in",
+        expanded && "bg-surface-page"
       )}
       style={{ animationDelay: `${index * 0.02}s` }}
       onClick={() => setExpanded(!expanded)}
@@ -876,7 +876,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
 
           {/* Expanded Details (Mobile) */}
           {expanded && isISO20022 && (
-            <div className="mt-3 pt-3 border-t border-neutral-200 space-y-2 animate-fade-in dark:border-primary-800">
+            <div className="mt-3 pt-3 border-t border-edge space-y-2 animate-fade-in">
               {tx.accountServicerRef && (
                 <div className="flex justify-between text-caption">
                   <span className="text-neutral-500 dark:text-neutral-400">Acct Svcr Ref</span>
@@ -958,7 +958,7 @@ const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
         <div className={cn(
           "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
           node.accountCategory === 'AGGREGATION' ? 'bg-info-100 dark:bg-info-500/20' :
-            node.accountCategory === 'ROOT' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800'
+            node.accountCategory === 'ROOT' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-surface-muted'
         )}>
           {node.accountCategory === 'AGGREGATION' ? (
             <Layers className="w-4 h-4 text-info-600 dark:text-info-300" />
@@ -1037,7 +1037,7 @@ const HistoryMobileCard: React.FC<HistoryMobileCardProps> = ({ statement: stmt, 
             <Badge variant="neutral" size="sm">{stmt.format}</Badge>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
+          <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div className="flex items-center gap-1 caption">
               <Clock className="w-3 h-3" />
               {new Date(stmt.generatedAt).toLocaleDateString()}
@@ -1083,10 +1083,10 @@ const SectionCard: React.FC<SectionCardProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={cn('bg-white rounded-lg border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800', className)}>
+    <div className={cn('bg-surface-card rounded-lg border border-edge overflow-hidden', className)}>
       <div
         className={cn(
-          'flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-primary-950',
+          'flex items-center justify-between px-4 py-3 bg-surface-page',
           collapsible && 'cursor-pointer hover:bg-neutral-100 transition-colors dark:hover:bg-primary-800'
         )}
         onClick={collapsible ? () => setIsOpen(!isOpen) : undefined}
@@ -1108,7 +1108,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           </button>
         )}
       </div>
-      {isOpen && <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60">{children}</div>}
+      {isOpen && <div className="px-4 py-3 border-t border-edge-subtle">{children}</div>}
     </div>
   );
 };
@@ -1439,7 +1439,7 @@ const StatementsPage: React.FC = () => {
         </Card>
 
         <Card padding="none">
-          <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+          <div className="p-4 border-b border-edge">
             <Skeleton className="h-5 w-32" />
           </div>
           <div className="p-4 space-y-3">
@@ -1616,7 +1616,7 @@ const StatementsPage: React.FC = () => {
             we eliminated in the cockpit + picker work. The icon medallion
             already carries the visual weight; the band only needs a soft
             primary tint to mark it as the section identity. */}
-        <div className="p-4 sm:p-6 bg-primary-50/40 border-b border-neutral-100 dark:bg-primary-800/30 dark:border-primary-800/60">
+        <div className="p-4 sm:p-6 bg-primary-50/40 border-b border-edge-subtle dark:bg-primary-800/30">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="primary" icon={FileText} className="dark:bg-primary-700" />
             <div>
@@ -1628,7 +1628,7 @@ const StatementsPage: React.FC = () => {
 
         <div className="p-4 sm:p-6 space-y-4">
           {/* Statement Mode Selection */}
-          <div className="flex flex-wrap gap-2 pb-4 border-b border-neutral-100 dark:border-primary-800/60">
+          <div className="flex flex-wrap gap-2 pb-4 border-b border-edge-subtle">
             {modeOptions.map((mode) => (
               <Button
                 key={mode.value}
@@ -1769,7 +1769,7 @@ const StatementsPage: React.FC = () => {
       {statement && (
         <Card padding="none" className="animate-fade-in overflow-hidden">
           {/* Statement Header — flat tonal band (was a gradient). */}
-          <div className="p-4 sm:p-6 border-b border-neutral-200 bg-neutral-50/60 dark:border-primary-800 dark:bg-primary-950">
+          <div className="p-4 sm:p-6 border-b border-edge bg-neutral-50/60 dark:bg-primary-950">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1930,7 +1930,7 @@ const StatementsPage: React.FC = () => {
 
           {/* Balances Section (ISO20022 Balance Types) */}
           {statement.balances && statement.balances.length > 0 && (
-            <div className="px-4 py-4 sm:px-6 border-b border-neutral-200 dark:border-primary-800">
+            <div className="px-4 py-4 sm:px-6 border-b border-edge">
               <h4 className="section-title mb-3 flex items-center gap-2">
                 <Banknote className="w-4 h-4" />
                 Balances
@@ -1952,7 +1952,7 @@ const StatementsPage: React.FC = () => {
 
           {/* Summary Stats (Fallback for legacy format) */}
           {!statement.balances?.length && (
-            <div className="p-4 sm:p-6 bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+            <div className="p-4 sm:p-6 bg-surface-page border-b border-edge">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <StatCard
                   label="Opening Balance"
@@ -2001,7 +2001,7 @@ const StatementsPage: React.FC = () => {
                   Phase 9 display tier (Fraunces serif + tabular-nums) for
                   every figure. Tone overlays only set the colour. */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                <div className="text-center p-3 bg-surface-page rounded-lg">
                   <p className="stat-value-sm">{statement.totalEntries || (statement.entries?.length || 0)}</p>
                   <p className="caption">Total Entries</p>
                 </div>
@@ -2032,14 +2032,14 @@ const StatementsPage: React.FC = () => {
 
           {/* Aggregated Child Summary (for aggregated statements) */}
           {statementMode === 'aggregated' && statement.childStatements && statement.childStatements.length > 0 && (
-            <div className="p-4 sm:p-6 border-b border-neutral-200 dark:border-primary-800">
+            <div className="p-4 sm:p-6 border-b border-edge">
               <h4 className="section-title mb-3 flex items-center gap-2">
                 <Layers className="w-4 h-4" />
                 Child Account Summary
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {statement.childStatements.map((child) => (
-                  <div key={child.vaId} className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div key={child.vaId} className="p-3 bg-surface-page rounded-lg">
                     <p className="body-sm text-primary-900 truncate dark:text-neutral-50">{child.vaName}</p>
                     <p className="code">{child.vaNumber}</p>
                     <div className="mt-2 flex justify-between text-caption">
@@ -2054,7 +2054,7 @@ const StatementsPage: React.FC = () => {
           )}
 
           {/* Entry List Header */}
-          <div className="px-4 py-3 sm:px-6 border-b border-neutral-200 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+          <div className="px-4 py-3 sm:px-6 border-b border-edge bg-surface-page">
             <div className="flex items-center justify-between">
               <h4 className="section-title flex items-center gap-2">
                 Entry List
@@ -2087,7 +2087,7 @@ const StatementsPage: React.FC = () => {
                       <th className="data-table-header-cell text-right">Balance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                  <tbody className="divide-y divide-edge-subtle">
                     {/* ISO20022 entries (camt.053/054) */}
                     {statement.entries?.map((entry, idx) => (
                       <ISO20022TransactionRow
@@ -2145,7 +2145,7 @@ const StatementsPage: React.FC = () => {
 
       {/* Statement History */}
       <Card padding="none">
-        <div className="p-4 sm:p-6 border-b border-neutral-200 dark:border-primary-800">
+        <div className="p-4 sm:p-6 border-b border-edge">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="neutral" icon={Clock} size="sm" rounded="lg" className="dark:bg-primary-800" />
@@ -2191,7 +2191,7 @@ const StatementsPage: React.FC = () => {
                     <th className="data-table-header-cell text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                <tbody className="divide-y divide-edge-subtle">
                   {filteredHistory.map((stmt: any) => (
                     <tr key={stmt.id} className="data-table-row group">
                       <td className="data-table-cell">

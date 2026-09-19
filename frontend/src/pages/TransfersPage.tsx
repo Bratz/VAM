@@ -198,12 +198,12 @@ const TransferTypeCard: React.FC<TransferTypeCardProps> = ({
       'p-5 rounded-lg border-2 cursor-pointer transition-all duration-200',
       selected
         ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-white shadow-lg shadow-primary-100/50 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40'
-        : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50'
+        : 'border-edge hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
     )}
   >
     <div className={cn(
       'w-12 h-12 rounded-lg flex items-center justify-center mb-4 transition-colors',
-      selected ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800'
+      selected ? 'bg-primary-100 dark:bg-primary-700' : 'bg-surface-muted'
     )}>
       <div className={selected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}>{icon}</div>
     </div>
@@ -264,7 +264,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
         }))}
       />
       {selectedAccount && (
-        <div className="mt-4 p-4 bg-white/60 rounded-lg border border-neutral-100 dark:bg-primary-900/60 dark:border-primary-800/60">
+        <div className="mt-4 p-4 bg-white/60 rounded-lg border border-edge-subtle dark:bg-primary-900/60">
           <div className="flex items-center gap-4">
             <StatusIconBadge tone={styles.tone} icon={Building2} size="lg" />
             <div className="flex-1 min-w-0">
@@ -385,9 +385,9 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   const completionPct = Math.round((completionSteps / 3) * 100);
 
   return (
-    <div className="bg-white rounded-lg border border-neutral-200 shadow-sm sticky top-24 dark:bg-primary-900 dark:border-primary-800">
+    <div className="bg-surface-card rounded-lg border border-edge shadow-sm sticky top-24">
       {/* Header */}
-      <div className="p-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50 to-white dark:border-primary-800/60 dark:from-primary-950 dark:to-primary-900">
+      <div className="p-4 border-b border-edge-subtle bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center gap-3">
           <StatusIconBadge tone={typeInfo.color as 'info' | 'primary' | 'success' | 'warning'} icon={typeInfo.icon} />
           <div>
@@ -405,7 +405,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             <span>Completion</span>
             <span>{completionPct}%</span>
           </div>
-          <div className="h-2 bg-neutral-100 rounded-full overflow-hidden dark:bg-primary-800">
+          <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
             <div
               className={cn(
                 'h-full transition-all duration-300 rounded-full',
@@ -417,7 +417,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         </div>
 
         {/* From Section */}
-        <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
+        <div className="pb-4 border-b border-edge-subtle">
           <p className="label mb-2">
             {transferType === 'inward' ? 'Payer (Remitter)' : 'From'}
           </p>
@@ -458,7 +458,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         <div className="flex justify-center">
           <div className={cn(
             'w-8 h-8 rounded-full flex items-center justify-center',
-            hasSource && hasDestination ? 'bg-success-100 dark:bg-success-500/20' : 'bg-neutral-100 dark:bg-primary-800'
+            hasSource && hasDestination ? 'bg-success-100 dark:bg-success-500/20' : 'bg-surface-muted'
           )}>
             {transferType === 'inward' ? (
               <ArrowDownLeft className={cn('w-4 h-4', hasSource && hasDestination ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />
@@ -469,7 +469,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         </div>
 
         {/* To Section */}
-        <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
+        <div className="pb-4 border-b border-edge-subtle">
           <p className="label mb-2">
             {transferType === 'inward' ? 'Credit To (VIBAN/VA)' : 'To'}
           </p>
@@ -535,7 +535,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 </div>
               </div>
               {bulkItems.slice(0, 3).map((item, idx) => (
-                <div key={item.id} className="flex justify-between text-caption bg-neutral-50 rounded-lg p-2 dark:bg-primary-950">
+                <div key={item.id} className="flex justify-between text-caption bg-surface-page rounded-lg p-2">
                   <span className="text-neutral-600 truncate dark:text-neutral-300">
                     {accounts.find(a => a.id === item.destinationVaId)?.vaName || 'Account ' + (idx + 1)}
                   </span>
@@ -580,7 +580,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           {(formData.description || formData.remittanceInfo) && (
             <div className="text-body-sm">
               <span className="text-neutral-500 block mb-1 dark:text-neutral-400">Reference</span>
-              <p className="text-neutral-700 bg-neutral-50 rounded-lg p-2 text-caption dark:text-neutral-200 dark:bg-primary-950">
+              <p className="text-neutral-700 bg-surface-page rounded-lg p-2 text-caption dark:text-neutral-200">
                 {formData.description || formData.remittanceInfo}
               </p>
             </div>
@@ -589,7 +589,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
         {/* Fee Information */}
         {hasAmount && transferType !== 'inward' && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 space-y-2 dark:bg-primary-950 dark:border-primary-800">
+          <div className="bg-surface-page border border-edge rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between text-body-sm">
               <span className="text-neutral-600 font-medium dark:text-neutral-300">Fees & Total</span>
               {loadingFees && <Loader2 className="w-3 h-3 animate-spin text-neutral-400" />}
@@ -611,7 +611,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                         </span>
                       </div>
                     ))}
-                    <div className="flex justify-between text-body-sm pt-1 border-t border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between text-body-sm pt-1 border-t border-edge">
                       <span className="text-neutral-700 font-medium dark:text-neutral-200">Total Fee</span>
                       <span className="text-warning-700 font-semibold dark:text-warning-300">
                         {formatCurrency(feePreview.feeBreakdown.totalFee, feePreview.currency)}
@@ -631,7 +631,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 )}
 
                 {/* Total Debit */}
-                <div className="flex justify-between text-body-sm pt-2 border-t border-neutral-300 mt-2 dark:border-primary-700">
+                <div className="flex justify-between text-body-sm pt-2 border-t border-edge-strong mt-2">
                   <span className="text-primary-700 font-semibold dark:text-neutral-200">Total Debit</span>
                   <span className="text-primary-700 font-bold dark:text-neutral-200">
                     {formatCurrency(feePreview.totalDebit, feePreview.currency)}
@@ -639,7 +639,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 </div>
 
                 {/* Balance & Credit Limit Info */}
-                <div className="pt-2 border-t border-neutral-200 mt-2 space-y-1 dark:border-primary-800">
+                <div className="pt-2 border-t border-edge mt-2 space-y-1">
                   <div className="flex justify-between text-caption">
                     <span className="text-neutral-500 dark:text-neutral-400">Current Balance</span>
                     <span className="text-neutral-700 dark:text-neutral-200">{formatCurrency(feePreview.fromBalance, feePreview.currency)}</span>
@@ -801,7 +801,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
         {/* Details */}
         <div className="space-y-3">
           {result.amount && (
-            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+            <div className="flex justify-between items-center p-4 bg-surface-page rounded-lg">
               <span className="text-neutral-600 dark:text-neutral-300">Amount</span>
               <span className="stat-value-xs">
                 {formatCurrency(result.amount, result.currencyCode || result.currency || 'AED')}
@@ -809,7 +809,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
             </div>
           )}
           {result.balanceBefore !== undefined && (
-            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+            <div className="flex justify-between items-center p-4 bg-surface-page rounded-lg">
               <span className="text-neutral-600 dark:text-neutral-300">Balance Before</span>
               <span className="font-semibold">{formatCurrency(result.balanceBefore, result.currencyCode || result.currency)}</span>
             </div>
@@ -852,7 +852,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex gap-3 pt-4 border-t border-edge">
           {hasXml && onViewXml && (
             <Button variant="outline" className="flex-1" leftIcon={<FileCode className="w-4 h-4" />} onClick={onViewXml}>
               View XML
@@ -897,7 +897,7 @@ const XmlViewerModal: React.FC<XmlViewerModalProps> = ({ isOpen, onClose, xml })
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="ISO 20022 XML Message" size="xl">
       <div className="space-y-4">
-        <Card className="bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <Card className="bg-surface-page border-edge">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
@@ -1069,7 +1069,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
         </Card>
 
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-neutral-200 pb-0 dark:border-primary-800">
+        <div className="flex gap-2 border-b border-edge pb-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -1131,14 +1131,14 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                 <Card>
                   <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                       <Hash className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Reference Number</p>
                         <p className="body-strong">{transaction.referenceNumber}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                       <Calendar className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Transaction Date</p>
@@ -1153,7 +1153,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                       <DollarSign className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Amount</p>
@@ -1162,7 +1162,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                       <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Movement Type</p>
@@ -1170,7 +1170,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </div>
                     {transaction.valueDate && (
-                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                      <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                         <Calendar className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">Value Date</p>
@@ -1179,7 +1179,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     )}
                     {transaction.externalReference && (
-                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                      <div className="flex items-center gap-3 p-3 bg-surface-page rounded-lg">
                         <FileText className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">External Reference</p>
@@ -1191,7 +1191,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
 
                   {/* Description/Narration */}
                   {transaction.description && (
-                    <div className="mt-4 p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="mt-4 p-4 bg-surface-page rounded-lg">
                       <p className="caption mb-1">Description / Remittance Info</p>
                       <p className="text-body-sm text-primary-900 dark:text-neutral-50">{transaction.description}</p>
                     </div>
@@ -1219,7 +1219,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-3 dark:text-neutral-300">Related Transactions</h4>
                       <div className="space-y-2">
                         {transactionDetail.relatedTransactions.map((related) => (
-                          <div key={related.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                          <div key={related.id} className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
                             <div className="flex items-center gap-3">
                               <Badge variant={related.movementType.includes('CREDIT') ? 'success' : 'info'} size="sm">
                                 {related.movementType}
@@ -1246,7 +1246,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
               <div className="space-y-4 animate-fade-in">
                 {isoMessage ? (
                   <>
-                    <Card className="bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+                    <Card className="bg-surface-page border-edge">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
@@ -1314,7 +1314,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         {/* Single Entry View for External Transactions */}
                         <div className="overflow-x-auto">
                           <table className="w-full">
-                            <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
+                            <thead className="bg-surface-page border-b border-edge-subtle">
                               <tr>
                                 <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
                                 <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Type</th>
@@ -1322,7 +1322,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                 <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Counterparty</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                            <tbody className="divide-y divide-edge-subtle">
                               <tr className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                                 <td className="p-3">
                                   <p className="body-strong">{transaction.vaName || 'Your Account'}</p>
@@ -1468,7 +1468,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </p>
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
+                          <thead className="bg-surface-page border-b border-edge-subtle">
                             <tr>
                               <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Entry Type</th>
                               <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
@@ -1478,7 +1478,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                               <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                          <tbody className="divide-y divide-edge-subtle">
                             {entries.map((entry) => (
                               <tr key={entry.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                                 <td className="p-3">
@@ -1522,7 +1522,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                               </tr>
                             ))}
                           </tbody>
-                          <tfoot className="bg-neutral-100 border-t border-neutral-200 dark:bg-primary-800 dark:border-primary-800">
+                          <tfoot className="bg-surface-muted border-t border-edge">
                             <tr>
                               <td colSpan={3} className="p-3 text-body-sm font-semibold text-neutral-700 dark:text-neutral-200">Total</td>
                               <td className="p-3 text-right font-bold text-error-700 dark:text-error-300">
@@ -1608,7 +1608,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
         )}
 
         {/* Close Button */}
-        <div className="flex justify-end pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-end pt-4 border-t border-edge">
           <Button onClick={onClose}>Close</Button>
         </div>
       </div>
@@ -2519,7 +2519,7 @@ export default function TransfersPage() {
               'flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200',
               activeTab === tab.id
                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
-                : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200 dark:bg-primary-900 dark:text-neutral-300 dark:hover:bg-primary-800/50 dark:border-primary-800'
+                : 'bg-surface-card text-neutral-600 hover:bg-neutral-50 border border-edge dark:text-neutral-300 dark:hover:bg-primary-800/50'
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -2627,7 +2627,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-success-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-success-500/30"
+                          className="w-full pl-10 pr-4 py-3 bg-surface-card border border-success-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:border-success-500/30"
                         >
                           <option value="">-- Select a payer --</option>
                           {filteredPayers.map((p) => (
@@ -2659,7 +2659,7 @@ export default function TransfersPage() {
                   </div>
 
                   {/* Manual Entry Option */}
-                  <div className="border-t border-neutral-200 pt-4 dark:border-primary-800">
+                  <div className="border-t border-edge pt-4">
                     <p className="body-sm mb-3">Or enter payer details manually:</p>
                     <div className="grid grid-cols-2 gap-4">
                       <Input
@@ -2732,7 +2732,7 @@ export default function TransfersPage() {
                       />
 
                       {/* Or select from accounts */}
-                      <div className="border-t border-neutral-200 pt-4 dark:border-primary-800">
+                      <div className="border-t border-edge pt-4">
                         <p className="body-sm mb-3">Or select destination account directly:</p>
                         <Select
                           label="Destination VA"
@@ -2813,7 +2813,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-primary-700"
+                          className="w-full pl-10 pr-4 py-3 bg-surface-card border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:border-primary-700"
                         >
                           <option value="">-- Select a beneficiary --</option>
                           {filteredBeneficiaries.map((b) => (
@@ -2841,7 +2841,7 @@ export default function TransfersPage() {
                       const selectedBeneficiary = beneficiaries.find(b => b.party.id === formData.selectedBeneficiaryId);
                       if (!selectedBeneficiary) return null;
                       return (
-                        <div className="mt-4 p-4 bg-white rounded-lg border border-primary-200 shadow-sm dark:bg-primary-900 dark:border-primary-700">
+                        <div className="mt-4 p-4 bg-surface-card rounded-lg border border-primary-200 shadow-sm dark:border-primary-700">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
@@ -2855,7 +2855,7 @@ export default function TransfersPage() {
 
                           {/* Bank Account Selection */}
                           {selectedBeneficiary.bankAccounts.length > 0 && (
-                            <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                            <div className="pt-3 border-t border-edge-subtle">
                               <p className="label mb-2">
                                 Bank Account {selectedBeneficiary.bankAccounts.length > 1 ? '(Select One)' : ''}
                               </p>
@@ -2868,7 +2868,7 @@ export default function TransfersPage() {
                                       'p-3 rounded-lg cursor-pointer transition-all border-2',
                                       formData.selectedBankAccountId === ba.id
                                         ? 'bg-primary-50 border-primary-400 shadow-sm dark:bg-primary-800/40'
-                                        : 'bg-neutral-50 border-transparent hover:bg-neutral-100 hover:border-neutral-200 dark:bg-primary-950 dark:hover:bg-primary-800'
+                                        : 'bg-surface-page border-transparent hover:bg-neutral-100 hover:border-neutral-200 dark:hover:bg-primary-800'
                                     )}
                                   >
                                     <div className="flex items-center justify-between">
@@ -2877,10 +2877,10 @@ export default function TransfersPage() {
                                           'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
                                           formData.selectedBankAccountId === ba.id
                                             ? 'border-primary-500 bg-primary-500'
-                                            : 'border-neutral-300 dark:border-primary-700'
+                                            : 'border-edge-strong'
                                         )}>
                                           {formData.selectedBankAccountId === ba.id && (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-primary-900" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-surface-card" />
                                           )}
                                         </div>
                                         <span className="body-strong">{ba.bankName}</span>
@@ -2918,8 +2918,8 @@ export default function TransfersPage() {
                   <details className={cn(
                     "group rounded-lg border transition-all",
                     formData.selectedBeneficiaryId
-                      ? "bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800"
-                      : "bg-white border-primary-200 dark:bg-primary-900 dark:border-primary-700"
+                      ? "bg-surface-page border-edge"
+                      : "bg-surface-card border-primary-200 dark:border-primary-700"
                   )} open={!formData.selectedBeneficiaryId}>
                     <summary className="p-4 cursor-pointer list-none flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -2967,14 +2967,14 @@ export default function TransfersPage() {
                   {shouldShowPoboToggle() && (
                     <Card className={cn(
                       'mt-6 transition-all',
-                      formData.isPobo ? 'bg-warning-50/50 border-warning-200 dark:border-warning-500/30' : 'bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800'
+                      formData.isPobo ? 'bg-warning-50/50 border-warning-200 dark:border-warning-500/30' : 'bg-surface-page border-edge'
                     )}>
                       <label className="flex items-start gap-4 cursor-pointer">
                         <div className={cn(
                           'w-6 h-6 rounded-lg border-2 flex items-center justify-center mt-0.5 transition-all',
                           formData.isPobo
                             ? 'bg-warning-500 border-warning-500'
-                            : 'border-neutral-300 hover:border-warning-400 dark:border-primary-700'
+                            : 'border-edge-strong hover:border-warning-400'
                         )}>
                           {formData.isPobo && <CheckCircle className="w-4 h-4 text-white" />}
                         </div>
@@ -3022,7 +3022,7 @@ export default function TransfersPage() {
                 </div>
 
                 {bulkItems.length === 0 ? (
-                  <div className="text-center py-12 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="text-center py-12 bg-surface-page rounded-lg">
                     <StatusIconBadge tone="neutral" icon={Users} size="xl" className="mx-auto mb-4" />
                     <p className="text-neutral-500 dark:text-neutral-400">No recipients added yet</p>
                     <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Click "Add Recipient" to start</p>
@@ -3030,7 +3030,7 @@ export default function TransfersPage() {
                 ) : (
                   <div className="space-y-3">
                     {bulkItems.map((item, index) => (
-                      <Card key={item.id} padding="sm" className="bg-neutral-50 dark:bg-primary-950">
+                      <Card key={item.id} padding="sm" className="bg-surface-page">
                         <div className="flex items-center justify-between mb-3">
                           <Badge variant="neutral" size="sm">Recipient #{index + 1}</Badge>
                           <Button
@@ -3135,7 +3135,7 @@ export default function TransfersPage() {
             )}
 
             {/* Navigation - simplified since submit is in sidebar */}
-            <div className="flex justify-between pt-4 border-t border-neutral-200 animate-fade-in dark:border-primary-800">
+            <div className="flex justify-between pt-4 border-t border-edge animate-fade-in">
               <Button
                 variant="outline"
                 onClick={() => step > 1 ? setStep(step - 1) : resetForm()}
@@ -3204,7 +3204,7 @@ export default function TransfersPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
+                <thead className="bg-surface-page border-b border-edge-subtle">
                   <tr>
                     <th className="text-left p-4 label">Reference</th>
                     <th className="text-left p-4 label">Type</th>
@@ -3216,7 +3216,7 @@ export default function TransfersPage() {
                     <th className="text-center p-4 label">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                <tbody className="divide-y divide-edge-subtle">
                   {recentTransfers.map((txn) => {
                     // Determine transfer type based on movement type
                     const getTransferType = () => {

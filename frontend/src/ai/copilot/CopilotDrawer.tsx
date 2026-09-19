@@ -60,13 +60,13 @@ export const CopilotDrawer: React.FC = () => {
                   'h-full flex flex-col',
                   'bg-white dark:bg-primary-950',
                   'shadow-2xl shadow-primary-900/30',
-                  'border-l border-neutral-200 dark:border-primary-800',
+                  'border-l border-edge',
                 ].join(' ')}
               >
                 {/* Header */}
                 <header className={[
                   'flex items-center gap-3 px-4 py-3.5',
-                  'border-b border-neutral-200 dark:border-primary-800',
+                  'border-b border-edge',
                   'bg-gradient-to-r from-primary-700 to-primary-900',
                   'dark:from-primary-900 dark:to-primary-950',
                   'text-white',

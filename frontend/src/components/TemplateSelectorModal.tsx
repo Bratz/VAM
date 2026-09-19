@@ -24,7 +24,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Modal } from '../components/ui/enhanced';
-import { Button, Badge } from '../components/ui';
+import { Button, Badge, StatusIconBadge } from '../components/ui';
 import { cn } from '../utils';
 import {
   HIERARCHY_TEMPLATES,
@@ -131,7 +131,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
         {/* ─────────────────────────────────────────────────────────────────── */}
         {/* LEFT PANEL: Template List */}
         {/* ─────────────────────────────────────────────────────────────────── */}
-        <div className="w-1/2 overflow-y-auto pr-4 border-r border-neutral-200 dark:border-primary-800">
+        <div className="w-1/2 overflow-y-auto pr-4 border-r border-edge">
           <p className="body-sm mb-4">
             Select a hierarchy template for{' '}
             <strong>{program.programName}</strong> ({program.programType})
@@ -156,18 +156,11 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                         'p-4 border rounded-lg cursor-pointer transition-all',
                         isSelected
                           ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40'
-                          : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-800'
+                          : 'border-edge hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        <div
-                          className={cn(
-                            'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                            template.bgColor
-                          )}
-                        >
-                          <Icon className={cn('w-5 h-5', template.color)} />
-                        </div>
+                        <StatusIconBadge tone={template.tone} icon={Icon} className="shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium text-primary-900 dark:text-neutral-50">
@@ -213,18 +206,11 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                         'p-3 border rounded-lg cursor-pointer transition-all',
                         isSelected
                           ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 opacity-100 dark:bg-primary-800/40'
-                          : 'border-neutral-200 hover:border-neutral-300 opacity-60 hover:opacity-100 dark:border-primary-800'
+                          : 'border-edge hover:border-neutral-300 opacity-60 hover:opacity-100'
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                            template.bgColor
-                          )}
-                        >
-                          <Icon className={cn('w-4 h-4', template.color)} />
-                        </div>
+                        <StatusIconBadge tone={template.tone} icon={Icon} size="sm" className="shrink-0" />
                         <div className="flex-1 min-w-0">
                           <span className="body-strong">
                             {template.name}
@@ -251,16 +237,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
             <div>
               {/* Template Header */}
               <div className="flex items-center gap-3 mb-4">
-                <div
-                  className={cn(
-                    'w-12 h-12 rounded-lg flex items-center justify-center shrink-0',
-                    previewTemplate.bgColor
-                  )}
-                >
-                  <previewTemplate.icon
-                    className={cn('w-6 h-6', previewTemplate.color)}
-                  />
-                </div>
+                <StatusIconBadge tone={previewTemplate.tone} icon={previewTemplate.icon} size="lg" className="shrink-0" />
                 <div>
                   <h3 className="font-semibold text-primary-900 dark:text-neutral-50">
                     {previewTemplate.name}
@@ -272,7 +249,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
               </div>
 
               {/* Hierarchy Structure */}
-              <div className="bg-neutral-50 rounded-lg p-4 mb-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4 mb-4">
                 <h4 className="body-strong mb-3">
                   Hierarchy Structure
                 </h4>

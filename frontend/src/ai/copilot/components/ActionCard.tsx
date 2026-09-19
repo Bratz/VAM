@@ -102,7 +102,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
             <button
               type="button"
               onClick={onCancel}
-              className="px-3 py-1.5 text-caption rounded-lg border border-neutral-300 dark:border-primary-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-primary-900 transition-colors"
+              className="px-3 py-1.5 text-caption rounded-lg border border-edge-strong text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-primary-900 transition-colors"
             >
               Cancel
             </button>

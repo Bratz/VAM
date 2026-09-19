@@ -269,7 +269,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
       case 'EXCEPTION':
         return 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300';
       default:
-        return 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200';
+        return 'bg-surface-muted text-neutral-700 dark:text-neutral-200';
     }
   };
 
@@ -281,7 +281,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
     if (movementType.includes('DEBIT') || movementType === 'TRANSFER_OUT' || movementType === 'POBO_DEBIT') {
       return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300';
     }
-    return 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200';
+    return 'bg-surface-muted text-neutral-700 dark:text-neutral-200';
   };
 
   return (
@@ -305,7 +305,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         </div>
 
         {/* Amount */}
-        <div className="bg-gradient-to-br from-neutral-50 to-white rounded-lg p-6 text-center border border-neutral-100 dark:border-primary-800/60 dark:from-primary-950 dark:to-primary-900">
+        <div className="bg-gradient-to-br from-neutral-50 to-white rounded-lg p-6 text-center border border-edge-subtle dark:from-primary-950 dark:to-primary-900">
           <p className="body-sm mb-2">Amount</p>
           {/* Phase 9.1 Task B: hero amount uses .stat-value (Fraunces 36px/600).
               The conditional tone class wins by cascade order — it sits in
@@ -318,13 +318,13 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
         {/* Tab Navigation - only show if fund movement detail is available */}
         {hasAccountingEntries && (
-          <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg dark:bg-primary-800">
+          <div className="flex gap-1 p-1 bg-surface-muted rounded-lg">
             <button
               onClick={() => setActiveTab('details')}
               className={cn(
                 'flex-1 px-4 py-2 rounded-md text-body-sm font-medium transition-all',
                 activeTab === 'details'
-                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50'
+                  ? 'bg-surface-card text-neutral-900 shadow-sm dark:text-neutral-50'
                   : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
               )}
             >
@@ -336,7 +336,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               className={cn(
                 'flex-1 px-4 py-2 rounded-md text-body-sm font-medium transition-all',
                 activeTab === 'accounting'
-                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50'
+                  ? 'bg-surface-card text-neutral-900 shadow-sm dark:text-neutral-50'
                   : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
               )}
             >
@@ -354,50 +354,50 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         {/* Details Tab Content */}
         {activeTab === 'details' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Virtual Account</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.vaName}</p>
               <p className="text-body-sm text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{transaction.vaNumber}</p>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Counterparty</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.counterpartyName || '-'}</p>
               {transaction.counterpartyAccount && (
                 <p className="text-body-sm text-neutral-500 font-mono mt-0.5 truncate dark:text-neutral-400">{transaction.counterpartyAccount}</p>
               )}
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Transaction Date</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(transaction.transactionDate)}</p>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Value Date</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.valueDate ? formatDate(transaction.valueDate) : '-'}</p>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Balance Before</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(transaction.balanceBefore, transaction.currencyCode)}</p>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Balance After</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(transaction.balanceAfter, transaction.currencyCode)}</p>
             </div>
-            <div className="sm:col-span-2 bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="sm:col-span-2 bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Description</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.description || '-'}</p>
             </div>
-            <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+            <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Channel</p>
               <Badge variant="neutral">{transaction.channel || 'N/A'}</Badge>
             </div>
             {transaction.externalReference && (
-              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4">
                 <p className="caption mb-1.5">External Reference</p>
                 <p className="font-medium text-neutral-900 font-mono text-body-sm dark:text-neutral-50">{transaction.externalReference}</p>
               </div>
             )}
             {transaction.correlationId && (
-              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+              <div className="bg-surface-page rounded-lg p-4">
                 <p className="caption mb-1.5">Correlation ID</p>
                 <p className="font-medium text-neutral-900 font-mono text-caption truncate dark:text-neutral-50">{transaction.correlationId}</p>
               </div>
@@ -411,7 +411,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
             {/* Show internal accounts toggle — off by default; bank-internal
                 Shadow VA / Settlement VA legs are noise for day-to-day use,
                 but reconciliation/audit needs the full picture on demand. */}
-            <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
+            <div className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
               <Toggle
                 layout="split"
                 size="sm"
@@ -424,7 +424,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
             {loadingEntries ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-neutral-50 rounded-lg p-4 animate-pulse dark:bg-primary-950">
+                  <div key={i} className="bg-surface-page rounded-lg p-4 animate-pulse">
                     <div className="h-4 bg-neutral-200 rounded-md w-1/4 mb-2 dark:bg-primary-800" />
                     <div className="h-3 bg-neutral-200 rounded-md w-3/4 dark:bg-primary-800" />
                   </div>
@@ -481,7 +481,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                           'rounded-lg p-4 border transition-all',
                           entry.transactionId === transaction.id
                             ? 'bg-info-50 border-info-200 ring-2 ring-info-100 dark:bg-info-500/10 dark:border-info-500/30'
-                            : 'bg-neutral-50 border-neutral-100 hover:border-neutral-200 dark:bg-primary-950 dark:border-primary-800/60'
+                            : 'bg-surface-page border-edge-subtle hover:border-neutral-200'
                         )}
                       >
                         <div className="flex items-start justify-between gap-4">
@@ -543,7 +543,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
                         {/* Description if available */}
                         {entry.description && (
-                          <p className="caption mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
+                          <p className="caption mt-3 pt-3 border-t border-edge">
                             {entry.description}
                           </p>
                         )}
@@ -582,7 +582,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         )}
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
           {transaction.status === 'COMPLETED' && onReverse && (
             <Button
               variant="outline"
@@ -662,7 +662,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
                   'px-4 py-3 rounded-lg text-body-sm font-medium transition-all duration-200',
                   type === t
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 shadow-sm dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-surface-muted text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:text-neutral-300'
                 )}
                 onClick={() => setType(t)}
               >
@@ -739,7 +739,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
         />
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="primary" loading={loading} leftIcon={<Send className="w-4 h-4" />}>
             Submit
@@ -1005,7 +1005,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 'p-4 rounded-lg border-2 transition-all duration-200 text-left',
                 messageType === 'pacs008'
                   ? 'border-info-500 bg-info-50 shadow-sm dark:bg-info-500/10'
-                  : 'border-neutral-200 bg-white hover:border-neutral-300 dark:border-primary-800 dark:bg-primary-900 dark:hover:border-primary-700'
+                  : 'border-edge bg-surface-card hover:border-neutral-300 dark:hover:border-primary-700'
               )}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -1023,7 +1023,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 'p-4 rounded-lg border-2 transition-all duration-200 text-left',
                 messageType === 'camt054'
                   ? 'border-cat-2 bg-cat-2-soft shadow-sm dark:bg-cat-2/15'
-                  : 'border-neutral-200 bg-white hover:border-neutral-300 dark:border-primary-800 dark:bg-primary-900 dark:hover:border-primary-700'
+                  : 'border-edge bg-surface-card hover:border-neutral-300 dark:hover:border-primary-700'
               )}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -1038,8 +1038,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Group Header Section */}
-        <div className="border border-neutral-200 rounded-lg overflow-hidden dark:border-primary-800">
-          <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border border-edge rounded-lg overflow-hidden">
+          <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <Hash className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">
@@ -1075,8 +1075,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Transaction Info Section */}
-        <div className="border border-neutral-200 rounded-lg overflow-hidden dark:border-primary-800">
-          <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border border-edge rounded-lg overflow-hidden">
+          <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">
@@ -1140,8 +1140,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Debtor (Remitter) Section */}
-        <div className="border border-neutral-200 rounded-lg overflow-hidden dark:border-primary-800">
-          <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border border-edge rounded-lg overflow-hidden">
+          <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">Dbtr (Debtor / Remitter)</span>
@@ -1199,8 +1199,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Creditor (Beneficiary) Section - VIBAN or Virtual Account Selection */}
-        <div className="border border-neutral-200 rounded-lg overflow-hidden dark:border-primary-800">
-          <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border border-edge rounded-lg overflow-hidden">
+          <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Landmark className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1218,7 +1218,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                   'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'viban'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-surface-muted text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:text-neutral-300'
                 )}
               >
                 <CreditCard className="w-4 h-4" />
@@ -1231,7 +1231,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                   'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'select'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-surface-muted text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:text-neutral-300'
                 )}
               >
                 <Building2 className="w-4 h-4" />
@@ -1352,8 +1352,8 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Remittance Information */}
-        <div className="border border-neutral-200 rounded-lg overflow-hidden dark:border-primary-800">
-          <div className="bg-neutral-50 px-4 py-2 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+        <div className="border border-edge rounded-lg overflow-hidden">
+          <div className="bg-surface-page px-4 py-2 border-b border-edge">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="field-label">RmtInf (Remittance Information)</span>
@@ -1393,7 +1393,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
             type="submit"
@@ -1927,7 +1927,7 @@ const TransactionsPage: React.FC = () => {
       {/* Tabs and Table */}
       <Card padding="none">
         {/* Tabs */}
-        <div className="border-b border-neutral-200 overflow-x-auto dark:border-primary-800">
+        <div className="border-b border-edge overflow-x-auto">
           <div className="flex gap-1 p-2 min-w-max">
             {tabs.map((tab) => (
               <button
@@ -1953,7 +1953,7 @@ const TransactionsPage: React.FC = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="p-4 border-b border-edge">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
@@ -1965,12 +1965,12 @@ const TransactionsPage: React.FC = () => {
             </div>
             <div className="flex gap-2">
               {/* View Mode Toggle */}
-              <div className="flex items-center bg-neutral-100 rounded-lg p-1 dark:bg-primary-800">
+              <div className="flex items-center bg-surface-muted rounded-lg p-1">
                 <button
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-caption font-medium transition-all duration-200 flex items-center gap-1.5',
                     viewMode === 'grouped'
-                      ? 'bg-white text-primary-700 shadow-sm dark:bg-primary-900 dark:text-neutral-200'
+                      ? 'bg-surface-card text-primary-700 shadow-sm dark:text-neutral-200'
                       : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
                   )}
                   onClick={() => { setViewMode('grouped'); setCurrentPage(0); }}
@@ -1983,7 +1983,7 @@ const TransactionsPage: React.FC = () => {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-caption font-medium transition-all duration-200 flex items-center gap-1.5',
                     viewMode === 'individual'
-                      ? 'bg-white text-primary-700 shadow-sm dark:bg-primary-900 dark:text-neutral-200'
+                      ? 'bg-surface-card text-primary-700 shadow-sm dark:text-neutral-200'
                       : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
                   )}
                   onClick={() => { setViewMode('individual'); setCurrentPage(0); }}
@@ -2078,7 +2078,7 @@ const TransactionsPage: React.FC = () => {
           <p className="body-sm">
             Are you sure you want to reverse this transaction? This action cannot be undone.
           </p>
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
+          <div className="flex justify-end gap-3 pt-4 border-t border-edge">
             <Button variant="secondary" onClick={() => setReverseTargetId(null)}>Cancel</Button>
             <Button variant="danger" onClick={confirmReverse} disabled={reversing}>
               {reversing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}

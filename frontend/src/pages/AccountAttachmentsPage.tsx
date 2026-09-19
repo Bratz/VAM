@@ -180,7 +180,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
+        className="w-full flex items-center justify-between px-3 py-2 border border-edge-strong rounded-lg bg-surface-card hover:border-primary-400"
       >
         <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400')}>
           {getSelectedLabel()}
@@ -189,7 +189,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-80 overflow-hidden dark:bg-primary-900 dark:border-primary-800">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface-card border border-edge rounded-lg shadow-lg max-h-80 overflow-hidden">
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -198,7 +198,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded-md dark:border-primary-800"
+                className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-edge rounded-md"
                 autoFocus
               />
             </div>
@@ -274,7 +274,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
               )
             )}
           </div>
-          <div className="p-2 border-t bg-neutral-50 dark:bg-primary-950">
+          <div className="p-2 border-t bg-surface-page">
             <button type="button" onClick={() => setIsOpen(false)} className="w-full text-center body-sm hover:text-neutral-700 dark:hover:text-neutral-200">Close</button>
           </div>
         </div>
@@ -308,7 +308,7 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
+        className="w-full flex items-center justify-between px-3 py-2 border border-edge-strong rounded-lg bg-surface-card hover:border-primary-400"
       >
         <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400')}>
           {selectedEntity ? `${selectedEntity.entityName} (${selectedEntity.entityCode})` : 'Select Entity...'}
@@ -317,11 +317,11 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-64 overflow-hidden dark:bg-primary-900 dark:border-primary-800">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-hidden">
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded-md dark:border-primary-800" autoFocus />
+              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-edge rounded-md" autoFocus />
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
@@ -608,11 +608,11 @@ const AccountAttachmentsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-edge rounded-lg bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500">
             <option value="">All Types</option>
             {Object.entries(RELATIONSHIP_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as AttachmentStatus | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as AttachmentStatus | '')} className="px-3 py-2 border border-edge rounded-lg bg-surface-card text-body-sm focus:ring-2 focus:ring-primary-500">
             <option value="">All Statuses</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
@@ -711,10 +711,10 @@ const AccountAttachmentsPage: React.FC = () => {
               <Badge variant={STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.variant}>{STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.label}</Badge>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Relationship</p><p className="font-medium">{RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.label}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Primary</p><p className="font-medium">{selectedAttachment.isPrimary ? 'Yes' : 'No'}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Effective From</p><p className="font-medium">{formatDate(selectedAttachment.effectiveFrom)}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Effective To</p><p className="font-medium">{selectedAttachment.effectiveTo ? formatDate(selectedAttachment.effectiveTo) : 'Indefinite'}</p></div>
+              <div className="bg-surface-page rounded-lg p-3"><p className="caption">Relationship</p><p className="font-medium">{RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.label}</p></div>
+              <div className="bg-surface-page rounded-lg p-3"><p className="caption">Primary</p><p className="font-medium">{selectedAttachment.isPrimary ? 'Yes' : 'No'}</p></div>
+              <div className="bg-surface-page rounded-lg p-3"><p className="caption">Effective From</p><p className="font-medium">{formatDate(selectedAttachment.effectiveFrom)}</p></div>
+              <div className="bg-surface-page rounded-lg p-3"><p className="caption">Effective To</p><p className="font-medium">{selectedAttachment.effectiveTo ? formatDate(selectedAttachment.effectiveTo) : 'Indefinite'}</p></div>
             </div>
             {selectedAttachment.relationshipType === 'AUTHORIZED' && (
               <div className="bg-cat-2-soft rounded-lg p-4 dark:bg-cat-2/15">
@@ -759,7 +759,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 const Icon = config.icon;
                 const isSelected = createForm.relationshipType === key;
                 return (
-                  <button key={key} type="button" onClick={() => setCreateForm(p => ({ ...p, relationshipType: key as RelationshipType }))} className={cn("flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all", isSelected ? `${config.bgColor} ${config.color} border-current` : 'bg-white border-neutral-200 hover:border-neutral-300 dark:bg-primary-900 dark:border-primary-800 dark:hover:border-primary-700')}>
+                  <button key={key} type="button" onClick={() => setCreateForm(p => ({ ...p, relationshipType: key as RelationshipType }))} className={cn("flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all", isSelected ? `${config.bgColor} ${config.color} border-current` : 'bg-surface-card border-edge hover:border-neutral-300 dark:hover:border-primary-700')}>
                     <Icon className="w-5 h-5" /><span className="text-caption font-medium">{config.label}</span>
                   </button>
                 );
@@ -792,7 +792,7 @@ const AccountAttachmentsPage: React.FC = () => {
             </div>
           )}
 
-          <div><label className="field-label block mb-1">Description (Optional)</label><textarea className="w-full border border-neutral-300 rounded-lg px-3 py-2 resize-none dark:border-primary-700" rows={2} placeholder="Add notes..." value={createForm.description} onChange={(e) => setCreateForm(p => ({ ...p, description: e.target.value }))} /></div>
+          <div><label className="field-label block mb-1">Description (Optional)</label><textarea className="w-full border border-edge-strong rounded-lg px-3 py-2 resize-none" rows={2} placeholder="Add notes..." value={createForm.description} onChange={(e) => setCreateForm(p => ({ ...p, description: e.target.value }))} /></div>
 
           <div className="flex gap-3 pt-4 border-t">
             <Button variant="outline" className="flex-1" onClick={() => setShowCreateModal(false)}>Cancel</Button>

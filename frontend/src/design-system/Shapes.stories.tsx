@@ -23,9 +23,9 @@ const SWATCH: Record<string, string> = {
   'rounded-sm': 'rounded-sm', 'rounded-md': 'rounded-md', 'rounded-lg': 'rounded-lg', 'rounded-full': 'rounded-full',
 };
 const th = 'text-left label pb-2 pr-6';
-const rows = 'divide-y divide-neutral-200 dark:divide-primary-800';
-const surface = 'bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800';
-const tag = 'inline-block rounded-md px-2 py-0.5 text-caption bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200';
+const rows = 'divide-y divide-edge';
+const surface = 'bg-surface-card border border-edge';
+const tag = 'inline-block rounded-md px-2 py-0.5 text-caption bg-surface-muted text-neutral-700 dark:text-neutral-200';
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -41,16 +41,16 @@ function Page() {
   const map: { comp: string; cls: string; demo: React.ReactNode }[] = [
     { comp: 'Button', cls: 'rounded-lg', demo: <Button size="sm">Save</Button> },
     { comp: 'Input', cls: 'rounded-lg', demo: <Input placeholder="Account name" inputSize="sm" /> },
-    { comp: 'Select-like', cls: 'rounded-lg', demo: <div className="rounded-lg border border-neutral-300 dark:border-primary-700 bg-white dark:bg-primary-900 px-3 py-2 body-sm w-40">GBP</div> },
+    { comp: 'Select-like', cls: 'rounded-lg', demo: <div className="rounded-lg border border-edge-strong bg-surface-card px-3 py-2 body-sm w-40">GBP</div> },
     { comp: 'Card', cls: 'rounded-lg', demo: <Card padding="sm"><span className="body-sm">Card</span></Card> },
     { comp: 'Badge', cls: 'rounded-full', demo: <Badge variant="success">Active</Badge> },
     { comp: 'Tag chip', cls: 'rounded-md', demo: <span className={tag}>Treasury</span> },
     { comp: 'Avatar', cls: 'rounded-full', demo: <div className="w-8 h-8 rounded-full bg-primary-700 text-white flex items-center justify-center caption">SB</div> },
     { comp: 'Tooltip-like', cls: 'rounded-md', demo: <div className="rounded-md bg-primary-900 dark:bg-primary-700 text-white px-2 py-1 text-caption shadow-lg inline-block">Copied</div> },
-    { comp: 'Code chip', cls: 'rounded-sm', demo: <code className="code rounded-sm bg-neutral-100 dark:bg-primary-800 px-1">VA-GB-001</code> },
+    { comp: 'Code chip', cls: 'rounded-sm', demo: <code className="code rounded-sm bg-surface-muted px-1">VA-GB-001</code> },
   ];
   return (
-    <div className="p-8 space-y-12 max-w-5xl bg-neutral-50 dark:bg-primary-950 min-h-screen">
+    <div className="p-8 space-y-12 max-w-5xl bg-surface-page min-h-screen">
       <Section title="Radius scale" hint="This is the entire scale.">
         <div className="flex gap-6 flex-wrap">
           {RADII.map((r) => (
@@ -95,10 +95,10 @@ function Page() {
       <Section title="Borders" hint="1px everywhere; 2px only for active tab, selected and focus.">
         <div className="flex gap-6 flex-wrap">
           <div className={`rounded-lg p-4 body-sm ${surface}`}>1px border (default)</div>
-          <div className="rounded-lg p-4 body-sm bg-white dark:bg-primary-900 border-2 border-primary-600 dark:border-primary-400">2px selected</div>
+          <div className="rounded-lg p-4 body-sm bg-surface-card border-2 border-primary-600 dark:border-primary-400">2px selected</div>
           <div className="flex gap-4 body-sm">
             <span className="pb-2 border-b-2 border-primary-600 dark:border-primary-400 text-primary-900 dark:text-neutral-50">Active tab</span>
-            <span className="pb-2 border-b border-transparent text-neutral-500">Inactive tab</span>
+            <span className="pb-2 border-b border-transparent text-neutral-500 dark:text-neutral-400">Inactive tab</span>
           </div>
         </div>
       </Section>
@@ -106,7 +106,7 @@ function Page() {
       <Section title="Focus ring" hint="Tab to the button, or see the forced sample.">
         <div className="flex items-center gap-6 flex-wrap">
           <Button variant="outline" leftIcon={<Building2 className="w-4 h-4" />}>Focus me (Tab)</Button>
-          <div className="rounded-lg px-4 py-2 body-sm bg-white dark:bg-primary-900 ring-2 ring-primary-500 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-primary-950">
+          <div className="rounded-lg px-4 py-2 body-sm bg-surface-card ring-2 ring-primary-500 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-primary-950">
             ring-2 ring-offset-2
           </div>
         </div>

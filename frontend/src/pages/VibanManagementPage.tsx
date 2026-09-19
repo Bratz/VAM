@@ -873,7 +873,7 @@ const VibanManagementPage: React.FC = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200 animate-fade-in dark:border-primary-800" style={{ animationDelay: '0.15s' }}>
+      <div className="flex gap-1 border-b border-edge animate-fade-in" style={{ animationDelay: '0.15s' }}>
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
           { id: 'pools', label: 'Pools', icon: Database, count: pools.length },
@@ -1070,7 +1070,7 @@ const OverviewTab: React.FC<{
           <p className="text-body-sm text-warning-700 mb-3 dark:text-warning-300">{lowThresholdPools.length} pool(s) running low:</p>
           <div className="space-y-2">
             {lowThresholdPools.map(pool => (
-              <div key={pool.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 hover:bg-warning-50 transition-colors dark:bg-primary-900 dark:hover:bg-warning-500/10">
+              <div key={pool.id} className="flex items-center justify-between bg-surface-card rounded-lg px-3 py-2 hover:bg-warning-50 transition-colors dark:hover:bg-warning-500/10">
                 <div className="flex items-center gap-2"><Database className="w-4 h-4 text-warning-600 dark:text-warning-300" /><span className="font-medium">{pool.poolName}</span></div>
                 <span className="text-body-sm"><span className="text-warning-600 font-medium dark:text-warning-300">{pool.availableCount}</span> / {pool.poolSize}</span>
               </div>
@@ -1171,9 +1171,9 @@ const PoolsTab: React.FC<{
                 </div>
                 <div className="flex items-center gap-2 body-sm mb-4"><Building2 className="w-4 h-4" /><span>{pool.programName || 'Unknown'}</span></div>
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available</p></div>
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="caption">Assigned</p></div>
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
+                  <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available</p></div>
+                  <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="caption">Assigned</p></div>
+                  <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
                 </div>
                 <div className="mb-4">
                   <div className="flex justify-between text-caption mb-1"><span className="text-neutral-500 dark:text-neutral-400">Utilization</span><span>{((pool.assignedCount + pool.reservedCount) / pool.poolSize * 100).toFixed(1)}%</span></div>
@@ -1282,7 +1282,7 @@ const VibansTab: React.FC<{
                 <th className="data-table-header-cell text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+            <tbody className="divide-y divide-edge-subtle">
               {vibans.map(v => (
                 <tr key={v.id} className="data-table-row group">
                   <td className="data-table-cell">
@@ -1385,7 +1385,7 @@ const PoolForm: React.FC<{
           <div><label className="field-label block mb-1">Prefix *</label><Input value={formData.prefix} onChange={e => setFormData(p => ({ ...p, prefix: e.target.value.toUpperCase() }))} placeholder="ORD" required disabled={!!pool} /></div>
           <div><label className="field-label block mb-1">Suffix Length</label><Input type="number" value={formData.suffixLength} onChange={e => setFormData(p => ({ ...p, suffixLength: parseInt(e.target.value) }))} min={6} max={12} disabled={!!pool} /></div>
         </div>
-        <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="body-sm"><strong>Sample:</strong> <span className="font-mono">{formData.countryCode}00{formData.bankCode}{formData.prefix}{'0'.repeat(formData.suffixLength)}</span></p></div>
+        <div className="bg-surface-page rounded-lg p-3"><p className="body-sm"><strong>Sample:</strong> <span className="font-mono">{formData.countryCode}00{formData.bankCode}{formData.prefix}{'0'.repeat(formData.suffixLength)}</span></p></div>
       </div>
 
       <div className="space-y-4 pt-4 border-t">
@@ -1414,7 +1414,7 @@ const GenerateForm: React.FC<{ pool?: VibanPool; onSubmit: (count: number) => vo
   const [count, setCount] = useState('100');
   return (
     <div className="space-y-4">
-      {pool && <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+      {pool && <div className="bg-surface-page rounded-lg p-4">
         <div className="flex items-center gap-3 mb-2"><Database className="w-5 h-5 text-primary-600 dark:text-primary-200" /><div><p className="font-medium">{pool.poolName}</p><p className="body-sm">{pool.poolCode}</p></div></div>
         <div className="grid grid-cols-3 gap-3 mt-3">
           <div className="text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p><p className="caption">Available</p></div>
@@ -1489,7 +1489,7 @@ const AssignForm: React.FC<{
   return (
     <div className="space-y-4">
       {viban ? (
-        <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
+        <div className="bg-surface-page rounded-lg p-3">
           <p className="body-sm">VIBAN</p>
           <p className="font-mono font-medium">{viban.viban}</p>
           {viban.poolCode && <p className="body-sm mt-1">Pool: {viban.poolCode}</p>}
@@ -1505,15 +1505,15 @@ const AssignForm: React.FC<{
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+            <div className="bg-surface-card rounded-lg p-2">
               <p className="text-body-lg font-bold text-info-600 dark:text-info-300">{selectedPool?.availableCount}</p>
               <p className="caption">Available</p>
             </div>
-            <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+            <div className="bg-surface-card rounded-lg p-2">
               <p className="text-body-lg font-bold text-success-600 dark:text-success-300">{selectedPool?.assignedCount}</p>
               <p className="caption">Assigned</p>
             </div>
-            <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+            <div className="bg-surface-card rounded-lg p-2">
               <p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{selectedPool?.reservedCount}</p>
               <p className="caption">Reserved</p>
             </div>
@@ -1791,15 +1791,15 @@ const BulkAssignForm: React.FC<{
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+          <div className="bg-surface-card rounded-lg p-2">
             <p className="text-body-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p>
             <p className="caption">Available</p>
           </div>
-          <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+          <div className="bg-surface-card rounded-lg p-2">
             <p className="text-body-lg font-bold text-success-600 dark:text-success-300">{pool.assignedCount}</p>
             <p className="caption">Assigned</p>
           </div>
-          <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
+          <div className="bg-surface-card rounded-lg p-2">
             <p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{vibanCount}</p>
             <p className="caption">To Assign</p>
           </div>
@@ -1860,7 +1860,7 @@ const BulkAssignForm: React.FC<{
       </div>
 
       {/* Assignment Mode */}
-      <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
+      <div className="bg-surface-page rounded-lg p-3">
         <RadioGroup
           legend="Assignment Mode"
           name="assignmentMode"
@@ -1878,7 +1878,7 @@ const BulkAssignForm: React.FC<{
       {/* Party Assignments (when with-parties mode) */}
       {assignmentMode === 'with-parties' && (
         <div className="border rounded-lg max-h-48 overflow-y-auto">
-          <div className="bg-neutral-100 px-3 py-2 text-body-sm font-medium border-b sticky top-0 flex justify-between items-center dark:bg-primary-800">
+          <div className="bg-surface-muted px-3 py-2 text-body-sm font-medium border-b sticky top-0 flex justify-between items-center">
             <span>Party Assignment for Each VIBAN</span>
             {selectedVADetails?.corporateName && (
               <span className="text-caption text-neutral-500 font-normal dark:text-neutral-400">
@@ -2017,7 +2017,7 @@ const PoolDetailView: React.FC<{
           <Badge variant="success">{activeVibans.length} Assigned</Badge>
         </div>
         <div className="max-h-80 overflow-auto"><table className="w-full">
-          <thead className="bg-neutral-50 sticky top-0 dark:bg-primary-950"><tr>
+          <thead className="bg-surface-page sticky top-0"><tr>
             <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">VIBAN</th>
             <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Assigned Virtual Account</th>
             <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Reference</th>
@@ -2066,7 +2066,7 @@ const PoolDetailView: React.FC<{
           ))}</tbody>
         </table></div>
         {activeVibans.length > 20 && (
-          <div className="p-3 text-center body-sm border-t bg-neutral-50 dark:bg-primary-950">
+          <div className="p-3 text-center body-sm border-t bg-surface-page">
             Showing 20 of {activeVibans.length} active VIBANs
           </div>
         )}

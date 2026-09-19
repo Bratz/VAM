@@ -88,6 +88,20 @@ function MyComponent() {
 - **Border**: `default`, `subtle`, `strong`, `focus`
 - **Status**: Each has `default`, `subtle`, `border`, `text` variants
 
+#### Surfaces and borders (2026-09) — themed once, no `dark:` pairs
+`bg-surface-*`, `border-edge*` and `divide-edge*` read CSS variables (`variables.css`), so they switch with the theme on their own. Do not write `bg-white dark:bg-primary-900` any more.
+
+| Class | Light | Dark | Use |
+|---|---|---|---|
+| `bg-surface-page` | neutral-50 | primary-950 | page background |
+| `bg-surface-card` | white | primary-900 | cards, modals, popovers, inputs |
+| `bg-surface-muted` | neutral-100 | primary-800 | grouped/nested areas, chips |
+| `border-edge` | neutral-200 | primary-800 | default border |
+| `border-edge-subtle` / `divide-edge-subtle` | neutral-100 | primary-800 @ 60% | row dividers |
+| `border-edge-strong` | neutral-300 | primary-700 | inputs, emphasised borders |
+
+Opacity works (`bg-surface-card/80`). Specimen: Storybook → Design System / Elevation & Surfaces.
+
 ### Typography
 
 #### Font sizes (2026-09) — semantic scale only

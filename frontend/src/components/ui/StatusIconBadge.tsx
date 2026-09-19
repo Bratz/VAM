@@ -140,7 +140,7 @@ const TONE_CLASSES: Record<Tone, ToneClasses> = {
   // Neutral uses primary-{800,900} backgrounds in dark mode — neutral-700/800
   // would clash with the page's navy chrome.
   neutral: {
-    default: { bg: 'bg-neutral-100 dark:bg-primary-800', text: 'text-neutral-600 dark:text-neutral-300' },
+    default: { bg: 'bg-surface-muted', text: 'text-neutral-600 dark:text-neutral-300' },
     subtle:  { bg: 'bg-neutral-50 dark:bg-primary-900',  text: 'text-neutral-500 dark:text-neutral-400' },
   },
   accent: {

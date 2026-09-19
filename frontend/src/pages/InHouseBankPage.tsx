@@ -357,7 +357,7 @@ const EntityCard: React.FC<{
               </div>
 
               {/* Lending Rate */}
-              <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-3 border-t border-edge">
                 <div className="flex justify-between text-body-sm">
                   <span className="text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</span>
                   <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
@@ -392,7 +392,7 @@ const EntityCard: React.FC<{
               </div>
 
               {/* Credit Limit & Utilization */}
-              <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-3 border-t border-edge">
                 <div className="flex justify-between text-body-sm mb-2">
                   <span className="text-neutral-500 dark:text-neutral-400">Credit Limit</span>
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(creditLimit, currency)}</span>
@@ -424,7 +424,7 @@ const EntityCard: React.FC<{
               </div>
 
               {/* Rate Spreads */}
-              <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-3 border-t border-edge">
                 <div className="grid grid-cols-2 gap-2 text-body-sm">
                   {entity.canLend && (
                     <div className="flex justify-between">
@@ -443,7 +443,7 @@ const EntityCard: React.FC<{
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-edge">
           {/* View Position - available for all entities */}
           {onViewPosition && (
             <Button variant="ghost" size="sm" className="flex-1" onClick={onViewPosition}>
@@ -745,7 +745,7 @@ const InHouseBankPage: React.FC = () => {
 
       {/* No Corporate Selected State */}
       {!selectedCorporateId && (
-        <Card padding="md" className="bg-gradient-to-r from-neutral-50 via-white to-neutral-50 border-neutral-200 animate-fade-in dark:border-primary-800 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
+        <Card padding="md" className="bg-gradient-to-r from-neutral-50 via-white to-neutral-50 border-edge animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <StatusIconBadge tone="warning" icon={Building2} size="xl" className="mb-4" />
             <p className="section-title">Select a Corporate</p>
@@ -807,7 +807,7 @@ const InHouseBankPage: React.FC = () => {
 
       {/* Tabs */}
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
-        <div className="border-b border-neutral-100 dark:border-primary-800/60">
+        <div className="border-b border-edge-subtle">
           <div className="flex gap-1 p-2 overflow-x-auto">
             {tabs.map(tab => (
               <button
@@ -949,7 +949,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Accrued Interest */}
                         {(account.accruedCreditInterest > 0 || account.accruedDebitInterest > 0) && (
-                          <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
+                          <div className="mt-3 pt-3 border-t border-edge">
                             <p className="label mb-2 dark:text-neutral-400">Accrued Interest</p>
                             <div className="grid grid-cols-2 gap-2 text-body-sm">
                               <div className="flex justify-between">
@@ -978,7 +978,7 @@ const InHouseBankPage: React.FC = () => {
                         )}
 
                         {/* Interest Rates */}
-                        <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
+                        <div className="mt-3 pt-3 border-t border-edge">
                           <div className="grid grid-cols-2 gap-2 text-caption">
                             <div className="flex justify-between">
                               <span className="text-neutral-500 dark:text-neutral-400">Credit Rate</span>
@@ -993,7 +993,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* IHB Configuration Details */}
                         {(account.ihbSweepEnabled || account.targetCashBalance) && (
-                          <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
+                          <div className="mt-3 pt-3 border-t border-edge">
                             <p className="label mb-2 dark:text-neutral-400">IHB Config</p>
                             <div className="grid grid-cols-2 gap-2 text-caption">
                               {account.targetCashBalance !== undefined && account.targetCashBalance !== null && (
@@ -1100,7 +1100,7 @@ const InHouseBankPage: React.FC = () => {
 
             {/* Credit Limit Section (for borrowers) */}
             {selectedEntity.canBorrow && (
-              <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-4 bg-surface-page rounded-lg border border-edge">
                 <p className="body-strong font-semibold mb-3">Credit Limit Status</p>
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div>
@@ -1146,7 +1146,7 @@ const InHouseBankPage: React.FC = () => {
             )}
 
             {/* Rate Spreads */}
-            <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+            <div className="p-4 bg-surface-page rounded-lg border border-edge">
               <p className="body-strong font-semibold mb-3">Rate Spreads</p>
               <div className="grid grid-cols-2 gap-4">
                 {selectedEntity.canLend && (
@@ -1200,7 +1200,7 @@ const InHouseBankPage: React.FC = () => {
 
           {/* Treasury Rates Preview */}
           {treasuryRates && (
-            <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 dark:bg-primary-950 dark:border-primary-800">
+            <div className="bg-surface-page border border-edge rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="label">Treasury Rates</p>

@@ -107,7 +107,7 @@ const Badge: React.FC<{
   className?: string;
 }> = ({ variant = 'default', children, className }) => {
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200',
+    default: 'bg-surface-muted text-neutral-700 dark:text-neutral-200',
     success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
     error: 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300',
@@ -129,7 +129,7 @@ const Card: React.FC<{
 }> = ({ children, className, padding = 'md' }) => {
   const paddings = { none: '', sm: 'p-4', md: 'p-6', lg: 'p-8' };
   return (
-    <div className={cn('bg-white rounded-lg shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>
+    <div className={cn('bg-surface-card rounded-lg shadow-sm border border-edge', paddings[padding], className)}>
       {children}
     </div>
   );
@@ -146,9 +146,9 @@ const Button: React.FC<{
 }> = ({ children, variant = 'primary', size = 'md', onClick, disabled, className }) => {
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-300',
-    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-200',
+    secondary: 'bg-surface-muted text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:text-neutral-200',
     ghost: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300',
-    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-200',
+    outline: 'border border-edge-strong text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:text-neutral-200',
   };
   const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm', lg: 'px-6 py-3 text-body' };
   return (
@@ -185,7 +185,7 @@ const QuickActionCard: React.FC<{ action: QuickAction }> = ({ action }) => {
   return (
     <button
       onClick={action.onClick}
-      className="flex flex-col items-center gap-3 p-6 bg-white rounded-lg border border-neutral-200 hover:border-primary-300 hover:shadow-md transition-all group dark:bg-primary-900 dark:border-primary-800"
+      className="flex flex-col items-center gap-3 p-6 bg-surface-card rounded-lg border border-edge hover:border-primary-300 hover:shadow-md transition-all group"
     >
       <div className={cn('p-3 rounded-lg transition-colors', colorClasses)}>
         <Icon className="w-6 h-6" />
@@ -266,7 +266,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 dark:bg-primary-900 dark:border-primary-800">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20">
                   <button onClick={() => { onAction(node, 'move'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
                     <ArrowUpDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />Move
                   </button>
@@ -318,7 +318,7 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
 
   return (
     <div className="flex items-start gap-3 p-4 hover:bg-neutral-50 rounded-lg transition-colors dark:hover:bg-primary-800/50">
-      <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon()}</div>
+      <div className="p-2 bg-surface-muted rounded-lg">{getOperationIcon()}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-primary-900 dark:text-neutral-50">{operation.operationType.replace(/_/g, ' ')}</span>
@@ -371,7 +371,7 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
   return (
     <SharedModal isOpen={isOpen} onClose={onClose} size="lg" title="Hierarchy Operation Rules">
       <div className="-mx-6 -my-6">
-        <div className="border-b border-neutral-200 dark:border-primary-800">
+        <div className="border-b border-edge">
             <div className="flex gap-1 px-6">
               {[{ id: 'transaction', label: 'Transaction VAs' }, { id: 'aggregation', label: 'Aggregations' }, { id: 'mna', label: 'M&A Operations' }, { id: 'notmovable', label: 'Not Movable' }].map((tab) => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={cn('px-4 py-3 text-body-sm font-medium border-b-2 transition-colors', activeTab === tab.id ? 'border-primary-600 text-primary-600 dark:text-primary-200' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
@@ -415,7 +415,7 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
               </div>
             )}
           </div>
-          <div className="px-6 py-4 border-t border-neutral-200 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950"><Button variant="secondary" onClick={onClose}>Close</Button></div>
+          <div className="px-6 py-4 border-t border-edge bg-surface-page"><Button variant="secondary" onClick={onClose}>Close</Button></div>
         </div>
     </SharedModal>
   );
@@ -830,7 +830,7 @@ const HierarchyOperationsPage: React.FC = () => {
             {/* Hierarchy Tree */}
             <div className="lg:col-span-2">
               <Card padding="none">
-                <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
+                <div className="flex items-center justify-between p-4 border-b border-edge">
                   <h2 className="font-semibold text-primary-900 dark:text-neutral-50">Current Hierarchy</h2>
                   <div className="flex items-center gap-2">
                     <Button variant="ghost" size="sm" onClick={handleExpandAll}>Expand All</Button>
@@ -855,7 +855,7 @@ const HierarchyOperationsPage: React.FC = () => {
                   )}
                 </div>
                 {hierarchy && (
-                  <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50 dark:border-primary-800/60 dark:bg-primary-950">
+                  <div className="px-4 py-3 border-t border-edge-subtle bg-surface-page">
                     <div className="flex flex-wrap items-center gap-4 caption">
                       <span className="font-medium">Legend:</span>
                       <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-primary-900" />ROOT</span>
@@ -873,7 +873,7 @@ const HierarchyOperationsPage: React.FC = () => {
             <div className="space-y-6">
               {pendingApprovals.length > 0 && (
                 <Card padding="none">
-                  <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between dark:border-primary-800">
+                  <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
                     <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Pending Approvals</h3>
                     <Badge variant="warning">{pendingApprovals.length}</Badge>
                   </div>
@@ -887,11 +887,11 @@ const HierarchyOperationsPage: React.FC = () => {
               )}
 
               <Card padding="none">
-                <div className="px-4 py-3 border-b border-neutral-200 flex items-center justify-between dark:border-primary-800">
+                <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
                   <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Operations</h3>
                   <Button variant="ghost" size="sm">View All</Button>
                 </div>
-                <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+                <div className="divide-y divide-edge-subtle">
                   {history.length === 0 ? (
                     <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
                       <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />

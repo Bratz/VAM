@@ -62,7 +62,7 @@ const Badge: React.FC<{
   children: React.ReactNode;
 }> = ({ variant = 'default', children }) => {
   const variants = {
-    default: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200',
+    default: 'bg-surface-muted text-neutral-700 dark:text-neutral-200',
     success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
     error: 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300',
@@ -80,7 +80,7 @@ const StepIndicator: React.FC<{
   currentStep: number;
   steps: { label: string }[];
 }> = ({ currentStep, steps }) => (
-  <div className="flex items-center justify-center gap-2 py-4 px-6 bg-neutral-50 dark:bg-primary-950 border-b border-neutral-100 dark:border-primary-800/60">
+  <div className="flex items-center justify-center gap-2 py-4 px-6 bg-surface-page border-b border-edge-subtle">
     {steps.map((step, i) => (
       <React.Fragment key={i}>
         <div className="flex items-center gap-2">
@@ -144,15 +144,15 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
         selected
           ? 'border-cat-2 bg-cat-2-soft dark:bg-cat-2/15 ring-2 ring-cat-2/20'
           : disabled || !isInitialized
-          ? 'border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950 cursor-not-allowed opacity-60'
-          : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900'
+          ? 'border-edge-subtle bg-surface-page cursor-not-allowed opacity-60'
+          : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700 bg-surface-card'
       )}
     >
       <div className="flex items-start gap-4">
         <div
           className={cn(
             'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1',
-            selected ? 'border-cat-2 bg-cat-2' : 'border-neutral-300 dark:border-primary-700'
+            selected ? 'border-cat-2 bg-cat-2' : 'border-edge-strong'
           )}
         >
           {selected && <Check className="w-3 h-3 text-white" />}
@@ -418,7 +418,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search corporates..."
-                        className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -473,7 +473,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                 {/* Step 2: Configure New Corporate */}
                 {step === 2 && (
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-surface-page rounded-lg">
                       <div className="text-center p-3 bg-info-50 dark:bg-info-500/10 rounded-lg">
                         <Building2 className="w-6 h-6 text-info-600 dark:text-info-300 mx-auto mb-1" />
                         <p className="font-medium text-info-900 dark:text-info-300">{corporateA?.name}</p>
@@ -495,7 +495,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={newCorporateName}
                         onChange={(e) => setNewCorporateName(e.target.value)}
                         placeholder="e.g., United Holdings Group"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -508,7 +508,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={newCorporateCode}
                         onChange={(e) => setNewCorporateCode(e.target.value.toUpperCase())}
                         placeholder="e.g., UHG-2024"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -519,7 +519,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <select
                         value={baseCurrency}
                         onChange={(e) => setBaseCurrency(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       >
                         {CURRENCY_OPTIONS.map((curr) => (
                           <option key={curr} value={curr}>
@@ -555,7 +555,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                               'w-full text-left p-4 rounded-lg border-2 transition-all',
                               selectedPolicy === policy.policy
                                 ? 'border-cat-2 bg-cat-2-soft dark:bg-cat-2/15'
-                                : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'
+                                : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
                             )}
                           >
                             <div className="flex items-start gap-3">
@@ -564,7 +564,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                                   'w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5',
                                   selectedPolicy === policy.policy
                                     ? 'border-cat-2 bg-cat-2'
-                                    : 'border-neutral-300 dark:border-primary-700'
+                                    : 'border-edge-strong'
                                 )}
                               >
                                 {selectedPolicy === policy.policy && (
@@ -618,7 +618,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                 {/* Step 4: Review & Execute */}
                 {step === 4 && (
                   <div className="space-y-6">
-                    <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+                    <div className="p-4 bg-surface-page rounded-lg">
                       <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-4">Merger Summary</h4>
                       <dl className="space-y-3 text-body-sm">
                         <div className="flex justify-between">
@@ -689,7 +689,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       </div>
                     </div>
 
-                    <Checkbox size="sm" label="I confirm this merger has been approved by the boards of both corporates and all necessary due diligence and regulatory approvals have been obtained." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
+                    <Checkbox size="sm" label="I confirm this merger has been approved by the boards of both corporates and all necessary due diligence and regulatory approvals have been obtained." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-surface-card border border-edge rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
@@ -706,7 +706,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950 flex justify-between">
+          <div className="px-6 py-4 border-t border-edge bg-surface-page flex justify-between">
             <button
               onClick={() => (step === 1 ? onClose() : setStep(step - 1))}
               className="px-4 py-2 field-label hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg"

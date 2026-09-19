@@ -268,14 +268,14 @@ const LineItemRow: React.FC<{
   }, [subtotal, discount, taxAmount]);
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-start p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+    <div className="grid grid-cols-12 gap-2 items-start p-3 bg-surface-page rounded-lg">
       <div className="col-span-3">
         <input
           type="text"
           value={item.description}
           onChange={(e) => onChange(index, 'description', e.target.value)}
           placeholder="Description"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -284,7 +284,7 @@ const LineItemRow: React.FC<{
           value={item.itemCode}
           onChange={(e) => onChange(index, 'itemCode', e.target.value)}
           placeholder="Code"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -292,14 +292,14 @@ const LineItemRow: React.FC<{
           type="number"
           value={item.quantity}
           onChange={(e) => onChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.unit}
           onChange={(e) => onChange(index, 'unit', e.target.value)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         >
           {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -310,7 +310,7 @@ const LineItemRow: React.FC<{
           value={item.unitPrice}
           onChange={(e) => onChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
           placeholder="Price"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -319,14 +319,14 @@ const LineItemRow: React.FC<{
           value={item.discountPercent}
           onChange={(e) => onChange(index, 'discountPercent', parseFloat(e.target.value) || 0)}
           placeholder="%"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.taxCode}
           onChange={(e) => onChange(index, 'taxCode', e.target.value)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-edge-strong rounded-md focus:border-primary-500 focus:outline-none"
         >
           {taxConfigs.map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
         </select>
@@ -476,7 +476,7 @@ const LineItemsTab: React.FC<{
           {/* Add Button */}
           <button
             onClick={addLineItem}
-            className="w-full py-2 border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg body-sm hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-200 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2 border-2 border-dashed border-edge-strong rounded-lg body-sm hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-200 transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Line Item
@@ -547,7 +547,7 @@ const TaxChargesTab: React.FC<{
   return (
     <div className="space-y-6">
       {/* VAT Configuration */}
-      <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg space-y-4">
+      <div className="p-4 bg-surface-page rounded-lg space-y-4">
         <h4 className="body-strong">VAT Configuration</h4>
         
         <div className="flex items-center justify-between">
@@ -562,7 +562,7 @@ const TaxChargesTab: React.FC<{
                 ...prev,
                 taxConfig: { ...prev.taxConfig, vatRate: parseFloat(e.target.value), vatEnabled: true }
               }))}
-              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
               disabled={formData.taxConfig.taxExempt}
             >
               <option value="0">0%</option>
@@ -622,7 +622,7 @@ const TaxChargesTab: React.FC<{
               taxConfig: { ...prev.taxConfig, exemptionReason: e.target.value }
             }))}
             placeholder="Exemption reason..."
-            className="w-full px-3 py-2 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+            className="w-full px-3 py-2 text-body-sm border border-edge-strong rounded-lg"
           />
         )}
       </div>
@@ -641,11 +641,11 @@ const TaxChargesTab: React.FC<{
         </div>
 
         {formData.charges.map((charge, index) => (
-          <div key={charge.id} className="flex items-center gap-2 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+          <div key={charge.id} className="flex items-center gap-2 p-3 bg-surface-page rounded-lg">
             <select
               value={charge.type}
               onChange={(e) => updateCharge(index, 'type', e.target.value)}
-              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
             >
               {CHARGE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
@@ -654,18 +654,18 @@ const TaxChargesTab: React.FC<{
               value={charge.description}
               onChange={(e) => updateCharge(index, 'description', e.target.value)}
               placeholder="Description"
-              className="flex-1 px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="flex-1 px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
             />
             <input
               type="number"
               value={charge.amount}
               onChange={(e) => updateCharge(index, 'amount', parseFloat(e.target.value) || 0)}
-              className="w-24 px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="w-24 px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
             />
             <select
               value={charge.isPercentage ? 'percent' : 'fixed'}
               onChange={(e) => updateCharge(index, 'isPercentage', e.target.value === 'percent')}
-              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
             >
               <option value="fixed">{currency}</option>
               <option value="percent">%</option>
@@ -704,7 +704,7 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, percent: parseFloat(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
+                className="w-16 px-2 py-1.5 text-body-sm border border-edge-strong rounded-md"
               />
               <span className="body-sm">% off if paid within</span>
               <input
@@ -714,7 +714,7 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, days: parseInt(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
+                className="w-16 px-2 py-1.5 text-body-sm border border-edge-strong rounded-md"
               />
               <span className="body-sm">days</span>
             </div>
@@ -748,7 +748,7 @@ const TaxChargesTab: React.FC<{
                 ...prev,
                 latePaymentFee: { ...prev.latePaymentFee, percent: parseFloat(e.target.value) || 0 }
               }))}
-              className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
+              className="w-16 px-2 py-1.5 text-body-sm border border-edge-strong rounded-md"
             />
             <span className="body-sm">% per month after due date</span>
           </div>
@@ -764,7 +764,7 @@ const TaxChargesTab: React.FC<{
 // actually saved -- see the post-creation confirmation Modal in handleSubmit.
 // This pre-submission tab just says so instead of faking a preview.
 const PaymentLinkTab: React.FC = () => (
-  <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800">
+  <div className="flex items-center gap-3 p-4 bg-surface-page rounded-lg border border-edge">
     <div className="p-2 bg-indigo-100 rounded-lg dark:bg-indigo-500/20">
       <Link2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
     </div>
@@ -788,7 +788,7 @@ const CoboTab: React.FC<{
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn('p-2 rounded-lg', formData.coboEnabled ? 'bg-success-100 dark:bg-success-500/20' : 'bg-neutral-100 dark:bg-primary-800')}>
+          <div className={cn('p-2 rounded-lg', formData.coboEnabled ? 'bg-success-100 dark:bg-success-500/20' : 'bg-surface-muted')}>
             <ArrowDownLeft className={cn('w-5 h-5', formData.coboEnabled ? 'text-success-600 dark:text-success-300' : 'text-neutral-500 dark:text-neutral-400')} />
           </div>
           <div>
@@ -814,7 +814,7 @@ const CoboTab: React.FC<{
             <select
               value={formData.collectingEntityId}
               onChange={(e) => setFormData(prev => ({ ...prev, collectingEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
             >
               <option value="">Select treasury entity...</option>
               {entities.filter(e => e.type === 'HEADQUARTERS').map(e => (
@@ -832,7 +832,7 @@ const CoboTab: React.FC<{
             <select
               value={formData.behalfEntityId}
               onChange={(e) => setFormData(prev => ({ ...prev, behalfEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
               disabled={!formData.collectingEntityId}
             >
               <option value="">Select subsidiary...</option>
@@ -851,14 +851,14 @@ const CoboTab: React.FC<{
               type="number"
               value={formData.coboRechargeMarkup}
               onChange={(e) => setFormData(prev => ({ ...prev, coboRechargeMarkup: parseFloat(e.target.value) || 0 }))}
-              className="w-24 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+              className="w-24 px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
               step="0.1"
             />
           </div>
 
           {/* Preview */}
           {collectingEntity && behalfEntity && (
-            <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-200 dark:border-success-500/30">
+            <div className="p-3 bg-surface-card rounded-lg border border-success-200 dark:border-success-500/30">
               <p className="caption mb-2">COBO Flow</p>
               <div className="flex items-center justify-between text-body-sm">
                 <span className="font-medium">Customer pays →</span>
@@ -870,7 +870,7 @@ const CoboTab: React.FC<{
           )}
 
           {/* Info Note */}
-          <div className="flex items-start gap-2 p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-200 dark:border-success-500/30">
+          <div className="flex items-start gap-2 p-3 bg-surface-card rounded-lg border border-success-200 dark:border-success-500/30">
             <Info className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
             <p className="caption">
               When payment is received, treasury will create an IHB deposit for the subsidiary. Interest accrues until settlement.
@@ -906,14 +906,14 @@ const HierarchyTab: React.FC<{
               'w-full flex items-center justify-between p-3 border rounded-lg transition-all text-left',
               formData.hierarchyNodeId === node.id
                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40'
-                : 'border-neutral-200 dark:border-primary-800 hover:border-primary-300'
+                : 'border-edge hover:border-primary-300'
             )}
           >
             <div>
               <p className="body-strong">{node.name}</p>
               <p className="caption">{node.path}</p>
             </div>
-            <span className="caption px-2 py-1 bg-neutral-100 dark:bg-primary-800 rounded-md">
+            <span className="caption px-2 py-1 bg-surface-muted rounded-md">
               {node.level}
             </span>
           </button>
@@ -928,7 +928,7 @@ const HierarchyTab: React.FC<{
           value={formData.revenueCenter}
           onChange={(e) => setFormData(prev => ({ ...prev, revenueCenter: e.target.value }))}
           placeholder="e.g., RC-001, Sales-Dubai"
-          className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
         />
       </div>
     </div>
@@ -980,7 +980,7 @@ const DocumentsTab: React.FC<{
       {/* File Upload */}
       <div>
         <p className="field-label mb-2">Attachments</p>
-        <div className="border-2 border-dashed border-neutral-200 dark:border-primary-800 rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
+        <div className="border-2 border-dashed border-edge rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
           <input
             type="file"
             multiple
@@ -998,7 +998,7 @@ const DocumentsTab: React.FC<{
         {formData.attachments.length > 0 && (
           <div className="mt-3 space-y-2">
             {formData.attachments.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                   <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
@@ -1029,7 +1029,7 @@ const DocumentsTab: React.FC<{
                 <select
                   value={ref.type}
                   onChange={(e) => handleUpdateRef(index, 'type', e.target.value)}
-                  className="px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+                  className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
                 >
                   {REFERENCE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -1038,7 +1038,7 @@ const DocumentsTab: React.FC<{
                   value={ref.value}
                   onChange={(e) => handleUpdateRef(index, 'value', e.target.value)}
                   placeholder="Reference number..."
-                  className="flex-1 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
+                  className="flex-1 px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
                 />
                 <button onClick={() => handleRemoveRef(index)} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg">
                   <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1060,7 +1060,7 @@ const DocumentsTab: React.FC<{
             onChange={(e) => setFormData(prev => ({ ...prev, customerNotes: e.target.value }))}
             rows={3}
             placeholder="Printed on invoice..."
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm resize-none"
           />
         </div>
         <div>
@@ -1070,7 +1070,7 @@ const DocumentsTab: React.FC<{
             onChange={(e) => setFormData(prev => ({ ...prev, internalNotes: e.target.value }))}
             rows={3}
             placeholder="Not visible to customer..."
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm resize-none"
           />
         </div>
       </div>
@@ -1131,7 +1131,7 @@ const RemindersTab: React.FC<{
                 'px-3 py-2 text-body-sm rounded-lg border transition-colors',
                 formData.reminderDays.includes(day)
                   ? 'bg-primary-100 dark:bg-primary-700 border-primary-500 text-primary-700 dark:text-neutral-200'
-                  : 'bg-white dark:bg-primary-900 border-neutral-300 dark:border-primary-700 text-neutral-600 dark:text-neutral-300 hover:border-primary-300'
+                  : 'bg-surface-card border-edge-strong text-neutral-600 dark:text-neutral-300 hover:border-primary-300'
               )}
             >
               {day > 0 ? `+${day}` : day} days
@@ -1169,7 +1169,7 @@ const RemindersTab: React.FC<{
                   'flex items-center justify-between p-3 rounded-lg border',
                   level.level <= formData.dunningMaxLevel
                     ? 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30'
-                    : 'bg-neutral-50 dark:bg-primary-950 border-neutral-200 dark:border-primary-800 opacity-50'
+                    : 'bg-surface-page border-edge opacity-50'
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -1194,7 +1194,7 @@ const RemindersTab: React.FC<{
               <select
                 value={formData.dunningMaxLevel}
                 onChange={(e) => setFormData(prev => ({ ...prev, dunningMaxLevel: parseInt(e.target.value) }))}
-                className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+                className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
               >
                 {[1, 2, 3, 4].map(l => <option key={l} value={l}>{l}</option>)}
               </select>
@@ -1574,7 +1574,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // second sticky element at the same offset would overlap it.
     <div>
       {/* Header */}
-      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-sm mb-6">
+      <div className="bg-surface-card border border-edge rounded-lg shadow-sm mb-6">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1594,7 +1594,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <button
                 onClick={() => handleSubmit(true)}
                 disabled={loading}
-                className="px-4 py-2 field-label bg-white dark:bg-primary-900 border border-neutral-300 dark:border-primary-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 field-label bg-surface-card border border-edge-strong rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
               >
                 Save Draft
               </button>
@@ -1672,7 +1672,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           {/* Left Column - Main Form */}
           <div className="md:col-span-2 space-y-6">
             {/* Customer Selection */}
-            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-surface-card rounded-lg border border-edge p-6">
               <SectionHeader
                 icon={<Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />}
                 iconBg="bg-info-50 dark:bg-info-500/10"
@@ -1690,7 +1690,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     placeholder="Search customer by name or code..."
                     className={cn(
                       'w-full pl-10 pr-4 py-3 border rounded-lg text-body-sm transition-colors',
-                      errors.customer ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700',
+                      errors.customer ? 'border-error-300' : 'border-edge-strong',
                       'focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500'
                     )}
                   />
@@ -1698,12 +1698,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 {errors.customer && <p className="mt-1 text-body-sm text-error-600 dark:text-error-300">{errors.customer}</p>}
 
                 {showCustomerDropdown && customerSearch && (
-                  <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  <div className="absolute z-20 mt-1 w-full bg-surface-card border border-edge rounded-lg shadow-lg max-h-64 overflow-y-auto">
                     {filteredCustomers.length > 0 ? filteredCustomers.map((customer) => (
                       <button
                         key={customer.id}
                         onClick={() => handleSelectCustomer(customer)}
-                        className="w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0"
+                        className="w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors border-b border-edge-subtle last:border-b-0"
                       >
                         <div className="text-left">
                           <p className="body-strong">{customer.name}</p>
@@ -1768,7 +1768,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
 
             {/* Invoice Details */}
-            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-surface-card rounded-lg border border-edge p-6">
               <SectionHeader
                 icon={<FileText className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />}
                 iconBg="bg-cat-2-soft dark:bg-cat-2/15"
@@ -1782,12 +1782,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     type="text"
                     value={formData.invoiceNumber}
                     onChange={(e) => setFormData(prev => ({ ...prev, invoiceNumber: e.target.value }))}
-                    className={cn('w-full px-3 py-2 border rounded-lg text-body-sm font-mono', errors.invoiceNumber ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
+                    className={cn('w-full px-3 py-2 border rounded-lg text-body-sm font-mono', errors.invoiceNumber ? 'border-error-300' : 'border-edge-strong', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
                   />
                 </div>
                 <div>
                   <label className="field-label block mb-1">Invoice Date</label>
-                  <input type="date" value={formData.invoiceDate} onChange={(e) => setFormData(prev => ({ ...prev, invoiceDate: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-200" />
+                  <input type="date" value={formData.invoiceDate} onChange={(e) => setFormData(prev => ({ ...prev, invoiceDate: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-200" />
                 </div>
                 <div>
                   <label className="field-label block mb-1">Amount *</label>
@@ -1797,10 +1797,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       value={formData.amount}
                       onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                       placeholder="0.00"
-                      className={cn('flex-1 px-3 py-2 border rounded-l-lg text-body-sm', errors.amount ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
+                      className={cn('flex-1 px-3 py-2 border rounded-l-lg text-body-sm', errors.amount ? 'border-error-300' : 'border-edge-strong', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
                       disabled={formData.useLineItems}
                     />
-                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="px-3 py-2 border border-l-0 border-neutral-300 dark:border-primary-700 rounded-r-lg text-body-sm bg-neutral-50 dark:bg-primary-950">
+                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="px-3 py-2 border border-l-0 border-edge-strong rounded-r-lg text-body-sm bg-surface-page">
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -1809,30 +1809,30 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 </div>
                 <div>
                   <label className="field-label block mb-1">Payment Terms</label>
-                  <select value={formData.paymentTerms} onChange={(e) => setFormData(prev => ({ ...prev, paymentTerms: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm">
+                  <select value={formData.paymentTerms} onChange={(e) => setFormData(prev => ({ ...prev, paymentTerms: e.target.value }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm">
                     {PAYMENT_TERMS.map(term => <option key={term.value} value={term.value}>{term.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="field-label block mb-1">Due Date</label>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-surface-page border border-edge rounded-lg">
                     <Calendar className="w-4 h-4 text-neutral-400" />
                     <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</span>
                   </div>
                 </div>
                 <div>
                   <label className="field-label block mb-1">Reference (PO/Contract)</label>
-                  <input type="text" value={formData.reference} onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))} placeholder="e.g., PO-2024-001" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" />
+                  <input type="text" value={formData.reference} onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))} placeholder="e.g., PO-2024-001" className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm" />
                 </div>
                 <div className="col-span-2">
                   <label className="field-label block mb-1">Description</label>
-                  <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder="Invoice description..." className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none" />
+                  <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder="Invoice description..." className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm resize-none" />
                 </div>
               </div>
             </div>
 
             {/* Collection Account & VIBAN */}
-            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-surface-card rounded-lg border border-edge p-6">
               <SectionHeader
                 icon={<Landmark className="w-5 h-5 text-success-600 dark:text-success-300" />}
                 iconBg="bg-success-50 dark:bg-success-500/10"
@@ -1846,7 +1846,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     onClick={() => handleSelectAccount(account)}
                     className={cn(
                       'w-full flex items-center justify-between p-4 border rounded-lg transition-all text-left',
-                      selectedAccount?.id === account.id ? 'border-success-500 bg-success-50 ring-2 ring-success-200 dark:bg-success-500/10' : 'border-neutral-200 dark:border-primary-800 hover:border-success-300'
+                      selectedAccount?.id === account.id ? 'border-success-500 bg-success-50 ring-2 ring-success-200 dark:bg-success-500/10' : 'border-edge hover:border-success-300'
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -1868,7 +1868,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               </div>
 
               {/* VIBAN Generation */}
-              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-primary-800">
+              <div className="mt-6 pt-6 border-t border-edge">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-cat-1-soft rounded-lg dark:bg-cat-1/15"><QrCode className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" /></div>
@@ -1895,8 +1895,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
 
             {/* Optional Tabs */}
-            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 overflow-hidden">
-              <div className="flex flex-wrap border-b border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950">
+            <div className="bg-surface-card rounded-lg border border-edge overflow-hidden">
+              <div className="flex flex-wrap border-b border-edge bg-surface-page">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
@@ -1906,7 +1906,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       className={cn(
                         'flex items-center gap-2 px-4 py-3 text-body-sm font-medium transition-colors border-b-2 -mb-px',
                         activeTab === tab.id
-                          ? 'text-primary-600 dark:text-primary-200 border-primary-600 bg-white dark:bg-primary-900'
+                          ? 'text-primary-600 dark:text-primary-200 border-primary-600 bg-surface-card'
                           : 'text-neutral-600 dark:text-neutral-300 border-transparent hover:text-neutral-900 dark:text-neutral-50 hover:bg-white dark:hover:bg-primary-800 dark:bg-primary-900 dark:hover:text-neutral-50'
                       )}
                     >
@@ -1946,7 +1946,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           {/* Right Column - Summary */}
           <div className="col-span-1">
             <div className="sticky top-24 space-y-4">
-              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
+              <div className="bg-surface-card rounded-lg border border-edge p-6">
                 <h3 className="body-strong font-semibold mb-4">Summary</h3>
                 <div className="space-y-4">
                   <div>
@@ -1957,7 +1957,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <p className="caption">Invoice</p>
                     <p className="text-body-sm font-mono text-neutral-900 dark:text-neutral-50">{formData.invoiceNumber}</p>
                   </div>
-                  <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                  <div className="pt-3 border-t border-edge-subtle">
                     <p className="caption">Amount</p>
                     <p className="stat-value-sm">
                       {formData.useLineItems && formData.lineItems.length > 0
@@ -1971,7 +1971,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <p className="caption">Due Date</p>
                     <p className="body-strong">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</p>
                   </div>
-                  <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                  <div className="pt-3 border-t border-edge-subtle">
                     <p className="caption">Collection Account</p>
                     <p className="body-strong">{selectedAccount?.accountName || '-'}</p>
                   </div>
@@ -1984,14 +1984,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
                   {/* Features Summary */}
                   {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.hierarchyNodeId || formData.attachments.length > 0 || formData.enableDunning) && (
-                    <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
+                    <div className="pt-3 border-t border-edge-subtle">
                       <p className="caption mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
                         {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded-md dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
                         {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded-md dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
                         {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded-md dark:bg-success-500/10 dark:text-success-300">COBO</span>}
                         {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 dark:text-cat-2-fg text-caption rounded-md dark:bg-cat-2/15">Hierarchy</span>}
-                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-caption rounded-md">{formData.attachments.length} files</span>}
+                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-surface-muted text-neutral-700 dark:text-neutral-200 text-caption rounded-md">{formData.attachments.length} files</span>}
                         {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded-md dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
                       </div>
                     </div>
@@ -2035,7 +2035,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
         {/* Bottom Action Bar — inner max-w wrapper dropped; Page above
             already centers at max-w-5xl. Phase 10 Design System Unification. */}
-        <div className="mt-8 border-t border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900">
+        <div className="mt-8 border-t border-edge bg-surface-card">
           <div className="py-4">
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
@@ -2048,7 +2048,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <button
                   onClick={() => handleSubmit(true)}
                   disabled={loading}
-                  className="px-6 py-2.5 field-label bg-white dark:bg-primary-900 border border-neutral-300 dark:border-primary-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
+                  className="px-6 py-2.5 field-label bg-surface-card border border-edge-strong rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
                 >
                   Save Draft
                 </button>
@@ -2089,7 +2089,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             <div>
               <p className="caption mb-1">Payment link</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-body-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded-md border border-neutral-200 dark:border-primary-800 font-mono truncate">
+                <code className="flex-1 text-body-sm bg-surface-page px-3 py-2 rounded-md border border-edge font-mono truncate">
                   {createdInvoice.paymentLink}
                 </code>
                 <button

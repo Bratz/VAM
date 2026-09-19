@@ -304,7 +304,7 @@ const CashConcentrationPage: React.FC = () => {
       </StatStrip>
 
       {/* Tabs with Filter — icon + pill-count style matches Intercompany Dashboard's tab row. */}
-      <div className="flex items-center justify-between border-b border-neutral-200 dark:border-primary-800 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+      <div className="flex items-center justify-between border-b border-edge animate-fade-in" style={{ animationDelay: '0.25s' }}>
         <div className="flex gap-1">
           {tabs.map((tab) => (
             <button
@@ -321,7 +321,7 @@ const CashConcentrationPage: React.FC = () => {
               {tab.label}
               <span className={cn(
                 'px-1.5 py-0.5 text-caption rounded-full font-medium',
-                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
               )}>{tab.count}</span>
             </button>
           ))}

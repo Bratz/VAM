@@ -345,8 +345,8 @@ const CreditAgreementsPage: React.FC = () => {
 
       <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search agreements..." className="pl-9" /></div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Types</option>{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Status</option>{Object.entries(STATUS_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 border border-edge-strong rounded-lg bg-surface-card text-body-sm font-medium"><option value="">All Types</option>{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 border border-edge-strong rounded-lg bg-surface-card text-body-sm font-medium"><option value="">All Status</option>{Object.entries(STATUS_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
       </div>
 
       {filteredAgreements.length > 0 ? (
@@ -368,7 +368,7 @@ const CreditAgreementsPage: React.FC = () => {
         <div className="p-4 space-y-4">
           <div><label className="field-label block mb-1">Agreement Name *</label><Input value={createForm.agreementName} onChange={(e) => setCreateForm(prev => ({ ...prev, agreementName: e.target.value }))} placeholder="e.g., ENBD Master Credit Agreement" /></div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="field-label block mb-1">Agreement Type *</label><select value={createForm.agreementType} onChange={(e) => setCreateForm(prev => ({ ...prev, agreementType: e.target.value as any }))} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700">{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
+            <div><label className="field-label block mb-1">Agreement Type *</label><select value={createForm.agreementType} onChange={(e) => setCreateForm(prev => ({ ...prev, agreementType: e.target.value as any }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
             <div><label className="field-label block mb-1">Bank Name</label><Input value={createForm.counterpartyBankName} onChange={(e) => setCreateForm(prev => ({ ...prev, counterpartyBankName: e.target.value }))} placeholder="Emirates NBD" /></div>
           </div>
           <div className="grid grid-cols-2 gap-4">

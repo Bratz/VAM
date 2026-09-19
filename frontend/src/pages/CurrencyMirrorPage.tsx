@@ -144,7 +144,7 @@ const CURRENCY_COLORS: Record<string, { tone: CurrencyTone; bg: string; text: st
 };
 
 const getCurrencyStyle = (currency: string) => {
-  return CURRENCY_COLORS[currency] || { tone: 'neutral' as CurrencyTone, bg: 'bg-neutral-50 dark:bg-primary-950', text: 'text-neutral-600 dark:text-neutral-300', border: 'border-neutral-200 dark:border-primary-800', solid: 'bg-neutral-400' };
+  return CURRENCY_COLORS[currency] || { tone: 'neutral' as CurrencyTone, bg: 'bg-surface-page', text: 'text-neutral-600 dark:text-neutral-300', border: 'border-edge', solid: 'bg-neutral-400' };
 };
 
 const getCurrencyIcon = (currency: string): LucideIcon => CURRENCY_ICONS[currency] || Coins;
@@ -183,14 +183,14 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
 
   return (
     <div className={cn(
-      "bg-white dark:bg-primary-900 rounded-lg border shadow-sm hover:shadow-md transition-all",
+      "bg-surface-card rounded-lg border shadow-sm hover:shadow-md transition-all",
       style.border
     )}>
       {/* Header */}
       <div className={cn("p-4 rounded-t-lg", style.bg)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn("w-12 h-12 rounded-lg bg-white dark:bg-primary-900 shadow-sm flex items-center justify-center")}>
+            <div className={cn("w-12 h-12 rounded-lg bg-surface-card shadow-sm flex items-center justify-center")}>
               <CurrencyIcon currency={breakdown.currency} className={cn("w-6 h-6", style.text)} />
             </div>
             <div>
@@ -211,7 +211,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
           </p>
         </div>
 
-        <div className="flex items-center gap-2 py-2 border-y border-dashed border-neutral-200 dark:border-primary-800">
+        <div className="flex items-center gap-2 py-2 border-y border-dashed border-edge">
           <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
           <span className="body-sm">
             1 {breakdown.currency} = {breakdown.fxRate?.toFixed(4) || 'N/A'} {baseCurrency}
@@ -236,7 +236,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50/50 dark:bg-primary-950/50 rounded-b-lg">
+      <div className="px-4 py-3 border-t border-edge-subtle bg-neutral-50/50 dark:bg-primary-950/50 rounded-b-lg">
         <div className="flex items-center justify-between caption mb-3">
           <span className="font-mono">{breakdown.mirrorVaNumber}</span>
           {rateAge !== null && (
@@ -275,7 +275,7 @@ const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
   const toStyle = getCurrencyStyle(rate.toCurrency);
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
+    <div className="flex items-center justify-between p-3 bg-surface-card rounded-lg border border-edge hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
       <div className="flex items-center gap-3">
         <div className="flex items-center">
           <StatusIconBadge tone={fromStyle.tone} icon={getCurrencyIcon(rate.fromCurrency)} size="sm" rounded="full" subtle />
@@ -664,7 +664,7 @@ const CurrencyMirrorPage: React.FC = () => {
           because it's a single per-page control that doesn't fit the
           ScopeSelector contract. */}
       <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg">
+        <div className="flex items-center gap-2 px-3 py-2 bg-surface-muted rounded-lg">
           <span className="body-sm">Base:</span>
           <CurrencyPicker
             value={baseCurrency}
@@ -797,7 +797,7 @@ const CurrencyMirrorPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+              <div className="p-4 bg-surface-page rounded-lg">
                 <p className="body-sm">Original Balance</p>
                 <p className="stat-value-sm">
                   {formatCurrency(selectedMirror.originalBalance, selectedMirror.currency)}

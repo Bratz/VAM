@@ -331,7 +331,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Request COBO Collection" size="lg">
       <div className="space-y-6">
         {/* Selected Receivables Summary */}
-        <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+        <div className="bg-surface-page rounded-lg p-4">
           <h4 className="text-body-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Selected Receivables ({receivables.length})</h4>
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {receivables.map(r => (
@@ -344,7 +344,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
               </div>
             ))}
           </div>
-          <div className="border-t border-neutral-200 mt-3 pt-3 flex justify-between items-center dark:border-primary-800">
+          <div className="border-t border-edge mt-3 pt-3 flex justify-between items-center">
             <span className="font-semibold text-neutral-700 dark:text-neutral-200">Total Amount</span>
             <span className="text-body-lg font-bold text-cat-1 dark:text-cat-1-fg">{formatCurrency(totalAmount, currency)}</span>
           </div>
@@ -359,7 +359,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
           <select
             value={collectingEntityId}
             onChange={(e) => setCollectingEntityId(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-cat-1 focus:border-cat-1 dark:border-primary-700 dark:bg-primary-900"
+            className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-cat-1 focus:border-cat-1 dark:bg-primary-900"
           >
             <option value="">Select Treasury Entity...</option>
             {treasuryEntities.length > 0 ? (
@@ -493,7 +493,7 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
       <div className="space-y-4">
         <p className="body-sm">{descriptions[action]}</p>
         
-        <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+        <div className="bg-surface-page rounded-lg p-4">
           <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice</p>
@@ -522,7 +522,7 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-cat-1 dark:border-primary-700 dark:bg-primary-900"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-cat-1 dark:bg-primary-900"
               rows={3}
               placeholder="Enter reason for rejection..."
             />
@@ -1186,7 +1186,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       <Card className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
         <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-lg dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
         {/* Tabs */}
-        <div className="border-b border-neutral-200 dark:border-primary-800">
+        <div className="border-b border-edge">
           <div className="flex gap-1 px-4">
             {tabs.map(tab => (
               <button
@@ -1202,7 +1202,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 {tab.label}
                 <span className={cn(
                   'ml-2 px-2 py-0.5 text-caption rounded-full transition-colors',
-                  activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                  activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
                 )}>
                   {tab.count}
                 </span>

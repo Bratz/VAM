@@ -79,7 +79,7 @@ export const CurrencyPicker: React.FC<CurrencyPickerProps> = ({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       className={cn(
-        'w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700',
+        'w-full px-3 py-2 border border-edge-strong rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50',
         className
       )}
     >

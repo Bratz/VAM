@@ -265,7 +265,7 @@ const MultiBankLiquidityPage: React.FC = () => {
         <button
           onClick={load}
           disabled={loading}
-          className="px-3 py-1.5 text-body-sm bg-transparent border border-neutral-300 dark:border-primary-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          className="px-3 py-1.5 text-body-sm bg-transparent border border-edge-strong text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
           Reload view
@@ -285,12 +285,12 @@ const MultiBankLiquidityPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-primary-900 rounded-lg p-5 border border-neutral-200 dark:border-primary-800 h-32 animate-pulse" />
+            <div key={i} className="bg-surface-card rounded-lg p-5 border border-edge h-32 animate-pulse" />
           ))}
         </div>
         <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 h-48 animate-pulse" />
+            <div key={i} className="bg-surface-card rounded-lg border border-edge h-48 animate-pulse" />
           ))}
         </div>
       </Page>

@@ -109,7 +109,7 @@ const EcommerceDashboardPage: React.FC = () => {
 
       {/* Collection Trends Chart */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
+        <div className="p-4 border-b border-edge-subtle">
           <h3 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Collection Trends (30 Days)</h3>
         </div>
         <div className="p-4" style={{ height: 300 }}>

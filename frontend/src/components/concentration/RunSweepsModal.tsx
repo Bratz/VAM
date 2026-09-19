@@ -126,7 +126,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
               <p className="caption mt-1">Activate some rules first</p>
             </Card>
           ) : (
-            <Card padding="none" className="divide-y divide-neutral-100 dark:divide-primary-800/60 max-h-64 overflow-y-auto mb-6">
+            <Card padding="none" className="divide-y divide-edge-subtle max-h-64 overflow-y-auto mb-6">
               {activeRules.map((rule) => {
                 const isSelected = selectedRules.has(rule.id);
                 return (
@@ -142,7 +142,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
                       'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-150',
                       isSelected
                         ? 'bg-primary-600 border-primary-600'
-                        : 'border-neutral-300 dark:border-primary-700 hover:border-primary-400 dark:hover:border-primary-700'
+                        : 'border-edge-strong hover:border-primary-400 dark:hover:border-primary-700'
                     )}>
                       {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                     </div>
@@ -166,7 +166,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-neutral-200 dark:border-primary-800">
+          <div className="flex justify-end gap-3 pt-6 border-t border-edge">
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
             <Button
               onClick={handleRun}
@@ -188,7 +188,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
 
           {runStatus && runStatus.sourcesTotal > 0 ? (
             <div className="mt-4 max-w-xs mx-auto">
-              <div className="h-2 rounded-full bg-neutral-100 dark:bg-primary-800 overflow-hidden">
+              <div className="h-2 rounded-full bg-surface-muted overflow-hidden">
                 <div
                   className="h-full bg-primary-600 dark:bg-primary-400 transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
@@ -235,7 +235,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
             </Card>
           )}
 
-          <div className="flex justify-end pt-6 border-t border-neutral-200 dark:border-primary-800">
+          <div className="flex justify-end pt-6 border-t border-edge">
             <Button onClick={handleClose}>Close</Button>
           </div>
         </div>
@@ -266,7 +266,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
             </div>
           )}
 
-          <div className="flex justify-end pt-6 border-t border-neutral-200 dark:border-primary-800">
+          <div className="flex justify-end pt-6 border-t border-edge">
             <Button onClick={handleClose}>Close</Button>
           </div>
         </div>

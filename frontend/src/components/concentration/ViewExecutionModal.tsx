@@ -38,7 +38,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
                 exec.status === 'SUCCESS' && 'bg-success-100 dark:bg-success-500/20',
                 exec.status === 'FAILED' && 'bg-error-100 dark:bg-error-500/20',
                 exec.status === 'SKIPPED' && 'bg-warning-100 dark:bg-warning-500/20',
-                !['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && 'bg-neutral-100 dark:bg-primary-800'
+                !['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && 'bg-surface-muted'
               )}>
                 {exec.status === 'SUCCESS' && <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
                 {exec.status === 'FAILED' && <XCircle className="w-6 h-6 text-error-600 dark:text-error-300" />}
@@ -200,7 +200,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         </Card>
       </div>
 
-      <div className="flex justify-end mt-8 pt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end mt-8 pt-6 border-t border-edge">
         <Button onClick={onClose}>Close</Button>
       </div>
     </Modal>

@@ -113,7 +113,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                 <p className="text-neutral-500 dark:text-neutral-400">No accounts found for this corporate</p>
               </Card>
             ) : (
-              <Card padding="none" className="divide-y divide-neutral-100 dark:divide-primary-800/60 max-h-64 overflow-y-auto">
+              <Card padding="none" className="divide-y divide-edge-subtle max-h-64 overflow-y-auto">
                 {accounts
                   .filter(acc => acc.id !== formData.targetAccountId)
                   .map((acc) => {
@@ -131,7 +131,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                           'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-150',
                           isSelected
                             ? 'bg-primary-600 border-primary-600'
-                            : 'border-neutral-300 dark:border-primary-700 hover:border-primary-400 dark:hover:border-primary-700'
+                            : 'border-edge-strong hover:border-primary-400 dark:hover:border-primary-700'
                         )}>
                           {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                         </div>

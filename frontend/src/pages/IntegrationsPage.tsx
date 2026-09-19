@@ -313,19 +313,19 @@ const ConnectorCard: React.FC<{
   const IconComponent = getConnectorIcon(connector.iconType || connector.connectorCode);
   
   return (
-    <div className="group border border-neutral-200 bg-white hover:border-neutral-400 transition-all duration-200 dark:border-primary-800 dark:bg-primary-900">
+    <div className="group border border-edge bg-surface-card hover:border-neutral-400 transition-all duration-200">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 border border-neutral-200 flex items-center justify-center bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+            <div className="w-12 h-12 border border-edge flex items-center justify-center bg-surface-page">
               <IconComponent size={24} className="text-neutral-700 dark:text-neutral-200" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="body-strong tracking-tight">{connector.connectorName}</h3>
                 {connector.isBeta && (
-                  <span className="px-1.5 py-0.5 label bg-neutral-100 dark:bg-primary-800">Beta</span>
+                  <span className="px-1.5 py-0.5 label bg-surface-muted">Beta</span>
                 )}
               </div>
               <p className="caption mt-0.5">{categoryConfig[connector.category].label} · {connector.region || 'Global'}</p>
@@ -342,7 +342,7 @@ const ConnectorCard: React.FC<{
         {/* Features */}
         <div className="flex flex-wrap gap-1 mb-4">
           {connector.supportedFeatures.slice(0, 3).map((feature, idx) => (
-            <span key={idx} className="px-2 py-0.5 label-cased bg-neutral-50 border border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
+            <span key={idx} className="px-2 py-0.5 label-cased bg-surface-page border border-edge-subtle">
               {feature}
             </span>
           ))}
@@ -364,7 +364,7 @@ const ConnectorCard: React.FC<{
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
+      <div className="px-6 py-3 border-t border-edge-subtle flex items-center justify-between bg-neutral-50/50 dark:bg-primary-950/50">
         {connector.documentationUrl && (
           <button className="caption hover:text-neutral-700 flex items-center gap-1 transition-colors dark:hover:text-neutral-200">
             Documentation <ExternalLink className="w-3 h-3" />
@@ -409,12 +409,12 @@ const ConnectionCard: React.FC<{
   const status = statusStyles[connection.status];
 
   return (
-    <div className="border border-neutral-200 bg-white hover:border-neutral-300 transition-colors dark:border-primary-800 dark:bg-primary-900 dark:hover:border-primary-700">
+    <div className="border border-edge bg-surface-card hover:border-neutral-300 transition-colors dark:hover:border-primary-700">
       {/* Header */}
-      <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60">
+      <div className="p-5 border-b border-edge-subtle">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 border border-neutral-200 flex items-center justify-center bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+            <div className="w-10 h-10 border border-edge flex items-center justify-center bg-surface-page">
               <IconComponent size={20} className="text-neutral-700 dark:text-neutral-200" />
             </div>
             <div>
@@ -425,7 +425,7 @@ const ConnectionCard: React.FC<{
           <div className="flex items-center gap-2">
             <span className={cn(
               "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
-              connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+              connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
             )}>
               {connection.environment === 'PRODUCTION' ? 'Prod' : 'Sandbox'}
             </span>
@@ -444,7 +444,7 @@ const ConnectionCard: React.FC<{
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100 dark:divide-primary-800/60 dark:border-primary-800/60">
+      <div className="grid grid-cols-3 divide-x divide-edge-subtle border-b border-edge-subtle">
         <div className="p-4 text-center">
           <p className="text-body-lg font-light text-neutral-900 dark:text-neutral-50">{connection.dataFlowCount}</p>
           <p className="caption">Flows</p>
@@ -479,7 +479,7 @@ const ConnectionCard: React.FC<{
           </button>
           <button
             onClick={onView}
-            className="px-3 py-1.5 text-caption font-medium border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all dark:border-primary-700"
+            className="px-3 py-1.5 text-caption font-medium border border-edge-strong hover:border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all"
           >
             Manage
           </button>
@@ -544,7 +544,7 @@ const SetupWizardModal: React.FC<{
             <label className="block label mb-2">Client ID</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
               placeholder="Enter OAuth Client ID"
               value={config.clientId}
               onChange={e => setConfig({ ...config, clientId: e.target.value })}
@@ -554,7 +554,7 @@ const SetupWizardModal: React.FC<{
             <label className="block label mb-2">Client Secret</label>
             <input
               type="password"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
               placeholder="Enter OAuth Client Secret"
               value={config.clientSecret}
               onChange={e => setConfig({ ...config, clientSecret: e.target.value })}
@@ -565,7 +565,7 @@ const SetupWizardModal: React.FC<{
               <label className="block label mb-2">Tenant ID</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
                 placeholder="Azure AD Tenant ID"
                 value={config.tenantId}
                 onChange={e => setConfig({ ...config, tenantId: e.target.value })}
@@ -583,7 +583,7 @@ const SetupWizardModal: React.FC<{
             <label className="block label mb-2">API Key</label>
             <input
               type="password"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
               placeholder="Enter API Key"
               value={config.apiKey}
               onChange={e => setConfig({ ...config, apiKey: e.target.value })}
@@ -593,7 +593,7 @@ const SetupWizardModal: React.FC<{
             <label className="block label mb-2">Endpoint URL</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
               placeholder="https://api.example.com"
               value={config.host}
               onChange={e => setConfig({ ...config, host: e.target.value })}
@@ -610,7 +610,7 @@ const SetupWizardModal: React.FC<{
             <label className="block label mb-2">Host</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
               placeholder="sftp.example.com"
               value={config.host}
               onChange={e => setConfig({ ...config, host: e.target.value })}
@@ -621,7 +621,7 @@ const SetupWizardModal: React.FC<{
               <label className="block label mb-2">Port</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
                 placeholder="22"
                 value={config.port}
                 onChange={e => setConfig({ ...config, port: e.target.value })}
@@ -631,7 +631,7 @@ const SetupWizardModal: React.FC<{
               <label className="block label mb-2">Username</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
                 placeholder="sftp_user"
                 value={config.username}
                 onChange={e => setConfig({ ...config, username: e.target.value })}
@@ -641,7 +641,7 @@ const SetupWizardModal: React.FC<{
           <div>
             <label className="block label mb-2">Private Key</label>
             <textarea
-              className="w-full h-24 px-3 py-2.5 border border-neutral-300 text-body-sm font-mono focus:border-neutral-900 focus:outline-none transition-colors resize-none dark:border-primary-700"
+              className="w-full h-24 px-3 py-2.5 border border-edge-strong text-body-sm font-mono focus:border-neutral-900 focus:outline-none transition-colors resize-none"
               placeholder="-----BEGIN RSA PRIVATE KEY-----"
               value={config.privateKey}
               onChange={e => setConfig({ ...config, privateKey: e.target.value })}
@@ -655,7 +655,7 @@ const SetupWizardModal: React.FC<{
     if (['PSD2_CONSENT', 'OPEN_BANKING_UK', 'BERLIN_GROUP', 'STET', 'POLISH_API'].includes(authType)) {
       return (
         <div className="space-y-4">
-          <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+          <div className="p-4 bg-surface-page border border-edge">
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-neutral-600 mt-0.5 dark:text-neutral-300" />
               <div>
@@ -668,7 +668,7 @@ const SetupWizardModal: React.FC<{
           </div>
           <div>
             <label className="block label mb-2">TPP Certificate</label>
-            <div className="border border-dashed border-neutral-300 p-6 text-center dark:border-primary-700">
+            <div className="border border-dashed border-edge-strong p-6 text-center">
               <Upload className="w-6 h-6 text-neutral-400 mx-auto mb-2 dark:text-neutral-400" />
               <p className="caption">Drop certificate file or click to upload</p>
             </div>
@@ -684,7 +684,7 @@ const SetupWizardModal: React.FC<{
           <label className="block label mb-2">Username</label>
           <input
             type="text"
-            className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+            className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
             placeholder="Enter username"
             value={config.username}
             onChange={e => setConfig({ ...config, username: e.target.value })}
@@ -694,7 +694,7 @@ const SetupWizardModal: React.FC<{
           <label className="block label mb-2">Password</label>
           <input
             type="password"
-            className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+            className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
             placeholder="Enter password"
             value={config.clientSecret}
             onChange={e => setConfig({ ...config, clientSecret: e.target.value })}
@@ -708,9 +708,9 @@ const SetupWizardModal: React.FC<{
     <Modal isOpen={!!connector} onClose={onClose} title="" size="lg">
       <div className="min-h-[500px] flex flex-col">
         {/* Header */}
-        <div className="pb-6 border-b border-neutral-200 mb-6 dark:border-primary-800">
+        <div className="pb-6 border-b border-edge mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 border border-neutral-200 flex items-center justify-center dark:border-primary-800">
+            <div className="w-12 h-12 border border-edge flex items-center justify-center">
               <IconComponent size={24} className="text-neutral-700 dark:text-neutral-200" />
             </div>
             <div>
@@ -727,7 +727,7 @@ const SetupWizardModal: React.FC<{
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
-                step > idx + 1 && "bg-neutral-100 text-neutral-900 dark:bg-primary-800 dark:text-neutral-50",
+                step > idx + 1 && "bg-surface-muted text-neutral-900 dark:text-neutral-50",
                 step < idx + 1 && "text-neutral-400"
               )}>
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
@@ -746,7 +746,7 @@ const SetupWizardModal: React.FC<{
                 <label className="block label mb-2">Connection Name</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                  className="w-full px-3 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
                   placeholder={`My ${connector.shortName} Connection`}
                   value={config.name}
                   onChange={e => setConfig({ ...config, name: e.target.value })}
@@ -763,7 +763,7 @@ const SetupWizardModal: React.FC<{
                         "p-4 border text-left transition-all",
                         config.environment === env
                           ? "border-neutral-900 bg-neutral-900 text-white"
-                          : "border-neutral-200 hover:border-neutral-400 dark:border-primary-800"
+                          : "border-edge hover:border-neutral-400"
                       )}
                     >
                       <p className="text-body-sm font-medium">{env === 'SANDBOX' ? 'Sandbox' : 'Production'}</p>
@@ -779,7 +779,7 @@ const SetupWizardModal: React.FC<{
 
           {step === 2 && (
             <div className="space-y-6">
-              <div className="p-4 bg-neutral-50 border border-neutral-200 mb-6 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-4 bg-surface-page border border-edge mb-6">
                 <div className="flex items-center gap-2 caption">
                   <Shield className="w-4 h-4" />
                   <span>Credentials are encrypted using AES-256 and stored securely</span>
@@ -807,7 +807,7 @@ const SetupWizardModal: React.FC<{
                         "p-3 border text-left transition-all",
                         config.syncFrequency === freq.value
                           ? "border-neutral-900 bg-neutral-900 text-white"
-                          : "border-neutral-200 hover:border-neutral-400 dark:border-primary-800"
+                          : "border-edge hover:border-neutral-400"
                       )}
                     >
                       <p className="text-body-sm font-medium">{freq.label}</p>
@@ -816,7 +816,7 @@ const SetupWizardModal: React.FC<{
                   ))}
                 </div>
               </div>
-              <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-4 bg-surface-page border border-edge">
                 <p className="text-caption font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Default Data Flows</p>
                 <div className="space-y-2">
                   {connector.supportedFeatures.slice(0, 4).map((feature, idx) => (
@@ -832,7 +832,7 @@ const SetupWizardModal: React.FC<{
 
           {step === 4 && (
             <div className="space-y-6">
-              <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-4 bg-surface-page border border-edge">
                 <div className="grid grid-cols-2 gap-4 text-body-sm">
                   <div>
                     <p className="label">Name</p>
@@ -893,7 +893,7 @@ const SetupWizardModal: React.FC<{
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-between pt-6 mt-6 border-t border-edge">
           <button
             onClick={step === 1 ? onClose : () => setStep(step - 1)}
             className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
@@ -941,9 +941,9 @@ const ConnectionDetailModal: React.FC<{
   return (
     <Modal isOpen={!!connection} onClose={onClose} title="" size="xl">
       {/* Header */}
-      <div className="flex items-center justify-between pb-6 border-b border-neutral-200 mb-6 dark:border-primary-800">
+      <div className="flex items-center justify-between pb-6 border-b border-edge mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 border border-neutral-200 flex items-center justify-center dark:border-primary-800">
+          <div className="w-12 h-12 border border-edge flex items-center justify-center">
             <IconComponent size={24} className="text-neutral-700 dark:text-neutral-200" />
           </div>
           <div>
@@ -951,7 +951,7 @@ const ConnectionDetailModal: React.FC<{
             <div className="flex items-center gap-2 mt-1">
               <span className={cn(
                 "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
-                connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
               )}>
                 {connection.environment}
               </span>
@@ -971,7 +971,7 @@ const ConnectionDetailModal: React.FC<{
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-6 mb-6 border-b border-neutral-200 dark:border-primary-800">
+      <div className="flex gap-6 mb-6 border-b border-edge">
         {[
           { id: 'overview', label: 'Overview' },
           { id: 'flows', label: 'Data Flows', count: connection.dataFlows?.length || 0 },
@@ -989,7 +989,7 @@ const ConnectionDetailModal: React.FC<{
           >
             {tab.label}
             {tab.count !== undefined && (
-              <span className="ml-2 px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">{tab.count}</span>
+              <span className="ml-2 px-1.5 py-0.5 caption bg-surface-muted">{tab.count}</span>
             )}
           </button>
         ))}
@@ -1006,7 +1006,7 @@ const ConnectionDetailModal: React.FC<{
                 { label: 'Created', value: formatRelativeTime(connection.createdAt) },
                 { label: 'Created By', value: connection.createdBy },
               ].map((item, idx) => (
-                <div key={idx} className="p-4 bg-neutral-50 border border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
+                <div key={idx} className="p-4 bg-surface-page border border-edge-subtle">
                   <p className="caption">{item.label}</p>
                   <p className="body-strong mt-1 capitalize">{item.value}</p>
                 </div>
@@ -1029,7 +1029,7 @@ const ConnectionDetailModal: React.FC<{
             )}
 
             {connection.consentInfo && (
-              <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+              <div className="p-4 bg-surface-page border border-edge">
                 <p className="text-caption font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Open Banking Consent</p>
                 <div className="grid grid-cols-2 gap-4 text-body-sm">
                   <div>
@@ -1053,13 +1053,13 @@ const ConnectionDetailModal: React.FC<{
             )}
 
             <div className="flex gap-2">
-              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" /> Sync Now
               </button>
-              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                 <Settings className="w-4 h-4" /> Settings
               </button>
-              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                 <Key className="w-4 h-4" /> Credentials
               </button>
             </div>
@@ -1069,12 +1069,12 @@ const ConnectionDetailModal: React.FC<{
         {activeTab === 'flows' && (
           <div className="space-y-3">
             {connection.dataFlows?.map(flow => (
-              <div key={flow.id} className="border border-neutral-200 hover:border-neutral-300 transition-colors dark:border-primary-800 dark:hover:border-primary-700">
+              <div key={flow.id} className="border border-edge hover:border-neutral-300 transition-colors dark:hover:border-primary-700">
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "w-8 h-8 flex items-center justify-center",
-                      flow.direction === 'INBOUND' ? 'bg-neutral-100 dark:bg-primary-800' : flow.direction === 'OUTBOUND' ? 'bg-neutral-900 text-white' : 'bg-neutral-200 dark:bg-primary-800'
+                      flow.direction === 'INBOUND' ? 'bg-surface-muted' : flow.direction === 'OUTBOUND' ? 'bg-neutral-900 text-white' : 'bg-neutral-200 dark:bg-primary-800'
                     )}>
                       {flow.direction === 'INBOUND' ? <Download className="w-4 h-4" /> :
                        flow.direction === 'OUTBOUND' ? <Upload className="w-4 h-4" /> :
@@ -1108,7 +1108,7 @@ const ConnectionDetailModal: React.FC<{
                 </div>
               </div>
             ))}
-            <button className="w-full p-4 border border-dashed border-neutral-300 body-sm hover:border-neutral-900 hover:text-neutral-900 transition-colors flex items-center justify-center gap-2 dark:border-primary-700 dark:hover:text-neutral-50">
+            <button className="w-full p-4 border border-dashed border-edge-strong body-sm hover:border-neutral-900 hover:text-neutral-900 transition-colors flex items-center justify-center gap-2 dark:hover:text-neutral-50">
               <Plus className="w-4 h-4" /> Add Data Flow
             </button>
           </div>
@@ -1118,7 +1118,7 @@ const ConnectionDetailModal: React.FC<{
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-200 dark:border-primary-800">
+                <tr className="border-b border-edge">
                   <th className="pb-3 text-left overline">Flow</th>
                   <th className="pb-3 text-left overline">Direction</th>
                   <th className="pb-3 text-left overline">Time</th>
@@ -1126,14 +1126,14 @@ const ConnectionDetailModal: React.FC<{
                   <th className="pb-3 text-center overline">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+              <tbody className="divide-y divide-edge-subtle">
                 {connectionLogs.map(log => (
                   <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                     <td className="py-3 text-body-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</td>
                     <td className="py-3">
                       <span className={cn(
                         "px-2 py-0.5 text-caption font-medium uppercase",
-                        log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
+                        log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction}
                       </span>
@@ -1162,7 +1162,7 @@ const ConnectionDetailModal: React.FC<{
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-end pt-6 mt-6 border-t border-edge">
         <button onClick={onClose} className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
           Close
         </button>
@@ -1194,21 +1194,21 @@ const FieldMappingModal: React.FC<{
   return (
     <Modal isOpen={!!flow} onClose={onClose} title="" size="xl">
       {/* Header */}
-      <div className="pb-6 border-b border-neutral-200 mb-6 dark:border-primary-800">
+      <div className="pb-6 border-b border-edge mb-6">
         <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">Field Mapping</h2>
         <p className="body-sm mt-1">{flow.flowName}</p>
         <div className="flex items-center gap-2 mt-3">
-          <span className="px-2 py-1 text-caption bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200">{flow.sourceEntity}</span>
+          <span className="px-2 py-1 text-caption bg-surface-muted text-neutral-700 dark:text-neutral-200">{flow.sourceEntity}</span>
           <ArrowRight className="w-4 h-4 text-neutral-400" />
           <span className="px-2 py-1 text-caption bg-neutral-900 text-white">{flow.targetEntity}</span>
         </div>
       </div>
 
       {/* Mapping Table */}
-      <div className="border border-neutral-200 mb-4 dark:border-primary-800">
+      <div className="border border-edge mb-4">
         <table className="w-full">
           <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
+            <tr className="bg-surface-page border-b border-edge">
               <th className="px-4 py-3 text-left label-cased w-1/4">Source</th>
               <th className="px-4 py-3 text-center label-cased w-12"></th>
               <th className="px-4 py-3 text-left label-cased w-1/4">Target</th>
@@ -1217,7 +1217,7 @@ const FieldMappingModal: React.FC<{
               <th className="px-4 py-3 text-center w-12"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+          <tbody className="divide-y divide-edge-subtle">
             {mappings.map((mapping) => (
               <tr key={mapping.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                 <td className="px-4 py-2">
@@ -1225,7 +1225,7 @@ const FieldMappingModal: React.FC<{
                     type="text"
                     value={mapping.sourceField}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, sourceField: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
+                    className="w-full px-2 py-1.5 border border-edge text-body-sm font-mono focus:border-neutral-900 focus:outline-none"
                     placeholder="Source field"
                   />
                 </td>
@@ -1237,7 +1237,7 @@ const FieldMappingModal: React.FC<{
                     type="text"
                     value={mapping.targetField}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, targetField: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
+                    className="w-full px-2 py-1.5 border border-edge text-body-sm font-mono focus:border-neutral-900 focus:outline-none"
                     placeholder="Target field"
                   />
                 </td>
@@ -1245,7 +1245,7 @@ const FieldMappingModal: React.FC<{
                   <select
                     value={mapping.transformation || 'direct'}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, transformation: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm focus:border-neutral-900 focus:outline-none bg-white dark:border-primary-800 dark:bg-primary-900"
+                    className="w-full px-2 py-1.5 border border-edge text-body-sm focus:border-neutral-900 focus:outline-none bg-surface-card"
                   >
                     <option value="direct">Direct</option>
                     <option value="trim">Trim</option>
@@ -1281,12 +1281,12 @@ const FieldMappingModal: React.FC<{
       </button>
 
       {/* Footer */}
-      <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
+      <div className="flex justify-between pt-6 mt-6 border-t border-edge">
         <button onClick={onClose} className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
           Cancel
         </button>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors dark:border-primary-700">
+          <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors">
             Test Mapping
           </button>
           <button onClick={onClose} className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors">
@@ -1352,21 +1352,21 @@ const IntegrationsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-primary-950">
+    <div className="min-h-screen bg-surface-page">
       {/* Phase 10 Design System Unification (2026-05-13): the banner chrome
           (header + tab nav below) keeps its full-width bg-white + border-b
           treatment but inner `max-w-7xl mx-auto` no longer adds `px-6` —
           the <main> shell already supplies horizontal padding. The content
           section below uses <Page maxWidth="default"> for max-width and
           space-y-6 rhythm. */}
-      <div className="bg-white border-b border-neutral-200 dark:bg-primary-900 dark:border-primary-800">
+      <div className="bg-surface-card border-b border-edge">
         <div className="max-w-7xl mx-auto py-8">
           <PageHeader
             title="Integrations"
             description="Connect ERP, treasury, and banking systems"
             actions={
               <>
-                <button className="px-4 py-2 text-body-sm border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+                <button className="px-4 py-2 text-body-sm border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                   <FileText className="w-4 h-4" /> API Docs
                 </button>
                 <button
@@ -1398,7 +1398,7 @@ const IntegrationsPage: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-neutral-200 dark:bg-primary-900 dark:border-primary-800">
+      <div className="bg-surface-card border-b border-edge">
         <div className="max-w-7xl mx-auto">
           <div className="flex gap-8">
             {[
@@ -1439,7 +1439,7 @@ const IntegrationsPage: React.FC = () => {
               />
             ))}
             {connections.length === 0 && (
-              <div className="col-span-2 text-center py-16 border border-dashed border-neutral-300 dark:border-primary-700">
+              <div className="col-span-2 text-center py-16 border border-dashed border-edge-strong">
                 <Link2 className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                 <p className="body-sm">No connections configured</p>
                 <button
@@ -1481,7 +1481,7 @@ const IntegrationsPage: React.FC = () => {
                   placeholder="Search connectors..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 w-64 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                  className="pl-9 pr-4 py-2 w-64 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none transition-colors"
                 />
               </div>
             </div>
@@ -1506,10 +1506,10 @@ const IntegrationsPage: React.FC = () => {
 
         {/* Sync Logs */}
         {activeTab === 'logs' && (
-          <div className="bg-white border border-neutral-200 dark:bg-primary-900 dark:border-primary-800">
+          <div className="bg-surface-card border border-edge">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-200 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+                <tr className="border-b border-edge bg-surface-page">
                   <th className="px-6 py-4 text-left overline">Connection</th>
                   <th className="px-6 py-4 text-left overline">Flow</th>
                   <th className="px-6 py-4 text-left overline">Direction</th>
@@ -1519,7 +1519,7 @@ const IntegrationsPage: React.FC = () => {
                   <th className="px-6 py-4 text-left overline">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
+              <tbody className="divide-y divide-edge-subtle">
                 {mockSyncLogs.map(log => (
                   <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                     <td className="px-6 py-4 body-strong">{log.connectionName}</td>
@@ -1527,7 +1527,7 @@ const IntegrationsPage: React.FC = () => {
                     <td className="px-6 py-4">
                       <span className={cn(
                         "inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium uppercase",
-                        log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
+                        log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction === 'INBOUND' ? <Download className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
                         {log.direction}

@@ -58,7 +58,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
       <div
         className={cn(
           'flex flex-col lg:flex-row lg:items-center lg:min-h-11 gap-2 lg:gap-3',
-          'border-b border-neutral-200 dark:border-primary-800 pb-2 lg:pb-0'
+          'border-b border-edge pb-2 lg:pb-0'
         )}
       >
         <div className="flex items-center gap-2 flex-wrap min-w-0">

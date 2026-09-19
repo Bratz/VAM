@@ -198,10 +198,10 @@ const ExceptionRow: React.FC<{
   const ageInDays = Math.floor((Date.now() - new Date(exception.createdAt).getTime()) / (1000 * 60 * 60 * 24));
 
   return (
-    <div className={cn('px-6 py-4 border-b border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer transition-colors group', selected && 'bg-primary-50 dark:bg-primary-800/40')} onClick={onView}>
+    <div className={cn('px-6 py-4 border-b border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer transition-colors group', selected && 'bg-primary-50 dark:bg-primary-800/40')} onClick={onView}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center shrink-0 group-hover:bg-primary-100 dark:group-hover:bg-primary-700 transition-colors">
+          <div className="w-10 h-10 rounded-lg bg-surface-muted flex items-center justify-center shrink-0 group-hover:bg-primary-100 dark:group-hover:bg-primary-700 transition-colors">
             <TypeIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-200 transition-colors" />
           </div>
           <div className="min-w-0 flex-1">
@@ -461,7 +461,7 @@ const ExceptionDashboardPage: React.FC = () => {
         {/* Same duplicate/conflicting dark cleanup as EscrowPage.tsx's
             equivalent banner — two competing dark gradient-stop sets. */}
         <div className="h-1 bg-gradient-to-r from-warning-50/50 via-white to-warning-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="px-6 py-4 border-b border-edge">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="warning" icon={AlertTriangle} />

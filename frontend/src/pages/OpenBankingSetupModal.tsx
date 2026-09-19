@@ -143,7 +143,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
     <Modal isOpen={isOpen} onClose={resetAndClose} title="" size="lg">
       <div className="min-h-[500px] flex flex-col">
         {/* Header */}
-        <div className="pb-6 border-b border-neutral-200 dark:border-primary-800 mb-6">
+        <div className="pb-6 border-b border-edge mb-6">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="neutral" solid icon={Globe} />
             <div>
@@ -160,7 +160,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
-                step > idx + 1 && "bg-neutral-100 dark:bg-primary-800 text-neutral-900 dark:text-neutral-50",
+                step > idx + 1 && "bg-surface-muted text-neutral-900 dark:text-neutral-50",
                 step < idx + 1 && "text-neutral-400"
               )}>
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
@@ -197,7 +197,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                       "p-3 border text-left transition-all hover:border-neutral-400 dark:hover:border-primary-700",
                       selectedCountry === country.code
                         ? "border-neutral-900 bg-neutral-900 text-white"
-                        : "border-neutral-200 dark:border-primary-800"
+                        : "border-edge"
                     )}
                   >
                     <span className="text-body-lg">{country.flag}</span>
@@ -218,7 +218,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                   placeholder="Search for your bank..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 text-body-sm focus:border-neutral-900 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 border border-edge-strong text-body-sm focus:border-neutral-900 focus:outline-none"
                 />
               </div>
 
@@ -228,7 +228,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                   <p className="body-sm">Loading banks...</p>
                 </div>
               ) : (
-                <div className="max-h-64 overflow-y-auto border border-neutral-200 dark:border-primary-800">
+                <div className="max-h-64 overflow-y-auto border border-edge">
                   {filteredAspsps.length === 0 ? (
                     <div className="p-6 text-center body-sm">
                       No banks found
@@ -242,12 +242,12 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                           setStep(3);
                         }}
                         className={cn(
-                          "w-full p-4 flex items-center justify-between border-b border-neutral-100 dark:border-primary-800/60 last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors",
-                          selectedAspsp?.aspspId === aspsp.aspspId && "bg-neutral-50 dark:bg-primary-950"
+                          "w-full p-4 flex items-center justify-between border-b border-edge-subtle last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors",
+                          selectedAspsp?.aspspId === aspsp.aspspId && "bg-surface-page"
                         )}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-surface-muted flex items-center justify-center">
                             {aspsp.logoUrl ? (
                               <img src={aspsp.logoUrl} alt={aspsp.name} className="w-6 h-6 object-contain" />
                             ) : (
@@ -260,8 +260,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">AIS</span>}
-                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">PIS</span>}
+                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 caption bg-surface-muted">AIS</span>}
+                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 caption bg-surface-muted">PIS</span>}
                           <ChevronRight className="w-4 h-4 text-neutral-400" />
                         </div>
                       </button>
@@ -275,9 +275,9 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
           {/* Step 3: Permissions */}
           {step === 3 && selectedAspsp && (
             <div className="space-y-6">
-              <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800">
+              <div className="p-4 bg-surface-page border border-edge">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 flex items-center justify-center">
+                  <div className="w-10 h-10 bg-surface-card border border-edge flex items-center justify-center">
                     <Building2 className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
                   </div>
                   <div>
@@ -306,8 +306,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                         className={cn(
                           "w-full p-4 border text-left transition-all flex items-center justify-between",
                           isSelected && isSupported && "border-neutral-900 bg-neutral-900 text-white",
-                          !isSelected && isSupported && "border-neutral-200 dark:border-primary-800 hover:border-neutral-400 dark:hover:border-primary-700",
-                          !isSupported && "border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950 opacity-50 cursor-not-allowed"
+                          !isSelected && isSupported && "border-edge hover:border-neutral-400 dark:hover:border-primary-700",
+                          !isSupported && "border-edge-subtle bg-surface-page opacity-50 cursor-not-allowed"
                         )}
                       >
                         <div>
@@ -358,7 +358,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                   <p className="caption mt-1 max-w-sm mx-auto">
                     Click below to connect to {selectedAspsp.name}. You'll be redirected to your bank to complete authorization.
                   </p>
-                  <div className="mt-6 p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 text-left max-w-sm mx-auto">
+                  <div className="mt-6 p-4 bg-surface-page border border-edge text-left max-w-sm mx-auto">
                     <p className="caption mb-2">Selected Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedPermissions.map(p => (
@@ -373,7 +373,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
+        <div className="flex justify-between pt-6 mt-6 border-t border-edge">
           <button
             onClick={step === 1 ? resetAndClose : () => setStep(step - 1)}
             className="px-4 py-2 body-sm hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors"

@@ -170,7 +170,7 @@ const IcCreditBadge: React.FC<{ limit?: number; exposure?: number }> = ({ limit,
 const OwningEntityBadge: React.FC<{ entityCode?: string }> = ({ entityCode }) => {
   if (!entityCode) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md label-cased bg-neutral-100 dark:bg-primary-800">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md label-cased bg-surface-muted">
       <Building2 className="w-3 h-3" />
       {entityCode}
     </span>
@@ -189,7 +189,7 @@ const EntitySelector: React.FC<{
   <select
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+    className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
   >
     <option value="">All Entities</option>
     {entities.map((entity) => (
@@ -212,7 +212,7 @@ const CorporateSelector: React.FC<{
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     disabled={loading}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
+    className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px]"
   >
     {loading ? (
       <option value="">Loading corporates...</option>
@@ -580,7 +580,7 @@ const PartyFormModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Party' : 'Add New Party'} size="xl">
       <div className="flex flex-col h-[70vh]">
         {/* Tab Navigation */}
-        <div className="flex border-b border-neutral-200 px-2 bg-neutral-50 rounded-t-lg dark:border-primary-800 dark:bg-primary-950">
+        <div className="flex border-b border-edge px-2 bg-surface-page rounded-t-lg">
           {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -590,7 +590,7 @@ const PartyFormModal: React.FC<{
                 className={cn(
                   'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors',
                   activeTab === tab.id
-                    ? 'border-primary-600 text-primary-600 bg-white dark:text-primary-200 dark:bg-primary-900'
+                    ? 'border-primary-600 text-primary-600 bg-surface-card dark:text-primary-200'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:border-primary-700'
                 )}
               >
@@ -622,7 +622,7 @@ const PartyFormModal: React.FC<{
                       value={formData.partyCode}
                       onChange={(e) => setFormData(prev => ({ ...prev, partyCode: e.target.value }))}
                       placeholder="Auto-generated if empty"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -630,7 +630,7 @@ const PartyFormModal: React.FC<{
                     <select
                       value={formData.partyType}
                       onChange={(e) => setFormData(prev => ({ ...prev, partyType: e.target.value as PartyType }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       {Object.entries(typeConfig).map(([key, config]) => (
                         <option key={key} value={key}>{config.label}</option>
@@ -645,7 +645,7 @@ const PartyFormModal: React.FC<{
                       onChange={(e) => setFormData(prev => ({ ...prev, legalName: e.target.value }))}
                       className={cn(
                         "w-full px-3 py-2 border rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
-                        errors.legalName ? 'border-error-500' : 'border-neutral-300 dark:border-primary-700'
+                        errors.legalName ? 'border-error-500' : 'border-edge-strong'
                       )}
                     />
                     {errors.legalName && <p className="caption-error mt-1">{errors.legalName}</p>}
@@ -656,7 +656,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.displayName}
                       onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -665,7 +665,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.tradeName}
                       onChange={(e) => setFormData(prev => ({ ...prev, tradeName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -688,7 +688,7 @@ const PartyFormModal: React.FC<{
                           'flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors',
                           isSelected
                             ? `${config.bgColor} ${config.color} border-current`
-                            : 'bg-white text-neutral-600 border-neutral-300 hover:border-neutral-400 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-700'
+                            : 'bg-surface-card text-neutral-600 border-edge-strong hover:border-neutral-400 dark:text-neutral-300'
                         )}
                       >
                         <Icon className="w-4 h-4" />
@@ -710,7 +710,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.taxId}
                       onChange={(e) => setFormData(prev => ({ ...prev, taxId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -719,7 +719,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.registrationNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, registrationNumber: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -728,7 +728,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.registrationCountry}
                       onChange={(e) => setFormData(prev => ({ ...prev, registrationCountry: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -744,7 +744,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.contactName}
                       onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -755,7 +755,7 @@ const PartyFormModal: React.FC<{
                       onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
                       className={cn(
                         "w-full px-3 py-2 border rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
-                        errors.contactEmail ? 'border-error-500' : 'border-neutral-300 dark:border-primary-700'
+                        errors.contactEmail ? 'border-error-500' : 'border-edge-strong'
                       )}
                     />
                     {errors.contactEmail && <p className="caption-error mt-1">{errors.contactEmail}</p>}
@@ -766,7 +766,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.contactPhone}
                       onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -782,7 +782,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.addressLine1}
                       onChange={(e) => setFormData(prev => ({ ...prev, addressLine1: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div className="col-span-2">
@@ -791,7 +791,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.addressLine2}
                       onChange={(e) => setFormData(prev => ({ ...prev, addressLine2: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -800,7 +800,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -809,7 +809,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.state}
                       onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -818,7 +818,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.postalCode}
                       onChange={(e) => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -828,7 +828,7 @@ const PartyFormModal: React.FC<{
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                       placeholder="AE"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -850,7 +850,7 @@ const PartyFormModal: React.FC<{
                           value={formData.ecommercePlatforms}
                           onChange={(e) => setFormData(prev => ({ ...prev, ecommercePlatforms: e.target.value }))}
                           placeholder="AMAZON, NOON, SHOPIFY"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                         <p className="caption mt-1">Comma-separated list</p>
                       </div>
@@ -870,7 +870,7 @@ const PartyFormModal: React.FC<{
                         type="text"
                         value={formData.employeeId}
                         onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
                     <div>
@@ -879,7 +879,7 @@ const PartyFormModal: React.FC<{
                         type="text"
                         value={formData.department}
                         onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -911,7 +911,7 @@ const PartyFormModal: React.FC<{
 
               {/* Bank Account Form */}
               {showBankAccountForm && (
-                <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 space-y-4 dark:bg-primary-950 dark:border-primary-800">
+                <div className="p-4 bg-surface-page rounded-lg border border-edge space-y-4">
                   <h4 className="text-body-sm font-semibold text-neutral-800 dark:text-neutral-100">New Bank Account</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -921,7 +921,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.label}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, label: e.target.value }))}
                         placeholder="e.g., Primary Account"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -931,7 +931,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.holderName}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, holderName: e.target.value }))}
                         placeholder="Account holder name"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -941,7 +941,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.bankName}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankName: e.target.value }))}
                         placeholder="e.g., Emirates NBD"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -951,7 +951,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.bankCode}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankCode: e.target.value }))}
                         placeholder="e.g., EABOROMCXXX"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -961,7 +961,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.iban}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, iban: e.target.value }))}
                         placeholder="e.g., AE07 0331 2345 6789 0123 456"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -971,7 +971,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.accountNumber}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, accountNumber: e.target.value }))}
                         placeholder="Account number"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -981,7 +981,7 @@ const PartyFormModal: React.FC<{
                         value={bankAccountForm.routingNumber}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, routingNumber: e.target.value }))}
                         placeholder="For US banks"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
                     <div>
@@ -998,7 +998,7 @@ const PartyFormModal: React.FC<{
                       <Checkbox size="sm" label="Set as Primary Account" checked={bankAccountForm.isPrimary} onChange={(checked) => setBankAccountForm(prev => ({ ...prev, isPrimary: checked }))} />
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-primary-800">
+                  <div className="flex justify-end gap-2 pt-3 border-t border-edge">
                     <Button variant="outline" size="sm" onClick={() => setShowBankAccountForm(false)}>Cancel</Button>
                     <Button
                       size="sm"
@@ -1028,7 +1028,7 @@ const PartyFormModal: React.FC<{
 
               {/* Bank Accounts List */}
               {bankAccounts.length === 0 ? (
-                <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
+                <div className="text-center py-12 text-neutral-500 bg-surface-page rounded-lg border border-dashed border-edge-strong dark:text-neutral-400">
                   <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No bank accounts added yet</p>
                   <p className="text-body-sm mt-1">Add a bank account to enable payments to this party</p>
@@ -1036,7 +1036,7 @@ const PartyFormModal: React.FC<{
               ) : (
                 <div className="space-y-3">
                   {bankAccounts.map((account, index) => (
-                    <div key={account.id || index} className="p-4 bg-white border border-neutral-200 rounded-lg hover:border-primary-200 transition-colors dark:bg-primary-900 dark:border-primary-800">
+                    <div key={account.id || index} className="p-4 bg-surface-card border border-edge rounded-lg hover:border-primary-200 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className="p-2 bg-primary-50 rounded-lg dark:bg-primary-800/40">
@@ -1112,7 +1112,7 @@ const PartyFormModal: React.FC<{
               </div>
 
               {documents.length === 0 ? (
-                <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
+                <div className="text-center py-12 text-neutral-500 bg-surface-page rounded-lg border border-dashed border-edge-strong dark:text-neutral-400">
                   <Shield className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No documents uploaded yet</p>
                   <p className="text-body-sm mt-1">
@@ -1124,7 +1124,7 @@ const PartyFormModal: React.FC<{
               ) : (
                 <div className="space-y-3">
                   {documents.map((doc) => (
-                    <div key={doc.id} className="p-4 bg-white border border-neutral-200 rounded-lg hover:border-primary-200 transition-colors dark:bg-primary-900 dark:border-primary-800">
+                    <div key={doc.id} className="p-4 bg-surface-card border border-edge rounded-lg hover:border-primary-200 transition-colors">
                       <div className="flex items-start justify-between">
                         <div>
                           <div className="flex items-center gap-2">
@@ -1158,7 +1158,7 @@ const PartyFormModal: React.FC<{
               <div>
                 <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">KYC Status</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">Current Status</label>
                     <div className="flex items-center gap-2">
                       {party.kycStatus && kycStatusConfig[party.kycStatus] && (
@@ -1176,7 +1176,7 @@ const PartyFormModal: React.FC<{
                       </p>
                     )}
                   </div>
-                  <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">Risk Rating</label>
                     <div className="flex items-center gap-2">
                       {party.riskRating && riskConfig[party.riskRating] && (
@@ -1195,19 +1195,19 @@ const PartyFormModal: React.FC<{
               <div>
                 <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">Screening Status</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">Sanctions</label>
                     <Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'}>
                       {party.sanctionsStatus || 'Not Checked'}
                     </Badge>
                   </div>
-                  <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">PEP Status</label>
                     <Badge variant={party.pepStatus ? 'warning' : 'success'}>
                       {party.pepStatus ? 'PEP Identified' : 'Clear'}
                     </Badge>
                   </div>
-                  <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                  <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">Adverse Media</label>
                     <Badge variant={party.adverseMediaStatus ? 'warning' : 'success'}>
                       {party.adverseMediaStatus ? 'Found' : 'Clear'}
@@ -1216,7 +1216,7 @@ const PartyFormModal: React.FC<{
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+              <div className="pt-4 border-t border-edge">
                 <p className="caption">
                   KYC and compliance settings can be managed from the View Details modal after saving the party.
                 </p>
@@ -1235,7 +1235,7 @@ const PartyFormModal: React.FC<{
                     <select
                       value={formData.owningEntityId}
                       onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       <option value="">{entities.length === 0 ? 'No entities available' : 'Select Entity (optional)'}</option>
                       {entities.map(entity => (
@@ -1300,7 +1300,7 @@ const PartyFormModal: React.FC<{
               </div>
 
               {isEditMode && (
-                <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
+                <div className="pt-4 border-t border-edge">
                   <p className="caption">
                     Additional POBO and Intercompany configuration (linked entities, credit limits) can be managed from the View Details modal.
                   </p>
@@ -1311,7 +1311,7 @@ const PartyFormModal: React.FC<{
         </div>
 
         {/* Actions Footer */}
-        <div className="flex justify-end gap-3 p-4 border-t border-neutral-200 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
+        <div className="flex justify-end gap-3 p-4 border-t border-edge bg-surface-page">
           <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button
             onClick={handleSubmit}
@@ -1565,7 +1565,7 @@ const PartyDetailModal: React.FC<{
     <Modal isOpen={!!party} onClose={onClose} title="" size="xl">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-neutral-200 dark:border-primary-800">
+        <div className="flex items-start justify-between pb-4 border-b border-edge">
           <div className="flex items-center gap-4">
             <StatusIconBadge
               tone={party.isIntercompany ? 'cat-2' : party.status === 'ACTIVE' ? 'primary' : 'error'}
@@ -1602,11 +1602,11 @@ const PartyDetailModal: React.FC<{
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg overflow-x-auto dark:bg-primary-800">
+        <div className="flex gap-1 p-1 bg-surface-muted rounded-lg overflow-x-auto">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={cn('flex items-center gap-2 px-4 py-2 text-body-sm font-medium rounded-md transition-colors whitespace-nowrap',
-                activeTab === tab.id ? 'bg-white text-primary-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50' : 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300 dark:hover:text-neutral-50')}>
+                activeTab === tab.id ? 'bg-surface-card text-primary-900 shadow-sm dark:text-neutral-50' : 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300 dark:hover:text-neutral-50')}>
               {tab.label}
               {tab.count !== undefined && (
                 <span className={cn('px-1.5 py-0.5 rounded-md text-caption', activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-200 dark:bg-primary-800')}>{tab.count}</span>
@@ -1679,7 +1679,7 @@ const PartyDetailModal: React.FC<{
                           value={bankAccountForm.label}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, label: e.target.value }))}
                           placeholder="e.g., Primary Account"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -1698,7 +1698,7 @@ const PartyDetailModal: React.FC<{
                           value={bankAccountForm.bankName}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankName: e.target.value }))}
                           placeholder="e.g., Emirates NBD"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -1708,7 +1708,7 @@ const PartyDetailModal: React.FC<{
                           value={bankAccountForm.iban}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
                           placeholder="AE07 0331 2345 6789 0123 456"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -1718,14 +1718,14 @@ const PartyDetailModal: React.FC<{
                           value={bankAccountForm.bankCode}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankCode: e.target.value.toUpperCase() }))}
                           placeholder="EABORAEAXXX"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div className="col-span-2 flex items-center gap-4">
                         <Checkbox size="sm" label="Set as primary account" checked={bankAccountForm.isPrimary} onChange={(checked) => setBankAccountForm(prev => ({ ...prev, isPrimary: checked }))} />
                       </div>
                     </div>
-                    <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-edge">
                       <Button variant="outline" size="sm" onClick={() => { setShowBankAccountForm(false); setBankAccountForm(defaultBankAccountForm); }}>Cancel</Button>
                       <Button size="sm" onClick={handleAddBankAccount} disabled={savingBankAccount}>
                         {savingBankAccount ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
@@ -1865,7 +1865,7 @@ const PartyDetailModal: React.FC<{
                         <select
                           value={kycFormData.kycStatus}
                           onChange={(e) => setKycFormData(prev => ({ ...prev, kycStatus: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="PENDING">Pending</option>
                           <option value="IN_PROGRESS">In Progress</option>
@@ -1881,7 +1881,7 @@ const PartyDetailModal: React.FC<{
                           type="date"
                           value={kycFormData.kycExpiresAt}
                           onChange={(e) => setKycFormData(prev => ({ ...prev, kycExpiresAt: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -1924,7 +1924,7 @@ const PartyDetailModal: React.FC<{
                         <select
                           value={riskFormData.riskRating}
                           onChange={(e) => setRiskFormData(prev => ({ ...prev, riskRating: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         >
                           <option value="LOW">Low</option>
                           <option value="MEDIUM">Medium</option>
@@ -1940,7 +1940,7 @@ const PartyDetailModal: React.FC<{
                           max="100"
                           value={riskFormData.riskScore}
                           onChange={(e) => setRiskFormData(prev => ({ ...prev, riskScore: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -2029,8 +2029,8 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="success" size="sm">Active</Badge>
                   </div>
-                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
-                  <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
                 </Card>
               </div>
               <div className="space-y-4">
@@ -2038,9 +2038,9 @@ const PartyDetailModal: React.FC<{
                 <Card padding="md">
                   <div className="space-y-3">
                     <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center text-body-sm font-semibold text-info-700 dark:bg-info-500/20 dark:text-info-300">1</div><div><p className="text-body-sm font-medium">Subsidiary creates payable</p><p className="caption">{party.owningEntityCode}</p></div></div>
-                    <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
+                    <div className="ml-4 border-l-2 border-dashed border-edge h-6"></div>
                     <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-body-sm font-semibold text-cat-1 dark:text-cat-1-fg dark:bg-cat-1/15">2</div><div><p className="text-body-sm font-medium">Treasury pays vendor</p><p className="caption">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
-                    <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
+                    <div className="ml-4 border-l-2 border-dashed border-edge h-6"></div>
                     <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">3</div><div><p className="text-body-sm font-medium">IC Recharge created</p><p className="caption">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
                   </div>
                 </Card>
@@ -2061,8 +2061,8 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="info" size="sm">IC</Badge>
                   </div>
-                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
-                  <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
+                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
+                  <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-surface-page rounded-md">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
                   <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="caption">Auto-enabled for IC parties</span></div>
                 </Card>
               </div>
@@ -2079,7 +2079,7 @@ const PartyDetailModal: React.FC<{
                       <div className="flex items-center justify-between"><span className="body-sm">Credit Limit</span><span className="section-title">{formatCurrency(party.icCreditLimit, party.icCurrency || 'AED')}</span></div>
                       <div className="flex items-center justify-between"><span className="body-sm">Current Exposure</span><span className="section-title">{formatCurrency(party.icCurrentExposure || 0, party.icCurrency || 'AED')}</span></div>
                       <div><div className="flex items-center justify-between mb-1"><span className="caption">Credit Utilization</span><span className="text-caption font-medium">{party.icCreditUtilizationPercent?.toFixed(1)}%</span></div><ProgressBar value={party.icCreditUtilizationPercent || 0} max={100} size="sm" variant={(party.icCreditUtilizationPercent || 0) >= 80 ? 'warning' : 'success'} /></div>
-                      <div className="flex items-center justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="field-label">Available Credit</span><span className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatCurrency(party.icAvailableCredit || 0, party.icCurrency || 'AED')}</span></div>
+                      <div className="flex items-center justify-between pt-3 border-t border-edge"><span className="field-label">Available Credit</span><span className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatCurrency(party.icAvailableCredit || 0, party.icCurrency || 'AED')}</span></div>
                     </>
                   ) : (
                     <div className="text-center py-6">
@@ -2107,7 +2107,7 @@ const PartyDetailModal: React.FC<{
                             value={icCreditForm.creditLimit}
                             onChange={(e) => setIcCreditForm(prev => ({ ...prev, creditLimit: e.target.value }))}
                             placeholder="1,000,000"
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                            className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                           />
                         </div>
                         <div>
@@ -2126,7 +2126,7 @@ const PartyDetailModal: React.FC<{
                           value={icCreditForm.approvalNotes}
                           onChange={(e) => setIcCreditForm(prev => ({ ...prev, approvalNotes: e.target.value }))}
                           placeholder="Reason for limit change..."
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -2490,9 +2490,9 @@ const PartiesPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                <input type="text" placeholder="Search by name, code, or tax ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700" />
+                <input type="text" placeholder="Search by name, code, or tax ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
               </div>
-              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value as any)} className="px-4 py-2.5 border border-neutral-300 rounded-lg dark:border-primary-700 min-w-[180px]">
+              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value as any)} className="px-4 py-2.5 border border-edge-strong rounded-lg min-w-[180px]">
                 <option value="ALL">All KYC Status</option>
                 <option value="VERIFIED">Verified</option>
                 <option value="PENDING">Pending</option>

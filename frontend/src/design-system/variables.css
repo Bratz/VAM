@@ -8,6 +8,16 @@
  */
 
 :root {
+  /* Semantic surfaces and borders (2026-09). Space-separated RGB triplets so Tailwind can apply
+     opacity (bg-surface-card/80). Themed here once; components use bg-surface-* / border-edge*
+     instead of pairing bg-white with dark:bg-primary-900. */
+  --surface-page:  242 242 243;  /* neutral-50   | dark: primary-950 */
+  --surface-card:  255 255 255;  /* white        | dark: primary-900 */
+  --surface-muted: 233 233 234;  /* neutral-100  | dark: primary-800 */
+  --edge-subtle:   233 233 234;  /* neutral-100  | dark: primary-800 @60% */
+  --edge:          220 220 221;  /* neutral-200  | dark: primary-800 */
+  --edge-strong:   197 195 198;  /* neutral-300  | dark: primary-700 */
+
   /* ==================== Color Primitives ==================== */
   
   /* Primary — grey-slate "ink" family (palette swap; this token was
@@ -489,6 +499,12 @@
 
 .dark,
 [data-theme="dark"] {
+  --surface-page:  63 74 84;
+  --surface-card:  70 73 76;
+  --surface-muted: 76 92 104;
+  --edge-subtle:   73 84 93;
+  --edge:          76 92 104;
+  --edge-strong:   89 91 94;
   /* Text */
   --color-text-primary: var(--color-neutral-50);
   --color-text-secondary: var(--color-neutral-400);

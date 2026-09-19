@@ -86,7 +86,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
 
   return (
     <div className="space-y-3">
-      <div className="border-2 border-dashed border-neutral-200 dark:border-primary-800 rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
+      <div className="border-2 border-dashed border-edge rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
         <input
           type="file"
           accept=".csv,.txt"
@@ -102,7 +102,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
       </div>
 
       {fileName && (
-        <div className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
+        <div className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
           <div className="flex items-center gap-2 body-sm min-w-0">
             <FileText className="w-4 h-4 shrink-0" />
             <span className="truncate">{fileName}</span>
@@ -143,7 +143,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
               </p>
               <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
                 {unmatched.map(u => (
-                  <span key={u} className="text-caption font-mono px-1.5 py-0.5 rounded-md bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
+                  <span key={u} className="text-caption font-mono px-1.5 py-0.5 rounded-md bg-surface-card border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
                     {u}
                   </span>
                 ))}

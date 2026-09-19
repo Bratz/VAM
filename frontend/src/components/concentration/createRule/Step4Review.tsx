@@ -92,7 +92,7 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
     {formData.sourceAccounts.length > 0 && (
       <div>
         <p className="body-strong mb-3">Source Accounts</p>
-        <Card padding="none" className="divide-y divide-neutral-100 dark:divide-primary-800/60 max-h-32 overflow-y-auto">
+        <Card padding="none" className="divide-y divide-edge-subtle max-h-32 overflow-y-auto">
           {formData.sourceAccounts.map((acc) => (
             <div key={acc.accountId} className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -66,7 +66,7 @@ export const NettingCyclePickerModal: React.FC<NettingCyclePickerModalProps> = (
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add to Netting Cycle" size="md">
       <div className="space-y-4">
-        <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
+        <div className="bg-surface-page rounded-lg p-4">
           <div className="space-y-1 max-h-32 overflow-y-auto">
             {items.map(item => (
               <div key={item.id} className="flex justify-between text-body-sm">
@@ -76,7 +76,7 @@ export const NettingCyclePickerModal: React.FC<NettingCyclePickerModalProps> = (
             ))}
           </div>
           {items.length > 1 && (
-            <div className="border-t border-neutral-200 mt-2 pt-2 flex justify-between text-body-sm font-semibold dark:border-primary-800">
+            <div className="border-t border-edge mt-2 pt-2 flex justify-between text-body-sm font-semibold">
               <span>Total</span>
               <span>{formatCurrency(totalAmount, currencyCode)}</span>
             </div>
@@ -97,7 +97,7 @@ export const NettingCyclePickerModal: React.FC<NettingCyclePickerModalProps> = (
             <select
               value={selectedCycleId}
               onChange={(e) => setSelectedCycleId(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-cat-1 focus:border-cat-1 dark:border-primary-700 dark:bg-primary-900"
+              className="w-full px-3 py-2 border border-edge-strong rounded-lg focus:ring-2 focus:ring-cat-1 focus:border-cat-1 dark:bg-primary-900"
             >
               <option value="">Select cycle...</option>
               {cycles.map(cycle => (
