@@ -90,6 +90,14 @@ function MyComponent() {
 
 ### Typography
 
+#### Font sizes (2026-09) — semantic scale only
+Raw Tailwind sizes (`text-xs/sm/base/lg/xl/2xl…`, `text-[Npx]`) no longer exist in `tailwind.config.js`;
+ESLint (`no-restricted-syntax`) rejects them in `pages/` and `components/`.
+1. Prefer a semantic class (`.caption`, `.body-sm`, `.label`, `.field-label`, `.section-title`, `.stat-value*`, …): size + weight + colour + dark mode.
+2. Otherwise use a size utility: `text-caption` 12/16, `text-body-sm` 14/20, `text-body` 16/24, `text-body-lg` 18/28,
+   `text-heading-sm|md|lg` 20/24/30, `text-stat-sm` 28, `text-stat` 36, `text-display` 48. Size + line-height only.
+3. Live specimen: `npm run storybook` → Design System / Typography (`src/design-system/Typography.stories.tsx`).
+
 #### Font Families
 > Updated 2026-09 — this section previously documented a Fraunces-for-titles
 > scheme that has since been fully retired (see below); the block below is

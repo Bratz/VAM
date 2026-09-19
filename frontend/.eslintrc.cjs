@@ -134,6 +134,16 @@ module.exports = {
               "Raw palette Tailwind class in template literal. Semantic statuses or cat-1…cat-8 categorical tokens instead — see file header.",
           },
           {
+            // 0. Raw font sizes — removed from tailwind.config.js `fontSize`; would silently render nothing.
+            selector:
+              "JSXAttribute[name.name='className'] > Literal[value=/\\btext-(?:xs|sm|base|lg|xl|[2-9]xl|\\[[0-9.]+(?:px|rem)\\])(?![\\w-])/]",
+            message: "Raw Tailwind font size. The scale is semantic: text-caption / body-sm / body / body-lg / heading-sm|md|lg / stat-sm / stat / display, or a class (.caption, .body-sm, .label, ...). See src/design-system/Typography.stories.tsx.",
+          },
+          {
+            selector: "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\btext-(?:xs|sm|base|lg|xl|[2-9]xl|\\[[0-9.]+(?:px|rem)\\])(?![\\w-])/]",
+            message: "Raw Tailwind font size. The scale is semantic: text-caption / body-sm / body / body-lg / heading-sm|md|lg / stat-sm / stat / display, or a class (.caption, .body-sm, .label, ...). See src/design-system/Typography.stories.tsx.",
+          },
+          {
             // 2. Display-tier typography hand-rolls. Narrowed from the
             //    retired Phase 9 all-size selector to the display tier only
             //    (xl–4xl + bold/semibold) — these are the stat-tile-shaped
