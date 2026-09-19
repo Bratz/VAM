@@ -142,7 +142,7 @@ This document has two parts:
 |---|---|---|---|---|
 | J1 | Market profiles | Boot-time market localization (currency/country/locale/tz/weekend/home-bank/IBAN country) | ● | `MarketProfileController` `/config/market-profile` |
 | J2 | KYCC / compliance queue | Review queue; document verification; beneficial-owner/PEP; screening; approve/reject/request-info; expiry | ○ *(mock, no persistence)* | `KycController` · `KyccPage` |
-| J3 | Dashboards & cockpit | Home dashboard, treasury cockpit, Treasury-2030 dashboard | ● | `DashboardController` · `CockpitPage`, `DashboardClassicPage`, `Treasury2030DashboardPage` |
+| J3 | Dashboards & cockpit | Home dashboard, treasury cockpit, Treasury-2030 dashboard | ● | `DashboardController` · `CockpitPage`, `Treasury2030DashboardPage` |
 | J4 | Treasury Copilot | In-app assistant: NL position queries (read tools) + guarded actions (propose→confirm→audit); SSE streaming | ◐ *(reasoning is stub router; LLM-ready)* | `CopilotController` `/api/ai/copilot` · Copilot drawer |
 | J5 | Settings | Application/user settings | ● | `SettingsPage` |
 

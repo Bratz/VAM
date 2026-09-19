@@ -14,8 +14,7 @@ import { PageHeaderProvider } from './context/PageHeaderContext';
 // ============================================================================
 // CORE PAGES
 // ============================================================================
-import DashboardClassicPage from './pages/DashboardClassicPage';
-import { CockpitFeatureFlag } from './components/cockpit/CockpitFeatureFlag';
+import Treasury2030DashboardPage from './pages/Treasury2030DashboardPage';
 import AccountsPage from './pages/AccountsPage';
 import ProgramsPage from './pages/ProgramsPage';
 import PartiesPage from './pages/PartiesPage';
@@ -114,7 +113,6 @@ import FileIngestUploadPage from './pages/FileIngestUploadPage';
 export type PageType =
   // Core
   | 'dashboard'
-  | 'dashboard-classic'
   | 'accounts'
   | 'programs'
   | 'parties'
@@ -671,13 +669,8 @@ const App: React.FC = () => {
       // Fund Transfers
       case 'transfers': return <TransfersPage />;
 
-      // /dashboard goes through the CockpitFeatureFlag, which routes to the
-      // new Treasurer's Morning Cockpit when `cockpit.v1` is on (default) or
-      // falls through to the classic dashboard when off. /dashboard-classic
-      // always resolves to the classic page for the 60-day rollout overlap.
-      case 'dashboard-classic': return <DashboardClassicPage onNavigate={handleNavigate} />;
       case 'dashboard':
-      default: return <CockpitFeatureFlag onNavigate={handleNavigate} />;
+      default: return <Treasury2030DashboardPage onNavigate={handleNavigate} />;
     }
   };
 
