@@ -693,9 +693,7 @@ const BaaSCashOperationsPage: React.FC = () => {
           className="p-4 bg-info-50 dark:bg-info-500/10 hover:bg-info-100 dark:hover:bg-info-500/20 border border-info-200 dark:border-info-500/30 rounded-lg transition-all hover:shadow-md text-left animate-fade-in"
           style={{ animationDelay: '0.4s' }}
         >
-          <div className="w-12 h-12 rounded-lg bg-info-100 dark:bg-info-500/20 flex items-center justify-center mb-3">
-            <ArrowLeftRight className="w-6 h-6 text-info-600 dark:text-info-300" />
-          </div>
+          <StatusIconBadge tone="info" icon={ArrowLeftRight} size="lg" className="mb-3" />
           <p className="font-semibold text-info-900">Transfer</p>
           <p className="text-body-sm text-info-600 dark:text-info-300">Wallet to wallet</p>
         </button>
@@ -874,9 +872,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <div className="flex items-center gap-3">
               {/* Phase 12 Task G: flat tonal medallion (gradient + white-icon
                   recipe retired in Phase 8). */}
-              <div className="w-10 h-10 rounded-lg bg-accent-100 dark:bg-accent-500/20 flex items-center justify-center">
-                <Store className="w-5 h-5 text-accent-700 dark:text-accent-300" />
-              </div>
+              <StatusIconBadge tone="accent" icon={Store} />
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Agent Network</h3>
             </div>
             <Button size="sm">+ Add Agent</Button>
@@ -940,9 +936,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
-                <Upload className="w-5 h-5 text-primary-700 dark:text-primary-200" />
-              </div>
+              <StatusIconBadge tone="primary" icon={Upload} />
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Bulk Top-up / Load</h3>
             </div>
             <p className="body-sm mb-4">
@@ -989,9 +983,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
           <Card className="animate-fade-in" style={{ animationDelay: '0.55s' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-info-100 dark:bg-info-500/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-info-700 dark:text-info-300" />
-              </div>
+              <StatusIconBadge tone="info" icon={Clock} />
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Bulk Operations</h3>
             </div>
             <div className="space-y-4">

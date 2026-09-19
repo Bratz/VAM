@@ -73,9 +73,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
             <div className="px-6">
               <div className="flex items-center gap-2">
                 <div className="h-0.5 w-8 bg-warning-300 rounded-full"></div>
-                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                </div>
+                <StatusIconBadge tone="primary" icon={ArrowRight} size="sm" rounded="full" />
                 <div className="h-0.5 w-8 bg-success-300 rounded-full"></div>
               </div>
               <p className="text-body-sm font-semibold text-primary-700 dark:text-neutral-200 text-center mt-2">
@@ -131,9 +129,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {/* Execution Time */}
         <Card padding="sm" className="bg-neutral-50/50 dark:bg-primary-950/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Clock} />
             <div>
               <p className="label mb-0.5">Execution Time</p>
               <p className="font-semibold text-primary-900 dark:text-neutral-50">

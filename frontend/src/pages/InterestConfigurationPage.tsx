@@ -808,9 +808,7 @@ const InterestConfigurationPage: React.FC = () => {
           ))}
           {filteredConfigs.length === 0 && !error && (
             <div className="col-span-full text-center py-12">
-              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Settings className="w-8 h-8 text-neutral-400" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={Settings} size="xl" className="mx-auto mb-4" />
               <p className="text-neutral-500 font-medium dark:text-neutral-400">No interest configurations found</p>
               <Button variant="outline" className="mt-4" onClick={handleCreate} disabled={!selectedCorporateId}>
                 <Plus className="w-4 h-4 mr-2" /> Create First Configuration

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, Plus, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, CreditCard, Landmark, FlaskConical, ArrowLeftRight, PiggyBank, Banknote, GitBranch, Copy, Lock, Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent, Mail, Phone, MapPin, FileText, Calendar, Hash, DollarSign, Shield, Zap, Save, Pencil } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input, StatTile } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, StatTile, StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -1339,9 +1339,7 @@ const LegalEntitiesPage: React.FC = () => {
       <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 border-primary-100/50 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.05s' }}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-              <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Building2} />
             <div className="flex flex-col">
               <span className="caption">Corporate</span>
               <select

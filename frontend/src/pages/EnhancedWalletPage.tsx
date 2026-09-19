@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, Pencil, ChevronRight } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input, EmptyState } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, EmptyState, StatusIconBadge } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -570,9 +570,7 @@ const ProgramCard: React.FC<{
         <div className="flex items-center gap-3">
           {/* Phase 12 Task G: flat tonal medallion (gradient + white-icon
               recipe retired in Phase 8). */}
-          <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
-            <Wallet className="w-6 h-6 text-primary-700 dark:text-primary-200" />
-          </div>
+          <StatusIconBadge tone="primary" icon={Wallet} size="lg" />
           <div>
             <h3 className="section-title">{program.programName}</h3>
             <p className="body-sm">{program.programCode}</p>

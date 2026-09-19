@@ -51,9 +51,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
 const EmptyState: React.FC<{ onCreateRule: () => void }> = ({ onCreateRule }) => (
   <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
     <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mb-4">
-        <Layers className="w-6 h-6 text-neutral-400" />
-      </div>
+      <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mb-4" />
       <p className="body-strong mb-1">No Sweep Rules</p>
       <p className="caption mb-6">Get started by creating your first sweep rule</p>
       <Button onClick={onCreateRule} leftIcon={<Plus className="w-4 h-4" />}>

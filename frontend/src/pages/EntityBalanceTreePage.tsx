@@ -1729,9 +1729,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
               {filteredHierarchy.length === 0 && (
                 <div className="text-center py-20">
-                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <TreeDeciduous className="w-8 h-8 text-neutral-400" />
-                  </div>
+                  <StatusIconBadge tone="neutral" icon={TreeDeciduous} size="xl" className="mx-auto mb-4" />
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
                   <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Try adjusting your search or filters</p>
                 </div>
@@ -1756,9 +1754,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
               {filteredEntities.length === 0 && (
                 <div className="text-center py-20 animate-fade-in">
-                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <Wallet className="w-8 h-8 text-neutral-400" />
-                  </div>
+                  <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
                   <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Try adjusting your search or filters</p>
                 </div>

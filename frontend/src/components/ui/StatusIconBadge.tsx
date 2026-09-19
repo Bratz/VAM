@@ -6,7 +6,7 @@ import { cn } from '../../utils';
  * Canonical "rounded medallion with a tinted icon" — the pattern that
  * appears 165+ times across the page layer as inline JSX:
  *
- *     <div className="w-10 h-10 rounded-xl bg-success-100 dark:bg-success-500/20
+ *     <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-500/20
  *                     flex items-center justify-center">
  *       <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />
  *     </div>
@@ -46,10 +46,11 @@ interface StatusIconBadgeProps {
    *   - `sm` — 8x8 medallion with 4x4 icon. Inline / table-cell.
    *   - `md` — 10x10 medallion with 5x5 icon. Canonical card / stat tile (default).
    *   - `lg` — 12x12 medallion with 6x6 icon. Hero / page-title accent.
+   *   - `xl` — 16x16 medallion with 8x8 icon. Empty states.
    */
-  size?: 'sm' | 'md' | 'lg';
-  /** Corner radius. Defaults to `xl` (matches the canonical card radius). */
-  rounded?: 'lg' | 'xl' | 'full';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Corner radius: `lg` (12px, default) or `full` (circle). */
+  rounded?: 'lg' | 'full';
   /**
    * Lighter background variant — uses the 50/10% stops instead of
    * 100/20%. Use when the medallion is decorative rather than primary
@@ -112,11 +113,11 @@ const SIZE_CLASSES = {
   sm: { box: 'w-8 h-8',  icon: 'w-4 h-4' },
   md: { box: 'w-10 h-10', icon: 'w-5 h-5' },
   lg: { box: 'w-12 h-12', icon: 'w-6 h-6' },
+  xl: { box: 'w-16 h-16', icon: 'w-8 h-8' },
 } as const;
 
 const ROUNDED_CLASSES = {
   lg: 'rounded-lg',
-  xl: 'rounded-lg',
   full: 'rounded-full',
 } as const;
 
@@ -124,7 +125,7 @@ export const StatusIconBadge: React.FC<StatusIconBadgeProps> = ({
   tone,
   icon: Icon,
   size = 'md',
-  rounded = 'xl',
+  rounded = 'lg',
   subtle = false,
   className,
 }) => {

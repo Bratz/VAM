@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Building2, CheckCircle, ListChecks, FolderTree, Upload } from 'lucide-react';
-import { Card, Badge, Select, Button } from '../../ui';
+import { Card, Badge, Select, Button, StatusIconBadge } from '../../ui';
 import { Tabs } from '../../ui/enhanced';
 import { formatCompactCurrency, cn } from '../../../utils';
 import { VirtualAccount } from '../../../services/api';
@@ -109,9 +109,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
               </Card>
             ) : accounts.length === 0 ? (
               <Card className="text-center py-12">
-                <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-3">
-                  <Building2 className="w-6 h-6 text-neutral-400" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Building2} size="lg" className="mx-auto mb-3" />
                 <p className="text-neutral-500 dark:text-neutral-400">No accounts found for this corporate</p>
               </Card>
             ) : (
@@ -137,9 +135,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                         )}>
                           {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
-                          <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                        </div>
+                        <StatusIconBadge tone="neutral" icon={Building2} className="flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-body-sm text-primary-900 dark:text-neutral-50 truncate">{acc.vaName}</p>
                           <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono truncate">{acc.vaNumber || acc.viban}</p>

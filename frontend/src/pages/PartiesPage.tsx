@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
-import { Card, Badge, Button, DataTable } from '../components/ui';
+import { Card, Badge, Button, DataTable, StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -2409,9 +2409,7 @@ const PartiesPage: React.FC = () => {
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700 shrink-0">
-              <Landmark className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Landmark} className="shrink-0" />
             <div className="flex flex-col">
               <span className="caption">Corporate</span>
               <CorporateSelector
@@ -2425,9 +2423,7 @@ const PartiesPage: React.FC = () => {
 
           {selectedCorporateId && (
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20 shrink-0">
-                <Building2 className="w-4 h-4 text-accent-600 dark:text-accent-300" />
-              </div>
+              <StatusIconBadge tone="accent" icon={Building2} className="shrink-0" />
               <div className="flex flex-col">
                 <span className="caption">Entity</span>
                 <EntitySelector value={selectedEntityId} onChange={setSelectedEntityId} entities={entities} />

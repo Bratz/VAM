@@ -121,9 +121,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
 
           {activeRules.length === 0 ? (
             <Card className="text-center py-12">
-              <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-3">
-                <Layers className="w-6 h-6 text-neutral-400" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-3" />
               <p className="text-neutral-500 dark:text-neutral-400">No active rules to execute</p>
               <p className="caption mt-1">Activate some rules first</p>
             </Card>
@@ -209,9 +207,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
       {phase === 'complete' && results && (
         <div className="space-y-6 animate-fade-in">
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-lg bg-success-100 dark:bg-success-500/20 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-300" />
-            </div>
+            <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
             <p className="body-lg">Sweeps Complete</p>
           </div>
 
@@ -248,9 +244,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
       {phase === 'failed' && (
         <div className="space-y-6 animate-fade-in">
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-lg bg-error-100 dark:bg-error-500/20 flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-error-600 dark:text-error-300" />
-            </div>
+            <StatusIconBadge tone="error" icon={XCircle} size="xl" className="mx-auto mb-4" />
             <p className="body-lg">Sweep Run Failed</p>
             <p className="text-neutral-500 dark:text-neutral-400 mt-2">Check execution history for details.</p>
           </div>

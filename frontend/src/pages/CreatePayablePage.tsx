@@ -6,7 +6,7 @@ import { ArrowLeft, Save, Send, Plus, Trash2, Search, Building2, FileText, Calcu
 // it strands pages outside every future token / focus-ring / dark-mode
 // migration. Local Input/Select/Toggle kept for now (non-trivial API
 // differences from the shared versions; deferred for a follow-up).
-import { Card, Button, Badge } from '../components/ui';
+import { Card, Button, Badge, StatusIconBadge } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi } from '../services/api';
@@ -411,9 +411,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
       <div className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-white rounded-lg p-5 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-700 rounded-lg flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Building2} size="lg" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-body-lg text-neutral-900 dark:text-neutral-50">{selectedVendor.name}</h3>
@@ -467,9 +465,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
                 onClick={() => { onSelect(vendor); setShowDropdown(false); setQuery(''); }}
                 className="w-full flex items-center gap-4 p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0 transition-colors"
               >
-                <div className="w-10 h-10 bg-neutral-100 dark:bg-primary-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Building2} className="flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{vendor.name}</p>
                   <p className="body-sm">{vendor.partyCode} • {vendor.category}</p>

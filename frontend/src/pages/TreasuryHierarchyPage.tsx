@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, MoreVertical, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatTile } from '../components/ui';
+import { Card, Button, Badge, Input , StatTile, StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -3727,9 +3727,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         />
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-neutral-400" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Building2} size="xl" rounded="full" className="mb-4" />
             <h2 className="section-title mb-2">Select a Corporate</h2>
             <p className="text-neutral-500 max-w-md dark:text-neutral-400">
               Choose a corporate from the dropdown above to view its programs and hierarchy structure.
@@ -3759,9 +3757,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         />
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Layers className="w-8 h-8 text-neutral-400" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Layers} size="xl" rounded="full" className="mb-4" />
             <h2 className="section-title mb-2">Select a Program</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
               Choose a program from the dropdown above to view its hierarchy structure and manage virtual accounts.
@@ -3828,9 +3824,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         />
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Globe className="w-8 h-8 text-neutral-400" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Globe} size="xl" rounded="full" className="mb-4" />
             <h2 className="section-title mb-2">Hierarchy Not Initialized</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
               This program doesn't have a hierarchy structure yet. Initialize it to start

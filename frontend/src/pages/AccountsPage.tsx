@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer } from '../components/ui';
+import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer, StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -1268,9 +1268,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               <h3 className="body-strong font-semibold mb-3">Status History</h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-body-sm">
-                  <div className="w-8 h-8 rounded-full bg-success-100 flex items-center justify-center dark:bg-success-500/20">
-                    <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
-                  </div>
+                  <StatusIconBadge tone="success" icon={CheckCircle} size="sm" rounded="full" />
                   <div>
                     <p className="font-medium text-primary-900 dark:text-neutral-50">Account Created</p>
                     <p className="caption">{formatDate(account.createdAt)}</p>

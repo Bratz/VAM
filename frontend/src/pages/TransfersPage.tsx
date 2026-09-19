@@ -1304,9 +1304,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                      <FileCode className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
-                    </div>
+                    <StatusIconBadge tone="neutral" icon={FileCode} size="xl" className="mx-auto mb-4" />
                     <p className="text-neutral-500 dark:text-neutral-400">No ISO 20022 message available</p>
                     <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">
                       ISO messages are generated for outward and POBO payments
@@ -1628,9 +1626,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     </Card>
                   ) : (
                     <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                        <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
-                      </div>
+                      <StatusIconBadge tone="neutral" icon={BookOpen} size="xl" className="mx-auto mb-4" />
                       <p className="text-neutral-500 dark:text-neutral-400">No accounting entries found</p>
                       <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">
                         Transaction entries will appear after processing
@@ -2366,9 +2362,7 @@ export default function TransfersPage() {
         {/* Desktop Layout */}
         <div className="hidden sm:flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-              <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Building2} />
             <div className="flex flex-col">
               <span className="caption">Corporate</span>
               <Select
@@ -2394,9 +2388,7 @@ export default function TransfersPage() {
           <div className="w-px h-12 bg-neutral-200 dark:bg-primary-800" />
 
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-success-100 flex items-center justify-center dark:bg-success-500/20">
-              <Users className="w-4 h-4 text-success-600 dark:text-success-300" />
-            </div>
+            <StatusIconBadge tone="success" icon={Users} />
             <div className="flex flex-col">
               <span className="caption">Legal Entity</span>
               <Select
@@ -2418,9 +2410,7 @@ export default function TransfersPage() {
           <div className="w-px h-12 bg-neutral-200 dark:bg-primary-800" />
 
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
-              <Briefcase className="w-4 h-4 text-accent-600 dark:text-accent-300" />
-            </div>
+            <StatusIconBadge tone="accent" icon={Briefcase} />
             <div className="flex flex-col">
               <span className="caption">Program</span>
               <Select
@@ -3065,9 +3055,7 @@ export default function TransfersPage() {
 
                 {bulkItems.length === 0 ? (
                   <div className="text-center py-12 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                      <Users className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
-                    </div>
+                    <StatusIconBadge tone="neutral" icon={Users} size="xl" className="mx-auto mb-4" />
                     <p className="text-neutral-500 dark:text-neutral-400">No recipients added yet</p>
                     <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Click "Add Recipient" to start</p>
                   </div>
@@ -3241,9 +3229,7 @@ export default function TransfersPage() {
 
           {recentTransfers.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={Clock} size="xl" className="mx-auto mb-4" />
               <p className="text-neutral-500 dark:text-neutral-400">No transfer history found</p>
               <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Your transfers will appear here</p>
             </div>

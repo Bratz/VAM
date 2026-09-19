@@ -665,30 +665,22 @@ const FundsAvailabilityPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-4 text-body-sm">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-success-100 flex items-center justify-center dark:bg-success-500/20">
-                <Wallet className="w-4 h-4 text-success-600 dark:text-success-300" />
-              </div>
+              <StatusIconBadge tone="success" icon={Wallet} size="sm" rounded="full" />
               <span className="font-medium text-primary-900 dark:text-neutral-50">Source VA</span>
             </div>
             <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center dark:bg-info-500/20">
-                <TrendingUp className="w-4 h-4 text-info-600 dark:text-info-300" />
-              </div>
+              <StatusIconBadge tone="info" icon={TrendingUp} size="sm" rounded="full" />
               <span className="font-medium text-primary-900 dark:text-neutral-50">Currency Mirror</span>
             </div>
             <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-warning-100 flex items-center justify-center dark:bg-warning-500/20">
-                <Layers className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-              </div>
+              <StatusIconBadge tone="warning" icon={Layers} size="sm" rounded="full" />
               <span className="font-medium text-primary-900 dark:text-neutral-50">Shadow Account</span>
             </div>
             <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
-                <Shield className="w-4 h-4 text-accent-600 dark:text-accent-300" />
-              </div>
+              <StatusIconBadge tone="accent" icon={Shield} size="sm" rounded="full" />
               <span className="font-medium text-primary-900 dark:text-neutral-50">ROOT</span>
             </div>
           </div>

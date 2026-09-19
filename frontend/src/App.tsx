@@ -2,7 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { TrendingUp, Building2, CreditCard, Users, Wallet } from 'lucide-react';
 import Layout from './components/layout/Layout';
-import { StatTile } from './components/ui';
+import { StatTile, StatusIconBadge } from './components/ui';
 import { UserProvider } from './context/UserContext';
 import { MarketProvider } from './context/MarketContext';
 import { ThemeProvider } from './design-system/ThemeProvider';
@@ -327,9 +327,7 @@ const BaaSPartnersPage: React.FC = () => (
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Directory</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
-          <Building2 className="w-8 h-8 text-neutral-400" />
-        </div>
+        <StatusIconBadge tone="neutral" icon={Building2} size="xl" className="mx-auto mb-4" />
         <p className="text-neutral-500 dark:text-neutral-400">Partner management interface coming soon...</p>
       </div>
     </div>
@@ -370,9 +368,7 @@ const BaaSCardsPage: React.FC = () => (
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Virtual Card Programs</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
-          <CreditCard className="w-8 h-8 text-neutral-400" />
-        </div>
+        <StatusIconBadge tone="neutral" icon={CreditCard} size="xl" className="mx-auto mb-4" />
         <p className="text-neutral-500 dark:text-neutral-400">Virtual cards interface coming soon...</p>
       </div>
     </div>
@@ -409,9 +405,7 @@ const BaaSSettlementsPage: React.FC = () => (
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Settlement Cycles</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
-          <Wallet className="w-8 h-8 text-neutral-400" />
-        </div>
+        <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
         <p className="text-neutral-500 dark:text-neutral-400">Settlements interface coming soon...</p>
       </div>
     </div>
@@ -448,9 +442,7 @@ const BaaSTransactionsPage: React.FC = () => (
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Transaction History</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
-          <TrendingUp className="w-8 h-8 text-neutral-400" />
-        </div>
+        <StatusIconBadge tone="neutral" icon={TrendingUp} size="xl" className="mx-auto mb-4" />
         <p className="text-neutral-500 dark:text-neutral-400">BaaS transactions interface coming soon...</p>
       </div>
     </div>

@@ -1047,9 +1047,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       {/* Cycles Grid */}
       {filteredCycles.length === 0 ? (
         <Card className="text-center py-12 animate-fade-in" style={{ animationDelay: '0.45s' }}>
-          <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-            <GitMerge className="w-8 h-8 text-neutral-400" />
-          </div>
+          <StatusIconBadge tone="neutral" icon={GitMerge} size="xl" className="mx-auto mb-4" />
           <h3 className="section-title mb-2">No Netting Cycles</h3>
           <p className="text-neutral-500 mb-6 dark:text-neutral-400">
             Create your first netting cycle to consolidate intercompany settlements

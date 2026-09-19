@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Building2, Users, ArrowLeftRight, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Wallet, DollarSign, RefreshCw, Settings, Plus, Eye, ChevronRight, Calendar, Layers, GitBranch, Target, Loader2, X, FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal, Briefcase, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, EmptyState, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -747,9 +747,7 @@ const InHouseBankPage: React.FC = () => {
       {!selectedCorporateId && (
         <Card padding="md" className="bg-gradient-to-r from-neutral-50 via-white to-neutral-50 border-neutral-200 animate-fade-in dark:border-primary-800 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-lg bg-warning-100 flex items-center justify-center mb-4 dark:bg-warning-500/20">
-              <Building2 className="w-8 h-8 text-warning-600 dark:text-warning-300" />
-            </div>
+            <StatusIconBadge tone="warning" icon={Building2} size="xl" className="mb-4" />
             <p className="section-title">Select a Corporate</p>
             <p className="body-sm mt-1 max-w-md">
               Choose a corporate from the selector above to view and manage its In-House Bank entities and current accounts.
@@ -766,9 +764,7 @@ const InHouseBankPage: React.FC = () => {
             <Card padding="sm" className="bg-gradient-to-r from-warning-50/50 via-white to-success-50/50 border-warning-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
               <div className="flex items-center justify-between p-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-warning-100 flex items-center justify-center flex-shrink-0 dark:bg-warning-500/20">
-                    <TrendingUp className="w-5 h-5 text-warning-600 dark:text-warning-300" />
-                  </div>
+                  <StatusIconBadge tone="warning" icon={TrendingUp} className="flex-shrink-0" />
                   <div>
                     <p className="text-caption font-medium text-warning-700 uppercase tracking-wide dark:text-warning-300">Treasury Indicative Rates</p>
                     <p className="text-body-sm text-neutral-700 mt-0.5 dark:text-neutral-200">

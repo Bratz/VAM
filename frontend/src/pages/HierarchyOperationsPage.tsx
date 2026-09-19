@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, MoreVertical, History, BookOpen, X, Globe, Wallet, Coins, Scale, Plus, CheckCircle, XCircle, ArrowUpDown, Settings, Layers } from 'lucide-react';
-import { Card as SharedCard, Badge as SharedBadge, Button as SharedButton, Skeleton } from '../components/ui';
+import { Card as SharedCard, Badge as SharedBadge, Button as SharedButton, Skeleton, StatusIconBadge } from '../components/ui';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { cn } from '../utils';
 import {
@@ -800,9 +800,7 @@ const HierarchyOperationsPage: React.FC = () => {
       {(!selectedCorporateId || !selectedProgramId) && (
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4 dark:bg-primary-800">
-              <Building2 className="w-8 h-8 text-neutral-400" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Building2} size="xl" rounded="full" className="mb-4" />
             <h2 className="section-title mb-2">
               {!selectedCorporateId ? 'Select a Corporate' : 'Select a Program'}
             </h2>

@@ -663,9 +663,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               {!hasHierarchy ? (
                 /* Hierarchy Not Initialized */
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-warning-100 flex items-center justify-center mx-auto mb-4 dark:bg-warning-500/20">
-                    <GitBranch className="w-8 h-8 text-warning-600 dark:text-warning-300" />
-                  </div>
+                  <StatusIconBadge tone="warning" icon={GitBranch} size="xl" rounded="full" className="mx-auto mb-4" />
                   <h3 className="section-title mb-2">
                     {program.hierarchyEnabled ? 'Hierarchy Not Initialized' : 'Hierarchy Not Enabled'}
                   </h3>
@@ -1373,9 +1371,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             <div className="space-y-3">
               {detail.activityLog.length === 0 ? <p className="text-center py-8 text-neutral-500 dark:text-neutral-400">No activity</p> : detail.activityLog.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                  <div className="w-8 h-8 rounded-full bg-success-100 flex items-center justify-center dark:bg-success-500/20">
-                    <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
-                  </div>
+                  <StatusIconBadge tone="success" icon={CheckCircle} size="sm" rounded="full" />
                   <div className="flex-1">
                     <p className="body-strong">{item.action}</p>
                     <p className="caption">by {item.user} • {formatDate(item.timestamp)}</p>

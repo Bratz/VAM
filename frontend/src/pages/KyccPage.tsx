@@ -479,9 +479,7 @@ const KyccPage: React.FC = () => {
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-                <Shield className="w-8 h-8 text-primary-600 dark:text-primary-200" />
-              </div>
+              <StatusIconBadge tone="primary" icon={Shield} size="xl" />
               <div>
                 {/* Phase 9 Task E: heading is sans-serif; the application
                     reference reads as data via .code. */}

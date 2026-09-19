@@ -586,9 +586,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       {/* Result Step */}
       {step === 'result' && result && (
         <div className="text-center py-6">
-          <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
-            <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-300" />
-          </div>
+          <StatusIconBadge tone="success" icon={CheckCircle} size="xl" rounded="full" className="mx-auto mb-4" />
           <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Transaction Successful</h3>
           <p className="text-neutral-600 mb-4 dark:text-neutral-300">{mode} transaction executed successfully</p>
           <div className="p-3 bg-neutral-50 rounded-lg inline-block dark:bg-primary-950">
@@ -658,9 +656,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
-                <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
-              </div>
+              <StatusIconBadge tone="primary" icon={Building2} />
               <div>
                 <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
                 <p className="caption">{pair.entity1Name}</p>
@@ -668,9 +664,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
             </div>
             <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-info-100 rounded-lg flex items-center justify-center dark:bg-info-500/20">
-                <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
-              </div>
+              <StatusIconBadge tone="info" icon={Building2} />
               <div>
                 <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
                 <p className="caption">{pair.entity2Name}</p>
@@ -1304,9 +1298,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   {transactions.filter(poboTransactionFilter).length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center">
-                        <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                          <CreditCard className="w-8 h-8 text-neutral-400" />
-                        </div>
+                        <StatusIconBadge tone="neutral" icon={CreditCard} size="xl" className="mx-auto mb-4" />
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No POBO transactions found</p>
                         <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowPoboModal(true)}>
                           Create First POBO
@@ -1401,9 +1393,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   {transactions.filter(coboTransactionFilter).length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center">
-                        <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                          <Wallet className="w-8 h-8 text-neutral-400" />
-                        </div>
+                        <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No COBO collections found</p>
                         <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowCoboModal(true)}>
                           Setup First COBO
@@ -1489,9 +1479,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
               {entityPairs.filter(p => p.pendingTransactions > 0).length === 0 ? (
                 <div className="px-4 py-12 text-center">
-                  <div className="w-16 h-16 rounded-lg bg-success-100 flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
-                    <CheckCircle className="w-8 h-8 text-success-500 dark:text-success-300" />
-                  </div>
+                  <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
                 </div>
               ) : entityPairs.filter(p => p.pendingTransactions > 0).map((pair, i) => (
@@ -1499,9 +1487,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
-                          <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
-                        </div>
+                        <StatusIconBadge tone="primary" icon={Building2} />
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
                           <p className="caption">{pair.entity1Name}</p>
@@ -1509,9 +1495,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                       </div>
                       <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-info-100 rounded-lg flex items-center justify-center dark:bg-info-500/20">
-                          <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
-                        </div>
+                        <StatusIconBadge tone="info" icon={Building2} />
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
                           <p className="caption">{pair.entity2Name}</p>
@@ -1560,9 +1544,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
               {intercompanyVas.length === 0 ? (
                 <div className="px-4 py-12 text-center">
-                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <Wallet className="w-8 h-8 text-neutral-400" />
-                  </div>
+                  <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">No intercompany virtual accounts configured</p>
                   <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Intercompany VAs will appear here when created</p>
                 </div>
@@ -1832,9 +1814,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center">
-                      <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                        <Receipt className="w-8 h-8 text-neutral-400" />
-                      </div>
+                      <StatusIconBadge tone="neutral" icon={Receipt} size="xl" className="mx-auto mb-4" />
                       <p className="text-neutral-500 dark:text-neutral-400">No transactions found</p>
                     </td>
                   </tr>
@@ -1852,9 +1832,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {entitiesWithPositions.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
-              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Building2 className="w-8 h-8 text-neutral-400" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={Building2} size="xl" className="mx-auto mb-4" />
               <p className="text-neutral-500 dark:text-neutral-400">No entities with intercompany positions</p>
             </Card>
           ) : entitiesWithPositions.map((entity, i) => (
@@ -1864,9 +1842,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
 
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
-                    <Building2 className="w-6 h-6 text-primary-600 dark:text-primary-200" />
-                  </div>
+                  <StatusIconBadge tone="primary" icon={Building2} size="lg" />
                   <div className="flex-1">
                     <p className="font-semibold text-primary-900 dark:text-neutral-50">{entity.entityName}</p>
                     <p className="body-sm">{entity.entityCode}</p>
@@ -1918,9 +1894,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <div className="grid gap-4 md:grid-cols-2">
           {entityPairs.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
-              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <ArrowLeftRight className="w-8 h-8 text-neutral-400" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={ArrowLeftRight} size="xl" className="mx-auto mb-4" />
               <p className="text-neutral-500 dark:text-neutral-400">No entity pairs with intercompany positions</p>
             </Card>
           ) : entityPairs.map((pair, i) => (

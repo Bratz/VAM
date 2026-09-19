@@ -331,9 +331,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       <Card className="bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 border-primary-100/50 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-4 p-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-              <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Building2} />
             <div className="flex flex-col">
               <span className="label">Corporate</span>
               <Select value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)} className="min-w-[240px]">

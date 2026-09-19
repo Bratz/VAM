@@ -96,9 +96,7 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
           {formData.sourceAccounts.map((acc) => (
             <div key={acc.accountId} className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Building2} size="sm" />
                 <span className="body-strong">{acc.entityName}</span>
               </div>
               <span className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{acc.accountNumber}</span>
