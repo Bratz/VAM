@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
+import { useNavigation } from '../App';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
@@ -236,6 +237,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   const [campaign, dismissCampaign] = useEligibleCampaign();
 
   const nav = (page?: string) => { if (page) onNavigate?.(page); };
+  const { navigate } = useNavigation();
 
   // Guards against out-of-order responses: switching the corporate scope
   // fires a second load() while the first (e.g. the slower, heavier
@@ -256,7 +258,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       transactionsApi.getRecent(20, s),
       sweepingApi.getAllRules(),
       fxRateApi.getAllActiveRates(),
-      dashboardApi.getPendingApprovals(),
+      dashboardApi.getPendingApprovals(s),
       // Firm/corporate-wide only — deliberately NOT narrowed by
       // selectedProgramId. This feeds the "Consolidated position" hero
       // figure, which must keep meaning the full scope regardless of
@@ -748,8 +750,9 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             </div>
           </Card>
 
-          {/* Payments — Awaiting approval is REAL; other states are
-              nav-only. Moved ahead of the Accounts table (was after it) —
+          {/* Payments — real payables the user can act on now (awaiting
+              approval, or approved and payable via Pay Now); each row deep-links
+              into the Payables page with that action open. Moved ahead of the Accounts table (was after it) —
               this is the treasury team's own actionable work queue
               ("money in motion"), which real dashboard research
               consistently places right after the headline number, not
@@ -759,7 +762,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="section-title">
                 Payments
                 <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-xs font-medium tabular-nums">
-                  {pending?.payablesCount ?? 0} awaiting
+                  {pending?.payablesCount ?? 0} to action
                 </span>
               </p>
               <button
@@ -772,7 +775,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             </div>
             <div>
               {(pending?.payables?.length ?? 0) === 0 ? (
-                <p className="body-sm px-4 py-6 text-center">Nothing awaiting approval.</p>
+                <p className="body-sm px-4 py-6 text-center">Nothing to approve or pay.</p>
               ) : (
                 pending!.payables.slice(0, 5).map((p) => (
                   <div key={p.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
@@ -782,10 +785,12 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                         <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} showCurrency={false} /></p>
+                        <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} currency={p.currencyCode} showCurrency={false} /></p>
                         <p className="caption">due {p.dueDate ? new Date(p.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</p>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => nav('payables')}>Review</Button>
+                      <Button size="sm" variant="outline" onClick={() => navigate('payables', { payableId: p.id, action: p.action ?? 'PAY' })}>
+                        {p.action === 'APPROVE' ? 'Approve' : 'Pay now'}
+                      </Button>
                     </div>
                   </div>
                 ))

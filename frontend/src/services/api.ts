@@ -204,7 +204,11 @@ export interface PendingApprovals {
     invoiceNumber: string;
     vendorName: string;
     amount: number;
+    currencyCode?: string;
     dueDate: string;
+    status?: string;
+    /** APPROVE = awaiting approval; PAY = approved and payable now (Pay Now). */
+    action?: 'APPROVE' | 'PAY';
   }>;
   transactions: Array<{
     id: string;
@@ -328,9 +332,11 @@ export const dashboardApi = {
     }
   },
 
-  getPendingApprovals: async (): Promise<PendingApprovals> => {
+  getPendingApprovals: async (corporateId?: string): Promise<PendingApprovals> => {
     try {
-      const response = await apiClient.get<ApiResponse<PendingApprovals>>('/dashboard/pending-approvals');
+      const response = await apiClient.get<ApiResponse<PendingApprovals>>('/dashboard/pending-approvals', {
+        params: corporateId ? { corporateId } : undefined,
+      });
       return extractData(response.data);
     } catch (error) {
       console.error('Failed to fetch pending approvals:', error);

@@ -783,7 +783,7 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
 // ============================================================================
 
 const EnhancedPayablesPage: React.FC = () => {
-  const { navigate } = useNavigation();
+  const { navigate, params } = useNavigation();
 
   // Selection state
   const [corporates, setCorporates] = useState<Corporate[]>([]);
@@ -1084,6 +1084,19 @@ const EnhancedPayablesPage: React.FC = () => {
   const handlePayNow = (payable: PayablePhase2) => {
     setPayNowTarget(payable);
   };
+
+  // Deep link from the Dashboard "Payments" block: open Pay Now / Approve for that payable.
+  // Fetched by id so it works regardless of which corporate/entity the list is scoped to.
+  const deepLinkHandled = React.useRef<string | null>(null);
+  useEffect(() => {
+    const id = params?.payableId;
+    if (!id || deepLinkHandled.current === id) return;
+    deepLinkHandled.current = id;
+    payablesApiPhase2.getById(id)
+      .then((p) => (params.action === 'APPROVE' ? handleApprove(p) : handlePayNow(p)))
+      .catch(() => toast.error('Could not open that payment'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params?.payableId]);
 
   const handleConfirmPayNow = async () => {
     if (!payNowTarget) return;
