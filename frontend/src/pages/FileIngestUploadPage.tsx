@@ -42,7 +42,7 @@ import { Upload, FileText, X, AlertTriangle, RefreshCw, ArrowUpFromLine, Send, S
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { Card, CardHeader, Button, Badge } from '../components/ui';
+import { Card, CardHeader, Button, Badge, DataTable } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
 import { formatFileSize } from '../utils';
@@ -702,36 +702,30 @@ const FileIngestUploadPage: React.FC = () => {
               <div className="p-6 pb-0">
                 <CardHeader title="Rows" subtitle={`${rows.length} row(s) from ${job.originalFilename}.`} />
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-body-sm">
-                  <thead>
-                    <tr className="border-t border-edge-subtle caption">
-                      <th className="text-left font-medium px-6 py-2">Row</th>
-                      <th className="text-left font-medium px-3 py-2">Status</th>
-                      <th className="text-right font-medium px-3 py-2">Amount</th>
-                      <th className="text-left font-medium px-3 py-2">Account</th>
-                      <th className="text-left font-medium px-6 py-2">Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr key={row.sourceRowNumber} className="border-t border-edge-subtle">
-                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 font-mono text-caption">{row.sourceRowNumber}</td>
-                        <td className="px-3 py-2">
-                          <Badge variant={ROW_STATUS_BADGE[row.status].variant} size="sm">{ROW_STATUS_BADGE[row.status].label}</Badge>
-                        </td>
-                        <td className="px-3 py-2 text-right text-primary-900 dark:text-neutral-50 font-mono">
-                          {row.amount != null ? `${row.amount} ${row.currency ?? ''}` : '—'}
-                        </td>
-                        <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300 font-mono text-caption truncate max-w-[10rem]">
-                          {row.targetAccountReference ?? '—'}
-                        </td>
-                        <td className="px-6 py-2 caption">{row.reason ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                hairline
+                data={rows}
+                keyExtractor={(row) => row.sourceRowNumber}
+                columns={[
+                  { key: 'sourceRowNumber', header: 'Row', minWidth: 80, render: (_v, row) => (
+                    <span className="text-neutral-500 dark:text-neutral-400 font-mono text-caption">{row.sourceRowNumber}</span>
+                  ) },
+                  { key: 'status', header: 'Status', minWidth: 110, render: (_v, row) => (
+                    <Badge variant={ROW_STATUS_BADGE[row.status].variant} size="sm">{ROW_STATUS_BADGE[row.status].label}</Badge>
+                  ) },
+                  { key: 'amount', header: 'Amount', align: 'right', minWidth: 150, render: (_v, row) => (
+                    <span className="text-primary-900 dark:text-neutral-50 font-mono">
+                      {row.amount != null ? `${row.amount} ${row.currency ?? ''}` : '—'}
+                    </span>
+                  ) },
+                  { key: 'targetAccountReference', header: 'Account', minWidth: 160, dropOrder: 2, render: (_v, row) => (
+                    <span className="block text-neutral-600 dark:text-neutral-300 font-mono text-caption truncate max-w-[10rem]">
+                      {row.targetAccountReference ?? '—'}
+                    </span>
+                  ) },
+                  { key: 'reason', header: 'Reason', minWidth: 200, dropOrder: 1, render: (_v, row) => <span className="caption">{row.reason ?? '—'}</span> },
+                ]}
+              />
             </Card>
           )}
         </>

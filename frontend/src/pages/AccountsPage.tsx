@@ -15,7 +15,8 @@ import type { LucideIcon } from 'lucide-react';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer, StatusIconBadge, DataTable } from '../components/ui';
+import type { Column } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -427,35 +428,97 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
 };
 
 // ============================================================================
-// TABLE ROW COMPONENT (Desktop)
+// DESKTOP TABLE COLUMNS (DataTable)
 // ============================================================================
 
-interface AccountRowProps {
+const accountMeta = (account: VirtualAccount) => {
+  const category = account.accountCategory || 'TRANSACTION';
+  const categoryConfig = accountCategoryConfig[category] || accountCategoryConfig.TRANSACTION;
+  const statusCfg = statusConfig[account.status];
+  return { categoryConfig, CategoryIcon: categoryConfig.icon, statusCfg, StatusIcon: statusCfg?.icon || Clock };
+};
+
+interface AccountActionsProps {
   account: VirtualAccount;
   onView: (a: VirtualAccount) => void;
   onEdit: (a: VirtualAccount) => void;
   onStatusChange: (id: string, status: VaStatus) => void;
 }
 
-const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStatusChange }) => {
+const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit, onStatusChange }) => {
   const [showActions, setShowActions] = useState(false);
-  const category = account.accountCategory || 'TRANSACTION';
-  const categoryConfig = accountCategoryConfig[category] || accountCategoryConfig.TRANSACTION;
-  const CategoryIcon = categoryConfig.icon;
-  const statusCfg = statusConfig[account.status];
-  const StatusIcon = statusCfg?.icon || Clock;
-
   return (
-    <tr
-      className="data-table-row group cursor-pointer"
-      onClick={() => onView(account)}
-    >
-      {/* Account Info */}
-      <td className="data-table-cell">
+    <div className="relative text-left" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setShowActions(!showActions)}
+        className="p-2 hover:bg-neutral-100 rounded-lg transition-all dark:hover:bg-primary-800"
+      >
+        <MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+      </button>
+      {showActions && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
+          <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20 animate-fade-in">
+            <button
+              onClick={() => { onView(account); setShowActions(false); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
+            >
+              <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
+            </button>
+            <button
+              onClick={() => { onEdit(account); setShowActions(false); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
+            >
+              <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
+            </button>
+            <hr className="my-1 border-edge-subtle" />
+            {account.status === 'ACTIVE' && (
+              <>
+                <button
+                  onClick={() => { onStatusChange(account.id, 'SUSPENDED'); setShowActions(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-warning-600 hover:bg-warning-50 transition-colors dark:text-warning-300 dark:hover:bg-warning-500/10"
+                >
+                  <PauseCircle className="w-4 h-4" /> Suspend Account
+                </button>
+                <button
+                  onClick={() => { onStatusChange(account.id, 'BLOCKED'); setShowActions(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300 dark:hover:bg-error-500/10"
+                >
+                  <Ban className="w-4 h-4" /> Block Account
+                </button>
+              </>
+            )}
+            {(account.status === 'SUSPENDED' || account.status === 'BLOCKED') && (
+              <button
+                onClick={() => { onStatusChange(account.id, 'ACTIVE'); setShowActions(false); }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-success-600 hover:bg-success-50 transition-colors dark:text-success-300 dark:hover:bg-success-500/10"
+              >
+                <Play className="w-4 h-4" /> Reactivate Account
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const buildAccountColumns = (
+  onView: (a: VirtualAccount) => void,
+  onEdit: (a: VirtualAccount) => void,
+  onStatusChange: (id: string, status: VaStatus) => void,
+): Column<VirtualAccount>[] => [
+  {
+    key: 'vaName',
+    header: 'Account',
+    minWidth: 280,
+    render: (_, account) => {
+      const { categoryConfig, CategoryIcon } = accountMeta(account);
+      return (
         <div className="flex items-center gap-3">
-          <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} subtle className="shrink-0 transition-transform group-hover:scale-105" />
+          <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} subtle className="shrink-0" />
           <div className="min-w-0">
-            <p className="text-body-sm font-semibold text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
+            <p className="text-body-sm font-semibold text-primary-900 truncate dark:text-neutral-50">
               {account.vaName}
             </p>
             <div className="flex items-center gap-2 caption mt-0.5">
@@ -468,37 +531,53 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
             </div>
           </div>
         </div>
-      </td>
-
-      {/* Program */}
-      <td className="data-table-cell">
-        {account.programName ? (
-          <div className="flex items-center gap-2">
-            <StatusIconBadge tone="primary" icon={Briefcase} size="sm" />
-            <div className="min-w-0">
-              <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
-                {account.programName}
-              </p>
-              {account.programType && (
-                <p className="caption">{account.programType}</p>
-              )}
-            </div>
+      );
+    },
+  },
+  {
+    key: 'programName',
+    header: 'Program',
+    minWidth: 220,
+    dropOrder: 2,
+    render: (_, account) =>
+      account.programName ? (
+        <div className="flex items-center gap-2">
+          <StatusIconBadge tone="primary" icon={Briefcase} size="sm" />
+          <div className="min-w-0">
+            <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
+              {account.programName}
+            </p>
+            {account.programType && (
+              <p className="caption">{account.programType}</p>
+            )}
           </div>
-        ) : (
-          <span className="text-caption text-neutral-400 italic dark:text-neutral-400">No program</span>
-        )}
-      </td>
-
-      {/* Category */}
-      <td className="data-table-cell">
+        </div>
+      ) : (
+        <span className="text-caption text-neutral-400 italic dark:text-neutral-400">No program</span>
+      ),
+  },
+  {
+    key: 'accountCategory',
+    header: 'Category',
+    minWidth: 130,
+    dropOrder: 1,
+    render: (_, account) => {
+      const { categoryConfig } = accountMeta(account);
+      return (
         <Badge variant="neutral" size="sm" className={cn(categoryConfig.bgColor, categoryConfig.color, "border-0")}>
           {categoryConfig.label}
         </Badge>
-      </td>
-
-      {/* Currency & Balance — negatives render in error tone so the eye
-          catches overdrawn / mirror-deficit accounts at a glance. */}
-      <td className="data-table-cell text-right">
+      );
+    },
+  },
+  {
+    key: 'balance',
+    header: 'Balance',
+    align: 'right',
+    minWidth: 170,
+    // Negatives render in error tone so the eye catches overdrawn / mirror-deficit accounts.
+    render: (_, account) => (
+      <>
         <p className={cn(
           "text-body-sm font-bold tabular-nums",
           getEffectiveBalance(account) < 0
@@ -515,74 +594,33 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
         )}>
           Avail: {formatCurrency(account.availableBalance, account.currencyCode)}
         </p>
-      </td>
-
-      {/* Status */}
-      <td className="data-table-cell">
+      </>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    minWidth: 130,
+    render: (_, account) => {
+      const { statusCfg, StatusIcon } = accountMeta(account);
+      return (
         <Badge variant={statusCfg?.variant as any} size="sm">
           <StatusIcon className="w-3 h-3 mr-1" />
           {statusCfg?.label}
         </Badge>
-      </td>
-
-      {/* Actions */}
-      <td className="data-table-cell" onClick={(e) => e.stopPropagation()}>
-        <div className="relative">
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="p-2 hover:bg-neutral-100 rounded-lg transition-all opacity-0 group-hover:opacity-100 dark:hover:bg-primary-800"
-          >
-            <MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-          </button>
-          {showActions && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20 animate-fade-in">
-                <button
-                  onClick={() => { onView(account); setShowActions(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
-                >
-                  <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
-                </button>
-                <button
-                  onClick={() => { onEdit(account); setShowActions(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
-                >
-                  <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
-                </button>
-                <hr className="my-1 border-edge-subtle" />
-                {account.status === 'ACTIVE' && (
-                  <>
-                    <button
-                      onClick={() => { onStatusChange(account.id, 'SUSPENDED'); setShowActions(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-warning-600 hover:bg-warning-50 transition-colors dark:text-warning-300 dark:hover:bg-warning-500/10"
-                    >
-                      <PauseCircle className="w-4 h-4" /> Suspend Account
-                    </button>
-                    <button
-                      onClick={() => { onStatusChange(account.id, 'BLOCKED'); setShowActions(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300 dark:hover:bg-error-500/10"
-                    >
-                      <Ban className="w-4 h-4" /> Block Account
-                    </button>
-                  </>
-                )}
-                {(account.status === 'SUSPENDED' || account.status === 'BLOCKED') && (
-                  <button
-                    onClick={() => { onStatusChange(account.id, 'ACTIVE'); setShowActions(false); }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-success-600 hover:bg-success-50 transition-colors dark:text-success-300 dark:hover:bg-success-500/10"
-                  >
-                    <Play className="w-4 h-4" /> Reactivate Account
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
-};
+      );
+    },
+  },
+  {
+    key: 'actions',
+    header: 'Actions',
+    width: '64px',
+    minWidth: 64,
+    render: (_, account) => (
+      <AccountActions account={account} onView={onView} onEdit={onEdit} onStatusChange={onStatusChange} />
+    ),
+  },
+];
 
 // ============================================================================
 // MOBILE CARD COMPONENT
@@ -1730,43 +1768,17 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
             {accounts.length > 0 ? (
               <>
                 {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="data-table">
-                    <thead className="data-table-header">
-                      <tr>
-                        <th className="data-table-header-cell">Account</th>
-                        <th className="data-table-header-cell">Program</th>
-                        <th className="data-table-header-cell">Category</th>
-                        <th className="data-table-header-cell text-right">Balance</th>
-                        <th className="data-table-header-cell">Status</th>
-                        <th className="data-table-header-cell w-16">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-edge-subtle">
-                      {accounts.map((a) => (
-                        <AccountRow
-                          key={a.id}
-                          account={a}
-                          onView={setSelectedAccount}
-                          onEdit={setEditAccount}
-                          onStatusChange={handleStatusChange}
-                        />
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Card View */}
-                <div className="md:hidden p-4 space-y-3">
-                  {accounts.map((account, idx) => (
-                    <AccountMobileCard
-                      key={account.id}
-                      account={account}
-                      onView={setSelectedAccount}
-                      index={idx}
-                    />
-                  ))}
-                </div>
+                <DataTable
+                  hairline
+                  className="p-4 lg:p-0"
+                  data={accounts}
+                  columns={buildAccountColumns(setSelectedAccount, setEditAccount, handleStatusChange)}
+                  keyExtractor={(a) => a.id}
+                  onRowClick={setSelectedAccount}
+                  mobileCardRenderer={(account, idx) => (
+                    <AccountMobileCard account={account} onView={setSelectedAccount} index={idx} />
+                  )}
+                />
 
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-edge">

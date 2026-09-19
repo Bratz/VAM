@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, Pencil, ChevronRight } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input, EmptyState, StatusIconBadge, Checkbox } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, EmptyState, StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -624,82 +624,16 @@ const ProgramCard: React.FC<{
 // Wallet Row Component - Enhanced with more actions
 // ============================================================================
 
-const WalletRow: React.FC<{
+const WalletActionsCell: React.FC<{
   wallet: WalletAccount;
   onView: () => void;
   onEdit: () => void;
   onAction: (action: string) => void;
 }> = ({ wallet, onView, onEdit, onAction }) => {
   const [showActions, setShowActions] = useState(false);
-  const status = walletStatusConfig[wallet.status] || walletStatusConfig.ACTIVE;
-  const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
-  const dailyUsage = wallet.dailyLimit > 0 ? (wallet.dailySpent / wallet.dailyLimit) * 100 : 0;
-  const monthlyUsage = wallet.monthlyLimit > 0 ? (wallet.monthlySpent / wallet.monthlyLimit) * 100 : 0;
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
 
   return (
-    <tr className="hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors">
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-3">
-          <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
-          <div>
-            <p className="text-body font-medium text-primary-900 dark:text-neutral-50">{wallet.holderName}</p>
-            <p className="body-sm">{wallet.holderMobile}</p>
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-1">
-          <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
-          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md">
-            <Copy className="w-3 h-3 text-neutral-400" />
-          </button>
-        </div>
-        <p className="caption">{wallet.programCode || wallet.programName}</p>
-      </td>
-      <td className="px-6 py-4">
-        <p className="text-body font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.currentBalance)}</p>
-        <p className="caption">Available: {formatCurrency(wallet.availableBalance)}</p>
-      </td>
-      <td className="px-6 py-4">
-        <div className="space-y-2 w-32">
-          <div>
-            <div className="flex justify-between text-caption mb-1">
-              <span className="text-neutral-500 dark:text-neutral-400">Daily</span>
-              <span className="text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.dailySpent)}</span>
-            </div>
-            <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
-          </div>
-          <div>
-            <div className="flex justify-between text-caption mb-1">
-              <span className="text-neutral-500 dark:text-neutral-400">Monthly</span>
-              <span className="text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.monthlySpent)}</span>
-            </div>
-            <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
-          </div>
-        </div>
-      </td>
-      <td className="px-6 py-4">
-        <Badge variant={status.color as any} className="flex items-center gap-1 w-fit">
-          {status.icon}{status.label}
-        </Badge>
-        <div className="flex items-center gap-1 mt-1">
-          <Badge variant={kycStatus.color as any} size="sm" className="flex items-center gap-1">
-            {kycStatus.icon}{kycStatus.label}
-          </Badge>
-        </div>
-      </td>
-      <td className="px-6 py-4">
-        <p className="body-sm">{wallet.transactionCount} txns</p>
-        <p className="caption">
-          {wallet.lastTransaction ? new Date(wallet.lastTransaction).toLocaleDateString() : 'No txns'}
-        </p>
-      </td>
-      <td className="px-6 py-4">
-        <div className="relative">
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={(e) => { e.stopPropagation(); setShowActions(!showActions); }}
             className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg"
@@ -750,8 +684,6 @@ const WalletRow: React.FC<{
             </>
           )}
         </div>
-      </td>
-    </tr>
   );
 };
 
@@ -1217,39 +1149,98 @@ const WalletPage: React.FC = () => {
               <span className="ml-3 text-neutral-600 dark:text-neutral-300">Loading wallets...</span>
             </div>
           ) : filteredWallets.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-surface-page border-b border-edge">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Holder</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Wallet</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Balance</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Usage</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Status</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Activity</th>
-                    <th className="px-6 py-3 text-left text-body-sm font-semibold text-neutral-600 dark:text-neutral-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-subtle">
-                  {filteredWallets.map(wallet => (
-                    <WalletRow key={wallet.id} wallet={wallet} onView={() => handleViewWallet(wallet)} onEdit={() => handleEditWallet(wallet)} onAction={(action) => handleWalletAction(action, wallet)} />
-                  ))}
-                </tbody>
-              </table>
+            <div className="px-4 pb-4">
+              <DataTable
+                hairline
+                data={filteredWallets}
+                keyExtractor={(w) => w.id}
+                pagination
+                pageSize={20}
+                currentPage={currentPage + 1}
+                totalCount={totalWallets}
+                onPageChange={(p) => setCurrentPage(p - 1)}
+                columns={[
+                  { key: 'holderName', header: 'Holder', minWidth: 220, render: (_v, wallet) => (
+                    <div className="flex items-center gap-3">
+                      <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
+                      <div>
+                        <p className="text-body font-medium text-primary-900 dark:text-neutral-50">{wallet.holderName}</p>
+                        <p className="body-sm">{wallet.holderMobile}</p>
+                      </div>
+                    </div>
+                  ) },
+                  { key: 'walletReference', header: 'Wallet', minWidth: 200, render: (_v, wallet) => (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
+                        <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(wallet.walletReference); }} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md">
+                          <Copy className="w-3 h-3 text-neutral-400" />
+                        </button>
+                      </div>
+                      <p className="caption">{wallet.programCode || wallet.programName}</p>
+                    </>
+                  ) },
+                  { key: 'currentBalance', header: 'Balance', minWidth: 150, render: (_v, wallet) => (
+                    <>
+                      <p className="text-body font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.currentBalance)}</p>
+                      <p className="caption">Available: {formatCurrency(wallet.availableBalance)}</p>
+                    </>
+                  ) },
+                  { key: 'usage', header: 'Usage', minWidth: 170, dropOrder: 1, render: (_v, wallet) => {
+                    const dailyUsage = wallet.dailyLimit > 0 ? (wallet.dailySpent / wallet.dailyLimit) * 100 : 0;
+                    const monthlyUsage = wallet.monthlyLimit > 0 ? (wallet.monthlySpent / wallet.monthlyLimit) * 100 : 0;
+                    return (
+                      <div className="space-y-2 w-32">
+                        <div>
+                          <div className="flex justify-between text-caption mb-1">
+                            <span className="text-neutral-500 dark:text-neutral-400">Daily</span>
+                            <span className="text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.dailySpent)}</span>
+                          </div>
+                          <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-caption mb-1">
+                            <span className="text-neutral-500 dark:text-neutral-400">Monthly</span>
+                            <span className="text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.monthlySpent)}</span>
+                          </div>
+                          <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
+                        </div>
+                      </div>
+                    );
+                  } },
+                  { key: 'status', header: 'Status', minWidth: 130, render: (_v, wallet) => {
+                    const status = walletStatusConfig[wallet.status] || walletStatusConfig.ACTIVE;
+                    const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
+                    return (
+                      <>
+                        <Badge variant={status.color as any} className="flex items-center gap-1 w-fit">
+                          {status.icon}{status.label}
+                        </Badge>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Badge variant={kycStatus.color as any} size="sm" className="flex items-center gap-1">
+                            {kycStatus.icon}{kycStatus.label}
+                          </Badge>
+                        </div>
+                      </>
+                    );
+                  } },
+                  { key: 'transactionCount', header: 'Activity', minWidth: 120, dropOrder: 2, render: (_v, wallet) => (
+                    <>
+                      <p className="body-sm">{wallet.transactionCount} txns</p>
+                      <p className="caption">
+                        {wallet.lastTransaction ? new Date(wallet.lastTransaction).toLocaleDateString() : 'No txns'}
+                      </p>
+                    </>
+                  ) },
+                  { key: 'actions', header: 'Actions', minWidth: 90, render: (_v, wallet) => (
+                    <WalletActionsCell wallet={wallet} onView={() => handleViewWallet(wallet)} onEdit={() => handleEditWallet(wallet)} onAction={(action) => handleWalletAction(action, wallet)} />
+                  ) },
+                ]}
+              />
             </div>
           ) : (
             <div className="p-8">
               <EmptyState icon={<CreditCard className="w-8 h-8" />} title="No wallets found" description="Issue a new wallet or adjust your filters" action={<Button onClick={() => setShowIssueModal(true)}>Issue Wallet</Button>} />
-            </div>
-          )}
-          
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-edge flex items-center justify-between">
-              <p className="body-sm">Showing {currentPage * 20 + 1} to {Math.min((currentPage + 1) * 20, totalWallets)} of {totalWallets}</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
-                <Button variant="outline" size="sm" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
-              </div>
             </div>
           )}
         </Card>

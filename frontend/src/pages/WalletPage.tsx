@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, ChevronLeft, Pencil, ChevronRight } from 'lucide-react';
-import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox } from '../components/ui';
+import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, Pencil, ChevronRight } from 'lucide-react';
+import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { HierarchyPicker } from '../components/hierarchy/HierarchyPicker';
@@ -744,96 +744,41 @@ const ProgramCard: React.FC<{
 // WALLET ROW COMPONENT - Enhanced with Party info display
 // ============================================================================
 
-const WalletRow: React.FC<{
+const WalletActionsCell: React.FC<{
   wallet: WalletAccount;
   onView: () => void;
   onEdit: () => void;
   onAction: (action: string) => void;
 }> = ({ wallet, onView, onEdit, onAction }) => {
   const [showActions, setShowActions] = useState(false);
-  const status = walletStatusConfig[wallet.status] || walletStatusConfig.ACTIVE;
-  const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
-  const dailyUsage = wallet.dailyLimit > 0 ? (wallet.dailySpent / wallet.dailyLimit) * 100 : 0;
-  const monthlyUsage = wallet.monthlyLimit > 0 ? (wallet.monthlySpent / wallet.monthlyLimit) * 100 : 0;
-
-  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
   return (
-    <tr className="data-table-row group">
-      <td className="data-table-cell">
-        <div className="flex items-center gap-3">
-          <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="body-strong">{wallet.holderName}</p>
-              {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded-md dark:bg-info-500/20 dark:text-info-300">Linked</span>}
-            </div>
-            <p className="caption">{wallet.holderMobile}</p>
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button onClick={(e) => { e.stopPropagation(); setShowActions(!showActions); }} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg"><MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /></button>
+      {showActions && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
+          <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20">
+            <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
+            <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Pencil className="w-4 h-4" /> Edit Limits</button>
+            <hr className="my-1 border-edge-subtle" />
+            <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
+            <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
+            <button onClick={() => { onAction('transfer'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Send className="w-4 h-4" /> Transfer</button>
+            <hr className="my-1 border-edge-subtle" />
+            {!wallet.kycVerified && <button onClick={() => { onAction('verify-kyc'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><UserCheck className="w-4 h-4" /> Verify KYC</button>}
+            {wallet.status === 'ACTIVE' ? (
+              <>
+                <button onClick={() => { onAction('suspend'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-warning-600 dark:text-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 dark:hover:bg-warning-500/10"><Lock className="w-4 h-4" /> Suspend</button>
+                <button onClick={() => { onAction('block'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 dark:hover:bg-error-500/10"><Ban className="w-4 h-4" /> Block</button>
+              </>
+            ) : wallet.status === 'SUSPENDED' && (
+              <button onClick={() => { onAction('reactivate'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><Unlock className="w-4 h-4" /> Reactivate</button>
+            )}
           </div>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="flex items-center gap-1">
-          <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
-          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400" /></button>
-        </div>
-        <p className="caption">{wallet.programCode || wallet.programName}</p>
-      </td>
-      <td className="data-table-cell">
-        <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
-        <p className="caption">Avail: {formatCurrency(wallet.availableBalance)}</p>
-      </td>
-      <td className="data-table-cell">
-        <div className="space-y-1.5 w-28">
-          <div>
-            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
-            <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
-          </div>
-          <div>
-            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
-            <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
-          </div>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <div className="space-y-1">
-          <Badge variant={status.color as any} className="flex items-center gap-1 w-fit">{status.icon}{status.label}</Badge>
-          <Badge variant={kycStatus.color as any} size="sm" className="flex items-center gap-1">{kycStatus.icon}{kycStatus.label}</Badge>
-        </div>
-      </td>
-      <td className="data-table-cell">
-        <p className="text-body-sm text-neutral-700 dark:text-neutral-200">{wallet.transactionCount} txns</p>
-        <p className="caption">{wallet.lastTransaction ? formatDate(wallet.lastTransaction) : 'No activity'}</p>
-      </td>
-      <td className="data-table-cell">
-        <div className="relative">
-          <button onClick={(e) => { e.stopPropagation(); setShowActions(!showActions); }} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /></button>
-          {showActions && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-20">
-                <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
-                <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Pencil className="w-4 h-4" /> Edit Limits</button>
-                <hr className="my-1 border-edge-subtle" />
-                <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
-                <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
-                <button onClick={() => { onAction('transfer'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Send className="w-4 h-4" /> Transfer</button>
-                <hr className="my-1 border-edge-subtle" />
-                {!wallet.kycVerified && <button onClick={() => { onAction('verify-kyc'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><UserCheck className="w-4 h-4" /> Verify KYC</button>}
-                {wallet.status === 'ACTIVE' ? (
-                  <>
-                    <button onClick={() => { onAction('suspend'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-warning-600 dark:text-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 dark:hover:bg-warning-500/10"><Lock className="w-4 h-4" /> Suspend</button>
-                    <button onClick={() => { onAction('block'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 dark:hover:bg-error-500/10"><Ban className="w-4 h-4" /> Block</button>
-                  </>
-                ) : wallet.status === 'SUSPENDED' && (
-                  <button onClick={() => { onAction('reactivate'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><Unlock className="w-4 h-4" /> Reactivate</button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
+        </>
+      )}
+    </div>
   );
 };
 
@@ -1337,31 +1282,84 @@ const WalletPage: React.FC = () => {
             </div>
           ) : filteredWallets.length > 0 ? (
             <>
-              {/* Desktop Table */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="data-table">
-                  <thead className="data-table-header">
-                    <tr>
-                      <th className="data-table-header-cell">Holder</th>
-                      <th className="data-table-header-cell">Wallet</th>
-                      <th className="data-table-header-cell">Balance</th>
-                      <th className="data-table-header-cell">Usage</th>
-                      <th className="data-table-header-cell">Status</th>
-                      <th className="data-table-header-cell">Activity</th>
-                      <th className="data-table-header-cell w-12"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredWallets.map(w => <WalletRow key={w.id} wallet={w} onView={() => handleViewWallet(w)} onEdit={() => handleEditWallet(w)} onAction={(a) => handleWalletAction(a, w)} />)}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Cards */}
-              <div className="lg:hidden p-4 space-y-3">
-                {filteredWallets.map(w => (
-                  <WalletMobileCard key={w.id} wallet={w} onView={() => handleViewWallet(w)} onEdit={() => handleEditWallet(w)} onAction={(a) => handleWalletAction(a, w)} />
-                ))}
+              <div className="px-4 pb-4">
+                <DataTable
+                  hairline
+                  data={filteredWallets}
+                  keyExtractor={(w) => w.id}
+                  pagination
+                  pageSize={20}
+                  currentPage={currentPage + 1}
+                  totalCount={totalWallets}
+                  onPageChange={(p) => setCurrentPage(p - 1)}
+                  mobileCardRenderer={(w) => (
+                    <WalletMobileCard wallet={w} onView={() => handleViewWallet(w)} onEdit={() => handleEditWallet(w)} onAction={(a) => handleWalletAction(a, w)} />
+                  )}
+                  columns={[
+                    { key: 'holderName', header: 'Holder', minWidth: 220, render: (_v, wallet) => (
+                      <div className="flex items-center gap-3">
+                        <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="body-strong">{wallet.holderName}</p>
+                            {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded-md dark:bg-info-500/20 dark:text-info-300">Linked</span>}
+                          </div>
+                          <p className="caption">{wallet.holderMobile}</p>
+                        </div>
+                      </div>
+                    ) },
+                    { key: 'walletReference', header: 'Wallet', minWidth: 200, render: (_v, wallet) => (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
+                          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(wallet.walletReference); }} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md"><Copy className="w-3 h-3 text-neutral-400" /></button>
+                        </div>
+                        <p className="caption">{wallet.programCode || wallet.programName}</p>
+                      </>
+                    ) },
+                    { key: 'currentBalance', header: 'Balance', minWidth: 140, render: (_v, wallet) => (
+                      <>
+                        <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
+                        <p className="caption">Avail: {formatCurrency(wallet.availableBalance)}</p>
+                      </>
+                    ) },
+                    { key: 'usage', header: 'Usage', minWidth: 150, dropOrder: 1, render: (_v, wallet) => {
+                      const dailyUsage = wallet.dailyLimit > 0 ? (wallet.dailySpent / wallet.dailyLimit) * 100 : 0;
+                      const monthlyUsage = wallet.monthlyLimit > 0 ? (wallet.monthlySpent / wallet.monthlyLimit) * 100 : 0;
+                      return (
+                        <div className="space-y-1.5 w-28">
+                          <div>
+                            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
+                            <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
+                            <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
+                          </div>
+                        </div>
+                      );
+                    } },
+                    { key: 'status', header: 'Status', minWidth: 130, render: (_v, wallet) => {
+                      const status = walletStatusConfig[wallet.status] || walletStatusConfig.ACTIVE;
+                      const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
+                      return (
+                        <div className="space-y-1">
+                          <Badge variant={status.color as any} className="flex items-center gap-1 w-fit">{status.icon}{status.label}</Badge>
+                          <Badge variant={kycStatus.color as any} size="sm" className="flex items-center gap-1">{kycStatus.icon}{kycStatus.label}</Badge>
+                        </div>
+                      );
+                    } },
+                    { key: 'transactionCount', header: 'Activity', minWidth: 130, dropOrder: 2, render: (_v, wallet) => (
+                      <>
+                        <p className="text-body-sm text-neutral-700 dark:text-neutral-200">{wallet.transactionCount} txns</p>
+                        <p className="caption">{wallet.lastTransaction ? formatDate(wallet.lastTransaction) : 'No activity'}</p>
+                      </>
+                    ) },
+                    { key: 'actions', header: '', width: '48px', minWidth: 64, render: (_v, wallet) => (
+                      <WalletActionsCell wallet={wallet} onView={() => handleViewWallet(wallet)} onEdit={() => handleEditWallet(wallet)} onAction={(a) => handleWalletAction(a, wallet)} />
+                    ) },
+                  ]}
+                />
               </div>
             </>
           ) : (
@@ -1375,20 +1373,6 @@ const WalletPage: React.FC = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="p-4 border-t border-edge-subtle flex items-center justify-between">
-              <p className="body-sm">Page {currentPage + 1} of {totalPages} <span className="hidden sm:inline">({totalWallets} total wallets)</span></p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)} leftIcon={<ChevronLeft className="w-4 h-4" />}>
-                  <span className="hidden sm:inline">Previous</span>
-                </Button>
-                <Button variant="outline" size="sm" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(p => p + 1)} rightIcon={<ChevronRight className="w-4 h-4" />}>
-                  <span className="hidden sm:inline">Next</span>
-                </Button>
-              </div>
-            </div>
-          )}
         </Card>
       )}
 

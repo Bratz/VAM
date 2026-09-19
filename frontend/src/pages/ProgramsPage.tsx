@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Percent, Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Copy, Landmark, Trash2, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, Badge, Button , StatusIconBadge, StatTile, Checkbox } from '../components/ui';
+import { Card, Badge, Button , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -3816,149 +3816,148 @@ const ProgramsPage: React.FC = () => {
 
       {/* Programs Table */}
       <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-surface-page border-b">
-              <tr>
-                <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Program</th>
-                <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Type</th>
-                <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Corporate</th>
-                <th className="text-center p-4 font-medium text-neutral-600 dark:text-neutral-300">VAs</th>
-                <th className="text-right p-4 font-medium text-neutral-600 dark:text-neutral-300">Balance</th>
-                <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Features</th>
-                <th className="text-left p-4 font-medium text-neutral-600 dark:text-neutral-300">Status</th>
-                <th className="text-right p-4 font-medium text-neutral-600 dark:text-neutral-300">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredPrograms.map(program => {
-                const typeConfig = programTypeConfig[program.programType];
-                const TypeIcon = typeConfig?.icon || Layers;
-                const stConfig = statusConfig[program.status];
-                const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
-                return (
-                  <tr key={program.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} subtle />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
-                            {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500 dark:text-accent-300" /></span>}
-                            {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500 dark:text-success-300" /></span>}
-                          </div>
-                          <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4"><Badge variant="neutral">{typeConfig?.label || program.programType}</Badge></td>
-                    <td className="p-4"><p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p></td>
-                    <td className="p-4 text-center"><p className="text-body-sm font-medium">{program.virtualAccountCount || 0}</p><p className="caption">{program.activeVirtualAccountCount || 0} active</p></td>
-                    <td className="p-4 text-right"><p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p></td>
-                    <td className="p-4">
-                      <div className="flex gap-1 flex-wrap">
-                        {program.vibanEnabled && <Badge variant="info" size="sm">VIBAN</Badge>}
-                        {program.walletEnabled && <Badge variant="warning" size="sm">Wallet</Badge>}
-                        {program.escrowEnabled && <Badge variant="success" size="sm">Escrow</Badge>}
-                        {program.ihbEnabled && <Badge variant="info" size="sm">IHB</Badge>}
-                        {hasHierarchy && <Badge variant="neutral" size="sm">Hierarchy</Badge>}
-                        {program.loyaltyEnabled && <Badge variant="neutral" size="sm">Loyalty</Badge>}
-                        {program.giftCardEnabled && <Badge variant="neutral" size="sm">Gift</Badge>}
-                        {!program.vibanEnabled && !program.walletEnabled && !program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
-                      </div>
-                    </td>
-                    <td className="p-4"><Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge></td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Pencil className="w-4 h-4" /></Button>
-                        {/* Action Menu Dropdown */}
-                        <div className="relative">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setActionMenuId(actionMenuId === program.id ? null : program.id)}
-                            title="More Actions"
+        {filteredPrograms.length > 0 && (
+        <DataTable
+          hairline
+          data={filteredPrograms}
+          keyExtractor={(program) => program.id}
+          columns={[
+            { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
+              const typeConfig = programTypeConfig[program.programType];
+              const TypeIcon = typeConfig?.icon || Layers;
+              const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
+              return (
+                <div className="flex items-center gap-3">
+                  <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} subtle />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
+                      {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500 dark:text-accent-300" /></span>}
+                      {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500 dark:text-success-300" /></span>}
+                    </div>
+                    <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
+                  </div>
+                </div>
+              );
+            } },
+            { key: 'programType', header: 'Type', minWidth: 130, dropOrder: 3, render: (_v, program) => {
+              const typeConfig = programTypeConfig[program.programType];
+              return <Badge variant="neutral">{typeConfig?.label || program.programType}</Badge>;
+            } },
+            { key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 2, render: (_v, program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> },
+            { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, render: (_v, program) => (
+              <><p className="text-body-sm font-medium">{program.virtualAccountCount || 0}</p><p className="caption">{program.activeVirtualAccountCount || 0} active</p></>
+            ) },
+            { key: 'totalBalance', header: 'Balance', align: 'right', minWidth: 140, mobileValue: true, render: (_v, program) => (
+              <p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p>
+            ) },
+            { key: 'features', header: 'Features', minWidth: 200, dropOrder: 1, render: (_v, program) => {
+              const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
+              return (
+                <div className="flex gap-1 flex-wrap">
+                  {program.vibanEnabled && <Badge variant="info" size="sm">VIBAN</Badge>}
+                  {program.walletEnabled && <Badge variant="warning" size="sm">Wallet</Badge>}
+                  {program.escrowEnabled && <Badge variant="success" size="sm">Escrow</Badge>}
+                  {program.ihbEnabled && <Badge variant="info" size="sm">IHB</Badge>}
+                  {hasHierarchy && <Badge variant="neutral" size="sm">Hierarchy</Badge>}
+                  {program.loyaltyEnabled && <Badge variant="neutral" size="sm">Loyalty</Badge>}
+                  {program.giftCardEnabled && <Badge variant="neutral" size="sm">Gift</Badge>}
+                  {!program.vibanEnabled && !program.walletEnabled && !program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
+                </div>
+              );
+            } },
+            { key: 'status', header: 'Status', minWidth: 120, render: (_v, program) => {
+              const stConfig = statusConfig[program.status];
+              return <Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge>;
+            } },
+            { key: 'actions', header: 'Actions', align: 'right', minWidth: 130, render: (_v, program) => (
+              <div className="flex justify-end gap-1">
+                <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Pencil className="w-4 h-4" /></Button>
+                {/* Action Menu Dropdown */}
+                <div className="relative">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActionMenuId(actionMenuId === program.id ? null : program.id)}
+                    title="More Actions"
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                  {actionMenuId === program.id && (
+                    <>
+                      {/* Backdrop to close menu when clicking outside */}
+                      <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} />
+                      {/* Dropdown Menu */}
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
+                        {/* Status Actions */}
+                        {program.status === 'ACTIVE' && (
+                          <button
+                            className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
+                            onClick={() => { handleStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
                           >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                          {actionMenuId === program.id && (
-                            <>
-                              {/* Backdrop to close menu when clicking outside */}
-                              <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} />
-                              {/* Dropdown Menu */}
-                              <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1">
-                                {/* Status Actions */}
-                                {program.status === 'ACTIVE' && (
-                                  <button
-                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
-                                    onClick={() => { handleStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
-                                  >
-                                    <PauseCircle className="w-4 h-4" />
-                                    Suspend Program
-                                  </button>
-                                )}
-                                {program.status === 'SUSPENDED' && (
-                                  <button
-                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
-                                    onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
-                                  >
-                                    <PlayCircle className="w-4 h-4" />
-                                    Activate Program
-                                  </button>
-                                )}
-                                {program.status === 'PENDING_APPROVAL' && (
-                                  <button
-                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
-                                    onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
-                                  >
-                                    <CheckCircle className="w-4 h-4" />
-                                    Approve Program
-                                  </button>
-                                )}
-                                {/* Clone Action */}
-                                <button
-                                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
-                                  onClick={() => {
-                                    // Clone by opening create modal with program data pre-filled
-                                    setEditProgram({ ...program, id: '', programCode: program.programCode + '-COPY', programName: program.programName + ' (Copy)' } as Program);
-                                    setActionMenuId(null);
-                                  }}
-                                >
-                                  <Copy className="w-4 h-4" />
-                                  Clone Program
-                                </button>
-                                {/* Divider */}
-                                <div className="border-t border-edge-subtle my-1" />
-                                {/* Delete Action */}
-                                <button
-                                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
-                                  onClick={() => {
-                                    if (confirm(`Are you sure you want to delete "${program.programName}"? This action cannot be undone.`)) {
-                                      programApi.delete(program.id).then(res => {
-                                        if (res.success) {
-                                          setPrograms(prev => prev.filter(p => p.id !== program.id));
-                                        }
-                                      });
-                                    }
-                                    setActionMenuId(null);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete Program
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                            <PauseCircle className="w-4 h-4" />
+                            Suspend Program
+                          </button>
+                        )}
+                        {program.status === 'SUSPENDED' && (
+                          <button
+                            className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
+                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
+                          >
+                            <PlayCircle className="w-4 h-4" />
+                            Activate Program
+                          </button>
+                        )}
+                        {program.status === 'PENDING_APPROVAL' && (
+                          <button
+                            className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
+                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Approve Program
+                          </button>
+                        )}
+                        {/* Clone Action */}
+                        <button
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
+                          onClick={() => {
+                            // Clone by opening create modal with program data pre-filled
+                            setEditProgram({ ...program, id: '', programCode: program.programCode + '-COPY', programName: program.programName + ' (Copy)' } as Program);
+                            setActionMenuId(null);
+                          }}
+                        >
+                          <Copy className="w-4 h-4" />
+                          Clone Program
+                        </button>
+                        {/* Divider */}
+                        <div className="border-t border-edge-subtle my-1" />
+                        {/* Delete Action */}
+                        <button
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete "${program.programName}"? This action cannot be undone.`)) {
+                              programApi.delete(program.id).then(res => {
+                                if (res.success) {
+                                  setPrograms(prev => prev.filter(p => p.id !== program.id));
+                                }
+                              });
+                            }
+                            setActionMenuId(null);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Program
+                        </button>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ) },
+          ]}
+        />
+        )}
         
         {/* Empty State - Graceful handling when no data */}
         {filteredPrograms.length === 0 && !loading && (

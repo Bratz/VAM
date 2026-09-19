@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, X, TrendingUp, XCircle, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, RadioGroup } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
@@ -1268,71 +1268,60 @@ const VibansTab: React.FC<{
       </Card>
 
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead className="data-table-header">
-              <tr>
-                <th className="data-table-header-cell">VIBAN</th>
-                <th className="data-table-header-cell">Pool</th>
-                <th className="data-table-header-cell">Assigned To</th>
-                <th className="data-table-header-cell">Reference</th>
-                <th className="data-table-header-cell">Status</th>
-                <th className="data-table-header-cell text-right">Usage</th>
-                <th className="data-table-header-cell text-right">Amount</th>
-                <th className="data-table-header-cell text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-edge-subtle">
-              {vibans.map(v => (
-                <tr key={v.id} className="data-table-row group">
-                  <td className="data-table-cell">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => copyToClipboard(v.viban, v.id)} className="p-1 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800">
-                        {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400" />}
-                      </button>
-                      <span className="font-mono text-body-sm">{v.viban}</span>
-                    </div>
-                  </td>
-                  <td className="data-table-cell body-sm">{v.poolCode || '-'}</td>
-                  <td className="data-table-cell">
-                    {v.vaNumber ? (
-                      <div className="bg-success-50 rounded-lg px-2 py-1 border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="w-3 h-3 text-success-600 dark:text-success-300" />
-                          <p className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</p>
-                        </div>
-                        {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
-                        {v.customerName && <p className="caption mt-0.5">Customer: {v.customerName}</p>}
-                      </div>
-                    ) : (
-                      <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
-                    )}
-                  </td>
-                  <td className="data-table-cell">
-                    {v.referenceType ? (
-                      <div className="flex items-center gap-2">
-                        {v.referenceType === 'ORDER' && <ShoppingCart className="w-3 h-3 text-primary-500" />}
-                        {v.referenceType === 'INVOICE' && <FileText className="w-3 h-3 text-info-500 dark:text-info-300" />}
-                        {v.referenceType === 'TERMINAL' && <CreditCard className="w-3 h-3 text-success-500 dark:text-success-300" />}
-                        <span className="text-body-sm">{v.referenceId}</span>
-                      </div>
-                    ) : <span className="text-neutral-400">-</span>}
-                  </td>
-                  <td className="data-table-cell">{getStatusBadge(v.status)}</td>
-                  <td className="data-table-cell text-right text-body-sm">{v.timesUsed || 0}</td>
-                  <td className="data-table-cell text-right text-body-sm font-medium">{(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}</td>
-                  <td className="data-table-cell text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {(v.status === 'AVAILABLE' || v.status === 'RETURNED') && <Button size="sm" variant="outline" onClick={() => onAssign(v)}><Link className="w-4 h-4 mr-1" />Assign</Button>}
-                      {v.status === 'ACTIVE' && <Button size="sm" variant="ghost" onClick={() => onRelease(v)} disabled={processing} className="text-warning-600 hover:bg-warning-50 dark:text-warning-300 dark:hover:bg-warning-500/10"><Unlink className="w-4 h-4" /></Button>}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {vibans.length === 0 && <div className="text-center py-12"><Hash className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No VIBANs found</p></div>}
+        <DataTable
+          hairline
+          data={vibans}
+          keyExtractor={(v) => v.id}
+          emptyTitle="No VIBANs found"
+          emptyDescription=""
+          emptyIcon={<Hash className="w-8 h-8" />}
+          columns={[
+            { key: 'viban', header: 'VIBAN', minWidth: 200, mobileLabel: true, render: (_v, v) => (
+              <div className="flex items-center gap-2">
+                <button onClick={(e) => { e.stopPropagation(); copyToClipboard(v.viban, v.id); }} className="p-1 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800">
+                  {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400" />}
+                </button>
+                <span className="font-mono text-body-sm">{v.viban}</span>
+              </div>
+            ) },
+            { key: 'poolCode', header: 'Pool', minWidth: 100, dropOrder: 3, render: (_v, v) => <span className="body-sm">{v.poolCode || '-'}</span> },
+            { key: 'vaNumber', header: 'Assigned To', minWidth: 210, render: (_v, v) => (
+              v.vaNumber ? (
+                <div className="bg-success-50 rounded-lg px-2 py-1 border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3 text-success-600 dark:text-success-300" />
+                    <p className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</p>
+                  </div>
+                  {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
+                  {v.customerName && <p className="caption mt-0.5">Customer: {v.customerName}</p>}
+                </div>
+              ) : (
+                <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
+              )
+            ) },
+            { key: 'referenceId', header: 'Reference', minWidth: 140, dropOrder: 2, render: (_v, v) => (
+              v.referenceType ? (
+                <div className="flex items-center gap-2">
+                  {v.referenceType === 'ORDER' && <ShoppingCart className="w-3 h-3 text-primary-500" />}
+                  {v.referenceType === 'INVOICE' && <FileText className="w-3 h-3 text-info-500 dark:text-info-300" />}
+                  {v.referenceType === 'TERMINAL' && <CreditCard className="w-3 h-3 text-success-500 dark:text-success-300" />}
+                  <span className="text-body-sm">{v.referenceId}</span>
+                </div>
+              ) : <span className="text-neutral-400">-</span>
+            ) },
+            { key: 'status', header: 'Status', minWidth: 110, render: (_v, v) => getStatusBadge(v.status) },
+            { key: 'timesUsed', header: 'Usage', align: 'right', minWidth: 80, dropOrder: 1, render: (_v, v) => <span className="text-body-sm">{v.timesUsed || 0}</span> },
+            { key: 'totalAmountReceived', header: 'Amount', align: 'right', minWidth: 120, render: (_v, v) => (
+              <span className="text-body-sm font-medium">{(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}</span>
+            ) },
+            { key: 'actions', header: 'Actions', align: 'right', minWidth: 100, render: (_v, v) => (
+              <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                {(v.status === 'AVAILABLE' || v.status === 'RETURNED') && <Button size="sm" variant="outline" onClick={() => onAssign(v)}><Link className="w-4 h-4 mr-1" />Assign</Button>}
+                {v.status === 'ACTIVE' && <Button size="sm" variant="ghost" onClick={() => onRelease(v)} disabled={processing} className="text-warning-600 hover:bg-warning-50 dark:text-warning-300 dark:hover:bg-warning-500/10"><Unlink className="w-4 h-4" /></Button>}
+              </div>
+            ) },
+          ]}
+        />
       </Card>
     </div>
   );
@@ -2016,55 +2005,50 @@ const PoolDetailView: React.FC<{
           </h4>
           <Badge variant="success">{activeVibans.length} Assigned</Badge>
         </div>
-        <div className="max-h-80 overflow-auto"><table className="w-full">
-          <thead className="bg-surface-page sticky top-0"><tr>
-            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">VIBAN</th>
-            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Assigned Virtual Account</th>
-            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Reference</th>
-            <th className="text-right p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Payments</th>
-            <th className="text-right p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Amount</th>
-          </tr></thead>
-          <tbody className="divide-y">{activeVibans.slice(0, 20).map(v => (
-            <tr key={v.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-              <td className="p-3 font-mono text-body-sm">{v.viban}</td>
-              <td className="p-3">
-                {v.vaNumber ? (
-                  <div className="bg-success-50 rounded-lg px-2 py-1.5 border border-success-100 inline-block dark:bg-success-500/10 dark:border-success-500/30">
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4 text-success-600 dark:text-success-300" />
-                      <span className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</span>
-                    </div>
-                    {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
-                    {v.customerName && (
-                      <p className="caption mt-0.5 flex items-center gap-1">
-                        <span className="text-neutral-400">Customer:</span> {v.customerName}
-                      </p>
-                    )}
+        <DataTable
+          hairline
+          stickyHeader
+          data={activeVibans.slice(0, 20)}
+          keyExtractor={(v) => v.id}
+          columns={[
+            { key: 'viban', header: 'VIBAN', minWidth: 180, mobileLabel: true, render: (_v, v) => <span className="font-mono text-body-sm">{v.viban}</span> },
+            { key: 'vaNumber', header: 'Assigned Virtual Account', minWidth: 240, render: (_v, v) => (
+              v.vaNumber ? (
+                <div className="bg-success-50 rounded-lg px-2 py-1.5 border border-success-100 inline-block dark:bg-success-500/10 dark:border-success-500/30">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-success-600 dark:text-success-300" />
+                    <span className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</span>
                   </div>
-                ) : (
-                  <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
-                )}
-              </td>
-              <td className="p-3">
-                {v.referenceType ? (
-                  <div className="flex items-center gap-2">
-                    {v.referenceType === 'ORDER' && <ShoppingCart className="w-4 h-4 text-primary-500" />}
-                    {v.referenceType === 'INVOICE' && <FileText className="w-4 h-4 text-info-500 dark:text-info-300" />}
-                    {v.referenceType === 'TERMINAL' && <CreditCard className="w-4 h-4 text-success-500 dark:text-success-300" />}
-                    <div>
-                      <p className="text-body-sm font-medium">{v.referenceId}</p>
-                      <p className="caption">{v.referenceType}</p>
-                    </div>
+                  {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
+                  {v.customerName && (
+                    <p className="caption mt-0.5 flex items-center gap-1">
+                      <span className="text-neutral-400">Customer:</span> {v.customerName}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
+              )
+            ) },
+            { key: 'referenceId', header: 'Reference', minWidth: 160, dropOrder: 2, render: (_v, v) => (
+              v.referenceType ? (
+                <div className="flex items-center gap-2">
+                  {v.referenceType === 'ORDER' && <ShoppingCart className="w-4 h-4 text-primary-500" />}
+                  {v.referenceType === 'INVOICE' && <FileText className="w-4 h-4 text-info-500 dark:text-info-300" />}
+                  {v.referenceType === 'TERMINAL' && <CreditCard className="w-4 h-4 text-success-500 dark:text-success-300" />}
+                  <div>
+                    <p className="text-body-sm font-medium">{v.referenceId}</p>
+                    <p className="caption">{v.referenceType}</p>
                   </div>
-                ) : <span className="text-neutral-400 text-body-sm dark:text-neutral-400">-</span>}
-              </td>
-              <td className="p-3 text-body-sm text-right font-medium">{v.timesUsed || 0}</td>
-              <td className="p-3 text-body-sm text-right font-medium">
-                {(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}
-              </td>
-            </tr>
-          ))}</tbody>
-        </table></div>
+                </div>
+              ) : <span className="text-neutral-400 text-body-sm dark:text-neutral-400">-</span>
+            ) },
+            { key: 'timesUsed', header: 'Payments', align: 'right', minWidth: 100, dropOrder: 1, render: (_v, v) => <span className="text-body-sm font-medium">{v.timesUsed || 0}</span> },
+            { key: 'totalAmountReceived', header: 'Amount', align: 'right', minWidth: 120, render: (_v, v) => (
+              <span className="text-body-sm font-medium">{(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}</span>
+            ) },
+          ]}
+        />
         {activeVibans.length > 20 && (
           <div className="p-3 text-center body-sm border-t bg-surface-page">
             Showing 20 of {activeVibans.length} active VIBANs

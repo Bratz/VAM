@@ -5,7 +5,7 @@ import {
   MultiBankLiquiditySummary,
   ShadowSummary,
 } from '../../services/api';
-import { StatusIconBadge } from '../ui';
+import { StatusIconBadge, DataTable } from '../ui';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 import { FilterKey } from './types';
@@ -142,53 +142,42 @@ export const ByEntityView: React.FC<ByEntityViewProps> = ({
               </div>
             </div>
 
-            <div className="p-5 overflow-x-auto">
-              <table className="w-full text-body-sm">
-                <thead>
-                  <tr className="text-left">
-                    <th className="label py-2">Currency</th>
-                    <th className="label py-2">Bank Account</th>
-                    <th className="label py-2 text-right">Committed</th>
-                    <th className="label py-2 text-right">Effective</th>
-                    <th className="label py-2">Freshness</th>
-                    <th className="label py-2 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entity.currencies.flatMap((c) => c.shadows.map((s, i) => (
-                    <tr
-                      key={s.vaId}
-                      className="border-t border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200"
-                    >
-                      <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">
-                        {i === 0 ? c.currencyCode : ''}
-                      </td>
-                      <td className="py-2.5">{s.bankAccountNumber ?? s.bankIban ?? '—'}</td>
-                      <td className="py-2.5 amount text-right">
-                        {s.bankBalanceCommitted ? formatCurrency(s.bankBalanceCommitted, s.currencyCode) : '—'}
-                      </td>
-                      <td className="py-2.5 amount text-right text-primary-900 dark:text-neutral-50">{formatCurrency(s.bankBalanceEffective, s.currencyCode)}</td>
-                      <td className="py-2.5">
-                        <FreshnessPill shadow={s} />
-                      </td>
-                      <td className="py-2.5 text-right">
-                        <button
-                          onClick={() => refresh(s)}
-                          disabled={refreshingIds.has(s.vaId)}
-                          aria-label={`Refresh ${s.vaNumber}`}
-                          className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
-                        >
-                          {refreshingIds.has(s.vaId)
-                            ? <Loader2 className="w-3 h-3 animate-spin" />
-                            : <RefreshCw className="w-3 h-3" />
-                          }
-                          Refresh
-                        </button>
-                      </td>
-                    </tr>
-                  )))}
-                </tbody>
-              </table>
+            <div className="p-5">
+              <DataTable
+                hairline
+                data={entity.currencies.flatMap((c) => c.shadows.map((s, i) => ({ s, c, i })))}
+                keyExtractor={(r) => r.s.vaId}
+                columns={[
+                  { key: 'currency', header: 'Currency', minWidth: 100, mobileLabel: true, render: (_v, r) => (
+                    <span className="font-mono text-caption text-primary-900 dark:text-neutral-50">{r.i === 0 ? r.c.currencyCode : ''}</span>
+                  ) },
+                  { key: 'account', header: 'Bank Account', minWidth: 160, dropOrder: 2, render: (_v, r) => r.s.bankAccountNumber ?? r.s.bankIban ?? '—' },
+                  { key: 'committed', header: 'Committed', align: 'right', minWidth: 130, dropOrder: 1, render: (_v, r) => (
+                    <span className="amount text-neutral-700 dark:text-neutral-200">{r.s.bankBalanceCommitted ? formatCurrency(r.s.bankBalanceCommitted, r.s.currencyCode) : '—'}</span>
+                  ) },
+                  { key: 'effective', header: 'Effective', align: 'right', minWidth: 130, mobileValue: true, render: (_v, r) => (
+                    <span className="amount text-primary-900 dark:text-neutral-50">{formatCurrency(r.s.bankBalanceEffective, r.s.currencyCode)}</span>
+                  ) },
+                  { key: 'freshness', header: 'Freshness', minWidth: 130, dropOrder: 3, render: (_v, r) => <FreshnessPill shadow={r.s} /> },
+                  { key: 'action', header: 'Action', align: 'right', minWidth: 100, render: (_v, r) => {
+                    const s = r.s;
+                    return (
+                      <button
+                onClick={() => refresh(s)}
+                disabled={refreshingIds.has(s.vaId)}
+                aria-label={`Refresh ${s.vaNumber}`}
+                className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
+              >
+                {refreshingIds.has(s.vaId)
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <RefreshCw className="w-3 h-3" />
+                }
+                Refresh
+              </button>
+                    );
+                  } },
+                ]}
+              />
             </div>
           </div>
         ))}

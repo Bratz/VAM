@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, RotateCcw, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
 import {
   StatementDownloadPanel,
@@ -2178,90 +2178,106 @@ const StatementsPage: React.FC = () => {
 
         {filteredHistory.length > 0 ? (
           <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">Account</th>
-                    <th className="data-table-header-cell">Period</th>
-                    <th className="data-table-header-cell">Format</th>
-                    <th className="data-table-header-cell">Generated</th>
-                    <th className="data-table-header-cell text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-subtle">
-                  {filteredHistory.map((stmt: any) => (
-                    <tr key={stmt.id} className="data-table-row group">
-                      <td className="data-table-cell">
-                        <span className="font-mono text-body-sm text-primary-900 dark:text-neutral-50">
-                          {stmt.statementReference}
-                        </span>
-                      </td>
-                      <td className="data-table-cell">
-                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{stmt.vaNumber}</span>
-                      </td>
-                      <td className="data-table-cell">
-                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
-                          {stmt.fromDate} - {stmt.toDate}
-                        </span>
-                      </td>
-                      <td className="data-table-cell">
-                        <Badge
-                          variant={stmt.format === 'XML' || stmt.format === 'CAMT053' ? 'info' : 'neutral'}
-                          size="sm"
-                        >
-                          {stmt.format}
-                        </Badge>
-                      </td>
-                      <td className="data-table-cell">
-                        <span className="body-sm">
-                          {new Date(stmt.generatedAt).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="data-table-cell text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            leftIcon={<Eye className="w-4 h-4" />}
-                            onClick={() => {
-                              setSelectedAccount(stmt.accountId || stmt.vaId);
-                              setFromDate(stmt.fromDate);
-                              setToDate(stmt.toDate);
-                              setShowPreviewModal(true);
-                            }}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            leftIcon={<Download className="w-4 h-4" />}
-                            onClick={() => handleDownloadFromHistory(stmt.statementReference)}
-                          >
-                            Download
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden p-4 space-y-3">
-              {filteredHistory.map((stmt: any, idx: number) => (
+            <DataTable
+              hairline
+              className="p-4 lg:p-0"
+              data={filteredHistory as any[]}
+              keyExtractor={(stmt: any) => stmt.id}
+              columns={[
+                {
+                  key: 'statementReference',
+                  header: 'Reference',
+                  minWidth: 180,
+                  render: (_, stmt: any) => (
+                    <span className="font-mono text-body-sm text-primary-900 dark:text-neutral-50">
+                      {stmt.statementReference}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'vaNumber',
+                  header: 'Account',
+                  minWidth: 160,
+                  dropOrder: 2,
+                  render: (_, stmt: any) => (
+                    <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{stmt.vaNumber}</span>
+                  ),
+                },
+                {
+                  key: 'period',
+                  header: 'Period',
+                  minWidth: 200,
+                  render: (_, stmt: any) => (
+                    <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
+                      {stmt.fromDate} - {stmt.toDate}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'format',
+                  header: 'Format',
+                  minWidth: 110,
+                  dropOrder: 1,
+                  render: (_, stmt: any) => (
+                    <Badge
+                      variant={stmt.format === 'XML' || stmt.format === 'CAMT053' ? 'info' : 'neutral'}
+                      size="sm"
+                    >
+                      {stmt.format}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: 'generatedAt',
+                  header: 'Generated',
+                  minWidth: 120,
+                  dropOrder: 3,
+                  render: (_, stmt: any) => (
+                    <span className="body-sm">
+                      {new Date(stmt.generatedAt).toLocaleDateString()}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  align: 'right',
+                  minWidth: 220,
+                  render: (_, stmt: any) => (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        leftIcon={<Eye className="w-4 h-4" />}
+                        onClick={() => {
+                          setSelectedAccount(stmt.accountId || stmt.vaId);
+                          setFromDate(stmt.fromDate);
+                          setToDate(stmt.toDate);
+                          setShowPreviewModal(true);
+                        }}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        leftIcon={<Download className="w-4 h-4" />}
+                        onClick={() => handleDownloadFromHistory(stmt.statementReference)}
+                      >
+                        Download
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]}
+              mobileCardRenderer={(stmt: any, idx) => (
                 <HistoryMobileCard
-                  key={stmt.id}
                   statement={stmt}
                   index={idx}
                   onDownload={(s) => handleDownloadFromHistory(s.statementReference)}
                 />
-              ))}
-            </div>
+              )}
+            />
           </>
         ) : (
           <div className="p-8">

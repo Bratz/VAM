@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ArrowLeftRight, Building2, Plus, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, ArrowLeft, GitMerge, Send, Download, Filter, Wallet, CreditCard, Scale, BarChart3, Activity, Zap, Receipt, X, XCircle, Ban, AlertTriangle } from 'lucide-react';
-import { Card, Button, Badge, Input, StatusIconBadge, StatTile, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input, StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Page } from '../components/layout/Page';
@@ -1273,63 +1273,53 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 </select>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">{isTreasuryView ? 'Treasury (Creditor)' : 'Subsidiary (Debtor)'}</th>
-                    <th className="data-table-header-cell text-center"></th>
-                    <th className="data-table-header-cell">{isTreasuryView ? 'Subsidiary (Owes)' : 'Treasury (Owed To)'}</th>
-                    <th className="data-table-header-cell text-right">Amount</th>
-                    <th className="data-table-header-cell">Status</th>
-                    <th className="data-table-header-cell text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.filter(poboTransactionFilter).length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center">
-                        <StatusIconBadge tone="neutral" icon={CreditCard} size="xl" className="mx-auto mb-4" />
-                        <p className="text-neutral-500 font-medium dark:text-neutral-400">No POBO transactions found</p>
-                        <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowPoboModal(true)}>
-                          Create First POBO
-                        </Button>
-                      </td>
-                    </tr>
-                  ) : transactions.filter(poboTransactionFilter).map(tx => (
-                    <tr key={tx.id} className="data-table-row group">
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.transactionRef}</p>
-                        <p className="caption">{formatDate(tx.createdAt)}</p>
-                      </td>
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.payingEntityCode}</p>
-                        <p className="caption">{tx.payingEntityName}</p>
-                      </td>
-                      <td className="data-table-cell text-center">
-                        <ArrowRight className="w-4 h-4 text-primary-400 inline" />
-                      </td>
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.behalfEntityCode}</p>
-                        <p className="caption">{tx.behalfEntityName}</p>
-                      </td>
-                      <td className="data-table-cell text-right">
-                        <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
-                      </td>
-                      <td className="data-table-cell">
-                        <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'PENDING' ? 'warning' : 'primary'} size="sm">
-                          {tx.status}
-                        </Badge>
-                      </td>
-                      <td className="data-table-cell text-center">
-                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="w-4 h-4" /></Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              hairline
+              data={transactions.filter(poboTransactionFilter)}
+              keyExtractor={(tx) => tx.id}
+              emptyTitle="No POBO transactions found"
+              emptyDescription=""
+              emptyIcon={<StatusIconBadge tone="neutral" icon={CreditCard} size="xl" />}
+              emptyAction={
+                <Button size="sm" variant="outline" onClick={() => setShowPoboModal(true)}>
+                  Create First POBO
+                </Button>
+              }
+              columns={[
+                { key: 'transactionRef', header: 'Reference', render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.transactionRef}</p>
+                    <p className="caption">{formatDate(tx.createdAt)}</p>
+                  </>
+                ) },
+                { key: 'payingEntityCode', header: isTreasuryView ? 'Treasury (Creditor)' : 'Subsidiary (Debtor)', minWidth: 160, dropOrder: 3, render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.payingEntityCode}</p>
+                    <p className="caption">{tx.payingEntityName}</p>
+                  </>
+                ) },
+                { key: 'direction', header: '', align: 'center', width: '48px', render: () => (
+                  <ArrowRight className="w-4 h-4 text-primary-400 inline" />
+                ) },
+                { key: 'behalfEntityCode', header: isTreasuryView ? 'Subsidiary (Owes)' : 'Treasury (Owed To)', minWidth: 160, dropOrder: 2, render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.behalfEntityCode}</p>
+                    <p className="caption">{tx.behalfEntityName}</p>
+                  </>
+                ) },
+                { key: 'amount', header: 'Amount', align: 'right', render: (_, tx) => (
+                  <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
+                ) },
+                { key: 'status', header: 'Status', render: (_, tx) => (
+                  <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'PENDING' ? 'warning' : 'primary'} size="sm">
+                    {tx.status}
+                  </Badge>
+                ) },
+                { key: 'actions', header: 'Actions', align: 'center', render: () => (
+                  <Button size="sm" variant="ghost"><Eye className="w-4 h-4" /></Button>
+                ) },
+              ]}
+            />
           </Card>
         </div>
       )}
@@ -1367,71 +1357,60 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 </select>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">Treasury (Collector)</th>
-                    <th className="data-table-header-cell text-center"></th>
-                    <th className="data-table-header-cell">Subsidiary (Behalf Of)</th>
-                    <th className="data-table-header-cell text-right">Amount</th>
-                    <th className="data-table-header-cell">VIBAN</th>
-                    <th className="data-table-header-cell">Status</th>
-                    <th className="data-table-header-cell text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.filter(coboTransactionFilter).length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center">
-                        <StatusIconBadge tone="neutral" icon={Wallet} size="xl" className="mx-auto mb-4" />
-                        <p className="text-neutral-500 font-medium dark:text-neutral-400">No COBO collections found</p>
-                        <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowCoboModal(true)}>
-                          Setup First COBO
-                        </Button>
-                      </td>
-                    </tr>
-                  ) : transactions.filter(coboTransactionFilter).map(tx => (
-                    <tr key={tx.id} className="data-table-row group">
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.transactionRef}</p>
-                        <p className="caption">{formatDate(tx.createdAt)}</p>
-                      </td>
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.payingEntityCode}</p>
-                        <p className="caption">{tx.payingEntityName}</p>
-                      </td>
-                      <td className="data-table-cell text-center">
-                        <ArrowLeft className="w-4 h-4 text-info-400 inline" />
-                      </td>
-                      <td className="data-table-cell">
-                        <p className="body-strong">{tx.behalfEntityCode}</p>
-                        <p className="caption">{tx.behalfEntityName}</p>
-                      </td>
-                      <td className="data-table-cell text-right">
-                        <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
-                      </td>
-                      <td className="data-table-cell">
-                        {tx.viban ? (
-                          <code className="text-caption bg-info-50 text-info-700 px-2 py-1 rounded-lg font-medium dark:bg-info-500/10 dark:text-info-300">{tx.viban}</code>
-                        ) : (
-                          <span className="text-neutral-400">—</span>
-                        )}
-                      </td>
-                      <td className="data-table-cell">
-                        <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'ACTIVE' ? 'info' : 'warning'} size="sm">
-                          {tx.status}
-                        </Badge>
-                      </td>
-                      <td className="data-table-cell text-center">
-                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="w-4 h-4" /></Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              hairline
+              data={transactions.filter(coboTransactionFilter)}
+              keyExtractor={(tx) => tx.id}
+              emptyTitle="No COBO collections found"
+              emptyDescription=""
+              emptyIcon={<StatusIconBadge tone="neutral" icon={Wallet} size="xl" />}
+              emptyAction={
+                <Button size="sm" variant="outline" onClick={() => setShowCoboModal(true)}>
+                  Setup First COBO
+                </Button>
+              }
+              columns={[
+                { key: 'transactionRef', header: 'Reference', render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.transactionRef}</p>
+                    <p className="caption">{formatDate(tx.createdAt)}</p>
+                  </>
+                ) },
+                { key: 'payingEntityCode', header: 'Treasury (Collector)', minWidth: 160, dropOrder: 3, render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.payingEntityCode}</p>
+                    <p className="caption">{tx.payingEntityName}</p>
+                  </>
+                ) },
+                { key: 'direction', header: '', align: 'center', width: '48px', render: () => (
+                  <ArrowLeft className="w-4 h-4 text-info-400 inline" />
+                ) },
+                { key: 'behalfEntityCode', header: 'Subsidiary (Behalf Of)', minWidth: 160, dropOrder: 2, render: (_, tx) => (
+                  <>
+                    <p className="body-strong">{tx.behalfEntityCode}</p>
+                    <p className="caption">{tx.behalfEntityName}</p>
+                  </>
+                ) },
+                { key: 'amount', header: 'Amount', align: 'right', render: (_, tx) => (
+                  <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
+                ) },
+                { key: 'viban', header: 'VIBAN', minWidth: 150, dropOrder: 1, render: (_, tx) => (
+                  tx.viban ? (
+                    <code className="text-caption bg-info-50 text-info-700 px-2 py-1 rounded-lg font-medium dark:bg-info-500/10 dark:text-info-300">{tx.viban}</code>
+                  ) : (
+                    <span className="text-neutral-400">—</span>
+                  )
+                ) },
+                { key: 'status', header: 'Status', render: (_, tx) => (
+                  <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'ACTIVE' ? 'info' : 'warning'} size="sm">
+                    {tx.status}
+                  </Badge>
+                ) },
+                { key: 'actions', header: 'Actions', align: 'center', render: () => (
+                  <Button size="sm" variant="ghost"><Eye className="w-4 h-4" /></Button>
+                ) },
+              ]}
+            />
           </Card>
         </div>
       )}
@@ -1591,52 +1570,33 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="p-4 border-b">
               <h4 className="font-medium">Recent Settlements</h4>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-edge">
-                <thead className="bg-surface-page">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Reference</th>
-                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Type</th>
-                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Entities</th>
-                    <th className="px-4 py-3 text-right text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Net Amount</th>
-                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Status</th>
-                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Settled At</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge">
-                  {transactions.filter(tx => tx.transactionType === 'SETTLEMENT' || tx.status === 'SETTLED').length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400">
-                        No settlement history yet
-                      </td>
-                    </tr>
-                  ) : transactions.filter(tx => tx.transactionType === 'SETTLEMENT' || tx.status === 'SETTLED').slice(0, 10).map(tx => (
-                    <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                      <td className="px-4 py-3">
-                        <p className="text-body-sm font-medium">{tx.settlementRef || tx.transactionRef}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="success" size="sm">Bilateral</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-body-sm">{tx.payingEntityCode} ↔ {tx.behalfEntityCode}</p>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <p className="text-body-sm font-medium">{formatCurrency(tx.netAmount || tx.amount, tx.currencyCode)}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="success" size="sm">Settled</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="body-sm">
-                          {formatDate(tx.settledAt)}
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              hairline
+              data={transactions.filter(tx => tx.transactionType === 'SETTLEMENT' || tx.status === 'SETTLED').slice(0, 10)}
+              keyExtractor={(tx) => tx.id}
+              emptyTitle="No settlement history yet"
+              emptyDescription=""
+              columns={[
+                { key: 'settlementRef', header: 'Reference', render: (_, tx) => (
+                  <p className="text-body-sm font-medium">{tx.settlementRef || tx.transactionRef}</p>
+                ) },
+                { key: 'type', header: 'Type', minWidth: 110, dropOrder: 2, render: () => (
+                  <Badge variant="success" size="sm">Bilateral</Badge>
+                ) },
+                { key: 'entities', header: 'Entities', render: (_, tx) => (
+                  <p className="text-body-sm">{tx.payingEntityCode} ↔ {tx.behalfEntityCode}</p>
+                ) },
+                { key: 'netAmount', header: 'Net Amount', align: 'right', render: (_, tx) => (
+                  <p className="text-body-sm font-medium">{formatCurrency(tx.netAmount || tx.amount, tx.currencyCode)}</p>
+                ) },
+                { key: 'status', header: 'Status', minWidth: 110, dropOrder: 3, render: () => (
+                  <Badge variant="success" size="sm">Settled</Badge>
+                ) },
+                { key: 'settledAt', header: 'Settled At', minWidth: 120, dropOrder: 1, render: (_, tx) => (
+                  <p className="body-sm">{formatDate(tx.settledAt)}</p>
+                ) },
+              ]}
+            />
           </Card>
         </div>
       )}
@@ -1662,103 +1622,85 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 Refresh
               </Button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">Payer (Treasury)</th>
-                    <th className="data-table-header-cell">On Behalf Of</th>
-                    <th className="data-table-header-cell text-right">Amount</th>
-                    <th className="data-table-header-cell">Status</th>
-                    <th className="data-table-header-cell">Created</th>
-                    <th className="data-table-header-cell text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingRecharges.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="data-table-cell text-center py-8 text-neutral-500 dark:text-neutral-400">
-                        No pending recharges found
-                      </td>
-                    </tr>
-                  ) : (
-                    pendingRecharges.map(recharge => (
-                      <tr key={recharge.id} className="data-table-row group">
-                        <td className="data-table-cell font-medium text-primary-700 dark:text-neutral-200">
-                          {recharge.rechargeReference}
-                        </td>
-                        <td className="data-table-cell">
-                          <div>
-                            <p className="font-medium">{recharge.payerEntityCode}</p>
-                            <p className="caption">{recharge.payerEntityName}</p>
-                          </div>
-                        </td>
-                        <td className="data-table-cell">
-                          <div>
-                            <p className="font-medium">{recharge.behalfEntityCode}</p>
-                            <p className="caption">{recharge.behalfEntityName}</p>
-                          </div>
-                        </td>
-                        <td className="data-table-cell text-right amount">
-                          {formatCurrency(recharge.totalRecharge, recharge.currencyCode)}
-                        </td>
-                        <td className="data-table-cell">
-                          <Badge
-                            variant={
-                              recharge.status === 'PENDING' ? 'warning' :
-                              recharge.status === 'APPROVED' ? 'success' :
-                              recharge.status === 'CANCELLED' ? 'error' : 'neutral'
-                            }
+            <DataTable
+              hairline
+              data={pendingRecharges}
+              keyExtractor={(r) => r.id}
+              emptyTitle="No pending recharges found"
+              emptyDescription=""
+              columns={[
+                { key: 'rechargeReference', header: 'Reference', render: (_, recharge) => (
+                  <span className="font-medium text-primary-700 dark:text-neutral-200">{recharge.rechargeReference}</span>
+                ) },
+                { key: 'payerEntityCode', header: 'Payer (Treasury)', minWidth: 160, dropOrder: 3, render: (_, recharge) => (
+                  <div>
+                    <p className="font-medium">{recharge.payerEntityCode}</p>
+                    <p className="caption">{recharge.payerEntityName}</p>
+                  </div>
+                ) },
+                { key: 'behalfEntityCode', header: 'On Behalf Of', minWidth: 160, dropOrder: 2, render: (_, recharge) => (
+                  <div>
+                    <p className="font-medium">{recharge.behalfEntityCode}</p>
+                    <p className="caption">{recharge.behalfEntityName}</p>
+                  </div>
+                ) },
+                { key: 'totalRecharge', header: 'Amount', align: 'right', render: (_, recharge) => (
+                  <span className="amount">{formatCurrency(recharge.totalRecharge, recharge.currencyCode)}</span>
+                ) },
+                { key: 'status', header: 'Status', render: (_, recharge) => (
+                  <Badge
+                    variant={
+                      recharge.status === 'PENDING' ? 'warning' :
+                      recharge.status === 'APPROVED' ? 'success' :
+                      recharge.status === 'CANCELLED' ? 'error' : 'neutral'
+                    }
+                    size="sm"
+                  >
+                    {recharge.status}
+                  </Badge>
+                ) },
+                { key: 'createdAt', header: 'Created', minWidth: 120, dropOrder: 1, render: (_, recharge) => (
+                  <span className="body-sm">{formatDate(recharge.createdAt)}</span>
+                ) },
+                { key: 'actions', header: 'Actions', render: (_, recharge) => (
+                  <>
+                    {recharge.status === 'PENDING' && (
+                      <TreasuryOnly>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
                             size="sm"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); handleApproveRecharge(recharge.id); }}
+                            disabled={rechargeProcessing === recharge.id}
+                            className="text-success-600 hover:bg-success-50 dark:text-success-300 dark:hover:bg-success-500/10"
                           >
-                            {recharge.status}
-                          </Badge>
-                        </td>
-                        <td className="data-table-cell body-sm">
-                          {formatDate(recharge.createdAt)}
-                        </td>
-                        <td className="data-table-cell">
-                          {recharge.status === 'PENDING' && (
-                            <TreasuryOnly>
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleApproveRecharge(recharge.id)}
-                                  disabled={rechargeProcessing === recharge.id}
-                                  className="text-success-600 hover:bg-success-50 dark:text-success-300 dark:hover:bg-success-500/10"
-                                >
-                                  {rechargeProcessing === recharge.id ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                  ) : (
-                                    <CheckCircle className="w-4 h-4" />
-                                  )}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleRejectRecharge(recharge.id)}
-                                  disabled={rechargeProcessing === recharge.id}
-                                  className="text-error-600 hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-500/10"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TreasuryOnly>
-                          )}
-                          {recharge.status === 'APPROVED' && (
-                            <span className="caption-success">
-                              Approved by {recharge.approvedBy}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            {rechargeProcessing === recharge.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => { e.stopPropagation(); handleRejectRecharge(recharge.id); }}
+                            disabled={rechargeProcessing === recharge.id}
+                            className="text-error-600 hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-500/10"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TreasuryOnly>
+                    )}
+                    {recharge.status === 'APPROVED' && (
+                      <span className="caption-success">
+                        Approved by {recharge.approvedBy}
+                      </span>
+                    )}
+                  </>
+                ) },
+              ]}
+            />
           </Card>
         </div>
       )}

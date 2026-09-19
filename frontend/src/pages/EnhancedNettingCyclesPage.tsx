@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, FileText, Users, ArrowRight, ArrowLeftRight, Building2, X, ChevronDown, ChevronUp, Filter, Download, BarChart3, Layers, Target, Send, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -527,46 +527,31 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
               )}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">Direction</th>
-                    <th className="data-table-header-cell">Payer</th>
-                    <th className="data-table-header-cell">Payee</th>
-                    <th className="data-table-header-cell text-right">Amount</th>
-                    <th className="data-table-header-cell">Source</th>
-                    <th className="data-table-header-cell">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map(entry => (
-                    <tr key={entry.id} className="data-table-row">
-                      <td className="data-table-cell body-strong">{entry.entryReference}</td>
-                      <td className="data-table-cell">
-                        <Badge variant={entry.flowDirection === 'PAYABLE' ? 'error' : 'success'} size="sm">
-                          {entry.flowDirection}
-                        </Badge>
-                      </td>
-                      <td className="data-table-cell body-sm">{entry.payerEntityCode}</td>
-                      <td className="data-table-cell body-sm">{entry.payeeEntityCode}</td>
-                      <td className="data-table-cell body-strong font-semibold text-right">
-                        {formatCurrency(entry.grossAmount, entry.currencyCode)}
-                      </td>
-                      <td className="data-table-cell body-sm">
-                        {entry.sourceType.replace('_', ' ')}
-                      </td>
-                      <td className="data-table-cell">
-                        <Badge variant={entry.status === 'INCLUDED' ? 'success' : 'warning'} size="sm">
-                          {entry.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={entries}
+              keyExtractor={(entry) => entry.id}
+              columns={[
+                { key: 'entryReference', header: 'Reference', minWidth: 150, mobileLabel: true, render: (_v, entry) => <span className="body-strong">{entry.entryReference}</span> },
+                { key: 'flowDirection', header: 'Direction', minWidth: 110, dropOrder: 3, render: (_v, entry) => (
+                  <Badge variant={entry.flowDirection === 'PAYABLE' ? 'error' : 'success'} size="sm">
+                    {entry.flowDirection}
+                  </Badge>
+                ) },
+                { key: 'payerEntityCode', header: 'Payer', minWidth: 110, render: (_v, entry) => <span className="body-sm">{entry.payerEntityCode}</span> },
+                { key: 'payeeEntityCode', header: 'Payee', minWidth: 110, render: (_v, entry) => <span className="body-sm">{entry.payeeEntityCode}</span> },
+                { key: 'grossAmount', header: 'Amount', align: 'right', minWidth: 140, mobileValue: true, render: (_v, entry) => (
+                  <span className="body-strong font-semibold">{formatCurrency(entry.grossAmount, entry.currencyCode)}</span>
+                ) },
+                { key: 'sourceType', header: 'Source', minWidth: 130, dropOrder: 2, render: (_v, entry) => (
+                  <span className="body-sm">{entry.sourceType.replace('_', ' ')}</span>
+                ) },
+                { key: 'status', header: 'Status', minWidth: 110, dropOrder: 1, render: (_v, entry) => (
+                  <Badge variant={entry.status === 'INCLUDED' ? 'success' : 'warning'} size="sm">
+                    {entry.status}
+                  </Badge>
+                ) },
+              ]}
+            />
           )}
         </div>
       )}

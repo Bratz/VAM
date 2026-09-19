@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Wallet, Plus, Search, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Users, TrendingUp, MoreHorizontal, Eye, RefreshCw, Send, Download, Loader2, CheckCircle, Building2, CreditCard, Banknote, Smartphone, QrCode, Store, Receipt, Clock, Filter, Calendar, ChevronDown, ChevronUp, Copy, Printer, FileText, Upload, X, XCircle } from 'lucide-react';
-import { Card, Button, Input, Badge, EmptyState , StatusIconBadge } from '../components/ui';
+import { Card, Button, Input, Badge, EmptyState , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Alert, Avatar } from '../components/ui/enhanced';
 import { cn, formatCurrency, formatDate } from '../utils';
 import { Page } from '../components/layout/Page';
@@ -779,82 +779,80 @@ const BaaSCashOperationsPage: React.FC = () => {
               <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
             </div>
           ) : filteredOperations.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead className="data-table-header">
-                  <tr>
-                    <th className="data-table-header-cell">Type</th>
-                    <th className="data-table-header-cell">Wallet</th>
-                    <th className="data-table-header-cell">Amount</th>
-                    <th className="data-table-header-cell">Channel</th>
-                    <th className="data-table-header-cell">Status</th>
-                    <th className="data-table-header-cell">Reference</th>
-                    <th className="data-table-header-cell">Time</th>
-                    <th className="data-table-header-cell">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-subtle">
-                  {filteredOperations.map((op) => {
-                    const typeConf = operationTypeConfig[op.type];
-                    const channelConf = channelConfig[op.channel];
-                    const statusConf = statusConfig[op.status];
-                    return (
-                      <tr key={op.id} className="data-table-row group">
-                        <td className="data-table-cell">
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "p-1.5 rounded-lg",
-                              typeConf.direction === 'in' ? "bg-success-100 dark:bg-success-500/20 text-success-600 dark:text-success-300" : "bg-error-100 dark:bg-error-500/20 text-error-600 dark:text-error-300"
-                            )}>
-                              {typeConf.icon}
-                            </span>
-                            <span className="font-medium text-primary-900 dark:text-neutral-50">{typeConf.label}</span>
-                          </div>
-                        </td>
-                        <td className="data-table-cell">
-                          <p className="font-medium text-primary-900 dark:text-neutral-50">{op.walletHolderName}</p>
-                          <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{op.walletReference}</p>
-                        </td>
-                        <td className="data-table-cell">
-                          <p className={cn(
-                            "font-semibold",
-                            typeConf.direction === 'in' ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300"
-                          )}>
-                            {typeConf.direction === 'in' ? '+' : '-'}{formatCurrency(op.amount)}
-                          </p>
-                          {op.fee > 0 && <p className="caption">Fee: {formatCurrency(op.fee)}</p>}
-                        </td>
-                        <td className="data-table-cell">
-                          <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
-                            {channelConf?.icon}
-                            <span className="text-body-sm">{channelConf?.label}</span>
-                          </div>
-                          {op.agentName && <p className="caption">{op.agentName}</p>}
-                        </td>
-                        <td className="data-table-cell">
-                          <Badge variant={statusConf.color as any}>{statusConf.label}</Badge>
-                        </td>
-                        <td className="data-table-cell">
-                          <p className="text-body-sm font-mono text-neutral-600 dark:text-neutral-300">{op.reference}</p>
-                        </td>
-                        <td className="data-table-cell">
-                          <p className="body-sm">{new Date(op.createdAt).toLocaleTimeString()}</p>
-                          <p className="caption">{new Date(op.createdAt).toLocaleDateString()}</p>
-                        </td>
-                        <td className="data-table-cell">
-                          <button
-                            onClick={() => { setSelectedOperation(op); setShowDetailModal(true); }}
-                            className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-body-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              hairline
+              data={filteredOperations}
+              keyExtractor={(op) => op.id}
+              columns={[
+                { key: 'type', header: 'Type', minWidth: 150, mobileLabel: true, render: (_v, op) => {
+                  const typeConf = operationTypeConfig[op.type];
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "p-1.5 rounded-lg",
+                        typeConf.direction === 'in' ? "bg-success-100 dark:bg-success-500/20 text-success-600 dark:text-success-300" : "bg-error-100 dark:bg-error-500/20 text-error-600 dark:text-error-300"
+                      )}>
+                        {typeConf.icon}
+                      </span>
+                      <span className="font-medium text-primary-900 dark:text-neutral-50">{typeConf.label}</span>
+                    </div>
+                  );
+                } },
+                { key: 'walletHolderName', header: 'Wallet', minWidth: 160, render: (_v, op) => (
+                  <>
+                    <p className="font-medium text-primary-900 dark:text-neutral-50">{op.walletHolderName}</p>
+                    <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{op.walletReference}</p>
+                  </>
+                ) },
+                { key: 'amount', header: 'Amount', minWidth: 130, render: (_v, op) => {
+                  const typeConf = operationTypeConfig[op.type];
+                  return (
+                    <>
+                      <p className={cn(
+                        "font-semibold",
+                        typeConf.direction === 'in' ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300"
+                      )}>
+                        {typeConf.direction === 'in' ? '+' : '-'}{formatCurrency(op.amount)}
+                      </p>
+                      {op.fee > 0 && <p className="caption">Fee: {formatCurrency(op.fee)}</p>}
+                    </>
+                  );
+                } },
+                { key: 'channel', header: 'Channel', minWidth: 140, dropOrder: 2, render: (_v, op) => {
+                  const channelConf = channelConfig[op.channel];
+                  return (
+                    <>
+                      <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
+                        {channelConf?.icon}
+                        <span className="text-body-sm">{channelConf?.label}</span>
+                      </div>
+                      {op.agentName && <p className="caption">{op.agentName}</p>}
+                    </>
+                  );
+                } },
+                { key: 'status', header: 'Status', minWidth: 110, render: (_v, op) => {
+                  const statusConf = statusConfig[op.status];
+                  return <Badge variant={statusConf.color as any}>{statusConf.label}</Badge>;
+                } },
+                { key: 'reference', header: 'Reference', minWidth: 140, dropOrder: 1, render: (_v, op) => (
+                  <p className="text-body-sm font-mono text-neutral-600 dark:text-neutral-300">{op.reference}</p>
+                ) },
+                { key: 'createdAt', header: 'Time', minWidth: 120, dropOrder: 3, render: (_v, op) => (
+                  <>
+                    <p className="body-sm">{new Date(op.createdAt).toLocaleTimeString()}</p>
+                    <p className="caption">{new Date(op.createdAt).toLocaleDateString()}</p>
+                  </>
+                ) },
+                { key: 'actions', header: 'Actions', minWidth: 80, render: (_v, op) => (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedOperation(op); setShowDetailModal(true); }}
+                    className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:hover:text-neutral-200 text-body-sm font-medium"
+                  >
+                    View
+                  </button>
+                ) },
+              ]}
+            />
           ) : (
             <EmptyState
               icon={<Banknote className="w-8 h-8" />}
@@ -877,57 +875,44 @@ const BaaSCashOperationsPage: React.FC = () => {
             </div>
             <Button size="sm">+ Add Agent</Button>
           </div>
-          <div className="overflow-x-auto">
-            <table className="data-table">
-              <thead className="data-table-header">
-                <tr>
-                  <th className="data-table-header-cell">Agent</th>
-                  <th className="data-table-header-cell">Type</th>
-                  <th className="data-table-header-cell">Location</th>
-                  <th className="data-table-header-cell">Float Balance</th>
-                  <th className="data-table-header-cell">Daily Usage</th>
-                  <th className="data-table-header-cell">Status</th>
-                  <th className="data-table-header-cell">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge-subtle">
-                {agents.map((agent) => (
-                  <tr key={agent.id} className="data-table-row group">
-                    <td className="data-table-cell">
-                      <p className="font-medium text-primary-900 dark:text-neutral-50">{agent.agentName}</p>
-                      <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{agent.agentCode}</p>
-                    </td>
-                    <td className="data-table-cell">
-                      <Badge variant={agent.agentType === 'SUPER_AGENT' ? 'info' : 'neutral'}>
-                        {agent.agentType}
-                      </Badge>
-                    </td>
-                    <td className="data-table-cell text-neutral-600 dark:text-neutral-300">{agent.location}</td>
-                    <td className="data-table-cell font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(agent.floatBalance)}</td>
-                    <td className="data-table-cell">
-                      <div className="w-32">
-                        <div className="flex justify-between text-caption mb-1">
-                          <span>{formatCurrency(agent.dailyUsed)}</span>
-                          <span className="text-neutral-400">{formatCurrency(agent.dailyLimit)}</span>
-                        </div>
-                        <ProgressBar
-                          value={(agent.dailyUsed / agent.dailyLimit) * 100}
-                          size="sm"
-                          variant={agent.dailyUsed / agent.dailyLimit > 0.8 ? 'warning' : 'default'}
-                        />
-                      </div>
-                    </td>
-                    <td className="data-table-cell">
-                      <Badge variant={agent.status === 'ACTIVE' ? 'success' : 'error'}>{agent.status}</Badge>
-                    </td>
-                    <td className="data-table-cell">
-                      <button className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-body-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200">Manage</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            hairline
+            data={agents}
+            keyExtractor={(agent) => agent.id}
+            emptyTitle="No agents"
+            columns={[
+              { key: 'agentName', header: 'Agent', minWidth: 180, mobileLabel: true, render: (_v, agent) => (
+                <>
+                  <p className="font-medium text-primary-900 dark:text-neutral-50">{agent.agentName}</p>
+                  <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{agent.agentCode}</p>
+                </>
+              ) },
+              { key: 'agentType', header: 'Type', minWidth: 130, dropOrder: 3, render: (_v, agent) => (
+                <Badge variant={agent.agentType === 'SUPER_AGENT' ? 'info' : 'neutral'}>
+                  {agent.agentType}
+                </Badge>
+              ) },
+              { key: 'location', header: 'Location', minWidth: 140, dropOrder: 2, render: (_v, agent) => <span className="text-neutral-600 dark:text-neutral-300">{agent.location}</span> },
+              { key: 'floatBalance', header: 'Float Balance', minWidth: 140, render: (_v, agent) => <span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(agent.floatBalance)}</span> },
+              { key: 'dailyUsed', header: 'Daily Usage', minWidth: 170, dropOrder: 1, render: (_v, agent) => (
+                <div className="w-32">
+                  <div className="flex justify-between text-caption mb-1">
+                    <span>{formatCurrency(agent.dailyUsed)}</span>
+                    <span className="text-neutral-400">{formatCurrency(agent.dailyLimit)}</span>
+                  </div>
+                  <ProgressBar
+                    value={(agent.dailyUsed / agent.dailyLimit) * 100}
+                    size="sm"
+                    variant={agent.dailyUsed / agent.dailyLimit > 0.8 ? 'warning' : 'default'}
+                  />
+                </div>
+              ) },
+              { key: 'status', header: 'Status', minWidth: 110, render: (_v, agent) => <Badge variant={agent.status === 'ACTIVE' ? 'success' : 'error'}>{agent.status}</Badge> },
+              { key: 'actions', header: 'Actions', minWidth: 100, render: () => (
+                <button className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:hover:text-neutral-200 text-body-sm font-medium">Manage</button>
+              ) },
+            ]}
+          />
         </Card>
       )}
 

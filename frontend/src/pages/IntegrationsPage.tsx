@@ -33,7 +33,7 @@ import {
   Database,
   Zap
 } from 'lucide-react';
-import { Card, Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
+import { Card, Button, Badge, Input, StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
@@ -1115,49 +1115,39 @@ const ConnectionDetailModal: React.FC<{
         )}
 
         {activeTab === 'logs' && (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-edge">
-                  <th className="pb-3 text-left overline">Flow</th>
-                  <th className="pb-3 text-left overline">Direction</th>
-                  <th className="pb-3 text-left overline">Time</th>
-                  <th className="pb-3 text-right overline">Records</th>
-                  <th className="pb-3 text-center overline">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge-subtle">
-                {connectionLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                    <td className="py-3 text-body-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</td>
-                    <td className="py-3">
-                      <span className={cn(
-                        "px-2 py-0.5 text-caption font-medium uppercase",
-                        log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
-                      )}>
-                        {log.direction}
-                      </span>
-                    </td>
-                    <td className="py-3 body-sm">{formatRelativeTime(log.startTime)}</td>
-                    <td className="py-3 text-right">
-                      <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
-                      {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
-                    </td>
-                    <td className="py-3 text-center">
-                      <span className={cn(
-                        "px-2 py-0.5 text-caption font-medium uppercase",
-                        log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
-                        log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
-                        log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
-                      )}>
-                        {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            hairline
+            data={connectionLogs}
+            keyExtractor={(log) => log.id}
+            columns={[
+              { key: 'flowName', header: 'Flow', minWidth: 180, mobileLabel: true, render: (_v, log) => <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</span> },
+              { key: 'direction', header: 'Direction', minWidth: 130, dropOrder: 2, render: (_v, log) => (
+                <span className={cn(
+                  "px-2 py-0.5 text-caption font-medium uppercase",
+                  log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
+                )}>
+                  {log.direction}
+                </span>
+              ) },
+              { key: 'startTime', header: 'Time', minWidth: 130, dropOrder: 1, render: (_v, log) => <span className="body-sm">{formatRelativeTime(log.startTime)}</span> },
+              { key: 'recordsProcessed', header: 'Records', align: 'right', minWidth: 130, render: (_v, log) => (
+                <>
+                  <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
+                  {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
+                </>
+              ) },
+              { key: 'status', header: 'Status', align: 'center', minWidth: 120, render: (_v, log) => (
+                <span className={cn(
+                  "px-2 py-0.5 text-caption font-medium uppercase",
+                  log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
+                  log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
+                  log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
+                )}>
+                  {log.status}
+                </span>
+              ) },
+            ]}
+          />
         )}
       </div>
 
@@ -1506,58 +1496,43 @@ const IntegrationsPage: React.FC = () => {
 
         {/* Sync Logs */}
         {activeTab === 'logs' && (
-          <div className="bg-surface-card border border-edge">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-edge bg-surface-page">
-                  <th className="px-6 py-4 text-left overline">Connection</th>
-                  <th className="px-6 py-4 text-left overline">Flow</th>
-                  <th className="px-6 py-4 text-left overline">Direction</th>
-                  <th className="px-6 py-4 text-left overline">Time</th>
-                  <th className="px-6 py-4 text-right overline">Records</th>
-                  <th className="px-6 py-4 text-center overline">Status</th>
-                  <th className="px-6 py-4 text-left overline">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge-subtle">
-                {mockSyncLogs.map(log => (
-                  <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                    <td className="px-6 py-4 body-strong">{log.connectionName}</td>
-                    <td className="px-6 py-4 body-sm">{log.flowName}</td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium uppercase",
-                        log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
-                      )}>
-                        {log.direction === 'INBOUND' ? <Download className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
-                        {log.direction}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 body-sm">{formatRelativeTime(log.startTime)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
-                      {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={cn(
-                        "px-2 py-0.5 text-caption font-medium uppercase",
-                        log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
-                        log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
-                        log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
-                      )}>
-                        {log.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {log.errorMessage && (
-                        <p className="text-caption text-error-600 truncate max-w-48 dark:text-error-300" title={log.errorMessage}>{log.errorMessage}</p>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={mockSyncLogs}
+            keyExtractor={(log) => log.id}
+            columns={[
+              { key: 'connectionName', header: 'Connection', minWidth: 160, mobileLabel: true, render: (_v, log) => <span className="body-strong">{log.connectionName}</span> },
+              { key: 'flowName', header: 'Flow', minWidth: 150, dropOrder: 3, render: (_v, log) => <span className="body-sm">{log.flowName}</span> },
+              { key: 'direction', header: 'Direction', minWidth: 140, dropOrder: 2, render: (_v, log) => (
+                <span className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium uppercase",
+                  log.direction === 'INBOUND' ? 'bg-surface-muted text-neutral-600 dark:text-neutral-300' : 'bg-neutral-900 text-white'
+                )}>
+                  {log.direction === 'INBOUND' ? <Download className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+                  {log.direction}
+                </span>
+              ) },
+              { key: 'startTime', header: 'Time', minWidth: 130, dropOrder: 1, render: (_v, log) => <span className="body-sm">{formatRelativeTime(log.startTime)}</span> },
+              { key: 'recordsProcessed', header: 'Records', align: 'right', minWidth: 130, render: (_v, log) => (
+                <>
+                  <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
+                  {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
+                </>
+              ) },
+              { key: 'status', header: 'Status', align: 'center', minWidth: 120, render: (_v, log) => (
+                <span className={cn(
+                  "px-2 py-0.5 text-caption font-medium uppercase",
+                  log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
+                  log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
+                  log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
+                )}>
+                  {log.status}
+                </span>
+              ) },
+              { key: 'errorMessage', header: 'Details', minWidth: 160, dropOrder: 4, render: (_v, log) => (
+                log.errorMessage ? <p className="text-caption text-error-600 truncate max-w-48 dark:text-error-300" title={log.errorMessage}>{log.errorMessage}</p> : null
+              ) },
+            ]}
+          />
         )}
       </Page>
 

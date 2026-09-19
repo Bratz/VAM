@@ -14,7 +14,7 @@ import { Page } from '../components/layout/Page';
 
 import React, { useState, useEffect } from 'react';
 import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building2, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Download, Plus, FileCode, ChevronRight, Globe, Trash2, Copy, TrendingUp, Wallet, CreditCard, Users, X, Briefcase, UserCheck, Search, Eye, BookOpen, FileText, Hash, Calendar, DollarSign, ArrowRightLeft } from 'lucide-react';
-import { Card, Button, Badge, Input, Select , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, Select , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal, Stepper } from '../components/ui/enhanced';
 import { formatCurrency, formatRelativeTime, cn } from '../utils';
 import {
@@ -3202,22 +3202,29 @@ export default function TransfersPage() {
               <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Your transfers will appear here</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-surface-page border-b border-edge-subtle">
-                  <tr>
-                    <th className="text-left p-4 label">Reference</th>
-                    <th className="text-left p-4 label">Type</th>
-                    <th className="text-left p-4 label">From</th>
-                    <th className="text-left p-4 label">To</th>
-                    <th className="text-right p-4 label">Amount</th>
-                    <th className="text-left p-4 label">Status</th>
-                    <th className="text-left p-4 label">Date</th>
-                    <th className="text-center p-4 label">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-edge-subtle">
-                  {recentTransfers.map((txn) => {
+            <DataTable
+              hairline
+              data={recentTransfers}
+              keyExtractor={(txn) => txn.id}
+              onRowClick={(txn) => {
+                setSelectedTransfer(txn);
+                setShowDetailModal(true);
+              }}
+              columns={[
+                {
+                  key: 'referenceNumber',
+                  header: 'Reference',
+                  minWidth: 170,
+                  render: (_, txn) => (
+                    <p className="font-mono text-body-sm text-neutral-600 dark:text-neutral-300">{txn.referenceNumber}</p>
+                  ),
+                },
+                {
+                  key: 'movementType',
+                  header: 'Type',
+                  minWidth: 120,
+                  dropOrder: 2,
+                  render: (_, txn) => {
                     // Determine transfer type based on movement type
                     const getTransferType = () => {
                       switch (txn.movementType) {
@@ -3239,73 +3246,88 @@ export default function TransfersPage() {
                       }
                     };
                     const transferType = getTransferType();
-
                     return (
-                      <tr
-                        key={txn.id}
-                        className="hover:bg-neutral-50 transition-colors cursor-pointer dark:hover:bg-primary-800/50"
-                        onClick={() => {
-                          setSelectedTransfer(txn);
-                          setShowDetailModal(true);
-                        }}
-                      >
-                        <td className="p-4">
-                          <p className="font-mono text-body-sm text-neutral-600 dark:text-neutral-300">{txn.referenceNumber}</p>
-                        </td>
-                        <td className="p-4">
-                          <Badge variant={transferType.variant} size="sm">
-                            <span className="inline-flex items-center gap-1">
-                              <transferType.icon className="w-3 h-3" />
-                              {transferType.label}
-                            </span>
-                          </Badge>
-                        </td>
-                        <td className="p-4">
-                          <p className="body-strong">{txn.vaName || txn.vaNumber}</p>
-                        </td>
-                        <td className="p-4">
-                          <p className="body-sm">{txn.counterpartyName || txn.counterpartyAccount || '-'}</p>
-                        </td>
-                        <td className="p-4 text-right">
-                          <p className="font-semibold text-primary-900 dark:text-neutral-50">
-                            {formatCurrency(txn.amount, txn.currencyCode)}
-                          </p>
-                        </td>
-                        <td className="p-4">
-                          <Badge
-                            variant={
-                              txn.status === 'COMPLETED' ? 'success' :
-                              txn.status === 'PENDING' ? 'warning' :
-                              txn.status === 'FAILED' ? 'error' : 'neutral'
-                            }
-                            size="sm"
-                            dot
-                          >
-                            {txn.status}
-                          </Badge>
-                        </td>
-                        <td className="p-4">
-                          <p className="body-sm">{formatRelativeTime(txn.transactionDate)}</p>
-                        </td>
-                        <td className="p-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTransfer(txn);
-                              setShowDetailModal(true);
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
+                      <Badge variant={transferType.variant} size="sm">
+                        <span className="inline-flex items-center gap-1">
+                          <transferType.icon className="w-3 h-3" />
+                          {transferType.label}
+                        </span>
+                      </Badge>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                },
+                {
+                  key: 'vaName',
+                  header: 'From',
+                  minWidth: 160,
+                  render: (_, txn) => <p className="body-strong">{txn.vaName || txn.vaNumber}</p>,
+                },
+                {
+                  key: 'counterpartyName',
+                  header: 'To',
+                  minWidth: 160,
+                  dropOrder: 3,
+                  render: (_, txn) => (
+                    <p className="body-sm">{txn.counterpartyName || txn.counterpartyAccount || '-'}</p>
+                  ),
+                },
+                {
+                  key: 'amount',
+                  header: 'Amount',
+                  align: 'right',
+                  minWidth: 150,
+                  render: (_, txn) => (
+                    <p className="font-semibold text-primary-900 dark:text-neutral-50">
+                      {formatCurrency(txn.amount, txn.currencyCode)}
+                    </p>
+                  ),
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  minWidth: 130,
+                  render: (_, txn) => (
+                    <Badge
+                      variant={
+                        txn.status === 'COMPLETED' ? 'success' :
+                        txn.status === 'PENDING' ? 'warning' :
+                        txn.status === 'FAILED' ? 'error' : 'neutral'
+                      }
+                      size="sm"
+                      dot
+                    >
+                      {txn.status}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: 'transactionDate',
+                  header: 'Date',
+                  minWidth: 120,
+                  dropOrder: 1,
+                  render: (_, txn) => <p className="body-sm">{formatRelativeTime(txn.transactionDate)}</p>,
+                },
+                {
+                  key: 'actions',
+                  header: 'Actions',
+                  align: 'center',
+                  minWidth: 80,
+                  render: (_, txn) => (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTransfer(txn);
+                        setShowDetailModal(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           )}
         </Card>
       )}

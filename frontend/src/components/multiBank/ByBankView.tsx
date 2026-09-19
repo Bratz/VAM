@@ -8,7 +8,7 @@ import {
   MultiBankBankBucket,
   ShadowSummary,
 } from '../../services/api';
-import { StatusIconBadge } from '../ui';
+import { StatusIconBadge, DataTable } from '../ui';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 
@@ -215,60 +215,44 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                       </p>
                     </div>
                   </div>
-                  <table className="w-full text-body-sm">
-                    <thead>
-                      <tr className="text-left">
-                        <th className="label py-2">Shadow</th>
-                        <th className="label py-2">Freshness</th>
-                        <th className="label py-2">Entity</th>
-                        <th className="label py-2">Bank Account</th>
-                        <th className="label py-2 text-right">Bank Balance</th>
-                        <th className="label py-2 text-right">Committed</th>
-                        <th className="label py-2 text-right">Effective</th>
-                        <th className="label py-2 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ccy.shadows.map((s) => (
-                        // Row text defaults to neutral-700 so non-dominant mono
-                        // cells (Bank Balance, Committed) sit at mid emphasis.
-                        // The vaNumber (identifier) and Effective (dominant
-                        // column) override back to primary-900 — hierarchy via
-                        // tone, not weight.
-                        <tr key={s.vaId} className="border-t border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200">
-                          <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">{s.vaNumber}</td>
-                          <td className="py-2.5">
-                            <FreshnessPill shadow={s} />
-                          </td>
-                          <td className="py-2.5 text-neutral-600 dark:text-neutral-300">{s.owningEntityCode ?? '—'}</td>
-                          <td className="py-2.5">{s.bankAccountNumber ?? s.bankIban ?? '—'}</td>
-                          <td className="py-2.5 amount text-right">{formatCurrency(s.bankBalance, s.currencyCode)}</td>
-                          {/* Committed is a neutral accounting value, not a caution. */}
-                          <td className="py-2.5 amount text-right">
-                            {s.bankBalanceCommitted ? formatCurrency(s.bankBalanceCommitted, s.currencyCode) : '—'}
-                          </td>
-                          <td className="py-2.5 amount text-right text-primary-900 dark:text-neutral-50">{formatCurrency(s.bankBalanceEffective, s.currencyCode)}</td>
-                          <td className="py-2.5 text-right">
-                            <button
-                              onClick={() => refresh(s)}
-                              disabled={refreshingIds.has(s.vaId)}
-                              aria-label={`Refresh ${s.vaNumber}`}
-                              // p-2 -m-2 expands the tap target to ~40px without
-                              // changing the visual footprint — page is in the
-                              // mobile bottom-nav.
-                              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
-                            >
-                              {refreshingIds.has(s.vaId)
-                                ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : <RefreshCw className="w-3 h-3" />
-                              }
-                              Refresh
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <DataTable
+                    hairline
+                    data={ccy.shadows}
+                    keyExtractor={(s) => s.vaId}
+                    columns={[
+                      { key: 'shadow', header: 'Shadow', minWidth: 130, mobileLabel: true, render: (_v, s) => (
+                        <span className="font-mono text-caption text-primary-900 dark:text-neutral-50">{s.vaNumber}</span>
+                      ) },
+                      { key: 'freshness', header: 'Freshness', minWidth: 130, dropOrder: 3, render: (_v, s) => <FreshnessPill shadow={s} /> },
+                      { key: 'entity', header: 'Entity', minWidth: 100, dropOrder: 1, render: (_v, s) => (
+                        <span className="text-neutral-600 dark:text-neutral-300">{s.owningEntityCode ?? '—'}</span>
+                      ) },
+                      { key: 'account', header: 'Bank Account', minWidth: 150, dropOrder: 2, render: (_v, s) => s.bankAccountNumber ?? s.bankIban ?? '—' },
+                      { key: 'bankBalance', header: 'Bank Balance', align: 'right', minWidth: 130, render: (_v, s) => (
+                        <span className="amount text-neutral-700 dark:text-neutral-200">{formatCurrency(s.bankBalance, s.currencyCode)}</span>
+                      ) },
+                      { key: 'committed', header: 'Committed', align: 'right', minWidth: 120, dropOrder: 4, render: (_v, s) => (
+                        <span className="amount text-neutral-700 dark:text-neutral-200">{s.bankBalanceCommitted ? formatCurrency(s.bankBalanceCommitted, s.currencyCode) : '—'}</span>
+                      ) },
+                      { key: 'effective', header: 'Effective', align: 'right', minWidth: 130, mobileValue: true, render: (_v, s) => (
+                        <span className="amount text-primary-900 dark:text-neutral-50">{formatCurrency(s.bankBalanceEffective, s.currencyCode)}</span>
+                      ) },
+                      { key: 'action', header: 'Action', align: 'right', minWidth: 100, render: (_v, s) => (
+                        <button
+                onClick={() => refresh(s)}
+                disabled={refreshingIds.has(s.vaId)}
+                aria-label={`Refresh ${s.vaNumber}`}
+                className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
+              >
+                {refreshingIds.has(s.vaId)
+                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                  : <RefreshCw className="w-3 h-3" />
+                }
+                Refresh
+              </button>
+                      ) },
+                    ]}
+                  />
                 </div>
               ))}
             </div>
