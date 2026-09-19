@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Shield, CheckCircle2, XCircle, AlertTriangle, Loader2,
-  ChevronRight, ChevronDown, CreditCard, Wallet, Layers,
-  ArrowRight, DollarSign, TrendingUp, Clock, Eye,
-  RefreshCw, Info, AlertCircle,
-} from 'lucide-react';
+import { Shield, XCircle, AlertTriangle, Loader2, ChevronRight, ChevronDown, CreditCard, Wallet, Layers, ArrowRight, DollarSign, TrendingUp, Clock, Eye, RefreshCw, Info, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -108,7 +103,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
           result.approved ? "bg-success-100 dark:bg-success-500/20" : isRejectionLevel ? "bg-error-100 dark:bg-error-500/20" : "bg-warning-100 dark:bg-warning-500/20"
         )}>
           {result.approved ? (
-            <CheckCircle2 className="w-5 h-5 text-success-600 dark:text-success-300" />
+            <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />
           ) : isRejectionLevel ? (
             <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
           ) : (
@@ -217,9 +212,9 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
             result.approved ? "bg-success-200 dark:bg-success-500/15" : "bg-error-200 dark:bg-error-500/15"
           )}>
             {result.approved ? (
-              <CheckCircle2 className="w-10 h-10 text-success-600 dark:text-success-300" />
+              <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-300" />
             ) : (
-              <XCircle className="w-10 h-10 text-error-600 dark:text-error-300" />
+              <XCircle className="w-8 h-8 text-error-600 dark:text-error-300" />
             )}
           </div>
           <div className="flex-1">
@@ -271,7 +266,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
       {!result.approved && (
         <div className="bg-error-50 border border-error-200 rounded-lg p-4 dark:bg-error-500/10 dark:border-error-500/30">
           <h4 className="text-body-sm font-semibold text-error-800 flex items-center gap-2 dark:text-error-300">
-            <AlertCircle className="w-4 h-4" />
+            <XCircle className="w-4 h-4" />
             Transaction Cannot Proceed
           </h4>
           <p className="text-body-sm text-error-700 mt-2 dark:text-error-300">
@@ -516,7 +511,7 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
       {error && (
         <Card className="bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
             <p className="text-error-700 font-medium dark:text-error-300">{error}</p>
           </div>
         </Card>
@@ -622,7 +617,7 @@ export const FundsCheckModal: React.FC<FundsCheckModalProps> = ({
           <FundsCheckDisplay result={result} onClose={onClose} />
         ) : (
           <div className="py-12 text-center">
-            <AlertCircle className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
+            <AlertTriangle className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
             <p className="text-neutral-500 dark:text-neutral-400">Ready to check funds availability</p>
           </div>
         )}

@@ -7,11 +7,7 @@ import { StatStrip } from '../components/layout/StatStrip';
  * Backend: CreditFacilityController.java at /api/v1/credit-facilities/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Wallet, Plus, RefreshCw, Search, Loader2, Calendar, CheckCircle2, XCircle,
-  Ban, Eye, TrendingUp, ArrowUpRight, ArrowDownRight, Shield, AlertTriangle,
-  Link2, Landmark, CreditCard, Banknote, FileText, Briefcase, PiggyBank, Receipt, Building,
-} from 'lucide-react';
+import { Wallet, Plus, RefreshCw, Search, Loader2, Calendar, XCircle, Ban, Eye, TrendingUp, ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, Link2, Landmark, CreditCard, Banknote, FileText, Briefcase, PiggyBank, Receipt, CheckCircle, Building2, X } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -24,7 +20,7 @@ import { creditFacilitiesApi, CreditFacility, FacilityType, ApiResponse } from '
 
 const STATUS_CONFIG: Record<string, { label: string; variant: string; icon: any }> = {
   DRAFT: { label: 'Draft', variant: 'neutral', icon: FileText },
-  ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle2 },
+  ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle },
   SUSPENDED: { label: 'Suspended', variant: 'error', icon: Ban },
   EXPIRED: { label: 'Expired', variant: 'neutral', icon: XCircle },
   CLOSED: { label: 'Closed', variant: 'neutral', icon: XCircle },
@@ -40,7 +36,7 @@ const FACILITY_TYPE_CONFIG: Record<string, { label: string; icon: any; color: st
   WORKING_CAPITAL: { label: 'Working Capital', icon: CreditCard, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
   INVOICE_FINANCING: { label: 'Invoice Financing', icon: Receipt, color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
   SUPPLY_CHAIN_FINANCE: { label: 'Supply Chain', icon: Link2, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
-  ASSET_BASED: { label: 'Asset Based', icon: Building, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
+  ASSET_BASED: { label: 'Asset Based', icon: Building2, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   CASH_POOLING: { label: 'Cash Pooling', icon: PiggyBank, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   NOTIONAL_POOLING: { label: 'Notional Pooling', icon: Landmark, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
   OTHER: { label: 'Other', icon: Wallet, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
@@ -353,7 +349,7 @@ const CreditFacilitiesPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </Card>
       )}
@@ -378,7 +374,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Active</p>
                 <p className="stat-value-success mt-1">{stats.active}</p>
               </div>
-              <StatusIconBadge tone="success" icon={CheckCircle2} className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={CheckCircle} className="dark:bg-success-500/20" />
             </div>
           </div>
         </Card>

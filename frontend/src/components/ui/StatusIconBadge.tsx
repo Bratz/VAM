@@ -8,12 +8,12 @@ import { cn } from '../../utils';
  *
  *     <div className="w-10 h-10 rounded-xl bg-success-100 dark:bg-success-500/20
  *                     flex items-center justify-center">
- *       <CheckCircle2 className="w-5 h-5 text-success-600 dark:text-success-300" />
+ *       <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />
  *     </div>
  *
  * Replaced with:
  *
- *     <StatusIconBadge tone="success" icon={CheckCircle2} />
+ *     <StatusIconBadge tone="success" icon={CheckCircle} />
  *
  * Tier 3 Design System Unification (2026-05-13). The benefits:
  *   1. One source of truth for the medallion's shape — radius, size,

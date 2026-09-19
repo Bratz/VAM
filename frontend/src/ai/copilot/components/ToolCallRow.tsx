@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Database, AlertCircle } from 'lucide-react';
+import { ChevronRight, Database, XCircle } from 'lucide-react';
 import type { ToolCall } from '../types';
 
 interface ToolCallRowProps {
@@ -37,8 +37,8 @@ export const ToolCallRow: React.FC<ToolCallRowProps> = ({ call }) => {
           ].filter(Boolean).join(' ')}
         />
         {ok
-          ? <Database className="w-3.5 h-3.5 text-primary-500 dark:text-primary-300 shrink-0" />
-          : <AlertCircle className="w-3.5 h-3.5 text-error-500 dark:text-error-300 shrink-0" />}
+          ? <Database className="w-4 h-4 text-primary-500 dark:text-primary-300 shrink-0" />
+          : <XCircle className="w-4 h-4 text-error-500 dark:text-error-300 shrink-0" />}
         <span className="font-mono text-primary-700 dark:text-primary-200 shrink-0">
           {call.toolName}
         </span>

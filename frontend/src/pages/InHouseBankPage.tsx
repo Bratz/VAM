@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Building2, Users, ArrowLeftRight, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown,
-  Wallet, DollarSign, RefreshCw, Settings, Plus, Eye, ChevronRight, Calendar,
-  AlertCircle, Layers, GitBranch, Target, Loader2, X,
-  FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal,
-  Briefcase
-} from 'lucide-react';
+import { Building2, Users, ArrowLeftRight, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Wallet, DollarSign, RefreshCw, Settings, Plus, Eye, ChevronRight, Calendar, Layers, GitBranch, Target, Loader2, X, FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal, Briefcase, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, EmptyState, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -740,7 +734,7 @@ const InHouseBankPage: React.FC = () => {
       {error && (
         <Card padding="sm" className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+            <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
             <p className="text-body-sm text-error-700 flex-1 dark:text-error-300">{error}</p>
             <button onClick={() => setError(null)} className="text-error-600 hover:text-error-800 dark:text-error-300">
               <X className="w-4 h-4" />

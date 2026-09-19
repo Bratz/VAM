@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight,
-  Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw,
-  Send, Download, Settings, Loader2, AlertCircle, CheckCircle, Building2,
-  Shield, Edit, Upload, FileText, UserCheck, XCircle, LayoutDashboard,
-  Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy,
-  ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, ChevronLeft
-} from 'lucide-react';
+import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, ChevronLeft, Pencil, ChevronRight } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -430,7 +423,7 @@ const kycStatusConfig: Record<string, { label: string; color: string; icon: Reac
   VERIFIED: { label: 'Verified', color: 'success', icon: <CheckCircle className="w-3 h-3" /> },
   PENDING: { label: 'Pending', color: 'warning', icon: <Clock className="w-3 h-3" /> },
   REJECTED: { label: 'Rejected', color: 'error', icon: <XCircle className="w-3 h-3" /> },
-  EXPIRED: { label: 'Expired', color: 'error', icon: <AlertCircle className="w-3 h-3" /> },
+  EXPIRED: { label: 'Expired', color: 'error', icon: <XCircle className="w-3 h-3" /> },
   NOT_STARTED: { label: 'Not Started', color: 'neutral', icon: <Clock className="w-3 h-3" /> },
 };
 
@@ -445,12 +438,6 @@ const partyTypeConfig: Record<string, { label: string; icon: React.ElementType; 
 // ============================================================================
 // Utility Components
 // ============================================================================
-
-const ChevronRight = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="9,18 15,12 9,6" />
-  </svg>
-);
 
 const StatCard: React.FC<{
   label: string; value: string | number; subValue?: string; icon: React.ReactNode; iconBg: string;
@@ -829,7 +816,7 @@ const WalletRow: React.FC<{
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
               <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-primary-900 rounded-lg shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-20">
                 <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
-                <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Edit className="w-4 h-4" /> Edit Limits</button>
+                <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Pencil className="w-4 h-4" /> Edit Limits</button>
                 <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
                 <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
                 <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
@@ -1219,7 +1206,7 @@ const WalletPage: React.FC = () => {
     <Page>
       {/* Alerts */}
       {actionSuccess && <Alert variant="success" className="flex items-center gap-2"><CheckCircle className="w-4 h-4" />{actionSuccess}</Alert>}
-      {error && <Alert variant="error" className="flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={() => setError(null)} className="ml-auto underline text-body-sm">Dismiss</button></Alert>}
+      {error && <Alert variant="error" className="flex items-center gap-2"><XCircle className="w-4 h-4" />{error}<button onClick={() => setError(null)} className="ml-auto underline text-body-sm">Dismiss</button></Alert>}
 
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>

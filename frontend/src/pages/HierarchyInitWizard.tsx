@@ -10,19 +10,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  X,
-  Check,
-  ChevronRight,
-  AlertTriangle,
-  Info,
-  Loader2,
-  Building2,
-  Globe,
-  AlertCircle,
-  Wallet,
-  Coins,
-} from 'lucide-react';
+import { X, Check, ChevronRight, AlertTriangle, Info, Loader2, Building2, Globe, Wallet, Coins } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
 import {
@@ -253,7 +241,7 @@ const HierarchyPreview: React.FC<HierarchyPreviewProps> = ({
           {exceptionCurrencies.map((currency, i) => (
             <div key={currency} className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
               {i === exceptionCurrencies.length - 1 ? '└─' : '├─'}
-              <AlertCircle className="w-3 h-3" />
+              <AlertTriangle className="w-3 h-3" />
               <span>{currency} Exception Account</span>
             </div>
           ))}
@@ -603,7 +591,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                         <div className="flex flex-wrap gap-2">
                           {allExceptionCurrencies.map((curr) => (
                             <Badge key={curr} variant="warning">
-                              <AlertCircle className="w-3 h-3 mr-1 inline" />
+                              <AlertTriangle className="w-3 h-3 mr-1 inline" />
                               {curr}
                             </Badge>
                           ))}

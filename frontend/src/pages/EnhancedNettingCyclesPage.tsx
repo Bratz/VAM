@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  GitMerge, Plus, Calculator, CheckCircle, Clock, AlertCircle, Loader2,
-  RefreshCw, DollarSign, TrendingUp, Eye, FileText, Users, ArrowRight,
-  ArrowLeftRight, Building2, X, ChevronDown, ChevronUp, Filter, Download,
-  BarChart3, Layers, Target, Send,
-} from 'lucide-react';
+import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, FileText, Users, ArrowRight, ArrowLeftRight, Building2, X, ChevronDown, ChevronUp, Filter, Download, BarChart3, Layers, Target, Send, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -79,7 +74,7 @@ const LoadingSpinner: React.FC = () => (
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
     <div className="flex items-center gap-3 p-4">
-      <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+      <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
         <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>

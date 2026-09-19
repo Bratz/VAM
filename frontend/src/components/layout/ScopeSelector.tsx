@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building, Briefcase, Users, RefreshCw, Loader2, X } from 'lucide-react';
+import { Briefcase, Users, RefreshCw, Loader2, X, Building2 } from 'lucide-react';
 import { cn } from '../../utils';
 import { Card, Badge, Button, Select, StatusIconBadge } from '../ui';
 
@@ -204,7 +204,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
 
     corporateField = (
       <div className="flex items-center gap-2">
-        <StatusIconBadge tone="primary" icon={Building} size="sm" />
+        <StatusIconBadge tone="primary" icon={Building2} size="sm" />
         <div className="min-w-[220px]">
           {!bare && <label className="label">Corporate</label>}
           <Select
@@ -222,7 +222,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
     if (selectedCorporate) {
       activeCorporateChip = (
         <Badge variant="primary" size="sm">
-          <Building className="w-3 h-3" />
+          <Building2 className="w-3 h-3" />
           {selectedCorporate.shortName || corporateLabel(selectedCorporate)}
         </Badge>
       );
@@ -376,7 +376,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
               variant="ghost"
               size="sm"
               onClick={handleClear}
-              leftIcon={<X className="w-3.5 h-3.5" />}
+              leftIcon={<X className="w-4 h-4" />}
               aria-label="Clear scope"
             >
               Clear

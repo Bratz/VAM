@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { RefreshCw, Loader2, Building } from 'lucide-react';
+import { RefreshCw, Loader2, Building2 } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import {
   MultiBankLiquiditySummary,
@@ -132,7 +132,7 @@ export const ByEntityView: React.FC<ByEntityViewProps> = ({
             <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300">
-                  <Building className="w-5 h-5" />
+                  <Building2 className="w-5 h-5" />
                 </div>
                 <div>
                   <h2 className="section-title">{entity.entityName}</h2>

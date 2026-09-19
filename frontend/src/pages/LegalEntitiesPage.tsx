@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import {
-  Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown,
-  Plus, Edit, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle,
-  XCircle, Clock, CreditCard, Landmark, FlaskConical, Building, ArrowLeftRight,
-  PiggyBank, Banknote, GitBranch, Copy, Lock,
-  Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent,
-  Mail, Phone, MapPin, FileText, Calendar, Hash, DollarSign, Shield, Zap, Save,
-} from 'lucide-react';
+import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, Plus, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, CreditCard, Landmark, FlaskConical, ArrowLeftRight, PiggyBank, Banknote, GitBranch, Copy, Lock, Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent, Mail, Phone, MapPin, FileText, Calendar, Hash, DollarSign, Shield, Zap, Save, Pencil } from 'lucide-react';
 import { Card, CardHeader, Button, Badge, Input, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -369,7 +362,7 @@ const consolidationConfig: Record<ConsolidationMethod, { label: string }> = {
 const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
   HOLDING: { label: 'Holding Company', icon: Crown, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
   SUBSIDIARY: { label: 'Subsidiary', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  BRANCH: { label: 'Branch', icon: Building, color: 'text-cyan-700 dark:text-cyan-300', bgColor: 'bg-cyan-100 dark:bg-cyan-500/20' },
+  BRANCH: { label: 'Branch', icon: Building2, color: 'text-cyan-700 dark:text-cyan-300', bgColor: 'bg-cyan-100 dark:bg-cyan-500/20' },
   REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
@@ -996,7 +989,7 @@ const EntityDetailPanel: React.FC<{
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="neutral" size="sm">{limitCurrency}</Badge>
                       <Button variant="ghost" size="sm" onClick={() => onAllocateLimit(entity, limitCurrency)}>
-                        <Edit className="w-3 h-3" />
+                        <Pencil className="w-3 h-3" />
                       </Button>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -1044,7 +1037,7 @@ const EntityDetailPanel: React.FC<{
             </div>
           ) : (
             <div className="text-center py-4">
-              <CreditCard className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
+              <CreditCard className="w-8 h-8 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
               <p className="body-sm">No limit allocated</p>
               {groupLimits.length > 0 && (
                 <div className="mt-2">
@@ -1103,7 +1096,7 @@ const EntityDetailPanel: React.FC<{
       </div>
 
       <div className="p-4 border-t border-neutral-200 flex gap-2 dark:border-primary-800">
-        <Button variant="outline" className="flex-1" onClick={() => onEdit(entity)}><Edit className="w-4 h-4 mr-1" />Edit</Button>
+        <Button variant="outline" className="flex-1" onClick={() => onEdit(entity)}><Pencil className="w-4 h-4 mr-1" />Edit</Button>
         <Button className="flex-1" onClick={() => onAllocateLimit(entity)}><CreditCard className="w-4 h-4 mr-1" />{hasLimits ? 'Update' : 'Allocate'} Limit</Button>
       </div>
     </div>
@@ -1405,7 +1398,7 @@ const LegalEntitiesPage: React.FC = () => {
           value: groupLimitsHeroValue,
           sub: groupLimitsHeroSub,
         }}
-        icon={<GitBranch className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<GitBranch className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}
@@ -1545,7 +1538,7 @@ const LegalEntitiesPage: React.FC = () => {
             <span className="caption">Subsidiary</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-cyan-100 dark:bg-cyan-500/20"><Building className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
+            <div className="p-1.5 rounded-md bg-cyan-100 dark:bg-cyan-500/20"><Building2 className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
             <span className="caption">Branch</span>
           </div>
           <div className="flex items-center gap-2">

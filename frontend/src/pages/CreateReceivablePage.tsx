@@ -11,45 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  ArrowLeft,
-  Search,
-  Building2,
-  FileText,
-  Calendar,
-  CreditCard,
-  QrCode,
-  Check,
-  AlertCircle,
-  Loader2,
-  Copy,
-  ChevronDown,
-  ChevronUp,
-  Landmark,
-  FolderTree,
-  Paperclip,
-  Upload,
-  X,
-  Plus,
-  Trash2,
-  Link2,
-  Mail,
-  Bell,
-  Calculator,
-  Percent,
-  DollarSign,
-  Building,
-  ArrowDownLeft,
-  ToggleLeft,
-  ToggleRight,
-  Share2,
-  Info,
-  Package,
-  Receipt,
-  Clock,
-  Send,
-  AlertTriangle,
-} from 'lucide-react';
+import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, ChevronDown, ChevronUp, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, Percent, DollarSign, ArrowDownLeft, ToggleLeft, ToggleRight, Share2, Info, Package, Receipt, Clock, Send, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
 import { useNavigation } from '../App';
 import { Page } from '../components/layout/Page';
@@ -221,7 +183,7 @@ const UNITS = ['Each', 'Piece', 'Box', 'Carton', 'Kg', 'Gram', 'Liter', 'Meter',
 const CHARGE_TYPES = [
   { value: 'SHIPPING', label: 'Shipping', icon: Package },
   { value: 'HANDLING', label: 'Handling', icon: Package },
-  { value: 'INSURANCE', label: 'Insurance', icon: AlertCircle },
+  { value: 'INSURANCE', label: 'Insurance', icon: AlertTriangle },
   { value: 'SERVICE', label: 'Service Fee', icon: Receipt },
   { value: 'CUSTOM', label: 'Custom', icon: DollarSign },
 ];
@@ -395,12 +357,12 @@ const Toggle: React.FC<{
     {enabled ? (
       <ToggleRight className={cn(
         'text-primary-600 dark:text-primary-200 transition-transform hover:scale-105',
-        size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
+        size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'
       )} />
     ) : (
       <ToggleLeft className={cn(
         'text-neutral-400 transition-transform hover:scale-105',
-        size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
+        size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'
       )} />
     )}
   </button>
@@ -879,7 +841,7 @@ const CoboTab: React.FC<{
           {/* On Behalf Entity */}
           <div>
             <label className="field-label block mb-2">
-              <Building className="w-4 h-4 inline mr-1" />
+              <Building2 className="w-4 h-4 inline mr-1" />
               On Behalf Of (Subsidiary)
             </label>
             <select
@@ -1672,7 +1634,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
-                <Building className="w-5 h-5 text-info-600 dark:text-info-300" />
+                <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
               </div>
               <div>
                 <p className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Corporate</p>
@@ -2055,7 +2017,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               {!canSubmit && (
                 <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 dark:bg-warning-500/10 dark:border-warning-500/30">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
+                    <AlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
                     <div>
                       <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
                       <ul className="text-caption text-warning-700 mt-1 space-y-1 dark:text-warning-300">

@@ -6,15 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import toast from 'react-hot-toast';
-import {
-  Plus,
-  FlaskConical,
-  Loader2,
-  AlertCircle,
-  Archive,
-  AlertTriangle,
-  Building2,
-} from 'lucide-react';
+import { Plus, FlaskConical, Loader2, Archive, AlertTriangle, Building2, XCircle } from 'lucide-react';
 import { Card, Button, Select } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -1000,7 +992,7 @@ const SimulatorPage: React.FC = () => {
 
       {error && (
         <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 body-sm text-error-700 dark:text-error-300">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+          <XCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>
       )}

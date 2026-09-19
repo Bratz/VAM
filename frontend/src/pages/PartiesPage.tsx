@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase,
-  Eye, Edit, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield,
-  CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, Building,
-  ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save,
-} from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
 import { Card, Badge, Button, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
@@ -111,7 +106,7 @@ const riskConfig: Record<RiskRating, { label: string; variant: string }> = {
 const icSettlementConfig: Record<IcSettlementMethod, { label: string; icon: React.ElementType }> = {
   NETTING: { label: 'Netting', icon: ArrowRightLeft },
   DIRECT_TRANSFER: { label: 'Direct Transfer', icon: Wallet },
-  IHB: { label: 'IHB', icon: Building },
+  IHB: { label: 'IHB', icon: Building2 },
   MANUAL: { label: 'Manual', icon: Settings },
 };
 
@@ -175,7 +170,7 @@ const OwningEntityBadge: React.FC<{ entityCode?: string }> = ({ entityCode }) =>
   if (!entityCode) return null;
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md label-cased bg-neutral-100 dark:bg-primary-800">
-      <Building className="w-3 h-3" />
+      <Building2 className="w-3 h-3" />
       {entityCode}
     </span>
   );
@@ -1613,7 +1608,7 @@ const PartyDetailModal: React.FC<{
           <div className="flex items-center gap-4">
             <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center',
               party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-              <TypeIcon className={cn('w-7 h-7', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
+              <TypeIcon className={cn('w-6 h-6', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -1639,7 +1634,7 @@ const PartyDetailModal: React.FC<{
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" leftIcon={<Edit className="w-4 h-4" />} onClick={handleEditClick}>Edit</Button>
+            <Button variant="outline" size="sm" leftIcon={<Pencil className="w-4 h-4" />} onClick={handleEditClick}>Edit</Button>
             <Button variant="ghost" size="sm" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>
         </div>
@@ -1890,7 +1885,7 @@ const PartyDetailModal: React.FC<{
                 <div className="flex items-center justify-between">
                   <h3 className="body-strong font-semibold">KYC Status</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowKycForm(!showKycForm)}>
-                    <Edit className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                 </div>
                 <Card padding="sm" className="space-y-3">
@@ -1955,7 +1950,7 @@ const PartyDetailModal: React.FC<{
                 <div className="flex items-center justify-between mt-6">
                   <h3 className="body-strong font-semibold">Risk Rating</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowRiskForm(!showRiskForm)}>
-                    <Edit className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                 </div>
                 <Card padding="sm" className="space-y-3">
@@ -2085,7 +2080,7 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="success" size="sm">Active</Badge>
                   </div>
-                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
                   <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
                 </Card>
               </div>
@@ -2117,7 +2112,7 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="info" size="sm">IC</Badge>
                   </div>
-                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
+                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
                   <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
                   <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="caption">Auto-enabled for IC parties</span></div>
                 </Card>
@@ -2126,7 +2121,7 @@ const PartyDetailModal: React.FC<{
                 <div className="flex items-center justify-between">
                   <h3 className="body-strong font-semibold">IC Credit Position</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowIcCreditForm(!showIcCreditForm)}>
-                    <Edit className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                 </div>
                 <Card padding="md" className="space-y-4">
@@ -2139,7 +2134,7 @@ const PartyDetailModal: React.FC<{
                     </>
                   ) : (
                     <div className="text-center py-6">
-                      <DollarSign className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
+                      <DollarSign className="w-8 h-8 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
                       <p className="body-sm">No credit limit configured</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowIcCreditForm(true)}>Set Credit Limit</Button>
                     </div>
@@ -2431,7 +2426,7 @@ const PartiesPage: React.FC = () => {
           {selectedCorporateId && (
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20 shrink-0">
-                <Building className="w-4 h-4 text-accent-600 dark:text-accent-300" />
+                <Building2 className="w-4 h-4 text-accent-600 dark:text-accent-300" />
               </div>
               <div className="flex flex-col">
                 <span className="caption">Entity</span>
@@ -2535,10 +2530,10 @@ const PartiesPage: React.FC = () => {
           {(poboFilter || icFilter || nettingFilter || selectedEntityId) && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="body-sm">Active Filters:</span>
-              {selectedEntityId && <span className="cursor-pointer" onClick={() => setSelectedEntityId(undefined)}><Badge variant="info" size="sm">{entities.find(e => e.id === selectedEntityId)?.entityCode} ×</Badge></span>}
-              {poboFilter && <span className="cursor-pointer" onClick={() => setPoboFilter(false)}><Badge variant="info" size="sm">POBO Eligible ×</Badge></span>}
-              {icFilter && <span className="cursor-pointer" onClick={() => setIcFilter(false)}><Badge variant="info" size="sm">Intercompany ×</Badge></span>}
-              {nettingFilter && <span className="cursor-pointer" onClick={() => setNettingFilter(false)}><Badge variant="info" size="sm">Netting Eligible ×</Badge></span>}
+              {selectedEntityId && <span className="cursor-pointer" onClick={() => setSelectedEntityId(undefined)}><Badge variant="info" size="sm">{entities.find(e => e.id === selectedEntityId)?.entityCode} <X className="w-3 h-3" /></Badge></span>}
+              {poboFilter && <span className="cursor-pointer" onClick={() => setPoboFilter(false)}><Badge variant="info" size="sm">POBO Eligible <X className="w-3 h-3" /></Badge></span>}
+              {icFilter && <span className="cursor-pointer" onClick={() => setIcFilter(false)}><Badge variant="info" size="sm">Intercompany <X className="w-3 h-3" /></Badge></span>}
+              {nettingFilter && <span className="cursor-pointer" onClick={() => setNettingFilter(false)}><Badge variant="info" size="sm">Netting Eligible <X className="w-3 h-3" /></Badge></span>}
               <button onClick={() => { setSelectedEntityId(undefined); setPoboFilter(false); setIcFilter(false); setNettingFilter(false); }} className="caption-error hover:underline">Clear All</button>
             </div>
           )}
@@ -2633,7 +2628,7 @@ const PartiesPage: React.FC = () => {
                   render: (_, party) => (
                     <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="sm" onClick={() => setSelectedParty(party)}><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEditParty(party)}><Pencil className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="sm"><MoreHorizontal className="w-4 h-4" /></Button>
                     </div>
                   ),

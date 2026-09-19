@@ -1,13 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Layers,
-  Loader2,
-  Calculator,
-  UserPlus,
-  Trash2,
-  Calendar,
-  Percent,
-} from 'lucide-react';
+import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent } from 'lucide-react';
 import { Button, Badge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
@@ -224,13 +216,13 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       <div className="mt-6 pt-4 border-t grid grid-cols-3 gap-4 text-body-sm">
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5" /> Effective From
+            <Calendar className="w-4 h-4" /> Effective From
           </p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{pool.effectiveFrom || '-'}</p>
         </div>
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-            <Percent className="w-3.5 h-3.5" /> Calculation Method
+            <Percent className="w-4 h-4" /> Calculation Method
           </p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">
             {pool.interestCalculationMethod?.replace('_', ' ')}
@@ -238,7 +230,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
         </div>
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-            <Calculator className="w-3.5 h-3.5" /> Last Calculated
+            <Calculator className="w-4 h-4" /> Last Calculated
           </p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{pool.lastCalculationDate || 'Never'}</p>
         </div>

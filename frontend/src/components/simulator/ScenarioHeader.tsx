@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, GitBranch, Undo2, UploadCloud } from 'lucide-react';
+import { Save, GitBranch, Undo2, Upload } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
 import { cn } from '../../utils';
 import { SandboxBadge } from './SandboxBadge';
@@ -135,7 +135,7 @@ export const ScenarioHeader: React.FC<ScenarioHeaderProps> = ({
           <Button
             variant="accent"
             size="sm"
-            leftIcon={<UploadCloud className="w-4 h-4" />}
+            leftIcon={<Upload className="w-4 h-4" />}
             onClick={onPropose}
             disabled={!proposeReady}
             title={

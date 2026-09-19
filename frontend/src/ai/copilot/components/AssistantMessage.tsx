@@ -27,7 +27,7 @@ function actionFromCall(call: ToolCall): ActionProposal | null {
 export const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) => (
   <div className="flex gap-3">
     <div className="shrink-0 w-7 h-7 mt-0.5 rounded-full bg-gradient-to-br from-primary-700 to-primary-900 dark:from-primary-800 dark:to-primary-950 flex items-center justify-center shadow-sm">
-      <Sparkles className="w-3.5 h-3.5 text-accent-300" />
+      <Sparkles className="w-4 h-4 text-accent-300" />
     </div>
     <div className="flex-1 min-w-0">
       <div

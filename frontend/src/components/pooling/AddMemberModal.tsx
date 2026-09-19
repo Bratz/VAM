@@ -205,7 +205,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
                   className="w-full flex items-center justify-between gap-2 px-3 py-2 text-body-sm font-medium text-warning-700 dark:text-warning-300"
                 >
                   <span className="flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" /> {bulkResult.skipped.length} account(s) skipped
+                    <AlertTriangle className="w-4 h-4" /> {bulkResult.skipped.length} account(s) skipped
                   </span>
                   {showSkipped ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>

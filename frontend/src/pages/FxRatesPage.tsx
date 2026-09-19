@@ -12,11 +12,7 @@ import { Page } from '../components/layout/Page';
  * table stays in view. Stats are operational (freshness) not inventory.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  TrendingUp, Plus, RefreshCw, Search, Loader2,
-  ArrowRightLeft, Clock, CheckCircle2, XCircle, AlertTriangle, MinusCircle,
-  Copy, Globe, Building2, Edit2, ArrowUpDown, Database, Zap, X,
-} from 'lucide-react';
+import { TrendingUp, Plus, RefreshCw, Search, Loader2, ArrowRightLeft, Clock, XCircle, AlertTriangle, MinusCircle, Copy, Globe, Building2, ArrowUpDown, Database, Zap, X, Pencil, CheckCircle } from 'lucide-react';
 import { Card, Button, Input, StatusIconBadge, Drawer, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -53,7 +49,7 @@ const SOURCE_CONFIG: Record<string, { label: string; icon: any }> = {
   CBS: { label: 'CBS', icon: Database },
   SWIFT: { label: 'SWIFT', icon: Zap },
   API: { label: 'API', icon: Globe },
-  MANUAL: { label: 'Manual', icon: Edit2 },
+  MANUAL: { label: 'Manual', icon: Pencil },
 };
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'AED', 'SAR', 'JPY', 'CHF', 'CNY', 'INR', 'SGD'];
@@ -96,7 +92,7 @@ const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs,
   if (ageMs < FRESH_THRESHOLD_MS) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300">
-        <CheckCircle2 className="w-3 h-3" /> Fresh
+        <CheckCircle className="w-3 h-3" /> Fresh
       </span>
     );
   }
@@ -200,7 +196,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
             const SourceIcon = sourceConfig.icon;
             return (
               <div className="flex items-center gap-1.5 text-body-sm text-neutral-700 dark:text-neutral-200">
-                <SourceIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+                <SourceIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 {sourceConfig.label}
               </div>
             );
@@ -547,7 +543,7 @@ const FxRatesPage: React.FC = () => {
 
       {/* Operational stats */}
       <StatStrip>
-        <StatTile label="Fresh" value={stats.freshCount} tone="success" icon={<CheckCircle2 className="w-5 h-5" />} />
+        <StatTile label="Fresh" value={stats.freshCount} tone="success" icon={<CheckCircle className="w-5 h-5" />} />
         <StatTile
           label="Stale"
           value={stats.staleCount}

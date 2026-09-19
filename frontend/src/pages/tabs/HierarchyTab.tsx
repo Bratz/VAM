@@ -4,23 +4,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  GitBranch,
-  ChevronRight,
-  CheckCircle,
-  Building2,
-  Layers,
-  Search,
-  RefreshCw,
-  Info,
-  AlertCircle,
-  Landmark,
-  CreditCard,
-  Smartphone,
-  Banknote,
-  FileText,
-  Wallet,
-} from 'lucide-react';
+import { GitBranch, ChevronRight, CheckCircle, Building2, Layers, Search, RefreshCw, Info, Landmark, CreditCard, Smartphone, Banknote, FileText, Wallet, XCircle } from 'lucide-react';
 import { Input, Button, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, SelectField } from './FormComponents';
@@ -428,7 +412,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
           </div>
         ) : (
           <div className="text-center py-12 border border-dashed border-neutral-300 rounded-lg">
-            <GitBranch className="w-10 h-10 mx-auto mb-3 text-neutral-400" />
+            <GitBranch className="w-8 h-8 mx-auto mb-3 text-neutral-400" />
             <p className="text-neutral-600 dark:text-neutral-300 mb-2">No hierarchy nodes available</p>
             <p className="body-sm mb-4">
               Load the hierarchy to assign this account to a node
@@ -449,7 +433,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
         {/* Error */}
         {errors.hierarchyNodeId && (
           <Alert variant="danger" className="mt-4">
-            <AlertCircle className="w-4 h-4" />
+            <XCircle className="w-4 h-4" />
             {errors.hierarchyNodeId}
           </Alert>
         )}

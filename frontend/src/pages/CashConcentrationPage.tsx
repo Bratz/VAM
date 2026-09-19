@@ -1,16 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Play,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Layers,
-  TrendingUp,
-  Building2,
-  AlertCircle,
-  Filter,
-  History,
-} from 'lucide-react';
+import { Play, Loader2, Plus, RefreshCw, Layers, TrendingUp, Building2, Filter, History, XCircle } from 'lucide-react';
 import { Card, Button, Select, StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { cn } from '../utils';
@@ -44,7 +33,7 @@ const LoadingSpinner: React.FC = () => (
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card className="bg-error-50 dark:bg-error-500/10 border-error-200 dark:border-error-500/30 animate-fade-in" style={{ animationDelay: '0.1s' }}>
     <div className="flex items-center gap-4 p-4">
-      <StatusIconBadge tone="error" icon={AlertCircle} />
+      <StatusIconBadge tone="error" icon={XCircle} />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
         <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
@@ -307,7 +296,7 @@ const CashConcentrationPage: React.FC = () => {
           value: <TileAmount value={todaySwept} showCurrency={false} />,
           sub: 'Net concentration today',
         }}
-        icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}

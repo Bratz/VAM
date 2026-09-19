@@ -148,8 +148,8 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
               className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-700"
             >
               {isExpanded
-                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
+                ? <ChevronDown className="w-4 h-4 text-neutral-400" />
+                : <ChevronRight className="w-4 h-4 text-neutral-400" />}
             </button>
           ) : <span className="w-[18px]" />}
           {mode === 'legalEntity'
@@ -160,7 +160,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
           <span className={cn('truncate', isSelected ? 'font-medium text-primary-900 dark:text-neutral-50' : 'text-neutral-700 dark:text-neutral-200')}>
             {nodeLabel(n)}
           </span>
-          {isSelected && resolving && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary-400" />}
+          {isSelected && resolving && <Loader2 className="w-4 h-4 animate-spin text-primary-400" />}
         </div>
         {isExpanded && children.map(c => renderNode(c, depth + 1))}
       </div>

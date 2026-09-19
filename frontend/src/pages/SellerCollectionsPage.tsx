@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Search, Loader2, AlertCircle, RefreshCw, Download, Eye, CreditCard, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { ShoppingBag, Search, Loader2, RefreshCw, Download, Eye, CreditCard, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
@@ -118,7 +118,7 @@ const SellerCollectionsPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>

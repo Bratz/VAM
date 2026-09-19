@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Play, Clock, CheckCircle, XCircle, Loader2, AlertCircle, List } from 'lucide-react';
+import { RefreshCw, Play, Clock, CheckCircle, XCircle, Loader2, List } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { syncAdminApi } from '../services/api';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -92,7 +92,7 @@ const SyncAdminPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 dark:bg-error-500/10 border-error-200 dark:border-error-500/30">
           <div className="flex items-center gap-3 p-4">
-            <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+            <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>

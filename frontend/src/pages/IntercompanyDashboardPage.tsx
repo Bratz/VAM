@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import {
-  ArrowLeftRight, Building2, Plus, CheckCircle, CheckCircle2, Clock, AlertCircle, Loader2,
-  RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, ArrowLeft,
-  GitMerge, Send, Download, Filter, Wallet, CreditCard, Scale,
-  BarChart3, Activity, Zap, Receipt, Building, X, XCircle, Ban,
-} from 'lucide-react';
+import { ArrowLeftRight, Building2, Plus, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, ArrowLeft, GitMerge, Send, Download, Filter, Wallet, CreditCard, Scale, BarChart3, Activity, Zap, Receipt, X, XCircle, Ban, AlertTriangle } from 'lucide-react';
 import { Card, Button, Badge, Input, StatusIconBadge, StatTile } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -286,7 +281,7 @@ const LoadingSpinner: React.FC<{ text?: string }> = ({ text = 'Loading...' }) =>
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
     <div className="flex items-center gap-3 p-4">
-      <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+      <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
         <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
@@ -435,7 +430,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       {/* Error Display */}
       {error && (
         <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 dark:bg-error-500/10 dark:border-error-500/30">
-          <AlertCircle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
+          <XCircle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
           <span className="text-body-sm text-error-700 dark:text-error-300">{error}</span>
         </div>
       )}
@@ -572,7 +567,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           {!preview.withinCreditLimit && (
             <div className="p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
               <p className="text-body-sm text-error-700 dark:text-error-300">
-                ⚠️ Amount exceeds available credit limit ({formatCurrency(preview.availableLimit, formData.currencyCode)})
+                <AlertTriangle className="w-4 h-4 inline align-text-bottom mr-1" />Amount exceeds available credit limit ({formatCurrency(preview.availableLimit, formData.currencyCode)})
               </p>
             </div>
           )}
@@ -1125,7 +1120,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               value: <TileAmount value={stats.totalCoboVolume} currency="AED" />,
               sub: `${stats.totalCoboTransactions} collections on behalf`,
             }}
-            icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+            icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
           />
 
           {/* Operational metrics — secondary strip below the hero. */}
@@ -1263,7 +1258,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <StatTile tone="primary" icon={<CreditCard className="w-5 h-5" />} label="Total POBO" value={stats?.totalPoboTransactions || 0} />
             <StatTile tone="success" icon={<TrendingUp className="w-5 h-5" />} label="POBO Volume" value={<TileAmount value={stats?.totalPoboVolume || 0} currency="AED" />} />
             <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Pending Recharges" value={positionSummary?.pendingRecharges || 0} />
-            <StatTile tone="danger" icon={<AlertCircle className="w-5 h-5" />} label="Outstanding" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
+            <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Outstanding" value={<TileAmount value={positionSummary?.totalOutstandingPayables || 0} currency="AED" />} />
           </StatStrip>
 
           <Card hover>
@@ -1763,7 +1758,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                                   {rechargeProcessing === recharge.id ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                   ) : (
-                                    <CheckCircle2 className="w-4 h-4" />
+                                    <CheckCircle className="w-4 h-4" />
                                   )}
                                 </Button>
                                 <Button

@@ -23,44 +23,7 @@
  */
 
 import React from 'react';
-import {
-  LayoutDashboard,
-  Building2,
-  ArrowLeftRight,
-  Users,
-  FileText,
-  Settings,
-  Wallet,
-  Layers,
-  Link2,
-  FolderKanban,
-  CreditCard,
-  Globe,
-  AlertTriangle,
-  GitBranch,
-  Building,
-  GitMerge,
-  Receipt,
-  Handshake,
-  Combine,
-  Home,
-  MoreHorizontal,
-  Send,
-  QrCode,
-  Landmark,
-  CircleDot,
-  Shield,
-  Percent,
-  Upload,
-  TrendingUp,
-  ShoppingCart,
-  Store,
-  DollarSign,
-  Sparkles,    // Insights section / Treasury Copilot
-  Droplets,    // Multi-Bank Liquidity (water metaphor differentiates from Globe used for Currency Mirrors)
-  Briefcase,   // Legal Entities (differentiates from Bank Accounts which uses Building)
-  FlaskConical, // Simulator (sandbox — the lab-flask metaphor; reserved for the Simulator only)
-} from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Home, MoreHorizontal, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -122,7 +85,7 @@ export const navSections: NavSection[] = [
     title: 'Accounts & Structure',
     items: [
       { icon: <Building2 className="w-5 h-5" />, label: 'Virtual Accounts', href: 'accounts' },
-      { icon: <Building className="w-5 h-5" />, label: 'Bank Accounts', href: 'physical-accounts' },
+      { icon: <Building2 className="w-5 h-5" />, label: 'Bank Accounts', href: 'physical-accounts' },
       { icon: <QrCode className="w-5 h-5" />, label: 'VIBAN Management', href: 'viban' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Account Linking', href: 'account-attachments' },
       { icon: <FolderKanban className="w-5 h-5" />, label: 'Programs', href: 'programs' },

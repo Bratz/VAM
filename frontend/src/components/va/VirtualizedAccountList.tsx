@@ -144,7 +144,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
         </div>
         {searchable && (
           <div className="relative w-56 shrink-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               value={query}

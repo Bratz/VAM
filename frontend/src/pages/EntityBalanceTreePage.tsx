@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import {
-  ChevronRight, Building2, Wallet, TrendingUp, TrendingDown, Globe,
-  DollarSign, RefreshCw, Layers, Loader2, AlertCircle, Eye, GitBranch, Crown,
-  PiggyBank, Coins, Scale, AlertTriangle, Banknote, ArrowLeftRight,
-  Search, Maximize2, Minimize2, LayoutGrid, FolderKanban,
-  Network, TreeDeciduous, Users,
-} from 'lucide-react';
+import { ChevronRight, Building2, Wallet, TrendingUp, TrendingDown, Globe, DollarSign, RefreshCw, Layers, Loader2, Eye, GitBranch, Crown, PiggyBank, Coins, Scale, AlertTriangle, Banknote, ArrowLeftRight, Search, Maximize2, Minimize2, LayoutGrid, FolderKanban, Network, TreeDeciduous, Users, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, Select, StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -507,15 +501,15 @@ const EntityCard: React.FC<EntityCardProps> = ({
           </div>
           <div className="flex items-center gap-4 body-sm mt-1.5">
             <span className="flex items-center gap-1">
-              <Globe className="w-3.5 h-3.5" />
+              <Globe className="w-4 h-4" />
               {entity.countryCode || 'N/A'}
             </span>
             <span className="flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5" />
+              <DollarSign className="w-4 h-4" />
               {entity.functionalCurrency}
             </span>
             <span className="flex items-center gap-1">
-              <Wallet className="w-3.5 h-3.5" />
+              <Wallet className="w-4 h-4" />
               {Object.values(entity.accounts).flat().length} accounts
             </span>
           </div>
@@ -704,7 +698,7 @@ const PyramidView: React.FC<PyramidViewProps> = ({
       {/* Corporate Total - Top of Pyramid */}
       <div className="w-72 bg-neutral-800 rounded-lg p-6 text-center shadow-xl">
         <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-          <Globe className="w-7 h-7 text-white" />
+          <Globe className="w-6 h-6 text-white" />
         </div>
         <p className="text-white/70 text-body-sm font-medium">Corporate Total</p>
         <p className="stat-value text-white mt-1">
@@ -860,10 +854,10 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
             'transition-transform duration-200',
             isSectionExpanded && 'rotate-90'
           )}>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
           </div>
           <div className={cn('p-1.5 rounded-lg', config.bgColor)}>
-            <Icon className={cn('w-3.5 h-3.5', config.color)} />
+            <Icon className={cn('w-4 h-4', config.color)} />
           </div>
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2">
@@ -1667,7 +1661,7 @@ const EntityBalanceTreePage: React.FC = () => {
       {error && (
         <div className="bg-error-50 border border-error-200 rounded-lg p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+            <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
             <span className="text-error-800 font-medium dark:text-error-300">{error}</span>
           </div>
           <Button variant="secondary" size="sm" onClick={() => loadHierarchy()}>
@@ -1680,7 +1674,7 @@ const EntityBalanceTreePage: React.FC = () => {
       {loading && (
         <div className="flex items-center justify-center py-20 animate-fade-in">
           <div className="text-center">
-            <Loader2 className="w-10 h-10 animate-spin text-primary-600 mx-auto dark:text-primary-200" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary-600 mx-auto dark:text-primary-200" />
             <p className="text-neutral-500 mt-4 font-medium dark:text-neutral-400">Loading hierarchy...</p>
           </div>
         </div>

@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Link2, Plus, Search, Loader2,
-  Eye, Shield, Users, Building2, Layers,
-  CheckCircle2, Clock, Ban, RefreshCw, UserCheck, Lock,
-  ArrowRightLeft, Key, Percent, AlertTriangle, X,
-  ChevronDown, Wallet, Globe, MapPin,
-} from 'lucide-react';
+import { Link2, Plus, Search, Loader2, Eye, Shield, Users, Building2, Layers, Clock, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, StatTile, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -582,7 +576,7 @@ const AccountAttachmentsPage: React.FC = () => {
           value: displayStats.activeAttachments,
           sub: `${displayStats.pendingApproval} pending approval`,
         }}
-        icon={<Link2 className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<Link2 className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}
@@ -689,7 +683,7 @@ const AccountAttachmentsPage: React.FC = () => {
               render: (_, att) => (
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm" onClick={() => { setSelectedAttachment(att); setShowDetailModal(true); }}><Eye className="w-4 h-4" /></Button>
-                  {att.status === 'PENDING_APPROVAL' && <Button variant="ghost" size="sm" onClick={() => handleApprove(att.id)} className="text-success-600 dark:text-success-300" disabled={submitting}><CheckCircle2 className="w-4 h-4" /></Button>}
+                  {att.status === 'PENDING_APPROVAL' && <Button variant="ghost" size="sm" onClick={() => handleApprove(att.id)} className="text-success-600 dark:text-success-300" disabled={submitting}><CheckCircle className="w-4 h-4" /></Button>}
                   {att.status === 'ACTIVE' && <Button variant="ghost" size="sm" onClick={() => handleSuspend(att.id)} className="text-warning-600 dark:text-warning-300" disabled={submitting}><Ban className="w-4 h-4" /></Button>}
                 </div>
               ),
@@ -733,7 +727,7 @@ const AccountAttachmentsPage: React.FC = () => {
               </div>
             )}
             <div className="flex gap-3 pt-4 border-t">
-              {selectedAttachment.status === 'PENDING_APPROVAL' && <Button className="flex-1" onClick={() => { handleApprove(selectedAttachment.id); setShowDetailModal(false); }} disabled={submitting}><CheckCircle2 className="w-4 h-4 mr-2" />Approve</Button>}
+              {selectedAttachment.status === 'PENDING_APPROVAL' && <Button className="flex-1" onClick={() => { handleApprove(selectedAttachment.id); setShowDetailModal(false); }} disabled={submitting}><CheckCircle className="w-4 h-4 mr-2" />Approve</Button>}
               {selectedAttachment.status === 'ACTIVE' && (
                 <>
                   <Button variant="outline" className="flex-1" onClick={() => { handleSuspend(selectedAttachment.id); setShowDetailModal(false); }} disabled={submitting}><Ban className="w-4 h-4 mr-2" />Suspend</Button>

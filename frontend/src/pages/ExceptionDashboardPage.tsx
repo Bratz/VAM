@@ -17,31 +17,7 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  AlertTriangle,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Search,
-  Filter,
-  RefreshCw,
-  Download,
-  Loader2,
-  AlertCircle,
-  Eye,
-  RotateCcw,
-  Trash2,
-  FileText,
-  DollarSign,
-  CreditCard,
-  X,
-  Info,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  Target,
-  History,
-} from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, RotateCcw, Trash2, FileText, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
@@ -101,7 +77,7 @@ const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
   IN_PROGRESS: { label: 'In Progress', variant: 'info', icon: RefreshCw },
   ON_HOLD: { label: 'On Hold', variant: 'neutral', icon: Eye },
   ESCALATED: { label: 'Escalated', variant: 'error', icon: AlertTriangle },
-  RESOLVED: { label: 'Resolved', variant: 'success', icon: CheckCircle2 },
+  RESOLVED: { label: 'Resolved', variant: 'success', icon: CheckCircle },
   WRITTEN_OFF: { label: 'Written Off', variant: 'neutral', icon: XCircle },
   RETURNED: { label: 'Returned', variant: 'error', icon: RotateCcw },
 };
@@ -114,7 +90,7 @@ const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
 const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.FC<{ className?: string }> }> = {
   UNMATCHED_PAYMENT: { label: 'Unmatched Payment', icon: CreditCard },
   RECONCILIATION_DIFF: { label: 'Reconciliation Difference', icon: History },
-  FAILED_PAYMENT: { label: 'Failed Payment', icon: AlertCircle },
+  FAILED_PAYMENT: { label: 'Failed Payment', icon: XCircle },
   INVALID_VIBAN: { label: 'Invalid VIBAN', icon: X },
   AMOUNT_MISMATCH: { label: 'Amount Mismatch', icon: Search },
   DUPLICATE_PAYMENT: { label: 'Duplicate Payment', icon: AlertTriangle },
@@ -142,7 +118,7 @@ const Toast: React.FC<{ toast: ToastNotification; onDismiss: (id: string) => voi
   }, [toast.id, toast.duration, onDismiss]);
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-success-500 dark:text-success-300" />,
+    success: <CheckCircle className="w-5 h-5 text-success-500 dark:text-success-300" />,
     error: <XCircle className="w-5 h-5 text-error-500 dark:text-error-300" />,
     warning: <AlertTriangle className="w-5 h-5 text-warning-500 dark:text-warning-300" />,
     info: <Info className="w-5 h-5 text-info-500 dark:text-info-300" />,
@@ -475,7 +451,7 @@ const ExceptionDashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <SummaryCard title="Open Exceptions" count={summary.openCount} amount={summary.openAmount} icon={Clock} color="warning" detail={summary.agedOver30Days ? `${summary.agedOver30Days} aged >30 days` : undefined} onClick={() => handleStatusFilter('OPEN')} isActive={filters.status === 'OPEN'} delay={0.1} />
           <SummaryCard title="In Progress" count={summary.inProgressCount} amount={summary.inProgressAmount} icon={RefreshCw} color="info" onClick={() => handleStatusFilter('IN_PROGRESS')} isActive={filters.status === 'IN_PROGRESS'} delay={0.15} />
-          <SummaryCard title="Resolved" count={summary.resolvedCount} amount={summary.resolvedAmount} icon={CheckCircle2} color="success" detail={summary.todayResolved ? `${summary.todayResolved} resolved today` : undefined} onClick={() => handleStatusFilter('RESOLVED')} isActive={filters.status === 'RESOLVED'} delay={0.2} />
+          <SummaryCard title="Resolved" count={summary.resolvedCount} amount={summary.resolvedAmount} icon={CheckCircle} color="success" detail={summary.todayResolved ? `${summary.todayResolved} resolved today` : undefined} onClick={() => handleStatusFilter('RESOLVED')} isActive={filters.status === 'RESOLVED'} delay={0.2} />
           <SummaryCard title="Written Off" count={summary.writtenOffCount} amount={summary.writtenOffAmount} icon={XCircle} color="neutral" onClick={() => handleStatusFilter('WRITTEN_OFF')} isActive={filters.status === 'WRITTEN_OFF'} delay={0.25} />
         </div>
       )}
@@ -506,12 +482,12 @@ const ExceptionDashboardPage: React.FC = () => {
         ) : error ? (
           <div className="p-6">
             <div className="flex items-center gap-3 p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
-              <StatusIconBadge tone="error" icon={AlertCircle} className="shrink-0" />
+              <StatusIconBadge tone="error" icon={XCircle} className="shrink-0" />
               <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
             </div>
           </div>
         ) : exceptions.length === 0 ? (
-          <EmptyState icon={<CheckCircle2 className="w-12 h-12" />} title="No exceptions found" description={filters.status ? 'Try adjusting your filters' : 'All payments have been matched'} />
+          <EmptyState icon={<CheckCircle className="w-12 h-12" />} title="No exceptions found" description={filters.status ? 'Try adjusting your filters' : 'All payments have been matched'} />
         ) : (
           <div>{exceptions.map((exception) => <ExceptionRow key={exception.id} exception={exception} onView={() => loadExceptionDetail(exception)} onAllocate={() => handleOpenAllocation(exception)} selected={selectedException?.id === exception.id} />)}</div>
         )}

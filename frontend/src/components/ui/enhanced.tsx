@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
-import { X, Check, AlertCircle, Info } from 'lucide-react';
+import { X, Check, Info, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '../../utils';
 
 // ==================== Modal Component ====================
@@ -396,20 +396,20 @@ export const Alert: React.FC<AlertProps> = ({
     },
     warning: {
       container: 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30',
-      icon: <AlertCircle className="w-5 h-5 text-warning-600 dark:text-warning-300" />,
+      icon: <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />,
       title: 'text-warning-800 dark:text-warning-300',
       content: 'text-warning-700 dark:text-warning-300',
     },
     error: {
       container: 'bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30',
-      icon: <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />,
+      icon: <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />,
       title: 'text-error-800 dark:text-error-300',
       content: 'text-error-700 dark:text-error-300',
     },
         // Alias: 'danger' maps to 'error' styling
     danger: {
       container: 'bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30',
-      icon: <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />,
+      icon: <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />,
       title: 'text-error-800 dark:text-error-300',
       content: 'text-error-700 dark:text-error-300',
     },

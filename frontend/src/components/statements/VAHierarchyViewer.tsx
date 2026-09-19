@@ -10,22 +10,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  ChevronRight,
-  ChevronDown,
-  Layers,
-  CreditCard,
-  ArrowDownRight,
-  ArrowUpRight,
-  FileText,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle,
-  PauseCircle,
-  Ban,
-  Coins,
-  GitBranch,
-} from 'lucide-react';
+import { ChevronRight, ChevronDown, Layers, CreditCard, ArrowDownRight, ArrowUpRight, FileText, RefreshCw, CheckCircle, PauseCircle, Ban, Coins, GitBranch, XCircle } from 'lucide-react';
 
 // Suppress unused variable warnings for props that are passed but may not be used in all code paths
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -78,8 +63,8 @@ const statusConfig: Record<string, {
   ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle },
   SUSPENDED: { label: 'Suspended', variant: 'warning', icon: PauseCircle },
   BLOCKED: { label: 'Blocked', variant: 'error', icon: Ban },
-  INACTIVE: { label: 'Inactive', variant: 'neutral', icon: AlertCircle },
-  CLOSED: { label: 'Closed', variant: 'neutral', icon: AlertCircle },
+  INACTIVE: { label: 'Inactive', variant: 'neutral', icon: XCircle },
+  CLOSED: { label: 'Closed', variant: 'neutral', icon: XCircle },
 };
 
 // ============================================================================
@@ -220,7 +205,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             }}
             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-4 h-4" />
           </Button>
         )}
       </div>
@@ -392,7 +377,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
   if (error) {
     return (
       <Card className={cn('text-center py-8', className)}>
-        <AlertCircle className="w-12 h-12 text-error-300 mx-auto mb-4" />
+        <XCircle className="w-12 h-12 text-error-300 mx-auto mb-4" />
         <h3 className="section-title mb-2">Failed to Load Hierarchy</h3>
         <p className="text-neutral-500 dark:text-neutral-400 mb-4">{error}</p>
         <Button variant="outline" onClick={loadHierarchy} leftIcon={<RefreshCw className="w-4 h-4" />}>
@@ -437,7 +422,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
             <Button variant="ghost" size="sm" onClick={collapseAll}>
               Collapse
             </Button>
-            <Button variant="outline" size="sm" onClick={loadHierarchy} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+            <Button variant="outline" size="sm" onClick={loadHierarchy} leftIcon={<RefreshCw className="w-4 h-4" />}>
               Refresh
             </Button>
           </div>

@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Layers,
-  Plus,
-  TrendingUp,
-  Users,
-  DollarSign,
-  RefreshCw,
-  Building2,
-  AlertCircle,
-} from 'lucide-react';
+import { Layers, Plus, TrendingUp, Users, DollarSign, RefreshCw, Building2, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
@@ -65,7 +56,7 @@ const LoadingSpinner: React.FC = () => (
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card padding="sm" className="bg-error-50 dark:bg-error-500/10 border-error-200 dark:border-error-500/30 animate-fade-in">
     <div className="flex items-center gap-3">
-      <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+      <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300 text-body-sm">Failed to load data</p>
         <p className="caption-error">{message}</p>
@@ -291,7 +282,7 @@ const NotionalPoolingPage: React.FC = () => {
           value: <TileAmount value={filteredStats.totalSavings} currency="AED" />,
           sub: 'Interest benefit from pooling',
         }}
-        icon={<DollarSign className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}

@@ -6,18 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import {
-  Globe,
-  AlertCircle,
-  Check,
-  Loader2,
-  ChevronRight,
-  Wallet,
-  AlertTriangle,
-  Info,
-  X,
-  Coins,
-} from 'lucide-react';
+import { Globe, Check, Loader2, ChevronRight, Wallet, AlertTriangle, Info, X, Coins, XCircle } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
 import {
@@ -582,7 +571,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
                       <span className="body-sm flex items-center gap-1">
-                        <Coins className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-300" />
+                        <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
                         Currency Mirrors
                       </span>
                       <span className="body-strong">
@@ -593,7 +582,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="body-sm flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5 text-warning-600 dark:text-warning-300" />
+                        <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                         Exception VAs
                       </span>
                       <span className="body-strong">
@@ -622,7 +611,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                         {createCurrencyMirror && (
                           <li className="flex items-center gap-1">
                             <span>•</span>
-                            <Coins className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-300" />
+                            <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
                             <span>
                               {currencyMirrorCount} Currency Mirror(s) for{' '}
                               {allCurrencies.join(', ')}
@@ -632,7 +621,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                         {createExceptionVa && (
                           <li className="flex items-center gap-1">
                             <span>•</span>
-                            <AlertTriangle className="w-3.5 h-3.5 text-warning-600 dark:text-warning-300" />
+                            <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                             <span>
                               {exceptionVaCount} Exception VA(s) for{' '}
                               {allCurrencies.join(', ')}
@@ -647,7 +636,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                 {/* Warning */}
                 <div className="p-4 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
                     <p className="text-body-sm text-warning-700 dark:text-warning-300">
                       This action cannot be undone. Make sure the configuration is
                       correct before proceeding.
@@ -661,7 +650,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
             {error && (
               <div className="mt-4 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 mt-0.5" />
+                  <XCircle className="w-5 h-5 text-error-600 dark:text-error-300 mt-0.5" />
                   <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
                 </div>
               </div>

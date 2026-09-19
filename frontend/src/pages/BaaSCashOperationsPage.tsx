@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Wallet, Plus, Search, ArrowUpRight, ArrowDownRight, ArrowLeftRight,
-  Users, TrendingUp, MoreHorizontal, Eye, RefreshCw, Send, Download,
-  Loader2, AlertCircle, CheckCircle, Building2, CreditCard, Banknote,
-  Smartphone, QrCode, Store, Receipt, Clock, Filter, Calendar,
-  ChevronDown, ChevronUp, Copy, Printer, FileText, Upload, X,
-} from 'lucide-react';
+import { Wallet, Plus, Search, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Users, TrendingUp, MoreHorizontal, Eye, RefreshCw, Send, Download, Loader2, CheckCircle, Building2, CreditCard, Banknote, Smartphone, QrCode, Store, Receipt, Clock, Filter, Calendar, ChevronDown, ChevronUp, Copy, Printer, FileText, Upload, X, XCircle } from 'lucide-react';
 import { Card, Button, Input, Badge, EmptyState , StatusIconBadge } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Alert, Avatar } from '../components/ui/enhanced';
 import { cn, formatCurrency, formatDate } from '../utils';
@@ -610,7 +604,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       )}
       {error && (
         <Alert variant="error" className="flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />{error}
+          <XCircle className="w-4 h-4" />{error}
           <button onClick={() => setError(null)} className="ml-auto text-body-sm underline">Dismiss</button>
         </Alert>
       )}

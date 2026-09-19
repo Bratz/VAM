@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Receipt, Globe, Building2, Plus, Search, Edit2, Trash2, Check, DollarSign, Settings,
-  Loader2, RefreshCw, Download, Upload, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText,
-  Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store,
-  Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign,
-} from 'lucide-react';
+import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, Download, Upload, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
 import { Button, Badge, Input, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -214,7 +209,7 @@ const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j
       },
       { key: 'reportingCurrency', header: 'Currency', render: (_, j) => <Badge variant="neutral" size="sm">{j.reportingCurrency}</Badge> },
       { key: 'status', header: 'Status', render: (_, j) => <Badge variant={j.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{j.status}</Badge> },
-      { key: 'actions', header: 'Actions', align: 'right', render: (_, j) => <Button variant="ghost" size="sm" onClick={() => onEdit(j)}><Edit2 className="w-4 h-4" /></Button> },
+      { key: 'actions', header: 'Actions', align: 'right', render: (_, j) => <Button variant="ghost" size="sm" onClick={() => onEdit(j)}><Pencil className="w-4 h-4" /></Button> },
     ]}
   />
 );
@@ -272,7 +267,7 @@ const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxCon
         key: 'actions', header: 'Actions', align: 'right',
         render: (_, c) => (
           <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Pencil className="w-4 h-4" /></Button>
             <Button variant="ghost" size="sm" onClick={() => onDelete(c.taxCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
           </div>
         ),
@@ -338,7 +333,7 @@ const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: 
         key: 'actions', header: 'Actions', align: 'right',
         render: (_, c) => (
           <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => onEdit(c)}><Pencil className="w-4 h-4" /></Button>
             <Button variant="ghost" size="sm" onClick={() => onDelete(c.chargeCode)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
           </div>
         ),

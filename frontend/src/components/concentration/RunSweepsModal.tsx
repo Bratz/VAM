@@ -146,7 +146,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
                         ? 'bg-primary-600 border-primary-600'
                         : 'border-neutral-300 dark:border-primary-700 hover:border-primary-400 dark:hover:border-primary-700'
                     )}>
-                      {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                      {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                     </div>
                     <StatusIconBadge tone="primary" icon={Layers} className="flex-shrink-0" />
                     <div className="flex-1 min-w-0">

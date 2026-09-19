@@ -338,7 +338,7 @@ export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
     <div>
       {(path.length > 1 || currentComposition.length > 1) && (
         <div className="mb-2 flex items-center gap-1 flex-wrap caption">
-          {path.length > 1 && <ChevronLeft size={14} className="shrink-0" />}
+          {path.length > 1 && <ChevronLeft className="w-4 h-4 shrink-0" />}
           {path.map((node, i) => (
             <React.Fragment key={node.id}>
               {i > 0 && <span className="text-neutral-400">›</span>}

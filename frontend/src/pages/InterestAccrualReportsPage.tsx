@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Percent, Clock, Download, RefreshCw,
-  TrendingUp, TrendingDown, Loader2, AlertCircle,
-  FileText, DollarSign, Eye, Building2,
-  CheckCircle, PiggyBank, CreditCard, BarChart3,
-  ArrowUpRight, Activity, Search
-} from 'lucide-react';
+import { Percent, Clock, Download, RefreshCw, TrendingUp, TrendingDown, Loader2, FileText, DollarSign, Eye, Building2, CheckCircle, PiggyBank, CreditCard, BarChart3, ArrowUpRight, Activity, Search, AlertTriangle, XCircle, X } from 'lucide-react';
 import { Card, Button, Badge, Input, Select , StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -355,7 +349,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       {unavailable && (
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
           <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="warning" icon={AlertCircle} className="dark:bg-warning-500/20" />
+            <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
             <span className="text-warning-700 font-medium dark:text-warning-300">
               Interest accrual reporting isn&apos;t available yet: this backend has no accrual service, so accruals can&apos;t be listed or run.
             </span>
@@ -367,10 +361,10 @@ const InterestAccrualReportsPage: React.FC = () => {
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="warning" icon={AlertCircle} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={XCircle} className="dark:bg-warning-500/20" />
               <span className="text-warning-700 font-medium dark:text-warning-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-warning-500 dark:text-warning-300 hover:text-warning-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-warning-500 dark:text-warning-300 hover:text-warning-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </Card>
       )}

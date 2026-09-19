@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  Hash, Plus, Search, Link, Unlink, Loader2, AlertCircle, RefreshCw,
-  Database, Settings, Trash2, Eye, Edit2, Copy, Check, Clock, AlertTriangle,
-  Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart,
-  Timer, X, TrendingUp
-} from 'lucide-react';
+import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, X, TrendingUp, XCircle, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -826,8 +821,8 @@ const VibanManagementPage: React.FC = () => {
           'bg-info-50 border-info-300 text-info-800 dark:bg-info-500/10 dark:text-info-300'
         }`}>
           {notification.type === 'success' && <Check className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />}
-          {notification.type === 'error' && <AlertCircle className="w-5 h-5 text-error-600 flex-shrink-0 dark:text-error-300" />}
-          {notification.type === 'info' && <AlertCircle className="w-5 h-5 text-info-600 flex-shrink-0 dark:text-info-300" />}
+          {notification.type === 'error' && <XCircle className="w-5 h-5 text-error-600 flex-shrink-0 dark:text-error-300" />}
+          {notification.type === 'info' && <XCircle className="w-5 h-5 text-info-600 flex-shrink-0 dark:text-info-300" />}
           <span className="flex-1">{notification.message}</span>
           <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 dark:text-neutral-400">
             <X className="w-4 h-4" />
@@ -869,7 +864,7 @@ const VibanManagementPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+              <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
               <span className="text-error-800 dark:text-error-300">{error}</span>
             </div>
             <Button size="sm" variant="ghost" onClick={() => setError(null)}><X className="w-4 h-4" /></Button>
@@ -1005,7 +1000,7 @@ const OverviewTab: React.FC<{
             </>
           ),
         }}
-        icon={<Hash className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<Hash className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational strip — neutral by default; only Reserved goes amber when
@@ -1044,7 +1039,7 @@ const OverviewTab: React.FC<{
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-              <Activity className="w-7 h-7 text-white" />
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="stat-value-sm">{formatNumber(stats.totalPaymentsRouted)}</p>
@@ -1055,7 +1050,7 @@ const OverviewTab: React.FC<{
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
-              <CreditCard className="w-7 h-7 text-white" />
+              <CreditCard className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="stat-value-sm">{formatCurrency(stats.totalAmountRouted)}</p>
@@ -1223,7 +1218,7 @@ const PoolsTab: React.FC<{
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => onViewDetails(pool)} className="flex-1"><Eye className="w-4 h-4 mr-1" />View</Button>
                     <Button size="sm" variant="outline" onClick={() => onGenerate(pool.id)} disabled={pool.status !== 'ACTIVE'} className="flex-1"><Plus className="w-4 h-4 mr-1" />Generate</Button>
-                    <Button size="sm" variant="ghost" onClick={() => onEdit(pool)}><Edit2 className="w-4 h-4" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => onEdit(pool)}><Pencil className="w-4 h-4" /></Button>
                     <Button size="sm" variant="ghost" onClick={() => onDelete(pool.id)} disabled={pool.assignedCount > 0 || processing} className="text-error-600 hover:bg-error-50 dark:text-error-300 dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
@@ -2067,7 +2062,7 @@ const PoolDetailView: React.FC<{
                 {v.vaNumber ? (
                   <div className="bg-success-50 rounded-lg px-2 py-1.5 border border-success-100 inline-block dark:bg-success-500/10 dark:border-success-500/30">
                     <div className="flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-success-600 dark:text-success-300" />
+                      <Building2 className="w-4 h-4 text-success-600 dark:text-success-300" />
                       <span className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</span>
                     </div>
                     {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
@@ -2084,9 +2079,9 @@ const PoolDetailView: React.FC<{
               <td className="p-3">
                 {v.referenceType ? (
                   <div className="flex items-center gap-2">
-                    {v.referenceType === 'ORDER' && <ShoppingCart className="w-3.5 h-3.5 text-primary-500" />}
-                    {v.referenceType === 'INVOICE' && <FileText className="w-3.5 h-3.5 text-info-500 dark:text-info-300" />}
-                    {v.referenceType === 'TERMINAL' && <CreditCard className="w-3.5 h-3.5 text-success-500 dark:text-success-300" />}
+                    {v.referenceType === 'ORDER' && <ShoppingCart className="w-4 h-4 text-primary-500" />}
+                    {v.referenceType === 'INVOICE' && <FileText className="w-4 h-4 text-info-500 dark:text-info-300" />}
+                    {v.referenceType === 'TERMINAL' && <CreditCard className="w-4 h-4 text-success-500 dark:text-success-300" />}
                     <div>
                       <p className="text-body-sm font-medium">{v.referenceId}</p>
                       <p className="caption">{v.referenceType}</p>

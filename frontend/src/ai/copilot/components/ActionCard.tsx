@@ -111,7 +111,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
               onClick={onConfirm}
               className="px-3 py-1.5 text-caption rounded-lg bg-primary-700 hover:bg-primary-800 text-white font-medium flex items-center gap-1.5 transition-colors"
             >
-              <Check className="w-3.5 h-3.5" />
+              <Check className="w-4 h-4" />
               Confirm
             </button>
           </div>
@@ -119,21 +119,21 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
 
         {state.kind === 'submitting' && (
           <div className="flex items-center gap-2 caption justify-end">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
             Executing…
           </div>
         )}
 
         {state.kind === 'executed' && (
           <div className="flex items-start gap-2 text-caption text-success-700 dark:text-success-300">
-            <Check className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <Check className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{state.message}</span>
           </div>
         )}
 
         {state.kind === 'cancelled' && (
           <div className="flex items-start gap-2 caption">
-            <X className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <X className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{state.message}</span>
           </div>
         )}
@@ -141,7 +141,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
         {state.kind === 'failed' && (
           <div className="flex items-center justify-between gap-2 caption-error">
             <div className="flex items-start gap-2">
-              <X className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <X className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{state.message}</span>
             </div>
             {!isDone && (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, AlertCircle, Layers, Building2, ArrowRight, Clock } from 'lucide-react';
+import { CheckCircle, Layers, Building2, ArrowRight, Clock, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, Button, Badge, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCompactCurrency, formatRelativeTime, cn } from '../../utils';
@@ -41,8 +41,8 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
                 !['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && 'bg-neutral-100 dark:bg-primary-800'
               )}>
                 {exec.status === 'SUCCESS' && <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
-                {exec.status === 'FAILED' && <AlertCircle className="w-6 h-6 text-error-600 dark:text-error-300" />}
-                {exec.status === 'SKIPPED' && <AlertCircle className="w-6 h-6 text-warning-600 dark:text-warning-300" />}
+                {exec.status === 'FAILED' && <XCircle className="w-6 h-6 text-error-600 dark:text-error-300" />}
+                {exec.status === 'SKIPPED' && <XCircle className="w-6 h-6 text-warning-600 dark:text-warning-300" />}
                 {!['SUCCESS', 'FAILED', 'SKIPPED'].includes(exec.status) && <Layers className="w-6 h-6 text-neutral-600 dark:text-neutral-300" />}
               </div>
               <div>
@@ -160,7 +160,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {exec.status === 'FAILED' && exec.errorMessage && (
           <Card className="bg-error-50/50 dark:bg-error-500/10 border-error-200/60 dark:border-error-500/30">
             <div className="flex items-start gap-4">
-              <StatusIconBadge tone="error" icon={AlertCircle} className="flex-shrink-0" />
+              <StatusIconBadge tone="error" icon={XCircle} className="flex-shrink-0" />
               <div>
                 <p className="font-semibold text-error-800 dark:text-error-300">Execution Failed</p>
                 <p className="text-body-sm text-error-700 dark:text-error-300 mt-1">{exec.errorMessage}</p>
@@ -173,7 +173,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {exec.status === 'SKIPPED' && exec.skipReason && (
           <Card className="bg-warning-50/50 dark:bg-warning-500/10 border-warning-200/60 dark:border-warning-500/30">
             <div className="flex items-start gap-4">
-              <StatusIconBadge tone="warning" icon={AlertCircle} className="flex-shrink-0" />
+              <StatusIconBadge tone="warning" icon={AlertTriangle} className="flex-shrink-0" />
               <div>
                 <p className="font-semibold text-warning-800 dark:text-warning-300">Execution Skipped</p>
                 <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1">{exec.skipReason}</p>

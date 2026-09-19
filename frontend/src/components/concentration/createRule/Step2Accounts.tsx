@@ -135,7 +135,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                             ? 'bg-primary-600 border-primary-600'
                             : 'border-neutral-300 dark:border-primary-700 hover:border-primary-400 dark:hover:border-primary-700'
                         )}>
-                          {isSelected && <CheckCircle className="w-3.5 h-3.5 text-white" />}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-white" />}
                         </div>
                         <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center flex-shrink-0">
                           <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />

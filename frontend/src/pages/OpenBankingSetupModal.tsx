@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Search,
-  Globe,
-  Shield,
-  Building2,
-  ChevronRight,
-  Loader2,
-  Check,
-  AlertCircle,
-} from 'lucide-react';
+import { Search, Globe, Shield, Building2, ChevronRight, Loader2, Check, XCircle } from 'lucide-react';
 import { Modal } from '../components/ui/enhanced';
 import { cn } from '../utils';
 
@@ -184,7 +175,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         {/* Error Display */}
         {error && (
           <div className="mb-4 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-error-600 dark:text-error-300" />
+            <XCircle className="w-4 h-4 text-error-600 dark:text-error-300" />
             <span className="text-body-sm text-error-700 dark:text-error-300">{error}</span>
           </div>
         )}

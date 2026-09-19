@@ -1,27 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  // Chrome (header / sidebar / mobile controls) — icons not handled by the
-  // navigation config still live here. Menu items themselves get their icons
-  // from config/navigation.tsx.
-  Bell,
-  Search,
-  Menu,
-  X,
-  ChevronDown,
-  LogOut,
-  User,
-  HelpCircle,
-  RefreshCw,
-  Plus,
-  Settings,         // user profile menu icon (not the nav Settings item)
-  Layers,           // mobile header logo medallion
-  ArrowLeftRight,   // mobile quick-action: Transfer
-  FileText,         // mobile quick-action: Statement
-  Moon,
-  Sun,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from 'lucide-react';
+import { Bell, Search, Menu, X, ChevronDown, LogOut, User, HelpCircle, RefreshCw, Plus, Settings, Layers, ArrowLeftRight, FileText, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../../utils';
 import { Avatar } from '../ui';
 import { BRAND } from '../../branding';
@@ -269,7 +247,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 >
                   <span>{section.title}</span>
                   <ChevronDown className={cn(
-                    'w-3.5 h-3.5 transition-transform duration-200',
+                    'w-4 h-4 transition-transform duration-200',
                     collapsedSections.has(section.title) && '-rotate-90'
                   )} />
                 </button>

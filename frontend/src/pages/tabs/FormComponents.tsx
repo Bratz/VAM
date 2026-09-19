@@ -4,7 +4,7 @@
 // ============================================================================
 
 import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 import { cn } from '../../utils';
 
 // ============================================================================
@@ -39,7 +39,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     )}
     {error && (
       <p className="caption-error flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" />
+        <XCircle className="w-3 h-3" />
         {error}
       </p>
     )}

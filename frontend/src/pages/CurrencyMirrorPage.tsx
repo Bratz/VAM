@@ -9,13 +9,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  * - fxRateApi from api.ts → FxRateController.java at /api/v1/treasury/fx-rates/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Globe, RefreshCw, ArrowRightLeft,
-  DollarSign, Euro, PoundSterling, Coins, BarChart3,
-  Clock, AlertTriangle, CheckCircle2, Settings,
-  Loader2, AlertCircle, Eye,
-  Calculator, Building, X,
-} from 'lucide-react';
+import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Settings, Loader2, Eye, Calculator, X, XCircle, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -698,7 +692,7 @@ const CurrencyMirrorPage: React.FC = () => {
         <Card className="bg-error-50 dark:bg-error-500/10 border-error-200 dark:border-error-500/30 animate-fade-in">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={AlertCircle} />
+              <StatusIconBadge tone="error" icon={XCircle} />
               <span className="text-error-700 dark:text-error-300 font-medium">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 dark:hover:text-error-200 p-1">
@@ -719,7 +713,7 @@ const CurrencyMirrorPage: React.FC = () => {
           value: <TileAmount value={stats.totalInBase} currency={baseCurrency} />,
           sub: `Across ${stats.currencyCount} ${stats.currencyCount === 1 ? 'currency' : 'currencies'} · last recalculated ${stats.lastRecalculated ? new Date(stats.lastRecalculated).toLocaleTimeString() : 'never'}`,
         }}
-        icon={<Globe className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<Globe className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}
@@ -738,7 +732,7 @@ const CurrencyMirrorPage: React.FC = () => {
           valueTone={staleCount > 0 ? 'warning' : 'success'}
           label="Stale Rates"
           value={staleCount}
-          icon={staleCount > 0 ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+          icon={staleCount > 0 ? <AlertTriangle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
           delay="0.2s"
         />
       </StatStrip>

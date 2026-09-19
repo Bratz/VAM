@@ -163,7 +163,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
 
         {shadows.length === 0 ? (
           <div className="flex flex-col items-center text-center gap-2 py-12">
-            <FlaskConical className="w-7 h-7 text-neutral-400" aria-hidden />
+            <FlaskConical className="w-6 h-6 text-neutral-400" aria-hidden />
             <p className="body-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
               Add a Physical Account from the inventory to begin designing the
               structure.

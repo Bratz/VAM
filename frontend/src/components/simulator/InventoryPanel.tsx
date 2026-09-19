@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, Loader2, AlertCircle, Plus, Check, Clock } from 'lucide-react';
+import { Building2, Loader2, Plus, Check, Clock, XCircle } from 'lucide-react';
 import { Card, Badge } from '../ui';
 import { cn, formatCurrency } from '../../utils';
 import { simulatorApi } from '../../services/simulatorApi';
@@ -158,7 +158,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
           </div>
         ) : error ? (
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 body-sm text-error-700 dark:text-error-300">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+            <XCircle className="w-4 h-4 shrink-0" />
             {error}
           </div>
         ) : groups.length === 0 ? (
@@ -171,7 +171,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
               <div key={g.bankCode}>
                 <div className="flex items-center gap-2 mb-1">
                   <Building2
-                    className="w-3.5 h-3.5 text-neutral-400 shrink-0"
+                    className="w-4 h-4 text-neutral-400 shrink-0"
                     aria-hidden
                   />
                   <span className="label">{g.bankName}</span>

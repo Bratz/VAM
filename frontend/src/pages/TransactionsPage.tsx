@@ -1,34 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Search,
-  Download,
-  Eye,
-  ArrowUpRight,
-  ArrowDownLeft,
-  ArrowLeftRight,
-  RefreshCw,
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Plus,
-  Send,
-  FileText,
-  Building2,
-  Landmark,
-  CreditCard,
-  Hash,
-  FileCode,
-  Info,
-  Layers,
-  List,
-  DollarSign,
-  Users,
-  TrendingUp,
-  TrendingDown,
-  Loader2,
-} from 'lucide-react';
+import { Search, Download, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Calendar, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
@@ -200,7 +171,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
       return <XCircle className="w-4 h-4 text-error-500 dark:text-error-300" />;
     case 'REVERSED':
     case 'CANCELLED':
-      return <AlertCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
+      return <XCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
     default:
       return null;
   }
@@ -332,7 +303,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               'w-14 h-14 rounded-lg flex items-center justify-center',
               getMovementBgClass(transaction.movementType)
             )}>
-              <MovementIcon type={transaction.movementType} className="w-7 h-7" />
+              <MovementIcon type={transaction.movementType} className="w-6 h-6" />
             </div>
             <div>
               <p className="section-title">{transaction.referenceNumber}</p>
@@ -2019,7 +1990,7 @@ const TransactionsPage: React.FC = () => {
                   onClick={() => { setViewMode('grouped'); setCurrentPage(0); }}
                   title="Business View - Groups related fund movements into one transaction"
                 >
-                  <Layers className="w-3.5 h-3.5" />
+                  <Layers className="w-4 h-4" />
                   <span className="hidden sm:inline">Business</span>
                 </button>
                 <button
@@ -2032,7 +2003,7 @@ const TransactionsPage: React.FC = () => {
                   onClick={() => { setViewMode('individual'); setCurrentPage(0); }}
                   title="Ledger View - Shows all individual entries"
                 >
-                  <List className="w-3.5 h-3.5" />
+                  <List className="w-4 h-4" />
                   <span className="hidden sm:inline">Ledger</span>
                 </button>
               </div>

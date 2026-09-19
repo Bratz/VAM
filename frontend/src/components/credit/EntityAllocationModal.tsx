@@ -3,11 +3,7 @@
  * Used by both CreditLimitsPage and LegalEntitiesPage
  */
 import React, { useState, useEffect } from 'react';
-import {
-  Building2, Crown, Landmark, Users, Briefcase, ArrowLeftRight,
-  FlaskConical, Building, AlertTriangle, Lock, CheckCircle,
-  ChevronDown, ChevronUp, Loader2, Wallet,
-} from 'lucide-react';
+import { Building2, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, AlertTriangle, Lock, CheckCircle, ChevronDown, ChevronUp, Loader2, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '../../utils';
 import { Modal } from '../ui/enhanced';
 
@@ -113,7 +109,7 @@ export const currencyConfig: Record<string, { symbol: string; name: string; colo
 export const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
   HOLDING: { label: 'Holding', icon: Crown, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
   SUBSIDIARY: { label: 'Subsidiary', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  BRANCH: { label: 'Branch', icon: Building, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
+  BRANCH: { label: 'Branch', icon: Building2, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },

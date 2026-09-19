@@ -5,10 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import {
-  Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle, Info, Layers, Tag, List, Edit2, RefreshCw,
-} from 'lucide-react';
+import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, Layers, Tag, List, RefreshCw, AlertTriangle, XCircle } from 'lucide-react';
 import { Modal } from './ui/enhanced';
 import { Card, Badge, Button, Input, Select } from './ui';
 import { cn } from '../utils';
@@ -451,7 +448,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         {/* Warning: Existing Nodes */}
         {hasExistingNodes && (
           <div className="bg-warning-50 border border-warning-300 rounded-lg p-3 flex gap-2 dark:bg-warning-500/10">
-            <AlertCircle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
+            <AlertTriangle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
             <div className="text-body-sm text-warning-800 dark:text-warning-300">
               <p className="font-medium">Hierarchy Already Has Nodes</p>
               <p className="mt-1 text-caption text-warning-700 dark:text-warning-300">
@@ -469,7 +466,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         {/* Error Display */}
         {error && (
           <div className="bg-error-50 border border-error-200 rounded-lg p-3 flex gap-2 dark:bg-error-500/10 dark:border-error-500/30">
-            <AlertCircle className="w-4 h-4 text-error-600 flex-shrink-0 dark:text-error-300" />
+            <XCircle className="w-4 h-4 text-error-600 flex-shrink-0 dark:text-error-300" />
             <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
           </div>
         )}
@@ -508,7 +505,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
           <div className="flex items-center gap-2 caption">
             {hasChanges ? (
               <>
-                <AlertCircle className="w-3 h-3 text-warning-500 dark:text-warning-300" />
+                <AlertTriangle className="w-3 h-3 text-warning-500 dark:text-warning-300" />
                 <span className="text-warning-600 dark:text-warning-300">Unsaved changes</span>
               </>
             ) : (

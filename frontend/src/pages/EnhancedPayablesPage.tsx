@@ -15,12 +15,7 @@ import { Select, StatusIconBadge, StatTile } from '../components/ui';
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Search, Filter, Plus, Send, Clock, FileText, Building, Eye,
-  AlertTriangle, RefreshCw, Loader2, X, Building2, ChevronDown,
-  Landmark, Calculator, ArrowRight, GitBranch, ExternalLink, Layers,
-  CheckCircle, XCircle, PlayCircle, MoreVertical, Calendar, Edit,
-} from 'lucide-react';
+import { Search, Filter, Plus, Send, Clock, FileText, Eye, AlertTriangle, RefreshCw, Loader2, X, Building2, ChevronDown, Landmark, Calculator, ArrowRight, GitBranch, ExternalLink, Layers, CheckCircle, XCircle, PlayCircle, MoreVertical, Calendar, Pencil } from 'lucide-react';
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
@@ -726,7 +721,7 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
           className="p-1.5 text-neutral-500 hover:text-info-600 dark:text-info-300 hover:bg-info-50 dark:bg-info-500/10 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-info-500/10"
           title="Edit"
         >
-          <Edit className="w-4 h-4" />
+          <Pencil className="w-4 h-4" />
         </button>
       )}
       {canApprove && (

@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight,
-  Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw,
-  Send, Download, Settings, Loader2, AlertCircle, CheckCircle, Building2,
-  Shield, Edit, Upload, FileText, UserCheck, XCircle, LayoutDashboard,
-  Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy,
-} from 'lucide-react';
+import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, Pencil, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, Button, Badge, Input, EmptyState } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -526,18 +520,12 @@ const kycStatusConfig: Record<string, { label: string; color: string; icon: Reac
   VERIFIED: { label: 'Verified', color: 'success', icon: <CheckCircle className="w-3 h-3" /> },
   PENDING: { label: 'Pending', color: 'warning', icon: <Clock className="w-3 h-3" /> },
   REJECTED: { label: 'Rejected', color: 'error', icon: <XCircle className="w-3 h-3" /> },
-  EXPIRED: { label: 'Expired', color: 'error', icon: <AlertCircle className="w-3 h-3" /> },
+  EXPIRED: { label: 'Expired', color: 'error', icon: <XCircle className="w-3 h-3" /> },
 };
 
 // ============================================================================
 // Utility Components
 // ============================================================================
-
-const ChevronRight = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="9,18 15,12 9,6" />
-  </svg>
-);
 
 const StatCard: React.FC<{
   label: string;
@@ -596,7 +584,7 @@ const ProgramCard: React.FC<{
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
             className="p-1.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
           >
-            <Edit className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           </button>
         </div>
       </div>
@@ -728,7 +716,7 @@ const WalletRow: React.FC<{
                   <Eye className="w-4 h-4" /> View Details
                 </button>
                 <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                  <Edit className="w-4 h-4" /> Edit Limits
+                  <Pencil className="w-4 h-4" /> Edit Limits
                 </button>
                 <hr className="my-1" />
                 <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50">
@@ -1103,7 +1091,7 @@ const WalletPage: React.FC = () => {
       )}
       {error && (
         <Alert variant="error" className="flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />{error}
+          <XCircle className="w-4 h-4" />{error}
           <button onClick={() => setError(null)} className="ml-auto text-body-sm underline">Dismiss</button>
         </Alert>
       )}

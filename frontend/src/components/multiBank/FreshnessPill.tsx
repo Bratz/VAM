@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, MinusCircle, CheckCircle } from 'lucide-react';
 import { cn } from '../../utils';
 import { ShadowSummary } from '../../services/api';
 
@@ -29,7 +29,7 @@ export const FreshnessPill: React.FC<{ shadow: ShadowSummary }> = ({ shadow }) =
     {shadow.stale
       ? <><AlertTriangle className="w-3 h-3" /> Stale</>
       : shadow.lastBalanceRefreshStatus === 'SUCCESS'
-        ? <><CheckCircle2 className="w-3 h-3" /> Fresh</>
+        ? <><CheckCircle className="w-3 h-3" /> Fresh</>
         : shadow.lastBalanceRefreshStatus === 'FAILED'
           ? <><XCircle className="w-3 h-3" /> Failed</>
           : <><MinusCircle className="w-3 h-3" /> Never</>

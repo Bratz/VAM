@@ -3,11 +3,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import {
-  Users, Plus, Search, CheckCircle, Trash2, Loader2, AlertCircle,
-  RefreshCw, Building2, Globe, CreditCard, ChevronRight, Eye,
-  MoreHorizontal, Clock, Ban,
-} from 'lucide-react';
+import { Users, Plus, Search, CheckCircle, Trash2, Loader2, RefreshCw, Building2, Globe, CreditCard, ChevronRight, Eye, MoreHorizontal, Clock, Ban, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { beneficiariesApi, Beneficiary } from '../services/api';
@@ -506,7 +502,7 @@ const BeneficiariesPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3 p-4">
-            <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
+            <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
             <span className="text-error-800 font-medium dark:text-error-300">{error}</span>
             <button
               onClick={() => setError(null)}

@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import {
-  Plus, Search, RefreshCw, Download, Eye, Settings, ArrowUpRight, ArrowDownRight,
-  Landmark, DollarSign, CreditCard, CheckCircle, AlertCircle, Clock, MoreHorizontal,
-  ExternalLink, Copy, Layers, X, Building2, Globe, Link2, Shield, Wifi, WifiOff,
-  Server, TrendingUp, TrendingDown, Activity, BarChart3, PieChart, Banknote,
-  FileText, Upload, ChevronDown, ChevronRight, Filter, Zap, GitBranch, Unlink,
-  AlertTriangle, Info, Loader2, MapPin, Check, Building, Users, Coins,
-  UserPlus, Database, User, FileCheck,
-} from 'lucide-react';
+import { Plus, Search, RefreshCw, Download, Eye, Settings, ArrowUpRight, ArrowDownRight, Landmark, DollarSign, CreditCard, CheckCircle, Clock, MoreHorizontal, ExternalLink, Copy, Layers, X, Building2, Globe, Link2, Shield, Wifi, WifiOff, Server, TrendingUp, TrendingDown, Activity, BarChart3, PieChart, Banknote, FileText, Upload, ChevronDown, ChevronRight, Filter, Zap, GitBranch, Unlink, AlertTriangle, Info, Loader2, MapPin, Check, Users, Coins, UserPlus, Database, User, FileCheck, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable, Input } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -585,7 +577,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         {/* Error Alert */}
         {error && (
           <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-body-sm">{error}</span>
           </div>
         )}
@@ -857,7 +849,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
       <div className="space-y-5">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-body-sm">{error}</span>
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-body-sm">{error}</span>
           </div>
         )}
 
@@ -1077,7 +1069,7 @@ const CreateAccountModal: React.FC<{
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isExternal ? "Link External Bank Account" : "Add Home Bank Account"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300"><AlertCircle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">{error}</span></div>}
+        {error && <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300"><XCircle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">{error}</span></div>}
         {!corporateId && <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg flex items-start gap-2 text-warning-700 dark:bg-warning-500/10 dark:border-warning-500/30 dark:text-warning-300"><AlertTriangle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">Please select a Corporate first.</span></div>}
         
         <div>
@@ -1431,7 +1423,7 @@ const PhysicalAccountsPage: React.FC = () => {
                 </>
               ),
             }}
-            icon={<Banknote className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+            icon={<Banknote className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
           />
         );
       })()}
@@ -1750,7 +1742,7 @@ const PhysicalAccountsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       {isStale && <Badge variant="warning" size="sm"><AlertTriangle className="w-3 h-3 mr-1" />Stale</Badge>}
                       {shadow.lastSyncStatus === 'SUCCESS' && <Badge variant="success" size="sm"><CheckCircle className="w-3 h-3 mr-1" />Synced</Badge>}
-                      {shadow.lastSyncStatus === 'FAILED' && <Badge variant="error" size="sm"><AlertCircle className="w-3 h-3 mr-1" />Failed</Badge>}
+                      {shadow.lastSyncStatus === 'FAILED' && <Badge variant="error" size="sm"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>}
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">

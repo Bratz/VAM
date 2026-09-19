@@ -13,15 +13,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Search, Plus, Filter, Download, Eye, Edit, X,
-  ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard,
-  CheckCircle, PauseCircle, Clock, Ban, Play,
-  ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote,
-  GitBranch, Coins, ChevronRight as ChevronRightIcon,
-  FolderTree, AlertTriangle, FileText, Activity, Copy,
-  MoreHorizontal, XCircle, Shield, Briefcase,
-} from 'lucide-react';
+import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -488,7 +480,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
         {account.programName ? (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-              <Briefcase className="w-3.5 h-3.5 text-primary-600 dark:text-primary-200" />
+              <Briefcase className="w-4 h-4 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
@@ -563,7 +555,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
                   onClick={() => { onEdit(account); setShowActions(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
                 >
-                  <Edit className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
+                  <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
                 </button>
                 <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
                 {account.status === 'ACTIVE' && (
@@ -731,7 +723,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
 
         {/* Icon */}
         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", categoryConfig.bgColor)}>
-          <CategoryIcon className={cn("w-3.5 h-3.5", categoryConfig.color)} />
+          <CategoryIcon className={cn("w-4 h-4", categoryConfig.color)} />
         </div>
 
         {/* Info */}
@@ -932,7 +924,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         )}
       </div>
       <Button onClick={() => onEdit(account)}>
-        <Edit className="w-4 h-4 mr-1" /> Edit Account
+        <Pencil className="w-4 h-4 mr-1" /> Edit Account
       </Button>
     </div>
   );
@@ -955,7 +947,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         <span className="flex items-center gap-2 body-sm">
           <span className="font-mono">{account.vaNumber}</span>
           <button onClick={copyVaNumber} className="hover:text-primary-600 dark:hover:text-primary-200">
-            <Copy className="w-3.5 h-3.5" />
+            <Copy className="w-4 h-4" />
           </button>
         </span>
       )}
@@ -1668,7 +1660,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
           value: <TileAmount value={stats.availableBalance} />,
           sub: 'Spendable today (includes credit headroom)',
         }}
-        icon={<Banknote className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<Banknote className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}

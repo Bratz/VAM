@@ -8,11 +8,7 @@ import { StatStrip } from '../components/layout/StatStrip';
  * Backend: BalanceAggregationController.java at /api/v1/treasury/aggregation/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Layers, RefreshCw, Search, Loader2, ChevronRight, ChevronDown,
-  Building2, Globe, MapPin, Briefcase, Wallet, TrendingUp,
-  DollarSign, PieChart, Clock, Eye, Download, Building,
-} from 'lucide-react';
+import { Layers, RefreshCw, Search, Loader2, ChevronRight, ChevronDown, Building2, Globe, MapPin, Briefcase, Wallet, TrendingUp, DollarSign, PieChart, Clock, Eye, Download, X } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
@@ -539,7 +535,7 @@ const BalanceAggregationPage: React.FC = () => {
         <div className="flex items-center gap-6 p-2">
           {/* Corporate Selector */}
           <div className="flex items-center gap-2">
-            <StatusIconBadge tone="primary" icon={Building} className="dark:bg-primary-700" />
+            <StatusIconBadge tone="primary" icon={Building2} className="dark:bg-primary-700" />
             <div className="min-w-[220px]">
               <label className="text-caption font-medium text-primary-700 uppercase tracking-wider dark:text-neutral-200">Corporate</label>
               <select
@@ -598,7 +594,7 @@ const BalanceAggregationPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={Layers} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </Card>
       )}

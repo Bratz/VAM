@@ -6,12 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown,
-  Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, MoreVertical, History,
-  BookOpen, X, Globe, Wallet, Coins, Scale, AlertCircle, Plus, CheckCircle,
-  XCircle, ArrowUpDown, Settings, Building, Layers,
-} from 'lucide-react';
+import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, MoreVertical, History, BookOpen, X, Globe, Wallet, Coins, Scale, Plus, CheckCircle, XCircle, ArrowUpDown, Settings, Layers } from 'lucide-react';
 import { Card as SharedCard, Badge as SharedBadge, Button as SharedButton, Skeleton } from '../components/ui';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { cn } from '../utils';
@@ -226,7 +221,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
       case 'AGGREGATION': return <Folder className="w-4 h-4 text-info-600 dark:text-info-300" />;
       case 'CURRENCY_MIRROR': return <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />;
       case 'SETTLEMENT': return <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
-      case 'EXCEPTION': return <AlertCircle className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
+      case 'EXCEPTION': return <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
       default: return <Wallet className="w-4 h-4 text-success-600 dark:text-success-300" />;
     }
   };
@@ -806,7 +801,7 @@ const HierarchyOperationsPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4 dark:bg-primary-800">
-              <Building className="w-10 h-10 text-neutral-400" />
+              <Building2 className="w-8 h-8 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">
               {!selectedCorporateId ? 'Select a Corporate' : 'Select a Program'}

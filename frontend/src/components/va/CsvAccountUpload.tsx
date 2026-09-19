@@ -108,7 +108,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
             <span className="truncate">{fileName}</span>
           </div>
           <button onClick={reset} className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
-            <X className="w-3.5 h-3.5 text-neutral-400" />
+            <X className="w-4 h-4 text-neutral-400" />
           </button>
         </div>
       )}
@@ -121,7 +121,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
 
       {error && (
         <p className="caption-error flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5" /> {error}
+          <AlertTriangle className="w-4 h-4" /> {error}
         </p>
       )}
 

@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import {
-  ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin,
-  DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers,
-  Percent, ArrowLeftRight, Banknote, Loader2, AlertCircle, CheckCircle2, XCircle,
-  Plus, Settings, CreditCard, Coins, Check,
-  Scale, AlertTriangle, Eye, MoreVertical, Building, X,
-  GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles,
-} from 'lucide-react';
+import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, MoreVertical, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
@@ -418,7 +411,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
       <div className="p-4 space-y-4">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-body-sm">{error}</span>
           </div>
         )}
@@ -739,7 +732,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
       <div className="p-4 space-y-4">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-body-sm">{error}</span>
           </div>
         )}
@@ -1006,7 +999,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
       <div className="p-4 space-y-4">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <XCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <span className="text-body-sm">{error}</span>
           </div>
         )}
@@ -1389,7 +1382,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
       {levels.length > 1 && (
         <div className="px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
           <div className="flex items-center gap-2">
-            <Layers className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+            <Layers className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(Number(e.target.value))}
@@ -2238,9 +2231,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       <h4 className="body-strong font-semibold pt-2">Participation</h4>
       <div className="flex flex-wrap gap-2">
-        <Badge variant={displayData.participatesInPooling ? 'success' : 'neutral'} size="sm">{displayData.participatesInPooling ? '✓' : '✗'} Notional Pooling</Badge>
-        <Badge variant={displayData.participatesInNetting ? 'success' : 'neutral'} size="sm">{displayData.participatesInNetting ? '✓' : '✗'} Balance Netting</Badge>
-        <Badge variant={displayData.participatesInSweep ? 'success' : 'neutral'} size="sm">{displayData.participatesInSweep ? '✓' : '✗'} Cash Concentration</Badge>
+        <Badge variant={displayData.participatesInPooling ? 'success' : 'neutral'} size="sm">{displayData.participatesInPooling ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} Notional Pooling</Badge>
+        <Badge variant={displayData.participatesInNetting ? 'success' : 'neutral'} size="sm">{displayData.participatesInNetting ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} Balance Netting</Badge>
+        <Badge variant={displayData.participatesInSweep ? 'success' : 'neutral'} size="sm">{displayData.participatesInSweep ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} Cash Concentration</Badge>
       </div>
 
       {node.type === 'VIRTUAL_ACCOUNT' && specialType === 'REGULAR' && !isCurrencyMirror && (
@@ -2599,7 +2592,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
             <p className="font-medium text-info-900">{entity.entityCode} - {entity.entityName}</p>
             {entity.ihbEnabled && (
               <Badge variant="success" size="sm" className="mt-1">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
+                <CheckCircle className="w-3 h-3 mr-1" />
                 IHB Active
               </Badge>
             )}
@@ -2698,7 +2691,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                 {!selectedConfigId && !loadingConfigs && (
                   <div className="p-3 bg-warning-50 rounded-md border border-warning-200 mt-3 dark:bg-warning-500/10 dark:border-warning-500/30">
                     <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
-                      <AlertCircle className="w-4 h-4" />
+                      <AlertTriangle className="w-4 h-4" />
                       <span className="text-body-sm">No rate configuration selected. Default rates (5% EIBOR) will be used.</span>
                     </div>
                   </div>
@@ -2943,7 +2936,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         {isEnabling && !willBeTreasuryCenter && !treasuryRates && !loadingRates && (
           <div className="p-3 bg-warning-50 rounded-lg border border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30">
             <div className="flex items-center gap-2 text-warning-800 dark:text-warning-300">
-              <AlertCircle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4" />
               <span className="text-body-sm font-medium">No Treasury Center Found</span>
             </div>
             <p className="text-caption text-warning-700 mt-1 dark:text-warning-300">
@@ -3735,7 +3728,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Building className="w-10 h-10 text-neutral-400" />
+              <Building2 className="w-8 h-8 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Select a Corporate</h2>
             <p className="text-neutral-500 max-w-md dark:text-neutral-400">
@@ -3767,7 +3760,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Layers className="w-10 h-10 text-neutral-400" />
+              <Layers className="w-8 h-8 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Select a Program</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
@@ -3836,7 +3829,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Globe className="w-10 h-10 text-neutral-400" />
+              <Globe className="w-8 h-8 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Hierarchy Not Initialized</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
@@ -3912,7 +3905,7 @@ const TreasuryHierarchyPage: React.FC = () => {
           onProgramChange={handleProgramChange}
         />
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <AlertCircle className="w-12 h-12 text-error-500 dark:text-error-300" />
+          <XCircle className="w-12 h-12 text-error-500 dark:text-error-300" />
           <p className="text-error-600 dark:text-error-300">{error}</p>
           <Button onClick={loadData}>Retry</Button>
         </div>
@@ -3973,7 +3966,7 @@ const TreasuryHierarchyPage: React.FC = () => {
           label: 'Net Position',
           value: <TileAmount value={displaySummary.netPosition} currency={reportingCurrency} />,
         }}
-        icon={<DollarSign className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}

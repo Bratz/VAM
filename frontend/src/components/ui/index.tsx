@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils';
-import { Loader2, Check, AlertCircle, ChevronDown } from 'lucide-react';
+import { Loader2, Check, ChevronDown, XCircle } from 'lucide-react';
 
 // Tier 3 Design System Unification: extracted medallion component.
 // Re-exported from this barrel so callers can `import { StatusIconBadge }
@@ -144,7 +144,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Icon sizes based on button size
     const iconSizes: Record<string, string> = {
-      xs: 'w-3.5 h-3.5',
+      xs: 'w-3 h-3',
       sm: 'w-4 h-4',
       md: 'w-4 h-4',
       lg: 'w-5 h-5',
@@ -461,13 +461,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {/* Error icon */}
           {error && !rightIcon && !success && (
             <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-error-500 dark:text-error-300">
-              <AlertCircle className={iconSizes[inputSize]} />
+              <XCircle className={iconSizes[inputSize]} />
             </div>
           )}
         </div>
         {error && (
           <p className="mt-2 text-body-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <XCircle className="w-4 h-4 shrink-0" />
             {error}
           </p>
         )}
@@ -539,7 +539,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
         />
         {error && (
           <p className="mt-2 text-body-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <XCircle className="w-4 h-4 shrink-0" />
             {error}
           </p>
         )}
@@ -654,7 +654,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         </div>
         {error && (
           <p className="mt-2 text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <XCircle className="w-4 h-4 shrink-0" />
             {error}
           </p>
         )}
@@ -817,7 +817,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
   color = 'primary',
 }) => {
   const sizes: Record<string, string> = {
-    xs: 'w-3.5 h-3.5',
+    xs: 'w-3 h-3',
     sm: 'w-4 h-4',
     md: 'w-6 h-6',
     lg: 'w-8 h-8',

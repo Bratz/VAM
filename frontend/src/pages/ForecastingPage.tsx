@@ -43,16 +43,7 @@ import {
   ReferenceArea,
   Cell,
 } from 'recharts';
-import {
-  TrendingUp,
-  RefreshCw,
-  AlertTriangle,
-  Wallet,
-  ArrowDownRight,
-  ArrowUpRight,
-  Sparkles,
-  Info,
-} from 'lucide-react';
+import { TrendingUp, RefreshCw, AlertTriangle, Wallet, ArrowDownRight, ArrowUpRight, Sparkles, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { Page } from '../components/layout/Page';
@@ -313,7 +304,7 @@ const ForecastingPage: React.FC = () => {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-accent-500 dark:text-accent-300" />
+              <Sparkles className="w-4 h-4 text-accent-500 dark:text-accent-300" />
               Cash Forecast
             </div>
             <p className="body-sm text-neutral-600 dark:text-neutral-300 max-w-xl">
@@ -382,7 +373,7 @@ const ForecastingPage: React.FC = () => {
       ) : errored ? (
         <Card padding="lg">
           <div className="text-center py-10">
-            <AlertTriangle className="w-10 h-10 mx-auto text-error-500 dark:text-error-300 mb-3" />
+            <AlertTriangle className="w-8 h-8 mx-auto text-error-500 dark:text-error-300 mb-3" />
             <p className="body text-error-600 dark:text-error-300">
               Couldn't load the forecast. Try "Run forecast now" or refresh the page.
             </p>
@@ -398,7 +389,7 @@ const ForecastingPage: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="section-title">Weekly cash position</h2>
               <span className="body-xs text-neutral-500 dark:text-neutral-400 inline-flex items-center gap-1">
-                <Info className="w-3.5 h-3.5" />
+                <Info className="w-4 h-4" />
                 Click a bar to see the lines that produced it
               </span>
             </div>
@@ -810,7 +801,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                         'inline-flex items-center gap-1 amount text-body-sm font-semibold',
                         line.direction === 'OUT' ? 'text-error-600 dark:text-error-300' : 'text-success-600 dark:text-success-300'
                       )}>
-                        {line.direction === 'OUT' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
+                        {line.direction === 'OUT' ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                         {formatCurrency(Math.abs(Number(line.amountMid ?? 0)), line.currency || currency)}
                       </span>
                       {line.confidence != null && (

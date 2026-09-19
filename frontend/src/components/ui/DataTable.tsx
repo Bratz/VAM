@@ -1,19 +1,6 @@
 import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { cn } from '../../utils';
-import {
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Search,
-  Filter,
-  Download,
-  MoreHorizontal,
-  ArrowUpDown,
-  Check,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Filter, Download, MoreHorizontal, ArrowUpDown, Check } from 'lucide-react';
 import { Button, Badge, Skeleton, EmptyState } from './index';
 
 // ============================================================================
@@ -254,12 +241,12 @@ export function DataTable<T>({
                       <span className="text-neutral-400">
                         {sortKey === col.key ? (
                           sortDirection === 'asc' ? (
-                            <ChevronUp className="w-3.5 h-3.5" />
+                            <ChevronUp className="w-4 h-4" />
                           ) : (
-                            <ChevronDown className="w-3.5 h-3.5" />
+                            <ChevronDown className="w-4 h-4" />
                           )
                         ) : (
-                          <ArrowUpDown className="w-3.5 h-3.5 opacity-50" />
+                          <ArrowUpDown className="w-4 h-4 opacity-50" />
                         )}
                       </span>
                     )}
@@ -453,7 +440,7 @@ export function DataTable<T>({
                             : 'border-neutral-300 dark:border-primary-700'
                         )}
                       >
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                        {isSelected && <Check className="w-4 h-4 text-white" />}
                       </button>
                     )}
                   </div>

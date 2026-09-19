@@ -17,37 +17,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  FileText,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Loader2,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  RefreshCw,
-  FileJson,
-  FileCode,
-  Copy,
-  CheckCircle,
-  Building2,
-  User,
-  Hash,
-  Clock,
-  CreditCard,
-  AlertCircle,
-  Info,
-  RotateCcw,
-  Banknote,
-  Receipt,
-  ExternalLink,
-  Bell,
-} from 'lucide-react';
+import { FileText, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Loader2, Calendar, TrendingUp, TrendingDown, RefreshCw, FileJson, FileCode, Copy, CheckCircle, Building2, User, Hash, Clock, CreditCard, Info, RotateCcw, Banknote, Receipt, ExternalLink, Bell } from 'lucide-react';
 import { Button, Badge, Input, Skeleton, Card, Divider } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { cn, formatCurrency, formatDate, formatDateTime, copyToClipboard } from '../../utils';
@@ -265,9 +235,9 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, label, className }) => {
     >
       <span className="truncate max-w-[180px]">{value}</span>
       {copied ? (
-        <CheckCircle className="w-3.5 h-3.5 text-success-500 dark:text-success-300 shrink-0" />
+        <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300 shrink-0" />
       ) : (
-        <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+        <Copy className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       )}
     </button>
   );
@@ -595,7 +565,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Transaction References */}
             <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
               <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                <Hash className="w-3.5 h-3.5" />
+                <Hash className="w-4 h-4" />
                 Transaction References
               </h5>
               <div className="space-y-1">
@@ -617,7 +587,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {(entry.bankTransactionCode || details?.bankTransactionCode) && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5" />
+                  <CreditCard className="w-4 h-4" />
                   Bank Transaction Code
                 </h5>
                 <div className="space-y-1">
@@ -639,7 +609,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {details?.debtor && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" />
+                  <User className="w-4 h-4" />
                   Debtor
                 </h5>
                 <div className="space-y-1">
@@ -655,7 +625,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {details?.creditor && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" />
+                  <User className="w-4 h-4" />
                   Creditor
                 </h5>
                 <div className="space-y-1">
@@ -671,7 +641,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {details?.remittanceInfo && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" />
+                  <FileText className="w-4 h-4" />
                   Remittance Info
                 </h5>
                 <div className="space-y-1">
@@ -693,7 +663,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {(details?.additionalInfo || details?.returnInfo || entry.additionalEntryInfo) && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-4 h-4" />
                   Additional Info
                 </h5>
                 <div className="space-y-1">
@@ -717,7 +687,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {details?.charges && details.charges.length > 0 && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <Banknote className="w-3.5 h-3.5" />
+                  <Banknote className="w-4 h-4" />
                   Charges
                 </h5>
                 <div className="space-y-1">
@@ -737,7 +707,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {details?.exchangeRate && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
                 <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
+                  <TrendingUp className="w-4 h-4" />
                   Exchange Rate
                 </h5>
                 <div className="space-y-1">

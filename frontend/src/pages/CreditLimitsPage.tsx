@@ -10,14 +10,7 @@ import { Page } from '../components/layout/Page';
  * 5. Currency breakdown in Entity Tree
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Building, Building2, Plus, RefreshCw, Search, Loader2,
-  CheckCircle, AlertTriangle, Lock, Unlock, ExternalLink, GitBranch,
-  Target, X, Info, Edit, Trash2, ChevronDown, ChevronRight,
-  Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight,
-  FlaskConical, Calendar, Percent, FileText, TrendingUp, DollarSign, Clock,
-  ChevronUp, Layers, CreditCard,
-} from 'lucide-react';
+import { Building2, Plus, RefreshCw, Search, Loader2, CheckCircle, AlertTriangle, Lock, Unlock, ExternalLink, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Calendar, Percent, FileText, TrendingUp, DollarSign, Clock, ChevronUp, Layers, CreditCard, Pencil } from 'lucide-react';
 import { StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import {
@@ -175,7 +168,7 @@ interface CurrencyLimitTotals {
 const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
   HOLDING: { label: 'Holding', icon: Crown, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
   SUBSIDIARY: { label: 'Subsidiary', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  BRANCH: { label: 'Branch', icon: Building, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
+  BRANCH: { label: 'Branch', icon: Building2, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   REPRESENTATIVE: { label: 'Representative', icon: Users, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
@@ -467,7 +460,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
             >
               <span className={cn("font-bold", config.color)}>{currency}</span>
               <span className="text-neutral-600 dark:text-neutral-300"><Amount value={safeNumber(limit?.limitAmount)} currency={currency} showCurrency={false} /></span>
-              {utilizationPct > 80 && <AlertTriangle className={cn("w-3.5 h-3.5", utilizationPct > 95 ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
+              {utilizationPct > 80 && <AlertTriangle className={cn("w-4 h-4", utilizationPct > 95 ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
             </button>
           );
         })}
@@ -488,7 +481,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
                   <span className="px-2 py-0.5 rounded-full text-caption bg-warning-50 text-warning-700 flex items-center gap-1 dark:bg-warning-500/10 dark:text-warning-300"><Unlock className="w-3 h-3" /> Soft</span>
                 )}
               </div>
-              <button type="button" onClick={() => onEdit(selectedLimit)} className="p-2 hover:bg-neutral-100 rounded-lg dark:hover:bg-primary-800"><Edit className="w-5 h-5 text-primary-600 dark:text-primary-200" /></button>
+              <button type="button" onClick={() => onEdit(selectedLimit)} className="p-2 hover:bg-neutral-100 rounded-lg dark:hover:bg-primary-800"><Pencil className="w-5 h-5 text-primary-600 dark:text-primary-200" /></button>
             </div>
 
             <div className="mb-3">
@@ -708,7 +701,7 @@ const EntityTreeNode: React.FC<{
                   <div>
                     <div className="flex items-center gap-2">
                       <span className={cn("font-bold text-body-sm", config.color)}>{currency}</span>
-                      {(isBreached || isNearLimit) && <AlertTriangle className={cn("w-3.5 h-3.5", isBreached ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
+                      {(isBreached || isNearLimit) && <AlertTriangle className={cn("w-4 h-4", isBreached ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
                     </div>
                     <p className="body-strong">{formatCurrency(limitAmount, currency)}</p>
                     <div className="w-20 bg-neutral-200 rounded-full h-1.5 mt-1 dark:bg-primary-800">
@@ -717,9 +710,9 @@ const EntityTreeNode: React.FC<{
                     <p className="caption mt-0.5">{utilizationPct.toFixed(0)}% utilized</p>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800" title="Edit limit"><Edit className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" /></button>
-                    <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded-md dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-3.5 h-3.5 text-primary-500" /></button>
-                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" /></button>
+                    <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800" title="Edit limit"><Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /></button>
+                    <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded-md dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-4 h-4 text-primary-500" /></button>
+                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" /></button>
                   </div>
                 </div>
               );
@@ -1338,7 +1331,7 @@ const CreditLimitsPage: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white rounded-lg border border-neutral-100 p-12 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
-          <Building className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
+          <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
           <p className="text-neutral-500 dark:text-neutral-400">Select a corporate to view credit limits</p>
         </div>
       )}

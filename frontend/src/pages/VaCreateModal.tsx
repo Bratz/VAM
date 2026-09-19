@@ -18,11 +18,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  CreditCard, ChevronRight,
-  AlertCircle, CheckCircle, Loader2, Building2,
-  GitBranch, Layers,
-} from 'lucide-react';
+import { CreditCard, ChevronRight, CheckCircle, Loader2, Building2, GitBranch, Layers, XCircle } from 'lucide-react';
 import { Button, Badge, Input } from '../components/ui';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { HierarchyTreePicker, PlacementSelection } from '../components/va/HierarchyTreePicker';
@@ -202,7 +198,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
 
     {error && (
       <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
-        <AlertCircle className="w-4 h-4" />
+        <XCircle className="w-4 h-4" />
         {error}
       </p>
     )}
@@ -297,7 +293,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
 
       {error && (
         <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
-          <AlertCircle className="w-4 h-4" />
+          <XCircle className="w-4 h-4" />
           {error}
         </p>
       )}
@@ -385,7 +381,7 @@ const PlacementStep: React.FC<PlacementStepProps> = ({
 
       {error && (
         <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
-          <AlertCircle className="w-4 h-4" />
+          <XCircle className="w-4 h-4" />
           {error}
         </p>
       )}
@@ -443,11 +439,11 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
         <div className="flex items-center gap-1 flex-wrap">
           {placement.map((value, i) => (
             <React.Fragment key={`${value}-${i}`}>
-              {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
+              {i > 0 && <ChevronRight className="w-4 h-4 text-neutral-400" />}
               <Badge variant="neutral" size="sm">{value}</Badge>
             </React.Fragment>
           ))}
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+          <ChevronRight className="w-4 h-4 text-neutral-400" />
           <Badge variant="success" size="sm">New VA</Badge>
         </div>
         <div className="mt-2">
@@ -879,7 +875,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
         {/* Error Display */}
         {errors.submit && (
           <div className="mt-4 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 flex-shrink-0" />
+            <XCircle className="w-5 h-5 text-error-600 dark:text-error-300 flex-shrink-0" />
             <p className="text-body-sm text-error-700 dark:text-error-300">{errors.submit}</p>
           </div>
         )}

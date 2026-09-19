@@ -7,12 +7,7 @@ import { StatStrip } from '../components/layout/StatStrip';
  * Backend: CreditAgreementController.java at /api/v1/credit-agreements/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  FileText, Plus, RefreshCw, Search, Loader2,
-  Calendar, CheckCircle2, XCircle, Clock, Ban,
-  Eye, TrendingUp, ArrowUpRight, ArrowDownRight,
-  Shield, AlertTriangle, Building2, Landmark,
-} from 'lucide-react';
+import { FileText, Plus, RefreshCw, Search, Loader2, Calendar, XCircle, Clock, Ban, Eye, TrendingUp, ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, Building2, Landmark, CheckCircle, X } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -26,7 +21,7 @@ import { creditAgreementsApi, CreditAgreement, AgreementType, AgreementStatus, A
 const STATUS_CONFIG: Record<string, { label: string; variant: string; icon: any }> = {
   DRAFT: { label: 'Draft', variant: 'neutral', icon: FileText },
   PENDING_APPROVAL: { label: 'Pending', variant: 'warning', icon: Clock },
-  ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle2 },
+  ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle },
   SUSPENDED: { label: 'Suspended', variant: 'error', icon: Ban },
   EXPIRED: { label: 'Expired', variant: 'neutral', icon: XCircle },
   CANCELLED: { label: 'Cancelled', variant: 'neutral', icon: XCircle },
@@ -303,7 +298,7 @@ const CreditAgreementsPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </Card>
       )}
@@ -327,7 +322,7 @@ const CreditAgreementsPage: React.FC = () => {
               <p className="label">Active</p>
               <p className="stat-value-success mt-1">{stats.active}</p>
             </div>
-            <StatusIconBadge tone="success" icon={CheckCircle2} className="dark:bg-success-500/20" />
+            <StatusIconBadge tone="success" icon={CheckCircle} className="dark:bg-success-500/20" />
           </div>
         </Card>
         <Card hover className="p-4">

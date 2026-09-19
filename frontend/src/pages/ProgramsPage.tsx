@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Percent, Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote,
-  Eye, Edit, MoreHorizontal, CheckCircle, XCircle, Clock, Copy, Landmark, Trash2,
-  ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash,
-  GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings,
-} from 'lucide-react';
+import { Percent, Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Copy, Landmark, Trash2, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings, Pencil } from 'lucide-react';
 import { Card, Badge, Button , StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -510,7 +505,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-neutral-200 dark:border-primary-800">
           <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center', programTypeConfig[program.programType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
-            <TypeIcon className={cn('w-7 h-7', programTypeConfig[program.programType]?.color || 'text-neutral-600 dark:text-neutral-300')} />
+            <TypeIcon className={cn('w-6 h-6', programTypeConfig[program.programType]?.color || 'text-neutral-600 dark:text-neutral-300')} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -533,7 +528,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onEdit(program)} leftIcon={<Edit className="w-4 h-4" />}>Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => onEdit(program)} leftIcon={<Pencil className="w-4 h-4" />}>Edit</Button>
             <Button variant="outline" size="sm" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>
         </div>
@@ -564,8 +559,8 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={cn('py-3 px-1 text-body-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5',
                 activeTab === tab.id ? 'border-primary-500 text-primary-900 dark:text-neutral-50' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
-              {tab.id === 'hierarchy' && <GitBranch className="w-3.5 h-3.5" />}
-              {tab.id === 'viban' && <Hash className="w-3.5 h-3.5" />}
+              {tab.id === 'hierarchy' && <GitBranch className="w-4 h-4" />}
+              {tab.id === 'viban' && <Hash className="w-4 h-4" />}
               {tab.label}
               {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-100 rounded-md dark:bg-primary-800">{tab.count}</span>}
               {tab.badge && <Badge variant="warning" size="sm">{tab.badge}</Badge>}
@@ -784,7 +779,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       </div>
                     ) : (
                       <Card padding="sm" className="text-center py-12">
-                        <FolderTree className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
+                        <FolderTree className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                         <p className="text-neutral-500 mb-2 dark:text-neutral-400">No Settlement VAs created yet</p>
                         <p className="caption">Settlement VAs are created when hierarchy nodes are added</p>
                       </Card>
@@ -971,7 +966,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         </Card>
                       ) : (
                         <Card padding="sm" className="text-center py-8">
-                          <Hash className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
+                          <Hash className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                           <p className="text-neutral-500 mb-2 dark:text-neutral-400">No VIBAN Pool Assigned</p>
                           <p className="caption">Assign a VIBAN pool to enable VIBAN generation</p>
                         </Card>
@@ -2309,7 +2304,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 if (autoFeatureNames.length > 0) {
                   return (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Sparkles className="w-3.5 h-3.5 text-success-600 dark:text-success-300" />
+                      <Sparkles className="w-4 h-4 text-success-600 dark:text-success-300" />
                       <span className="text-caption text-success-700 font-medium dark:text-success-300">Auto-enabled:</span>
                       {autoFeatureNames.map(name => (
                         <Badge key={name} variant="success" size="sm">{name}</Badge>
@@ -3838,7 +3833,7 @@ const ProgramsPage: React.FC = () => {
           value: <TileAmount value={displayStats.totalBalance} currency="AED" />,
           sub: `${displayStats.totalPrograms} programs · ${displayStats.activePrograms} active`,
         }}
-        icon={<TrendingUp className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+        icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
       {/* Operational metrics — secondary strip below the hero. */}
@@ -3938,7 +3933,7 @@ const ProgramsPage: React.FC = () => {
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-1">
                         <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Edit className="w-4 h-4" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Pencil className="w-4 h-4" /></Button>
                         {/* Action Menu Dropdown */}
                         <div className="relative">
                           <Button

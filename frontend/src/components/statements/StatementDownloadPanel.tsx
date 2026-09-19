@@ -21,6 +21,7 @@ import {
   GitBranch,
   Eye,
   Info,
+  Check,
 } from 'lucide-react';
 import { Card, Button, Input, Badge, StatusIconBadge } from '../ui';
 import { cn, formatCurrency } from '../../utils';
@@ -389,15 +390,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
                   : 'bg-white border-neutral-300 group-hover:border-primary-300 dark:bg-primary-900 dark:border-primary-700'
               )}>
                 {includeChildAccounts && (
-                  <svg className="w-full h-full text-white" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M4 8l3 3 5-6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <Check className="w-full h-full p-0.5 text-white" />
                 )}
               </div>
             </div>

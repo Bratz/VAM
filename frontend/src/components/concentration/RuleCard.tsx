@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit3, Pause, Play, Trash2, Building2, Clock } from 'lucide-react';
+import { Pause, Play, Trash2, Building2, Clock, Pencil } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
 import { formatCompactCurrency, formatRelativeTime } from '../../utils';
 import { SweepRule } from '../../services/api';
@@ -39,7 +39,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
               onClick={(e) => { e.stopPropagation(); onEdit(); }}
               title="Edit rule"
             >
-              <Edit3 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+              <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             </Button>
             <Button
               variant="ghost"

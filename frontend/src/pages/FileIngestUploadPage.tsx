@@ -38,12 +38,7 @@
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Upload, FileText, X, AlertTriangle, CheckCircle2, RefreshCw,
-  ArrowDownToLine, ArrowUpFromLine, Send, ScanSearch, Wand2, Hammer,
-  ShieldCheck, Zap, Clock, PackageCheck, Workflow, XCircle, PauseCircle,
-  Loader2,
-} from 'lucide-react';
+import { Upload, FileText, X, AlertTriangle, RefreshCw, ArrowUpFromLine, Send, ScanSearch, Wand2, Hammer, ShieldCheck, Zap, Clock, PackageCheck, Workflow, XCircle, PauseCircle, Loader2, CheckCircle, Download } from 'lucide-react';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
@@ -92,7 +87,7 @@ const STAGE_ICONS: Record<IngestStage, React.ReactNode> = {
   AWAITING_TRANSFORM: <Clock className="w-4 h-4" />,
   STAGED: <PackageCheck className="w-4 h-4" />,
   PROCESSING: <Workflow className="w-4 h-4" />,
-  DONE: <CheckCircle2 className="w-4 h-4" />,
+  DONE: <CheckCircle className="w-4 h-4" />,
   BLOCKED: <AlertTriangle className="w-4 h-4" />,
 };
 
@@ -104,7 +99,7 @@ const AGENT_NAMES = {
 };
 
 const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string; icon: React.ReactNode }[] = [
-  { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <ArrowDownToLine className="w-5 h-5" /> },
+  { value: 'RECEIVABLES', label: 'Receivables', description: 'Incoming customer payments', icon: <Download className="w-5 h-5" /> },
   { value: 'RECEIVABLES_INVOICE', label: 'Raise Invoices', description: 'Bulk-create new invoices awaiting payment', icon: <FileText className="w-5 h-5" /> },
   { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
   { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-5 h-5" /> },
@@ -212,7 +207,7 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
             ? 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-300'
             : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300'
       }`}>
-        {elapsedLabel.tone === 'live' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+        {elapsedLabel.tone === 'live' && <Loader2 className="w-4 h-4 animate-spin" />}
         {elapsedLabel.text}
       </div>
     )}
@@ -230,7 +225,7 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
                     : 'border-2 border-neutral-200 text-neutral-400 dark:border-primary-700'
             }`}>
               {step.status === 'done' ? (
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4" />
               ) : step.status === 'active' ? (
                 <span className="w-2 h-2 rounded-full bg-warning-500 animate-pulse-soft" />
               ) : step.status === 'blocked' ? (
@@ -523,7 +518,7 @@ const FileIngestUploadPage: React.FC = () => {
 
           {uploadError && (
             <p className="caption-error flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" /> {uploadError}
+              <AlertTriangle className="w-4 h-4" /> {uploadError}
             </p>
           )}
         </div>
@@ -550,10 +545,10 @@ const FileIngestUploadPage: React.FC = () => {
             <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
               <span className="caption">File</span>
               <div className="flex items-center gap-2 min-w-0">
-                <FileText className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
+                <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
                 <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12rem]">{file.name}</span>
                 <button onClick={() => setFile(null)} className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
-                  <X className="w-3.5 h-3.5 text-neutral-400" />
+                  <X className="w-4 h-4 text-neutral-400" />
                 </button>
               </div>
             </div>
@@ -565,7 +560,7 @@ const FileIngestUploadPage: React.FC = () => {
       {!job && file && (
         customerId.trim() ? (
           <div className="p-3 rounded-lg bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
             <div>
               <p className="text-body-sm font-medium text-success-800 dark:text-success-300">Ready to upload</p>
               <p className="text-caption text-success-700 dark:text-success-300 mt-0.5">
@@ -641,7 +636,7 @@ const FileIngestUploadPage: React.FC = () => {
               subtitle={`${job.domain} · ${job.customerId}${job.jiraTicketKey ? ` · ${job.jiraTicketKey}` : ''}`}
               action={
                 job.stage === 'DONE' ? (
-                  <Badge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>Done</Badge>
+                  <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Done</Badge>
                 ) : job.stage === 'BLOCKED' ? (
                   <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Blocked</Badge>
                 ) : (
@@ -685,7 +680,7 @@ const FileIngestUploadPage: React.FC = () => {
                 <p className="text-heading-sm font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
               </Card>
               <Card padding="sm" className="text-center">
-                <CheckCircle2 className="w-4 h-4 text-success-500 dark:text-success-300 mx-auto" />
+                <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300 mx-auto" />
                 <p className="text-heading-sm font-semibold text-success-700 dark:text-success-300 mt-0.5">{doneSummary.processed}</p>
                 <p className="caption">Processed</p>
               </Card>

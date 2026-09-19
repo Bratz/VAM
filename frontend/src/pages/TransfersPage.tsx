@@ -13,43 +13,7 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Send,
-  ArrowRight,
-  ArrowLeftRight,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Building2,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
-  AlertTriangle,
-  RefreshCw,
-  Download,
-  Plus,
-  FileCode,
-  ChevronRight,
-  Globe,
-  Trash2,
-  Copy,
-  TrendingUp,
-  Wallet,
-  CreditCard,
-  Users,
-  X,
-  Briefcase,
-  UserCheck,
-  Search,
-  Eye,
-  BookOpen,
-  FileText,
-  Hash,
-  Calendar,
-  DollarSign,
-  ArrowRightLeft,
-} from 'lucide-react';
+import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building2, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Download, Plus, FileCode, ChevronRight, Globe, Trash2, Copy, TrendingUp, Wallet, CreditCard, Users, X, Briefcase, UserCheck, Search, Eye, BookOpen, FileText, Hash, Calendar, DollarSign, ArrowRightLeft } from 'lucide-react';
 import { Card, Button, Badge, Input, Select , StatusIconBadge } from '../components/ui';
 import { Modal, Stepper } from '../components/ui/enhanced';
 import { formatCurrency, formatRelativeTime, cn } from '../utils';
@@ -716,7 +680,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 {/* Validation status */}
                 {!feePreview.fundsAvailable && (
                   <div className="caption-error flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3 h-3" />
+                    <XCircle className="w-3 h-3" />
                     {feePreview.validationMessage || 'Insufficient funds'}
                   </div>
                 )}
@@ -755,7 +719,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           return hasInsufficientFunds ? (
             <div className="bg-error-50 border border-error-200 rounded-lg p-3 dark:bg-error-500/10 dark:border-error-500/30">
               <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
-                <AlertCircle className="w-4 h-4" />
+                <XCircle className="w-4 h-4" />
                 <span className="font-medium text-body-sm">Insufficient Funds</span>
               </div>
               <div className="caption-error mt-1 space-y-0.5">
@@ -1072,7 +1036,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
       case 'TRANSFER_IN':
         return { label: 'Inward Payment', variant: 'success' as const, icon: ArrowDownLeft };
       case 'EXCEPTION_CREDIT':
-        return { label: 'Exception', variant: 'warning' as const, icon: AlertCircle };
+        return { label: 'Exception', variant: 'warning' as const, icon: AlertTriangle };
       default:
         return { label: transaction?.movementType || 'Transfer', variant: 'neutral' as const, icon: Send };
     }

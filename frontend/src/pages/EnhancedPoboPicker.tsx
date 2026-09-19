@@ -8,11 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  ArrowLeftRight, Building2, Landmark, CheckCircle, AlertCircle, AlertTriangle,
-  ChevronDown, DollarSign, Info, Loader2, TrendingUp, TrendingDown, Percent,
-  RefreshCw, Eye, Clock, CreditCard, ArrowRight, Shield, Banknote, FileText,
-} from 'lucide-react';
+import { ArrowLeftRight, Building2, Landmark, CheckCircle, AlertTriangle, ChevronDown, DollarSign, Info, Loader2, TrendingUp, TrendingDown, Percent, RefreshCw, Eye, Clock, CreditCard, ArrowRight, Shield, Banknote, FileText, XCircle } from 'lucide-react';
 import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -489,7 +485,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                 <div className="bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg p-3">
                   {validationErrors.map((error, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-body-sm text-error-700 dark:text-error-300">
-                      <AlertCircle className="w-4 h-4" />
+                      <XCircle className="w-4 h-4" />
                       <span>{error}</span>
                     </div>
                   ))}

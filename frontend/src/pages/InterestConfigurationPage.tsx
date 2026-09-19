@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Plus, Search, AlertCircle, Loader2,
-  Eye, TrendingUp, TrendingDown, Settings,
-  CheckCircle2, XCircle, Edit2,
-  RefreshCw, Calendar, Building2, Calculator,
-  ArrowUpRight, ArrowDownRight, Layers,
-  Save, Copy, Building,
-} from 'lucide-react';
+import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, ArrowUpRight, ArrowDownRight, Layers, Save, Copy, Pencil, CheckCircle, X } from 'lucide-react';
 import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { cn, formatDate } from '../utils';
@@ -250,7 +243,7 @@ const ConfigCard: React.FC<{
         <Eye className="w-4 h-4 mr-1" /> View
       </Button>
       <Button variant="ghost" size="sm" className="flex-1" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-        <Edit2 className="w-4 h-4 mr-1" /> Edit
+        <Pencil className="w-4 h-4 mr-1" /> Edit
       </Button>
       <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
         <Copy className="w-4 h-4" />
@@ -295,7 +288,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
         {/* Corporate Selector */}
         <div className="flex items-center gap-2">
           <div className="p-2 bg-primary-100 rounded-lg dark:bg-primary-700">
-            <Building className="w-5 h-5 text-primary-700 dark:text-neutral-200" />
+            <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" />
           </div>
           <div className="min-w-[200px]">
             <label className="text-caption font-medium text-primary-700 uppercase tracking-wide dark:text-neutral-200">Corporate</label>
@@ -346,7 +339,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
         <div className="flex-1 flex items-center gap-3">
           {selectedCorporate && (
             <Badge variant="info" size="sm">
-              <Building className="w-3 h-3 mr-1" />
+              <Building2 className="w-3 h-3 mr-1" />
               {selectedCorporate.shortName || selectedCorporate.tradeName || selectedCorporate.legalName}
             </Badge>
           )}
@@ -792,10 +785,10 @@ const InterestConfigurationPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </Card>
       )}
@@ -937,7 +930,7 @@ const InterestConfigurationPage: React.FC = () => {
             <div className="flex gap-3 pt-4 border-t">
               {selectedConfig.status === 'DRAFT' && (
                 <Button className="flex-1" onClick={() => handleActivate(selectedConfig)}>
-                  <CheckCircle2 className="w-4 h-4 mr-2" /> Activate
+                  <CheckCircle className="w-4 h-4 mr-2" /> Activate
                 </Button>
               )}
               {selectedConfig.status === 'ACTIVE' && (
@@ -949,7 +942,7 @@ const InterestConfigurationPage: React.FC = () => {
                 setShowDetailModal(false);
                 handleEdit(selectedConfig);
               }}>
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
+                <Pencil className="w-4 h-4 mr-2" /> Edit
               </Button>
             </div>
           </div>

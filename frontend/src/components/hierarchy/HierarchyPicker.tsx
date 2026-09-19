@@ -180,7 +180,7 @@ const PickerNode: React.FC<PickerNodeProps> = ({
         )}
 
         <div className={cn('p-1.5 rounded-md', style.bg)}>
-          <Icon className={cn('w-3.5 h-3.5', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
+          <Icon className={cn('w-4 h-4', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
         </div>
 
         <div className="flex-1 min-w-0">

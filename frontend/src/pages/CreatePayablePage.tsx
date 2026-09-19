@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  ArrowLeft, Save, Send, Plus, Trash2, Search, Building2, FileText,
-  Calculator, ArrowLeftRight, GitBranch, Paperclip, CheckCircle2,
-  Calendar, DollarSign, Percent, ChevronDown, ChevronUp, AlertCircle,
-  Loader2, X, Check, Info, CreditCard, Landmark, Clock, RefreshCw,
-  Upload, Link as LinkIcon, StickyNote, Users, ToggleLeft, ToggleRight,
-  HelpCircle, Receipt, Package, Truck, Shield, BanknoteIcon, FileCheck,
-  Settings2, ChevronRight, Eye, ChevronsUpDown, Building, AlertTriangle
-} from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Trash2, Search, Building2, FileText, Calculator, ArrowLeftRight, GitBranch, Paperclip, Calendar, DollarSign, Percent, ChevronDown, ChevronUp, Loader2, X, Check, Info, CreditCard, Landmark, Clock, RefreshCw, Upload, Link as LinkIcon, StickyNote, Users, ToggleLeft, ToggleRight, HelpCircle, Receipt, Package, Truck, Shield, FileCheck, ChevronRight, Eye, ChevronsUpDown, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
 // Tier 5 Design System Unification (2026-05-13): switched from page-local
 // Card/Button/Badge definitions to the shared components/ui versions.
 // Page-local re-definition of system primitives is no longer permitted —
@@ -568,7 +560,7 @@ const BankAccountSelector: React.FC<{
       
       {selectedAccount && (
         <div className="bg-success-50 border border-success-200 rounded-lg p-3 flex items-center gap-3 dark:bg-success-500/10 dark:border-success-500/30">
-          <CheckCircle2 className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
+          <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
           <div className="text-body-sm">
             <span className="text-success-700 dark:text-success-300">Payment will be sent via </span>
             <span className="font-medium text-success-800 dark:text-success-300">{paymentChannel}</span>
@@ -635,7 +627,7 @@ const InvoiceLookup: React.FC<{
           placeholder="Enter or select invoice number..."
           className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none"
         />
-        {matchedInvoice && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success-500 dark:text-success-300" />}
+        {matchedInvoice && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success-500 dark:text-success-300" />}
       </div>
       
       {showSuggestions && filteredInvoices.length > 0 && !matchedInvoice && (
@@ -860,7 +852,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
     <div>
       <label className="field-label block mb-2">Attachments</label>
       <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
-        <Upload className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
+        <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-3" />
         <p className="text-neutral-600 dark:text-neutral-300 font-medium">Drop files here or click to upload</p>
         <p className="text-body-sm text-neutral-400 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
       </div>
@@ -888,7 +880,7 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
         {[
           { value: 'DUE_DATE', label: 'Pay on Due Date', description: `Scheduled for ${formData.dueDate || 'due date'}`, icon: Calendar },
           { value: 'IMMEDIATE', label: 'Pay Immediately', description: 'Process after approval', icon: Clock },
-          { value: 'HOLD', label: 'Hold for Manual Release', description: 'Requires manual trigger', icon: Settings2 },
+          { value: 'HOLD', label: 'Hold for Manual Release', description: 'Requires manual trigger', icon: Settings },
         ].map((opt) => {
           const Icon = opt.icon;
           return (
@@ -948,7 +940,7 @@ const SummarySidebar: React.FC<{
         {formData.dueDate && (
           <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
             <div className="flex justify-between items-center"><span className="body-sm">Due Date</span><span className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(formData.dueDate)}</span></div>
-            {daysUntilDue !== null && <p className={`text-caption mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? `⚠️ ${Math.abs(daysUntilDue)} days overdue` : daysUntilDue === 0 ? '⏰ Due today' : `✓ ${daysUntilDue} days remaining`}</p>}
+            {daysUntilDue !== null && <p className={`inline-flex items-center gap-1 text-caption mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? <><AlertTriangle className="w-3 h-3" /> {Math.abs(daysUntilDue)} days overdue</> : daysUntilDue === 0 ? <><Clock className="w-3 h-3" /> Due today</> : <><Check className="w-3 h-3" /> {daysUntilDue} days remaining</>}</p>}
           </div>
         )}
         {formData.poboEnabled && (
@@ -959,7 +951,7 @@ const SummarySidebar: React.FC<{
         )}
         {grandTotal > 100000 && (
           <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 dark:bg-warning-500/10 dark:border-warning-500/30">
-            <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300"><AlertCircle className="w-4 h-4" /><span className="font-medium text-body-sm">Approval Required</span></div>
+            <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300"><AlertTriangle className="w-4 h-4" /><span className="font-medium text-body-sm">Approval Required</span></div>
             <p className="caption-warning mt-1">Amount exceeds AED 100,000 threshold</p>
           </div>
         )}
@@ -1415,7 +1407,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="flex flex-wrap items-center gap-4">
               <div className="p-2 bg-primary-100 dark:bg-primary-700 rounded-lg">
-                <Building className="w-5 h-5 text-primary-600 dark:text-primary-200" />
+                <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
               </div>
               <div>
                 <p className="text-caption font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Creating payable for</p>
@@ -1529,7 +1521,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   )}
                   {formData.sourceVirtualAccountId && (
                     <div className="mt-3 bg-success-50 border border-success-200 rounded-lg p-3 flex items-center gap-3 dark:bg-success-500/10 dark:border-success-500/30">
-                      <CheckCircle2 className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
+                      <CheckCircle className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
                       <p className="text-body-sm text-success-700 dark:text-success-300">
                         Payment will be debited from <span className="font-medium">{virtualAccounts.find(v => v.id === formData.sourceVirtualAccountId)?.name}</span>
                       </p>
@@ -1550,7 +1542,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               <Card padding="none">
                 <div className="border-b border-neutral-200 dark:border-primary-800 px-4 pt-4">
                   <div className="flex items-center gap-2 mb-4">
-                    <Settings2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+                    <Settings className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                     <h2 className="font-semibold text-neutral-900 dark:text-neutral-50">Optional Configuration</h2>
                     <span className="text-body-sm text-neutral-400 ml-2">Click to expand</span>
                   </div>
@@ -1588,7 +1580,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               <Card padding="md">
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-lg ${grandTotal > 100000 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-success-100 dark:bg-success-500/20'}`}>
-                    {grandTotal > 100000 ? <AlertCircle className="w-6 h-6 text-warning-600 dark:text-warning-300" /> : <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-300" />}
+                    {grandTotal > 100000 ? <AlertTriangle className="w-6 h-6 text-warning-600 dark:text-warning-300" /> : <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
                   </div>
                   <div>
                     <h3 className={`font-semibold ${grandTotal > 100000 ? 'text-warning-800 dark:text-warning-300' : 'text-success-800 dark:text-success-300'}`}>{grandTotal > 100000 ? 'Approval Required' : 'Ready for Processing'}</h3>

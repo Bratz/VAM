@@ -14,39 +14,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  FileText,
-  Download,
-  Calendar,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownLeft,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  Network,
-  FileCode,
-  Bell,
-  Layers,
-  Eye,
-  Search,
-  X,
-  Building2,
-  User,
-  Hash,
-  Copy,
-  Banknote,
-  Receipt,
-  CreditCard,
-  Info,
-  RotateCcw,
-} from 'lucide-react';
+import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, RotateCcw, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
 import {
@@ -568,7 +536,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {/* Transaction References */}
               <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                 <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                  <Hash className="w-3.5 h-3.5" />
+                  <Hash className="w-4 h-4" />
                   Transaction References
                 </h5>
                 <div className="space-y-1 text-caption">
@@ -615,7 +583,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {entry.bankTransactionCode && (
                 <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                    <CreditCard className="w-3.5 h-3.5" />
+                    <CreditCard className="w-4 h-4" />
                     Bank Transaction Code
                   </h5>
                   <div className="space-y-1 text-caption">
@@ -639,7 +607,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {relatedParties?.debtor && (
                 <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                    <User className="w-3.5 h-3.5" />
+                    <User className="w-4 h-4" />
                     Debtor
                   </h5>
                   <div className="space-y-1 text-caption">
@@ -669,7 +637,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {relatedParties?.creditor && (
                 <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                    <User className="w-3.5 h-3.5" />
+                    <User className="w-4 h-4" />
                     Creditor
                   </h5>
                   <div className="space-y-1 text-caption">
@@ -699,7 +667,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {remittanceInfo && (
                 <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                    <FileText className="w-3.5 h-3.5" />
+                    <FileText className="w-4 h-4" />
                     Remittance Info
                   </h5>
                   <div className="space-y-1 text-caption">
@@ -726,7 +694,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {entry.additionalEntryInfo && (
                 <div className="bg-white rounded-lg border border-neutral-200 p-3 dark:bg-primary-900 dark:border-primary-800">
                   <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
-                    <Info className="w-3.5 h-3.5" />
+                    <Info className="w-4 h-4" />
                     Additional Info
                   </h5>
                   <p className="caption break-words">{entry.additionalEntryInfo}</p>
@@ -1077,7 +1045,7 @@ const HistoryMobileCard: React.FC<HistoryMobileCardProps> = ({ statement: stmt, 
             <Button
               size="sm"
               variant="ghost"
-              leftIcon={<Download className="w-3.5 h-3.5" />}
+              leftIcon={<Download className="w-4 h-4" />}
               onClick={() => onDownload?.(stmt)}
             >
               Download
@@ -1532,7 +1500,7 @@ const StatementsPage: React.FC = () => {
               value: `${netMovement >= 0 ? '+' : ''}${formatCurrency(netMovement, statementCurrency)}`,
               sub: `${statement.creditCount || 0} credits · ${statement.debitCount || 0} debits`,
             }}
-            icon={<Banknote className="w-7 h-7 text-accent-600 dark:text-accent-300" />}
+            icon={<Banknote className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
           />
         );
       })()}
@@ -1788,7 +1756,7 @@ const StatementsPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
-            <StatusIconBadge tone="error" icon={AlertCircle} className="shrink-0 dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} className="shrink-0 dark:bg-error-500/20" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-error-800 dark:text-error-300">Error</p>
               <p className="text-body-sm text-error-700 truncate dark:text-error-300">{error}</p>

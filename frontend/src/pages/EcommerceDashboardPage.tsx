@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, TrendingUp, Users, CreditCard, Loader2, AlertCircle, RefreshCw, Download } from 'lucide-react';
+import { ShoppingCart, TrendingUp, Users, CreditCard, Loader2, RefreshCw, Download, XCircle } from 'lucide-react';
 import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
 import { ecommerceApi } from '../services/api';
 import { formatCurrency } from '../utils';
@@ -50,7 +50,7 @@ const EcommerceDashboardPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>

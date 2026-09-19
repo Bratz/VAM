@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  RefreshCw, ArrowRight, Plus, Clock, AlertTriangle,
-  ArrowLeftRight, FileDown, Repeat, Building2, Wallet, Sparkles,
-  ChevronDown, ChevronRight,
-} from 'lucide-react';
+import { RefreshCw, ArrowRight, Plus, Clock, AlertTriangle, ArrowLeftRight, Repeat, Building2, Wallet, Sparkles, ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
 import { useNavigation } from '../App';
@@ -854,8 +850,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           <td colSpan={7} className="px-3 py-[9px]">
                             <span className="inline-flex items-center gap-1.5">
                               {isExpanded
-                                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-                                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
+                                ? <ChevronDown className="w-4 h-4 text-neutral-400" />
+                                : <ChevronRight className="w-4 h-4 text-neutral-400" />}
                               <span className="label">{g.label}</span>
                             </span>
                             <span className="caption ml-2">{g.meta}</span>
@@ -1103,7 +1099,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 onClick={() => nav('statements')}
                 className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
-                <FileDown className="w-3 h-3" /> Statements
+                <Download className="w-3 h-3" /> Statements
               </button>
             </div>
             <div>
@@ -1216,7 +1212,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               {[
                 { ic: <Plus className="w-4 h-4" />, label: 'New payment', sub: 'Wire · ACH · SEPA', act: () => nav('payables-create') },
                 { ic: <ArrowLeftRight className="w-4 h-4" />, label: 'FX deal', sub: 'Spot · forward', act: () => nav('fx-rates') },
-                { ic: <FileDown className="w-4 h-4" />, label: 'Statement', sub: 'CAMT · MT940', act: () => nav('statements') },
+                { ic: <Download className="w-4 h-4" />, label: 'Statement', sub: 'CAMT · MT940', act: () => nav('statements') },
                 { ic: <Repeat className="w-4 h-4" />, label: 'Run sweep', sub: 'Cross-bank', act: () => nav('sweeping') },
                 { ic: <Building2 className="w-4 h-4" />, label: 'Open account', sub: 'Partner bank', act: () => nav('accounts') },
                 { ic: <Sparkles className="w-4 h-4" />, label: 'Ask Aperture', sub: 'NL assist', act: () => openCopilot() },
@@ -1243,10 +1239,10 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       <div className="flex flex-wrap items-center justify-between gap-3 caption pt-2 border-t border-neutral-100 dark:border-primary-800/60">
         <div className="flex flex-wrap gap-4">
           <span className="inline-flex items-center gap-1.5">
-            <Wallet className="w-3.5 h-3.5" /> {bankCount} banks · {acctCount} accounts connected
+            <Wallet className="w-4 h-4" /> {bankCount} banks · {acctCount} accounts connected
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <AlertTriangle className={cn('w-3.5 h-3.5', staleCount ? 'text-warning-500 dark:text-warning-300' : 'text-neutral-400')} />
+            <AlertTriangle className={cn('w-4 h-4', staleCount ? 'text-warning-500 dark:text-warning-300' : 'text-neutral-400')} />
             {staleCount} stale balance{staleCount === 1 ? '' : 's'}
           </span>
         </div>

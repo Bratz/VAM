@@ -44,7 +44,7 @@ export const SweepRuleEdge: React.FC<SweepRuleEdgeProps> = ({
     <span className="font-medium text-neutral-600 dark:text-neutral-300">
       {SWEEP_LABEL[rule.sweepType] ?? rule.sweepType}
     </span>
-    <ArrowRight className="w-3.5 h-3.5 shrink-0" aria-hidden />
+    <ArrowRight className="w-4 h-4 shrink-0" aria-hidden />
     <span className="truncate">{targetName || '—'}</span>
     <span aria-hidden>·</span>
     <span className="shrink-0">

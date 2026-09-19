@@ -24,7 +24,6 @@ import {
   Clock,
   Activity,
   AlertTriangle,
-  CheckCircle2,
   XCircle,
   Link2,
   Unlink,
@@ -32,7 +31,7 @@ import {
   Globe,
   CreditCard,
   Database,
-  Zap,
+  Zap
 } from 'lucide-react';
 import { Card, Button, Badge, Input } from '../components/ui';
 import { Page } from '../components/layout/Page';

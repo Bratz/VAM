@@ -101,7 +101,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
           padding="sm"
           className="flex flex-col items-center justify-center text-center gap-3 border-dashed"
         >
-          <GitBranch className="w-7 h-7 text-neutral-400" aria-hidden />
+          <GitBranch className="w-6 h-6 text-neutral-400" aria-hidden />
           <p className="body-sm text-neutral-500 dark:text-neutral-400 max-w-[14rem]">
             Fork this scenario to compare A/B/C structures side-by-side.
           </p>

@@ -19,7 +19,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   ChevronRight, ChevronDown, Plus, X,
-  Globe, Coins, Flag, MapPin, Building2, Building, Users, Wallet,
+  Globe, Coins, Flag, MapPin, Building2, Users, Wallet,
   BarChart3, RadioTower, Network, Target, User, Store, Folder, Landmark,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -56,7 +56,7 @@ export interface PlacementSelection {
 
 const DIMENSION_ICONS: Record<string, LucideIcon> = {
   CURRENCY: Coins, REGION: Globe, COUNTRY: Flag, STATE: MapPin, CITY: Building2,
-  ENTITY: Building, DEPARTMENT: Users, COST_CENTER: Wallet, ACCOUNT_TYPE: BarChart3,
+  ENTITY: Building2, DEPARTMENT: Users, COST_CENTER: Wallet, ACCOUNT_TYPE: BarChart3,
   CHANNEL: RadioTower, PLATFORM: Network, SEGMENT: Target, CUSTOMER: User,
   MERCHANT: Store,
 };
@@ -201,8 +201,8 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
               className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-700"
             >
               {isExpanded
-                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
-                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
+                ? <ChevronDown className="w-4 h-4 text-neutral-400" />
+                : <ChevronRight className="w-4 h-4 text-neutral-400" />}
             </button>
           ) : <span className="w-[18px]" />}
           {n.levelNumber === 1
@@ -248,7 +248,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
               </p>
               <button onClick={() => { setGrowFrom(null); setGrowValues({}); onChange(null); }}
                 className="p-0.5 rounded-md hover:bg-info-100 dark:hover:bg-info-500/20">
-                <X className="w-3.5 h-3.5 text-info-500 dark:text-info-300" />
+                <X className="w-4 h-4 text-info-500 dark:text-info-300" />
               </button>
             </div>
             {growLevels.map(l => {

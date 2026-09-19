@@ -23,32 +23,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Search,
-  Loader2,
-  AlertCircle,
-  X,
-  Wallet,
-  Layers,
-  Target,
-  ChevronRight,
-  ChevronDown,
-  Building2,
-  Globe,
-  MapPin,
-  Check,
-  Info,
-  TreePine,
-  Sparkles,
-  ArrowRight,
-  Clock,
-  XCircle,
-  TrendingUp,
-  TrendingDown,
-  RotateCcw,
-} from 'lucide-react';
+import { AlertTriangle, Search, Loader2, X, Wallet, Layers, Target, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, Clock, XCircle, TrendingUp, TrendingDown, RotateCcw, CheckCircle } from 'lucide-react';
 import { Card, Badge, Button } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
 import { formatCurrency, cn } from '../../utils';
@@ -190,7 +165,7 @@ interface ToastNotification {
 const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.FC<{ className?: string }> }> = {
   UNMATCHED_PAYMENT: { label: 'Unmatched Payment', icon: Wallet },
   RECONCILIATION_DIFF: { label: 'Reconciliation Difference', icon: Search },
-  FAILED_PAYMENT: { label: 'Failed Payment', icon: AlertCircle },
+  FAILED_PAYMENT: { label: 'Failed Payment', icon: XCircle },
   INVALID_VIBAN: { label: 'Invalid VIBAN', icon: X },
   AMOUNT_MISMATCH: { label: 'Amount Mismatch', icon: Layers },
   DUPLICATE_PAYMENT: { label: 'Duplicate Payment', icon: Layers },
@@ -225,7 +200,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
   }, [toast.id, toast.duration, onDismiss]);
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-success-500 dark:text-success-300" />,
+    success: <CheckCircle className="w-5 h-5 text-success-500 dark:text-success-300" />,
     error: <XCircle className="w-5 h-5 text-error-500 dark:text-error-300" />,
     warning: <AlertTriangle className="w-5 h-5 text-warning-500 dark:text-warning-300" />,
     info: <Info className="w-5 h-5 text-info-500 dark:text-info-300" />,
@@ -316,7 +291,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+                <CheckCircle className="w-4 h-4 mr-2" />
                 Confirm Allocation
               </>
             )}
@@ -907,7 +882,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         )}
 
         <div className={cn('p-1.5 rounded-md shrink-0', style.bg)}>
-          <Icon className={cn('w-3.5 h-3.5', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
+          <Icon className={cn('w-4 h-4', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -1344,7 +1319,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               )}
               {!isValidating && selectedVa && validationErrors.length === 0 && (
                 <span className="flex items-center gap-1 caption-success">
-                  <CheckCircle2 className="w-3 h-3" />
+                  <CheckCircle className="w-3 h-3" />
                   Ready to allocate
                 </span>
               )}
@@ -1380,7 +1355,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           {/* Error Banner */}
           {error && (
             <div className="flex items-center gap-3 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 shrink-0" />
+              <XCircle className="w-5 h-5 text-error-600 dark:text-error-300 shrink-0" />
               <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
               <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-error-100 dark:hover:bg-error-500/20 rounded-md">
                 <X className="w-4 h-4 text-error-600 dark:text-error-300" />
@@ -1500,7 +1475,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   </div>
                 ) : suggestedTargets.length === 0 ? (
                   <div className="text-center py-12">
-                    <Sparkles className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
+                    <Sparkles className="w-8 h-8 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">No suggested matches found</p>
                     <p className="caption mt-1">Try searching or browsing the hierarchy</p>
                   </div>
@@ -1612,12 +1587,12 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   </div>
                 ) : searchQuery.length >= 2 && !searching ? (
                   <div className="text-center py-8">
-                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
+                    <Search className="w-8 h-8 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">No results found for "{searchQuery}"</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
+                    <Search className="w-8 h-8 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">Enter at least 2 characters to search</p>
                   </div>
                 )}
@@ -1670,7 +1645,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <TreePine className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
+                      <TreePine className="w-8 h-8 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                       <p className="body-sm">No hierarchy data available</p>
                     </div>
                   )}
@@ -1696,7 +1671,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             <div className="bg-primary-50 rounded-lg p-4 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
+                  <CheckCircle className="w-5 h-5 text-primary-600 dark:text-primary-200" />
                   <div>
                     <p className="body-strong">Selected Target</p>
                     <p className="text-body-sm text-primary-700 dark:text-neutral-200 font-mono">{selectedVa.vaNumber}</p>
@@ -1735,7 +1710,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           {/* Allocation Preview Banner */}
           {selectedVa && validationErrors.length === 0 && (
             <div className="flex items-start gap-3 p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
-              <CheckCircle2 className="w-5 h-5 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
               <div className="text-body-sm text-success-700 dark:text-success-300">
                 <p className="font-medium mb-1">Allocation Preview</p>
                 <p>

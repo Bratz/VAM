@@ -4,7 +4,7 @@
 // ============================================================================
 
 import React from 'react';
-import { Settings, TrendingUp, Info, AlertCircle } from 'lucide-react';
+import { Settings, TrendingUp, Info, AlertTriangle } from 'lucide-react';
 import { Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, NumberInput } from './FormComponents';
@@ -217,7 +217,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
       {/* Warnings */}
       {warnings.length > 0 && (
         <Alert variant="warning">
-          <AlertCircle className="w-4 h-4" />
+          <AlertTriangle className="w-4 h-4" />
           <div>
             <strong>Limit configuration warnings:</strong>
             <ul className="list-disc list-inside mt-1 text-body-sm">
