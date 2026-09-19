@@ -75,6 +75,7 @@ export const RowSelect: Story = {
     const rows = ['INV-1', 'INV-2', 'INV-3'];
     const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
     return (
+      // eslint-disable-next-line no-restricted-syntax -- minimal markup to show a label-less row checkbox
       <table className="body-sm">
         <tbody>
           {rows.map((id) => (

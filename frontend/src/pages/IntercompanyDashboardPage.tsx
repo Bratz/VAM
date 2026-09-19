@@ -1731,6 +1731,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             </div>
           </div>
           <div className="overflow-x-auto">
+            {/* eslint-disable-next-line no-restricted-syntax -- rows come from the separate TransactionRow component */}
             <table className="data-table">
               <thead className="data-table-header">
                 <tr>

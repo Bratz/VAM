@@ -676,6 +676,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
         </p>
       ) : (
         <div className="overflow-x-auto">
+          {/* eslint-disable-next-line no-restricted-syntax -- category totals summary */}
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200 dark:border-primary-800/60">

@@ -278,6 +278,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
         </Alert>
         
         <div className="mt-4 overflow-x-auto">
+          {/* eslint-disable-next-line no-restricted-syntax -- small static limits summary */}
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200">

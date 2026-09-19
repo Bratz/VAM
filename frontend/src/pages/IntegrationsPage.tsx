@@ -1196,6 +1196,7 @@ const FieldMappingModal: React.FC<{
 
       {/* Mapping Table */}
       <div className="border border-edge mb-4">
+        {/* eslint-disable-next-line no-restricted-syntax -- editable field-mapping grid (inputs in cells) */}
         <table className="w-full">
           <thead>
             <tr className="bg-surface-page border-b border-edge">

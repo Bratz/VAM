@@ -1235,6 +1235,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 {/* Transactions */}
                 <Card padding="none">
                   <div className="overflow-x-auto max-h-64">
+                    {/* eslint-disable-next-line no-restricted-syntax -- statement ledger with running balance (not a list) */}
                     <table className="w-full text-body-sm">
                       <thead className="bg-surface-page sticky top-0">
                         <tr>

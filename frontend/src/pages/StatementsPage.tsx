@@ -2074,6 +2074,7 @@ const StatementsPage: React.FC = () => {
             <>
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
+                {/* eslint-disable-next-line no-restricted-syntax -- expandable rows with a colSpan detail row */}
                 <table className="data-table">
                   <thead className="data-table-header">
                     <tr>

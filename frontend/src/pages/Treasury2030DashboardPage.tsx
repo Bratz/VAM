@@ -817,6 +817,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="body-sm py-6 text-center">No accounts in scope.</p>
             ) : (
               <div className="overflow-x-auto scroll-fade-x">
+                {/* eslint-disable-next-line no-restricted-syntax -- dashboard group table with section rows (colSpan) */}
                 <table className="w-full border-collapse text-body-sm">
                   <thead>
                     <tr className="text-left">

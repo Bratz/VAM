@@ -135,6 +135,12 @@ module.exports = {
               "Raw palette Tailwind class in template literal. Semantic statuses or cat-1…cat-8 categorical tokens instead — see file header.",
           },
           {
+            // 0d. Data tables: use the shared DataTable (components/ui). Raw <table> is allowed only with an
+            // eslint-disable-next-line comment giving the reason (expandable rows, totals footer, editable cells, ...).
+            selector: "JSXOpeningElement[name.name='table']",
+            message: "Raw <table>. Use <DataTable> from components/ui (sorting, paging, empty/loading, mobile cards, dark styling). If it needs expandable rows, a totals footer or inline editing, add `{/* eslint-disable-next-line no-restricted-syntax -- reason */}`.",
+          },
+          {
             // 0c. Native checkbox/radio inputs: use the shared Checkbox / Toggle / Radio / RadioGroup
             // (components/ui). The three primitives themselves opt out with a file-level eslint-disable.
             selector: "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value=/^(checkbox|radio)$/]",
