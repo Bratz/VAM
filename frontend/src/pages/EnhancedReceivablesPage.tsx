@@ -1244,7 +1244,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                   columns={[
                     {
                       key: 'select',
-                      header: '',
+                      header: '', minWidth: 48,
                       width: '3rem',
                       render: (_, invoice) => {
                         const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
@@ -1261,7 +1261,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'invoiceNumber',
-                      header: 'Invoice',
+                      header: 'Invoice', minWidth: 105,
                       render: (_, invoice) => (
                         <div className="flex flex-col">
                           <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
@@ -1271,7 +1271,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'customerName',
-                      header: 'Customer',
+                      header: 'Customer', minWidth: 220,
                       render: (_, invoice) => (
                         <div className="flex flex-col">
                           <span className="body-strong">{invoice.customerName}</span>
@@ -1284,7 +1284,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'invoiceAmount',
-                      header: 'Amount',
+                      header: 'Amount', minWidth: 115,
                       align: 'right',
                       render: (_, invoice) => (
                         <div className="flex flex-col items-end">
@@ -1304,7 +1304,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'dueDate',
-                      header: 'Due Date',
+                      header: 'Due Date', minWidth: 100, dropOrder: 1,
                       render: (_, invoice) => {
                         const isOverdue = new Date(invoice.dueDate) < new Date() && invoice.status === 'OPEN';
                         const daysOverdue = isOverdue ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -1320,7 +1320,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'status',
-                      header: 'Status',
+                      header: 'Status', minWidth: 210,
                       render: (_, invoice) => (
                         <div className="flex flex-col gap-1">
                           {getStatusBadge(invoice.status)}
@@ -1343,7 +1343,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'assignedViban',
-                      header: 'VIBAN',
+                      header: 'VIBAN', minWidth: 145, dropOrder: 2,
                       render: (_, invoice) => (
                         <div className="flex flex-col gap-1">
                           {invoice.assignedViban ? (
@@ -1361,7 +1361,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                     },
                     {
                       key: 'actions',
-                      header: 'Actions',
+                      header: 'Actions', minWidth: 210,
                       render: (_, invoice) => {
                         const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
                         const canRequestCobo = !invoice.isCobo &&

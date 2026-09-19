@@ -1286,7 +1286,7 @@ const EnhancedPayablesPage: React.FC = () => {
           columns={[
             {
               key: 'invoiceNumber',
-              header: 'Invoice',
+              header: 'Invoice', minWidth: 160,
               render: (_, payable) => (
                 <div>
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{payable.invoiceNumber || payable.payableNumber}</p>
@@ -1296,7 +1296,7 @@ const EnhancedPayablesPage: React.FC = () => {
             },
             {
               key: 'vendorName',
-              header: 'Vendor / Entity',
+              header: 'Vendor / Entity', minWidth: 110,
               render: (_, payable) => (
                 <div>
                   <p className="body-strong">{payable.vendorName}</p>
@@ -1306,7 +1306,7 @@ const EnhancedPayablesPage: React.FC = () => {
             },
             {
               key: 'netAmount',
-              header: 'Amount',
+              header: 'Amount', minWidth: 140,
               align: 'right',
               render: (_, payable) => (
                 <>
@@ -1319,7 +1319,7 @@ const EnhancedPayablesPage: React.FC = () => {
             },
             {
               key: 'dueDate',
-              header: 'Due Date',
+              header: 'Due Date', minWidth: 100, dropOrder: 1,
               render: (_, payable) => (
                 <div className="flex flex-col gap-1">
                   <span className={cn("text-body-sm", payable.isOverdue ? "text-error-600 dark:text-error-300 font-medium" : "text-neutral-600 dark:text-neutral-300")}>
@@ -1331,7 +1331,7 @@ const EnhancedPayablesPage: React.FC = () => {
             },
             {
               key: 'status',
-              header: 'Status',
+              header: 'Status', minWidth: 150,
               render: (_, payable) => (
                 <div className="flex flex-col gap-1">
                   {getStatusBadge(payable.status)}
@@ -1339,10 +1339,10 @@ const EnhancedPayablesPage: React.FC = () => {
                 </div>
               ),
             },
-            { key: 'paymentRoute', header: 'Route', render: (_, payable) => getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus) },
+            { key: 'paymentRoute', header: 'Route', minWidth: 100, dropOrder: 2, render: (_, payable) => getPaymentRouteBadge(payable.paymentRoute, payable.isIntercompany, payable.nettingStatus) },
             {
               key: 'actions',
-              header: 'Actions',
+              header: 'Actions', minWidth: 110,
               render: (_, payable) => (
                 <PayableActionsCell
                   payable={payable}

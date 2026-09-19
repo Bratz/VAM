@@ -214,7 +214,7 @@ export function DataTable<T>({
           )}>
             <tr className={cn(
               'border-b dark:border-primary-700',
-              hairline ? 'border-neutral-300' : 'bg-neutral-50/80 backdrop-blur-sm border-neutral-200 dark:border-primary-800'
+              hairline ? 'border-neutral-300' : 'bg-neutral-50/80 backdrop-blur-sm border-neutral-200 dark:bg-primary-800/60 dark:border-primary-800'
             )}>
               {selectable && (
                 <th className="w-12 px-4 py-3">
@@ -268,7 +268,7 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className={cn('divide-y', hairline ? 'divide-neutral-200 dark:divide-primary-800/60' : 'divide-neutral-100')}>
+          <tbody className={cn('divide-y', hairline ? 'divide-neutral-200 dark:divide-primary-800/60' : 'divide-neutral-100 dark:divide-primary-800/60')}>
             {loading ? (
               Array.from({ length: pageSize }).map((_, i) => (
                 <tr key={i}>
@@ -308,9 +308,9 @@ export function DataTable<T>({
                     className={cn(
                       'transition-colors duration-150',
                       onRowClick && 'cursor-pointer',
-                      effectiveStriped && index % 2 === 1 && 'bg-neutral-50/50',
+                      effectiveStriped && index % 2 === 1 && 'bg-neutral-50/50 dark:bg-primary-800/30',
                       isSelected && 'bg-primary-50 dark:bg-primary-800/40',
-                      !isSelected && 'hover:bg-neutral-50'
+                      !isSelected && 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                     )}
                   >
                     {selectable && (
