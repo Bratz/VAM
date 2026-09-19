@@ -18,6 +18,7 @@ import { Modal } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { formatCompactCurrency, formatCurrency, cn } from '../utils';
 import { useUser } from '../context/UserContext';
+import { useNavigation } from '../App';
 import { usePermissions } from '../hooks/usePermissions';
 import { TreasuryOnly } from '../components/permissions';
 
@@ -810,6 +811,7 @@ interface IntercompanyDashboardPageProps {
 const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ defaultTab = 'overview' }) => {
   // User context and permissions
   const { currentEntity } = useUser();
+  const { navigate } = useNavigation();
   const { canApprovePOBORecharge, canRejectPOBORecharge } = usePermissions();
   const approverName = currentEntity?.entityCode || currentEntity?.entityName || 'System';
 
@@ -1212,10 +1214,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <Button className="w-full justify-start" variant="outline" leftIcon={<Wallet className="w-4 h-4" />} onClick={() => setShowCoboModal(true)}>
                     Setup COBO Collection
                   </Button>
-                  <Button className="w-full justify-start" variant="outline" leftIcon={<Scale className="w-4 h-4" />}>
+                  {/* ponytail: no bilateral-settlement flow exists yet; disabled rather than a dead button */}
+                  <Button className="w-full justify-start" variant="outline" leftIcon={<Scale className="w-4 h-4" />} disabled title="Coming soon">
                     Bilateral Settlement
                   </Button>
-                  <Button className="w-full justify-start" variant="outline" leftIcon={<GitMerge className="w-4 h-4" />}>
+                  <Button className="w-full justify-start" variant="outline" leftIcon={<GitMerge className="w-4 h-4" />} onClick={() => navigate('netting-enhanced')}>
                     Add to Netting Cycle
                   </Button>
                 </div>

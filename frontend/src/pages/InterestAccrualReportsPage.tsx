@@ -99,6 +99,12 @@ interface AccrualSummary {
 // API SERVICE
 // ============================================================================
 
+// fetch doesn't reject on HTTP errors; without this a 404 body parses as an empty success.
+const ok = (r: Response) => {
+  if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+  return r;
+};
+
 const interestAccrualApi = {
   getAccruals: (corporateId: string, params?: { 
     type?: AccrualType; 
@@ -106,10 +112,10 @@ const interestAccrualApi = {
     from?: string; 
     to?: string;
   }) => 
-    fetch(`${API_BASE}/interest-accruals/corporate/${corporateId}?${new URLSearchParams(params as any)}`).then(r => r.json()) as Promise<ApiResponse<InterestAccrual[]>>,
+    fetch(`${API_BASE}/interest-accruals/corporate/${corporateId}?${new URLSearchParams(params as any)}`).then(ok).then(r => r.json()) as Promise<ApiResponse<InterestAccrual[]>>,
   
   getSummary: (corporateId: string, from?: string, to?: string) => 
-    fetch(`${API_BASE}/interest-accruals/summary/${corporateId}?${new URLSearchParams({ from: from || '', to: to || '' })}`).then(r => r.json()) as Promise<ApiResponse<AccrualSummary>>,
+    fetch(`${API_BASE}/interest-accruals/summary/${corporateId}?${new URLSearchParams({ from: from || '', to: to || '' })}`).then(ok).then(r => r.json()) as Promise<ApiResponse<AccrualSummary>>,
   
   runDailyAccrual: (corporateId: string, accrualDate?: string) => 
     fetch(`${API_BASE}/interest-accruals/run/${corporateId}`, {
@@ -193,6 +199,8 @@ const InterestAccrualReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The backend has no /interest-accruals API yet (list, summary and run all 404).
+  const [unavailable, setUnavailable] = useState(false);
   
   const [filterType, setFilterType] = useState<AccrualType | 'ALL'>('ALL');
   const [filterStatus, setFilterStatus] = useState<AccrualStatus | 'ALL'>('ALL');
@@ -226,6 +234,7 @@ const InterestAccrualReportsPage: React.FC = () => {
     if (!selectedCorporateId) return;
     setLoading(true);
     setError(null);
+    setUnavailable(false);
     
     try {
       const params: any = {};
@@ -242,7 +251,8 @@ const InterestAccrualReportsPage: React.FC = () => {
       setAccruals(accrualsRes?.data || []);
       setSummary(summaryRes?.data || null);
     } catch (err) {
-      setError('Failed to load interest accrual data. API endpoint may not be implemented yet.');
+      if ((err as { status?: number })?.status === 404) setUnavailable(true);
+      else setError('Failed to load interest accrual data.');
       setAccruals([]);
       setSummary(null);
     } finally {
@@ -318,7 +328,7 @@ const InterestAccrualReportsPage: React.FC = () => {
     <Page>
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <Button variant="outline" leftIcon={running ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} onClick={handleRunAccrual} disabled={running}>
+        <Button variant="outline" leftIcon={running ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} onClick={handleRunAccrual} disabled={running || unavailable} title={unavailable ? 'Interest accrual is not available on this backend yet' : undefined}>
           Run Accrual
         </Button>
       </div>
@@ -341,6 +351,17 @@ const InterestAccrualReportsPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {unavailable && (
+        <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
+          <div className="flex items-center gap-3 p-4">
+            <StatusIconBadge tone="warning" icon={AlertCircle} className="dark:bg-warning-500/20" />
+            <span className="text-warning-700 font-medium dark:text-warning-300">
+              Interest accrual reporting isn&apos;t available yet: this backend has no accrual service, so accruals can&apos;t be listed or run.
+            </span>
+          </div>
+        </Card>
+      )}
 
       {error && (
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
