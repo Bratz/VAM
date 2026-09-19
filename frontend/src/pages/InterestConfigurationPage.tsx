@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, ArrowUpRight, ArrowDownRight, Layers, Save, Copy, Pencil, CheckCircle, X } from 'lucide-react';
+import { Plus, Search, Loader2, Eye, TrendingUp, TrendingDown, Settings, XCircle, RefreshCw, Calendar, Building2, Calculator, ArrowUpRight, ArrowDownRight, Layers, Save, Copy, Pencil, CheckCircle, X, Landmark } from 'lucide-react';
 import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { cn, formatDate } from '../utils';
@@ -712,7 +712,7 @@ const InterestConfigurationPage: React.FC = () => {
           <StatCard
             title="External (Bank)"
             value={statistics.externalConfigs || 0}
-            icon={<Building2 className="w-5 h-5" />}
+            icon={<Landmark className="w-5 h-5" />}
             color="primary"
           />
           <StatCard
@@ -785,7 +785,7 @@ const InterestConfigurationPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={XCircle} />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>

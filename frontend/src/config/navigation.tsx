@@ -85,7 +85,7 @@ export const navSections: NavSection[] = [
     title: 'Accounts & Structure',
     items: [
       { icon: <Building2 className="w-5 h-5" />, label: 'Virtual Accounts', href: 'accounts' },
-      { icon: <Building2 className="w-5 h-5" />, label: 'Bank Accounts', href: 'physical-accounts' },
+      { icon: <Landmark className="w-5 h-5" />, label: 'Bank Accounts', href: 'physical-accounts' },
       { icon: <QrCode className="w-5 h-5" />, label: 'VIBAN Management', href: 'viban' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Account Linking', href: 'account-attachments' },
       { icon: <FolderKanban className="w-5 h-5" />, label: 'Programs', href: 'programs' },

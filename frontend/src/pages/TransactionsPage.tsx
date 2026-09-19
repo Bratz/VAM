@@ -990,7 +990,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         {/* ISO 20022 Message Type Selection */}
         <div className="bg-gradient-to-r from-info-50 to-cat-1-soft rounded-lg p-4 border border-info-100 dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
           <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="info" icon={FileCode} className="dark:bg-info-500/20" />
+            <StatusIconBadge tone="info" icon={FileCode} />
             <div>
               <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">ISO 20022 Message Simulation</h3>
               <p className="caption">Simulate incoming payment messages as if received from SWIFT/Clearing</p>
@@ -1264,7 +1264,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                       disabled={!vibanInput.trim() || vibanLookupLoading}
                     >
                       {vibanLookupLoading ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Search className="w-4 h-4" />
                       )}
@@ -1291,7 +1291,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
               <>
                 {loadingVAs ? (
                   <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Loading virtual accounts...</span>
                   </div>
                 ) : virtualAccounts.length === 0 ? (

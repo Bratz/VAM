@@ -23,7 +23,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AlertTriangle, Search, Loader2, X, Wallet, Layers, Target, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, Clock, XCircle, TrendingUp, TrendingDown, RotateCcw, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Search, Loader2, X, Wallet, Layers, Target, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, Clock, XCircle, TrendingUp, TrendingDown, CheckCircle, RefreshCw } from 'lucide-react';
 import { Card, Badge, Button, Radio } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
 import { formatCurrency, cn } from '../../utils';
@@ -177,7 +177,7 @@ const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.
   SYSTEM_ERROR: { label: 'System Error', icon: AlertTriangle },
   MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
   OVERPAYMENT: { label: 'Overpayment', icon: Wallet },
-  PENDING_REFUND: { label: 'Pending Refund', icon: RotateCcw },
+  PENDING_REFUND: { label: 'Pending Refund', icon: RefreshCw },
 };
 
 // ============================================================================

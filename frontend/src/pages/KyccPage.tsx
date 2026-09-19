@@ -125,7 +125,7 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
       style={{ animationDelay: `${index * 0.03}s` }}
     >
       <div className="flex items-start gap-3">
-        <StatusIconBadge tone="primary" icon={Shield} size="lg" className="shrink-0 dark:bg-primary-700" />
+        <StatusIconBadge tone="primary" icon={Shield} size="lg" className="shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -397,7 +397,7 @@ const KyccPage: React.FC = () => {
       {expiring.length > 0 && (
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30" style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center gap-3">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} className="shrink-0 dark:bg-warning-500/20" />
+            <StatusIconBadge tone="warning" icon={AlertTriangle} className="shrink-0" />
             <div>
               <p className="font-semibold text-warning-800 dark:text-warning-300">KYC Expiring Soon</p>
               <p className="text-body-sm text-warning-700 dark:text-warning-300">{expiring.length} entities have KYC expiring within 30 days</p>
@@ -433,7 +433,7 @@ const KyccPage: React.FC = () => {
               header: 'Application',
               render: (_, kyc) => (
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="primary" icon={Shield} className="shrink-0 dark:bg-primary-700" />
+                  <StatusIconBadge tone="primary" icon={Shield} className="shrink-0" />
                   <div className="min-w-0">
                     <p className="text-body-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.applicationRef}</p>
                     <p className="caption mt-0.5">{new Date(kyc.submittedAt).toLocaleDateString()}</p>

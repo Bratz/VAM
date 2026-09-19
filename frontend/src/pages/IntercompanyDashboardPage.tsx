@@ -281,7 +281,7 @@ const LoadingSpinner: React.FC<{ text?: string }> = ({ text = 'Loading...' }) =>
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
     <div className="flex items-center gap-3 p-4">
-      <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+      <StatusIconBadge tone="error" icon={XCircle} />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
         <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
@@ -1152,7 +1152,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <div className="h-1 bg-gradient-to-r from-primary-500 via-info-500 to-accent-500 rounded-t-lg" />
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <StatusIconBadge tone="primary" icon={BarChart3} className="dark:bg-primary-700" />
+                  <StatusIconBadge tone="primary" icon={BarChart3} />
                   <h3 className="section-title">Corporate Position Summary</h3>
                 </div>
                 <StatStrip className="mb-6">
@@ -1251,7 +1251,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-primary-700" />
+                <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" />
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">POBO Transactions</h4>
                 {isTreasuryView && (
                   <span className="ml-2 px-2 py-0.5 text-caption font-medium bg-success-100 text-success-700 rounded-full dark:bg-success-500/20 dark:text-success-300">
@@ -1345,7 +1345,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
+                <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" />
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">COBO Collections</h4>
               </div>
               <div className="flex items-center gap-2">
@@ -1440,7 +1440,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-edge-subtle">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" className="dark:bg-success-500/20" />
+                <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" />
                 <div>
                   <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Entity Pairs - Ready for Settlement</h4>
                   <p className="body-sm">Select pairs to settle bilaterally or add to netting cycle</p>
@@ -1503,7 +1503,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="p-4 border-b border-edge-subtle">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
+                  <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" />
                   <div>
                     <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Intercompany Virtual Accounts</h4>
                     <p className="body-sm">Virtual accounts for intercompany positions</p>
@@ -1525,7 +1525,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <div key={va.id} className="p-4 rounded-lg border border-edge hover:border-info-300 hover:shadow-sm transition-all bg-surface-card">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-info-500/20" />
+                          <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" />
                           <div>
                             <p className="body-strong">{va.vaNumber}</p>
                             <p className="caption">{va.vaName || 'Intercompany VA'}</p>

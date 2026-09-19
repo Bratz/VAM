@@ -193,7 +193,7 @@ const VibanDisplay: React.FC<{
             <div className="w-48 h-48 mx-auto bg-surface-card p-4 rounded-lg border">
               {/* QR Code would be rendered here - using placeholder */}
               <div className="w-full h-full bg-surface-muted flex items-center justify-center rounded-md">
-                <QrCode className="w-24 h-24 text-neutral-400" />
+                <QrCode className="w-12 h-12 text-neutral-400" />
               </div>
             </div>
             <p className="body-sm mt-4">Scan to pay {formatCurrency(amount, currencyCode)}</p>

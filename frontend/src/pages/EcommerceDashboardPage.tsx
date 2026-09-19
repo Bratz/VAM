@@ -50,7 +50,7 @@ const EcommerceDashboardPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>
@@ -62,7 +62,7 @@ const EcommerceDashboardPage: React.FC = () => {
           <Card hover>
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <StatusIconBadge tone="primary" icon={Users} className="dark:bg-primary-700" />
+                <StatusIconBadge tone="primary" icon={Users} />
                 <Badge variant="success">+12%</Badge>
               </div>
               <p className="stat-value-sm mt-3">{stats.totalMerchants}</p>
@@ -74,7 +74,7 @@ const EcommerceDashboardPage: React.FC = () => {
           <Card hover>
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <StatusIconBadge tone="success" icon={CreditCard} className="dark:bg-success-500/20" />
+                <StatusIconBadge tone="success" icon={CreditCard} />
                 <Badge variant="success">+8%</Badge>
               </div>
               <p className="stat-value-sm mt-3">{formatCurrency(stats.totalCollections)}</p>
@@ -86,7 +86,7 @@ const EcommerceDashboardPage: React.FC = () => {
           <Card hover>
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <StatusIconBadge tone="warning" icon={ShoppingCart} className="dark:bg-warning-500/20" />
+                <StatusIconBadge tone="warning" icon={ShoppingCart} />
               </div>
               <p className="stat-value-sm mt-3">{stats.transactionsToday}</p>
               <p className="label">Transactions Today</p>
@@ -97,7 +97,7 @@ const EcommerceDashboardPage: React.FC = () => {
           <Card hover>
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
+                <StatusIconBadge tone="info" icon={TrendingUp} />
               </div>
               <p className="stat-value-sm mt-3">{stats.successRate}%</p>
               <p className="label">Success Rate</p>

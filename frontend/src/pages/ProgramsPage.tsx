@@ -1033,7 +1033,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         walletCharges.topup.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
-                          <StatusIconBadge tone="success" icon={Plus} rounded="lg" className="dark:bg-success-500/20" />
+                          <StatusIconBadge tone="success" icon={Plus} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.topup.chargeName}</p>
                             <p className="caption">{walletCharges.topup.chargeCode}</p>
@@ -1063,7 +1063,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         walletCharges.withdrawal.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
-                          <StatusIconBadge tone="error" icon={Banknote} rounded="lg" className="dark:bg-error-500/20" />
+                          <StatusIconBadge tone="error" icon={Banknote} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.withdrawal.chargeName}</p>
                             <p className="caption">{walletCharges.withdrawal.chargeCode}</p>
@@ -1093,7 +1093,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         walletCharges.transfer.hasOverride ? 'bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-surface-page border-edge'
                       )}>
                         <div className="flex items-center gap-3">
-                          <StatusIconBadge tone="info" icon={TrendingUp} rounded="lg" className="dark:bg-info-500/20" />
+                          <StatusIconBadge tone="info" icon={TrendingUp} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.transfer.chargeName}</p>
                             <p className="caption">{walletCharges.transfer.chargeCode}</p>
@@ -1255,7 +1255,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   {detail.recentVirtualAccounts.map(va => (
                     <Card key={va.id} padding="sm" className="flex items-center justify-between hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50">
                       <div className="flex items-center gap-3">
-                        <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="dark:bg-primary-700" />
+                        <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" />
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{va.vaName}</p>
                           <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>

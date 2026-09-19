@@ -877,9 +877,7 @@ const SetupWizardModal: React.FC<{
                 )}
                 {testResult === 'error' && (
                   <div>
-                    <div className="w-12 h-12 bg-error-600 flex items-center justify-center mx-auto mb-3">
-                      <X className="w-6 h-6 text-white" />
-                    </div>
+                    <StatusIconBadge tone="error" icon={X} size="lg" solid className="mx-auto mb-3" />
                     <p className="body-strong">Connection Failed</p>
                     <p className="caption mt-1">Please check credentials and try again</p>
                     <button onClick={testConnection} className="mt-4 caption hover:text-neutral-900 underline dark:hover:text-neutral-50">

@@ -575,7 +575,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                 </div>
               </div>
               <div className="border-t pt-4">
-                <h4 className="text-body-sm font-semibold mb-3 flex items-center gap-2"><Wallet className="w-4 h-4" />Bank Relationship</h4>
+                <h4 className="text-body-sm font-semibold mb-3 flex items-center gap-2"><Landmark className="w-4 h-4" />Bank Relationship</h4>
                 <Checkbox variant="card" size="sm" checked={formData.isBankCustomer} onChange={(v) => updateField('isBankCustomer', v)} label="Is Bank Customer" description="Has direct banking relationship with external limits" />
                 {formData.isBankCustomer && (
                   <div className="mt-3">
@@ -1402,9 +1402,7 @@ const LegalEntitiesPage: React.FC = () => {
           <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center justify-between p-4 border-b border-edge">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-                  <GitBranch className="w-5 h-5 text-white" />
-                </div>
+                <StatusIconBadge tone="primary" icon={GitBranch} />
                 <div>
                   <h2 className="section-title">Entity Hierarchy</h2>
                   <p className="body-sm">{entities.length} entities</p>
@@ -1537,7 +1535,7 @@ const LegalEntitiesPage: React.FC = () => {
             <span className="caption">Treasury Center</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-success-100 dark:bg-success-500/20"><Wallet className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
+            <div className="p-1.5 rounded-md bg-success-100 dark:bg-success-500/20"><Landmark className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
             <span className="caption">Bank Customer</span>
           </div>
           <div className="flex items-center gap-2">

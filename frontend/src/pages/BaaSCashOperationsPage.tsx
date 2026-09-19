@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wallet, Plus, Search, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Users, TrendingUp, MoreHorizontal, Eye, RefreshCw, Send, Download, Loader2, CheckCircle, Building2, CreditCard, Banknote, Smartphone, QrCode, Store, Receipt, Clock, Filter, Calendar, ChevronDown, ChevronUp, Copy, Printer, FileText, Upload, X, XCircle } from 'lucide-react';
+import { Wallet, Plus, Search, ArrowUpRight, ArrowDownRight, ArrowLeftRight, Users, TrendingUp, MoreHorizontal, Eye, RefreshCw, Send, Download, Loader2, CheckCircle, CreditCard, Banknote, Smartphone, QrCode, Store, Receipt, Clock, Filter, Calendar, ChevronDown, ChevronUp, Copy, Printer, FileText, Upload, X, XCircle, Landmark } from 'lucide-react';
 import { Card, Button, Input, Badge, EmptyState , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Alert, Avatar } from '../components/ui/enhanced';
 import { cn, formatCurrency, formatDate } from '../utils';
@@ -309,7 +309,7 @@ const operationTypeConfig: Record<string, { label: string; color: string; icon: 
 
 const channelConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   AGENT: { label: 'Agent', icon: <Store className="w-4 h-4" /> },
-  BANK_TRANSFER: { label: 'Bank Transfer', icon: <Building2 className="w-4 h-4" /> },
+  BANK_TRANSFER: { label: 'Bank Transfer', icon: <Landmark className="w-4 h-4" /> },
   CARD: { label: 'Card', icon: <CreditCard className="w-4 h-4" /> },
   VIBAN: { label: 'VIBAN', icon: <QrCode className="w-4 h-4" /> },
   ATM: { label: 'ATM', icon: <Banknote className="w-4 h-4" /> },
@@ -702,7 +702,7 @@ const BaaSCashOperationsPage: React.FC = () => {
           className="p-4 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-lg transition-all hover:shadow-md text-left animate-fade-in dark:bg-accent-500/10 dark:hover:bg-accent-500/20 dark:border-accent-500/30"
           style={{ animationDelay: '0.45s' }}
         >
-          <StatusIconBadge tone="accent" icon={Upload} size="lg" className="mb-3 dark:bg-accent-500/20" />
+          <StatusIconBadge tone="accent" icon={Upload} size="lg" className="mb-3" />
           <p className="font-semibold text-accent-900">Bulk Load</p>
           <p className="text-body-sm text-accent-600 dark:text-accent-300">Multiple wallets</p>
         </button>

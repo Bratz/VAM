@@ -1434,7 +1434,7 @@ const AssignForm: React.FC<{
         // Pre-selected pool (from "Assign to VA" button on pool card)
         <div className="bg-primary-50 rounded-lg p-4 border border-primary-100 dark:bg-primary-800/40 dark:border-primary-700/60">
           <div className="flex items-center gap-3 mb-3">
-            <StatusIconBadge tone="primary" icon={Database} rounded="lg" className="dark:bg-primary-700" />
+            <StatusIconBadge tone="primary" icon={Database} rounded="lg" />
             <div>
               <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedPool?.poolName}</p>
               <p className="text-body-sm text-primary-600 dark:text-primary-200">{selectedPool?.poolCode}</p>
@@ -1720,7 +1720,7 @@ const BulkAssignForm: React.FC<{
       {/* Pool Info */}
       <div className="bg-primary-50 rounded-lg p-4 border border-primary-100 dark:bg-primary-800/40 dark:border-primary-700/60">
         <div className="flex items-center gap-3 mb-3">
-          <StatusIconBadge tone="primary" icon={Database} rounded="lg" className="dark:bg-primary-700" />
+          <StatusIconBadge tone="primary" icon={Database} rounded="lg" />
           <div>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{pool.poolName}</p>
             <p className="text-body-sm text-primary-600 dark:text-primary-200">{pool.poolCode}</p>

@@ -17,7 +17,7 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, RotateCcw, Trash2, FileText, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, Trash2, FileText, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
@@ -79,7 +79,7 @@ const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
   ESCALATED: { label: 'Escalated', variant: 'error', icon: AlertTriangle },
   RESOLVED: { label: 'Resolved', variant: 'success', icon: CheckCircle },
   WRITTEN_OFF: { label: 'Written Off', variant: 'neutral', icon: XCircle },
-  RETURNED: { label: 'Returned', variant: 'error', icon: RotateCcw },
+  RETURNED: { label: 'Returned', variant: 'error', icon: RefreshCw },
 };
 
 // Kept in sync with the backend's ExceptionTransaction.ExceptionType enum —
@@ -102,7 +102,7 @@ const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.
   SYSTEM_ERROR: { label: 'System Error', icon: AlertTriangle },
   MISSING_SETTLEMENT_VA: { label: 'Missing Settlement VA', icon: AlertTriangle },
   OVERPAYMENT: { label: 'Overpayment', icon: DollarSign },
-  PENDING_REFUND: { label: 'Pending Refund', icon: RotateCcw },
+  PENDING_REFUND: { label: 'Pending Refund', icon: RefreshCw },
 };
 
 // ============================================================================

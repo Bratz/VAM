@@ -424,7 +424,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           {transferType === 'inward' ? (
             formData.debtorName ? (
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="success" icon={Building2} rounded="lg" className="dark:bg-success-500/20" />
+                <StatusIconBadge tone="success" icon={Building2} rounded="lg" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{formData.debtorName}</p>
                   {formData.debtorAccount && (
@@ -440,7 +440,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             )
           ) : sourceAccount ? (
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="primary" icon={Wallet} rounded="lg" className="dark:bg-primary-700" />
+              <StatusIconBadge tone="primary" icon={Wallet} rounded="lg" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{sourceAccount.vaName}</p>
                 <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{sourceAccount.vaNumber}</p>
@@ -475,7 +475,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           </p>
           {transferType === 'internal' && targetAccount ? (
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="success" icon={Wallet} rounded="lg" className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={Wallet} rounded="lg" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{targetAccount.vaName}</p>
                 <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{targetAccount.vaNumber}</p>
@@ -484,7 +484,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           ) : transferType === 'outward' && formData.creditorName ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="primary" icon={Globe} rounded="lg" className="dark:bg-primary-700" />
+                <StatusIconBadge tone="primary" icon={Globe} rounded="lg" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{formData.creditorName}</p>
                   <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{formData.creditorAccount}</p>
@@ -514,7 +514,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             </div>
           ) : transferType === 'inward' && formData.targetVibanOrVa ? (
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="success" icon={ArrowDownLeft} rounded="lg" className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={ArrowDownLeft} rounded="lg" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">
                   {formData.toVaId ? accounts.find(a => a.id === formData.toVaId)?.vaName : 'VIBAN Routing'}
@@ -528,7 +528,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           ) : transferType === 'bulk' && bulkItems.length > 0 ? (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="warning" icon={Users} rounded="lg" className="dark:bg-warning-500/20" />
+                <StatusIconBadge tone="warning" icon={Users} rounded="lg" />
                 <div>
                   <p className="font-semibold text-neutral-900 dark:text-neutral-50">{bulkItems.length} Recipients</p>
                   <p className="caption">Multiple accounts</p>
@@ -900,7 +900,7 @@ const XmlViewerModal: React.FC<XmlViewerModalProps> = ({ isOpen, onClose, xml })
         <Card className="bg-surface-page border-edge">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
+              <StatusIconBadge tone="primary" icon={FileCode} />
               <div>
                 <p className="font-semibold text-primary-900 dark:text-neutral-50">pain.001 Message</p>
                 <p className="caption">Customer Credit Transfer Initiation</p>
@@ -1103,7 +1103,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                 <div className="grid grid-cols-2 gap-4">
                   <Card padding="sm" className="bg-primary-50/50 dark:bg-primary-800/40 border-primary-200 dark:border-primary-700">
                     <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="primary" icon={ArrowUpRight} className="dark:bg-primary-700" />
+                      <StatusIconBadge tone="primary" icon={ArrowUpRight} />
                       <div className="flex-1 min-w-0">
                         <p className="text-caption text-primary-600 uppercase tracking-wider dark:text-primary-200">From</p>
                         <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">{transaction.vaName || 'N/A'}</p>
@@ -1113,7 +1113,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   </Card>
                   <Card padding="sm" className="bg-success-50/50 border-success-200 dark:border-success-500/30">
                     <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="success" icon={ArrowDownLeft} className="dark:bg-success-500/20" />
+                      <StatusIconBadge tone="success" icon={ArrowDownLeft} />
                       <div className="flex-1 min-w-0">
                         <p className="text-caption text-success-600 uppercase tracking-wider dark:text-success-300">To</p>
                         <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">
@@ -1201,7 +1201,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   {transaction.movementType === 'POBO_DEBIT' && (
                     <Card className="mt-4 bg-warning-50/50 border-warning-200 dark:border-warning-500/30">
                       <div className="flex items-start gap-3">
-                        <StatusIconBadge tone="warning" icon={Building2} className="dark:bg-warning-500/20" />
+                        <StatusIconBadge tone="warning" icon={Building2} />
                         <div>
                           <p className="font-semibold text-warning-800 dark:text-warning-300">POBO Payment</p>
                           <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">
@@ -1249,7 +1249,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     <Card className="bg-surface-page border-edge">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
+                          <StatusIconBadge tone="primary" icon={FileCode} />
                           <div>
                             <p className="font-semibold text-primary-900 dark:text-neutral-50">{isoMessage.messageType}</p>
                             <p className="caption">Message ID: {isoMessage.messageId}</p>
@@ -1369,7 +1369,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         {/* External Transaction Explanation */}
                         <Card className="mt-4 bg-primary-50/50 dark:bg-primary-800/40 border-primary-200 dark:border-primary-700">
                           <div className="flex items-start gap-3">
-                            <StatusIconBadge tone="primary" icon={Building2} className="flex-shrink-0 dark:bg-primary-700" />
+                            <StatusIconBadge tone="primary" icon={Building2} className="flex-shrink-0" />
                             <div>
                               <p className="font-semibold text-primary-800 dark:text-neutral-100">
                                 {isInwardCollection ? 'Inward Collection' : 'Outward Payment'}
@@ -1568,7 +1568,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       {transaction.movementType === 'POBO_DEBIT' && (
                         <Card className="mt-4 bg-warning-50/50 border-warning-200 dark:border-warning-500/30">
                           <div className="flex items-start gap-3">
-                            <StatusIconBadge tone="warning" icon={Building2} className="flex-shrink-0 dark:bg-warning-500/20" />
+                            <StatusIconBadge tone="warning" icon={Building2} className="flex-shrink-0" />
                             <div>
                               <p className="font-semibold text-warning-800 dark:text-warning-300">POBO Intercompany Entries</p>
                               <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">
@@ -2601,7 +2601,7 @@ export default function TransfersPage() {
                   {/* Payer Picker from Parties (CUSTOMER role) */}
                   <div className="p-4 rounded-lg bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
                     <div className="flex items-center gap-3 mb-4">
-                      <StatusIconBadge tone="success" icon={UserCheck} className="dark:bg-success-500/20" />
+                      <StatusIconBadge tone="success" icon={UserCheck} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Payer</p>
                         <p className="caption">Choose from registered customers ({payers.length} available)</p>
@@ -2645,7 +2645,7 @@ export default function TransfersPage() {
                       {formData.selectedPayerId && (
                         <div className="p-3 bg-success-50 rounded-lg border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
                           <div className="flex items-center gap-3">
-                            <StatusIconBadge tone="success" icon={Building2} rounded="lg" className="dark:bg-success-500/20" />
+                            <StatusIconBadge tone="success" icon={Building2} rounded="lg" />
                             <div className="flex-1">
                               <p className="font-semibold text-success-900">{formData.debtorName}</p>
                               <p className="text-caption text-success-600 font-mono dark:text-success-300">{formData.debtorAccount}</p>
@@ -2716,7 +2716,7 @@ export default function TransfersPage() {
                 <div className="space-y-4">
                   <div className="p-4 rounded-lg bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
                     <div className="flex items-center gap-3 mb-4">
-                      <StatusIconBadge tone="success" icon={ArrowDownLeft} className="dark:bg-success-500/20" />
+                      <StatusIconBadge tone="success" icon={ArrowDownLeft} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Credit Destination</p>
                         <p className="caption">Enter VIBAN for auto-routing or select a VA directly</p>
@@ -2759,7 +2759,7 @@ export default function TransfersPage() {
                       {(formData.targetVibanOrVa || formData.toVaId) && (
                         <div className="p-3 bg-success-50 rounded-lg border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
                           <div className="flex items-center gap-3">
-                            <StatusIconBadge tone="success" icon={Wallet} rounded="lg" className="dark:bg-success-500/20" />
+                            <StatusIconBadge tone="success" icon={Wallet} rounded="lg" />
                             <div className="flex-1">
                               <p className="font-semibold text-success-900">
                                 {formData.toVaId
@@ -2787,7 +2787,7 @@ export default function TransfersPage() {
                   {/* Beneficiary Picker from Parties - Primary Selection */}
                   <div className="p-4 rounded-lg bg-gradient-to-br from-primary-50/50 to-white border border-primary-100 dark:border-primary-700/60">
                     <div className="flex items-center gap-3 mb-4">
-                      <StatusIconBadge tone="primary" icon={UserCheck} className="dark:bg-primary-700" />
+                      <StatusIconBadge tone="primary" icon={UserCheck} />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Beneficiary</p>
                         <p className="caption">Choose from registered parties ({beneficiaries.length} available)</p>
@@ -2846,7 +2846,7 @@ export default function TransfersPage() {
                         <div className="mt-4 p-4 bg-surface-card rounded-lg border border-primary-200 shadow-sm dark:border-primary-700">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
+                              <StatusIconBadge tone="success" icon={Building2} />
                               <div>
                                 <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedBeneficiary.party.legalName}</p>
                                 <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{selectedBeneficiary.party.partyCode}</p>

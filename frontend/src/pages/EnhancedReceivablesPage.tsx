@@ -1173,7 +1173,7 @@ const EnhancedReceivablesPage: React.FC = () => {
         <Card className="animate-fade-in border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10">
           <div className="h-1 bg-gradient-to-r from-error-100 via-error-200 to-error-100 rounded-t-lg" />
           <div className="p-4 flex items-center gap-3">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <span className="flex-1 text-body-sm text-error-700 dark:text-error-300">{error}</span>
             <Button variant="ghost" size="sm" onClick={() => setError(null)} className="text-error-600 hover:bg-error-100 dark:text-error-300 dark:hover:bg-error-500/20">
               <X className="w-4 h-4" />

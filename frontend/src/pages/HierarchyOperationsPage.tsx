@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, MoreVertical, History, BookOpen, X, Globe, Wallet, Coins, Scale, Plus, CheckCircle, XCircle, ArrowUpDown, Settings, Layers } from 'lucide-react';
+import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, Plus, CheckCircle, XCircle, ArrowUpDown, Settings, Layers, MoreHorizontal } from 'lucide-react';
 import { Card as SharedCard, Badge as SharedBadge, Button as SharedButton, Skeleton, StatusIconBadge } from '../components/ui';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { cn } from '../utils';
@@ -261,7 +261,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <MoreVertical className="w-4 h-4 text-neutral-400" />
+              <MoreHorizontal className="w-4 h-4 text-neutral-400" />
             </button>
             {showMenu && (
               <>

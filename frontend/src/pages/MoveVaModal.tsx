@@ -341,7 +341,7 @@ const ParentSelectionTree: React.FC<ParentSelectionTreeProps> = ({
               isSelected ? 'border-primary-600 bg-primary-600' : 'border-edge-strong'
             )}
           >
-            {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+            {isSelected && <Check className="w-3 h-3 text-white" />}
           </div>
         )}
       </div>

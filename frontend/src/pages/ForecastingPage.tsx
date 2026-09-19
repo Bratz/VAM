@@ -47,7 +47,7 @@ import { TrendingUp, RefreshCw, AlertTriangle, Wallet, ArrowDownRight, ArrowUpRi
 import toast from 'react-hot-toast';
 
 import { Page } from '../components/layout/Page';
-import { Card, Button, Skeleton, Badge, Drawer, StatTile } from '../components/ui';
+import { Card, Button, Skeleton, Badge, Drawer, StatTile, StatusIconBadge } from '../components/ui';
 import { StatStrip } from '../components/layout/StatStrip';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -830,9 +830,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
 const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, running }) => (
   <Card padding="lg">
     <div className="text-center py-12">
-      <div className="w-16 h-16 rounded-lg bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center mx-auto mb-4">
-        <Sparkles className="w-8 h-8 text-accent-600 dark:text-accent-300" />
-      </div>
+      <StatusIconBadge tone="accent" icon={Sparkles} size="xl" className="mx-auto mb-4" />
       <h2 className="page-title-display text-heading-md text-primary-900 dark:text-neutral-50">
         No forecast yet
       </h2>

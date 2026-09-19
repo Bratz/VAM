@@ -293,7 +293,7 @@ const CreditAgreementsPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={AlertTriangle} />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
@@ -311,7 +311,7 @@ const CreditAgreementsPage: React.FC = () => {
               <p className="label">Total Agreements</p>
               <p className="stat-value-sm mt-1">{stats.total}</p>
             </div>
-            <StatusIconBadge tone="info" icon={FileText} className="dark:bg-info-500/20" />
+            <StatusIconBadge tone="info" icon={FileText} />
           </div>
         </Card>
         <Card hover className="p-4">
@@ -320,7 +320,7 @@ const CreditAgreementsPage: React.FC = () => {
               <p className="label">Active</p>
               <p className="stat-value-success mt-1">{stats.active}</p>
             </div>
-            <StatusIconBadge tone="success" icon={CheckCircle} className="dark:bg-success-500/20" />
+            <StatusIconBadge tone="success" icon={CheckCircle} />
           </div>
         </Card>
         <Card hover className="p-4">
@@ -329,7 +329,7 @@ const CreditAgreementsPage: React.FC = () => {
               <p className="label">Total Limit</p>
               <p className="stat-value-xs mt-1">{formatCurrency(stats.totalLimit)}</p>
             </div>
-            <StatusIconBadge tone="accent" icon={Shield} className="dark:bg-accent-500/20" />
+            <StatusIconBadge tone="accent" icon={Shield} />
           </div>
         </Card>
         <Card hover className="p-4">
@@ -338,7 +338,7 @@ const CreditAgreementsPage: React.FC = () => {
               <p className="label">Utilization</p>
               <p className="stat-value-warning mt-1">{stats.totalLimit > 0 ? ((stats.totalUtilized / stats.totalLimit) * 100).toFixed(1) : 0}%</p>
             </div>
-            <StatusIconBadge tone="warning" icon={TrendingUp} className="dark:bg-warning-500/20" />
+            <StatusIconBadge tone="warning" icon={TrendingUp} />
           </div>
         </Card>
       </StatStrip>

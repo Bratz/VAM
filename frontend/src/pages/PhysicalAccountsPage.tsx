@@ -1441,7 +1441,7 @@ const PhysicalAccountsPage: React.FC = () => {
           title="Home Bank"
           value={stats?.homeBankCount || 0}
           subtitle={stats?.homeBankName ? `${stats.homeBankName} · Pool eligible` : 'Pool eligible'}
-          icon={<Building2 className="w-6 h-6 text-primary-700 dark:text-neutral-200" />}
+          icon={<Landmark className="w-6 h-6 text-primary-700 dark:text-neutral-200" />}
           loading={loading}
           delay={0.15}
         />

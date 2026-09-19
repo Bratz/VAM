@@ -92,7 +92,7 @@ const EcommerceCollectionsPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>

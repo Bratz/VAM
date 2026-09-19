@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, MoreVertical, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle, MoreHorizontal } from 'lucide-react';
 import { Card, Button, Badge, Input , StatTile, StatusIconBadge, Toggle, Checkbox } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
@@ -207,9 +207,7 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           onClick={() => onSelect('aggregation')}
           className="flex items-start gap-4 p-4 rounded-lg border-2 border-cat-1/20 dark:border-cat-1/30 bg-cat-1-soft dark:bg-cat-1/15 hover:border-cat-1/40 dark:hover:border-cat-1/40 hover:bg-cat-1/10 dark:hover:bg-cat-1/25 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-lg bg-cat-1/10 dark:bg-cat-1/15 group-hover:bg-cat-1/20 dark:group-hover:bg-cat-1/25 flex items-center justify-center flex-shrink-0">
-            <FolderPlus className="w-6 h-6 text-cat-1 dark:text-cat-1-fg" />
-          </div>
+          <StatusIconBadge tone="cat-1" icon={FolderPlus} size="lg" className="flex-shrink-0" />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-body font-semibold text-cat-1 dark:text-cat-1-fg">Add AGGREGATION</h3>
@@ -236,9 +234,7 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           onClick={() => onSelect('transaction')}
           className="flex items-start gap-4 p-4 rounded-lg border-2 border-success-200 dark:border-success-500/30 bg-success-50 dark:bg-success-500/10 hover:border-success-400 dark:hover:border-success-500/40 hover:bg-success-100 dark:hover:bg-success-500/20 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-lg bg-success-100 dark:bg-success-500/20 group-hover:bg-success-200 dark:group-hover:bg-success-500/30 flex items-center justify-center flex-shrink-0">
-            <Wallet className="w-6 h-6 text-success-600 dark:text-success-300" />
-          </div>
+          <StatusIconBadge tone="success" icon={Wallet} size="lg" className="flex-shrink-0" />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-body font-semibold text-success-900 dark:text-success-100">Add Transaction VA</h3>
@@ -265,9 +261,7 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           onClick={() => onSelect('ihb-current-account')}
           className="flex items-start gap-4 p-4 rounded-lg border-2 border-cat-2/20 dark:border-cat-2/30 bg-cat-2-soft dark:bg-cat-2/15 hover:border-cat-2/40 dark:hover:border-cat-2/40 hover:bg-cat-2/10 dark:hover:bg-cat-2/25 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-lg bg-cat-2/10 dark:bg-cat-2/15 group-hover:bg-cat-2/20 dark:group-hover:bg-cat-2/25 flex items-center justify-center flex-shrink-0">
-            <PiggyBank className="w-6 h-6 text-cat-2 dark:text-cat-2-fg" />
-          </div>
+          <StatusIconBadge tone="cat-2" icon={PiggyBank} size="lg" className="flex-shrink-0" />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-body font-semibold text-cat-2 dark:text-cat-2-fg">Add IHB Current Account</h3>
@@ -1779,7 +1773,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             }}
             className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-40 group-hover:opacity-100 transition-opacity"
           >
-            <MoreVertical className="w-4 h-4 text-neutral-400" />
+            <MoreHorizontal className="w-4 h-4 text-neutral-400" />
           </button>
           {showContextMenu && (
             <div className={cn(

@@ -162,7 +162,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             </span>
             {hasChildren && (
               <Badge variant="neutral" size="xs" className="shrink-0">
-                <GitBranch className="w-2.5 h-2.5 mr-0.5" />
+                <GitBranch className="w-3 h-3 mr-0.5" />
                 {node.children.length}
               </Badge>
             )}

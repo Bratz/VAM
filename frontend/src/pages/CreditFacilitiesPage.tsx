@@ -344,7 +344,7 @@ const CreditFacilitiesPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={AlertTriangle} />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
@@ -361,7 +361,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Total</p>
                 <p className="stat-value-sm mt-1">{stats.total}</p>
               </div>
-              <StatusIconBadge tone="info" icon={Wallet} className="dark:bg-info-500/20" />
+              <StatusIconBadge tone="info" icon={Wallet} />
             </div>
           </div>
         </Card>
@@ -372,7 +372,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Active</p>
                 <p className="stat-value-success mt-1">{stats.active}</p>
               </div>
-              <StatusIconBadge tone="success" icon={CheckCircle} className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={CheckCircle} />
             </div>
           </div>
         </Card>
@@ -383,7 +383,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Total Limit</p>
                 <p className="text-body-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit)}</p>
               </div>
-              <StatusIconBadge tone="accent" icon={Shield} className="dark:bg-accent-500/20" />
+              <StatusIconBadge tone="accent" icon={Shield} />
             </div>
           </div>
         </Card>
@@ -394,7 +394,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Outstanding</p>
                 <p className="text-body-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding)}</p>
               </div>
-              <StatusIconBadge tone="warning" icon={TrendingUp} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={TrendingUp} />
             </div>
           </div>
         </Card>
@@ -405,7 +405,7 @@ const CreditFacilitiesPage: React.FC = () => {
                 <p className="label">Overdrafts</p>
                 <p className="stat-value-error mt-1">{stats.overdrafts}</p>
               </div>
-              <StatusIconBadge tone="error" icon={Wallet} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={Wallet} />
             </div>
           </div>
         </Card>

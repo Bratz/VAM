@@ -80,7 +80,7 @@ const SellerCollectionsPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="primary" icon={CreditCard} className="dark:bg-primary-700" />
+              <StatusIconBadge tone="primary" icon={CreditCard} />
             </div>
             <p className="stat-value-sm mt-3">{collections.length}</p>
             <p className="label">Total Collections</p>
@@ -89,7 +89,7 @@ const SellerCollectionsPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={TrendingUp} />
             </div>
             <p className="stat-value-sm mt-3 text-success-600 dark:text-success-300">{formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0))}</p>
             <p className="label">Total Amount</p>
@@ -98,7 +98,7 @@ const SellerCollectionsPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={Clock} />
             </div>
             <p className="stat-value-warning mt-3">{settlements.filter(s => s.status === 'PENDING').length}</p>
             <p className="label">Pending Settlements</p>
@@ -107,7 +107,7 @@ const SellerCollectionsPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="info" icon={CheckCircle} className="dark:bg-info-500/20" />
+              <StatusIconBadge tone="info" icon={CheckCircle} />
             </div>
             <p className="stat-value-sm mt-3">{formatCurrency(settlements.filter(s => s.status === 'COMPLETED').reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
             <p className="label">Settled Amount</p>
@@ -118,7 +118,7 @@ const SellerCollectionsPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>

@@ -531,7 +531,7 @@ const FxRatesPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={TrendingUp} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={TrendingUp} />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setError(null)} aria-label="Dismiss error">

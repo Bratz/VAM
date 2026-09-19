@@ -458,7 +458,7 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
       <Card hover>
         <div className="p-4">
           <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="primary" icon={Shield} className="dark:bg-primary-700" />
+            <StatusIconBadge tone="primary" icon={Shield} />
             <h3 className="section-title">Funds Availability Check</h3>
           </div>
 
@@ -511,7 +511,7 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
       {error && (
         <Card className="bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <p className="text-error-700 font-medium dark:text-error-300">{error}</p>
           </div>
         </Card>
@@ -639,7 +639,7 @@ const FundsAvailabilityPage: React.FC = () => {
       {/* Info Banner */}
       <Card padding="sm" className="bg-gradient-to-r from-info-50/50 via-white to-primary-50/50 border-info-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start gap-3 p-4">
-          <StatusIconBadge tone="info" icon={Shield} className="flex-shrink-0 dark:bg-info-500/20" />
+          <StatusIconBadge tone="info" icon={Shield} className="flex-shrink-0" />
           <div>
             <p className="text-body-sm font-semibold text-info-800 dark:text-info-300">Hierarchical Funds Check</p>
             <p className="text-body-sm text-info-700 mt-1 dark:text-info-300">
@@ -660,7 +660,7 @@ const FundsAvailabilityPage: React.FC = () => {
       <Card hover className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="p-4">
           <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="accent" icon={Layers} className="dark:bg-accent-500/20" />
+            <StatusIconBadge tone="accent" icon={Layers} />
             <h3 className="section-title">Check Process</h3>
           </div>
           <div className="flex items-center gap-4 text-body-sm">

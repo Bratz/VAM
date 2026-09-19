@@ -107,7 +107,7 @@ module.exports = {
          * Phase 9 all-size typography selectors (text-xs…5xl + medium) and
          * the Phase 10 layout-hand-roll selectors were retired rather than
          * promoted — see the file header for the rationale. */
-        'no-restricted-imports': ['error', { paths: [{ name: 'lucide-react', importNames: ['Edit', 'Edit2', 'Edit3', 'CheckCircle2', 'Building', 'Settings2', 'UploadCloud', 'FileDown', 'AlertCircle'], message: 'Use the canonical icon: Pencil, CheckCircle, Building2, Settings, Upload, Download; AlertCircle -> XCircle (error) / AlertTriangle (warning) / Info. See src/design-system/Iconography.stories.tsx.' }] }],
+        'no-restricted-imports': ['error', { paths: [{ name: 'lucide-react', importNames: ['Edit', 'Edit2', 'Edit3', 'CheckCircle2', 'Building', 'Settings2', 'UploadCloud', 'FileDown', 'AlertCircle', 'RotateCcw', 'RotateCw', 'MoreVertical', 'Loader'], message: 'Use the canonical icon: Pencil, CheckCircle, Building2, Settings, Upload, Download, RefreshCw (not RotateCcw/RotateCw), MoreHorizontal (not MoreVertical), Loader2 (not Loader); AlertCircle -> XCircle (error) / AlertTriangle (warning) / Info. See src/design-system/Iconography.stories.tsx.' }] }],
         'no-restricted-syntax': [
           'error',
           {
@@ -133,6 +133,11 @@ module.exports = {
               "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/(?:(?:dark|hover|focus|active|disabled|group-hover|peer-hover|md|sm|lg|xl|2xl):)*(?:text|bg|border|ring|from|to|via|placeholder|fill|stroke|divide|outline|caret|decoration|accent|shadow)-(?:red|green|blue|yellow|gray|danger|amber|orange|purple|teal|indigo|pink|violet|emerald)-\\d+/]",
             message:
               "Raw palette Tailwind class in template literal. Semantic statuses or cat-1…cat-8 categorical tokens instead — see file header.",
+          },
+          {
+            // 0e. StatusIconBadge owns its tone colours (light + dark); a bg-* className fights it.
+            selector: "JSXOpeningElement[name.name='StatusIconBadge'] > JSXAttribute[name.name='className'] > Literal[value=/(^| )(dark:)?bg-/]",
+            message: "Don't set bg-* on StatusIconBadge: use `tone`, `subtle` or `solid`. className is for spacing only (mb-3, mx-auto, shrink-0).",
           },
           {
             // 0d. Data tables: use the shared DataTable (components/ui). Raw <table> is allowed only with an

@@ -546,7 +546,7 @@ const StatsCards: React.FC<{
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount}</p>
             <p className="caption mt-1">{currencyCount > 0 ? groupLimits.map(l => l.currency).join(', ') : 'No group limits'}</p>
           </div>
-          <StatusIconBadge tone="primary" icon={DollarSign} className="dark:bg-primary-700" />
+          <StatusIconBadge tone="primary" icon={DollarSign} />
         </div>
       </div>
 
@@ -557,7 +557,7 @@ const StatsCards: React.FC<{
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount > 0 ? `${currencyCount} currencies` : 'Not Set'}</p>
             <p className="caption mt-1">{allocationPercent.toFixed(0)}% allocated overall</p>
           </div>
-          <StatusIconBadge tone="info" icon={Target} className="dark:bg-info-500/20" />
+          <StatusIconBadge tone="info" icon={Target} />
         </div>
         {currencyCount > 0 && (
           <div className="mt-3">
@@ -575,7 +575,7 @@ const StatsCards: React.FC<{
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${allocatedEntityCount} / ${entityCount}`}</p>
             <p className="caption mt-1">{entityCount > 0 ? `${entityPercent}% entities allocated` : 'No entities'}</p>
           </div>
-          <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
+          <StatusIconBadge tone="success" icon={Building2} />
         </div>
       </div>
 
@@ -1260,7 +1260,7 @@ const CreditLimitsPage: React.FC = () => {
       {error && (
         <div className="bg-error-50 border border-error-200 rounded-lg p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
-            <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={AlertTriangle} />
             <p className="text-body-sm text-error-700 font-medium dark:text-error-300">{error}</p>
           </div>
           <button type="button" onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1"><X className="w-5 h-5" /></button>
@@ -1277,7 +1277,7 @@ const CreditLimitsPage: React.FC = () => {
             <div className="bg-surface-card rounded-lg border border-edge-subtle shadow-sm animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <div className="px-4 py-3 border-b border-edge-subtle flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="primary" icon={GitBranch} className="dark:bg-primary-700" />
+                  <StatusIconBadge tone="primary" icon={GitBranch} />
                   <div>
                     <h3 className="section-title">Entity Hierarchy</h3>
                     <p className="caption">{allocatedEntityCount} of {entities.length} entities with limits</p>

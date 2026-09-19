@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, RotateCcw, XCircle } from 'lucide-react';
+import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
 import {
@@ -447,7 +447,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                 <ArrowDownLeft className="w-4 h-4 text-success-600 dark:text-success-300" />
               )}
               {entry.reversalIndicator && (
-                <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
+                <RefreshCw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
               )}
             </div>
             <div>
@@ -828,7 +828,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
             <ArrowDownLeft className="w-5 h-5 text-success-600 dark:text-success-300" />
           )}
           {isISO20022 && tx.reversalIndicator && (
-            <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
+            <RefreshCw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
           )}
         </div>
 
@@ -1022,7 +1022,7 @@ const HistoryMobileCard: React.FC<HistoryMobileCardProps> = ({ statement: stmt, 
       style={{ animationDelay: `${index * 0.03}s` }}
     >
       <div className="flex items-start gap-3">
-        <StatusIconBadge tone="primary" icon={FileText} subtle className="shrink-0 dark:bg-primary-800/40" />
+        <StatusIconBadge tone="primary" icon={FileText} subtle className="shrink-0" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -1577,7 +1577,7 @@ const StatementsPage: React.FC = () => {
       {showHierarchy && hierarchy && !selectedAccount && (
         <Card className="animate-fade-in">
           <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="info" icon={Network} className="dark:bg-info-500/20" />
+            <StatusIconBadge tone="info" icon={Network} />
             <div>
               <h3 className="section-title">Account Hierarchy</h3>
               <p className="caption">
@@ -1618,7 +1618,7 @@ const StatementsPage: React.FC = () => {
             primary tint to mark it as the section identity. */}
         <div className="p-4 sm:p-6 bg-primary-50/40 border-b border-edge-subtle dark:bg-primary-800/30">
           <div className="flex items-center gap-3">
-            <StatusIconBadge tone="primary" icon={FileText} className="dark:bg-primary-700" />
+            <StatusIconBadge tone="primary" icon={FileText} />
             <div>
               <h3 className="section-title">ISO 20022 Statement Generator</h3>
               <p className="caption">Generate camt.053 / 054-compliant statements</p>
@@ -1748,7 +1748,7 @@ const StatementsPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
-            <StatusIconBadge tone="error" icon={XCircle} className="shrink-0 dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} className="shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-error-800 dark:text-error-300">Error</p>
               <p className="text-body-sm text-error-700 truncate dark:text-error-300">{error}</p>
@@ -2149,7 +2149,7 @@ const StatementsPage: React.FC = () => {
         <div className="p-4 sm:p-6 border-b border-edge">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="neutral" icon={Clock} size="sm" rounded="lg" className="dark:bg-primary-800" />
+              <StatusIconBadge tone="neutral" icon={Clock} size="sm" rounded="lg" />
               <h3 className="section-title">Statement History</h3>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">

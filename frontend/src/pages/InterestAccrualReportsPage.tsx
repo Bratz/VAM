@@ -353,7 +353,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       {unavailable && (
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
           <div className="flex items-center gap-3 p-4">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
+            <StatusIconBadge tone="warning" icon={AlertTriangle} />
             <span className="text-warning-700 font-medium dark:text-warning-300">
               Interest accrual reporting isn&apos;t available yet: this backend has no accrual service, so accruals can&apos;t be listed or run.
             </span>
@@ -365,7 +365,7 @@ const InterestAccrualReportsPage: React.FC = () => {
         <Card className="bg-warning-50 border-warning-200 animate-fade-in dark:bg-warning-500/10 dark:border-warning-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="warning" icon={XCircle} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={XCircle} />
               <span className="text-warning-700 font-medium dark:text-warning-300">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-warning-500 dark:text-warning-300 hover:text-warning-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>

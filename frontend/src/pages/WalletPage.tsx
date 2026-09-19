@@ -696,9 +696,7 @@ const ProgramCard: React.FC<{
     <Card hover className="cursor-pointer" onClick={onClick}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center">
-            <Wallet className="w-6 h-6 text-white" />
-          </div>
+          <StatusIconBadge tone="primary" icon={Wallet} size="lg" />
           <div>
             <h3 className="section-title">{program.programName}</h3>
             <p className="body-sm">{program.programCode}</p>

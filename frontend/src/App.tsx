@@ -258,9 +258,7 @@ const BaaSDashboardPage: React.FC = () => (
     {/* Partner Performance Card */}
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-          <Building2 className="w-5 h-5 text-white" />
-        </div>
+        <StatusIconBadge tone="primary" icon={Building2} />
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Performance</h2>
       </div>
       <div className="divide-y divide-neutral-100">
@@ -321,9 +319,7 @@ const BaaSPartnersPage: React.FC = () => (
     {/* Partner List Card */}
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-          <Building2 className="w-5 h-5 text-white" />
-        </div>
+        <StatusIconBadge tone="primary" icon={Building2} />
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Directory</h2>
       </div>
       <div className="p-8 text-center">
@@ -362,9 +358,7 @@ const BaaSCardsPage: React.FC = () => (
     {/* Cards List */}
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center">
-          <CreditCard className="w-5 h-5 text-white" />
-        </div>
+        <StatusIconBadge tone="accent" icon={CreditCard} />
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Virtual Card Programs</h2>
       </div>
       <div className="p-8 text-center">
@@ -399,9 +393,7 @@ const BaaSSettlementsPage: React.FC = () => (
     {/* Content Card */}
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
-          <Wallet className="w-5 h-5 text-white" />
-        </div>
+        <StatusIconBadge tone="success" icon={Wallet} />
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Settlement Cycles</h2>
       </div>
       <div className="p-8 text-center">
@@ -436,9 +428,7 @@ const BaaSTransactionsPage: React.FC = () => (
     {/* Content Card */}
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-          <TrendingUp className="w-5 h-5 text-white" />
-        </div>
+        <StatusIconBadge tone="primary" icon={TrendingUp} />
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Transaction History</h2>
       </div>
       <div className="p-8 text-center">

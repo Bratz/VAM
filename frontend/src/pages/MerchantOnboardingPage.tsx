@@ -100,7 +100,7 @@ const MerchantOnboardingPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="primary" icon={Users} className="dark:bg-primary-700" />
+              <StatusIconBadge tone="primary" icon={Users} />
             </div>
             <p className="stat-value-sm mt-3">{merchants.length}</p>
             <p className="label">Total Merchants</p>
@@ -109,7 +109,7 @@ const MerchantOnboardingPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={TrendingUp} />
             </div>
             <p className="stat-value-success mt-3">{merchants.filter(m => m.status === 'ACTIVE').length}</p>
             <p className="label">Active</p>
@@ -118,7 +118,7 @@ const MerchantOnboardingPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={AlertTriangle} />
             </div>
             <p className="stat-value-warning mt-3">{merchants.filter(m => m.status === 'PENDING').length}</p>
             <p className="label">Pending Approval</p>
@@ -127,7 +127,7 @@ const MerchantOnboardingPage: React.FC = () => {
         <Card hover>
           <div className="p-4">
             <div className="flex items-center justify-between">
-              <StatusIconBadge tone="error" icon={Ban} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={Ban} />
             </div>
             <p className="stat-value-error mt-3">{merchants.filter(m => m.status === 'SUSPENDED').length}</p>
             <p className="label">Suspended</p>
@@ -146,7 +146,7 @@ const MerchantOnboardingPage: React.FC = () => {
       {error && (
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30" style={{ animationDelay: '0.15s' }}>
           <div className="flex items-center gap-4 p-4">
-            <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+            <StatusIconBadge tone="error" icon={XCircle} />
             <span className="text-error-800 dark:text-error-300">{error}</span>
           </div>
         </Card>
@@ -165,7 +165,7 @@ const MerchantOnboardingPage: React.FC = () => {
               header: 'Merchant',
               render: (_, m) => (
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="primary" icon={Store} className="dark:bg-primary-700" />
+                  <StatusIconBadge tone="primary" icon={Store} />
                   <div>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{m.merchantName}</p>
                     <p className="caption">{m.merchantId}</p>

@@ -74,7 +74,7 @@ const LoadingSpinner: React.FC = () => (
 const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ message, onRetry }) => (
   <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
     <div className="flex items-center gap-3 p-4">
-      <StatusIconBadge tone="error" icon={XCircle} className="dark:bg-error-500/20" />
+      <StatusIconBadge tone="error" icon={XCircle} />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
         <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
@@ -508,7 +508,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
 
           {entries.length === 0 ? (
             <div className="text-center py-12 bg-surface-page rounded-lg">
-              <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-4 dark:bg-primary-800" />
+              <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-4" />
               <h4 className="body-lg mb-1">No entries yet</h4>
               <p className="caption mb-4">
                 {(cycle.status === 'DRAFT' || cycle.status === 'OPEN')
@@ -567,7 +567,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="primary" icon={Building2} className="dark:bg-primary-700" />
+                      <StatusIconBadge tone="primary" icon={Building2} />
                       <div>
                         <p className="font-medium text-primary-900 dark:text-neutral-50">{pos.entityName}</p>
                         <p className="body-sm">{pos.entityCode} • {pos.entryCount} entries</p>
@@ -619,7 +619,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
         <div className="space-y-4">
           <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-lg border border-info-200/60">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
+              <StatusIconBadge tone="info" icon={TrendingUp} />
               <p className="text-body-sm text-info-800 dark:text-info-300">
                 <strong>{settlements.length}</strong> settlement payments required to clear all positions.
                 This represents a <strong className="text-success-700 dark:text-success-300">{positions.length > 0 ? Math.round((1 - settlements.length / positions.length) * 100) : 0}%</strong> reduction
@@ -634,7 +634,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="error" icon={Building2} className="dark:bg-error-500/20" />
+                      <StatusIconBadge tone="error" icon={Building2} />
                       <div>
                         <p className="body-strong">{instruction.fromEntityCode}</p>
                         <p className="caption">{instruction.fromEntityName}</p>
@@ -642,7 +642,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                     </div>
                     <ArrowRight className="w-5 h-5 text-primary-400" />
                     <div className="flex items-center gap-3">
-                      <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
+                      <StatusIconBadge tone="success" icon={Building2} />
                       <div>
                         <p className="body-strong">{instruction.toEntityCode}</p>
                         <p className="caption">{instruction.toEntityName}</p>

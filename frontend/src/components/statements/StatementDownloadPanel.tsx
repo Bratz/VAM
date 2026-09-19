@@ -224,7 +224,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
       {/* Header */}
       {!compact && (
         <div className="flex items-center gap-3 mb-5">
-          <StatusIconBadge tone="primary" icon={FileText} className="dark:bg-primary-700" />
+          <StatusIconBadge tone="primary" icon={FileText} />
           <div>
             <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Download Statement</h3>
             <p className="caption">

@@ -186,7 +186,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
       <Card hover>
         <div className="p-4">
           <div className="flex items-center gap-3 mb-4">
-            <StatusIconBadge tone="info" icon={PieChart} className="dark:bg-info-500/20" />
+            <StatusIconBadge tone="info" icon={PieChart} />
             <h3 className="section-title">Currency Breakdown</h3>
           </div>
           <p className="body-sm text-center py-8">No currency data available</p>
@@ -202,7 +202,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
     <Card hover>
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
-          <StatusIconBadge tone="info" icon={PieChart} className="dark:bg-info-500/20" />
+          <StatusIconBadge tone="info" icon={PieChart} />
           <h3 className="section-title">Currency Breakdown</h3>
         </div>
 
@@ -533,7 +533,7 @@ const BalanceAggregationPage: React.FC = () => {
         <div className="flex items-center gap-6 p-2">
           {/* Corporate Selector */}
           <div className="flex items-center gap-2">
-            <StatusIconBadge tone="primary" icon={Building2} className="dark:bg-primary-700" />
+            <StatusIconBadge tone="primary" icon={Building2} />
             <div className="min-w-[220px]">
               <label className="text-caption font-medium text-primary-700 uppercase tracking-wider dark:text-neutral-200">Corporate</label>
               <select
@@ -554,7 +554,7 @@ const BalanceAggregationPage: React.FC = () => {
 
           {/* Program Selector */}
           <div className="flex items-center gap-2">
-            <StatusIconBadge tone="info" icon={Layers} className="dark:bg-info-500/20" />
+            <StatusIconBadge tone="info" icon={Layers} />
             <div className="min-w-[220px]">
               <label className="text-caption font-medium text-info-700 uppercase tracking-wider dark:text-info-300">Program</label>
               <select
@@ -589,7 +589,7 @@ const BalanceAggregationPage: React.FC = () => {
         <Card className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <StatusIconBadge tone="error" icon={Layers} className="dark:bg-error-500/20" />
+              <StatusIconBadge tone="error" icon={Layers} />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
             <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1" aria-label="Dismiss"><X className="w-4 h-4" /></button>
@@ -608,7 +608,7 @@ const BalanceAggregationPage: React.FC = () => {
                   {formatCurrency(stats.totalBalance, stats.baseCurrency)}
                 </p>
               </div>
-              <StatusIconBadge tone="success" icon={DollarSign} className="dark:bg-success-500/20" />
+              <StatusIconBadge tone="success" icon={DollarSign} />
             </div>
           </div>
         </Card>
@@ -619,7 +619,7 @@ const BalanceAggregationPage: React.FC = () => {
                 <p className="label">Hierarchy Nodes</p>
                 <p className="stat-value-sm mt-1">{hierarchy?.childCount || 0}</p>
               </div>
-              <StatusIconBadge tone="info" icon={Layers} className="dark:bg-info-500/20" />
+              <StatusIconBadge tone="info" icon={Layers} />
             </div>
           </div>
         </Card>
@@ -630,7 +630,7 @@ const BalanceAggregationPage: React.FC = () => {
                 <p className="label">Currencies</p>
                 <p className="stat-value-sm mt-1">{stats.currencyCount}</p>
               </div>
-              <StatusIconBadge tone="accent" icon={Globe} className="dark:bg-accent-500/20" />
+              <StatusIconBadge tone="accent" icon={Globe} />
             </div>
           </div>
         </Card>
@@ -641,7 +641,7 @@ const BalanceAggregationPage: React.FC = () => {
                 <p className="label">Last Updated</p>
                 <p className="text-body-lg font-bold mt-1 text-primary-900 tracking-tight dark:text-neutral-50">{formatDate(stats.lastUpdated)}</p>
               </div>
-              <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
+              <StatusIconBadge tone="warning" icon={Clock} />
             </div>
           </div>
         </Card>
@@ -654,7 +654,7 @@ const BalanceAggregationPage: React.FC = () => {
           <Card hover className="overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <StatusIconBadge tone="primary" icon={Layers} className="dark:bg-primary-700" />
+                <StatusIconBadge tone="primary" icon={Layers} />
                 <h3 className="section-title">Balance Hierarchy</h3>
               </div>
               <div className="relative">
@@ -699,7 +699,7 @@ const BalanceAggregationPage: React.FC = () => {
           <Card hover>
             <div className="p-4">
               <div className="flex items-center gap-3 mb-4">
-                <StatusIconBadge tone="accent" icon={TrendingUp} className="dark:bg-accent-500/20" />
+                <StatusIconBadge tone="accent" icon={TrendingUp} />
                 <h3 className="section-title">Quick Actions</h3>
               </div>
               <div className="space-y-2">

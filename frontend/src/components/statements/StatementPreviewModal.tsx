@@ -17,7 +17,7 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Loader2, Calendar, TrendingUp, TrendingDown, RefreshCw, FileJson, FileCode, Copy, CheckCircle, Building2, User, Hash, Clock, CreditCard, Info, RotateCcw, Banknote, Receipt, ExternalLink, Bell } from 'lucide-react';
+import { FileText, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Loader2, Calendar, TrendingUp, TrendingDown, RefreshCw, FileJson, FileCode, Copy, CheckCircle, Building2, User, Hash, Clock, CreditCard, Info, Banknote, Receipt, ExternalLink, Bell } from 'lucide-react';
 import { Button, Badge, Input, Skeleton, Card, Divider } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { cn, formatCurrency, formatDate, formatDateTime, copyToClipboard } from '../../utils';
@@ -510,7 +510,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" />
           )}
           {entry.reversalIndicator && (
-            <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
+            <RefreshCw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
           )}
         </div>
 
@@ -766,7 +766,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />
             )}
             {entry.reversalIndicator && (
-              <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
+              <RefreshCw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
             )}
           </div>
 

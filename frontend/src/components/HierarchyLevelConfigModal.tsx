@@ -5,7 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, Layers, Tag, List, RefreshCw, AlertTriangle, XCircle } from 'lucide-react';
+import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, Layers, Tag, List, RefreshCw, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
 import { Modal } from './ui/enhanced';
 import { Card, Badge, Button, Input, Select, Checkbox } from './ui';
 import { cn } from '../utils';
@@ -514,7 +514,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
             <Button onClick={handleSave} disabled={saving || !hasChanges}>
               {saving ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   Saving...
                 </>
               ) : (

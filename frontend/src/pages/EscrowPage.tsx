@@ -371,7 +371,7 @@ const EscrowPage: React.FC = () => {
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16">
-            <StatusIconBadge tone="neutral" icon={Shield} size="lg" className="mb-4 dark:bg-primary-800" />
+            <StatusIconBadge tone="neutral" icon={Shield} size="lg" className="mb-4" />
             <p className="body-strong mb-1">No contracts found</p>
             <p className="caption mb-4">Create your first escrow contract to get started</p>
             <Button size="sm" onClick={() => setShowCreateModal(true)}>
