@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { cn } from '../../utils';
 import { TONE, STAT_VALUE_BY_TONE } from './statTileTokens';
 
@@ -68,6 +68,25 @@ export const StatTile: React.FC<StatTileProps> = ({
   delay,
 }) => {
   const t = TONE[tone] ?? TONE.neutral;
+
+  // Long amounts ("GBP 14,437,919.42") are shrunk to fit the tile on one line instead of wrapping
+  // and clipping. Floor of 14px; a tile that still can't fit truncates rather than overflowing.
+  const valueRef = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    const el = valueRef.current;
+    if (!el) return;
+    el.style.transition = 'none'; // global `transition: all` would make the reset read a stale computed size
+    const fit = () => {
+      el.style.fontSize = '';
+      if (el.scrollWidth > el.clientWidth) {
+        el.style.fontSize = `${Math.max(14, Math.floor(parseFloat(getComputedStyle(el).fontSize) * el.clientWidth / el.scrollWidth))}px`;
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [value, loading]);
   const valueClass = STAT_VALUE_BY_TONE[valueTone ?? tone] ?? 'stat-value-sm';
   const baseClass = cn(
     // shadow-sm aliases to --shadow-rest; dark-mode shadows were retired in
@@ -100,7 +119,7 @@ export const StatTile: React.FC<StatTileProps> = ({
   const valueEl = loading ? (
     <div className="skeleton h-7 w-20 rounded-lg mt-1" aria-hidden="true" />
   ) : (
-    <p className={cn(valueClass, layout === 'row' ? 'mt-0.5' : 'mt-1')}>{value}</p>
+    <p ref={valueRef} className={cn(valueClass, 'whitespace-nowrap overflow-hidden text-ellipsis', layout === 'row' ? 'mt-0.5' : 'mt-1')}>{value}</p>
   );
 
   const inner =
