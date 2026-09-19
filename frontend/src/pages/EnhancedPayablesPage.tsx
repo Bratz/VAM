@@ -929,14 +929,16 @@ const EnhancedPayablesPage: React.FC = () => {
       });
 
       // Handle response - could be array or paginated response
+      // `content` is the raw Spring `Page` shape: not in PayableListResponse, but some endpoints still return it.
+      const raw = result as typeof result & { content?: typeof result.payables };
       if (Array.isArray(result)) {
         setPayables(result);
         setTotalPages(1);
       } else if (result?.payables) {
         setPayables(result.payables);
         setTotalPages(isFilteredTab ? 1 : (result.totalPages || 1));
-      } else if (result?.content) {
-        setPayables(result.content);
+      } else if (raw?.content) {
+        setPayables(raw.content);
         setTotalPages(isFilteredTab ? 1 : (result.totalPages || 1));
       } else {
         setPayables([]);

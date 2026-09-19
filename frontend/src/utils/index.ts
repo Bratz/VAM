@@ -1,8 +1,19 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 
 // Badge variant type
 type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+// tailwind-merge only knows Tailwind's default font sizes; without this it reads our
+// `text-body-sm` etc. as a text COLOUR and drops a real colour like `text-white` (or the reverse).
+// Keep in sync with `fontSize` in tailwind.config.js.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [{ text: ['caption', 'body-sm', 'body', 'body-lg', 'heading-sm', 'heading-md', 'heading-lg', 'stat-sm', 'stat', 'display'] }],
+    },
+  },
+});
 
 // Utility for merging Tailwind classes
 export function cn(...inputs: ClassValue[]) {
