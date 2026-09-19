@@ -107,6 +107,7 @@ module.exports = {
          * Phase 9 all-size typography selectors (text-xs…5xl + medium) and
          * the Phase 10 layout-hand-roll selectors were retired rather than
          * promoted — see the file header for the rationale. */
+        'no-restricted-imports': ['error', { paths: [{ name: 'lucide-react', importNames: ['Edit', 'Edit2', 'Edit3', 'CheckCircle2', 'Building', 'Settings2', 'UploadCloud', 'FileDown', 'AlertCircle'], message: 'Use the canonical icon: Pencil, CheckCircle, Building2, Settings, Upload, Download; AlertCircle -> XCircle (error) / AlertTriangle (warning) / Info. See src/design-system/Iconography.stories.tsx.' }] }],
         'no-restricted-syntax': [
           'error',
           {
@@ -132,6 +133,16 @@ module.exports = {
               "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/(?:(?:dark|hover|focus|active|disabled|group-hover|peer-hover|md|sm|lg|xl|2xl):)*(?:text|bg|border|ring|from|to|via|placeholder|fill|stroke|divide|outline|caret|decoration|accent|shadow)-(?:red|green|blue|yellow|gray|danger|amber|orange|purple|teal|indigo|pink|violet|emerald)-\\d+/]",
             message:
               "Raw palette Tailwind class in template literal. Semantic statuses or cat-1…cat-8 categorical tokens instead — see file header.",
+          },
+          {
+            // 0b. Off-scale radius / shadow tokens (removed from tailwind.config.js; would silently render nothing).
+            selector:
+              "JSXAttribute[name.name='className'] > Literal[value=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13)(?![\\w-])/]",
+            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). See src/design-system/Shapes.stories.tsx.",
+          },
+          {
+            selector: "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13)(?![\\w-])/]",
+            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). See src/design-system/Shapes.stories.tsx.",
           },
           {
             // 0. Raw font sizes — removed from tailwind.config.js `fontSize`; would silently render nothing.

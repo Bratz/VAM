@@ -2823,3 +2823,20 @@ Pre-existing files (T7 wave, not touched by T8 beyond the import above):
 `StubForecastOrchestrator.java`, `DefaultForecastOrchestrator.java`,
 `ForecastRun.java`, `forecast/domain/**`, `forecast/engine/**`,
 `forecast/repository/**`.
+
+---
+
+# Icons, shapes & elevation standardisation (2026-09-19)
+
+Decisions (user): keep the 34 ConnectorIcons brand SVGs; canonical error icon = XCircle; w-3.5 -> w-4 and size unsized icons by context; Storybook: Iconography/Shapes/Elevation specimens + component stories + addon-a11y + Toggle/Checkbox/Radio primitives. Surface tokens (step 4) deferred.
+
+- [x] 1. Radius rename (rounded-xl/2xl/3xl -> lg, bare rounded -> md; remove xl/2xl/DEFAULT from config) + shadow remap (sm/md/lg/xl/2xl -> rest/hover/popover/modal tokens), fix h-13
+- [x] 2. Icons: size scale 12/16/20/24/32 (+48 hero), w-3.5->w-4, size unsized by context; canonical names (CheckCircle2->CheckCircle, Building->Building2, Edit*->Pencil, AlertCircle by tone, Settings2->Settings, ...); replace 3 hand-drawn SVGs + glyphs with lucide; delete duplicate pages/ConnectorIcons.tsx
+- [x] 3. Migrate ad-hoc medallions to StatusIconBadge (add xl size 64/32)
+- [x] 4. Storybook: Iconography, Shapes, Elevation specimens; component stories; addon-a11y; Toggle/Checkbox/Radio primitives
+- [x] 5. ESLint bans (after migration), README/tokens.json corrections, lessons
+- Verify each step: tsc (no new errors), vite build, storybook build, browser spot checks light+dark. Commit per step.
+
+## Review
+- Steps 1-5 done, uncommitted. Runtime sweep of 41 pages: radii resolve only to 4/8/12/9999px; icons 12/16/20/24/32/48 (+3 stragglers fixed). tsc non-unused errors unchanged (158); vite + storybook builds pass; eslint bans clean.
+- Left: ~90 ad-hoc medallions (no bg / gradient / non-canonical box) not migrated; text glyphs inside strings (Copilot messages, toasts, trend arrows) kept; toggles/checkboxes/radios primitives exist but call sites (73 native inputs) not migrated; surface tokens (step 4 of the proposal) deferred.

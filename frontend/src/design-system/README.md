@@ -153,33 +153,39 @@ historical `--font-display` alias is retired — stat utilities read
 - **Form**: `gap: 1rem`, `labelGap: 0.375rem`
 - **Button**: Sizes define padding and gaps
 
-### Border Radius
+### Border Radius (2026-09 — four radii only)
 
-```css
---radius-none: 0;
---radius-sm: 0.25rem;     /* 4px - Subtle */
---radius-default: 0.375rem; /* 6px - Default */
---radius-md: 0.5rem;      /* 8px - Buttons, inputs */
---radius-lg: 0.75rem;     /* 12px - Cards */
---radius-xl: 1rem;        /* 16px - Large cards */
---radius-2xl: 1.5rem;     /* 24px - Modals */
---radius-full: 9999px;    /* Pills, avatars */
-```
+`tailwind.config.js` `theme.borderRadius` is the only scale. `rounded-xl/2xl/3xl` and bare `rounded` do not exist (ESLint rejects them).
 
-### Shadows
+| Class | px | Use |
+|---|---|---|
+| `rounded-sm` | 4 | checkboxes, code chips |
+| `rounded-md` | 8 | tooltips, small category tags |
+| `rounded-lg` | 12 | controls and surfaces: buttons, inputs, cards, modals, popovers, icon medallions |
+| `rounded-full` | 9999 | pills, badges, avatars, dots |
 
-```css
---shadow-soft: 0 2px 8px -2px rgba(0,0,0,0.05), 0 4px 16px -4px rgba(0,0,0,0.1);
---shadow-medium: 0 4px 12px -2px rgba(0,0,0,0.08), 0 8px 24px -4px rgba(0,0,0,0.12);
---shadow-strong: 0 8px 24px -4px rgba(0,0,0,0.1), 0 16px 48px -8px rgba(0,0,0,0.15);
---shadow-inner-soft: inset 0 2px 4px 0 rgba(0,0,0,0.05);
---shadow-focus-offset: 0 0 0 2px white, 0 0 0 4px var(--color-border-focus);
-```
+Borders are 1px; 2px only for the active-tab underline, selection and focus. Focus ring: `ring-2 ring-offset-2`.
 
-**Usage Guidelines:**
-- `soft`: Cards at rest, subtle elevation
-- `medium`: Cards on hover, dropdowns, popovers
-- `strong`: Modals, dialogs, overlays
+### Shadows / Elevation (2026-09 — four levels)
+
+`theme.boxShadow` maps Tailwind's names onto the canonical tokens (`--shadow-rest/hover/popover/modal` in `variables.css`). `shadow-soft/medium/strong/dropdown/popover` no longer exist.
+
+| Class | Token | Use |
+|---|---|---|
+| `shadow-sm` (or bare `shadow`) | rest | cards at rest |
+| `shadow-md` | hover | hover / raised |
+| `shadow-lg` | popover | dropdowns, popovers, tooltips |
+| `shadow-xl` / `shadow-2xl` | modal | modals, drawers |
+
+Dark mode has no real shadows: depth comes from surface tone (page `primary-950` < card `primary-900` < muted `primary-800`).
+
+### Iconography (2026-09)
+
+- **Library:** `lucide-react` only. Do not draw custom icons; do not use glyph characters (✓ × ⚠️ ▲) as icons.
+- **Sizes:** 12 `w-3 h-3` · 16 `w-4 h-4` (default) · 20 `w-5 h-5` · 24 `w-6 h-6` · 32 `w-8 h-8` · 48 `w-12 h-12` (empty-state art only). Default stroke; colour via `currentColor`.
+- **Canonical icons:** success `CheckCircle` · warning `AlertTriangle` · error `XCircle` · info `Info` · add `Plus` · close `X` · tick `Check` · refresh `RefreshCw` · download `Download` · upload `Upload` · search `Search` · edit `Pencil` · delete `Trash2` · settings `Settings` · loading `Loader2` · bank `Landmark` · entity `Building2`.
+- **Medallions:** use `StatusIconBadge` (`sm` 32/16, `md` 40/20, `lg` 48/24, `xl` 64/32; `rounded` lg|full; `subtle`).
+- **Specimens:** `npm run storybook` → Design System / Iconography, Shapes, Elevation & Surfaces.
 
 ### Animation
 
@@ -333,14 +339,14 @@ All tokens are available as CSS custom properties:
 .my-card {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-rest);
   padding: var(--spacing-6);
   transition: var(--transition-default);
 }
 
 .my-card:hover {
-  box-shadow: var(--shadow-medium);
+  box-shadow: var(--shadow-hover);
 }
 
 .my-heading {

@@ -960,3 +960,7 @@ export const Progress: React.FC<ProgressProps> = ({
     </div>
   );
 };
+
+export { Toggle } from './Toggle';
+export { Checkbox } from './Checkbox';
+export { Radio, RadioGroup } from './Radio';

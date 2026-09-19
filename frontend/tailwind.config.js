@@ -23,7 +23,8 @@ export default {
       'display':    ['3rem',     { lineHeight: '1' }],         // 48/48  was text-5xl
     },
     // Shape scale — the ONLY radii and shadows (replaces the Tailwind defaults, so rounded-xl/2xl/3xl,
-    // bare `rounded` and shadow-soft/medium/strong don't exist).
+    // bare `rounded` and shadow-soft/medium/strong don't exist). Keep in sync with utils/index.ts if
+    // tailwind-merge ever needs to know about them.
     borderRadius: {
       none: '0',
       sm: '0.25rem',   // 4px  — checkboxes, code chips

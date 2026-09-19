@@ -166,3 +166,9 @@ Build failure: `Expected "as" but found "{"`. Cascade: had to manually repair tw
 **Rule:** `tailwind.config.js` `theme.fontSize` is the only scale (`text-caption`, `text-body-sm`, … `text-display`); prefer the classes in `styles/index.css`. ESLint bans the raw sizes. Specimen: Storybook → Design System / Typography.
 **Why:** The migration was pixel-identical only because the new tokens reuse Tailwind's old size/line-height pairs; changing a token's values now changes every use at once.
 **How to apply:** New text → class first, size utility second. Bulk rewrites → token-boundary codemod with a dry run (see L2), then `vite build` + computed-style check. Tailwind config changes need a dev-server restart.
+
+## L-shapes — Radius, shadow and icon names are a fixed vocabulary
+**Trigger:** 2026-09-19. 1,476 uses of rounded-lg/-xl/-2xl all rendered 12px; shadow names disagreed with the tokens; icons used 3 names for one idea.
+**Rule:** Radii: sm/md/lg/full. Shadows: sm/md/lg/xl. Icons: lucide only, canonical name per concept, size scale 12/16/20/24/32(+48 hero), medallions via StatusIconBadge. ESLint (no-restricted-syntax / no-restricted-imports) rejects the retired names. Specimens: Storybook -> Design System.
+**Why:** Renaming to match reality was pixel-identical; drift is prevented by removing the old names from Tailwind so they cannot silently no-op.
+**How to apply:** Removing a Tailwind key needs a top-level `theme.*` override (not `extend`), a full-source codemod first, and a dev-server restart. Codemod with the TypeScript AST for identifiers (regex renames corrupt JSX text such as the word "Edit"), and never rewrite a bare word like `rounded` outside class contexts.
