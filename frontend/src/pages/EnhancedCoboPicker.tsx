@@ -34,7 +34,7 @@ import {
   Mail,
   MessageSquare
 } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { 
@@ -414,9 +414,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', enabled ? 'bg-info-100 dark:bg-info-500/20' : 'bg-neutral-200 dark:bg-primary-800')}>
-            <ArrowDownLeft className={cn('w-5 h-5', enabled ? 'text-info-600 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')} />
-          </div>
+          <StatusIconBadge tone={enabled ? 'info' : 'neutral'} icon={ArrowDownLeft} />
           <div>
             <h4 className="body-strong font-semibold">Collect On Behalf Of (COBO)</h4>
             <p className="caption">Central treasury collects payment on behalf of subsidiary</p>
@@ -556,24 +554,22 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
               {behalfEntity && <EntityCard entity={behalfEntity} role="BENEFICIARY" />}
 
               {/* VIBAN Generation Option */}
-              <label className="flex items-center gap-3 p-3 border border-neutral-200 dark:border-primary-800 rounded-lg bg-white hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer dark:bg-primary-900">
-                <input
-                  type="checkbox"
-                  checked={generateViban}
-                  onChange={(e) => {
-                    onGenerateVibanChange(e.target.checked);
-                    if (!e.target.checked) setGeneratedViban(null);
-                  }}
-                  className="w-4 h-4 rounded-md border-neutral-300 dark:border-primary-700 text-info-600 dark:text-info-300"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
+              <Checkbox
+                variant="card"
+                size="sm"
+                checked={generateViban}
+                onChange={(checked) => {
+                  onGenerateVibanChange(checked);
+                  if (!checked) setGeneratedViban(null);
+                }}
+                label={
+                  <span className="flex items-center gap-2">
                     <Hash className="w-4 h-4 text-info-600 dark:text-info-300" />
-                    <span className="body-sm">Generate Dedicated VIBAN</span>
-                  </div>
-                  <p className="caption mt-0.5">Create a unique VIBAN for automatic payment reconciliation</p>
-                </div>
-              </label>
+                    Generate Dedicated VIBAN
+                  </span>
+                }
+                description="Create a unique VIBAN for automatic payment reconciliation"
+              />
 
               {/* Generated VIBAN Display */}
               {vibanGenerating ? (

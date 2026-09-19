@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Download, Eye, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Calendar, Clock, CheckCircle, XCircle, Plus, Send, FileText, Building2, Landmark, CreditCard, Hash, FileCode, Info, Layers, List, DollarSign, Users, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, DataTable, Toggle } from '../components/ui';
 import type { Column } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, formatRelativeTime, getStatusVariant, cn } from '../utils';
@@ -14,7 +14,7 @@ import {
   type TransactionStats,
   type GroupedTransaction,
 } from '../services/api';
-import { isCredit, isDebit, getAmountColorClass, getMovementBgClass } from '../utils/transactionUtils';
+import { isCredit, isDebit, getAmountColorClass } from '../utils/transactionUtils';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector, type ScopeCorporate } from '../components/layout/ScopeSelector';
 
@@ -148,15 +148,11 @@ const demoStats: TransactionStats = {
 // ============================================================================
 
 // Movement Type Icon - Uses utility functions for consistent styling
-const MovementIcon: React.FC<{ type: string; className?: string }> = ({ type, className }) => {
-  if (isCredit(type)) {
-    return <ArrowDownLeft className={cn('w-5 h-5 text-success-600 dark:text-success-300', className)} />;
-  }
-  if (isDebit(type)) {
-    return <ArrowUpRight className={cn('w-5 h-5 text-error-600 dark:text-error-300', className)} />;
-  }
+const MovementBadge: React.FC<{ type: string; size?: 'md' | 'lg'; className?: string }> = ({ type, size, className }) => {
+  if (isCredit(type)) return <StatusIconBadge tone="success" icon={ArrowDownLeft} size={size} className={className} />;
+  if (isDebit(type)) return <StatusIconBadge tone="error" icon={ArrowUpRight} size={size} className={className} />;
   // Default/unknown movement type
-  return <ArrowLeftRight className={cn('w-5 h-5 text-neutral-500 dark:text-neutral-400', className)} />;
+  return <StatusIconBadge tone="neutral" icon={ArrowLeftRight} size={size} className={className} />;
 };
 
 // Status Icon
@@ -299,12 +295,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={cn(
-              'w-14 h-14 rounded-lg flex items-center justify-center',
-              getMovementBgClass(transaction.movementType)
-            )}>
-              <MovementIcon type={transaction.movementType} className="w-6 h-6" />
-            </div>
+            <MovementBadge type={transaction.movementType} size="lg" />
             <div>
               <p className="section-title">{transaction.referenceNumber}</p>
               <p className="body-sm">{transaction.movementType.replace(/_/g, ' ')}</p>
@@ -421,16 +412,13 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 Shadow VA / Settlement VA legs are noise for day-to-day use,
                 but reconciliation/audit needs the full picture on demand. */}
             <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
-              <span className="body-sm">Show internal settlement accounts</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showInternalAccounts}
-                  onChange={(e) => setShowInternalAccounts(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-info-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all dark:bg-primary-800" />
-              </label>
+              <Toggle
+                layout="split"
+                size="sm"
+                label={<span className="body-sm font-normal">Show internal settlement accounts</span>}
+                checked={showInternalAccounts}
+                onChange={setShowInternalAccounts}
+              />
             </div>
 
             {loadingEntries ? (
@@ -1673,9 +1661,7 @@ const TransactionsPage: React.FC = () => {
       key: 'referenceNumber', header: 'Reference', mobileLabel: true, minWidth: 270,
       render: (_, t) => (
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center shrink-0', getMovementBgClass(t.movementType))}>
-            <MovementIcon type={t.movementType} />
-          </div>
+          <MovementBadge type={t.movementType} className="shrink-0" />
           <div className="min-w-0">
             <p className="text-body-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.referenceNumber}</p>
             <p className="caption">{t.movementType.replace(/_/g, ' ')}</p>

@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, RotateCcw, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
 import {
   StatementDownloadPanel,
@@ -1683,15 +1683,7 @@ const StatementsPage: React.FC = () => {
             </div>
             {statementMode === 'aggregated' && (
               <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeChildren}
-                    onChange={(e) => setIncludeChildren(e.target.checked)}
-                    className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
-                  />
-                  <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Include Children</span>
-                </label>
+                <Checkbox size="sm" label="Include Children" checked={includeChildren} onChange={setIncludeChildren} />
               </div>
             )}
             <div className="flex items-end gap-2">

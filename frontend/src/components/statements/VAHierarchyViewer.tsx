@@ -11,10 +11,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Layers, CreditCard, ArrowDownRight, ArrowUpRight, FileText, RefreshCw, CheckCircle, PauseCircle, Ban, Coins, GitBranch, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // Suppress unused variable warnings for props that are passed but may not be used in all code paths
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Card, Button, Badge, Skeleton } from '../ui';
+import { Card, Button, Badge, Skeleton, StatusIconBadge } from '../ui';
 import { cn, formatCurrency } from '../../utils';
 import { statementsApi } from '../../services/api';
 import type { VAHierarchyNode } from '../../types';
@@ -42,16 +43,17 @@ interface VAHierarchyViewerProps {
 // Account category configuration
 const accountCategoryConfig: Record<string, {
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
+  tone: React.ComponentProps<typeof StatusIconBadge>['tone'];
   color: string;
   bgColor: string;
 }> = {
-  TRANSACTION: { label: 'Transaction', icon: CreditCard, color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
-  COLLECTION: { label: 'Collection', icon: ArrowDownRight, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
-  DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  CURRENCY_MIRROR: { label: 'Currency', icon: Coins, color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
+  TRANSACTION: { label: 'Transaction', icon: CreditCard, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
+  COLLECTION: { label: 'Collection', icon: ArrowDownRight, tone: 'success', color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
+  DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
+  ROOT: { label: 'Root', icon: Layers, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
+  AGGREGATION: { label: 'Aggregation', icon: Layers, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  CURRENCY_MIRROR: { label: 'Currency', icon: Coins, tone: 'cat-5', color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
 };
 
 // Status configuration
@@ -141,13 +143,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         </button>
 
         {/* Category Icon */}
-        <div className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform',
-          categoryInfo.bgColor,
-          isSelected && 'scale-105'
-        )}>
-          <CategoryIcon className={cn('w-4 h-4', categoryInfo.color)} />
-        </div>
+        <StatusIconBadge
+          tone={categoryInfo.tone}
+          icon={CategoryIcon}
+          size="sm"
+          subtle
+          className={cn('shrink-0 transition-transform', isSelected && 'scale-105')}
+        />
 
         {/* Account Info */}
         <div className="flex-1 min-w-0">
@@ -404,9 +406,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
       <div className="p-4 border-b border-neutral-200 dark:border-primary-800 bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-cat-2/10 dark:bg-cat-2/15 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
-            </div>
+            <StatusIconBadge tone="cat-2" icon={Layers} subtle />
             <div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Account Hierarchy</h3>
               <p className="caption">

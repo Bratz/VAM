@@ -36,6 +36,7 @@ import {
   MergeOperationResult,
 } from '../services/hierarchyOperationsApi';
 
+import { Checkbox } from '../components/ui';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -788,18 +789,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       </div>
                     </div>
 
-                    <label className="flex items-start gap-3 p-4 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                      <input
-                        type="checkbox"
-                        checked={confirmBoardApproval}
-                        onChange={(e) => setConfirmBoardApproval(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-primary-600 rounded-md border-neutral-300 dark:border-primary-700 focus:ring-primary-500 dark:text-primary-200"
-                      />
-                      <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
-                        I confirm this acquisition has been approved by the board and all necessary
-                        due diligence has been completed.
-                      </span>
-                    </label>
+                    <Checkbox size="sm" label="I confirm this acquisition has been approved by the board and all necessary due diligence has been completed." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">

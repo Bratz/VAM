@@ -10,6 +10,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Globe, RefreshCw, ArrowRightLeft, DollarSign, Euro, PoundSterling, Coins, BarChart3, Clock, AlertTriangle, Settings, Loader2, Eye, Calculator, X, XCircle, CheckCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -121,29 +122,32 @@ const extractData = <T,>(response: ApiResponse<T>): T => {
 // CURRENCY ICONS & STYLES
 // ============================================================================
 
-const CURRENCY_ICONS: Record<string, React.FC<{ className?: string }>> = {
+const CURRENCY_ICONS: Record<string, LucideIcon> = {
   USD: DollarSign,
   EUR: Euro,
   GBP: PoundSterling,
   AED: Coins,
 };
 
-const CURRENCY_COLORS: Record<string, { bg: string; text: string; border: string; solid: string }> = {
+type CurrencyTone = React.ComponentProps<typeof StatusIconBadge>['tone'];
+const CURRENCY_COLORS: Record<string, { tone: CurrencyTone; bg: string; text: string; border: string; solid: string }> = {
   // `bg` / `text` / `border` — pale variants for currency cards and inline chips on light surfaces.
   // `solid` — saturated fill for use ON dark surfaces (the navy hero card's distribution bar).
-  USD: { bg: 'bg-success-50 dark:bg-success-500/10',     text: 'text-success-600 dark:text-success-300',     border: 'border-success-200 dark:border-success-500/30',     solid: 'bg-success-400' },
-  EUR: { bg: 'bg-info-50 dark:bg-info-500/10',       text: 'text-info-600 dark:text-info-300',       border: 'border-info-200 dark:border-info-500/30',       solid: 'bg-info-400' },
-  GBP: { bg: 'bg-cat-2-soft dark:bg-cat-2/15',   text: 'text-cat-2 dark:text-cat-2-fg',   border: 'border-cat-2/20 dark:border-cat-2/30',   solid: 'bg-cat-2' },
-  AED: { bg: 'bg-warning-50 dark:bg-warning-500/10',     text: 'text-warning-600 dark:text-warning-300',     border: 'border-warning-200 dark:border-warning-500/30',     solid: 'bg-warning-400' },
-  SAR: { bg: 'bg-cat-5-soft dark:bg-cat-5/15', text: 'text-cat-5 dark:text-cat-5-fg', border: 'border-cat-5/20 dark:border-cat-5/30', solid: 'bg-cat-5' },
-  CHF: { bg: 'bg-error-50 dark:bg-error-500/10',         text: 'text-error-600 dark:text-error-300',         border: 'border-error-200 dark:border-error-500/30',         solid: 'bg-error-400' },
-  JPY: { bg: 'bg-cat-4-soft dark:bg-cat-4/15',       text: 'text-cat-4 dark:text-cat-4-fg',       border: 'border-cat-4/20 dark:border-cat-4/30',       solid: 'bg-cat-4' },
-  INR: { bg: 'bg-warning-50 dark:bg-warning-500/10',   text: 'text-warning-600 dark:text-warning-300',   border: 'border-warning-200 dark:border-warning-500/30',   solid: 'bg-warning-400' },
+  USD: { tone: 'success', bg: 'bg-success-50 dark:bg-success-500/10',     text: 'text-success-600 dark:text-success-300',     border: 'border-success-200 dark:border-success-500/30',     solid: 'bg-success-400' },
+  EUR: { tone: 'info', bg: 'bg-info-50 dark:bg-info-500/10',       text: 'text-info-600 dark:text-info-300',       border: 'border-info-200 dark:border-info-500/30',       solid: 'bg-info-400' },
+  GBP: { tone: 'cat-2', bg: 'bg-cat-2-soft dark:bg-cat-2/15',   text: 'text-cat-2 dark:text-cat-2-fg',   border: 'border-cat-2/20 dark:border-cat-2/30',   solid: 'bg-cat-2' },
+  AED: { tone: 'warning', bg: 'bg-warning-50 dark:bg-warning-500/10',     text: 'text-warning-600 dark:text-warning-300',     border: 'border-warning-200 dark:border-warning-500/30',     solid: 'bg-warning-400' },
+  SAR: { tone: 'cat-5', bg: 'bg-cat-5-soft dark:bg-cat-5/15', text: 'text-cat-5 dark:text-cat-5-fg', border: 'border-cat-5/20 dark:border-cat-5/30', solid: 'bg-cat-5' },
+  CHF: { tone: 'error', bg: 'bg-error-50 dark:bg-error-500/10',         text: 'text-error-600 dark:text-error-300',         border: 'border-error-200 dark:border-error-500/30',         solid: 'bg-error-400' },
+  JPY: { tone: 'cat-4', bg: 'bg-cat-4-soft dark:bg-cat-4/15',       text: 'text-cat-4 dark:text-cat-4-fg',       border: 'border-cat-4/20 dark:border-cat-4/30',       solid: 'bg-cat-4' },
+  INR: { tone: 'warning', bg: 'bg-warning-50 dark:bg-warning-500/10',   text: 'text-warning-600 dark:text-warning-300',   border: 'border-warning-200 dark:border-warning-500/30',   solid: 'bg-warning-400' },
 };
 
 const getCurrencyStyle = (currency: string) => {
-  return CURRENCY_COLORS[currency] || { bg: 'bg-neutral-50 dark:bg-primary-950', text: 'text-neutral-600 dark:text-neutral-300', border: 'border-neutral-200 dark:border-primary-800', solid: 'bg-neutral-400' };
+  return CURRENCY_COLORS[currency] || { tone: 'neutral' as CurrencyTone, bg: 'bg-neutral-50 dark:bg-primary-950', text: 'text-neutral-600 dark:text-neutral-300', border: 'border-neutral-200 dark:border-primary-800', solid: 'bg-neutral-400' };
 };
+
+const getCurrencyIcon = (currency: string): LucideIcon => CURRENCY_ICONS[currency] || Coins;
 
 const CurrencyIcon: React.FC<{ currency: string; className?: string }> = ({ currency, className }) => {
   const Icon = CURRENCY_ICONS[currency] || Coins;
@@ -274,13 +278,9 @@ const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
     <div className="flex items-center justify-between p-3 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-primary-300 dark:hover:border-primary-700 transition-colors">
       <div className="flex items-center gap-3">
         <div className="flex items-center">
-          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", fromStyle.bg)}>
-            <CurrencyIcon currency={rate.fromCurrency} className={cn("w-4 h-4", fromStyle.text)} />
-          </div>
+          <StatusIconBadge tone={fromStyle.tone} icon={getCurrencyIcon(rate.fromCurrency)} size="sm" rounded="full" subtle />
           <ArrowRightLeft className="w-4 h-4 text-neutral-400 mx-2" />
-          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", toStyle.bg)}>
-            <CurrencyIcon currency={rate.toCurrency} className={cn("w-4 h-4", toStyle.text)} />
-          </div>
+          <StatusIconBadge tone={toStyle.tone} icon={getCurrencyIcon(rate.toCurrency)} size="sm" rounded="full" subtle />
         </div>
         <div>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{rate.fromCurrency}/{rate.toCurrency}</p>
@@ -785,9 +785,7 @@ const CurrencyMirrorPage: React.FC = () => {
         {selectedMirror && (
           <div className="p-4 space-y-6">
             <div className="flex items-center gap-4">
-              <div className={cn("w-16 h-16 rounded-lg flex items-center justify-center", getCurrencyStyle(selectedMirror.currency).bg)}>
-                <CurrencyIcon currency={selectedMirror.currency} className={cn("w-8 h-8", getCurrencyStyle(selectedMirror.currency).text)} />
-              </div>
+              <StatusIconBadge tone={getCurrencyStyle(selectedMirror.currency).tone} icon={getCurrencyIcon(selectedMirror.currency)} size="xl" subtle />
               <div>
                 {/* Currency code is the hero metric of this panel — use
                     stat-value-sm typography on the heading for visual weight;

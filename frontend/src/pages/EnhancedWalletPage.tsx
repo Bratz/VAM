@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, Pencil, ChevronRight } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input, EmptyState, StatusIconBadge } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, EmptyState, StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -1323,7 +1323,7 @@ const WalletPage: React.FC = () => {
             <Input label="Max Topup" type="number" value={createProgramForm.maxTopup?.toString() || ''} onChange={(e) => setCreateProgramForm({ ...createProgramForm, maxTopup: parseFloat(e.target.value) || undefined })} />
           </div>
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={createProgramForm.kycRequired} onChange={(e) => setCreateProgramForm({ ...createProgramForm, kycRequired: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
+            <Checkbox size="sm" label="KYC Required" checked={createProgramForm.kycRequired} onChange={(checked) => setCreateProgramForm({ ...createProgramForm, kycRequired: checked })} />
             <Input label="Expiry Days" type="number" className="w-32" value={createProgramForm.expiryDays?.toString() || ''} onChange={(e) => setCreateProgramForm({ ...createProgramForm, expiryDays: parseInt(e.target.value) || undefined })} />
           </div>
         </div>
@@ -1339,7 +1339,7 @@ const WalletPage: React.FC = () => {
             <Input label="Monthly Limit" type="number" value={editProgramForm.monthlySpendLimit?.toString() || ''} onChange={(e) => setEditProgramForm({ ...editProgramForm, monthlySpendLimit: parseFloat(e.target.value) || undefined })} />
           </div>
           <Input label="Max Balance" type="number" value={editProgramForm.maxBalance?.toString() || ''} onChange={(e) => setEditProgramForm({ ...editProgramForm, maxBalance: parseFloat(e.target.value) || undefined })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={editProgramForm.kycRequired} onChange={(e) => setEditProgramForm({ ...editProgramForm, kycRequired: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
+          <Checkbox size="sm" label="KYC Required" checked={editProgramForm.kycRequired} onChange={(checked) => setEditProgramForm({ ...editProgramForm, kycRequired: checked })} />
         </div>
       </Modal>
 
@@ -1428,7 +1428,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Alert variant="warning">Blocking a wallet will prevent all transactions. This action requires manual review to reverse.</Alert>
           <Input label="Reason *" placeholder="Enter reason for blocking" value={blockForm.reason} onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm text-error-600 dark:text-error-300">Permanent block (cannot be reversed)</span></label>
+          <Checkbox size="sm" label="Permanent block (cannot be reversed)" checked={blockForm.permanent} onChange={(checked) => setBlockForm({ ...blockForm, permanent: checked })} />
         </div>
       </Modal>
 

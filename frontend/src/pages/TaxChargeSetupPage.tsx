@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Receipt, Globe, Building2, Plus, Search, Trash2, Check, DollarSign, Settings, Loader2, RefreshCw, Download, Upload, ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText, Layers, CreditCard, Zap, Send, Shield, Tag, Wallet, CreditCard as CardIcon, Store, Undo2, AlertTriangle, GitMerge, Landmark, PiggyBank, CircleDollarSign, Pencil } from 'lucide-react';
-import { Button, Badge, Input, DataTable } from '../components/ui';
+import { Button, Badge, Input, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -108,44 +109,44 @@ const MOCK_CHARGE_CONFIGS: ChargeConfiguration[] = [
   { id: '10', chargeCode: 'SETTLE_IC', chargeName: 'Intercompany Settlement Fee', description: 'Fee for intercompany settlement transactions', chargeType: 'SETTLEMENT_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.05, currencyCode: 'AED', minimumCharge: 10, maximumCharge: 200, isCrossBorder: true, isDomestic: true, waiverForVip: true, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
 ];
 
-const TAX_TYPE_CONFIG: Record<TaxType, { label: string; icon: React.FC<{ className?: string }>; color: string; bgColor: string }> = {
-  VAT: { label: 'VAT', icon: Receipt, color: 'text-blue-600 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-500/10' },
-  GST: { label: 'GST', icon: Receipt, color: 'text-green-600 dark:text-green-300', bgColor: 'bg-green-50 dark:bg-green-500/10' },
-  WHT: { label: 'Withholding', icon: Shield, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  SALES_TAX: { label: 'Sales Tax', icon: Tag, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  EXCISE: { label: 'Excise', icon: Layers, color: 'text-orange-600 dark:text-orange-300', bgColor: 'bg-orange-50 dark:bg-orange-500/10' },
-  STAMP_DUTY: { label: 'Stamp Duty', icon: FileText, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  CUSTOMS: { label: 'Customs', icon: Globe, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
-  OTHER: { label: 'Other', icon: Tag, color: 'text-gray-600', bgColor: 'bg-gray-50' },
+const TAX_TYPE_CONFIG: Record<TaxType, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
+  VAT: { label: 'VAT', icon: Receipt, tone: 'info' },
+  GST: { label: 'GST', icon: Receipt, tone: 'success' },
+  WHT: { label: 'Withholding', icon: Shield, tone: 'warning' },
+  SALES_TAX: { label: 'Sales Tax', icon: Tag, tone: 'cat-2' },
+  EXCISE: { label: 'Excise', icon: Layers, tone: 'warning' },
+  STAMP_DUTY: { label: 'Stamp Duty', icon: FileText, tone: 'cat-1' },
+  CUSTOMS: { label: 'Customs', icon: Globe, tone: 'cat-3' },
+  OTHER: { label: 'Other', icon: Tag, tone: 'neutral' },
 };
 
-const CHARGE_TYPE_CONFIG: Record<ChargeType, { label: string; icon: React.FC<{ className?: string }>; color: string; bgColor: string }> = {
+const CHARGE_TYPE_CONFIG: Record<ChargeType, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
   // Payment Transfer Fees
-  SWIFT_FEE: { label: 'SWIFT Fee', icon: Send, color: 'text-blue-600 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-500/10' },
-  FX_FEE: { label: 'FX Fee', icon: ArrowUpRight, color: 'text-green-600 dark:text-green-300', bgColor: 'bg-green-50 dark:bg-green-500/10' },
-  PROCESSING_FEE: { label: 'Processing', icon: Settings, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  URGENCY_FEE: { label: 'Urgency', icon: Zap, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  SERVICE_FEE: { label: 'Service', icon: CreditCard, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  MAINTENANCE_FEE: { label: 'Maintenance', icon: Settings, color: 'text-gray-600', bgColor: 'bg-gray-50' },
-  TRANSACTION_FEE: { label: 'Transaction', icon: ArrowLeftRight, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
-  ADMIN_FEE: { label: 'Admin', icon: FileText, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
+  SWIFT_FEE: { label: 'SWIFT Fee', icon: Send, tone: 'info' },
+  FX_FEE: { label: 'FX Fee', icon: ArrowUpRight, tone: 'success' },
+  PROCESSING_FEE: { label: 'Processing', icon: Settings, tone: 'cat-2' },
+  URGENCY_FEE: { label: 'Urgency', icon: Zap, tone: 'warning' },
+  SERVICE_FEE: { label: 'Service', icon: CreditCard, tone: 'cat-1' },
+  MAINTENANCE_FEE: { label: 'Maintenance', icon: Settings, tone: 'neutral' },
+  TRANSACTION_FEE: { label: 'Transaction', icon: ArrowLeftRight, tone: 'cat-3' },
+  ADMIN_FEE: { label: 'Admin', icon: FileText, tone: 'cat-4' },
   // Treasury / IHB Fees
-  POBO_FEE: { label: 'POBO', icon: Building2, color: 'text-orange-600 dark:text-orange-300', bgColor: 'bg-orange-50 dark:bg-orange-500/10' },
-  IHB_FEE: { label: 'IHB Fee', icon: Landmark, color: 'text-yellow-600 dark:text-yellow-300', bgColor: 'bg-yellow-50 dark:bg-yellow-500/10' },
-  NETTING_FEE: { label: 'Netting', icon: GitMerge, color: 'text-cyan-600 dark:text-cyan-300', bgColor: 'bg-cyan-50 dark:bg-cyan-500/10' },
-  POOLING_FEE: { label: 'Pooling', icon: PiggyBank, color: 'text-lime-600 dark:text-lime-300', bgColor: 'bg-lime-50 dark:bg-lime-500/10' },
-  SETTLEMENT_FEE: { label: 'Settlement', icon: CircleDollarSign, color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
+  POBO_FEE: { label: 'POBO', icon: Building2, tone: 'warning' },
+  IHB_FEE: { label: 'IHB Fee', icon: Landmark, tone: 'warning' },
+  NETTING_FEE: { label: 'Netting', icon: GitMerge, tone: 'info' },
+  POOLING_FEE: { label: 'Pooling', icon: PiggyBank, tone: 'success' },
+  SETTLEMENT_FEE: { label: 'Settlement', icon: CircleDollarSign, tone: 'cat-5' },
   // Wallet / BaaS Fees
-  WALLET_TOPUP_FEE: { label: 'Wallet Top-up', icon: Wallet, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  WALLET_WITHDRAWAL_FEE: { label: 'Wallet Withdrawal', icon: Wallet, color: 'text-fuchsia-600 dark:text-fuchsia-300', bgColor: 'bg-fuchsia-50 dark:bg-fuchsia-500/10' },
-  CARD_ISSUANCE_FEE: { label: 'Card Issuance', icon: CardIcon, color: 'text-sky-600 dark:text-sky-300', bgColor: 'bg-sky-50 dark:bg-sky-500/10' },
-  CARD_TRANSACTION_FEE: { label: 'Card Transaction', icon: CardIcon, color: 'text-blue-600 dark:text-blue-300', bgColor: 'bg-blue-50 dark:bg-blue-500/10' },
+  WALLET_TOPUP_FEE: { label: 'Wallet Top-up', icon: Wallet, tone: 'cat-2' },
+  WALLET_WITHDRAWAL_FEE: { label: 'Wallet Withdrawal', icon: Wallet, tone: 'cat-6' },
+  CARD_ISSUANCE_FEE: { label: 'Card Issuance', icon: CardIcon, tone: 'info' },
+  CARD_TRANSACTION_FEE: { label: 'Card Transaction', icon: CardIcon, tone: 'info' },
   // E-commerce Fees
-  MERCHANT_FEE: { label: 'Merchant', icon: Store, color: 'text-rose-600 dark:text-rose-300', bgColor: 'bg-rose-50 dark:bg-rose-500/10' },
-  REFUND_FEE: { label: 'Refund', icon: Undo2, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  CHARGEBACK_FEE: { label: 'Chargeback', icon: AlertTriangle, color: 'text-red-600 dark:text-red-300', bgColor: 'bg-red-50 dark:bg-red-500/10' },
+  MERCHANT_FEE: { label: 'Merchant', icon: Store, tone: 'cat-7' },
+  REFUND_FEE: { label: 'Refund', icon: Undo2, tone: 'warning' },
+  CHARGEBACK_FEE: { label: 'Chargeback', icon: AlertTriangle, tone: 'error' },
   // Other
-  OTHER: { label: 'Other', icon: Tag, color: 'text-gray-600', bgColor: 'bg-gray-50' },
+  OTHER: { label: 'Other', icon: Tag, tone: 'neutral' },
 };
 
 const CHARGE_CATEGORY_CONFIG: Record<ChargeCategory, { label: string; description: string }> = {
@@ -155,11 +156,11 @@ const CHARGE_CATEGORY_CONFIG: Record<ChargeCategory, { label: string; descriptio
   SLIDING_SCALE: { label: 'Sliding Scale', description: 'Progressive rates' },
 };
 
-const StatCard: React.FC<{ label: string; value: string | number; icon: React.FC<{ className?: string }>; color: string; bgColor: string; trend?: number; loading?: boolean }> = ({ label, value, icon: Icon, color, bgColor, trend, loading }) => (
+const StatCard: React.FC<{ label: string; value: string | number; icon: LucideIcon; color: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; trend?: number; loading?: boolean }> = ({ label, value, icon: Icon, color, tone, trend, loading }) => (
   <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-100 dark:bg-primary-900 dark:border-primary-800/60">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', bgColor)}><Icon className={cn('w-5 h-5', color)} /></div>
+        <StatusIconBadge tone={tone} icon={Icon} subtle />
         <div>
           <p className="body-sm">{label}</p>
           {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm
@@ -173,7 +174,7 @@ const StatCard: React.FC<{ label: string; value: string | number; icon: React.FC
   </div>
 );
 
-const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: React.FC<{ className?: string }>; label: string; count?: number }> = ({ active, onClick, icon: Icon, label, count }) => (
+const TabButton: React.FC<{ active: boolean; onClick: () => void; icon: LucideIcon; label: string; count?: number }> = ({ active, onClick, icon: Icon, label, count }) => (
   <button onClick={onClick} className={cn('flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all', active ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800')}>
     <Icon className="w-4 h-4" />{label}{count !== undefined && <Badge variant={active ? 'info' : 'neutral'} size="sm">{count}</Badge>}
   </button>
@@ -189,7 +190,7 @@ const JurisdictionTable: React.FC<{ jurisdictions: TaxJurisdiction[]; onEdit: (j
         key: 'jurisdictionName', header: 'Jurisdiction',
         render: (_, j) => (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center dark:bg-blue-500/10"><Globe className="w-4 h-4 text-blue-600 dark:text-blue-300" /></div>
+            <StatusIconBadge tone="info" icon={Globe} size="sm" subtle />
             <div><p className="body-strong">{j.jurisdictionName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{j.jurisdictionCode}</p></div>
           </div>
         ),
@@ -227,7 +228,7 @@ const TaxConfigTable: React.FC<{ configs: TaxConfiguration[]; onEdit: (c: TaxCon
           const TypeIcon = typeConfig.icon;
           return (
             <div className="flex items-center gap-2">
-              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div>
+              <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} size="sm" subtle />
               <div><p className="body-strong">{c.taxName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.taxCode}</p></div>
             </div>
           );
@@ -289,7 +290,7 @@ const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: 
           const TypeIcon = typeConfig.icon;
           return (
             <div className="flex items-center gap-2">
-              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', typeConfig.bgColor)}><TypeIcon className={cn('w-4 h-4', typeConfig.color)} /></div>
+              <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} size="sm" subtle />
               <div><p className="body-strong">{c.chargeName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p></div>
             </div>
           );
@@ -353,7 +354,7 @@ const TaxConfigModal: React.FC<{ isOpen: boolean; onClose: () => void; config?: 
         <div><label className="field-label block mb-1">Description</label><textarea className="w-full border border-neutral-300 rounded-lg px-3 py-2 resize-none dark:border-primary-700" rows={2} value={formData.description || ''} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Optional description..." /></div>
         <div className="grid grid-cols-3 gap-4"><div><label className="field-label block mb-1">Tax Type *</label><select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700" value={formData.taxType} onChange={(e) => setFormData({ ...formData, taxType: e.target.value as TaxType })}>{Object.entries(TAX_TYPE_CONFIG).map(([key, cfg]) => (<option key={key} value={key}>{cfg.label}</option>))}</select></div><div><label className="field-label block mb-1">Jurisdiction *</label><select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700" value={formData.jurisdictionCode} onChange={(e) => setFormData({ ...formData, jurisdictionCode: e.target.value })}>{jurisdictions.map((j) => (<option key={j.jurisdictionCode} value={j.jurisdictionCode}>{j.jurisdictionName}</option>))}</select></div><div><label className="field-label block mb-1">Category *</label><select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700" value={formData.taxCategory} onChange={(e) => setFormData({ ...formData, taxCategory: e.target.value as TaxCategory })}><option value="STANDARD">Standard</option><option value="REDUCED">Reduced</option><option value="ZERO">Zero-Rated</option><option value="EXEMPT">Exempt</option><option value="SPECIAL">Special</option></select></div></div>
         <div className="grid grid-cols-3 gap-4"><div><label className="field-label block mb-1">Rate (%) *</label><Input type="number" step="0.01" value={formData.ratePercentage || 0} onChange={(e) => setFormData({ ...formData, ratePercentage: parseFloat(e.target.value) })} /></div><div><label className="field-label block mb-1">Minimum Amount</label><Input type="number" value={formData.minimumAmount || ''} onChange={(e) => setFormData({ ...formData, minimumAmount: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Optional" /></div><div><label className="field-label block mb-1">Maximum Amount</label><Input type="number" value={formData.maximumAmount || ''} onChange={(e) => setFormData({ ...formData, maximumAmount: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Optional" /></div></div>
-        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Applicability</h4><div className="grid grid-cols-2 gap-4"><label className="flex items-center gap-2"><input type="checkbox" checked={formData.appliesToPayables} onChange={(e) => setFormData({ ...formData, appliesToPayables: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Applies to Payables</span></label><label className="flex items-center gap-2"><input type="checkbox" checked={formData.appliesToReceivables} onChange={(e) => setFormData({ ...formData, appliesToReceivables: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Applies to Receivables</span></label><label className="flex items-center gap-2"><input type="checkbox" checked={formData.isWithholding} onChange={(e) => setFormData({ ...formData, isWithholding: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Is Withholding Tax</span></label><label className="flex items-center gap-2"><input type="checkbox" checked={formData.isRecoverable} onChange={(e) => setFormData({ ...formData, isRecoverable: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Is Recoverable</span></label></div></div>
+        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Applicability</h4><div className="grid grid-cols-2 gap-4"><Checkbox size="sm" label="Applies to Payables" checked={formData.appliesToPayables} onChange={(checked) => setFormData({ ...formData, appliesToPayables: checked })} /><Checkbox size="sm" label="Applies to Receivables" checked={formData.appliesToReceivables} onChange={(checked) => setFormData({ ...formData, appliesToReceivables: checked })} /><Checkbox size="sm" label="Is Withholding Tax" checked={formData.isWithholding} onChange={(checked) => setFormData({ ...formData, isWithholding: checked })} /><Checkbox size="sm" label="Is Recoverable" checked={formData.isRecoverable} onChange={(checked) => setFormData({ ...formData, isRecoverable: checked })} /></div></div>
         {formData.isRecoverable && <div><label className="field-label block mb-1">Recovery Percentage</label><Input type="number" step="0.01" max="100" value={formData.recoveryPercentage || 100} onChange={(e) => setFormData({ ...formData, recoveryPercentage: parseFloat(e.target.value) })} /></div>}
         <div className="grid grid-cols-3 gap-4"><div><label className="field-label block mb-1">Effective From *</label><Input type="date" value={formData.effectiveFrom || ''} onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })} /></div><div><label className="field-label block mb-1">Effective To</label><Input type="date" value={formData.effectiveTo || ''} onChange={(e) => setFormData({ ...formData, effectiveTo: e.target.value || undefined })} /></div><div><label className="field-label block mb-1">Status</label><select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as TaxStatus })}><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="PENDING">Pending</option></select></div></div>
         <div className="flex justify-end gap-2 pt-4 border-t"><Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button><Button onClick={handleSubmit} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}{config ? 'Update' : 'Create'} Tax Config</Button></div>
@@ -375,8 +376,8 @@ const ChargeConfigModal: React.FC<{ isOpen: boolean; onClose: () => void; config
         {formData.chargeCategory === 'FIXED' && <div><label className="field-label block mb-1">Fixed Amount *</label><Input type="number" step="0.01" value={formData.fixedAmount || 0} onChange={(e) => setFormData({ ...formData, fixedAmount: parseFloat(e.target.value) })} /></div>}
         {(formData.chargeCategory === 'PERCENTAGE' || formData.chargeCategory === 'SLIDING_SCALE') && <div className="grid grid-cols-3 gap-4"><div><label className="field-label block mb-1">Percentage Rate *</label><Input type="number" step="0.01" value={formData.percentageRate || 0} onChange={(e) => setFormData({ ...formData, percentageRate: parseFloat(e.target.value) })} /></div><div><label className="field-label block mb-1">Minimum Charge</label><Input type="number" value={formData.minimumCharge || ''} onChange={(e) => setFormData({ ...formData, minimumCharge: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Optional" /></div><div><label className="field-label block mb-1">Maximum Charge</label><Input type="number" value={formData.maximumCharge || ''} onChange={(e) => setFormData({ ...formData, maximumCharge: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Optional" /></div></div>}
         {formData.chargeCategory === 'TIERED' && <div className="border rounded-lg p-3 bg-neutral-50 dark:bg-primary-950"><h4 className="text-body-sm font-semibold mb-2">Tier Configuration</h4><p className="caption mb-2">Define volume-based tiers with rates</p><div className="space-y-2">{(formData.tierConfig || [{ from: 0, to: 10000, rate: 0.5 }]).map((tier, idx) => (<div key={idx} className="grid grid-cols-4 gap-2 items-center"><Input type="number" placeholder="From" value={tier.from} onChange={(e) => { const newTiers = [...(formData.tierConfig || [])]; newTiers[idx] = { ...tier, from: parseFloat(e.target.value) }; setFormData({ ...formData, tierConfig: newTiers }); }} /><Input type="number" placeholder="To" value={tier.to || ''} onChange={(e) => { const newTiers = [...(formData.tierConfig || [])]; newTiers[idx] = { ...tier, to: e.target.value ? parseFloat(e.target.value) : undefined }; setFormData({ ...formData, tierConfig: newTiers }); }} /><Input type="number" step="0.01" placeholder="Rate %" value={tier.rate} onChange={(e) => { const newTiers = [...(formData.tierConfig || [])]; newTiers[idx] = { ...tier, rate: parseFloat(e.target.value) }; setFormData({ ...formData, tierConfig: newTiers }); }} /><Button variant="ghost" size="sm" onClick={() => { const newTiers = (formData.tierConfig || []).filter((_, i) => i !== idx); setFormData({ ...formData, tierConfig: newTiers }); }}><Trash2 className="w-4 h-4 text-red-500" /></Button></div>))}<Button variant="outline" size="sm" onClick={() => { const newTiers = [...(formData.tierConfig || []), { from: 0, to: undefined, rate: 0 }]; setFormData({ ...formData, tierConfig: newTiers }); }}><Plus className="w-4 h-4 mr-1" />Add Tier</Button></div></div>}
-        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Scope & Applicability</h4><div className="grid grid-cols-2 gap-4"><label className="flex items-center gap-2"><input type="checkbox" checked={formData.isCrossBorder} onChange={(e) => setFormData({ ...formData, isCrossBorder: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Cross-Border Payments</span></label><label className="flex items-center gap-2"><input type="checkbox" checked={formData.isDomestic} onChange={(e) => setFormData({ ...formData, isDomestic: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Domestic Payments</span></label></div></div>
-        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Waiver Rules</h4><div className="grid grid-cols-2 gap-4"><label className="flex items-center gap-2"><input type="checkbox" checked={formData.waiverForVip} onChange={(e) => setFormData({ ...formData, waiverForVip: e.target.checked })} className="rounded-md text-primary-600 dark:text-primary-200" /><span className="text-body-sm">Waive for VIP Customers</span></label><div><label className="field-label block mb-1">Waiver Threshold</label><Input type="number" value={formData.waiverThreshold || ''} onChange={(e) => setFormData({ ...formData, waiverThreshold: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Amount above which to waive" /></div></div></div>
+        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Scope & Applicability</h4><div className="grid grid-cols-2 gap-4"><Checkbox size="sm" label="Cross-Border Payments" checked={formData.isCrossBorder} onChange={(checked) => setFormData({ ...formData, isCrossBorder: checked })} /><Checkbox size="sm" label="Domestic Payments" checked={formData.isDomestic} onChange={(checked) => setFormData({ ...formData, isDomestic: checked })} /></div></div>
+        <div className="border-t pt-4"><h4 className="text-body-sm font-semibold mb-3">Waiver Rules</h4><div className="grid grid-cols-2 gap-4"><Checkbox size="sm" label="Waive for VIP Customers" checked={formData.waiverForVip} onChange={(checked) => setFormData({ ...formData, waiverForVip: checked })} /><div><label className="field-label block mb-1">Waiver Threshold</label><Input type="number" value={formData.waiverThreshold || ''} onChange={(e) => setFormData({ ...formData, waiverThreshold: e.target.value ? parseFloat(e.target.value) : undefined })} placeholder="Amount above which to waive" /></div></div></div>
         <div className="grid grid-cols-3 gap-4"><div><label className="field-label block mb-1">Effective From *</label><Input type="date" value={formData.effectiveFrom || ''} onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })} /></div><div><label className="field-label block mb-1">Effective To</label><Input type="date" value={formData.effectiveTo || ''} onChange={(e) => setFormData({ ...formData, effectiveTo: e.target.value || undefined })} /></div><div><label className="field-label block mb-1">Status</label><select className="w-full border border-neutral-300 rounded-lg px-3 py-2 dark:border-primary-700" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as ChargeStatus })}><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="PENDING">Pending</option></select></div></div>
         <div className="flex justify-end gap-2 pt-4 border-t"><Button variant="ghost" onClick={onClose} disabled={saving}>Cancel</Button><Button onClick={handleSubmit} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}{config ? 'Update' : 'Create'} Charge Config</Button></div>
       </div>
@@ -453,7 +454,7 @@ const TaxChargesSetupPage: React.FC = () => {
         description={<>Configure tax rates, jurisdictions, and fee schedules{useMockData && <Badge variant="warning" size="sm" className="ml-2">Demo Mode</Badge>}</>}
         actions={<><Button variant="outline" onClick={() => console.log('Export configs')}><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={() => console.log('Import configs')}><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></>}
       />
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" bgColor="bg-blue-50 dark:bg-blue-500/10" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" bgColor="bg-green-50 dark:bg-green-500/10" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2 dark:text-cat-2-fg" bgColor="bg-cat-2-soft dark:bg-cat-2/15" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" bgColor="bg-warning-50 dark:bg-warning-500/10" loading={loading} /></div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" tone="info" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" tone="success" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2 dark:text-cat-2-fg" tone="cat-2" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" tone="warning" loading={loading} /></div>
       <div className="bg-white rounded-lg shadow-sm border border-neutral-100 dark:bg-primary-900 dark:border-primary-800/60">
         <div className="flex items-center gap-2 p-4 border-b border-neutral-200 dark:border-primary-800"><TabButton active={activeTab === 'taxes'} onClick={() => setActiveTab('taxes')} icon={Receipt} label="Tax Configurations" count={taxConfigs.length} /><TabButton active={activeTab === 'charges'} onClick={() => setActiveTab('charges')} icon={DollarSign} label="Charge Configurations" count={chargeConfigs.length} /><TabButton active={activeTab === 'jurisdictions'} onClick={() => setActiveTab('jurisdictions')} icon={Globe} label="Jurisdictions" count={jurisdictions.length} /></div>
         <div className="flex items-center gap-4 p-4 bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800"><div className="flex-1 relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" /><Input className="pl-10" placeholder={`Search ${activeTab}...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><select className="border border-neutral-300 rounded-lg px-3 py-2 text-body-sm dark:border-primary-700" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}><option value="ALL">All Status</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="PENDING">Pending</option></select>{activeTab === 'taxes' && <select className="border border-neutral-300 rounded-lg px-3 py-2 text-body-sm dark:border-primary-700" value={filterJurisdiction} onChange={(e) => setFilterJurisdiction(e.target.value)}><option value="ALL">All Jurisdictions</option>{jurisdictions.map(j => (<option key={j.jurisdictionCode} value={j.jurisdictionCode}>{j.jurisdictionName}</option>))}</select>}</div>

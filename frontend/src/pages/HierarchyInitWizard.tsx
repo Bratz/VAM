@@ -13,6 +13,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, Check, ChevronRight, AlertTriangle, Info, Loader2, Building2, Globe, Wallet, Coins } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
+import { Checkbox } from '../components/ui';
 import {
   hierarchyOperationsApi,
   CorporateSummary,
@@ -533,22 +534,13 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                 {step === 3 && (
                   <div className="space-y-6">
                     <div>
-                      <label className="flex items-center gap-3 p-4 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={createExceptionVa}
-                          onChange={(e) => setCreateExceptionVa(e.target.checked)}
-                          className="w-5 h-5 text-warning-600 rounded-md border-warning-300 dark:border-warning-500/30 focus:ring-warning-500 dark:text-warning-300"
-                        />
-                        <div>
-                          <span className="font-medium text-warning-800 dark:text-warning-300">
-                            Create {baseCurrency} Exception Account
-                          </span>
-                          <p className="text-body-sm text-warning-600 dark:text-warning-300 mt-0.5">
-                            Unmatched transactions will be routed here for manual resolution
-                          </p>
-                        </div>
-                      </label>
+                      <Checkbox
+                        variant="card"
+                        checked={createExceptionVa}
+                        onChange={setCreateExceptionVa}
+                        label={`Create ${baseCurrency} Exception Account`}
+                        description="Unmatched transactions will be routed here for manual resolution"
+                      />
                     </div>
 
                     <div>

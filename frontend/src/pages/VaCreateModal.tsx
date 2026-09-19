@@ -19,7 +19,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { CreditCard, ChevronRight, CheckCircle, Loader2, Building2, GitBranch, Layers, XCircle } from 'lucide-react';
-import { Button, Badge, Input } from '../components/ui';
+import { Button, Badge, Input, StatusIconBadge } from '../components/ui';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { HierarchyTreePicker, PlacementSelection } from '../components/va/HierarchyTreePicker';
 import { Modal, Alert } from '../components/ui/enhanced';
@@ -169,15 +169,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
               : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
           )}
         >
-          <div className={cn(
-            "w-12 h-12 rounded-lg flex items-center justify-center",
-            selectedId === corp.id ? "bg-primary-100 dark:bg-primary-700" : "bg-neutral-100 dark:bg-primary-800"
-          )}>
-            <Building2 className={cn(
-              "w-6 h-6",
-              selectedId === corp.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400"
-            )} />
-          </div>
+          <StatusIconBadge tone={selectedId === corp.id ? 'primary' : 'neutral'} icon={Building2} size="lg" />
           <div className="flex-1">
             <p className="font-medium text-neutral-900 dark:text-neutral-50">{corp.name}</p>
             {corp.legalName && corp.legalName !== corp.name && (
@@ -262,15 +254,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
                 : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
             )}
           >
-            <div className={cn(
-              "w-12 h-12 rounded-lg flex items-center justify-center",
-              selectedId === program.id ? "bg-primary-100 dark:bg-primary-700" : "bg-neutral-100 dark:bg-primary-800"
-            )}>
-              <Layers className={cn(
-                "w-6 h-6",
-                selectedId === program.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400"
-              )} />
-            </div>
+            <StatusIconBadge tone={selectedId === program.id ? 'primary' : 'neutral'} icon={Layers} size="lg" />
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{program.programName}</p>

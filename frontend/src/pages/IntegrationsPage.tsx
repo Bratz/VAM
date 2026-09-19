@@ -33,7 +33,7 @@ import {
   Database,
   Zap
 } from 'lucide-react';
-import { Card, Button, Badge, Input } from '../components/ui';
+import { Card, Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
@@ -870,9 +870,7 @@ const SetupWizardModal: React.FC<{
                 )}
                 {testResult === 'success' && (
                   <div>
-                    <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mx-auto mb-3">
-                      <Check className="w-6 h-6 text-white" />
-                    </div>
+                    <StatusIconBadge tone="neutral" solid icon={Check} size="lg" className="mx-auto mb-3" />
                     <p className="body-strong">Connection Successful</p>
                     <p className="caption mt-1">Ready to sync data</p>
                   </div>
@@ -1259,11 +1257,12 @@ const FieldMappingModal: React.FC<{
                   </select>
                 </td>
                 <td className="px-4 py-2 text-center">
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    size="sm"
+                    className="inline-flex"
+                    aria-label={`Required: ${mapping.sourceField}`}
                     checked={mapping.isRequired}
-                    onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, isRequired: e.target.checked } : m))}
-                    className="w-4 h-4 border-neutral-300 dark:border-primary-700"
+                    onChange={checked => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, isRequired: checked } : m))}
                   />
                 </td>
                 <td className="px-4 py-2 text-center">

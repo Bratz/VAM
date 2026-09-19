@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Percent, Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, Copy, Landmark, Trash2, ChevronRight, Loader2, Layers, X, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, DollarSign, FolderTree, Info, Sparkles, Settings, Pencil } from 'lucide-react';
-import { Card, Badge, Button , StatusIconBadge, StatTile } from '../components/ui';
+import type { LucideIcon } from 'lucide-react';
+import { Card, Badge, Button , StatusIconBadge, StatTile, Checkbox } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -318,7 +319,7 @@ const vibanPoolApi = {
 };
 
 // VIBAN Generation Strategy Config
-const vibanStrategyConfig: Record<string, { label: string; description: string; icon: React.ElementType }> = {
+const vibanStrategyConfig: Record<string, { label: string; description: string; icon: LucideIcon }> = {
   SEQUENTIAL: { label: 'Sequential', description: 'VIBANs are generated in sequential order (001, 002, 003...)', icon: TrendingUp },
   RANDOM: { label: 'Random', description: 'VIBANs are generated with random unique identifiers', icon: Hash },
   HIERARCHY_ENCODED: { label: 'Hierarchy Encoded', description: 'VIBAN includes encoded hierarchy path for routing', icon: GitBranch },
@@ -328,19 +329,19 @@ const vibanStrategyConfig: Record<string, { label: string; description: string; 
 // CONFIGURATION
 // ============================================================================
 
-const programTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string; description: string }> = {
-  COLLECTION: { label: 'Collection', icon: CreditCard, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Receivables collection' },
-  VIBAN: { label: 'VIBAN', icon: Hash, color: 'text-accent-600 dark:text-accent-300', bgColor: 'bg-accent-50 dark:bg-accent-500/10', description: 'Virtual IBAN' },
-  ESCROW: { label: 'Escrow', icon: Shield, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Digital escrow' },
-  WALLET: { label: 'Wallet', icon: Wallet, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Prepaid wallet' },
-  IHB: { label: 'In-House Bank', icon: Building2, color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-100 dark:bg-primary-700', description: 'In-house banking' },
-  PAYABLES: { label: 'Payables', icon: Banknote, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Payables management' },
+const programTypeConfig: Record<string, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; description: string }> = {
+  COLLECTION: { label: 'Collection', icon: CreditCard, tone: 'info', color: 'text-info-600 dark:text-info-300', description: 'Receivables collection' },
+  VIBAN: { label: 'VIBAN', icon: Hash, tone: 'accent', color: 'text-accent-600 dark:text-accent-300', description: 'Virtual IBAN' },
+  ESCROW: { label: 'Escrow', icon: Shield, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Digital escrow' },
+  WALLET: { label: 'Wallet', icon: Wallet, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', description: 'Prepaid wallet' },
+  IHB: { label: 'In-House Bank', icon: Building2, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', description: 'In-house banking' },
+  PAYABLES: { label: 'Payables', icon: Banknote, tone: 'error', color: 'text-error-600 dark:text-error-300', description: 'Payables management' },
   // NEW: Additional Program Types
-  RECEIVABLES: { label: 'Receivables', icon: DollarSign, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receivables management' },
-  LOYALTY: { label: 'Loyalty', icon: TrendingUp, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15', description: 'Loyalty/rewards program' },
-  GIFT_CARD: { label: 'Gift Card', icon: Gift, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Gift card program' },
-  CORPORATE_CARD: { label: 'Corporate Card', icon: CreditCard, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15', description: 'Corporate card program' },
-  MOBILE_MONEY: { label: 'Mobile Money', icon: Smartphone, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15', description: 'Mobile money/agent banking' },
+  RECEIVABLES: { label: 'Receivables', icon: DollarSign, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Receivables management' },
+  LOYALTY: { label: 'Loyalty', icon: TrendingUp, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', description: 'Loyalty/rewards program' },
+  GIFT_CARD: { label: 'Gift Card', icon: Gift, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', description: 'Gift card program' },
+  CORPORATE_CARD: { label: 'Corporate Card', icon: CreditCard, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', description: 'Corporate card program' },
+  MOBILE_MONEY: { label: 'Mobile Money', icon: Smartphone, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', description: 'Mobile money/agent banking' },
 };
 
 type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
@@ -504,9 +505,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-neutral-200 dark:border-primary-800">
-          <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center', programTypeConfig[program.programType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
-            <TypeIcon className={cn('w-6 h-6', programTypeConfig[program.programType]?.color || 'text-neutral-600 dark:text-neutral-300')} />
-          </div>
+          <StatusIconBadge tone={programTypeConfig[program.programType]?.tone || 'neutral'} icon={TypeIcon} size="lg" subtle />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="section-title truncate">{program.programName}</h2>
@@ -833,12 +832,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             )}
                           >
                             <div className="flex items-start gap-3">
-                              <div className={cn(
-                                'w-10 h-10 rounded-lg flex items-center justify-center',
-                                isActive ? 'bg-primary-600' : 'bg-neutral-100 dark:bg-primary-800'
-                              )}>
-                                <StrategyIcon className={cn('w-5 h-5', isActive ? 'text-white' : 'text-neutral-600 dark:text-neutral-300')} />
-                              </div>
+                              <StatusIconBadge tone={isActive ? 'primary' : 'neutral'} icon={StrategyIcon} solid={isActive} />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className={cn('font-medium', isActive ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-700 dark:text-neutral-200')}>
@@ -1441,10 +1435,7 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
       
-      <label className="flex items-center gap-1 cursor-pointer">
-        <input type="checkbox" checked={isWaived} onChange={e => onWaiverChange(e.target.checked)} className="rounded-md" />
-        <span className="caption">Waive</span>
-      </label>
+      <Checkbox size="sm" label="Waive" checked={isWaived} onChange={onWaiverChange} />
       
       <div className="w-16">
         {isWaived ? <Badge variant="warning" size="sm">Waived</Badge> :
@@ -2333,30 +2324,21 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   const autoEnabledFeatures = PROGRAM_TYPE_FEATURE_MAP[formData.programType] || {};
                   const isAutoEnabled = autoEnabledFeatures[f.key as keyof FeatureFlags] === true;
                   return (
-                    <label
+                    <Checkbox
                       key={f.key}
-                      className={cn(
-                        'flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all',
-                        isChecked ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700',
-                        isAutoEnabled && isChecked && 'ring-2 ring-primary-400'
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={isChecked}
-                        onChange={e => setFormData({ ...formData, [f.key]: e.target.checked })}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      variant="card"
+                      checked={isChecked}
+                      onChange={(checked) => setFormData({ ...formData, [f.key]: checked })}
+                      label={
+                        <span className="flex items-center gap-2 flex-wrap">
                           <Icon className={cn('w-4 h-4', f.color)} />
-                          <span className="body-strong">{f.label}</span>
+                          <span>{f.label}</span>
                           {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
                           {f.step && isChecked && <Badge variant="info" size="sm">+Step</Badge>}
-                        </div>
-                        <p className="caption mt-0.5">{f.desc}</p>
-                      </div>
-                    </label>
+                        </span>
+                      }
+                      description={f.desc}
+                    />
                   );
                 })}
               </div>
@@ -2379,29 +2361,20 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     const autoEnabledFeatures = PROGRAM_TYPE_FEATURE_MAP[formData.programType] || {};
                     const isAutoEnabled = autoEnabledFeatures[f.key as keyof FeatureFlags] === true;
                     return (
-                      <label
+                      <Checkbox
                         key={f.key}
-                        className={cn(
-                          'flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-all',
-                          isChecked ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800 dark:hover:border-primary-700',
-                          isAutoEnabled && isChecked && 'ring-2 ring-primary-400'
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="mt-1"
-                          checked={isChecked}
-                          onChange={e => setFormData({ ...formData, [f.key]: e.target.checked })}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
+                        variant="card"
+                        checked={isChecked}
+                        onChange={(checked) => setFormData({ ...formData, [f.key]: checked })}
+                        label={
+                          <span className="flex items-center gap-2 flex-wrap">
                             <Icon className={cn('w-4 h-4', f.color)} />
-                            <span className="body-strong">{f.label}</span>
+                            <span>{f.label}</span>
                             {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
-                          </div>
-                          <p className="caption mt-0.5">{f.desc}</p>
-                        </div>
-                      </label>
+                          </span>
+                        }
+                        description={f.desc}
+                      />
                     );
                   })}
                 </div>
@@ -2807,19 +2780,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                             </div>
 
                             {/* Required Toggle */}
-                            <label className="flex items-center gap-2 text-caption">
-                              <input
-                                type="checkbox"
-                                checked={level.isRequired ?? false}
-                                onChange={e => {
+                            <Checkbox size="sm" label="This level is required (must have a value)" checked={level.isRequired ?? false} onChange={(checked) => {
                                   const updated = [...hierarchyLevelConfigs];
-                                  updated[idx] = { ...updated[idx], isRequired: e.target.checked };
+                                  updated[idx] = { ...updated[idx], isRequired: checked };
                                   setHierarchyLevelConfigs(updated);
-                                }}
-                                className="rounded-md text-cat-2 dark:text-cat-2-fg"
-                              />
-                              <span className="text-neutral-600 dark:text-neutral-300">This level is required (must have a value)</span>
-                            </label>
+                                }} className="text-caption" />
                           </div>
                         )}
                       </div>
@@ -3068,17 +3033,13 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div className="space-y-3">
               <h4 className="text-body-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">KYC Configuration</h4>
               <div className="grid grid-cols-2 gap-4">
-                <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50">
-                  <input
-                    type="checkbox"
-                    checked={formData.kycRequired ?? false}
-                    onChange={e => setFormData({ ...formData, kycRequired: e.target.checked })}
-                  />
-                  <div>
-                    <span className="body-strong">KYC Required</span>
-                    <p className="caption">Require KYC verification for wallet holders</p>
-                  </div>
-                </label>
+                <Checkbox
+                  variant="card"
+                  checked={formData.kycRequired ?? false}
+                  onChange={(checked) => setFormData({ ...formData, kycRequired: checked })}
+                  label="KYC Required"
+                  description="Require KYC verification for wallet holders"
+                />
                 <div>
                   <label className="block label-cased mb-1">Minimum KYC Level</label>
                   <select
@@ -3106,17 +3067,14 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   { key: 'allowTransfer', label: 'Allow Transfer', desc: 'Transfer between wallets', defaultVal: true },
                   { key: 'allowPayment', label: 'Allow Payment', desc: 'Pay merchants/bills', defaultVal: true },
                 ].map(cap => (
-                  <label key={cap.key} className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50">
-                    <input
-                      type="checkbox"
-                      checked={(formData as any)[cap.key] ?? cap.defaultVal}
-                      onChange={e => setFormData({ ...formData, [cap.key]: e.target.checked })}
-                    />
-                    <div>
-                      <span className="body-strong">{cap.label}</span>
-                      <p className="caption">{cap.desc}</p>
-                    </div>
-                  </label>
+                  <Checkbox
+                    key={cap.key}
+                    variant="card"
+                    checked={(formData as any)[cap.key] ?? cap.defaultVal}
+                    onChange={(checked) => setFormData({ ...formData, [cap.key]: checked })}
+                    label={cap.label}
+                    description={cap.desc}
+                  />
                 ))}
               </div>
             </div>
@@ -3181,11 +3139,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.issuance.chargeName}</span>
-                    <label className="flex items-center gap-1 text-caption">
-                      <input type="checkbox" checked={chargeOverrides.issuance.waived}
-                        onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: e.target.checked } })} />
-                      Waive
-                    </label>
+                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.issuance.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
@@ -3199,11 +3153,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.monthly.chargeName}</span>
-                    <label className="flex items-center gap-1 text-caption">
-                      <input type="checkbox" checked={chargeOverrides.monthly.waived}
-                        onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: e.target.checked } })} />
-                      Waive
-                    </label>
+                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.monthly.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
@@ -3217,11 +3167,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.inactivity.chargeName}</span>
-                    <label className="flex items-center gap-1 text-caption">
-                      <input type="checkbox" checked={chargeOverrides.inactivity.waived}
-                        onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: e.target.checked } })} />
-                      Waive
-                    </label>
+                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.inactivity.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
@@ -3324,20 +3270,18 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               </div>
             </div>
 
-            <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50">
-              <input 
-                type="checkbox" 
-                checked={formData.realtimeBalancePropagation}
-                onChange={e => setFormData({ ...formData, realtimeBalancePropagation: e.target.checked })} 
-              />
-              <div>
-                <span className="body-strong flex items-center gap-2">
+            <Checkbox
+              variant="card"
+              checked={formData.realtimeBalancePropagation}
+              onChange={(checked) => setFormData({ ...formData, realtimeBalancePropagation: checked })}
+              label={
+                <span className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-success-500 dark:text-success-300" />
                   Real-time Balance Propagation
                 </span>
-                <p className="caption">Instantly update parent balances when child accounts change</p>
-              </div>
-            </label>
+              }
+              description="Instantly update parent balances when child accounts change"
+            />
           </div>
         )}
 
@@ -3896,9 +3840,7 @@ const ProgramsPage: React.FC = () => {
                   <tr key={program.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', typeConfig?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
-                          <TypeIcon className={cn('w-5 h-5', typeConfig?.color || 'text-neutral-600 dark:text-neutral-300')} />
-                        </div>
+                        <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} subtle />
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>

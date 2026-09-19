@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, ChevronDown, ChevronUp, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, Percent, DollarSign, ArrowDownLeft, ToggleLeft, ToggleRight, Share2, Info, Package, Receipt, Clock, Send, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, ChevronDown, ChevronUp, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, Percent, DollarSign, ArrowDownLeft, Share2, Info, Package, Receipt, Clock, Send, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
 import { useNavigation } from '../App';
 import { Page } from '../components/layout/Page';
@@ -20,6 +20,8 @@ import { Modal } from '../components/ui/enhanced';
 import { formatCurrency } from '../utils';
 import QRCode from 'react-qr-code';
 
+import { StatusIconBadge } from '../components/ui/StatusIconBadge';
+import { Toggle } from '../components/ui/Toggle';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -344,30 +346,6 @@ const LineItemRow: React.FC<{
   );
 };
 
-// Toggle Switch Component
-const Toggle: React.FC<{
-  enabled: boolean;
-  onChange: (enabled: boolean) => void;
-  size?: 'sm' | 'md';
-}> = ({ enabled, onChange, size = 'md' }) => (
-  <button
-    onClick={() => onChange(!enabled)}
-    className="focus:outline-none"
-  >
-    {enabled ? (
-      <ToggleRight className={cn(
-        'text-primary-600 dark:text-primary-200 transition-transform hover:scale-105',
-        size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'
-      )} />
-    ) : (
-      <ToggleLeft className={cn(
-        'text-neutral-400 transition-transform hover:scale-105',
-        size === 'sm' ? 'w-8 h-8' : 'w-8 h-8'
-      )} />
-    )}
-  </button>
-);
-
 // Section Header Component
 const SectionHeader: React.FC<{
   icon: React.ReactNode;
@@ -455,7 +433,8 @@ const LineItemsTab: React.FC<{
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Toggle
-            enabled={formData.useLineItems}
+            aria-label="Use line items"
+            checked={formData.useLineItems}
             onChange={(enabled) => setFormData(prev => ({ ...prev, useLineItems: enabled }))}
           />
           <div>
@@ -591,7 +570,8 @@ const TaxChargesTab: React.FC<{
               <option value="15">15%</option>
             </select>
             <Toggle
-              enabled={formData.taxConfig.vatEnabled && !formData.taxConfig.taxExempt}
+              aria-label="Enable VAT"
+              checked={formData.taxConfig.vatEnabled && !formData.taxConfig.taxExempt}
               onChange={(enabled) => setFormData(prev => ({
                 ...prev,
                 taxConfig: { ...prev.taxConfig, vatEnabled: enabled }
@@ -607,7 +587,8 @@ const TaxChargesTab: React.FC<{
             <p className="caption">Customer accounts for VAT</p>
           </div>
           <Toggle
-            enabled={formData.taxConfig.reverseCharge}
+            aria-label="Reverse charge"
+            checked={formData.taxConfig.reverseCharge}
             onChange={(enabled) => setFormData(prev => ({
               ...prev,
               taxConfig: { ...prev.taxConfig, reverseCharge: enabled }
@@ -622,7 +603,8 @@ const TaxChargesTab: React.FC<{
             <p className="caption">Invoice is exempt from tax</p>
           </div>
           <Toggle
-            enabled={formData.taxConfig.taxExempt}
+            aria-label="Tax exempt"
+            checked={formData.taxConfig.taxExempt}
             onChange={(enabled) => setFormData(prev => ({
               ...prev,
               taxConfig: { ...prev.taxConfig, taxExempt: enabled, vatEnabled: !enabled }
@@ -703,7 +685,8 @@ const TaxChargesTab: React.FC<{
             <p className="caption">Offer discount for early payment</p>
           </div>
           <Toggle
-            enabled={formData.earlyPaymentDiscount.enabled}
+            aria-label="Early payment discount"
+            checked={formData.earlyPaymentDiscount.enabled}
             onChange={(enabled) => setFormData(prev => ({
               ...prev,
               earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, enabled }
@@ -747,7 +730,8 @@ const TaxChargesTab: React.FC<{
             <p className="caption">Charge fee for overdue payments</p>
           </div>
           <Toggle
-            enabled={formData.latePaymentFee.enabled}
+            aria-label="Late payment fee"
+            checked={formData.latePaymentFee.enabled}
             onChange={(enabled) => setFormData(prev => ({
               ...prev,
               latePaymentFee: { ...prev.latePaymentFee, enabled }
@@ -813,7 +797,8 @@ const CoboTab: React.FC<{
           </div>
         </div>
         <Toggle
-          enabled={formData.coboEnabled}
+          aria-label="Enable COBO collection"
+          checked={formData.coboEnabled}
           onChange={(enabled) => setFormData(prev => ({ ...prev, coboEnabled: enabled }))}
         />
       </div>
@@ -1126,7 +1111,8 @@ const RemindersTab: React.FC<{
           </div>
         </div>
         <Toggle
-          enabled={formData.sendInvoiceEmail}
+          aria-label="Send invoice email"
+          checked={formData.sendInvoiceEmail}
           onChange={(enabled) => setFormData(prev => ({ ...prev, sendInvoiceEmail: enabled }))}
           size="sm"
         />
@@ -1167,7 +1153,8 @@ const RemindersTab: React.FC<{
             <p className="caption">Automated escalation for overdue invoices</p>
           </div>
           <Toggle
-            enabled={formData.enableDunning}
+            aria-label="Enable dunning"
+            checked={formData.enableDunning}
             onChange={(enabled) => setFormData(prev => ({ ...prev, enableDunning: enabled }))}
             size="sm"
           />
@@ -1863,9 +1850,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', selectedAccount?.id === account.id ? 'bg-success-100 dark:bg-success-500/20' : 'bg-neutral-100 dark:bg-primary-800')}>
-                        <CreditCard className={cn('w-5 h-5', selectedAccount?.id === account.id ? 'text-success-600 dark:text-success-300' : 'text-neutral-500 dark:text-neutral-400')} />
-                      </div>
+                      <StatusIconBadge tone={selectedAccount?.id === account.id ? 'success' : 'neutral'} icon={CreditCard} rounded="full" />
                       <div>
                         <p className="body-strong">{account.accountName}</p>
                         <p className="caption">{account.bankName} • {account.accountType}</p>

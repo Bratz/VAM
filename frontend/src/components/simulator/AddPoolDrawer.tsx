@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../ui/enhanced';
-import { Button, Input, Select, Badge } from '../ui';
+import { Button, Input, Select, Badge, Checkbox } from '../ui';
 import { newLocalId } from '../../utils/simulator/scenarioModel';
 import type { SimulatedPool, SimulatedShadow } from './types';
 
@@ -169,11 +169,11 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
                   key={s.localId}
                   className="flex items-center gap-2 px-3 py-2 cursor-pointer body-sm"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    size="sm"
+                    aria-label={`Select ${s.proposedVaName}`}
                     checked={memberIds.includes(s.localId)}
                     onChange={() => toggleMember(s.localId)}
-                    className="accent-primary-600"
                   />
                   <span className="truncate text-primary-900 dark:text-neutral-100">
                     {s.proposedVaName}

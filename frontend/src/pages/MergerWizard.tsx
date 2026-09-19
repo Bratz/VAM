@@ -35,6 +35,7 @@ import {
 
 
 
+import { Checkbox } from '../components/ui';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -688,18 +689,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       </div>
                     </div>
 
-                    <label className="flex items-start gap-3 p-4 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                      <input
-                        type="checkbox"
-                        checked={confirmBoardApproval}
-                        onChange={(e) => setConfirmBoardApproval(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-cat-2 dark:text-cat-2-fg rounded-md border-neutral-300 dark:border-primary-700 focus:ring-cat-2"
-                      />
-                      <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
-                        I confirm this merger has been approved by the boards of both corporates and
-                        all necessary due diligence and regulatory approvals have been obtained.
-                      </span>
-                    </label>
+                    <Checkbox size="sm" label="I confirm this merger has been approved by the boards of both corporates and all necessary due diligence and regulatory approvals have been obtained." checked={confirmBoardApproval} onChange={setConfirmBoardApproval} className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">

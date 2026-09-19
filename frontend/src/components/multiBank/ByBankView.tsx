@@ -8,6 +8,7 @@ import {
   MultiBankBankBucket,
   ShadowSummary,
 } from '../../services/api';
+import { StatusIconBadge } from '../ui';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 
@@ -166,9 +167,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
           >
             <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300">
-                  <Building2 className="w-5 h-5" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Building2} />
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="section-title">

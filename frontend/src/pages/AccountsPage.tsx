@@ -1,4 +1,5 @@
 // ============================================================================
+import type { LucideIcon } from 'lucide-react';
 // VIRTUAL ACCOUNTS PAGE - PREMIUM DESIGN SYSTEM
 // ============================================================================
 // Features:
@@ -306,24 +307,25 @@ const getEffectiveBalance = (account: VirtualAccount): number => {
 
 const accountCategoryConfig: Record<AccountCategory, {
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   color: string;
   bgColor: string;
+  tone: React.ComponentProps<typeof StatusIconBadge>['tone'];
 }> = {
-  TRANSACTION: { label: 'Transaction', icon: CreditCard, color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
-  COLLECTION: { label: 'Collection', icon: ArrowDownRight, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
-  DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  SETTLEMENT: { label: 'Settlement', icon: Banknote, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  EXCEPTION: { label: 'Exception', icon: AlertTriangle, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  SUSPENSE: { label: 'Suspense', icon: Clock, color: 'text-neutral-600 dark:text-neutral-300', bgColor: 'bg-neutral-50 dark:bg-primary-950' },
-  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  PHYSICAL_MIRROR: { label: 'Shadow', icon: Building2, color: 'text-cyan-600 dark:text-cyan-300', bgColor: 'bg-cyan-50 dark:bg-cyan-500/10' },
-  EXTERNAL_MIRROR: { label: 'External', icon: Building2, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
-  CURRENCY_MIRROR: { label: 'Currency Mirror', icon: Coins, color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
-  INTERCOMPANY: { label: 'Intercompany', icon: GitBranch, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  ESCROW: { label: 'Escrow', icon: Shield, color: 'text-rose-600 dark:text-rose-300', bgColor: 'bg-rose-50 dark:bg-rose-500/10' },
-  NETTING: { label: 'Netting', icon: Hash, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
+  TRANSACTION: { label: 'Transaction', icon: CreditCard, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
+  COLLECTION: { label: 'Collection', icon: ArrowDownRight, tone: 'success', color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
+  DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
+  SETTLEMENT: { label: 'Settlement', icon: Banknote, tone: 'info', color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
+  EXCEPTION: { label: 'Exception', icon: AlertTriangle, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
+  SUSPENSE: { label: 'Suspense', icon: Clock, tone: 'neutral', color: 'text-neutral-600 dark:text-neutral-300', bgColor: 'bg-neutral-50 dark:bg-primary-950' },
+  ROOT: { label: 'Root', icon: Layers, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
+  AGGREGATION: { label: 'Aggregation', icon: Layers, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  PHYSICAL_MIRROR: { label: 'Shadow', icon: Building2, tone: 'info', color: 'text-cyan-600 dark:text-cyan-300', bgColor: 'bg-cyan-50 dark:bg-cyan-500/10' },
+  EXTERNAL_MIRROR: { label: 'External', icon: Building2, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
+  CURRENCY_MIRROR: { label: 'Currency Mirror', icon: Coins, tone: 'cat-5', color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
+  INTERCOMPANY: { label: 'Intercompany', icon: GitBranch, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  ESCROW: { label: 'Escrow', icon: Shield, tone: 'cat-6', color: 'text-rose-600 dark:text-rose-300', bgColor: 'bg-rose-50 dark:bg-rose-500/10' },
+  NETTING: { label: 'Netting', icon: Hash, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
 };
 
 const programTypeConfig: Record<ProgramType, { label: string; icon: React.ElementType; color: string }> = {
@@ -359,12 +361,12 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
     { label: 'Suspended', value: stats.suspendedAccounts, icon: PauseCircle, color: 'warning', trend: null, isBalance: false },
   ];
 
-  const colorMap: Record<string, { gradient: string; iconBg: string; iconColor: string }> = {
-    primary: { gradient: 'from-primary-50 to-white dark:from-primary-800/40 dark:to-primary-900', iconBg: 'bg-primary-100 dark:bg-primary-700', iconColor: 'text-primary-600 dark:text-primary-200' },
-    success: { gradient: 'from-success-50 to-white dark:from-success-500/15 dark:to-primary-900', iconBg: 'bg-success-100 dark:bg-success-500/20', iconColor: 'text-success-600 dark:text-success-300' },
-    warning: { gradient: 'from-warning-50 to-white dark:from-warning-500/15 dark:to-primary-900', iconBg: 'bg-warning-100 dark:bg-warning-500/20', iconColor: 'text-warning-600 dark:text-warning-300' },
-    info:    { gradient: 'from-info-50 to-white dark:from-info-500/15 dark:to-primary-900',       iconBg: 'bg-info-100 dark:bg-info-500/20',       iconColor: 'text-info-600 dark:text-info-300' },
-    accent:  { gradient: 'from-accent-50 to-white dark:from-accent-500/15 dark:to-primary-900',   iconBg: 'bg-accent-100 dark:bg-accent-500/20',   iconColor: 'text-accent-600 dark:text-accent-300' },
+  const colorMap: Record<string, { gradient: string }> = {
+    primary: { gradient: 'from-primary-50 to-white dark:from-primary-800/40 dark:to-primary-900', },
+    success: { gradient: 'from-success-50 to-white dark:from-success-500/15 dark:to-primary-900', },
+    warning: { gradient: 'from-warning-50 to-white dark:from-warning-500/15 dark:to-primary-900', },
+    info:    { gradient: 'from-info-50 to-white dark:from-info-500/15 dark:to-primary-900', },
+    accent:  { gradient: 'from-accent-50 to-white dark:from-accent-500/15 dark:to-primary-900', },
   };
 
   if (loading) {
@@ -403,9 +405,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
             style={{ animationDelay: `${idx * 0.05}s` }}
           >
             <div className="flex items-center gap-3">
-              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", colors.iconBg)}>
-                <Icon className={cn("w-5 h-5", colors.iconColor)} />
-              </div>
+              <StatusIconBadge tone={card.color as React.ComponentProps<typeof StatusIconBadge>['tone']} icon={Icon} className="shrink-0" />
               <div className="min-w-0">
                 <p className="text-caption font-medium text-neutral-500 truncate dark:text-neutral-400">{card.label}</p>
                 <p className={cn(
@@ -453,12 +453,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
       {/* Account Info */}
       <td className="data-table-cell">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
-            categoryConfig.bgColor
-          )}>
-            <CategoryIcon className={cn("w-5 h-5", categoryConfig.color)} />
-          </div>
+          <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} subtle className="shrink-0 transition-transform group-hover:scale-105" />
           <div className="min-w-0">
             <p className="text-body-sm font-semibold text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
               {account.vaName}
@@ -479,9 +474,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
       <td className="data-table-cell">
         {account.programName ? (
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-              <Briefcase className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Briefcase} size="sm" />
             <div className="min-w-0">
               <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
                 {account.programName}
@@ -617,12 +610,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
       style={{ animationDelay: `${index * 0.03}s` }}
     >
       <div className="flex items-start gap-3">
-        <div className={cn(
-          "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
-          categoryConfig.bgColor
-        )}>
-          <CategoryIcon className={cn("w-6 h-6", categoryConfig.color)} />
-        </div>
+        <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} size="lg" subtle className="shrink-0" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -722,9 +710,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
         </button>
 
         {/* Icon */}
-        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", categoryConfig.bgColor)}>
-          <CategoryIcon className={cn("w-4 h-4", categoryConfig.color)} />
-        </div>
+        <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} size="sm" subtle className="shrink-0" />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -937,9 +923,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
       size="lg"
       title={(
         <span className="flex items-center gap-3">
-          <span className={cn("w-10 h-10 rounded-lg flex items-center justify-center", categoryConfig.bgColor)}>
-            <CategoryIcon className={cn("w-5 h-5", categoryConfig.color)} />
-          </span>
+          <StatusIconBadge tone={categoryConfig.tone} icon={CategoryIcon} subtle />
           {account.vaName}
         </span>
       )}

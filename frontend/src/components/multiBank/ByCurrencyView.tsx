@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { RefreshCw, Loader2, Banknote } from 'lucide-react';
 import { formatCurrency } from '../../utils';
+import { StatusIconBadge } from '../ui';
 import {
   MultiBankLiquiditySummary,
   ShadowSummary,
@@ -142,9 +143,7 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
           >
             <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300">
-                  <Banknote className="w-5 h-5" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Banknote} />
                 <div>
                   <h2 className="section-title">{c.currencyCode}</h2>
                   <p className="caption mt-0.5">

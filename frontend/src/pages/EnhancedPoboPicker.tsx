@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftRight, Building2, Landmark, CheckCircle, AlertTriangle, ChevronDown, DollarSign, Info, Loader2, TrendingUp, TrendingDown, Percent, RefreshCw, Eye, Clock, CreditCard, ArrowRight, Shield, Banknote, FileText, XCircle } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, StatusIconBadge } from '../components/ui';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { intercompanyApi, ihbIntegrationApi, HierarchyEntity, PoboRequest, PoboResult } from '../services/api';
@@ -323,9 +323,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', enabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-neutral-200 dark:bg-primary-800')}>
-            <ArrowLeftRight className={cn('w-5 h-5', enabled ? 'text-accent-600 dark:text-accent-300' : 'text-neutral-500 dark:text-neutral-400')} />
-          </div>
+          <StatusIconBadge tone={enabled ? 'accent' : 'neutral'} icon={ArrowLeftRight} />
           <div>
             <h4 className="body-strong font-semibold">Pay On Behalf Of (POBO)</h4>
             <p className="caption">Central treasury pays vendor on behalf of subsidiary</p>

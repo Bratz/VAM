@@ -27,13 +27,13 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; icon: any 
   CANCELLED: { label: 'Cancelled', variant: 'neutral', icon: XCircle },
 };
 
-const AGREEMENT_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  MASTER: { label: 'Master Agreement', icon: Shield, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
-  FACILITY: { label: 'Facility Agreement', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  BILATERAL: { label: 'Bilateral', icon: FileText, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
-  SYNDICATED: { label: 'Syndicated', icon: Landmark, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  REVOLVING: { label: 'Revolving', icon: RefreshCw, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
-  TERM: { label: 'Term', icon: Calendar, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
+const AGREEMENT_TYPE_CONFIG: Record<string, { label: string; icon: any; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; bgColor: string }> = {
+  MASTER: { label: 'Master Agreement', icon: Shield, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
+  FACILITY: { label: 'Facility Agreement', icon: Building2, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
+  BILATERAL: { label: 'Bilateral', icon: FileText, tone: 'success', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
+  SYNDICATED: { label: 'Syndicated', icon: Landmark, tone: 'warning', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
+  REVOLVING: { label: 'Revolving', icon: RefreshCw, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
+  TERM: { label: 'Term', icon: Calendar, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
 };
 
 // Helper to extract data
@@ -84,9 +84,7 @@ const AgreementCard: React.FC<AgreementCardProps> = ({ agreement, onView, onUtil
     <Card className={cn("p-4 hover:shadow-md transition-shadow", isExpiringSoon && agreement.status === 'ACTIVE' && "border-warning-300 bg-warning-50/30")}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", typeConfig.bgColor)}>
-            <TypeIcon className={cn("w-5 h-5", typeConfig.color)} />
-          </div>
+          <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} />
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{agreement.agreementName}</h3>
             <p className="body-sm">{agreement.counterpartyBankName || 'Bank'}</p>

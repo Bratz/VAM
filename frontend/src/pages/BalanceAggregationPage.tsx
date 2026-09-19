@@ -73,14 +73,14 @@ const extractData = <T,>(response: ApiResponse<T>): T => {
 // CONSTANTS
 // ============================================================================
 
-const NODE_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  ROOT: { label: 'Root', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
-  REGION: { label: 'Region', icon: Globe, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  COUNTRY: { label: 'Country', icon: MapPin, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
-  LEGAL_ENTITY: { label: 'Legal Entity', icon: Building2, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  BUSINESS_UNIT: { label: 'Business Unit', icon: Briefcase, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
-  DEPARTMENT: { label: 'Department', icon: Briefcase, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
-  VIRTUAL_ACCOUNT: { label: 'Virtual Account', icon: Wallet, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4/10 dark:bg-cat-4/15' },
+const NODE_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string; tone: 'cat-1'|'cat-2'|'cat-3'|'cat-4'|'info'|'success'|'warning' }> = {
+  ROOT: { label: 'Root', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15', tone: 'cat-2' },
+  REGION: { label: 'Region', icon: Globe, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20', tone: 'info' },
+  COUNTRY: { label: 'Country', icon: MapPin, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20', tone: 'success' },
+  LEGAL_ENTITY: { label: 'Legal Entity', icon: Building2, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20', tone: 'warning' },
+  BUSINESS_UNIT: { label: 'Business Unit', icon: Briefcase, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15', tone: 'cat-3' },
+  DEPARTMENT: { label: 'Department', icon: Briefcase, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15', tone: 'cat-1' },
+  VIRTUAL_ACCOUNT: { label: 'Virtual Account', icon: Wallet, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4/10 dark:bg-cat-4/15', tone: 'cat-4' },
 };
 
 const CURRENCIES = ['AED', 'USD', 'EUR', 'GBP', 'SAR', 'SGD', 'INR'];
@@ -126,9 +126,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
           <span className="w-6" />
         )}
 
-        <div className={cn("w-6 h-6 rounded-md flex items-center justify-center mr-2", config.bgColor)}>
-          <Icon className={cn("w-3 h-3", config.color)} />
-        </div>
+        <StatusIconBadge tone={config.tone} icon={Icon} size="sm" className="mr-2" />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -730,15 +728,7 @@ const BalanceAggregationPage: React.FC = () => {
         {selectedNode && (
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-4">
-              <div className={cn(
-                "w-12 h-12 rounded-lg flex items-center justify-center",
-                NODE_TYPE_CONFIG[selectedNode.nodeType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800'
-              )}>
-                {(() => {
-                  const Icon = NODE_TYPE_CONFIG[selectedNode.nodeType]?.icon || Building2;
-                  return <Icon className={cn("w-6 h-6", NODE_TYPE_CONFIG[selectedNode.nodeType]?.color || 'text-neutral-600 dark:text-neutral-300')} />;
-                })()}
-              </div>
+              <StatusIconBadge tone={NODE_TYPE_CONFIG[selectedNode.nodeType]?.tone || 'neutral'} icon={NODE_TYPE_CONFIG[selectedNode.nodeType]?.icon || Building2} size="lg" />
               <div>
                 <h3 className="section-title">{selectedNode.nodeName}</h3>
                 <p className="body-sm">{selectedNode.nodeCode} • {NODE_TYPE_CONFIG[selectedNode.nodeType]?.label}</p>

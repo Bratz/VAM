@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, X, TrendingUp, XCircle, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, RadioGroup } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
@@ -1395,7 +1395,7 @@ const PoolForm: React.FC<{
           <div><label className="field-label block mb-1">TTL (minutes)</label><Input type="number" value={formData.assignmentTtlMinutes} onChange={e => setFormData(p => ({ ...p, assignmentTtlMinutes: parseInt(e.target.value) }))} min={0} /><p className="caption mt-1">0 = Permanent</p></div>
           <div><label className="field-label block mb-1">Low Threshold (%)</label><Input type="number" value={formData.lowThresholdPercent} onChange={e => setFormData(p => ({ ...p, lowThresholdPercent: parseInt(e.target.value) }))} min={5} max={50} /></div>
         </div>
-        <div className="flex items-center gap-2"><input type="checkbox" id="autoReturn" checked={formData.autoReturnExpired} onChange={e => setFormData(p => ({ ...p, autoReturnExpired: e.target.checked }))} className="rounded-md" /><label htmlFor="autoReturn" className="text-body-sm">Auto-return expired VIBANs</label></div>
+        <Checkbox size="sm" checked={formData.autoReturnExpired} onChange={(checked) => setFormData(p => ({ ...p, autoReturnExpired: checked }))} label="Auto-return expired VIBANs" />
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
@@ -1612,22 +1612,15 @@ const AssignForm: React.FC<{
 
       {/* Primary VIBAN Toggle */}
       <div className="bg-primary-50 rounded-lg p-3 border border-primary-100 dark:bg-primary-800/40 dark:border-primary-700/60">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isPrimary}
-            onChange={e => setIsPrimary(e.target.checked)}
-            className="w-4 h-4 rounded-md text-primary-600 dark:text-primary-200"
-          />
-          <div>
-            <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBAN</span>
-            <p className="text-caption text-primary-600 dark:text-primary-200">
-              {isPrimary
-                ? 'Permanent assignment - no expiry (for main collection VA)'
-                : 'Temporary assignment - will expire based on pool TTL'}
-            </p>
-          </div>
-        </label>
+        <Checkbox
+          size="sm"
+          checked={isPrimary}
+          onChange={setIsPrimary}
+          label="Primary VIBAN"
+          description={isPrimary
+            ? 'Permanent assignment - no expiry (for main collection VA)'
+            : 'Temporary assignment - will expire based on pool TTL'}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -1868,35 +1861,18 @@ const BulkAssignForm: React.FC<{
 
       {/* Assignment Mode */}
       <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
-        <label className="field-label block mb-2">Assignment Mode</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="assignmentMode"
-              checked={assignmentMode === 'simple'}
-              onChange={() => handleModeChange('simple')}
-              className="w-4 h-4 text-primary-600 dark:text-primary-200"
-            />
-            <div>
-              <span className="text-body-sm font-medium">Simple</span>
-              <p className="caption">Assign {vibanCount} VIBANs without specific parties</p>
-            </div>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="assignmentMode"
-              checked={assignmentMode === 'with-parties'}
-              onChange={() => handleModeChange('with-parties')}
-              className="w-4 h-4 text-primary-600 dark:text-primary-200"
-            />
-            <div>
-              <span className="text-body-sm font-medium">With Parties</span>
-              <p className="caption">Assign each VIBAN to a specific customer/party</p>
-            </div>
-          </label>
-        </div>
+        <RadioGroup
+          legend="Assignment Mode"
+          name="assignmentMode"
+          orientation="horizontal"
+          size="sm"
+          value={assignmentMode}
+          onChange={(v) => handleModeChange(v as 'simple' | 'with-parties')}
+          options={[
+            { value: 'simple', label: 'Simple', description: `Assign ${vibanCount} VIBANs without specific parties` },
+            { value: 'with-parties', label: 'With Parties', description: 'Assign each VIBAN to a specific customer/party' },
+          ]}
+        />
       </div>
 
       {/* Party Assignments (when with-parties mode) */}
@@ -1949,22 +1925,15 @@ const BulkAssignForm: React.FC<{
 
       {/* Primary Toggle */}
       <div className="bg-primary-50 rounded-lg p-3 border border-primary-100 dark:bg-primary-800/40 dark:border-primary-700/60">
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={isPrimary}
-            onChange={e => setIsPrimary(e.target.checked)}
-            className="w-4 h-4 rounded-md text-primary-600 dark:text-primary-200"
-          />
-          <div>
-            <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBANs</span>
-            <p className="text-caption text-primary-600 dark:text-primary-200">
-              {isPrimary
-                ? 'Permanent assignment - no expiry (for main collection VA)'
-                : 'Temporary assignment - will expire based on pool TTL'}
-            </p>
-          </div>
-        </label>
+        <Checkbox
+          size="sm"
+          checked={isPrimary}
+          onChange={setIsPrimary}
+          label="Primary VIBANs"
+          description={isPrimary
+            ? 'Permanent assignment - no expiry (for main collection VA)'
+            : 'Temporary assignment - will expire based on pool TTL'}
+        />
       </div>
 
       {/* Actions */}

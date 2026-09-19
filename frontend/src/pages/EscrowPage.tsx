@@ -274,12 +274,7 @@ const EscrowPage: React.FC = () => {
                 header: 'Contract',
                 render: (_, contract) => (
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-10 h-10 rounded-lg flex items-center justify-center',
-                      contract.disputeRaised ? 'bg-error-100 dark:bg-error-500/20' : 'bg-primary-100 dark:bg-primary-700'
-                    )}>
-                      <Shield className={cn('w-5 h-5', contract.disputeRaised ? 'text-error-600 dark:text-error-300' : 'text-primary-600 dark:text-primary-200')} />
-                    </div>
+                    <StatusIconBadge tone={contract.disputeRaised ? 'error' : 'primary'} icon={Shield} />
                     <div>
                       <p className="body-strong">{contract.contractName}</p>
                       <p className="caption">{contract.contractReference}</p>

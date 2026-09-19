@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, FileText, Users, ArrowRight, ArrowLeftRight, Building2, X, ChevronDown, ChevronUp, Filter, Download, BarChart3, Layers, Target, Send, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
@@ -218,30 +218,20 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
         </div>
 
         <div className="space-y-2 p-3 bg-info-50 rounded-lg dark:bg-info-500/10">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="autoPopulate"
-              checked={formData.autoPopulate}
-              onChange={(e) => setFormData({ ...formData, autoPopulate: e.target.checked })}
-              className="rounded-md text-primary-600 dark:text-primary-200"
-            />
-            <label htmlFor="autoPopulate" className="text-body-sm text-neutral-700 dark:text-neutral-200">
-              Auto-populate with eligible intercompany payables, receivables, and recharges
-            </label>
-          </div>
+          <Checkbox
+            size="sm"
+            checked={formData.autoPopulate}
+            onChange={(checked) => setFormData({ ...formData, autoPopulate: checked })}
+            label={<span className="text-body-sm font-normal text-neutral-700 dark:text-neutral-200">Auto-populate with eligible intercompany payables, receivables, and recharges</span>}
+          />
           {formData.autoPopulate && (
-            <div className="flex items-center gap-2 ml-6">
-              <input
-                type="checkbox"
-                id="includePending"
+            <div className="ml-6">
+              <Checkbox
+                size="sm"
                 checked={formData.includePending}
-                onChange={(e) => setFormData({ ...formData, includePending: e.target.checked })}
-                className="rounded-md text-warning-600 dark:text-warning-300"
+                onChange={(checked) => setFormData({ ...formData, includePending: checked })}
+                label={<span className="body-sm font-normal">Include pending (unapproved) POBO recharges</span>}
               />
-              <label htmlFor="includePending" className="body-sm">
-                Include pending (unapproved) POBO recharges
-              </label>
             </div>
           )}
         </div>
@@ -772,9 +762,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
         {cycle.savingsAmount > 0 && (
           <div className="bg-gradient-to-r from-accent-50 to-accent-100 rounded-lg p-3 mb-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-accent-200 dark:bg-accent-500/15 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-accent-700 dark:text-accent-300" />
-              </div>
+              <StatusIconBadge tone="accent" icon={TrendingUp} size="sm" />
               <span className="body-sm">Settlement Savings</span>
             </div>
             <span className="font-bold text-accent-700 dark:text-accent-300">

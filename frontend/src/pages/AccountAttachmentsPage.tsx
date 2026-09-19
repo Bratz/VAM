@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Link2, Plus, Search, Loader2, Eye, Shield, Users, Building2, Layers, Clock, Ban, RefreshCw, UserCheck, Lock, ArrowRightLeft, Key, Percent, AlertTriangle, X, ChevronDown, Wallet, Globe, MapPin, CheckCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, StatTile, DataTable } from '../components/ui';
+import { Card, Button, Badge, Input, StatTile, DataTable, Checkbox, StatusIconBadge } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
@@ -55,16 +56,17 @@ interface CreateAttachmentForm {
 
 const RELATIONSHIP_CONFIG: Record<RelationshipType, { 
   label: string; 
-  icon: React.FC<any>; 
+  icon: LucideIcon; 
   color: string; 
   bgColor: string;
+  tone: React.ComponentProps<typeof StatusIconBadge>['tone'];
   description: string;
 }> = {
-  OWNER: { label: 'Owner', icon: Key, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner with full control' },
-  BENEFICIARY: { label: 'Beneficiary', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receives benefits from the account' },
-  AUTHORIZED: { label: 'Authorized', icon: UserCheck, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to perform transactions within limits' },
-  GUARANTOR: { label: 'Guarantor', icon: Shield, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantees obligations on the account' },
-  COLLATERAL: { label: 'Collateral', icon: Lock, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Account used as collateral for facilities' },
+  OWNER: { label: 'Owner', icon: Key, tone: 'info', color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner with full control' },
+  BENEFICIARY: { label: 'Beneficiary', icon: Users, tone: 'success', color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receives benefits from the account' },
+  AUTHORIZED: { label: 'Authorized', icon: UserCheck, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to perform transactions within limits' },
+  GUARANTOR: { label: 'Guarantor', icon: Shield, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantees obligations on the account' },
+  COLLATERAL: { label: 'Collateral', icon: Lock, tone: 'error', color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Account used as collateral for facilities' },
 };
 
 const STATUS_CONFIG: Record<AttachmentStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' }> = {
@@ -637,7 +639,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 const Icon = cfg?.icon || Link2;
                 return (
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
+                    <StatusIconBadge tone={cfg?.tone ?? 'neutral'} icon={Icon} subtle className="shrink-0" />
                     <div className="min-w-0"><p className="text-body-sm font-semibold text-primary-900 truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="caption truncate">{att.entityName || 'Unknown Entity'}</p></div>
                   </div>
                 );
@@ -698,9 +700,12 @@ const AccountAttachmentsPage: React.FC = () => {
           <div className="p-4 space-y-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.bgColor)}>
-                  {React.createElement(RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.icon || Link2, { className: cn("w-6 h-6", RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.color) })}
-                </div>
+                <StatusIconBadge
+                  tone={RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.tone ?? 'neutral'}
+                  icon={RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.icon || Link2}
+                  size="lg"
+                  subtle
+                />
                 <div><h3 className="text-body-lg font-semibold">{selectedAttachment.vaNumber}</h3><p className="body-sm">{selectedAttachment.entityName}</p></div>
               </div>
               <Badge variant={STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.variant}>{STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.label}</Badge>
@@ -762,10 +767,7 @@ const AccountAttachmentsPage: React.FC = () => {
             </div>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={createForm.isPrimary} onChange={(e) => setCreateForm(p => ({ ...p, isPrimary: e.target.checked }))} className="rounded-md text-primary-600 dark:text-primary-200" />
-            <span className="text-body-sm">Set as Primary</span>
-          </label>
+          <Checkbox size="sm" label="Set as Primary" checked={createForm.isPrimary} onChange={(checked) => setCreateForm(p => ({ ...p, isPrimary: checked }))} />
 
           <div className="grid grid-cols-2 gap-4">
             <div><label className="field-label block mb-1">Effective From</label><Input type="date" value={createForm.effectiveFrom} onChange={(e) => setCreateForm(p => ({ ...p, effectiveFrom: e.target.value }))} /></div>
@@ -779,7 +781,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
                 <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded-md text-cat-2 dark:text-cat-2-fg" /><span className="text-body-sm">Require Dual Authorization</span></label>
+              <Checkbox size="sm" label="Require Dual Authorization" checked={createForm.requiresDualAuth} onChange={(checked) => setCreateForm(p => ({ ...p, requiresDualAuth: checked }))} />
             </div>
           )}
 

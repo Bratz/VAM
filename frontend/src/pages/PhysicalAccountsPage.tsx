@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Plus, Search, RefreshCw, Download, Eye, Settings, ArrowUpRight, ArrowDownRight, Landmark, DollarSign, CreditCard, CheckCircle, Clock, MoreHorizontal, ExternalLink, Copy, Layers, X, Building2, Globe, Link2, Shield, Wifi, WifiOff, Server, TrendingUp, TrendingDown, Activity, BarChart3, PieChart, Banknote, FileText, Upload, ChevronDown, ChevronRight, Filter, Zap, GitBranch, Unlink, AlertTriangle, Info, Loader2, MapPin, Check, Users, Coins, UserPlus, Database, User, FileCheck, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Skeleton, StatusIconBadge, DataTable, Input } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -344,12 +345,12 @@ const getCategoryColor = (category: string) => {
 
 // Shadow account "attach to entity" vocabulary — ported from the standalone
 // Shadow Accounts page as part of merging it into Bank Accounts.
-const RELATIONSHIP_TYPE_CONFIG: Record<string, { label: string; icon: React.FC<any>; color: string; bgColor: string; description: string }> = {
-  OWNER: { label: 'Owner', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner of the account' },
-  BENEFICIARY: { label: 'Beneficiary', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Beneficiary with read access' },
-  AUTHORIZED: { label: 'Authorized', icon: Shield, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to transact with limits' },
-  GUARANTOR: { label: 'Guarantor', icon: FileCheck, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantor for credit facilities' },
-  COLLATERAL: { label: 'Collateral', icon: Banknote, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Collateral pledge for facilities' },
+const RELATIONSHIP_TYPE_CONFIG: Record<string, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; description: string }> = {
+  OWNER: { label: 'Owner', icon: User, tone: 'info', description: 'Primary owner of the account' },
+  BENEFICIARY: { label: 'Beneficiary', icon: Users, tone: 'success', description: 'Beneficiary with read access' },
+  AUTHORIZED: { label: 'Authorized', icon: Shield, tone: 'cat-2', description: 'Authorized to transact with limits' },
+  GUARANTOR: { label: 'Guarantor', icon: FileCheck, tone: 'warning', description: 'Guarantor for credit facilities' },
+  COLLATERAL: { label: 'Collateral', icon: Banknote, tone: 'error', description: 'Collateral pledge for facilities' },
 };
 
 const getEntityTypeIcon = (type?: string) => {
@@ -879,9 +880,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                 return (
                   <div key={att.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", typeConfig?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
-                        <TypeIcon className={cn("w-3 h-3", typeConfig?.color || 'text-neutral-600 dark:text-neutral-300')} />
-                      </div>
+                      <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} size="sm" subtle />
                       <div>
                         <span className="text-body-sm font-medium">{att.entityName || att.legalEntityId}</span>
                         <Badge variant={att.isPrimary ? 'info' : 'neutral'} size="sm" className="ml-2">{att.relationshipType}</Badge>
@@ -908,7 +907,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                   className={cn("p-3 rounded-lg border-2 text-left transition-all",
                     isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700" : "border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50")}>
                   <div className="flex items-center gap-2">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", config.bgColor)}><TypeIcon className={cn("w-4 h-4", config.color)} /></div>
+                    <StatusIconBadge tone={config.tone} icon={TypeIcon} size="sm" subtle />
                     <p className="text-body-sm font-medium">{config.label}</p>
                   </div>
                   {isSelected && <p className="caption mt-2">{config.description}</p>}

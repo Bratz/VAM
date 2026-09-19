@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, MoreVertical, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatTile, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input , StatTile, StatusIconBadge, Toggle, Checkbox } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -493,51 +493,26 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 </h4>
                 <p className="caption">Configure intercompany lending for this entity</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.enableIhb}
-                  onChange={(e) => setFormData(prev => ({ ...prev, enableIhb: e.target.checked }))}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-info-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all dark:bg-primary-800"></div>
-              </label>
+              <Toggle checked={formData.enableIhb} onChange={(checked) => setFormData(prev => ({ ...prev, enableIhb: checked }))} aria-label="In-House Banking" />
             </div>
             
             {formData.enableIhb && (
               <div className="p-4 bg-info-50 dark:bg-info-500/10 border border-info-200 dark:border-info-500/30 rounded-lg space-y-4">
                 {/* Role Selection */}
                 <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.ihbConfig.canLend}
-                      onChange={(e) => setFormData(prev => ({
+                  <Checkbox
+                    size="sm"
+                    checked={formData.ihbConfig.canLend}
+                    onChange={(checked) => setFormData(prev => ({
                         ...prev,
-                        ihbConfig: { ...prev.ihbConfig, canLend: e.target.checked }
+                        ihbConfig: { ...prev.ihbConfig, canLend: checked }
                       }))}
-                      className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
-                    />
-                    <span className="text-body-sm">Can Lend</span>
-                    {formData.ihbConfig.canLend && (
-                      <Badge variant="warning" size="sm" className="flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        Treasury Center
-                      </Badge>
-                    )}
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.ihbConfig.canBorrow}
-                      onChange={(e) => setFormData(prev => ({
+                    label={<span className="inline-flex items-center gap-2">Can Lend{formData.ihbConfig.canLend && (<Badge variant="warning" size="sm" className="flex items-center gap-1"><Crown className="w-3 h-3" />Treasury Center</Badge>)}</span>}
+                  />
+                  <Checkbox size="sm" label="Can Borrow" checked={formData.ihbConfig.canBorrow} onChange={(checked) => setFormData(prev => ({
                         ...prev,
-                        ihbConfig: { ...prev.ihbConfig, canBorrow: e.target.checked }
-                      }))}
-                      className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
-                    />
-                    <span className="text-body-sm">Can Borrow</span>
-                  </label>
+                        ihbConfig: { ...prev.ihbConfig, canBorrow: checked }
+                      }))} />
                 </div>
                 
                 {/* Credit Limit & Target Balance */}
@@ -593,18 +568,10 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                       <option value="DAILY">Daily @ 6PM</option>
                       <option value="REAL_TIME">Real-time</option>
                     </select>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.ihbConfig.enableSweep}
-                        onChange={(e) => setFormData(prev => ({
+                    <Toggle checked={formData.ihbConfig.enableSweep} onChange={(checked) => setFormData(prev => ({
                           ...prev,
-                          ihbConfig: { ...prev.ihbConfig, enableSweep: e.target.checked }
-                        }))}
-                        className="sr-only peer"
-                      />
-                      <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-info-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all dark:bg-primary-800"></div>
-                    </label>
+                          ihbConfig: { ...prev.ihbConfig, enableSweep: checked }
+                        }))} aria-label="Daily @ 6PM" />
                   </div>
                 </div>
                 
@@ -1007,9 +974,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         {/* Description Banner */}
         <div className="bg-gradient-to-r from-cat-2-soft to-cat-1-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-1/15">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
-              <PiggyBank className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
-            </div>
+            <StatusIconBadge tone="cat-2" icon={PiggyBank} className="shrink-0" />
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
@@ -1175,15 +1140,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
             Sweep Configuration
           </p>
           <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.ihbSweepEnabled}
-                onChange={(e) => setFormData(prev => ({ ...prev, ihbSweepEnabled: e.target.checked }))}
-                className="w-4 h-4 rounded-md border-neutral-300 text-cat-2 dark:text-cat-2-fg focus:ring-cat-2 dark:border-primary-700"
-              />
-              <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Enable Auto-Sweep to Treasury</span>
-            </label>
+            <Checkbox size="sm" label="Enable Auto-Sweep to Treasury" checked={formData.ihbSweepEnabled} onChange={(checked) => setFormData(prev => ({ ...prev, ihbSweepEnabled: checked }))} />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label block mb-1">Target Cash Balance</label>
@@ -2985,31 +2942,14 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         
         {/* Role Selection */}
         <div className="flex items-center gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.canLend}
-              onChange={(e) => setConfig(prev => ({ ...prev, canLend: e.target.checked }))}
-              className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
-              disabled={!isEnabling && entity?.canLend}
-            />
-            <span className="text-body-sm">Can Lend</span>
-            {config.canLend && (
-              <Badge variant="warning" size="sm" className="flex items-center gap-1">
-                <Crown className="w-3 h-3" />
-                Treasury Center
-              </Badge>
-            )}
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={config.canBorrow}
-              onChange={(e) => setConfig(prev => ({ ...prev, canBorrow: e.target.checked }))}
-              className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
-            />
-            <span className="text-body-sm">Can Borrow</span>
-          </label>
+          <Checkbox
+            size="sm"
+            checked={config.canLend}
+            onChange={(checked) => setConfig(prev => ({ ...prev, canLend: checked }))}
+            disabled={!isEnabling && entity?.canLend}
+            label={<span className="inline-flex items-center gap-2">Can Lend{config.canLend && (<Badge variant="warning" size="sm" className="flex items-center gap-1"><Crown className="w-3 h-3" />Treasury Center</Badge>)}</span>}
+          />
+          <Checkbox size="sm" label="Can Borrow" checked={config.canBorrow} onChange={(checked) => setConfig(prev => ({ ...prev, canBorrow: checked }))} />
         </div>
         
         {/* Credit Limit */}
@@ -3044,15 +2984,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               <RefreshCw className="w-4 h-4 text-info-600 dark:text-info-300" />
               <span className="text-body-sm">Enable EOD Auto-Sweep</span>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.autoSweepEnabled}
-                onChange={(e) => setConfig(prev => ({ ...prev, autoSweepEnabled: e.target.checked }))}
-                className="sr-only peer"
-              />
-              <div className="w-9 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-info-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all dark:bg-primary-800"></div>
-            </label>
+            <Toggle checked={config.autoSweepEnabled} onChange={(checked) => setConfig(prev => ({ ...prev, autoSweepEnabled: checked }))} aria-label="Enable EOD Auto-Sweep" />
           </div>
         )}
         
@@ -4073,14 +4005,8 @@ const TreasuryHierarchyPage: React.FC = () => {
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
               <h2 className="section-title">Virtual Account Hierarchy</h2>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 body-sm">
-                  <input type="checkbox" checked={showSystemVas} onChange={(e) => setShowSystemVas(e.target.checked)} className="rounded-md text-primary-600 dark:text-primary-200" />
-                  System VAs
-                </label>
-                <label className="flex items-center gap-2 body-sm">
-                  <input type="checkbox" checked={showInterest} onChange={(e) => setShowInterest(e.target.checked)} className="rounded-md text-primary-600 dark:text-primary-200" />
-                  Interest
-                </label>
+                <Checkbox size="sm" label="System VAs" checked={showSystemVas} onChange={setShowSystemVas} className="body-sm" />
+                <Checkbox size="sm" label="Interest" checked={showInterest} onChange={setShowInterest} className="body-sm" />
                 {/* Discoverable creation entry: works off the selected node
                     (the row kebab remains the contextual shortcut). Routes
                     through the type-selector modal, whose cards explain the

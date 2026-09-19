@@ -15,7 +15,7 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Download, RefreshCw, Clock, ArrowDownLeft, FileText, Eye, X, AlertTriangle, Copy, Plus, QrCode, Loader2, Building2, Landmark, Calculator, GitMerge, ThumbsUp, ThumbsDown, Play, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -382,15 +382,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
         </div>
 
         {/* VIBAN Option */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={generateViban}
-            onChange={(e) => setGenerateViban(e.target.checked)}
-            className="w-4 h-4 rounded-md border-neutral-300 text-cat-1 dark:text-cat-1-fg focus:ring-cat-1 dark:border-primary-700"
-          />
-          <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
-        </label>
+        <Checkbox size="sm" label="Generate VIBAN for collection" checked={generateViban} onChange={setGenerateViban} />
 
         {/* Preview Card */}
         {previewLoading ? (
@@ -1243,12 +1235,12 @@ const EnhancedReceivablesPage: React.FC = () => {
                       render: (_, invoice) => {
                         const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
                         return (
-                          <input
-                            type="checkbox"
+                          <Checkbox
+                            size="sm"
+                            aria-label={`Select invoice ${invoice.invoiceNumber}`}
                             checked={selectedIds.has(invoice.id)}
                             onChange={() => handleSelectInvoice(invoice.id)}
                             disabled={!isSelectable}
-                            className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700 dark:text-primary-200"
                           />
                         );
                       },

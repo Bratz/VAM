@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
-import { Card, Badge, Button, DataTable, StatusIconBadge } from '../components/ui';
+import { Card, Badge, Button, DataTable, StatusIconBadge, Checkbox, Toggle } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -80,7 +81,7 @@ const roleConfig: Record<PartyRole, { label: string; icon: React.ElementType; co
   FINANCIAL: { label: 'Financial', icon: Banknote, color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
 };
 
-const typeConfig: Record<PartyType, { label: string; icon: React.ElementType }> = {
+const typeConfig: Record<PartyType, { label: string; icon: LucideIcon }> = {
   INDIVIDUAL: { label: 'Individual', icon: User },
   COMPANY: { label: 'Company', icon: Building2 },
   GOVERNMENT: { label: 'Government', icon: Landmark },
@@ -839,15 +840,7 @@ const PartyFormModal: React.FC<{
                   <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">E-commerce</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.ecommerceEnabled}
-                          onChange={(e) => setFormData(prev => ({ ...prev, ecommerceEnabled: e.target.checked }))}
-                          className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
-                        />
-                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">E-commerce Enabled</span>
-                      </label>
+                      <Checkbox size="sm" label="E-commerce Enabled" checked={formData.ecommerceEnabled} onChange={(checked) => setFormData(prev => ({ ...prev, ecommerceEnabled: checked }))} />
                     </div>
                     {formData.ecommerceEnabled && (
                       <div>
@@ -1002,15 +995,7 @@ const PartyFormModal: React.FC<{
                       />
                     </div>
                     <div className="flex items-end">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={bankAccountForm.isPrimary}
-                          onChange={(e) => setBankAccountForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
-                          className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200"
-                        />
-                        <span className="field-label">Set as Primary Account</span>
-                      </label>
+                      <Checkbox size="sm" label="Set as Primary Account" checked={bankAccountForm.isPrimary} onChange={(checked) => setBankAccountForm(prev => ({ ...prev, isPrimary: checked }))} />
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-primary-800">
@@ -1277,15 +1262,7 @@ const PartyFormModal: React.FC<{
                           <h4 className="font-medium text-info-900">POBO Eligible</h4>
                           <p className="text-body-sm text-info-700 dark:text-info-300">Allow treasury to pay this vendor on behalf of subsidiaries</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.poboEligible}
-                            onChange={(e) => setFormData(prev => ({ ...prev, poboEligible: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-info-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-info-600 dark:bg-primary-800"></div>
-                        </label>
+                        <Toggle checked={formData.poboEligible} onChange={(checked) => setFormData(prev => ({ ...prev, poboEligible: checked }))} aria-label="POBO Eligible" />
                       </div>
                     </div>
                   </div>
@@ -1300,15 +1277,7 @@ const PartyFormModal: React.FC<{
                           <h4 className="font-medium text-cat-2 dark:text-cat-2-fg">Intercompany Party</h4>
                           <p className="text-body-sm text-cat-2 dark:text-cat-2-fg">This party represents another legal entity within the group</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.isIntercompany}
-                            onChange={(e) => setFormData(prev => ({ ...prev, isIntercompany: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cat-2/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cat-2 dark:bg-primary-800"></div>
-                        </label>
+                        <Toggle checked={formData.isIntercompany} onChange={(checked) => setFormData(prev => ({ ...prev, isIntercompany: checked }))} aria-label="Intercompany Party" />
                       </div>
                     </div>
                   </div>
@@ -1323,15 +1292,7 @@ const PartyFormModal: React.FC<{
                           <h4 className="font-medium text-cat-3 dark:text-cat-3-fg">Netting Eligible</h4>
                           <p className="text-body-sm text-cat-3 dark:text-cat-3-fg">Include transactions in netting cycles for settlement optimization</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={formData.nettingEligible}
-                            onChange={(e) => setFormData(prev => ({ ...prev, nettingEligible: e.target.checked }))}
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cat-3/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cat-3 dark:bg-primary-800"></div>
-                        </label>
+                        <Toggle checked={formData.nettingEligible} onChange={(checked) => setFormData(prev => ({ ...prev, nettingEligible: checked }))} aria-label="Netting Eligible" />
                       </div>
                     </div>
                   </div>
@@ -1606,10 +1567,11 @@ const PartyDetailModal: React.FC<{
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-neutral-200 dark:border-primary-800">
           <div className="flex items-center gap-4">
-            <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center',
-              party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-              <TypeIcon className={cn('w-6 h-6', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
-            </div>
+            <StatusIconBadge
+              tone={party.isIntercompany ? 'cat-2' : party.status === 'ACTIVE' ? 'primary' : 'error'}
+              icon={TypeIcon}
+              size="lg"
+            />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="section-title">{party.legalName}</h2>
@@ -1760,15 +1722,7 @@ const PartyDetailModal: React.FC<{
                         />
                       </div>
                       <div className="col-span-2 flex items-center gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={bankAccountForm.isPrimary}
-                            onChange={(e) => setBankAccountForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
-                            className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
-                          />
-                          <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Set as primary account</span>
-                        </label>
+                        <Checkbox size="sm" label="Set as primary account" checked={bankAccountForm.isPrimary} onChange={(checked) => setBankAccountForm(prev => ({ ...prev, isPrimary: checked }))} />
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-primary-800">
@@ -1788,9 +1742,7 @@ const PartyDetailModal: React.FC<{
                     <Card key={account.id} padding="sm" className="hover:shadow-md transition-shadow group">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', account.isPrimary ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800')}>
-                            <CreditCard className={cn('w-5 h-5', account.isPrimary ? 'text-primary-700 dark:text-neutral-200' : 'text-neutral-500 dark:text-neutral-400')} />
-                          </div>
+                          <StatusIconBadge tone={account.isPrimary ? 'primary' : 'neutral'} icon={CreditCard} />
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="body-strong">{account.label}</p>
@@ -1839,13 +1791,10 @@ const PartyDetailModal: React.FC<{
                     <Card key={doc.id} padding="sm" className="hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center',
-                            doc.verificationStatus === 'VERIFIED' ? 'bg-success-100 dark:bg-success-500/20' :
-                            doc.verificationStatus === 'REJECTED' ? 'bg-error-100 dark:bg-error-500/20' : 'bg-neutral-100 dark:bg-primary-800')}>
-                            <Shield className={cn('w-5 h-5',
-                              doc.verificationStatus === 'VERIFIED' ? 'text-success-600 dark:text-success-300' :
-                              doc.verificationStatus === 'REJECTED' ? 'text-error-600 dark:text-error-300' : 'text-neutral-500 dark:text-neutral-400')} />
-                          </div>
+                          <StatusIconBadge
+                            tone={doc.verificationStatus === 'VERIFIED' ? 'success' : doc.verificationStatus === 'REJECTED' ? 'error' : 'neutral'}
+                            icon={Shield}
+                          />
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="body-strong">{doc.name}</p>
@@ -2569,9 +2518,10 @@ const PartiesPage: React.FC = () => {
                     const TypeIcon = typeConfig[party.partyType]?.icon || Building2;
                     return (
                       <div className="flex items-center gap-3">
-                        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-                          <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
-                        </div>
+                        <StatusIconBadge
+                          tone={party.isIntercompany ? 'cat-2' : party.status === 'ACTIVE' ? 'primary' : 'error'}
+                          icon={TypeIcon}
+                        />
                         <div><p className="body-strong font-semibold">{party.displayName || party.legalName}</p><p className="caption">{party.partyCode}</p></div>
                       </div>
                     );

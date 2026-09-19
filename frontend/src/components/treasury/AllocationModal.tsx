@@ -24,7 +24,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle, Search, Loader2, X, Wallet, Layers, Target, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, Clock, XCircle, TrendingUp, TrendingDown, RotateCcw, CheckCircle } from 'lucide-react';
-import { Card, Badge, Button } from '../../components/ui';
+import { Card, Badge, Button, Radio } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
 import { formatCurrency, cn } from '../../utils';
 
@@ -1496,11 +1496,13 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           )}
                           onClick={() => handleSelectSuggested(va)}
                         >
-                          <input
-                            type="radio"
+                          <Radio
+                            size="sm"
+                            name="allocation-suggested-va"
+                            value={String(va.vaId)}
+                            aria-label={`Select ${va.vaNumber}`}
                             checked={isSelected}
                             onChange={() => handleSelectSuggested(va)}
-                            className="text-primary-600 dark:text-primary-200"
                           />
                           <Wallet className="w-5 h-5 text-neutral-400 shrink-0" />
                           <div className="flex-1 min-w-0">
@@ -1562,11 +1564,13 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                         )}
                         onClick={() => setSelectedVa(va)}
                       >
-                        <input
-                          type="radio"
+                        <Radio
+                          size="sm"
+                          name="allocation-search-va"
+                          value={String(va.id)}
+                          aria-label={`Select ${va.vaNumber}`}
                           checked={selectedVa?.id === va.id}
                           onChange={() => setSelectedVa(va)}
-                          className="text-primary-600 dark:text-primary-200"
                         />
                         <Wallet className="w-5 h-5 text-neutral-400 shrink-0" />
                         <div className="flex-1 min-w-0">

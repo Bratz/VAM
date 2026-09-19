@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Modal } from '../ui/enhanced';
-import { Button, Input, Select, Badge } from '../ui';
+import { Button, Input, Select, Badge, Checkbox } from '../ui';
 import {
   newLocalId,
   deriveRuleFlags,
@@ -245,23 +245,14 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
               </p>
             ) : (
               shadows.map((s) => (
-                <label
+                <Checkbox
                   key={s.localId}
-                  className="flex items-center gap-2 px-3 py-2 cursor-pointer body-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={sourceIds.includes(s.localId)}
-                    onChange={() => toggleSource(s.localId)}
-                    className="accent-primary-600"
-                  />
-                  <span className="truncate text-primary-900 dark:text-neutral-100">
-                    {s.proposedVaName}
-                  </span>
-                  <span className="code text-neutral-400 ml-auto">
-                    {s.snapshotCurrencyCode}
-                  </span>
-                </label>
+                  size="sm"
+                  className="px-3 py-2"
+                  checked={sourceIds.includes(s.localId)}
+                  onChange={() => toggleSource(s.localId)}
+                  label={<span className="flex items-center gap-2"><span className="truncate">{s.proposedVaName}</span><span className="code text-neutral-400">{s.snapshotCurrencyCode}</span></span>}
+                />
               ))
             )}
           </div>

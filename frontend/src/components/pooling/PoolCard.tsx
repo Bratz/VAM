@@ -8,7 +8,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from 'lucide-react';
-import { Card, Button, Badge } from '../ui';
+import { Card, Button, Badge, StatusIconBadge } from '../ui';
 import { formatCompactCurrency } from '../../utils';
 import { TileAmount } from '../TileAmount';
 import { NotionalPool } from '../../services/api';
@@ -32,9 +32,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center">
-            <Layers className="w-5 h-5 text-white" />
-          </div>
+          <StatusIconBadge tone="primary" solid icon={Layers} />
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-primary-900 dark:text-neutral-50">{pool.poolName}</h3>

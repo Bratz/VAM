@@ -15,6 +15,7 @@ import {
   hierarchyOperationsApi, HierarchyNode, MoveLimitPolicy, DivestitureRequest, MergeOperationResult,
 } from '../services/hierarchyOperationsApi';
 
+import { Checkbox } from '../components/ui';
 interface DivestitureModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -296,10 +297,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                       </div>
                     </div>
 
-                    <label className="flex items-start gap-3 p-4 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                      <input type="checkbox" checked={confirmApproval} onChange={(e) => setConfirmApproval(e.target.checked)} className="mt-1 w-4 h-4 text-warning-600 rounded-md border-neutral-300 dark:border-primary-700 focus:ring-warning-500 dark:text-warning-300" />
-                      <span className="text-body-sm text-neutral-700 dark:text-neutral-200">I confirm this divestiture has been approved and all requirements have been met.</span>
-                    </label>
+                    <Checkbox size="sm" label="I confirm this divestiture has been approved and all requirements have been met." checked={confirmApproval} onChange={setConfirmApproval} className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50" />
 
                     {error && (
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">

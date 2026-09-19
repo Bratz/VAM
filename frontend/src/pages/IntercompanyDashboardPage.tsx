@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ArrowLeftRight, Building2, Plus, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, ArrowLeft, GitMerge, Send, Download, Filter, Wallet, CreditCard, Scale, BarChart3, Activity, Zap, Receipt, X, XCircle, Ban, AlertTriangle } from 'lucide-react';
-import { Card, Button, Badge, Input, StatusIconBadge, StatTile } from '../components/ui';
+import { Card, Button, Badge, Input, StatusIconBadge, StatTile, Checkbox } from '../components/ui';
 import { TileAmount } from '../components/TileAmount';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Page } from '../components/layout/Page';
@@ -508,15 +508,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
 
           <div className="space-y-2">
             {!isPOBO && (
-              <label className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={formData.generateViban}
-                  onChange={(e) => setFormData({ ...formData, generateViban: e.target.checked })}
-                  className="rounded-md text-primary-600 dark:text-primary-200"
-                />
-                <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
-              </label>
+              <Checkbox size="sm" label="Generate VIBAN for collection" checked={formData.generateViban} onChange={(checked) => setFormData({ ...formData, generateViban: checked })} />
             )}
           </div>
         </div>

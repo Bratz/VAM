@@ -21,9 +21,8 @@ import {
   GitBranch,
   Eye,
   Info,
-  Check,
 } from 'lucide-react';
-import { Card, Button, Input, Badge, StatusIconBadge } from '../ui';
+import { Card, Button, Input, Badge, StatusIconBadge, Checkbox } from '../ui';
 import { cn, formatCurrency } from '../../utils';
 import { statementsApi } from '../../services/api';
 import type { ISO20022StatementFormat, StatementSummary } from '../../types';
@@ -374,35 +373,12 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
       {/* Include Child Accounts Option (for aggregation accounts) */}
       {isAggregationAccount && (
         <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-primary-800/60">
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={includeChildAccounts}
-                onChange={(e) => setIncludeChildAccounts(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className={cn(
-                'w-5 h-5 rounded-lg border-2 transition-all',
-                'peer-focus:ring-2 peer-focus:ring-primary-500/20',
-                includeChildAccounts
-                  ? 'bg-primary-600 border-primary-600'
-                  : 'bg-white border-neutral-300 group-hover:border-primary-300 dark:bg-primary-900 dark:border-primary-700'
-              )}>
-                {includeChildAccounts && (
-                  <Check className="w-full h-full p-0.5 text-white" />
-                )}
-              </div>
-            </div>
-            <div>
-              <span className="body-strong">
-                Include Child Accounts
-              </span>
-              <p className="caption">
-                Aggregate transactions from all {childAccountCount} child accounts
-              </p>
-            </div>
-          </label>
+          <Checkbox
+            checked={includeChildAccounts}
+            onChange={setIncludeChildAccounts}
+            label="Include Child Accounts"
+            description={`Aggregate transactions from all ${childAccountCount} child accounts`}
+          />
         </div>
       )}
 

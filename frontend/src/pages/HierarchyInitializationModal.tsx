@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Check, Loader2, ChevronRight, Wallet, AlertTriangle, Info, X, Coins, XCircle } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
+import { Checkbox, RadioGroup } from '../components/ui';
 import {
   hierarchyVaApi,
   InitializeHierarchyRequest,
@@ -356,39 +357,13 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
 
                 {/* Template Selection */}
                 <div>
-                  <label className="field-label block mb-2">
-                    Hierarchy Template
-                  </label>
-                  <div className="space-y-2">
-                    {TEMPLATES.map((template) => (
-                      <label
-                        key={template.code}
-                        className={cn(
-                          'flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
-                          templateType === template.code
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40'
-                            : 'border-neutral-200 dark:border-primary-800 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name="template"
-                          value={template.code}
-                          checked={templateType === template.code}
-                          onChange={(e) => setTemplateType(e.target.value)}
-                          className="mt-1"
-                        />
-                        <div>
-                          <p className="body-strong">
-                            {template.name}
-                          </p>
-                          <p className="caption mt-0.5">
-                            {template.description}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
+                  <RadioGroup
+                    legend="Hierarchy Template"
+                    name="template"
+                    value={templateType}
+                    onChange={setTemplateType}
+                    options={TEMPLATES.map((template) => ({ value: template.code, label: template.name, description: template.description }))}
+                  />
                 </div>
               </div>
             )}
@@ -432,46 +407,22 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                 </div>
 
                 {/* Create Currency Mirror Toggle */}
-                <label className="flex items-center gap-3 p-4 border border-cyan-200 dark:border-cyan-500/30 rounded-lg cursor-pointer hover:bg-cyan-50/50 dark:hover:bg-cyan-500/10 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={createCurrencyMirror}
-                    onChange={(e) => setCreateCurrencyMirror(e.target.checked)}
-                    className="w-5 h-5 rounded-md border-neutral-300 dark:border-primary-700 text-cyan-600 focus:ring-cyan-500 dark:text-cyan-300"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
-                      <p className="body-strong">
-                        Create Currency Mirror for {baseCurrency}
-                      </p>
-                    </div>
-                    <p className="caption mt-0.5">
-                      Recommended for accurate multi-currency balance tracking
-                    </p>
-                  </div>
-                </label>
+                <Checkbox
+                  variant="card"
+                  checked={createCurrencyMirror}
+                  onChange={setCreateCurrencyMirror}
+                  label={<span className="inline-flex items-center gap-2"><Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />Create Currency Mirror for {baseCurrency}</span>}
+                  description="Recommended for accurate multi-currency balance tracking"
+                />
 
                 {/* Create Exception VA Toggle */}
-                <label className="flex items-center gap-3 p-4 border border-warning-200 dark:border-warning-500/30 rounded-lg cursor-pointer hover:bg-warning-50/50 dark:hover:bg-warning-500/10 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={createExceptionVa}
-                    onChange={(e) => setCreateExceptionVa(e.target.checked)}
-                    className="w-5 h-5 rounded-md border-neutral-300 dark:border-primary-700 text-warning-600 focus:ring-warning-500 dark:text-warning-300"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                      <p className="body-strong">
-                        Create Exception VA for {baseCurrency}
-                      </p>
-                    </div>
-                    <p className="caption mt-0.5">
-                      Recommended for catching unmatched transactions
-                    </p>
-                  </div>
-                </label>
+                <Checkbox
+                  variant="card"
+                  checked={createExceptionVa}
+                  onChange={setCreateExceptionVa}
+                  label={<span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />Create Exception VA for {baseCurrency}</span>}
+                  description="Recommended for catching unmatched transactions"
+                />
 
                 {/* Additional Currencies */}
                 {(createExceptionVa || createCurrencyMirror) && (

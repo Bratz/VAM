@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Layers, Loader2, Calculator, UserPlus, Trash2, Calendar, Percent } from 'lucide-react';
-import { Button, Badge } from '../ui';
+import { Button, Badge, StatusIconBadge } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { formatCurrency } from '../../utils';
 import { NotionalPool, CalculateInterestResponse } from '../../services/api';
@@ -80,9 +80,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       <div className="bg-primary-50 dark:bg-primary-500/10 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center">
-              <Layers className="w-6 h-6 text-white" />
-            </div>
+            <StatusIconBadge tone="primary" icon={Layers} size="lg" solid />
             <div>
               <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{pool.poolReference}</p>
               <Badge variant={pool.status === 'ACTIVE' ? 'success' : 'warning'}>

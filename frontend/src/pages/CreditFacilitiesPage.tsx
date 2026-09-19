@@ -26,20 +26,20 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; icon: any 
   CLOSED: { label: 'Closed', variant: 'neutral', icon: XCircle },
 };
 
-const FACILITY_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  OVERDRAFT: { label: 'Overdraft', icon: Wallet, color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-100 dark:bg-error-500/20' },
-  REVOLVING_CREDIT: { label: 'Revolving Credit', icon: RefreshCw, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  TERM_LOAN: { label: 'Term Loan', icon: Banknote, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
-  TRADE_FINANCE: { label: 'Trade Finance', icon: Briefcase, color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
-  LETTER_OF_CREDIT: { label: 'Letter of Credit', icon: FileText, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  BANK_GUARANTEE: { label: 'Bank Guarantee', icon: Shield, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
-  WORKING_CAPITAL: { label: 'Working Capital', icon: CreditCard, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  INVOICE_FINANCING: { label: 'Invoice Financing', icon: Receipt, color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
-  SUPPLY_CHAIN_FINANCE: { label: 'Supply Chain', icon: Link2, color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
-  ASSET_BASED: { label: 'Asset Based', icon: Building2, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  CASH_POOLING: { label: 'Cash Pooling', icon: PiggyBank, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
-  NOTIONAL_POOLING: { label: 'Notional Pooling', icon: Landmark, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
-  OTHER: { label: 'Other', icon: Wallet, color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
+const FACILITY_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
+  OVERDRAFT: { label: 'Overdraft', icon: Wallet, tone: 'error', color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-100 dark:bg-error-500/20' },
+  REVOLVING_CREDIT: { label: 'Revolving Credit', icon: RefreshCw, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
+  TERM_LOAN: { label: 'Term Loan', icon: Banknote, tone: 'success', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
+  TRADE_FINANCE: { label: 'Trade Finance', icon: Briefcase, tone: 'accent', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
+  LETTER_OF_CREDIT: { label: 'Letter of Credit', icon: FileText, tone: 'warning', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
+  BANK_GUARANTEE: { label: 'Bank Guarantee', icon: Shield, tone: 'primary', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
+  WORKING_CAPITAL: { label: 'Working Capital', icon: CreditCard, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
+  INVOICE_FINANCING: { label: 'Invoice Financing', icon: Receipt, tone: 'accent', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
+  SUPPLY_CHAIN_FINANCE: { label: 'Supply Chain', icon: Link2, tone: 'primary', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-100 dark:bg-primary-700' },
+  ASSET_BASED: { label: 'Asset Based', icon: Building2, tone: 'warning', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
+  CASH_POOLING: { label: 'Cash Pooling', icon: PiggyBank, tone: 'success', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
+  NOTIONAL_POOLING: { label: 'Notional Pooling', icon: Landmark, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
+  OTHER: { label: 'Other', icon: Wallet, tone: 'neutral', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-neutral-100 dark:bg-primary-800' },
 };
 
 // Helper
@@ -95,9 +95,7 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
     )}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", typeConfig.bgColor)}>
-            <TypeIcon className={cn("w-5 h-5", typeConfig.color)} />
-          </div>
+          <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} />
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{facility.facilityName}</h3>
             <p className="body-sm line-clamp-1">{facility.agreementName || 'Standalone Facility'}</p>

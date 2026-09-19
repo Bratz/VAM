@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, Layers, Tag, List, RefreshCw, AlertTriangle, XCircle } from 'lucide-react';
 import { Modal } from './ui/enhanced';
-import { Card, Badge, Button, Input, Select } from './ui';
+import { Card, Badge, Button, Input, Select, Checkbox } from './ui';
 import { cn } from '../utils';
 
 // ============================================================================
@@ -218,15 +218,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
           </div>
 
           {/* Required Toggle */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded-md border-neutral-300 dark:border-primary-700"
-              checked={level.isRequired || false}
-              onChange={(e) => onChange({ ...level, isRequired: e.target.checked })}
-            />
-            <span className="text-body-sm text-neutral-700 dark:text-neutral-200">This level is required</span>
-          </label>
+          <Checkbox size="sm" label="This level is required" checked={level.isRequired || false} onChange={(checked) => onChange({ ...level, isRequired: checked })} />
 
           {/* Allowed Values */}
           <div>

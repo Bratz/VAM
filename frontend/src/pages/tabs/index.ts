@@ -17,8 +17,6 @@ export {
   NumberInput,
   TextInput,
   TextArea,
-  Checkbox,
-  Toggle,
   DateInput,
   FormSection,
   FormRow,
@@ -30,8 +28,6 @@ export type { SelectOption, SelectFieldProps } from './FormComponents';
 export type { NumberInputProps } from './FormComponents';
 export type { TextInputProps } from './FormComponents';
 export type { TextAreaProps } from './FormComponents';
-export type { CheckboxProps } from './FormComponents';
-export type { ToggleProps } from './FormComponents';
 export type { DateInputProps } from './FormComponents';
 export type { FormSectionProps } from './FormComponents';
 export type { FormRowProps } from './FormComponents';

@@ -5,7 +5,7 @@ import {
   MultiBankLiquiditySummary,
   ShadowSummary,
 } from '../../services/api';
-import { Card } from '../ui';
+import { Card, StatusIconBadge } from '../ui';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { CountryExposureMap } from './CountryExposureMap';
 import { ReportingRates } from './useReportingRates';
@@ -171,9 +171,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
           >
             <div className="p-5 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300">
-                  <Globe2 className="w-5 h-5" />
-                </div>
+                <StatusIconBadge tone="neutral" icon={Globe2} />
                 <div>
                   <h2 className="section-title">{group.country}</h2>
                   <p className="caption mt-0.5">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Modal } from '../ui/enhanced';
-import { Button, Input, TextArea } from '../ui';
+import { Button, Input, TextArea, Checkbox } from '../ui';
 import { DiffSummaryStrip } from './DiffSummaryStrip';
 import type { DiffResult, SimulatorScenario } from './types';
 
@@ -109,19 +109,18 @@ export const ProposeDrawer: React.FC<ProposeDrawerProps> = ({
           textareaSize="sm"
         />
 
-        <label className="flex items-start gap-2 cursor-pointer body-sm text-primary-900 dark:text-neutral-100">
-          <input
-            type="checkbox"
-            checked={reviewed}
-            onChange={(e) => setReviewed(e.target.checked)}
-            className="mt-0.5 accent-primary-600"
-          />
-          <span>
-            I have reviewed the Optimisation Score and its assumptions, and the
-            diff above, for{' '}
-            <span className="code">{scenario.scenarioReference}</span>.
-          </span>
-        </label>
+        <Checkbox
+          size="sm"
+          checked={reviewed}
+          onChange={setReviewed}
+          label={
+            <>
+              I have reviewed the Optimisation Score and its assumptions, and the
+              diff above, for{' '}
+              <span className="code">{scenario.scenarioReference}</span>.
+            </>
+          }
+        />
 
         {changed === 0 && (
           <p className="body-sm text-neutral-500 dark:text-neutral-400">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Percent, Clock, Download, RefreshCw, TrendingUp, TrendingDown, Loader2, FileText, DollarSign, Eye, Building2, CheckCircle, PiggyBank, CreditCard, BarChart3, ArrowUpRight, Activity, Search, AlertTriangle, XCircle, X } from 'lucide-react';
 import { Card, Button, Badge, Input, Select , StatusIconBadge, StatTile, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
@@ -144,6 +145,11 @@ const interestAccrualApi = {
 // <StatTile layout="row"> (components/ui/StatTile) — see the summary strip
 // in the page body. The original kept the headline number neutral with a
 // toned icon medallion, hence `valueTone="neutral"` at the call sites.
+
+const ACCRUAL_ICONS: Record<string, LucideIcon> = {
+  LOAN: CreditCard, DEPOSIT: PiggyBank, VA_CREDIT: TrendingUp, VA_DEBIT: TrendingDown, POOL_INTEREST: Activity, SWEEP_INTEREST: ArrowUpRight,
+};
+const accrualIcon = (type: AccrualType) => ACCRUAL_ICONS[type] ?? DollarSign;
 
 const AccrualTypeIcon: React.FC<{ type: AccrualType }> = ({ type }) => {
   switch (type) {
@@ -522,9 +528,7 @@ const InterestAccrualReportsPage: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center', ['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20')}>
-                  <AccrualTypeIcon type={selectedAccrual.accrualType} />
-                </div>
+                <StatusIconBadge tone={['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'success' : 'error'} icon={accrualIcon(selectedAccrual.accrualType)} size="lg" />
                 <div>
                   <h3 className="section-title">{selectedAccrual.accrualReference}</h3>
                   <p className="body-sm">{getTypeLabel(selectedAccrual.accrualType)}</p>

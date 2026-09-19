@@ -11,7 +11,7 @@ import { Page } from '../components/layout/Page';
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Building2, Plus, RefreshCw, Search, Loader2, CheckCircle, AlertTriangle, Lock, Unlock, ExternalLink, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Calendar, Percent, FileText, TrendingUp, DollarSign, Clock, ChevronUp, Layers, CreditCard, Pencil } from 'lucide-react';
-import { StatusIconBadge } from '../components/ui';
+import { StatusIconBadge, RadioGroup } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import {
   EntityAllocationModal,
@@ -846,16 +846,16 @@ const GroupLimitModal: React.FC<{
 
           <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
             <p className="field-label mb-3">Limit Control</p>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={hardLimit} onChange={() => setHardLimit(true)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Lock className="w-4 h-4 text-error-500 dark:text-error-300" /><span className="text-body-sm">Hard Limit</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" checked={!hardLimit} onChange={() => setHardLimit(false)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Unlock className="w-4 h-4 text-warning-500 dark:text-warning-300" /><span className="text-body-sm">Soft Limit</span>
-              </label>
-            </div>
+            <RadioGroup
+              name="limit-control"
+              orientation="horizontal"
+              value={hardLimit ? 'hard' : 'soft'}
+              onChange={(v) => setHardLimit(v === 'hard')}
+              options={[
+                { value: 'hard', label: <span className="flex items-center gap-2 font-normal"><Lock className="w-4 h-4 text-error-500 dark:text-error-300" /><span className="text-body-sm">Hard Limit</span></span> },
+                { value: 'soft', label: <span className="flex items-center gap-2 font-normal"><Unlock className="w-4 h-4 text-warning-500 dark:text-warning-300" /><span className="text-body-sm">Soft Limit</span></span> },
+              ]}
+            />
           </div>
 
           <div>

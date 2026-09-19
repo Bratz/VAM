@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Globe, Shield, Building2, ChevronRight, Loader2, Check, XCircle } from 'lucide-react';
 import { Modal } from '../components/ui/enhanced';
+import { StatusIconBadge } from '../components/ui/StatusIconBadge';
 import { cn } from '../utils';
 
 // ============================================================================
@@ -144,9 +145,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         {/* Header */}
         <div className="pb-6 border-b border-neutral-200 dark:border-primary-800 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-neutral-900 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
+            <StatusIconBadge tone="neutral" solid icon={Globe} />
             <div>
               <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">Connect via {connectorName}</h2>
               <p className="body-sm">Securely link your bank account</p>
@@ -354,9 +353,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                 </div>
               ) : (
                 <div>
-                  <div className="w-16 h-16 bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
-                    <Shield className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
-                  </div>
+                  <StatusIconBadge tone="neutral" icon={Shield} size="xl" className="mx-auto mb-4" />
                   <p className="body-strong">Ready to Authorize</p>
                   <p className="caption mt-1 max-w-sm mx-auto">
                     Click below to connect to {selectedAspsp.name}. You'll be redirected to your bank to complete authorization.

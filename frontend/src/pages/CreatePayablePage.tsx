@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Save, Send, Plus, Trash2, Search, Building2, FileText, Calculator, ArrowLeftRight, GitBranch, Paperclip, Calendar, DollarSign, Percent, ChevronDown, ChevronUp, Loader2, X, Check, Info, CreditCard, Landmark, Clock, RefreshCw, Upload, Link as LinkIcon, StickyNote, Users, ToggleLeft, ToggleRight, HelpCircle, Receipt, Package, Truck, Shield, FileCheck, ChevronRight, Eye, ChevronsUpDown, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
+import { ArrowLeft, Save, Send, Plus, Trash2, Search, Building2, FileText, Calculator, ArrowLeftRight, GitBranch, Paperclip, Calendar, DollarSign, Percent, ChevronDown, ChevronUp, Loader2, X, Check, Info, CreditCard, Landmark, Clock, RefreshCw, Upload, Link as LinkIcon, StickyNote, Users, HelpCircle, Receipt, Package, Truck, Shield, FileCheck, ChevronRight, Eye, ChevronsUpDown, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
 // Tier 5 Design System Unification (2026-05-13): switched from page-local
 // Card/Button/Badge definitions to the shared components/ui versions.
 // Page-local re-definition of system primitives is no longer permitted —
 // it strands pages outside every future token / focus-ring / dark-mode
-// migration. Local Input/Select/Toggle kept for now (non-trivial API
+// migration. Local Input/Select kept for now (non-trivial API
 // differences from the shared versions; deferred for a follow-up).
-import { Card, Button, Badge, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, StatusIconBadge, Toggle, RadioGroup } from '../components/ui';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi } from '../services/api';
@@ -245,8 +245,8 @@ const calculateDueDate = (invoiceDate: string, terms: string): string => {
 // PAGE-LOCAL FORM COMPONENTS
 // ============================================================================
 // Note: Card / Button / Badge moved to shared `components/ui` (Tier 5
-// Design System Unification, 2026-05-13). The page-local Input / Select /
-// Toggle below remain — their APIs differ enough from the shared versions
+// Design System Unification, 2026-05-13). The page-local Input / Select
+// below remain — their APIs differ enough from the shared versions
 // (`prefix`/`suffix` vs `leftIcon`/`rightIcon`, value-callback shapes) that
 // migrating them is its own follow-up.
 
@@ -309,23 +309,6 @@ const Select: React.FC<{
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </select>
-  </div>
-);
-
-const Toggle: React.FC<{ label: string; description?: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; size?: 'sm' | 'md'; }> = ({ label, description, checked, onChange, disabled, size = 'md' }) => (
-  <div className="flex items-center justify-between">
-    <div>
-      <p className={`font-medium text-neutral-900 dark:text-neutral-50 ${size === 'sm' ? 'text-body-sm' : ''}`}>{label}</p>
-      {description && <p className="caption">{description}</p>}
-    </div>
-    <button
-      type="button"
-      onClick={() => !disabled && onChange(!checked)}
-      disabled={disabled}
-      className={`relative inline-flex items-center rounded-full transition-colors ${size === 'sm' ? 'h-5 w-9' : 'h-6 w-11'} ${checked ? 'bg-primary-600' : 'bg-neutral-300'} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-    >
-      <span className={`inline-block transform rounded-full bg-white dark:bg-primary-900 shadow transition-transform ${size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} ${checked ? (size === 'sm' ? 'translate-x-5' : 'translate-x-6') : 'translate-x-1'}`} />
-    </button>
   </div>
 );
 
@@ -535,9 +518,7 @@ const BankAccountSelector: React.FC<{
                 onClick={() => onSelect(account.id)}
                 className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${selectedId === account.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900'} dark:bg-primary-800/40 dark:bg-primary-900`}
               >
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${selectedId === account.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800'}`}>
-                  <Landmark className={`w-5 h-5 ${selectedId === account.id ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}`} />
-                </div>
+                <StatusIconBadge tone={selectedId === account.id ? 'primary' : 'neutral'} icon={Landmark} />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{account.bankName}</p>
@@ -689,8 +670,8 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select label="Tax Jurisdiction" value={formData.taxJurisdiction} onChange={(v) => updateField('taxJurisdiction', v)} options={[{ value: 'UAE', label: 'UAE - VAT 5%' }, { value: 'KSA', label: 'KSA - VAT 15%' }]} />
           <div className="space-y-3">
-            <Toggle label="Apply VAT" checked={formData.applyVat} onChange={(v) => updateField('applyVat', v)} size="sm" />
-            <Toggle label="Reverse Charge" description="Buyer accounts for VAT" checked={formData.reverseCharge} onChange={(v) => updateField('reverseCharge', v)} size="sm" />
+            <Toggle layout="split" label="Apply VAT" checked={formData.applyVat} onChange={(v) => updateField('applyVat', v)} size="sm" />
+            <Toggle layout="split" label="Reverse Charge" description="Buyer accounts for VAT" checked={formData.reverseCharge} onChange={(v) => updateField('reverseCharge', v)} size="sm" />
           </div>
         </div>
       </div>
@@ -783,9 +764,11 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
               </span>
             )}
           </div>
-          <button onClick={() => updateField('poboEnabled', !formData.poboEnabled)} className="transition-transform hover:scale-105">
-            {formData.poboEnabled ? <ToggleRight className="w-12 h-12 text-accent-600 dark:text-accent-300" /> : <ToggleLeft className="w-12 h-12 text-neutral-400" />}
-          </button>
+          <Toggle
+            checked={formData.poboEnabled}
+            onChange={(v) => updateField('poboEnabled', v)}
+            aria-label="Enable Payment On Behalf Of (POBO)"
+          />
         </div>
       </div>
       {formData.poboEnabled && (
@@ -872,29 +855,23 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
   <div className="space-y-6">
     <div>
       <label className="field-label block mb-3">Payment Schedule</label>
-      <div className="space-y-2">
-        {[
-          { value: 'DUE_DATE', label: 'Pay on Due Date', description: `Scheduled for ${formData.dueDate || 'due date'}`, icon: Calendar },
-          { value: 'IMMEDIATE', label: 'Pay Immediately', description: 'Process after approval', icon: Clock },
-          { value: 'HOLD', label: 'Hold for Manual Release', description: 'Requires manual trigger', icon: Settings },
-        ].map((opt) => {
-          const Icon = opt.icon;
-          return (
-            <label key={opt.value} className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${formData.scheduleType === opt.value ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
-              <input type="radio" name="scheduleType" value={opt.value} checked={formData.scheduleType === opt.value} onChange={(e) => updateField('scheduleType', e.target.value)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-              <Icon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-              <div className="flex-1"><p className="font-medium text-neutral-900 dark:text-neutral-50">{opt.label}</p><p className="body-sm">{opt.description}</p></div>
-            </label>
-          );
-        })}
-      </div>
+      <RadioGroup
+        name="scheduleType"
+        value={formData.scheduleType}
+        onChange={(v) => updateField('scheduleType', v)}
+        options={[
+          { value: 'DUE_DATE', label: 'Pay on Due Date', description: `Scheduled for ${formData.dueDate || 'due date'}` },
+          { value: 'IMMEDIATE', label: 'Pay Immediately', description: 'Process after approval' },
+          { value: 'HOLD', label: 'Hold for Manual Release', description: 'Requires manual trigger' },
+        ]}
+      />
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <Select label="Payment Priority" value={formData.paymentPriority} onChange={(v) => updateField('paymentPriority', v)} options={[{ value: 'LOW', label: '🟢 Low' }, { value: 'NORMAL', label: '🔵 Normal' }, { value: 'HIGH', label: '🟠 High' }, { value: 'URGENT', label: '🔴 Urgent' }]} />
       <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg text-body-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
     </div>
     <div className="border-t border-neutral-200 dark:border-primary-800 pt-4">
-      <Toggle label="Notify Vendor" description="Send payment notification when processed" checked={formData.notifyVendor} onChange={(v) => updateField('notifyVendor', v)} />
+      <Toggle layout="split" label="Notify Vendor" description="Send payment notification when processed" checked={formData.notifyVendor} onChange={(v) => updateField('notifyVendor', v)} />
     </div>
   </div>
 );
@@ -1492,9 +1469,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                             className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : hasSufficientBalance ? 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900' : 'border-neutral-200 bg-neutral-50 dark:bg-primary-950 opacity-60'}`}
                             disabled={!hasSufficientBalance}
                           >
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800'}`}>
-                              <CreditCard className={`w-5 h-5 ${isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}`} />
-                            </div>
+                            <StatusIconBadge tone={isSelected ? 'primary' : 'neutral'} icon={CreditCard} />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{va.name}</p>

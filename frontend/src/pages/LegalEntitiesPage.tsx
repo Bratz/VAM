@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, Plus, Eye, Search, RefreshCw, Download, TrendingUp, AlertTriangle, CheckCircle, XCircle, Clock, CreditCard, Landmark, FlaskConical, ArrowLeftRight, PiggyBank, Banknote, GitBranch, Copy, Lock, Info, ChevronUp, Loader2, X, Check, Wallet, Link2, Percent, Mail, Phone, MapPin, FileText, Calendar, Hash, DollarSign, Shield, Zap, Save, Pencil } from 'lucide-react';
-import { Card, CardHeader, Button, Badge, Input, StatTile, StatusIconBadge } from '../components/ui';
+import { Card, CardHeader, Button, Badge, Input, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
@@ -391,13 +391,6 @@ const FormField: React.FC<{ label: string; required?: boolean; error?: string; h
   </div>
 );
 
-const CheckboxField: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }> = ({ checked, onChange, label, description }) => (
-  <label className={cn('flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all', checked ? 'bg-primary-50 border-primary-300 dark:bg-primary-800/40' : 'bg-white border-neutral-200 hover:bg-neutral-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800/50')}>
-    <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded-md border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200" />
-    <div><p className="body-strong">{label}</p>{description && <p className="caption mt-0.5">{description}</p>}</div>
-  </label>
-);
-
 // ============================================================================
 // ENTITY FORM MODAL - CREATE/EDIT
 // ============================================================================
@@ -583,7 +576,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
               </div>
               <div className="border-t pt-4">
                 <h4 className="text-body-sm font-semibold mb-3 flex items-center gap-2"><Wallet className="w-4 h-4" />Bank Relationship</h4>
-                <CheckboxField checked={formData.isBankCustomer} onChange={(v) => updateField('isBankCustomer', v)} label="Is Bank Customer" description="Has direct banking relationship with external limits" />
+                <Checkbox variant="card" size="sm" checked={formData.isBankCustomer} onChange={(v) => updateField('isBankCustomer', v)} label="Is Bank Customer" description="Has direct banking relationship with external limits" />
                 {formData.isBankCustomer && (
                   <div className="mt-3">
                     <FormField label="BANCS Customer ID" required error={errors.bancsCustomerId}>
@@ -629,7 +622,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
             <div className="space-y-4">
               {/* Treasury Center Section */}
               <div className="space-y-3">
-                <CheckboxField
+                <Checkbox variant="card" size="sm"
                   checked={formData.isTreasuryCenter}
                   onChange={(v) => {
                     updateField('isTreasuryCenter', v);
@@ -642,9 +635,9 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                   label="Is Treasury Center"
                   description="Central treasury for intercompany funding (auto-enables IHB & lending)"
                 />
-                <CheckboxField checked={formData.canHoldPhysicalAccounts} onChange={(v) => updateField('canHoldPhysicalAccounts', v)} label="Can Hold Physical Accounts" description="Can maintain physical bank accounts" />
-                <CheckboxField checked={formData.canParticipatePooling} onChange={(v) => updateField('canParticipatePooling', v)} label="Can Participate in Pooling" description="Cash pooling arrangements" />
-                <CheckboxField checked={formData.canParticipateNetting} onChange={(v) => updateField('canParticipateNetting', v)} label="Can Participate in Netting" description="Intercompany netting cycles" />
+                <Checkbox variant="card" size="sm" checked={formData.canHoldPhysicalAccounts} onChange={(v) => updateField('canHoldPhysicalAccounts', v)} label="Can Hold Physical Accounts" description="Can maintain physical bank accounts" />
+                <Checkbox variant="card" size="sm" checked={formData.canParticipatePooling} onChange={(v) => updateField('canParticipatePooling', v)} label="Can Participate in Pooling" description="Cash pooling arrangements" />
+                <Checkbox variant="card" size="sm" checked={formData.canParticipateNetting} onChange={(v) => updateField('canParticipateNetting', v)} label="Can Participate in Netting" description="Intercompany netting cycles" />
               </div>
 
               {/* Credit Limit Info - Managed via CreditLimitService */}
@@ -663,7 +656,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                 <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 mb-4 dark:bg-cat-2/15 dark:border-cat-2/30">
                   <p className="text-body-sm text-cat-2 dark:text-cat-2-fg"><Banknote className="w-4 h-4 inline mr-1" />In-House Banking for intercompany lending/borrowing.</p>
                 </div>
-                <CheckboxField
+                <Checkbox variant="card" size="sm"
                   checked={formData.ihbEnabled}
                   onChange={(v) => {
                     updateField('ihbEnabled', v);
@@ -678,13 +671,13 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                 {formData.ihbEnabled && (
                   <>
                     <div className="grid grid-cols-2 gap-4 mt-4">
-                      <CheckboxField
+                      <Checkbox variant="card" size="sm"
                         checked={formData.canLend}
                         onChange={(v) => updateField('canLend', v)}
                         label="Can Lend"
                         description={formData.isTreasuryCenter ? "Auto-enabled for Treasury Centers" : "Provide intercompany loans"}
                       />
-                      <CheckboxField checked={formData.canBorrow} onChange={(v) => updateField('canBorrow', v)} label="Can Borrow" description="Take intercompany loans" />
+                      <Checkbox variant="card" size="sm" checked={formData.canBorrow} onChange={(v) => updateField('canBorrow', v)} label="Can Borrow" description="Take intercompany loans" />
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <FormField label="Lending Spread %" hint="Added when lending">

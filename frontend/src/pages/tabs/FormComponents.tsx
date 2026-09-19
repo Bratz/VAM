@@ -228,99 +228,6 @@ export const TextArea: React.FC<TextAreaProps> = ({
 );
 
 // ============================================================================
-// CHECKBOX
-// ============================================================================
-
-export interface CheckboxProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: string;
-  description?: string;
-  disabled?: boolean;
-}
-
-export const Checkbox: React.FC<CheckboxProps> = ({
-  checked,
-  onChange,
-  label,
-  description,
-  disabled,
-}) => (
-  <label className={cn(
-    'flex items-start gap-3 cursor-pointer',
-    disabled && 'cursor-not-allowed opacity-60'
-  )}>
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
-      disabled={disabled}
-      className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
-    />
-    <div>
-      <span className="body-strong">{label}</span>
-      {description && (
-        <p className="caption mt-0.5">{description}</p>
-      )}
-    </div>
-  </label>
-);
-
-// ============================================================================
-// TOGGLE SWITCH
-// ============================================================================
-
-export interface ToggleProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label?: string;
-  description?: string;
-  disabled?: boolean;
-}
-
-export const Toggle: React.FC<ToggleProps> = ({
-  checked,
-  onChange,
-  label,
-  description,
-  disabled,
-}) => (
-  <label className={cn(
-    'flex items-center justify-between gap-4',
-    disabled && 'cursor-not-allowed opacity-60'
-  )}>
-    {(label || description) && (
-      <div>
-        {label && <span className="body-strong">{label}</span>}
-        {description && (
-          <p className="caption mt-0.5">{description}</p>
-        )}
-      </div>
-    )}
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => !disabled && onChange(!checked)}
-      className={cn(
-        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-        checked ? 'bg-primary-600' : 'bg-neutral-200 dark:bg-primary-800',
-        disabled && 'cursor-not-allowed'
-      )}
-    >
-      <span
-        className={cn(
-          'inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm',
-          checked ? 'translate-x-[22px]' : 'translate-x-[2px]'
-        )}
-      />
-    </button>
-  </label>
-);
-
-// ============================================================================
 // DATE INPUT
 // ============================================================================
 
@@ -433,8 +340,6 @@ export default {
   NumberInput,
   TextInput,
   TextArea,
-  Checkbox,
-  Toggle,
   DateInput,
   FormSection,
   FormRow,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Building2, Users, ArrowLeftRight, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Wallet, DollarSign, RefreshCw, Settings, Plus, Eye, ChevronRight, Calendar, Layers, GitBranch, Target, Loader2, X, FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal, Briefcase, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
@@ -884,17 +884,10 @@ const InHouseBankPage: React.FC = () => {
                         {/* Account Header */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <div className={cn(
-                              'w-10 h-10 rounded-lg flex items-center justify-center',
-                              account.positionType === 'CREDIT' ? 'bg-success-100 dark:bg-success-500/20' :
-                              account.positionType === 'DEBIT' ? 'bg-error-100 dark:bg-error-500/20' : 'bg-neutral-100 dark:bg-primary-800'
-                            )}>
-                              <Wallet className={cn(
-                                'w-5 h-5',
-                                account.positionType === 'CREDIT' ? 'text-success-600 dark:text-success-300' :
-                                account.positionType === 'DEBIT' ? 'text-error-600 dark:text-error-300' : 'text-neutral-600 dark:text-neutral-300'
-                              )} />
-                            </div>
+                            <StatusIconBadge
+                              tone={account.positionType === 'CREDIT' ? 'success' : account.positionType === 'DEBIT' ? 'error' : 'neutral'}
+                              icon={Wallet}
+                            />
                             <div>
                               <p className="body-strong font-semibold">{account.participantEntityName || account.accountName}</p>
                               <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{account.accountNumber}</p>
@@ -1069,15 +1062,7 @@ const InHouseBankPage: React.FC = () => {
                 : "bg-primary-50 border-primary-200 dark:border-primary-700 dark:bg-primary-500/10"
             )}>
               <div className="flex items-center gap-3 mb-3">
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center",
-                  selectedEntity.canLend && !selectedEntity.canBorrow ? "bg-warning-100 dark:bg-warning-500/20" : "bg-primary-100 dark:bg-primary-700"
-                )}>
-                  <Building2 className={cn(
-                    "w-5 h-5",
-                    selectedEntity.canLend && !selectedEntity.canBorrow ? "text-warning-600 dark:text-warning-300" : "text-primary-600 dark:text-primary-200"
-                  )} />
-                </div>
+                <StatusIconBadge tone={selectedEntity.canLend && !selectedEntity.canBorrow ? 'warning' : 'primary'} icon={Building2} />
                 <div>
                   <p className="body-strong font-semibold">{selectedEntity.entityName}</p>
                   <p className="caption">{selectedEntity.entityCode} • {selectedEntity.entityType}</p>
@@ -1200,9 +1185,7 @@ const InHouseBankPage: React.FC = () => {
           {/* Description */}
           <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:bg-cat-2/15">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-lg bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
-                <Wallet className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
-              </div>
+              <StatusIconBadge tone="cat-2" icon={Wallet} className="shrink-0" />
               <div>
                 <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
                 <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
@@ -1343,15 +1326,7 @@ const InHouseBankPage: React.FC = () => {
             </p>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="flex items-center gap-2 field-label">
-                  <input
-                    type="checkbox"
-                    checked={currentAccountForm.ihbSweepEnabled}
-                    onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepEnabled: e.target.checked })}
-                    className="rounded-md border-neutral-300 dark:border-primary-700"
-                  />
-                  Enable Auto-Sweep
-                </label>
+                <Checkbox size="sm" label="Enable Auto-Sweep" checked={currentAccountForm.ihbSweepEnabled} onChange={(checked) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepEnabled: checked })} className="field-label" />
                 <p className="caption mt-1">Auto-sweep surplus to treasury pool</p>
               </div>
               <div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, ChevronLeft, Pencil, ChevronRight } from 'lucide-react';
-import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge } from '../components/ui';
+import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { HierarchyPicker } from '../components/hierarchy/HierarchyPicker';
@@ -427,12 +428,12 @@ const kycStatusConfig: Record<string, { label: string; color: string; icon: Reac
   NOT_STARTED: { label: 'Not Started', color: 'neutral', icon: <Clock className="w-3 h-3" /> },
 };
 
-const partyTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
-  INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
-  VENDOR: { label: 'Vendor', icon: Building2, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  CUSTOMER: { label: 'Customer', icon: UserCheck, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
+const partyTypeConfig: Record<string, { label: string; icon: LucideIcon; color: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
+  INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', tone: 'info' },
+  CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', tone: 'cat-2' },
+  EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', tone: 'success' },
+  VENDOR: { label: 'Vendor', icon: Building2, color: 'text-warning-600 dark:text-warning-300', tone: 'warning' },
+  CUSTOMER: { label: 'Customer', icon: UserCheck, color: 'text-cat-3 dark:text-cat-3-fg', tone: 'cat-3' },
 };
 
 // ============================================================================
@@ -549,19 +550,17 @@ const PartyPicker: React.FC<{
     }
   };
 
-  const partyTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
-    INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-    CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-    EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
+  const partyTypeConfig: Record<string, { label: string; icon: LucideIcon; color: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
+    INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', tone: 'info' },
+    CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', tone: 'cat-2' },
+    EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', tone: 'success' },
   };
 
   return (
     <div ref={containerRef} className="relative">
       {value ? (
         <div className="flex items-center gap-3 p-3 border border-neutral-300 dark:border-primary-700 rounded-lg bg-white dark:bg-primary-900">
-          <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', partyTypeConfig[value.partyType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
-            {(() => { const Icon = partyTypeConfig[value.partyType]?.icon || User; return <Icon className={cn('w-5 h-5', partyTypeConfig[value.partyType]?.color)} />; })()}
-          </div>
+          <StatusIconBadge tone={partyTypeConfig[value.partyType]?.tone ?? 'neutral'} icon={partyTypeConfig[value.partyType]?.icon || User} rounded="full" subtle />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{value.legalName}</p>
             <p className="text-body-sm text-neutral-500 dark:text-neutral-400 truncate">
@@ -642,9 +641,7 @@ const PartyPicker: React.FC<{
                       return (
                         <div key={party.id} onClick={() => handleSelect(party)}
                           className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                          <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', config.bgColor)}>
-                            <Icon className={cn('w-5 h-5', config.color)} />
-                          </div>
+                          <StatusIconBadge tone={config.tone} icon={Icon} rounded="full" subtle />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{party.legalName}</p>
                             <div className="flex items-center gap-2 body-sm">
@@ -1498,10 +1495,7 @@ const WalletPage: React.FC = () => {
                 <input type="number" className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2" placeholder={selectedProgramForIssue ? `Default: ${selectedProgramForIssue.monthlySpendLimit}` : 'Default'} value={issueForm.monthlyLimit || ''} onChange={(e) => setIssueForm({ ...issueForm, monthlyLimit: e.target.value })} />
               </div>
             </div>
-            <label className="flex items-center gap-2 p-3 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-              <input type="checkbox" checked={issueForm.autoTriggerKyc || false} onChange={(e) => setIssueForm({ ...issueForm, autoTriggerKyc: e.target.checked })} className="rounded-md" />
-              <div><span className="text-body-sm font-medium">Auto-trigger KYC</span><p className="caption">Start KYC if customer has ID</p></div>
-            </label>
+            <Checkbox variant="card" size="sm" checked={issueForm.autoTriggerKyc || false} onChange={(checked) => setIssueForm({ ...issueForm, autoTriggerKyc: checked })} label="Auto-trigger KYC" description="Start KYC if customer has ID" />
           </div>
         </div>
       </Modal>
@@ -1585,7 +1579,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Alert variant="warning">Blocking prevents all transactions.</Alert>
           <Input label="Reason *" value={blockForm.reason || ''} onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} /><span className="text-body-sm text-error-600 dark:text-error-300">Permanent</span></label>
+          <Checkbox size="sm" label="Permanent" checked={blockForm.permanent} onChange={(checked) => setBlockForm({ ...blockForm, permanent: checked })} />
         </div>
       </Modal>
 

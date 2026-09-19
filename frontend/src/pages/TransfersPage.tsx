@@ -240,13 +240,11 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
   const variantStyles = {
     source: {
       card: 'border-primary-200/60 bg-gradient-to-br from-primary-50/30 to-white',
-      icon: 'bg-primary-100 dark:bg-primary-700',
-      iconColor: 'text-primary-600 dark:text-primary-200',
+      tone: 'primary' as const,
     },
     target: {
       card: 'border-success-200/60 bg-gradient-to-br from-success-50/30 to-white',
-      icon: 'bg-success-100 dark:bg-success-500/20',
-      iconColor: 'text-success-600 dark:text-success-300',
+      tone: 'success' as const,
     },
   };
 
@@ -268,9 +266,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
       {selectedAccount && (
         <div className="mt-4 p-4 bg-white/60 rounded-lg border border-neutral-100 dark:bg-primary-900/60 dark:border-primary-800/60">
           <div className="flex items-center gap-4">
-            <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center', styles.icon)}>
-              <Building2 className={cn('w-6 h-6', styles.iconColor)} />
-            </div>
+            <StatusIconBadge tone={styles.tone} icon={Building2} size="lg" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">{selectedAccount.vaName}</p>
               <p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{selectedAccount.vaNumber}</p>
@@ -375,7 +371,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     }
   };
   const typeInfo = getTypeInfo();
-  const TypeIcon = typeInfo.icon;
 
   // Check what's filled
   const hasSource = transferType === 'inward' ? !!formData.debtorName : !!sourceAccount;
@@ -394,21 +389,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50 to-white dark:border-primary-800/60 dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            typeInfo.color === 'info' ? 'bg-info-100 dark:bg-info-500/20' :
-            typeInfo.color === 'primary' ? 'bg-primary-100 dark:bg-primary-700' :
-            typeInfo.color === 'success' ? 'bg-success-100 dark:bg-success-500/20' :
-            'bg-warning-100 dark:bg-warning-500/20'
-          )}>
-            <TypeIcon className={cn(
-              'w-5 h-5',
-              typeInfo.color === 'info' ? 'text-info-600 dark:text-info-300' :
-              typeInfo.color === 'primary' ? 'text-primary-600 dark:text-primary-200' :
-              typeInfo.color === 'success' ? 'text-success-600 dark:text-success-300' :
-              'text-warning-600 dark:text-warning-300'
-            )} />
-          </div>
+          <StatusIconBadge tone={typeInfo.color as 'info' | 'primary' | 'success' | 'warning'} icon={typeInfo.icon} />
           <div>
             <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{typeInfo.label}</h3>
             <p className="caption">{typeInfo.description}</p>
@@ -1043,7 +1024,6 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
   };
 
   const transferTypeInfo = getTransferTypeInfo();
-  const TypeIcon = transferTypeInfo.icon;
 
   if (!transaction) return null;
 
@@ -1060,19 +1040,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
         <Card className="bg-gradient-to-br from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className={cn(
-                'w-14 h-14 rounded-lg flex items-center justify-center',
-                transferTypeInfo.variant === 'info' ? 'bg-info-100 dark:bg-info-500/20' :
-                transferTypeInfo.variant === 'primary' ? 'bg-primary-100 dark:bg-primary-700' :
-                transferTypeInfo.variant === 'warning' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-neutral-100 dark:bg-primary-800'
-              )}>
-                <TypeIcon className={cn(
-                  'w-7 h-7',
-                  transferTypeInfo.variant === 'info' ? 'text-info-600 dark:text-info-300' :
-                  transferTypeInfo.variant === 'primary' ? 'text-primary-600 dark:text-primary-200' :
-                  transferTypeInfo.variant === 'warning' ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-600 dark:text-neutral-300'
-                )} />
-              </div>
+              <StatusIconBadge tone={transferTypeInfo.variant} icon={transferTypeInfo.icon} size="lg" />
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="code-display">{transaction.referenceNumber}</h3>

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, AlertTriangle, Lock, CheckCircle, ChevronDown, ChevronUp, Loader2, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '../../utils';
 import { Modal } from '../ui/enhanced';
+import { Checkbox } from '../ui';
 
 // ============================================================================
 // TYPES
@@ -433,24 +434,24 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                 {/* Control Settings */}
                 <div className="p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-lg border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 space-y-3">
                   <p className="body-strong font-semibold tracking-tight">Control Settings</p>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={hardLimit}
-                      onChange={(e) => setHardLimit(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded-md border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
-                    />
-                    <Lock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                    <span className="text-body-sm text-primary-900 dark:text-neutral-50 dark:text-neutral-200">Hard Limit - Block transactions when exceeded</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
+                  <Checkbox
+                    size="sm"
+                    checked={hardLimit}
+                    onChange={setHardLimit}
+                    label={
+                      <span className="flex items-center gap-2 font-normal">
+                        <Lock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                        <span className="text-body-sm text-primary-900 dark:text-neutral-50">Hard Limit - Block transactions when exceeded</span>
+                      </span>
+                    }
+                  />
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      size="sm"
                       checked={requiresApproval}
-                      onChange={(e) => setRequiresApproval(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded-md border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
+                      onChange={setRequiresApproval}
+                      label={<span className="text-body-sm font-normal text-primary-900 dark:text-neutral-50">Require Approval</span>}
                     />
-                    <span className="text-body-sm text-primary-900 dark:text-neutral-50 dark:text-neutral-200">Require Approval</span>
                     {requiresApproval && (
                       <div className="flex items-center gap-1 ml-2">
                         <span className="body-sm">when exceeds</span>
@@ -460,12 +461,13 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                           onChange={(e) => setApprovalThreshold(parseInt(e.target.value) || 80)}
                           min={0}
                           max={100}
+                          aria-label="Approval threshold percent"
                           className="w-16 px-2 py-1.5 border border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800/50 dark:text-neutral-50 rounded-lg text-body-sm tabular-nums"
                         />
                         <span className="body-sm">%</span>
                       </div>
                     )}
-                  </label>
+                  </div>
                 </div>
               </div>
 
