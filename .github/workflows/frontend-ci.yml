@@ -87,3 +87,39 @@ jobs:
             echo "type-check or lint failed — see tsc.log / eslint.json artifact"
             exit 1
           fi
+
+  # Storybook is the design-system specimen: every story must build and render, in light and dark.
+  # Render failures fail the job. WCAG contrast findings are reported (report-only) until the
+  # baseline is clean; set STORYBOOK_A11Y_STRICT=1 to make them fail too.
+  storybook:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Build Storybook
+        run: npm run build-storybook -- -o storybook-static
+
+      - name: Install Chromium for the render check
+        run: npx playwright install --with-deps chromium
+
+      - name: Render + contrast check (every story, light and dark)
+        run: npm run storybook:check | tee storybook-check.log
+
+      - name: Upload check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-check-${{ github.event.pull_request.head.sha || github.sha }}
+          path: frontend/storybook-check.log
+          retention-days: 14

@@ -94,7 +94,7 @@ module.exports = {
      * Pages + UI components: enforce the design-system colour vocabulary
      * ----------------------------------------------------------------- */
     {
-      files: ['src/pages/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
+      files: ['src/**/*.{ts,tsx}'],
       excludedFiles: [
         // TaxChargeSetupPage intentionally uses categorical chromatic
         // colours for fee-type and jurisdiction icons. Documented in
@@ -135,14 +135,20 @@ module.exports = {
               "Raw palette Tailwind class in template literal. Semantic statuses or cat-1…cat-8 categorical tokens instead — see file header.",
           },
           {
-            // 0b. Off-scale radius / shadow tokens (removed from tailwind.config.js; would silently render nothing).
-            selector:
-              "JSXAttribute[name.name='className'] > Literal[value=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13)(?![\\w-])/]",
-            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). See src/design-system/Shapes.stories.tsx.",
+            // 0c. Native checkbox/radio inputs: use the shared Checkbox / Toggle / Radio / RadioGroup
+            // (components/ui). The three primitives themselves opt out with a file-level eslint-disable.
+            selector: "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value=/^(checkbox|radio)$/]",
+            message: "Native checkbox/radio input. Use <Checkbox>, <Toggle>, <Radio> or <RadioGroup> from components/ui (see Components/Checkbox in Storybook).",
           },
           {
-            selector: "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13)(?![\\w-])/]",
-            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). See src/design-system/Shapes.stories.tsx.",
+            // 0b. Off-scale radius / shadow / border-width tokens (removed from tailwind.config.js; would silently render nothing).
+            selector:
+              "JSXAttribute[name.name='className'] > Literal[value=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13|border-[lrtb]-4)(?![\\w-])/]",
+            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). Borders: 1px, 2px only (no border-*-4). See src/design-system/Shapes.stories.tsx.",
+          },
+          {
+            selector: "JSXExpressionContainer > TemplateLiteral > TemplateElement[value.raw=/\\b(?:rounded(?:-(?:t|b|l|r|tl|tr|bl|br))?(?:-(?:xl|2xl|3xl))?|shadow-(?:soft|medium|strong|dropdown|popover)|h-13|border-[lrtb]-4)(?![\\w-])/]",
+            message: "Off-scale shape token. Radii: rounded-sm|md|lg|full only (rounded-xl/2xl/3xl and bare `rounded` are gone: use -lg / -md). Shadows: shadow-sm|md|lg|xl (soft/medium/strong/dropdown/popover are gone). Borders: 1px, 2px only (no border-*-4). See src/design-system/Shapes.stories.tsx.",
           },
           {
             // 0. Raw font sizes — removed from tailwind.config.js `fontSize`; would silently render nothing.
