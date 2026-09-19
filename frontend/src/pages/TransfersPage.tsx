@@ -491,7 +491,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 </div>
               </div>
             ) : (
-              <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">Select payer...</p>
+              <p className="text-body-sm text-neutral-400 italic dark:text-neutral-400">Select payer...</p>
             )
           ) : sourceAccount ? (
             <div className="flex items-center gap-3">
@@ -505,7 +505,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
               </div>
             </div>
           ) : (
-            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">Select source account...</p>
+            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-400">Select source account...</p>
           )}
         </div>
 
@@ -516,9 +516,9 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             hasSource && hasDestination ? 'bg-success-100 dark:bg-success-500/20' : 'bg-neutral-100 dark:bg-primary-800'
           )}>
             {transferType === 'inward' ? (
-              <ArrowDownLeft className={cn('w-4 h-4', hasSource && hasDestination ? 'text-success-600 dark:text-success-300' : 'text-neutral-400 dark:text-neutral-500')} />
+              <ArrowDownLeft className={cn('w-4 h-4', hasSource && hasDestination ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />
             ) : (
-              <ArrowRight className={cn('w-4 h-4', hasSource && hasDestination ? 'text-success-600 dark:text-success-300' : 'text-neutral-400 dark:text-neutral-500')} />
+              <ArrowRight className={cn('w-4 h-4', hasSource && hasDestination ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />
             )}
           </div>
         </div>
@@ -546,7 +546,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 </div>
               </div>
               {/* Enhanced beneficiary details */}
-              <div className="bg-primary-50/50 rounded-lg p-2 space-y-1 text-caption">
+              <div className="bg-primary-50/50 dark:bg-primary-800/40 rounded-lg p-2 space-y-1 text-caption">
                 {formData.creditorBankName && (
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">Bank</span>
@@ -604,7 +604,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
               )}
             </div>
           ) : (
-            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">
+            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-400">
               {transferType === 'inward' ? 'Enter VIBAN or select VA...' : 'Select destination...'}
             </p>
           )}
@@ -619,7 +619,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 empty-state grey overrides its default ink. */}
             <span className={cn(
               'stat-value-xs',
-              !hasAmount && 'text-neutral-300 dark:text-neutral-600'
+              !hasAmount && 'text-neutral-300 dark:text-neutral-400'
             )}>
               {hasAmount ? formatCurrency(amount, formData.currency) : '---'}
             </span>
@@ -647,7 +647,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 space-y-2 dark:bg-primary-950 dark:border-primary-800">
             <div className="flex items-center justify-between text-body-sm">
               <span className="text-neutral-600 font-medium dark:text-neutral-300">Fees & Total</span>
-              {loadingFees && <Loader2 className="w-3 h-3 animate-spin text-neutral-400 dark:text-neutral-500" />}
+              {loadingFees && <Loader2 className="w-3 h-3 animate-spin text-neutral-400" />}
             </div>
 
             {feePreview ? (
@@ -1148,7 +1148,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                 activeTab === tab.id
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
                   : tab.disabled
-                    ? 'border-transparent text-neutral-300 cursor-not-allowed dark:text-neutral-600'
+                    ? 'border-transparent text-neutral-300 cursor-not-allowed dark:text-neutral-400'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:border-primary-700'
               )}
             >
@@ -1169,7 +1169,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
               <div className="space-y-4 animate-fade-in">
                 {/* Transfer Flow */}
                 <div className="grid grid-cols-2 gap-4">
-                  <Card padding="sm" className="bg-primary-50/50 border-primary-200 dark:border-primary-700">
+                  <Card padding="sm" className="bg-primary-50/50 dark:bg-primary-800/40 border-primary-200 dark:border-primary-700">
                     <div className="flex items-center gap-3">
                       <StatusIconBadge tone="primary" icon={ArrowUpRight} className="dark:bg-primary-700" />
                       <div className="flex-1 min-w-0">
@@ -1200,14 +1200,14 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <Hash className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                      <Hash className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Reference Number</p>
                         <p className="body-strong">{transaction.referenceNumber}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                      <Calendar className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Transaction Date</p>
                         <p className="body-strong">
@@ -1222,7 +1222,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <DollarSign className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                      <DollarSign className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Amount</p>
                         <p className="body-strong">
@@ -1231,7 +1231,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <ArrowRightLeft className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                      <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Movement Type</p>
                         <p className="body-strong">{transaction.movementType}</p>
@@ -1239,7 +1239,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     </div>
                     {transaction.valueDate && (
                       <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                        <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                        <Calendar className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">Value Date</p>
                           <p className="body-strong">{transaction.valueDate}</p>
@@ -1248,7 +1248,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     )}
                     {transaction.externalReference && (
                       <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                        <FileText className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                        <FileText className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">External Reference</p>
                           <p className="body-strong">{transaction.externalReference}</p>
@@ -1341,10 +1341,10 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                 ) : (
                   <div className="text-center py-12">
                     <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                      <FileCode className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
+                      <FileCode className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No ISO 20022 message available</p>
-                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">
+                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">
                       ISO messages are generated for outward and POBO payments
                     </p>
                   </div>
@@ -1436,7 +1436,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         </div>
 
                         {/* External Transaction Explanation */}
-                        <Card className="mt-4 bg-primary-50/50 border-primary-200 dark:border-primary-700">
+                        <Card className="mt-4 bg-primary-50/50 dark:bg-primary-800/40 border-primary-200 dark:border-primary-700">
                           <div className="flex items-start gap-3">
                             <StatusIconBadge tone="primary" icon={Building2} className="flex-shrink-0 dark:bg-primary-700" />
                             <div>
@@ -1665,10 +1665,10 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   ) : (
                     <div className="text-center py-12">
                       <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                        <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
+                        <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                       </div>
                       <p className="text-neutral-500 dark:text-neutral-400">No accounting entries found</p>
-                      <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">
+                      <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">
                         Transaction entries will appear after processing
                       </p>
                     </div>
@@ -2687,7 +2687,7 @@ export default function TransfersPage() {
                     {/* Payer Dropdown Selector */}
                     <div className="space-y-3">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 dark:text-neutral-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 dark:text-neutral-400" />
                         <select
                           value={formData.selectedPayerId}
                           onChange={(e) => {
@@ -2714,7 +2714,7 @@ export default function TransfersPage() {
                             </option>
                           ))}
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 dark:text-neutral-500" />
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 dark:text-neutral-400" />
                       </div>
 
                       {/* Selected Payer Display */}
@@ -2873,7 +2873,7 @@ export default function TransfersPage() {
                     {/* Beneficiary Dropdown Selector */}
                     <div className="space-y-3">
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 dark:text-neutral-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 z-10 dark:text-neutral-400" />
                         <select
                           value={formData.selectedBeneficiaryId}
                           onChange={(e) => {
@@ -2900,7 +2900,7 @@ export default function TransfersPage() {
                             </option>
                           ))}
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 dark:text-neutral-500" />
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 rotate-90 dark:text-neutral-400" />
                       </div>
 
                       {/* Search filter for long lists */}
@@ -3006,7 +3006,7 @@ export default function TransfersPage() {
                           {formData.selectedBeneficiaryId ? 'Override with manual entry' : 'Or enter details manually'}
                         </span>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-neutral-400 transition-transform group-open:rotate-90 dark:text-neutral-500" />
+                      <ChevronRight className="w-4 h-4 text-neutral-400 transition-transform group-open:rotate-90 dark:text-neutral-400" />
                     </summary>
                     <div className="px-4 pb-4 space-y-4">
                       <Input
@@ -3102,10 +3102,10 @@ export default function TransfersPage() {
                 {bulkItems.length === 0 ? (
                   <div className="text-center py-12 bg-neutral-50 rounded-xl dark:bg-primary-950">
                     <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                      <Users className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
+                      <Users className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No recipients added yet</p>
-                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Click "Add Recipient" to start</p>
+                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Click "Add Recipient" to start</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -3118,7 +3118,7 @@ export default function TransfersPage() {
                             size="sm"
                             onClick={() => removeBulkItem(item.id)}
                           >
-                            <Trash2 className="w-4 h-4 text-error-500" />
+                            <Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" />
                           </Button>
                         </div>
                         <div className="grid grid-cols-4 gap-3">
@@ -3233,7 +3233,7 @@ export default function TransfersPage() {
               )}
               {step === maxSteps && (
                 <p className="body-sm flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-success-500" />
+                  <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" />
                   Review details in the sidebar and click Submit
                 </p>
               )}
@@ -3278,10 +3278,10 @@ export default function TransfersPage() {
           {recentTransfers.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
+                <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No transfer history found</p>
-              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Your transfers will appear here</p>
+              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Your transfers will appear here</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

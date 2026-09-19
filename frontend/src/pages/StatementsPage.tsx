@@ -258,7 +258,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, className }) => {
     >
       <span className="truncate max-w-[120px]">{value}</span>
       {copied ? (
-        <CheckCircle className="w-3 h-3 text-success-500 shrink-0" />
+        <CheckCircle className="w-3 h-3 text-success-500 dark:text-success-300 shrink-0" />
       ) : (
         <Copy className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       )}
@@ -479,7 +479,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                 <ArrowDownLeft className="w-4 h-4 text-success-600 dark:text-success-300" />
               )}
               {entry.reversalIndicator && (
-                <RotateCcw className="w-3 h-3 text-warning-500 absolute -bottom-1 -right-1" />
+                <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
               )}
             </div>
             <div>
@@ -533,7 +533,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               -{formatCurrency(entry.amount, currencyCode)}
             </span>
           ) : (
-            <span className="body-sm text-neutral-400 dark:text-neutral-500">-</span>
+            <span className="body-sm text-neutral-400">-</span>
           )}
         </td>
 
@@ -544,7 +544,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               +{formatCurrency(entry.amount, currencyCode)}
             </span>
           ) : (
-            <span className="body-sm text-neutral-400 dark:text-neutral-500">-</span>
+            <span className="body-sm text-neutral-400">-</span>
           )}
         </td>
 
@@ -555,7 +555,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               {formatCurrency(entry.balanceAfter, currencyCode)}
             </span>
           ) : (
-            <span className="body-sm text-neutral-400 dark:text-neutral-500">-</span>
+            <span className="body-sm text-neutral-400">-</span>
           )}
         </td>
       </tr>
@@ -790,7 +790,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction: tx, curren
             -{formatCurrency(tx.amount, currencyCode)}
           </span>
         ) : (
-          <span className="body-sm text-neutral-400 dark:text-neutral-500">-</span>
+          <span className="body-sm text-neutral-400">-</span>
         )}
       </td>
       <td className="data-table-cell text-right">
@@ -799,7 +799,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction: tx, curren
             +{formatCurrency(tx.amount, currencyCode)}
           </span>
         ) : (
-          <span className="body-sm text-neutral-400 dark:text-neutral-500">-</span>
+          <span className="body-sm text-neutral-400">-</span>
         )}
       </td>
       <td className="data-table-cell text-right">
@@ -860,7 +860,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
             <ArrowDownLeft className="w-5 h-5 text-success-600 dark:text-success-300" />
           )}
           {isISO20022 && tx.reversalIndicator && (
-            <RotateCcw className="w-3 h-3 text-warning-500 absolute -bottom-0.5 -right-0.5" />
+            <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
           )}
         </div>
 
@@ -897,11 +897,11 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
             {isISO20022 && tx.reversalIndicator && (
               <Badge variant="warning" size="xs">REV</Badge>
             )}
-            <span className="text-caption text-neutral-400 font-mono truncate dark:text-neutral-500">
+            <span className="text-caption text-neutral-400 font-mono truncate dark:text-neutral-400">
               {tx.entryReference || tx.referenceNumber}
             </span>
             <ChevronDown className={cn(
-              'w-4 h-4 text-neutral-400 ml-auto transition-transform dark:text-neutral-500',
+              'w-4 h-4 text-neutral-400 ml-auto transition-transform dark:text-neutral-400',
               expanded && 'rotate-180'
             )} />
           </div>

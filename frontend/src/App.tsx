@@ -261,7 +261,7 @@ const BaaSDashboardPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-body-lg font-semibold text-primary-900">Partner Performance</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Performance</h2>
       </div>
       <div className="divide-y divide-neutral-100">
         {[
@@ -271,18 +271,18 @@ const BaaSDashboardPage: React.FC = () => (
         ].map((partner, i) => (
           <div key={i} className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors group">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-                <span className="text-primary-700 font-semibold">{partner.name.charAt(0)}</span>
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-700 rounded-xl flex items-center justify-center">
+                <span className="text-primary-700 dark:text-neutral-200 font-semibold">{partner.name.charAt(0)}</span>
               </div>
               <div>
-                <p className="font-medium text-primary-900">{partner.name}</p>
+                <p className="font-medium text-primary-900 dark:text-neutral-50">{partner.name}</p>
                 <p className="body-sm">{partner.wallets.toLocaleString()} wallets</p>
               </div>
             </div>
             <div className="text-right flex items-center gap-4">
               <div>
-                <p className="font-semibold text-primary-900">{partner.volume}</p>
-                <span className="text-caption px-2 py-0.5 bg-success-100 text-success-700 rounded-full">{partner.status}</span>
+                <p className="font-semibold text-primary-900 dark:text-neutral-50">{partner.volume}</p>
+                <span className="text-caption px-2 py-0.5 bg-success-100 dark:bg-success-500/15 text-success-700 dark:text-success-300 rounded-full">{partner.status}</span>
               </div>
               <button className="text-primary-600 text-body-sm opacity-0 group-hover:opacity-100 transition-opacity">View</button>
             </div>
@@ -324,13 +324,13 @@ const BaaSPartnersPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-body-lg font-semibold text-primary-900">Partner Directory</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Directory</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <Building2 className="w-8 h-8 text-neutral-400" />
         </div>
-        <p className="text-neutral-500">Partner management interface coming soon...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Partner management interface coming soon...</p>
       </div>
     </div>
   </div>
@@ -367,13 +367,13 @@ const BaaSCardsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-body-lg font-semibold text-primary-900">Virtual Card Programs</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Virtual Card Programs</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-neutral-400" />
         </div>
-        <p className="text-neutral-500">Virtual cards interface coming soon...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Virtual cards interface coming soon...</p>
       </div>
     </div>
   </div>
@@ -406,13 +406,13 @@ const BaaSSettlementsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
           <Wallet className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-body-lg font-semibold text-primary-900">Settlement Cycles</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Settlement Cycles</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <Wallet className="w-8 h-8 text-neutral-400" />
         </div>
-        <p className="text-neutral-500">Settlements interface coming soon...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">Settlements interface coming soon...</p>
       </div>
     </div>
   </div>
@@ -445,13 +445,13 @@ const BaaSTransactionsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <TrendingUp className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-body-lg font-semibold text-primary-900">Transaction History</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Transaction History</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <TrendingUp className="w-8 h-8 text-neutral-400" />
         </div>
-        <p className="text-neutral-500">BaaS transactions interface coming soon...</p>
+        <p className="text-neutral-500 dark:text-neutral-400">BaaS transactions interface coming soon...</p>
       </div>
     </div>
   </div>
@@ -664,7 +664,7 @@ const App: React.FC = () => {
       case 'sync-admin': return <SyncAdminPage />;
       case 'integrations': return <IntegrationsPage />;
       case 'tax-charges': return <TaxChargesSetupPage />;
-      case 'settings': return <div className="p-8 text-center text-neutral-500">Settings page coming soon...</div>;
+      case 'settings': return <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">Settings page coming soon...</div>;
 
       // Fund Transfers
       case 'transfers': return <TransfersPage />;
@@ -706,7 +706,7 @@ const App: React.FC = () => {
           }}
         />
         {isFullScreenPage ? (
-          <div className="min-h-screen bg-neutral-50">{renderPage()}</div>
+          <div className="min-h-screen bg-neutral-50 dark:bg-primary-950/50">{renderPage()}</div>
         ) : (
           <Layout currentPage={currentPage} onNavigate={handleNavigate}>{renderPage()}</Layout>
         )}

@@ -184,7 +184,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
       </div>
 
       <div className="mt-3 flex items-center justify-between text-caption">
-        <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">7 levels • 543 nodes</span>
+        <span className="text-neutral-500 dark:text-neutral-400">7 levels • 543 nodes</span>
         <span className="text-primary-600 dark:text-primary-200 font-medium">
           {formatCompactCurrency(125000000, 'AED')}
         </span>
@@ -265,13 +265,13 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
               index === 0 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
               index === 1 ? 'bg-neutral-200 text-neutral-600 dark:text-neutral-300 dark:bg-primary-800' :
               index === 2 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
-              'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500'
+              'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
             )}>
               {index + 1}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-caption font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.name}</p>
-              <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{entity.path}</p>
+              <p className="text-caption text-neutral-400 truncate">{entity.path}</p>
             </div>
             <div className="text-right">
               <p className="text-caption font-semibold text-primary-900 dark:text-neutral-50">
@@ -279,9 +279,9 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
               </p>
               <div className="flex items-center justify-end">
                 {entity.change >= 0 ? (
-                  <ArrowUpRight className="w-3 h-3 text-success-500" />
+                  <ArrowUpRight className="w-3 h-3 text-success-500 dark:text-success-300" />
                 ) : (
-                  <ArrowDownRight className="w-3 h-3 text-error-500" />
+                  <ArrowDownRight className="w-3 h-3 text-error-500 dark:text-error-300" />
                 )}
                 <span className={cn(
                   'text-caption',

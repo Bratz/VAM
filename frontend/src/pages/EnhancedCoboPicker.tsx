@@ -173,11 +173,11 @@ const VibanDisplay: React.FC<{
             <div className="w-48 h-48 mx-auto bg-white p-4 rounded-lg border dark:bg-primary-900">
               {/* QR Code would be rendered here - using placeholder */}
               <div className="w-full h-full bg-neutral-100 dark:bg-primary-800 flex items-center justify-center rounded">
-                <QrCode className="w-24 h-24 text-neutral-400 dark:text-neutral-500" />
+                <QrCode className="w-24 h-24 text-neutral-400" />
               </div>
             </div>
             <p className="body-sm mt-4">Scan to pay {formatCurrency(amount, currencyCode)}</p>
-            <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-1 font-mono">{viban}</p>
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-1 font-mono">{viban}</p>
           </div>
         </Modal>
       )}
@@ -238,15 +238,15 @@ const IhbDepositPreview: React.FC<{
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Amount</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Amount</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Daily Interest</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Est. Monthly</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
@@ -286,13 +286,13 @@ const EntityCard: React.FC<{
 
       <div className="grid grid-cols-2 gap-2 text-caption">
         <div>
-          <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Current Balance</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Current Balance</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">
             {formatCurrency(entity.currentBalance || 0, entity.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Pending COBO</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Pending COBO</p>
           <p className="font-medium text-info-600 dark:text-info-300">
             {formatCurrency(entity.pendingCobo || 0, entity.currencyCode)}
           </p>
@@ -395,7 +395,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', enabled ? 'bg-info-100 dark:bg-info-500/20' : 'bg-neutral-200 dark:bg-primary-800')}>
-            <ArrowDownLeft className={cn('w-5 h-5', enabled ? 'text-info-600 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400 dark:text-neutral-500')} />
+            <ArrowDownLeft className={cn('w-5 h-5', enabled ? 'text-info-600 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')} />
           </div>
           <div>
             <h4 className="body-strong font-semibold">Collect On Behalf Of (COBO)</h4>
@@ -437,9 +437,9 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select collecting entity...</span>
+                    <span className="text-body-sm text-neutral-400">Select collecting entity...</span>
                   )}
-                  <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <ChevronDown className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 {showCollectorPicker && (
@@ -495,9 +495,9 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select subsidiary...</span>
+                    <span className="text-body-sm text-neutral-400">Select subsidiary...</span>
                   )}
-                  <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <ChevronDown className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 {showBehalfPicker && (

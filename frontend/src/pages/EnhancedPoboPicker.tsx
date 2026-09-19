@@ -82,19 +82,19 @@ const EntityPositionCard: React.FC<{
 
       <div className="grid grid-cols-3 gap-2 text-caption">
         <div>
-          <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Balance</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Balance</p>
           <p className={cn('font-medium', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
             {formatCurrency(entity.currentBalance || 0, entity.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Net Position</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Net Position</p>
           <p className={cn('font-medium', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
             {formatCurrency(entity.netPosition || 0, entity.currencyCode)}
           </p>
         </div>
         <div>
-          <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Credit Available</p>
+          <p className="text-neutral-500 dark:text-neutral-400">Credit Available</p>
           <p className={cn('font-medium', hasCapacity ? 'text-info-600 dark:text-info-300' : 'text-warning-600 dark:text-warning-300')}>
             {formatCurrency(entity.creditAvailable || entity.creditLimit || 0, entity.currencyCode)}
           </p>
@@ -171,15 +171,15 @@ const IhbLoanPreview: React.FC<{
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Principal</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Principal</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Daily Interest</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
           <div className="bg-white dark:bg-primary-900 rounded p-2">
-            <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Est. Monthly</p>
+            <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
@@ -328,7 +328,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', enabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-neutral-200 dark:bg-primary-800')}>
-            <ArrowLeftRight className={cn('w-5 h-5', enabled ? 'text-accent-600 dark:text-accent-300' : 'text-neutral-500 dark:text-neutral-400 dark:text-neutral-500')} />
+            <ArrowLeftRight className={cn('w-5 h-5', enabled ? 'text-accent-600 dark:text-accent-300' : 'text-neutral-500 dark:text-neutral-400')} />
           </div>
           <div>
             <h4 className="body-strong font-semibold">Pay On Behalf Of (POBO)</h4>
@@ -347,7 +347,7 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-accent-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-accent-500 dark:text-accent-300" />
               <span className="ml-2 body-sm">Loading entities...</span>
             </div>
           ) : (
@@ -370,9 +370,9 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select paying entity...</span>
+                    <span className="text-body-sm text-neutral-400">Select paying entity...</span>
                   )}
-                  <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <ChevronDown className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 {showPayingPicker && (
@@ -434,9 +434,9 @@ export const EnhancedPoboPicker: React.FC<PoboComponentProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select subsidiary...</span>
+                    <span className="text-body-sm text-neutral-400">Select subsidiary...</span>
                   )}
-                  <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <ChevronDown className="w-4 h-4 text-neutral-400" />
                 </button>
 
                 {showBehalfPicker && (

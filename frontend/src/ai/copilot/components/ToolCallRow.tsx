@@ -32,13 +32,13 @@ export const ToolCallRow: React.FC<ToolCallRowProps> = ({ call }) => {
         <ChevronRight
           className={[
             'w-3 h-3 transition-transform shrink-0',
-            'text-neutral-400 dark:text-neutral-500',
+            'text-neutral-400',
             expanded && 'rotate-90',
           ].filter(Boolean).join(' ')}
         />
         {ok
           ? <Database className="w-3.5 h-3.5 text-primary-500 dark:text-primary-300 shrink-0" />
-          : <AlertCircle className="w-3.5 h-3.5 text-error-500 shrink-0" />}
+          : <AlertCircle className="w-3.5 h-3.5 text-error-500 dark:text-error-300 shrink-0" />}
         <span className="font-mono text-primary-700 dark:text-primary-200 shrink-0">
           {call.toolName}
         </span>

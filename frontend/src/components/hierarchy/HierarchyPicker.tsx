@@ -362,7 +362,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
       {label && (
         <label className="block body-strong mb-1">
           {label}
-          {required && <span className="text-error-500 ml-1">*</span>}
+          {required && <span className="text-error-500 dark:text-error-300 ml-1">*</span>}
         </label>
       )}
       
@@ -388,7 +388,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
             </div>
           </div>
         ) : (
-          <span className="text-neutral-400 text-body-sm dark:text-neutral-500">{placeholder}</span>
+          <span className="text-neutral-400 text-body-sm dark:text-neutral-400">{placeholder}</span>
         )}
         
         <div className="flex items-center gap-1">
@@ -397,11 +397,11 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
               onClick={handleClear}
               className="p-1 hover:bg-neutral-200 rounded"
             >
-              <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <X className="w-4 h-4 text-neutral-400" />
             </button>
           )}
           <ChevronDown className={cn(
-            'w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-500',
+            'w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400',
             isOpen && 'transform rotate-180'
           )} />
         </div>
@@ -417,7 +417,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
           {/* Search */}
           <div className="p-2 border-b border-neutral-200 dark:border-primary-800">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search hierarchy..."

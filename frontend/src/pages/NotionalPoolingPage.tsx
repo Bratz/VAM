@@ -89,7 +89,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
 // ============================================================================
 const EmptyState: React.FC<{ onCreatePool: () => void }> = ({ onCreatePool }) => (
   <Card className="text-center py-12">
-    <Layers className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+    <Layers className="w-12 h-12 text-neutral-300 dark:text-neutral-400 mx-auto mb-4" />
     <h3 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50 mb-2">No Notional Pools</h3>
     <p className="text-neutral-500 dark:text-neutral-400 mb-6 max-w-md mx-auto">
       Create your first notional pool to virtually combine account balances and optimize interest earnings.

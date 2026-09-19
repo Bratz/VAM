@@ -277,7 +277,7 @@ const Input: React.FC<{
   
   return (
     <div className={className}>
-      {label && <label className="field-label block mb-1.5">{label} {required && <span className="text-error-500">*</span>}</label>}
+      {label && <label className="field-label block mb-1.5">{label} {required && <span className="text-error-500 dark:text-error-300">*</span>}</label>}
       <div className="relative">
         {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">{prefix}</span>}
         <input
@@ -290,7 +290,7 @@ const Input: React.FC<{
         />
         {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">{suffix}</span>}
       </div>
-      {error && <p className="mt-1 text-caption text-error-500">{error}</p>}
+      {error && <p className="mt-1 text-caption text-error-500 dark:text-error-300">{error}</p>}
       {helpText && !error && <p className="mt-1 caption">{helpText}</p>}
     </div>
   );
@@ -307,7 +307,7 @@ const Select: React.FC<{
   className?: string;
 }> = ({ label, value, onChange, options, required, disabled, placeholder, className = '' }) => (
   <div className={className}>
-    {label && <label className="field-label block mb-1.5">{label} {required && <span className="text-error-500">*</span>}</label>}
+    {label && <label className="field-label block mb-1.5">{label} {required && <span className="text-error-500 dark:text-error-300">*</span>}</label>}
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -452,23 +452,23 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
         <input
           type="text"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
           placeholder="Search vendors by name or code..."
-          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-xl text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-500 transition-all"
+          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-xl text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-400 transition-all"
         />
-        {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-neutral-400 dark:text-neutral-500" />}
+        {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-neutral-400" />}
       </div>
       {showDropdown && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
           <div className="absolute z-20 mt-2 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl shadow-xl max-h-80 overflow-y-auto">
             {results.length === 0 ? (
-              <div className="p-4 text-center text-neutral-500 dark:text-neutral-400"><Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" /><p>No vendors found</p></div>
+              <div className="p-4 text-center text-neutral-500 dark:text-neutral-400"><Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" /><p>No vendors found</p></div>
             ) : results.map((vendor) => (
               <button
                 key={vendor.id}
@@ -524,7 +524,7 @@ const BankAccountSelector: React.FC<{
                 disabled={!isAvailable}
                 className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left ${isSelected ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : isAvailable ? 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 bg-white dark:bg-primary-900' : 'border-neutral-100 bg-neutral-50 dark:bg-primary-950 opacity-50 cursor-not-allowed'}`}
               >
-                <Icon className={`w-5 h-5 ${isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500'}`} />
+                <Icon className={`w-5 h-5 ${isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400'}`} />
                 <div>
                   <p className={`font-medium text-body-sm ${isSelected ? 'text-primary-700 dark:text-neutral-200' : 'text-neutral-700 dark:text-neutral-200'}`}>{channel.label}</p>
                   <p className="caption">{channel.description}</p>
@@ -624,9 +624,9 @@ const InvoiceLookup: React.FC<{
   
   return (
     <div className="relative">
-      <label className="field-label block mb-1.5">Invoice / Bill Number <span className="text-error-500">*</span></label>
+      <label className="field-label block mb-1.5">Invoice / Bill Number <span className="text-error-500 dark:text-error-300">*</span></label>
       <div className="relative">
-        <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+        <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
         <input
           type="text"
           value={invoiceNumber}
@@ -635,7 +635,7 @@ const InvoiceLookup: React.FC<{
           placeholder="Enter or select invoice number..."
           className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none"
         />
-        {matchedInvoice && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success-500" />}
+        {matchedInvoice && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-success-500 dark:text-success-300" />}
       </div>
       
       {showSuggestions && filteredInvoices.length > 0 && !matchedInvoice && (
@@ -712,7 +712,7 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
           <div key={charge.id} className="flex items-center gap-3 mb-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
             <span className="flex-1 text-body-sm font-medium">{charge.description}</span>
             <span className="font-semibold">{formatCurrency(charge.amount, formData.currencyCode)}</span>
-            <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded text-error-500 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
+            <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded text-error-500 dark:text-error-300 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
           </div>
         ))}
         <div className="flex flex-wrap gap-2">
@@ -746,11 +746,11 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
         <div className="border-2 border-neutral-200 dark:border-primary-800 rounded-xl p-5 bg-neutral-50 dark:bg-primary-950">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-neutral-100 dark:bg-primary-800">
-              <ArrowLeftRight className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+              <ArrowLeftRight className="w-6 h-6 text-neutral-400" />
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-neutral-500 dark:text-neutral-400">Payment On Behalf Of (POBO)</h4>
-              <p className="text-body-sm text-neutral-400 dark:text-neutral-500">Not available for this payment</p>
+              <p className="text-body-sm text-neutral-400">Not available for this payment</p>
             </div>
             <div className="p-2 bg-warning-100 rounded-lg dark:bg-warning-500/20">
               <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />
@@ -796,7 +796,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
             )}
           </div>
           <button onClick={() => updateField('poboEnabled', !formData.poboEnabled)} className="transition-transform hover:scale-105">
-            {formData.poboEnabled ? <ToggleRight className="w-12 h-12 text-accent-600 dark:text-accent-300" /> : <ToggleLeft className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+            {formData.poboEnabled ? <ToggleRight className="w-12 h-12 text-accent-600 dark:text-accent-300" /> : <ToggleLeft className="w-12 h-12 text-neutral-400" />}
           </button>
         </div>
       </div>
@@ -843,7 +843,7 @@ const HierarchyTab: React.FC<{ formData: PayableFormData; updateField: (field: k
           <button key={node.id} onClick={() => { updateField('hierarchyNodeId', node.id); updateField('hierarchyNodeName', node.name); updateField('hierarchyPath', `MEA > UAE > ${node.name}`); }}
             className={`w-full flex items-center gap-2 p-3 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0 transition-colors ${formData.hierarchyNodeId === node.id ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'}`}
             style={{ paddingLeft: `${node.level * 16 + 12}px` }}>
-            <GitBranch className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <GitBranch className="w-4 h-4 text-neutral-400" />
             <span className="caption w-12">{node.code}</span>
             <span className="text-body-sm text-neutral-900 dark:text-neutral-50 flex-1">{node.name}</span>
             <Badge variant="neutral" size="sm">{node.type}</Badge>
@@ -860,9 +860,9 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
     <div>
       <label className="field-label block mb-2">Attachments</label>
       <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-xl p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
-        <Upload className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
+        <Upload className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
         <p className="text-neutral-600 dark:text-neutral-300 font-medium">Drop files here or click to upload</p>
-        <p className="text-body-sm text-neutral-400 dark:text-neutral-500 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
+        <p className="text-body-sm text-neutral-400 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
       </div>
     </div>
     <div>
@@ -964,7 +964,7 @@ const SummarySidebar: React.FC<{
           </div>
         )}
         <div className="flex items-center gap-2 py-2"><div className="w-2 h-2 rounded-full bg-warning-400" /><span className="body-sm">Draft</span></div>
-        {!canSubmit && <p className="text-caption text-error-500 text-center">Select vendor, enter invoice number, choose source account, and select vendor bank account</p>}
+        {!canSubmit && <p className="text-caption text-error-500 dark:text-error-300 text-center">Select vendor, enter invoice number, choose source account, and select vendor bank account</p>}
       </div>
     </div>
   );
@@ -1423,7 +1423,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
               </div>
               {selectedLegalEntity && (
                 <>
-                  <div className="hidden sm:block w-px h-10 bg-primary-200" />
+                  <div className="hidden sm:block w-px h-10 bg-primary-200 dark:bg-primary-700" />
                   <div>
                     <p className="text-caption font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Legal Entity</p>
                     <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedLegalEntity.entityCode} - {selectedLegalEntity.entityName}</p>
@@ -1482,7 +1482,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 {/* Source Account Selection */}
                 <div className="mb-6">
                   <label className="field-label block mb-2">
-                    Source Account (Pay From) <span className="text-error-500">*</span>
+                    Source Account (Pay From) <span className="text-error-500 dark:text-error-300">*</span>
                   </label>
                   {virtualAccounts.length === 0 ? (
                     <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 flex items-center gap-3 dark:bg-warning-500/10 dark:border-warning-500/30">
@@ -1552,7 +1552,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   <div className="flex items-center gap-2 mb-4">
                     <Settings2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                     <h2 className="font-semibold text-neutral-900 dark:text-neutral-50">Optional Configuration</h2>
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500 ml-2">Click to expand</span>
+                    <span className="text-body-sm text-neutral-400 ml-2">Click to expand</span>
                   </div>
                   <div className="flex gap-1 -mb-px overflow-x-auto">
                     {TAB_CONFIG.map((tab) => {

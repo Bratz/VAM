@@ -1030,7 +1030,7 @@ const SimulatorPage: React.FC = () => {
       ) : !currentScenario || !workingScenario ? (
         <Card padding="lg">
           <div className="flex flex-col items-center text-center gap-3">
-            <FlaskConical className="w-8 h-8 text-warning-500" />
+            <FlaskConical className="w-8 h-8 text-warning-500 dark:text-warning-300" />
             <div>
               <p className="section-title">No scenario selected</p>
               <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-1">
@@ -1073,7 +1073,7 @@ const SimulatorPage: React.FC = () => {
               {issues.length > 0 && (
                 <Card padding="sm">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-warning-500 shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-warning-500 dark:text-warning-300 shrink-0" />
                     <span className="label">
                       {issues.filter((i) => i.level === 'error').length} error
                       {issues.filter((i) => i.level === 'error').length === 1

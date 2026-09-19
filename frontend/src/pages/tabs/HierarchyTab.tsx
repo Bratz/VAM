@@ -104,9 +104,9 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
 
   // Node type icons and colors
   const nodeTypeConfig = {
-    MASTER: { icon: Building2, color: 'text-primary-600', bg: 'bg-primary-100' },
-    CONSOLIDATION: { icon: Layers, color: 'text-cat-2', bg: 'bg-cat-2/10' },
-    VIRTUAL_ACCOUNT: { icon: GitBranch, color: 'text-success-600', bg: 'bg-success-100' },
+    MASTER: { icon: Building2, color: 'text-primary-600', bg: 'bg-primary-100 dark:bg-primary-700' },
+    CONSOLIDATION: { icon: Layers, color: 'text-cat-2 dark:text-cat-2-fg', bg: 'bg-cat-2/10' },
+    VIRTUAL_ACCOUNT: { icon: GitBranch, color: 'text-success-600 dark:text-success-300', bg: 'bg-success-100 dark:bg-success-500/15' },
   };
 
   const typeConfig = nodeTypeConfig[node.nodeType] || nodeTypeConfig.CONSOLIDATION;
@@ -118,7 +118,7 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
         className={cn(
           'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all',
           isSelected 
-            ? 'bg-primary-100 border-2 border-primary-400' 
+            ? 'bg-primary-100 dark:bg-primary-700 border-2 border-primary-400' 
             : 'hover:bg-neutral-50 border-2 border-transparent',
           matchesSearch && searchQuery && 'ring-2 ring-warning-200'
         )}
@@ -337,8 +337,8 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-sm transition-all',
                 formData.collectionChannel === channel.value
-                  ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-neutral-200 hover:border-primary-300 text-neutral-600'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 text-primary-700 dark:text-neutral-200'
+                  : 'border-neutral-200 hover:border-primary-300 text-neutral-600 dark:text-neutral-300'
               )}
             >
               <channel.icon className="w-4 h-4" /> {channel.label}
@@ -391,11 +391,11 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
 
         {/* Selected Node Display */}
         {selectedNode && (
-          <div className="mb-4 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+          <div className="mb-4 p-3 bg-primary-50 dark:bg-primary-800/40 border border-primary-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-primary-900">{selectedNode.nodeName}</div>
-                <div className="text-body-sm text-primary-700">
+                <div className="font-medium text-primary-900 dark:text-neutral-50">{selectedNode.nodeName}</div>
+                <div className="text-body-sm text-primary-700 dark:text-neutral-200">
                   {selectedNode.nodeCode} • Level {selectedNode.levelNumber} • {selectedNode.materializedPath}
                 </div>
               </div>
@@ -429,7 +429,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
         ) : (
           <div className="text-center py-12 border border-dashed border-neutral-300 rounded-lg">
             <GitBranch className="w-10 h-10 mx-auto mb-3 text-neutral-400" />
-            <p className="text-neutral-600 mb-2">No hierarchy nodes available</p>
+            <p className="text-neutral-600 dark:text-neutral-300 mb-2">No hierarchy nodes available</p>
             <p className="body-sm mb-4">
               Load the hierarchy to assign this account to a node
             </p>

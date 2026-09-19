@@ -144,7 +144,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
             </div>
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Limits</p>
-              <p className="font-semibold text-cat-2">
+              <p className="font-semibold text-cat-2 dark:text-cat-2-fg">
                 {formatCurrency(result.externalLimitAvailable + result.internalLimitAvailable, result.vaCurrency)}
               </p>
             </div>
@@ -214,7 +214,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
         <div className="flex items-center gap-4">
           <div className={cn(
             "w-16 h-16 rounded-full flex items-center justify-center",
-            result.approved ? "bg-success-200" : "bg-error-200"
+            result.approved ? "bg-success-200 dark:bg-success-500/15" : "bg-error-200 dark:bg-error-500/15"
           )}>
             {result.approved ? (
               <CheckCircle2 className="w-10 h-10 text-success-600 dark:text-success-300" />
@@ -622,7 +622,7 @@ export const FundsCheckModal: React.FC<FundsCheckModalProps> = ({
           <FundsCheckDisplay result={result} onClose={onClose} />
         ) : (
           <div className="py-12 text-center">
-            <AlertCircle className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+            <AlertCircle className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
             <p className="text-neutral-500 dark:text-neutral-400">Ready to check funds availability</p>
           </div>
         )}
@@ -675,21 +675,21 @@ const FundsAvailabilityPage: React.FC = () => {
               </div>
               <span className="font-medium text-primary-900 dark:text-neutral-50">Source VA</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center dark:bg-info-500/20">
                 <TrendingUp className="w-4 h-4 text-info-600 dark:text-info-300" />
               </div>
               <span className="font-medium text-primary-900 dark:text-neutral-50">Currency Mirror</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-warning-100 flex items-center justify-center dark:bg-warning-500/20">
                 <Layers className="w-4 h-4 text-warning-600 dark:text-warning-300" />
               </div>
               <span className="font-medium text-primary-900 dark:text-neutral-50">Shadow Account</span>
             </div>
-            <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <ArrowRight className="w-4 h-4 text-neutral-400" />
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
                 <Shield className="w-4 h-4 text-accent-600 dark:text-accent-300" />

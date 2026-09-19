@@ -175,6 +175,9 @@ export default {
         'cat-6': '#8a5f14', 'cat-6-soft': '#f3efe8',  // warning
         'cat-7': '#a8443c', 'cat-7-soft': '#f6ecec',  // danger
         'cat-8': '#5d6165', 'cat-8-soft': '#efeff0',  // secondary text
+        // Dark-mode text tones for the cat-N hues (the base hues are too dark to read on dark surfaces).
+        'cat-1-fg': '#6cc4dc', 'cat-2-fg': '#6fb9cd', 'cat-3-fg': '#9db0bf', 'cat-4-fg': '#9aa8b6',
+        'cat-5-fg': '#6fc2a1', 'cat-6-fg': '#e0b25a', 'cat-7-fg': '#e88a82', 'cat-8-fg': '#b0aeb1',
       },
       fontFamily: {
         // Single sans stack app-wide — keep this aligned with

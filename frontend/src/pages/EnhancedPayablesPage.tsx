@@ -558,7 +558,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
         {action === 'reject' ? (
           <div>
             <label className="field-label block mb-2">
-              Rejection Reason <span className="text-error-500">*</span>
+              Rejection Reason <span className="text-error-500 dark:text-error-300">*</span>
             </label>
             <textarea
               value={reason}
@@ -1251,7 +1251,7 @@ const EnhancedPayablesPage: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search invoices..."
@@ -1282,7 +1282,7 @@ const EnhancedPayablesPage: React.FC = () => {
           currentPage={currentPage + 1}
           totalCount={totalPages * 20}
           onPageChange={(p) => setCurrentPage(p - 1)}
-          emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
           emptyTitle="No payables found"
           emptyDescription={!selectedCorporateId ? 'Select a corporate to view payables' : 'Try adjusting your filters'}
           columns={[

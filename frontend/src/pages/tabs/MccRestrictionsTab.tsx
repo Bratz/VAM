@@ -239,7 +239,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
       {/* MCC Whitelist Section */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <CheckCircle className="w-5 h-5 text-success-600" />
+          <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />
           <h4 className="body-strong">MCC Whitelist</h4>
           <Badge variant="success" size="sm">{mccWhitelist.length} codes</Badge>
         </div>
@@ -273,7 +273,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Ban className="w-5 h-5 text-error-600" />
+            <Ban className="w-5 h-5 text-error-600 dark:text-error-300" />
             <h4 className="body-strong">MCC Blacklist</h4>
             <Badge variant="error" size="sm">{mccBlacklist.length} codes</Badge>
           </div>
@@ -322,7 +322,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
           <div className="mt-4 border border-neutral-200 rounded-lg max-h-60 overflow-y-auto">
             {MCC_CATEGORIES.map((category) => (
               <div key={category.category} className="border-b border-neutral-100 last:border-b-0">
-                <div className="px-3 py-2 bg-neutral-50 font-medium text-body-sm">
+                <div className="px-3 py-2 bg-neutral-50 dark:bg-primary-950/50 font-medium text-body-sm">
                   {category.category}
                 </div>
                 <div className="p-2 flex flex-wrap gap-1">
@@ -337,9 +337,9 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                       className={cn(
                         'px-2 py-1 text-caption rounded border transition-colors',
                         mccWhitelist.includes(mcc.code.split('-')[0])
-                          ? 'bg-success-100 border-success-300 text-success-700'
+                          ? 'bg-success-100 dark:bg-success-500/15 border-success-300 text-success-700 dark:text-success-300'
                           : mccBlacklist.includes(mcc.code.split('-')[0])
-                          ? 'bg-error-100 border-error-300 text-error-700'
+                          ? 'bg-error-100 dark:bg-error-500/15 border-error-300 text-error-700 dark:text-error-300'
                           : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50'
                       )}
                       title={mcc.label}
@@ -464,7 +464,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
               className={cn(
                 'px-2 py-1 text-caption rounded border transition-colors',
                 countryWhitelist.includes(country.code)
-                  ? 'bg-info-100 border-info-300 text-info-700'
+                  ? 'bg-info-100 dark:bg-info-500/15 border-info-300 text-info-700 dark:text-info-300'
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50'
               )}
               title={country.name}

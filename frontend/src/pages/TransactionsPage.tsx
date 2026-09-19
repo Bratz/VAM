@@ -192,12 +192,12 @@ const MovementIcon: React.FC<{ type: string; className?: string }> = ({ type, cl
 const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case 'COMPLETED':
-      return <CheckCircle className="w-4 h-4 text-success-500" />;
+      return <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" />;
     case 'PENDING':
     case 'PROCESSING':
-      return <Clock className="w-4 h-4 text-warning-500" />;
+      return <Clock className="w-4 h-4 text-warning-500 dark:text-warning-300" />;
     case 'FAILED':
-      return <XCircle className="w-4 h-4 text-error-500" />;
+      return <XCircle className="w-4 h-4 text-error-500 dark:text-error-300" />;
     case 'REVERSED':
     case 'CANCELLED':
       return <AlertCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
@@ -294,7 +294,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
     switch (accountType) {
       case 'SHADOW':
       case 'PHYSICAL_MIRROR':
-        return 'bg-cat-2/10 text-cat-2 dark:bg-cat-2/15';
+        return 'bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15';
       case 'SETTLEMENT':
         return 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300';
       case 'OPERATING':
@@ -309,7 +309,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
   // Helper to get movement type badge
   const getMovementTypeBadgeClass = (movementType: string) => {
     if (movementType.includes('CREDIT') || movementType === 'TRANSFER_IN' || movementType === 'ROBO_CREDIT') {
-      return 'bg-cat-5/10 text-cat-5 dark:bg-cat-5/15';
+      return 'bg-cat-5/10 text-cat-5 dark:text-cat-5-fg dark:bg-cat-5/15';
     }
     if (movementType.includes('DEBIT') || movementType === 'TRANSFER_OUT' || movementType === 'POBO_DEBIT') {
       return 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300';
@@ -530,7 +530,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                           <div className="flex items-start gap-3">
                             <div className={cn(
                               'w-8 h-8 rounded-lg flex items-center justify-center text-body-sm font-bold',
-                              entryIsCredit ? 'bg-cat-5/10 text-cat-5 dark:bg-cat-5/15' : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
+                              entryIsCredit ? 'bg-cat-5/10 text-cat-5 dark:text-cat-5-fg dark:bg-cat-5/15' : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
                             )}>
                               {entry.legNumber}
                             </div>
@@ -538,7 +538,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-medium text-neutral-900 dark:text-neutral-50">{entry.vaName}</span>
                                 {entry.transactionId === transaction.id && (
-                                  <span className="text-caption px-1.5 py-0.5 bg-info-200 text-info-800 rounded dark:text-info-300">
+                                  <span className="text-caption px-1.5 py-0.5 bg-info-200 dark:bg-info-500/15 text-info-800 rounded dark:text-info-300">
                                     Current
                                   </span>
                                 )}
@@ -565,7 +565,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                           <div className="text-right">
                             <p className={cn(
                               'text-body-lg font-bold',
-                              entryIsCredit ? 'text-cat-5' : 'text-rose-600 dark:text-rose-300'
+                              entryIsCredit ? 'text-cat-5 dark:text-cat-5-fg' : 'text-rose-600 dark:text-rose-300'
                             )}>
                               {entryIsCredit ? '+' : '-'}{formatCurrency(entry.amount, entry.currencyCode)}
                             </p>
@@ -595,7 +595,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               </>
             ) : (
               <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                 {!!groupedData?.feeAmount && groupedData.feeAmount > 0 ? (
                   <>
                     <p className="font-medium">No movements on your accounts</p>
@@ -1986,7 +1986,7 @@ const TransactionsPage: React.FC = () => {
                 {tab.label}
                 <span className={cn(
                   'ml-2 px-2 py-0.5 rounded-full text-caption font-semibold',
-                  activeTab === tab.id ? 'bg-primary-200 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                  activeTab === tab.id ? 'bg-primary-200 dark:bg-primary-700 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                 )}>
                   {tab.count}
                 </span>

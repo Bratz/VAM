@@ -167,12 +167,12 @@ const SyncAdminPage: React.FC = () => {
       <Card>
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="font-medium">Sync Logs</h3>
-          <List className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <List className="w-4 h-4 text-neutral-400" />
         </div>
         <div className="divide-y max-h-80 overflow-y-auto font-mono text-body-sm">
           {logs.map((log, idx) => (
             <div key={idx} className="p-3 flex gap-4">
-              <span className="text-neutral-400 dark:text-neutral-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleTimeString()}</span>
+              <span className="text-neutral-400 whitespace-nowrap">{new Date(log.timestamp).toLocaleTimeString()}</span>
               <span className={`font-medium w-12 ${getLogLevelClass(log.level)}`}>{log.level}</span>
               <span className="text-neutral-600 dark:text-neutral-300">{log.message}</span>
               {log.details && <span className="text-error-600 dark:text-error-300">{log.details}</span>}

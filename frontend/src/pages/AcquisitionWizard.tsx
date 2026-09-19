@@ -187,7 +187,7 @@ const CorporateCard: React.FC<CorporateCardProps> = ({ corporate, selected, onSe
             <span>{corporate.totalBalance?.toLocaleString() || '0'} {corporate.baseCurrency}</span>
           </div>
           {disabled && (
-            <p className="mt-2 text-caption text-error-500">
+            <p className="mt-2 text-caption text-error-500 dark:text-error-300">
               Target must have an initialized hierarchy
             </p>
           )}
@@ -525,7 +525,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       </label>
 
                       <div className="relative mb-3">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                         <input
                           type="text"
                           value={searchQuery}
@@ -833,7 +833,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                     'px-5 py-2 text-body-sm font-medium rounded-lg',
                     canProceed()
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                   )}
                 >
                   Next →
@@ -846,7 +846,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                     'px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2',
                     canProceed() && !submitting
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                   )}
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -176,7 +176,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
                 <span className="hidden sm:inline">{label}</span>
               </div>
-              {idx < 3 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-neutral-900" : "bg-neutral-200")} />}
+              {idx < 3 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-neutral-900" : "bg-neutral-200 dark:bg-primary-800")} />}
             </React.Fragment>
           ))}
         </div>

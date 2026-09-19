@@ -386,7 +386,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             className={cn(
               'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
               activeTab === tab.id
-                ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
+                ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
                 : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
             )}
           >
@@ -753,7 +753,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
             onClick={onViewDetails}
             className="p-2 hover:bg-neutral-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-primary-800"
           >
-            <Eye className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+            <Eye className="w-5 h-5 text-neutral-400" />
           </button>
         </div>
 
@@ -777,7 +777,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
         {cycle.savingsAmount > 0 && (
           <div className="bg-gradient-to-r from-accent-50 to-accent-100 rounded-xl p-3 mb-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-accent-200 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-accent-200 dark:bg-accent-500/15 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-accent-700 dark:text-accent-300" />
               </div>
               <span className="body-sm">Settlement Savings</span>
@@ -791,15 +791,15 @@ const CycleCard: React.FC<CycleCardProps> = ({
 
         {/* Details Grid */}
         <div className="grid grid-cols-3 gap-2 text-body-sm mb-4">
-          <div className="p-2 bg-neutral-50/50 rounded-lg">
+          <div className="p-2 bg-neutral-50/50 dark:bg-primary-950/50 rounded-lg">
             <p className="label">Entries</p>
             <p className="font-semibold text-primary-900 mt-0.5 dark:text-neutral-50">{cycle.entryCount || 0}</p>
           </div>
-          <div className="p-2 bg-neutral-50/50 rounded-lg">
+          <div className="p-2 bg-neutral-50/50 dark:bg-primary-950/50 rounded-lg">
             <p className="label">Entities</p>
             <p className="font-semibold text-primary-900 mt-0.5 dark:text-neutral-50">{cycle.participantCount || 0}</p>
           </div>
-          <div className="p-2 bg-neutral-50/50 rounded-lg">
+          <div className="p-2 bg-neutral-50/50 dark:bg-primary-950/50 rounded-lg">
             <p className="label">Period</p>
             <p className="font-semibold text-primary-900 mt-0.5 text-caption dark:text-neutral-50">{cycle.periodStart?.slice(0, 10)}</p>
           </div>
@@ -1031,7 +1031,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
 
       {/* Filter */}
       <div className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <Filter className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+        <Filter className="w-4 h-4 text-neutral-400" />
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -1053,7 +1053,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       {filteredCycles.length === 0 ? (
         <Card className="text-center py-12 animate-fade-in" style={{ animationDelay: '0.45s' }}>
           <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-            <GitMerge className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+            <GitMerge className="w-8 h-8 text-neutral-400" />
           </div>
           <h3 className="section-title mb-2">No Netting Cycles</h3>
           <p className="text-neutral-500 mb-6 dark:text-neutral-400">

@@ -70,7 +70,7 @@ export const Composer: React.FC = () => {
           'bg-neutral-50 dark:bg-primary-900/60',
           'border border-neutral-200 dark:border-primary-700',
           'focus:outline-none focus:ring-2 focus:ring-accent-400/40 focus:border-accent-400/60',
-          'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
+          'placeholder:text-neutral-400 dark:placeholder:text-neutral-400',
           'disabled:opacity-60 disabled:cursor-not-allowed',
         ].join(' ')}
       />

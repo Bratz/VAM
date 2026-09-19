@@ -324,23 +324,23 @@ const accountCategoryConfig: Record<AccountCategory, {
   SETTLEMENT: { label: 'Settlement', icon: Banknote, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   EXCEPTION: { label: 'Exception', icon: AlertTriangle, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   SUSPENSE: { label: 'Suspense', icon: Clock, color: 'text-neutral-600 dark:text-neutral-300', bgColor: 'bg-neutral-50 dark:bg-primary-950' },
-  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
+  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
   PHYSICAL_MIRROR: { label: 'Shadow', icon: Building2, color: 'text-cyan-600 dark:text-cyan-300', bgColor: 'bg-cyan-50 dark:bg-cyan-500/10' },
-  EXTERNAL_MIRROR: { label: 'External', icon: Building2, color: 'text-cat-3', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
-  CURRENCY_MIRROR: { label: 'Currency Mirror', icon: Coins, color: 'text-cat-5', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
-  INTERCOMPANY: { label: 'Intercompany', icon: GitBranch, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  EXTERNAL_MIRROR: { label: 'External', icon: Building2, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
+  CURRENCY_MIRROR: { label: 'Currency Mirror', icon: Coins, color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
+  INTERCOMPANY: { label: 'Intercompany', icon: GitBranch, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
   ESCROW: { label: 'Escrow', icon: Shield, color: 'text-rose-600 dark:text-rose-300', bgColor: 'bg-rose-50 dark:bg-rose-500/10' },
-  NETTING: { label: 'Netting', icon: Hash, color: 'text-cat-4', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
+  NETTING: { label: 'Netting', icon: Hash, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
 };
 
 const programTypeConfig: Record<ProgramType, { label: string; icon: React.ElementType; color: string }> = {
   COLLECTION: { label: 'Collection', icon: ArrowDownRight, color: 'text-success-600 dark:text-success-300' },
   WALLET: { label: 'Wallet', icon: CreditCard, color: 'text-primary-600 dark:text-primary-200' },
-  IHB: { label: 'In-House Bank', icon: Building2, color: 'text-cat-2' },
+  IHB: { label: 'In-House Bank', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg' },
   PAYABLES: { label: 'Payables', icon: ArrowUpRight, color: 'text-warning-600 dark:text-warning-300' },
   VIBAN: { label: 'VIBAN', icon: Hash, color: 'text-info-600 dark:text-info-300' },
-  ESCROW: { label: 'Escrow', icon: Shield, color: 'text-cat-3' },
+  ESCROW: { label: 'Escrow', icon: Shield, color: 'text-cat-3 dark:text-cat-3-fg' },
 };
 
 // Picker now uses the shared `<ScopeSelector mode="corporate-program">`
@@ -474,7 +474,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
             <div className="flex items-center gap-2 caption mt-0.5">
               <span className="font-mono">{account.vaNumber}</span>
               {account.owningEntityCode && (
-                <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30">
+                <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:text-cat-2-fg border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30">
                   {account.owningEntityCode}
                 </Badge>
               )}
@@ -500,7 +500,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
             </div>
           </div>
         ) : (
-          <span className="text-caption text-neutral-400 italic dark:text-neutral-500">No program</span>
+          <span className="text-caption text-neutral-400 italic dark:text-neutral-400">No program</span>
         )}
       </td>
 
@@ -672,7 +672,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
           {(account.owningEntityCode || account.programName) && (
             <div className="mt-2 flex items-center gap-2 flex-wrap">
               {account.owningEntityCode && (
-                <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30">
+                <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:text-cat-2-fg border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30">
                   {account.owningEntityCode}
                 </Badge>
               )}
@@ -685,7 +685,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
           )}
         </div>
 
-        <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-500" />
+        <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-400" />
       </div>
     </Card>
   );
@@ -725,7 +725,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
           className={cn("w-5 h-5 flex items-center justify-center rounded", hasChildren ? "hover:bg-neutral-200" : "invisible")}
         >
           {hasChildren && (
-            <ChevronRightIcon className={cn("w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-500", isExpanded && "rotate-90")} />
+            <ChevronRightIcon className={cn("w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400", isExpanded && "rotate-90")} />
           )}
         </button>
 
@@ -742,7 +742,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
               {statusConfig[account.status]?.label}
             </Badge>
             {account.owningEntityCode && (
-              <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:bg-cat-2/15">
+              <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                 {account.owningEntityCode}
               </Badge>
             )}
@@ -819,7 +819,7 @@ const TreeView: React.FC<TreeViewProps> = ({ accounts, loading, onView }) => {
   if (treeData.length === 0) {
     return (
       <div className="text-center py-12">
-        <FolderTree className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+        <FolderTree className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
         <p className="text-neutral-500 dark:text-neutral-400">No accounts with hierarchy</p>
       </div>
     );
@@ -1056,7 +1056,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                account.aggregatedBalanceBase !== undefined && account.baseCurrency && (
                 <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
                   <p className="caption">Aggregated (Base Currency)</p>
-                  <p className="text-body-sm font-semibold text-cat-2">
+                  <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">
                     {formatCurrency(account.aggregatedBalanceBase, account.baseCurrency)}
                   </p>
                 </div>
@@ -1065,7 +1065,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                account.balanceInBase !== undefined && account.baseCurrency && (
                 <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
                   <p className="caption">Balance in Base Currency</p>
-                  <p className="text-body-sm font-semibold text-cat-5">
+                  <p className="text-body-sm font-semibold text-cat-5 dark:text-cat-5-fg">
                     {formatCurrency(account.balanceInBase, account.baseCurrency)}
                   </p>
                 </div>
@@ -1095,7 +1095,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 {account.owningEntityCode && (
                   <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">Owning Entity</span>
-                    <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:bg-cat-2/15">
+                    <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                       {account.owningEntityCode}
                     </Badge>
                   </div>

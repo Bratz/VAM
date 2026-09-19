@@ -63,7 +63,7 @@ const EmptyState: React.FC<{ onCreateRule: () => void }> = ({ onCreateRule }) =>
   <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
     <div className="flex flex-col items-center justify-center py-16">
       <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mb-4">
-        <Layers className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+        <Layers className="w-6 h-6 text-neutral-400" />
       </div>
       <p className="body-strong mb-1">No Sweep Rules</p>
       <p className="caption mb-6">Get started by creating your first sweep rule</p>
@@ -326,7 +326,7 @@ const CashConcentrationPage: React.FC = () => {
               className={cn(
                 'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
                 activeTab === tab.id
-                  ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
+                  ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
                   : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
               )}
             >
@@ -343,7 +343,7 @@ const CashConcentrationPage: React.FC = () => {
         {/* History Rule Filter */}
         {activeTab === 'history' && rules.length > 0 && (
           <div className="flex items-center gap-2 pb-2">
-            <Filter className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Filter className="w-4 h-4 text-neutral-400" />
             <div className="w-52">
               <Select
                 selectSize="sm"

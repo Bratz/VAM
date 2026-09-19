@@ -220,7 +220,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                   <label className="field-label block mb-2">Select Aggregation to Divest *</label>
                   {aggregations.length === 0 ? (
                     <div className="text-center py-8 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-                      <Folder className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+                      <Folder className="w-12 h-12 text-neutral-300 dark:text-neutral-400 mx-auto mb-3" />
                       <p className="text-neutral-500 dark:text-neutral-400">No aggregations available for divestiture</p>
                     </div>
                   ) : (
@@ -315,7 +315,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
           {/* Footer */}
           <div className="px-6 py-4 border-t border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950 flex justify-between">
             <button onClick={onClose} className="px-4 py-2 field-label hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg">Cancel</button>
-            <button onClick={handleSubmit} disabled={!canSubmit || submitting} className={cn('px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2', canSubmit && !submitting ? 'bg-warning-600 text-white hover:bg-warning-700' : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed')}>
+            <button onClick={handleSubmit} disabled={!canSubmit || submitting} className={cn('px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2', canSubmit && !submitting ? 'bg-warning-600 text-white hover:bg-warning-700' : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed')}>
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}Execute Divestiture
             </button>
           </div>

@@ -66,7 +66,7 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
           </Card>
         ) : notFound || !invoice ? (
           <Card padding="lg" className="text-center">
-            <AlertTriangle className="w-8 h-8 text-warning-500 mx-auto mb-3" />
+            <AlertTriangle className="w-8 h-8 text-warning-500 dark:text-warning-300 mx-auto mb-3" />
             <p className="body-strong">
               This payment link is invalid or has expired
             </p>
@@ -97,7 +97,7 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
                 <div className="flex items-center justify-between gap-2">
                   <code className="text-body-sm font-mono text-primary-900 dark:text-neutral-50 break-all">{invoice.viban}</code>
                   <button onClick={copyViban} className="p-2 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg flex-shrink-0" title="Copy account number">
-                    {copied ? <Check className="w-4 h-4 text-success-600" /> : <Copy className="w-4 h-4 text-accent-600" />}
+                    {copied ? <Check className="w-4 h-4 text-success-600 dark:text-success-300" /> : <Copy className="w-4 h-4 text-accent-600 dark:text-accent-300" />}
                   </button>
                 </div>
                 <div className="mt-4 flex flex-col items-center gap-2 pt-4 border-t border-accent-100 dark:border-accent-500/30">

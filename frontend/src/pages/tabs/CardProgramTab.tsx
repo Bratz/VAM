@@ -127,7 +127,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
               className={cn(
                 'p-4 rounded-lg border text-left transition-all',
                 formData.cardProgramType === type.value
-                  ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
               )}
             >
@@ -188,7 +188,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
             label="Card Status"
             hint="Current status of the linked card (read-only)"
           >
-            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-primary-950/50 border border-neutral-200 rounded-lg">
               {formData.linkedCardId ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-success-500" />
@@ -370,8 +370,8 @@ const QuickAssignButton: React.FC<QuickAssignButtonProps> = ({
     className={cn(
       'px-4 py-2 rounded-lg border text-body-sm font-medium transition-colors',
       selected
-        ? 'border-primary-500 bg-primary-100 text-primary-700'
-        : 'border-neutral-200 hover:border-primary-300 text-neutral-600 hover:bg-neutral-50'
+        ? 'border-primary-500 bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200'
+        : 'border-neutral-200 hover:border-primary-300 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50'
     )}
   >
     {label}

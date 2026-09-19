@@ -373,7 +373,7 @@ const LineItemRow: React.FC<{
         </span>
         <button
           onClick={() => onRemove(index)}
-          className="p-1 text-error-500 hover:bg-error-50 rounded dark:hover:bg-error-500/10"
+          className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded dark:hover:bg-error-500/10"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -399,7 +399,7 @@ const Toggle: React.FC<{
       )} />
     ) : (
       <ToggleLeft className={cn(
-        'text-neutral-400 dark:text-neutral-500 transition-transform hover:scale-105',
+        'text-neutral-400 transition-transform hover:scale-105',
         size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
       )} />
     )}
@@ -726,7 +726,7 @@ const TaxChargesTab: React.FC<{
               <option value="fixed">{currency}</option>
               <option value="percent">%</option>
             </select>
-            <button onClick={() => removeCharge(index)} className="p-1 text-error-500 hover:bg-error-50 rounded dark:hover:bg-error-500/10">
+            <button onClick={() => removeCharge(index)} className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded dark:hover:bg-error-500/10">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -1042,7 +1042,7 @@ const DocumentsTab: React.FC<{
             id="file-upload"
           />
           <label htmlFor="file-upload" className="cursor-pointer">
-            <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-2" />
+            <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
             <p className="body-sm">Click to upload or drag and drop</p>
             <p className="caption mt-1">PDF, DOC, XLS up to 10MB</p>
           </label>
@@ -1100,7 +1100,7 @@ const DocumentsTab: React.FC<{
             ))}
           </div>
         ) : (
-          <p className="text-body-sm text-neutral-400 dark:text-neutral-500 italic">No external references added</p>
+          <p className="text-body-sm text-neutral-400 italic">No external references added</p>
         )}
       </div>
 
@@ -1226,7 +1226,7 @@ const RemindersTab: React.FC<{
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-bold',
-                    level.level <= formData.dunningMaxLevel ? 'bg-warning-200 text-warning-700 dark:text-warning-300' : 'bg-neutral-200 text-neutral-500 dark:text-neutral-400 dark:bg-primary-800'
+                    level.level <= formData.dunningMaxLevel ? 'bg-warning-200 dark:bg-warning-500/15 text-warning-700 dark:text-warning-300' : 'bg-neutral-200 text-neutral-500 dark:text-neutral-400 dark:bg-primary-800'
                   )}>
                     {level.level}
                   </div>
@@ -1681,13 +1681,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 </p>
               </div>
             </div>
-            <div className="hidden sm:block w-px h-10 bg-info-200" />
+            <div className="hidden sm:block w-px h-10 bg-info-200 dark:bg-info-500/15" />
             <div className="flex items-center gap-3">
               <div className="p-2 bg-cat-1/10 rounded-lg dark:bg-cat-1/15">
-                <Landmark className="w-5 h-5 text-cat-1" />
+                <Landmark className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" />
               </div>
               <div>
-                <p className="text-caption font-medium text-cat-1 uppercase tracking-wide">Legal Entity</p>
+                <p className="text-caption font-medium text-cat-1 dark:text-cat-1-fg uppercase tracking-wide">Legal Entity</p>
                 <p className="body-strong font-semibold">
                   {dataLoading ? 'Loading...' : (
                     selectedLegalEntity
@@ -1701,7 +1701,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
             {!corporateIdFromParams && (
               <>
-                <div className="hidden sm:block w-px h-10 bg-warning-200" />
+                <div className="hidden sm:block w-px h-10 bg-warning-200 dark:bg-warning-500/15" />
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 border border-warning-300 rounded-lg dark:bg-warning-500/20">
                   <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                   <span className="text-caption font-medium text-warning-700 dark:text-warning-300">Using default corporate</span>
@@ -1732,7 +1732,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
               <div className="relative">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
                     type="text"
                     value={customerSearch}
@@ -1766,7 +1766,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                             {formatCurrency(customer.creditAvailable, customer.currency)}
                           </p>
                           {customer.overdueAmount && customer.overdueAmount > 0 && (
-                            <p className="text-caption text-error-500">Overdue: {formatCurrency(customer.overdueAmount, customer.currency)}</p>
+                            <p className="text-caption text-error-500 dark:text-error-300">Overdue: {formatCurrency(customer.overdueAmount, customer.currency)}</p>
                           )}
                         </div>
                       </button>
@@ -1821,7 +1821,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             {/* Invoice Details */}
             <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
               <SectionHeader
-                icon={<FileText className="w-5 h-5 text-cat-2" />}
+                icon={<FileText className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />}
                 iconBg="bg-cat-2-soft dark:bg-cat-2/15"
                 title="Invoice Details"
               />
@@ -1867,7 +1867,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <div>
                   <label className="field-label block mb-1">Due Date</label>
                   <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
-                    <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                    <Calendar className="w-4 h-4 text-neutral-400" />
                     <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</span>
                   </div>
                 </div>
@@ -1924,14 +1924,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-primary-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-cat-1-soft rounded-lg dark:bg-cat-1/15"><QrCode className="w-5 h-5 text-cat-1" /></div>
+                    <div className="p-2 bg-cat-1-soft rounded-lg dark:bg-cat-1/15"><QrCode className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" /></div>
                     <div>
                       <p className="body-strong">Generate VIBAN</p>
                       <p className="caption">Create unique virtual IBAN for auto-reconciliation</p>
                     </div>
                   </div>
                   {!formData.generateViban ? (
-                    <button onClick={handleGenerateViban} disabled={!selectedCustomer || !formData.collectionAccountId} className={cn('px-4 py-2 text-body-sm font-medium rounded-lg transition-colors', selectedCustomer && formData.collectionAccountId ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 dark:text-neutral-500 cursor-not-allowed dark:bg-primary-800')}>
+                    <button onClick={handleGenerateViban} disabled={!selectedCustomer || !formData.collectionAccountId} className={cn('px-4 py-2 text-body-sm font-medium rounded-lg transition-colors', selectedCustomer && formData.collectionAccountId ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 cursor-not-allowed dark:bg-primary-800')}>
                       Generate
                     </button>
                   ) : (
@@ -1940,8 +1940,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 </div>
                 {formData.generateViban && (
                   <div className="mt-4 p-4 bg-cat-1-soft rounded-lg border border-cat-1/10 dark:bg-cat-1/15 dark:border-cat-1/30">
-                    <p className="text-caption text-cat-1 font-medium">Virtual IBAN</p>
-                    <p className="text-body-sm text-cat-1">A real VIBAN will be created and shown on the receivable once you save.</p>
+                    <p className="text-caption text-cat-1 dark:text-cat-1-fg font-medium">Virtual IBAN</p>
+                    <p className="text-body-sm text-cat-1 dark:text-cat-1-fg">A real VIBAN will be created and shown on the receivable once you save.</p>
                   </div>
                 )}
               </div>
@@ -2031,7 +2031,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   {formData.generateViban && (
                     <div>
                       <p className="caption">VIBAN</p>
-                      <p className="text-caption text-cat-1">Will generate on save</p>
+                      <p className="text-caption text-cat-1 dark:text-cat-1-fg">Will generate on save</p>
                     </div>
                   )}
 
@@ -2043,7 +2043,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                         {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
                         {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
                         {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded dark:bg-success-500/10 dark:text-success-300">COBO</span>}
-                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 text-caption rounded dark:bg-cat-2/15">Hierarchy</span>}
+                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 dark:text-cat-2-fg text-caption rounded dark:bg-cat-2/15">Hierarchy</span>}
                         {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-caption rounded">{formData.attachments.length} files</span>}
                         {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
                       </div>

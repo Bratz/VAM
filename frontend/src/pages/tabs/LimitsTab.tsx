@@ -232,7 +232,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
       {/* Topup Limits Section */}
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-success-600" />
+          <TrendingUp className="w-5 h-5 text-success-600 dark:text-success-300" />
           <h4 className="body-strong">Topup Limits</h4>
         </div>
         
@@ -281,10 +281,10 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200">
-                <th className="text-left py-2 px-3 font-medium text-neutral-600">KYC Level</th>
-                <th className="text-right py-2 px-3 font-medium text-neutral-600">Max Balance</th>
-                <th className="text-right py-2 px-3 font-medium text-neutral-600">Daily Limit</th>
-                <th className="text-right py-2 px-3 font-medium text-neutral-600">Monthly Limit</th>
+                <th className="text-left py-2 px-3 font-medium text-neutral-600 dark:text-neutral-300">KYC Level</th>
+                <th className="text-right py-2 px-3 font-medium text-neutral-600 dark:text-neutral-300">Max Balance</th>
+                <th className="text-right py-2 px-3 font-medium text-neutral-600 dark:text-neutral-300">Daily Limit</th>
+                <th className="text-right py-2 px-3 font-medium text-neutral-600 dark:text-neutral-300">Monthly Limit</th>
               </tr>
             </thead>
             <tbody>
@@ -292,13 +292,13 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
                 <tr 
                   key={tier.level}
                   className={`border-b border-neutral-100 ${
-                    tier.level === kycLevel ? 'bg-primary-50' : ''
+                    tier.level === kycLevel ? 'bg-primary-50 dark:bg-primary-800/40' : ''
                   }`}
                 >
                   <td className="py-2 px-3">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">Level {tier.level}</span>
-                      <span className="text-neutral-500">- {tier.name}</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">- {tier.name}</span>
                       {tier.level === kycLevel && (
                         <Badge variant="primary" size="sm">Selected</Badge>
                       )}

@@ -78,13 +78,13 @@ const extractData = <T,>(response: ApiResponse<T>): T => {
 // ============================================================================
 
 const NODE_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  ROOT: { label: 'Root', icon: Building2, color: 'text-cat-2', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
+  ROOT: { label: 'Root', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
   REGION: { label: 'Region', icon: Globe, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
   COUNTRY: { label: 'Country', icon: MapPin, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   LEGAL_ENTITY: { label: 'Legal Entity', icon: Building2, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  BUSINESS_UNIT: { label: 'Business Unit', icon: Briefcase, color: 'text-cat-3', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
-  DEPARTMENT: { label: 'Department', icon: Briefcase, color: 'text-cat-1', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
-  VIRTUAL_ACCOUNT: { label: 'Virtual Account', icon: Wallet, color: 'text-cat-4', bgColor: 'bg-cat-4/10 dark:bg-cat-4/15' },
+  BUSINESS_UNIT: { label: 'Business Unit', icon: Briefcase, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
+  DEPARTMENT: { label: 'Department', icon: Briefcase, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
+  VIRTUAL_ACCOUNT: { label: 'Virtual Account', icon: Wallet, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4/10 dark:bg-cat-4/15' },
 };
 
 const CURRENCIES = ['AED', 'USD', 'EUR', 'GBP', 'SAR', 'SGD', 'INR'];
@@ -598,7 +598,7 @@ const BalanceAggregationPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={Layers} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
           </div>
         </Card>
       )}
@@ -664,7 +664,7 @@ const BalanceAggregationPage: React.FC = () => {
                 <h3 className="section-title">Balance Hierarchy</h3>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <Input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -686,7 +686,7 @@ const BalanceAggregationPage: React.FC = () => {
                 />
               ) : (
                 <div className="p-12 text-center">
-                  <Layers className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+                  <Layers className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No hierarchy data available</p>
                   <Button className="mt-4" onClick={handleRefresh}>
                     <RefreshCw className="w-4 h-4 mr-2" /> Load Data

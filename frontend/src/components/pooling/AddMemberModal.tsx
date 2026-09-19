@@ -213,7 +213,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
                   <div className="px-3 pb-3 space-y-1 max-h-48 overflow-y-auto">
                     {bulkResult.skipped.map(s => (
                       <div key={s.accountId} className="caption flex items-start gap-2">
-                        <span className="font-mono text-neutral-400 dark:text-neutral-500 shrink-0">{s.accountId.slice(0, 8)}</span>
+                        <span className="font-mono text-neutral-400 shrink-0">{s.accountId.slice(0, 8)}</span>
                         <span>{s.reason}</span>
                       </div>
                     ))}

@@ -41,7 +41,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
     : path;
 
   if (!segments || segments.length === 0) {
-    return <span className="text-neutral-400 text-body-sm dark:text-neutral-500">—</span>;
+    return <span className="text-neutral-400 text-body-sm dark:text-neutral-400">—</span>;
   }
 
   // Truncate to maxLevels
@@ -70,8 +70,8 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
         if (segment.id === 'ellipsis') {
           return (
             <React.Fragment key="ellipsis">
-              <span className={cn('text-neutral-400 dark:text-neutral-500', textSize)}>...</span>
-              <ChevronRight className={cn(iconSize, 'text-neutral-300 flex-shrink-0 dark:text-neutral-600')} />
+              <span className={cn('text-neutral-400', textSize)}>...</span>
+              <ChevronRight className={cn(iconSize, 'text-neutral-300 flex-shrink-0 dark:text-neutral-400')} />
             </React.Fragment>
           );
         }
@@ -111,7 +111,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
             </button>
             
             {!isLast && (
-              <ChevronRight className={cn(iconSize, 'text-neutral-300 flex-shrink-0 dark:text-neutral-600')} />
+              <ChevronRight className={cn(iconSize, 'text-neutral-300 flex-shrink-0 dark:text-neutral-400')} />
             )}
           </React.Fragment>
         );
@@ -154,7 +154,7 @@ export const CompactHierarchyPath: React.FC<CompactHierarchyPathProps> = ({
   path,
   className,
 }) => {
-  if (!path) return <span className="text-neutral-400 dark:text-neutral-500">—</span>;
+  if (!path) return <span className="text-neutral-400">—</span>;
   
   // Show only last 2 segments for compact view
   const parts = path.split('/').filter(Boolean);

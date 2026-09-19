@@ -64,9 +64,9 @@ const accountCategoryConfig: Record<string, {
   TRANSACTION: { label: 'Transaction', icon: CreditCard, color: 'text-primary-600 dark:text-primary-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
   COLLECTION: { label: 'Collection', icon: ArrowDownRight, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
   DISBURSEMENT: { label: 'Disbursement', icon: ArrowUpRight, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
-  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
-  CURRENCY_MIRROR: { label: 'Currency', icon: Coins, color: 'text-cat-5', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
+  ROOT: { label: 'Root', icon: Layers, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15' },
+  AGGREGATION: { label: 'Aggregation', icon: Layers, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  CURRENCY_MIRROR: { label: 'Currency', icon: Coins, color: 'text-cat-5 dark:text-cat-5-fg', bgColor: 'bg-cat-5-soft dark:bg-cat-5/15' },
 };
 
 // Status configuration
@@ -148,9 +148,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         >
           {hasChildren && (
             isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             )
           )}
         </button>
@@ -181,7 +181,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono">{node.vaNumber}</span>
+            <span className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{node.vaNumber}</span>
             {node.viban && (
               <span className="caption">({node.viban})</span>
             )}
@@ -394,7 +394,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
       <Card className={cn('text-center py-8', className)}>
         <AlertCircle className="w-12 h-12 text-error-300 mx-auto mb-4" />
         <h3 className="section-title mb-2">Failed to Load Hierarchy</h3>
-        <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mb-4">{error}</p>
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">{error}</p>
         <Button variant="outline" onClick={loadHierarchy} leftIcon={<RefreshCw className="w-4 h-4" />}>
           Retry
         </Button>
@@ -406,9 +406,9 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
   if (!hierarchy) {
     return (
       <Card className={cn('text-center py-8', className)}>
-        <Layers className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+        <Layers className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
         <h3 className="section-title mb-2">No Hierarchy Found</h3>
-        <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">This account does not have any child accounts.</p>
+        <p className="text-neutral-500 dark:text-neutral-400">This account does not have any child accounts.</p>
       </Card>
     );
   }
@@ -420,7 +420,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-cat-2/10 dark:bg-cat-2/15 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-cat-2" />
+              <Layers className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
             </div>
             <div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Account Hierarchy</h3>

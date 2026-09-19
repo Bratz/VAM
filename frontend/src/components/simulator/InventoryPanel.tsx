@@ -239,7 +239,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                             aria-label={`Add ${pa.accountName} to the structure`}
                             className={cn(
                               'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-caption font-medium shrink-0',
-                              'bg-primary-100 text-primary-800 hover:bg-primary-200',
+                              'bg-primary-100 dark:bg-primary-700 text-primary-800 dark:text-neutral-100 hover:bg-primary-200',
                               'dark:bg-primary-800/60 dark:text-primary-200 dark:hover:bg-primary-800',
                               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
                             )}

@@ -158,7 +158,7 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
   settlementVas: {
     label: 'Settlement VAs',
     icon: Scale,
-    color: 'text-cat-2',
+    color: 'text-cat-2 dark:text-cat-2-fg',
     bgColor: 'bg-cat-2-soft dark:bg-cat-2/15',
     borderColor: 'border-cat-2/20 dark:border-cat-2/30',
     description: 'Fee collection and settlement',
@@ -194,7 +194,7 @@ const ACCOUNT_TYPE_CONFIG: Record<string, {
   intercompanyVas: {
     label: 'Intercompany VAs',
     icon: ArrowLeftRight,
-    color: 'text-cat-4',
+    color: 'text-cat-4 dark:text-cat-4-fg',
     bgColor: 'bg-cat-4-soft dark:bg-cat-4/15',
     borderColor: 'border-cat-4/20 dark:border-cat-4/30',
     description: 'IC Receivable/Payable tracking',
@@ -403,7 +403,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
             'transition-transform duration-200',
             isSectionExpanded && 'rotate-90'
           )}>
-            <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
           </div>
           <div className={cn('p-2 rounded-lg transition-transform duration-300 group-hover:scale-110', config.bgColor)}>
             <Icon className={cn('w-4 h-4', config.color)} />
@@ -524,9 +524,9 @@ const EntityCard: React.FC<EntityCardProps> = ({
         <div className="text-right">
           <div className="flex items-center justify-end gap-2">
             {entity.totalBalance >= 0 ? (
-              <TrendingUp className="w-5 h-5 text-success-500" />
+              <TrendingUp className="w-5 h-5 text-success-500 dark:text-success-300" />
             ) : (
-              <TrendingDown className="w-5 h-5 text-error-500" />
+              <TrendingDown className="w-5 h-5 text-error-500 dark:text-error-300" />
             )}
             {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the
                 raw `text-heading-sm font-bold` hand-roll (same 20px scale; this is an
@@ -539,7 +539,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
             </p>
           </div>
           {entity.functionalCurrency !== reportingCurrency && (
-            <p className="text-body-sm text-neutral-400 mt-0.5 dark:text-neutral-500">
+            <p className="text-body-sm text-neutral-400 mt-0.5 dark:text-neutral-400">
               ≈ {formatCurrency(entity.totalBalanceInBase, reportingCurrency)}
             </p>
           )}
@@ -659,7 +659,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
         )}
       </div>
 
-      <Eye className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-1 dark:text-neutral-500" />
+      <Eye className="w-4 h-4 text-neutral-400 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-1 dark:text-neutral-400" />
     </div>
   );
 };
@@ -805,7 +805,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
       case 'HOLDING':
         return {
           bg: 'bg-cat-2/10 dark:bg-cat-2/15',
-          icon: <Network className="w-5 h-5 text-cat-2" />,
+          icon: <Network className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />,
           badge: 'accent' as const,
         };
       case 'SUBSIDIARY':
@@ -860,7 +860,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
             'transition-transform duration-200',
             isSectionExpanded && 'rotate-90'
           )}>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           </div>
           <div className={cn('p-1.5 rounded-lg', config.bgColor)}>
             <Icon className={cn('w-3.5 h-3.5', config.color)} />
@@ -888,7 +888,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
         </button>
 
         {isSectionExpanded && (
-          <div className="bg-neutral-50/50 divide-y divide-neutral-100 animate-fade-in dark:divide-primary-800/60">
+          <div className="bg-neutral-50/50 dark:bg-primary-950/50 divide-y divide-neutral-100 animate-fade-in dark:divide-primary-800/60">
             {accounts.map((account, idx) => (
               <AccountRow
                 key={account.id}
@@ -928,7 +928,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
             !hasChildren && !hasAccounts && 'opacity-0'
           )}>
             {(hasChildren || hasAccounts) && (
-              <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <ChevronRight className="w-4 h-4 text-neutral-400" />
             )}
           </div>
 
@@ -989,9 +989,9 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
           <div className="text-right shrink-0">
             <div className="flex items-center justify-end gap-2">
               {entity.rolledUpBalance >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-success-500" />
+                <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-error-500" />
+                <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
               )}
               <p className={cn(
                 'font-bold',
@@ -1556,7 +1556,7 @@ const EntityBalanceTreePage: React.FC = () => {
       <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               placeholder="Search entities..."
@@ -1736,10 +1736,10 @@ const EntityBalanceTreePage: React.FC = () => {
               {filteredHierarchy.length === 0 && (
                 <div className="text-center py-20">
                   <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <TreeDeciduous className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                    <TreeDeciduous className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Try adjusting your search or filters</p>
                 </div>
               )}
             </Card>
@@ -1763,10 +1763,10 @@ const EntityBalanceTreePage: React.FC = () => {
               {filteredEntities.length === 0 && (
                 <div className="text-center py-20 animate-fade-in">
                   <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <Wallet className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                    <Wallet className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Try adjusting your search or filters</p>
                 </div>
               )}
             </div>

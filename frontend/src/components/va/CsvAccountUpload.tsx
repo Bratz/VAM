@@ -95,7 +95,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
           id="csv-account-upload"
         />
         <label htmlFor="csv-account-upload" className="cursor-pointer">
-          <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-2" />
+          <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
           <p className="body-sm">Click to upload a CSV or TXT file</p>
           <p className="caption mt-1">One account number per line, or comma-separated</p>
         </label>

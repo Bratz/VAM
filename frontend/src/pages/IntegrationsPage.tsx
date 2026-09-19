@@ -365,7 +365,7 @@ const ConnectorCard: React.FC<{
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50/50 dark:border-primary-800/60">
+      <div className="px-6 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
         {connector.documentationUrl && (
           <button className="caption hover:text-neutral-700 flex items-center gap-1 transition-colors dark:hover:text-neutral-200">
             Documentation <ExternalLink className="w-3 h-3" />
@@ -377,7 +377,7 @@ const ConnectorCard: React.FC<{
           className={cn(
             "px-4 py-1.5 text-caption font-medium transition-all",
             connector.status === 'COMING_SOON'
-              ? "text-neutral-400 cursor-not-allowed dark:text-neutral-500"
+              ? "text-neutral-400 cursor-not-allowed dark:text-neutral-400"
               : "text-neutral-900 hover:bg-neutral-900 hover:text-white border border-neutral-900 dark:text-neutral-50"
           )}
         >
@@ -402,7 +402,7 @@ const ConnectionCard: React.FC<{
 
   const statusStyles: Record<ConnectionStatus, { bg: string; text: string; label: string }> = {
     CONNECTED: { bg: 'bg-neutral-900', text: 'text-white', label: 'Active' },
-    DISCONNECTED: { bg: 'bg-neutral-200', text: 'text-neutral-600 dark:text-neutral-300', label: 'Inactive' },
+    DISCONNECTED: { bg: 'bg-neutral-200 dark:bg-primary-800', text: 'text-neutral-600 dark:text-neutral-300', label: 'Inactive' },
     ERROR: { bg: 'bg-error-600', text: 'text-white', label: 'Error' },
     SYNCING: { bg: 'bg-neutral-600', text: 'text-white', label: 'Syncing' },
   };
@@ -461,10 +461,10 @@ const ConnectionCard: React.FC<{
       </div>
 
       {/* Actions */}
-      <div className="p-3 flex items-center justify-between bg-neutral-50/50">
+      <div className="p-3 flex items-center justify-between bg-neutral-50/50 dark:bg-primary-950/50">
         <button
           onClick={onDisconnect}
-          className="p-2 text-neutral-400 hover:text-error-600 transition-colors dark:text-neutral-500"
+          className="p-2 text-neutral-400 hover:text-error-600 transition-colors dark:text-neutral-400"
           title="Disconnect"
         >
           <Trash2 className="w-4 h-4" />
@@ -670,7 +670,7 @@ const SetupWizardModal: React.FC<{
           <div>
             <label className="block label mb-2">TPP Certificate</label>
             <div className="border border-dashed border-neutral-300 p-6 text-center dark:border-primary-700">
-              <Upload className="w-6 h-6 text-neutral-400 mx-auto mb-2 dark:text-neutral-500" />
+              <Upload className="w-6 h-6 text-neutral-400 mx-auto mb-2 dark:text-neutral-400" />
               <p className="caption">Drop certificate file or click to upload</p>
             </div>
           </div>
@@ -729,7 +729,7 @@ const SetupWizardModal: React.FC<{
                 "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
                 step > idx + 1 && "bg-neutral-100 text-neutral-900 dark:bg-primary-800 dark:text-neutral-50",
-                step < idx + 1 && "text-neutral-400 dark:text-neutral-500"
+                step < idx + 1 && "text-neutral-400"
               )}>
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
                 <span className="hidden sm:inline">{label}</span>
@@ -768,7 +768,7 @@ const SetupWizardModal: React.FC<{
                       )}
                     >
                       <p className="text-body-sm font-medium">{env === 'SANDBOX' ? 'Sandbox' : 'Production'}</p>
-                      <p className={cn("text-caption mt-1", config.environment === env ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>
+                      <p className={cn("text-caption mt-1", config.environment === env ? "text-neutral-300 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400")}>
                         {env === 'SANDBOX' ? 'For testing and development' : 'Live production data'}
                       </p>
                     </button>
@@ -812,7 +812,7 @@ const SetupWizardModal: React.FC<{
                       )}
                     >
                       <p className="text-body-sm font-medium">{freq.label}</p>
-                      <p className={cn("text-caption", config.syncFrequency === freq.value ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>{freq.desc}</p>
+                      <p className={cn("text-caption", config.syncFrequency === freq.value ? "text-neutral-300 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400")}>{freq.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -865,7 +865,7 @@ const SetupWizardModal: React.FC<{
                 )}
                 {testing && (
                   <div>
-                    <Loader2 className="w-8 h-8 text-neutral-400 animate-spin mx-auto mb-3 dark:text-neutral-500" />
+                    <Loader2 className="w-8 h-8 text-neutral-400 animate-spin mx-auto mb-3 dark:text-neutral-400" />
                     <p className="body-sm">Testing connection...</p>
                   </div>
                 )}
@@ -1100,10 +1100,10 @@ const ConnectionDetailModal: React.FC<{
                       {flow.status}
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => onOpenMapping(flow)} className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-500 dark:hover:text-neutral-50" title="Field Mapping">
+                      <button onClick={() => onOpenMapping(flow)} className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50" title="Field Mapping">
                         <FileText className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-500 dark:hover:text-neutral-50" title={flow.status === 'ACTIVE' ? 'Pause' : 'Resume'}>
+                      <button className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50" title={flow.status === 'ACTIVE' ? 'Pause' : 'Resume'}>
                         {flow.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                       </button>
                     </div>
@@ -1202,7 +1202,7 @@ const FieldMappingModal: React.FC<{
         <p className="body-sm mt-1">{flow.flowName}</p>
         <div className="flex items-center gap-2 mt-3">
           <span className="px-2 py-1 text-caption bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200">{flow.sourceEntity}</span>
-          <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <ArrowRight className="w-4 h-4 text-neutral-400" />
           <span className="px-2 py-1 text-caption bg-neutral-900 text-white">{flow.targetEntity}</span>
         </div>
       </div>
@@ -1233,7 +1233,7 @@ const FieldMappingModal: React.FC<{
                   />
                 </td>
                 <td className="px-4 py-2 text-center">
-                  <ArrowRight className="w-4 h-4 text-neutral-300 mx-auto dark:text-neutral-600" />
+                  <ArrowRight className="w-4 h-4 text-neutral-300 mx-auto dark:text-neutral-400" />
                 </td>
                 <td className="px-4 py-2">
                   <input
@@ -1268,7 +1268,7 @@ const FieldMappingModal: React.FC<{
                   />
                 </td>
                 <td className="px-4 py-2 text-center">
-                  <button onClick={() => removeMapping(mapping.id)} className="p-1 text-neutral-400 hover:text-error-600 transition-colors dark:text-neutral-500">
+                  <button onClick={() => removeMapping(mapping.id)} className="p-1 text-neutral-400 hover:text-error-600 transition-colors dark:text-neutral-400">
                     <X className="w-4 h-4" />
                   </button>
                 </td>
@@ -1442,7 +1442,7 @@ const IntegrationsPage: React.FC = () => {
             ))}
             {connections.length === 0 && (
               <div className="col-span-2 text-center py-16 border border-dashed border-neutral-300 dark:border-primary-700">
-                <Link2 className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
+                <Link2 className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                 <p className="body-sm">No connections configured</p>
                 <button
                   onClick={() => setActiveTab('connectors')}
@@ -1477,7 +1477,7 @@ const IntegrationsPage: React.FC = () => {
                 ))}
               </div>
               <div className="relative">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-neutral-500" />
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-neutral-400" />
                 <input
                   type="text"
                   placeholder="Search connectors..."

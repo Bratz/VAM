@@ -225,7 +225,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
       case 'ROOT': return <Globe className="w-4 h-4 text-white" />;
       case 'AGGREGATION': return <Folder className="w-4 h-4 text-info-600 dark:text-info-300" />;
       case 'CURRENCY_MIRROR': return <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />;
-      case 'SETTLEMENT': return <Scale className="w-4 h-4 text-cat-2" />;
+      case 'SETTLEMENT': return <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
       case 'EXCEPTION': return <AlertCircle className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
       default: return <Wallet className="w-4 h-4 text-success-600 dark:text-success-300" />;
     }
@@ -266,7 +266,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 hover:bg-neutral-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
             >
-              <MoreVertical className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <MoreVertical className="w-4 h-4 text-neutral-400" />
             </button>
             {showMenu && (
               <>
@@ -304,9 +304,9 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
   const getOperationIcon = () => {
     switch (operation.operationType) {
       case 'MOVE_TRANSACTION_VA': return <Package className="w-4 h-4 text-info-600 dark:text-info-300" />;
-      case 'MOVE_AGGREGATION': return <Folder className="w-4 h-4 text-cat-1" />;
+      case 'MOVE_AGGREGATION': return <Folder className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" />;
       case 'ACQUISITION': return <Building2 className="w-4 h-4 text-success-600 dark:text-success-300" />;
-      case 'MERGER': return <GitMerge className="w-4 h-4 text-cat-2" />;
+      case 'MERGER': return <GitMerge className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
       case 'DIVESTITURE': return <GitBranch className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
       default: return <Settings className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />;
     }
@@ -335,7 +335,7 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
           <span>by {operation.performedBy}</span>
         </div>
       </div>
-      <button onClick={() => onViewDetails(operation.id)} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:bg-primary-800 dark:text-neutral-500">
+      <button onClick={() => onViewDetails(operation.id)} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:bg-primary-800 dark:text-neutral-400">
         <Eye className="w-4 h-4" />
       </button>
     </div>
@@ -391,7 +391,7 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
                 <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Transaction VA Rules</h3>
                 <ul className="space-y-3">
                   {rules.transactionVaRules.map((rule, i) => (
-                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
+                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 dark:text-success-300 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
                   ))}
                 </ul>
               </div>
@@ -401,15 +401,15 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
                 <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Aggregation Rules</h3>
                 <ul className="space-y-3">
                   {rules.aggregationRules.map((rule, i) => (
-                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
+                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 dark:text-success-300 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
                   ))}
                 </ul>
               </div>
             )}
             {activeTab === 'mna' && rules && (
               <div className="space-y-6">
-                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Acquisition Rules</h3><ul className="space-y-2">{rules.acquisitionRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
-                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Divestiture Rules</h3><ul className="space-y-2">{rules.divestureRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
+                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Acquisition Rules</h3><ul className="space-y-2">{rules.acquisitionRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 dark:text-success-300 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
+                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Divestiture Rules</h3><ul className="space-y-2">{rules.divestureRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 dark:text-success-300 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
               </div>
             )}
             {activeTab === 'notmovable' && rules && (
@@ -713,7 +713,7 @@ const HierarchyOperationsPage: React.FC = () => {
       title: 'Move Division',
       description: 'Relocate entire business unit',
       onClick: () => { setMoveType('AGGREGATION'); setPreSelectedVaId(undefined); setShowMoveModal(true); },
-      color: 'bg-cat-1-soft group-hover:bg-cat-1/10 text-cat-1 dark:bg-cat-1/15 dark:group-hover:bg-cat-1/25'
+      color: 'bg-cat-1-soft group-hover:bg-cat-1/10 text-cat-1 dark:text-cat-1-fg dark:bg-cat-1/15 dark:group-hover:bg-cat-1/25'
     },
     {
       id: 'acquire',
@@ -729,7 +729,7 @@ const HierarchyOperationsPage: React.FC = () => {
       title: 'Merger',
       description: 'Combine two corporates',
       onClick: () => setShowMergerWizard(true),
-      color: 'bg-cat-2-soft group-hover:bg-cat-2/10 text-cat-2 dark:bg-cat-2/15 dark:group-hover:bg-cat-2/25'
+      color: 'bg-cat-2-soft group-hover:bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15 dark:group-hover:bg-cat-2/25'
     },
     {
       id: 'divest',
@@ -806,7 +806,7 @@ const HierarchyOperationsPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4 dark:bg-primary-800">
-              <Building className="w-10 h-10 text-neutral-400 dark:text-neutral-500" />
+              <Building className="w-10 h-10 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">
               {!selectedCorporateId ? 'Select a Corporate' : 'Select a Program'}
@@ -856,7 +856,7 @@ const HierarchyOperationsPage: React.FC = () => {
                     <TreeNode node={hierarchy} expandedIds={expandedIds} onToggle={handleToggle} onAction={handleNodeAction} />
                   ) : (
                     <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                      <Globe className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                      <Globe className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                       <p>No hierarchy available for this program</p>
                     </div>
                   )}
@@ -901,7 +901,7 @@ const HierarchyOperationsPage: React.FC = () => {
                 <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
                   {history.length === 0 ? (
                     <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
-                      <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
+                      <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
                       <p className="text-body-sm">No operations yet</p>
                     </div>
                   ) : (

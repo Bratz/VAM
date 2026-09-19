@@ -349,7 +349,7 @@ const InterestAccrualReportsPage: React.FC = () => {
               <StatusIconBadge tone="warning" icon={AlertCircle} className="dark:bg-warning-500/20" />
               <span className="text-warning-700 font-medium dark:text-warning-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-warning-500 hover:text-warning-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-warning-500 dark:text-warning-300 hover:text-warning-700 p-1">×</button>
           </div>
         </Card>
       )}
@@ -369,7 +369,7 @@ const InterestAccrualReportsPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <Input placeholder="Search by reference, entity..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
           </div>
@@ -430,7 +430,7 @@ const InterestAccrualReportsPage: React.FC = () => {
           selectable
           selectedKeys={selectedIds}
           onSelectionChange={(keys) => setSelectedIds(keys as Set<string>)}
-          emptyIcon={<Percent className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />}
+          emptyIcon={<Percent className="w-8 h-8 text-neutral-400" />}
           emptyTitle="No interest accruals found"
           emptyDescription={accruals.length === 0 ? 'Run daily accrual to generate interest calculations' : 'Try adjusting your filters'}
           columns={[

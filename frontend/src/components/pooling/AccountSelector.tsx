@@ -116,7 +116,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
     <div className="space-y-3">
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <Input
           placeholder="Search accounts..."
           value={searchTerm}
@@ -137,7 +137,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
       <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
         {filteredAccounts.length === 0 ? (
           <div className="text-center py-6 body-sm">
-            <Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
+            <Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
             No {currency} accounts available
           </div>
         ) : (
@@ -170,7 +170,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                   <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{displayName}</p>
                   <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{displayNumber}</p>
                   {entityInfo && entityInfo !== displayName && (
-                    <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{entityInfo}</p>
+                    <p className="text-caption text-neutral-400 truncate">{entityInfo}</p>
                   )}
                 </div>
                 <div className="text-right">

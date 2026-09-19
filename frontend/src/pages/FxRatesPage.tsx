@@ -130,7 +130,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
       data={rates}
       keyExtractor={(rate) => rate.id}
       onRowClick={onRowClick}
-      emptyIcon={<TrendingUp className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+      emptyIcon={<TrendingUp className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
       emptyTitle="No FX rates match your filters"
       emptyDescription="Try clearing search and filters, or add a new rate."
       columns={[
@@ -164,7 +164,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
             <span className="font-mono text-body-sm">
               {rate.bidRate
                 ? <span className="text-success-700 dark:text-success-300">{formatFxRate(rate.bidRate, rate.fromCurrency, rate.toCurrency)}</span>
-                : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
+                : <span className="text-neutral-400">—</span>}
             </span>
           ),
         },
@@ -176,7 +176,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
             <span className="font-mono text-body-sm">
               {rate.askRate
                 ? <span className="text-error-700 dark:text-error-300">{formatFxRate(rate.askRate, rate.fromCurrency, rate.toCurrency)}</span>
-                : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
+                : <span className="text-neutral-400">—</span>}
             </span>
           ),
         },

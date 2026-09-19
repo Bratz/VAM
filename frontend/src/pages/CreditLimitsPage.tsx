@@ -64,15 +64,15 @@ const formatDate = (date: Date | string | null | undefined): string => {
 
 const currencyConfig: Record<string, { symbol: string; name: string; color: string; bgColor: string }> = {
   AED: { symbol: 'د.إ', name: 'UAE Dirham', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
-  USD: { symbol: '$', name: 'US Dollar', color: 'text-success-700', bgColor: 'bg-success-50' },
-  EUR: { symbol: '€', name: 'Euro', color: 'text-info-700', bgColor: 'bg-info-50' },
-  GBP: { symbol: '£', name: 'British Pound', color: 'text-accent-700', bgColor: 'bg-accent-50' },
+  USD: { symbol: '$', name: 'US Dollar', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/15' },
+  EUR: { symbol: '€', name: 'Euro', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/15' },
+  GBP: { symbol: '£', name: 'British Pound', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-50 dark:bg-accent-500/15' },
   SAR: { symbol: 'ر.س', name: 'Saudi Riyal', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
   QAR: { symbol: 'ر.ق', name: 'Qatari Riyal', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   KWD: { symbol: 'د.ك', name: 'Kuwaiti Dinar', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   CHF: { symbol: 'CHF', name: 'Swiss Franc', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  JPY: { symbol: '¥', name: 'Japanese Yen', color: 'text-accent-700', bgColor: 'bg-accent-50' },
-  INR: { symbol: '₹', name: 'Indian Rupee', color: 'text-primary-700', bgColor: 'bg-primary-50' },
+  JPY: { symbol: '¥', name: 'Japanese Yen', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-50 dark:bg-accent-500/15' },
+  INR: { symbol: '₹', name: 'Indian Rupee', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
 };
 
 const availableCurrencies = ['AED', 'USD', 'EUR', 'GBP', 'SAR', 'QAR', 'KWD', 'CHF', 'JPY', 'INR'];
@@ -467,7 +467,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
             >
               <span className={cn("font-bold", config.color)}>{currency}</span>
               <span className="text-neutral-600 dark:text-neutral-300"><Amount value={safeNumber(limit?.limitAmount)} currency={currency} showCurrency={false} /></span>
-              {utilizationPct > 80 && <AlertTriangle className={cn("w-3.5 h-3.5", utilizationPct > 95 ? "text-error-500" : "text-warning-500")} />}
+              {utilizationPct > 80 && <AlertTriangle className={cn("w-3.5 h-3.5", utilizationPct > 95 ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
             </button>
           );
         })}
@@ -648,7 +648,7 @@ const EntityTreeNode: React.FC<{
       <div
         className={cn(
           "py-3 px-4 hover:bg-neutral-50 transition-colors border-b border-neutral-100 last:border-0 dark:hover:bg-primary-800/50 dark:border-primary-800/60",
-          !hasAnyLimit && "bg-neutral-50/50",
+          !hasAnyLimit && "bg-neutral-50/50 dark:bg-primary-950/50",
           entity.isTreasuryCenter && "border-l-4 border-l-accent-500"
         )}
         style={{ paddingLeft: `${16 + level * 28}px` }}
@@ -674,10 +674,10 @@ const EntityTreeNode: React.FC<{
           </div>
 
           <div className="w-[100px] text-right">
-            <p className="text-caption text-neutral-400 uppercase dark:text-neutral-500">External</p>
+            <p className="text-caption text-neutral-400 uppercase dark:text-neutral-400">External</p>
             {entity.isBankCustomer && externalCeiling ? (
               <p className="text-body-sm font-medium text-info-700 dark:text-info-300">{formatCurrency(externalCeiling, entity.functionalCurrency)}</p>
-            ) : <p className="text-body-sm text-neutral-400 dark:text-neutral-500">—</p>}
+            ) : <p className="text-body-sm text-neutral-400">—</p>}
           </div>
 
           <div className="w-[100px]">
@@ -708,7 +708,7 @@ const EntityTreeNode: React.FC<{
                   <div>
                     <div className="flex items-center gap-2">
                       <span className={cn("font-bold text-body-sm", config.color)}>{currency}</span>
-                      {(isBreached || isNearLimit) && <AlertTriangle className={cn("w-3.5 h-3.5", isBreached ? "text-error-500" : "text-warning-500")} />}
+                      {(isBreached || isNearLimit) && <AlertTriangle className={cn("w-3.5 h-3.5", isBreached ? "text-error-500 dark:text-error-300" : "text-warning-500 dark:text-warning-300")} />}
                     </div>
                     <p className="body-strong">{formatCurrency(limitAmount, currency)}</p>
                     <div className="w-20 bg-neutral-200 rounded-full h-1.5 mt-1 dark:bg-primary-800">
@@ -719,7 +719,7 @@ const EntityTreeNode: React.FC<{
                   <div className="flex flex-col gap-1">
                     <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded dark:hover:bg-primary-800" title="Edit limit"><Edit className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" /></button>
                     <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-3.5 h-3.5 text-primary-500" /></button>
-                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-3.5 h-3.5 text-error-500" /></button>
+                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" /></button>
                   </div>
                 </div>
               );
@@ -846,7 +846,7 @@ const GroupLimitModal: React.FC<{
               </select>
             </div>
             <div>
-              <label className="field-label block mb-1">Amount {minAmount > 0 && <span className="text-neutral-400 dark:text-neutral-500">(min: {formatCurrency(minAmount, currency)})</span>}</label>
+              <label className="field-label block mb-1">Amount {minAmount > 0 && <span className="text-neutral-400">(min: {formatCurrency(minAmount, currency)})</span>}</label>
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value === '' ? 0 : parseFloat(e.target.value))} min={minAmount} step={1000} className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 dark:border-primary-700" required />
             </div>
           </div>
@@ -856,11 +856,11 @@ const GroupLimitModal: React.FC<{
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" checked={hardLimit} onChange={() => setHardLimit(true)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Lock className="w-4 h-4 text-error-500" /><span className="text-body-sm">Hard Limit</span>
+                <Lock className="w-4 h-4 text-error-500 dark:text-error-300" /><span className="text-body-sm">Hard Limit</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" checked={!hardLimit} onChange={() => setHardLimit(false)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Unlock className="w-4 h-4 text-warning-500" /><span className="text-body-sm">Soft Limit</span>
+                <Unlock className="w-4 h-4 text-warning-500 dark:text-warning-300" /><span className="text-body-sm">Soft Limit</span>
               </label>
             </div>
           </div>
@@ -1016,7 +1016,7 @@ const VaLimitsModal: React.FC<{
                             </div>
                             <p className="caption">{utilizationPct.toFixed(0)}% utilized</p>
                           </div>
-                          <button type="button" onClick={() => handleDeleteVaLimit(va.id)} className="p-2 hover:bg-error-50 rounded dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4 text-error-500" /></button>
+                          <button type="button" onClick={() => handleDeleteVaLimit(va.id)} className="p-2 hover:bg-error-50 rounded dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" /></button>
                         </div>
                       );
                     })}
@@ -1037,7 +1037,7 @@ const VaLimitsModal: React.FC<{
                     </div>
                     {selectedVaId && (
                       <div>
-                        <label className="field-label block mb-1">Amount <span className="text-neutral-400 dark:text-neutral-500">(max: {formatCurrency(entityUnallocated, currency)})</span></label>
+                        <label className="field-label block mb-1">Amount <span className="text-neutral-400">(max: {formatCurrency(entityUnallocated, currency)})</span></label>
                         <input type="number" value={allocAmount} onChange={(e) => setAllocAmount(e.target.value === '' ? 0 : parseFloat(e.target.value))} max={entityUnallocated} step={1000} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" />
                       </div>
                     )}
@@ -1048,7 +1048,7 @@ const VaLimitsModal: React.FC<{
                 </div>
               )}
 
-              {vas.length === 0 && <div className="text-center py-8"><CreditCard className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" /><p className="text-neutral-500 dark:text-neutral-400">No {currency} VAs found for this entity</p></div>}
+              {vas.length === 0 && <div className="text-center py-8"><CreditCard className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No {currency} VAs found for this entity</p></div>}
               {vasWithoutLimit.length === 0 && vas.length > 0 && <div className="text-center py-4 bg-success-50 rounded-lg dark:bg-success-500/10"><p className="text-success-700 dark:text-success-300">All VAs have limits allocated</p></div>}
               {entityUnallocated <= 0 && vasWithoutLimit.length > 0 && <div className="text-center py-4 bg-warning-50 rounded-lg dark:bg-warning-500/10"><p className="text-warning-700 dark:text-warning-300">No available entity limit to allocate. Increase entity limit first.</p></div>}
             </>
@@ -1270,7 +1270,7 @@ const CreditLimitsPage: React.FC = () => {
             <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
             <p className="text-body-sm text-error-700 font-medium dark:text-error-300">{error}</p>
           </div>
-          <button type="button" onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1"><X className="w-5 h-5" /></button>
+          <button type="button" onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1"><X className="w-5 h-5" /></button>
         </div>
       )}
 
@@ -1298,7 +1298,7 @@ const CreditLimitsPage: React.FC = () => {
 
               <div className="px-4 py-3 border-b border-neutral-100 dark:border-primary-800/60">
                 <div className="relative max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input type="text" placeholder="Search entities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900" />
                 </div>
               </div>
@@ -1314,7 +1314,7 @@ const CreditLimitsPage: React.FC = () => {
                 {loading ? (
                   <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>
                 ) : rootEntities.length === 0 ? (
-                  <div className="text-center py-12"><Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" /><p className="text-neutral-500 dark:text-neutral-400">No entities found</p></div>
+                  <div className="text-center py-12"><Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No entities found</p></div>
                 ) : (
                   rootEntities.sort((a, b) => a.hierarchyLevel - b.hierarchyLevel || a.entityCode.localeCompare(b.entityCode)).map(entity => (
                     <EntityTreeNode
@@ -1331,14 +1331,14 @@ const CreditLimitsPage: React.FC = () => {
 
           {groupLimits.length === 0 && !loading && (
             <div className="bg-white rounded-xl border border-neutral-100 p-8 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.15s' }}>
-              <AlertTriangle className="w-12 h-12 text-warning-500 mx-auto mb-4" />
+              <AlertTriangle className="w-12 h-12 text-warning-500 dark:text-warning-300 mx-auto mb-4" />
               <p className="text-neutral-600 dark:text-neutral-300">Create a Group Limit first to allocate to entities</p>
             </div>
           )}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
-          <Building className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+          <Building className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
           <p className="text-neutral-500 dark:text-neutral-400">Select a corporate to view credit limits</p>
         </div>
       )}

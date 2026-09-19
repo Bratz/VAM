@@ -102,7 +102,7 @@ const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
             <p
               className={cn(
                 'text-body-sm font-medium',
-                currentStep >= step.id ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500'
+                currentStep >= step.id ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400'
               )}
             >
               {step.title}
@@ -110,7 +110,7 @@ const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
           </div>
         </div>
         {index < STEPS.length - 1 && (
-          <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600 mx-2" />
+          <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-400 mx-2" />
         )}
       </React.Fragment>
     ))}
@@ -685,7 +685,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   'px-4 py-2 text-body-sm font-medium rounded-lg transition-colors',
                   canProceed()
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
-                    : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                    : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                 )}
               >
                 Next →

@@ -77,7 +77,7 @@ const EcommerceCollectionsPage: React.FC = () => {
       <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="p-4 flex gap-4">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <Input className="pl-9" placeholder="Search by reference or merchant..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <select className="border border-neutral-200 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
@@ -103,7 +103,7 @@ const EcommerceCollectionsPage: React.FC = () => {
         <DataTable
           data={filteredCollections}
           keyExtractor={(c) => c.id}
-          emptyIcon={<CreditCard className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyIcon={<CreditCard className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
           emptyTitle="No collections found"
           columns={[
             {

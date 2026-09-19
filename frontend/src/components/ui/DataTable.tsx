@@ -407,7 +407,7 @@ export function DataTable<T>({
                   'transition-all duration-200',
                   'active:scale-[0.99]',
                   onRowClick && 'cursor-pointer',
-                  isSelected && 'border-primary-300 bg-primary-50/50 ring-1 ring-primary-200',
+                  isSelected && 'border-primary-300 bg-primary-50/50 dark:bg-primary-800/40 ring-1 ring-primary-200',
                   !isSelected && 'hover:border-neutral-300 hover:shadow-md'
                 )}
               >

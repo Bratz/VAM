@@ -374,7 +374,7 @@ const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementT
   JOINT_VENTURE: { label: 'Joint Venture', icon: ArrowLeftRight, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   ASSOCIATE: { label: 'Associate', icon: Briefcase, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   SPV: { label: 'SPV', icon: FlaskConical, color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-100 dark:bg-error-500/20' },
-  TREASURY_CENTER: { label: 'Treasury Center', icon: Landmark, color: 'text-cat-2', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
+  TREASURY_CENTER: { label: 'Treasury Center', icon: Landmark, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
 };
 
 const statusConfig: Record<EntityStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
@@ -391,7 +391,7 @@ const statusConfig: Record<EntityStatus, { label: string; color: string; bgColor
 
 const FormField: React.FC<{ label: string; required?: boolean; error?: string; hint?: string; children: React.ReactNode }> = ({ label, required, error, hint, children }) => (
   <div className="space-y-1">
-    <label className="field-label block">{label}{required && <span className="text-error-500 ml-1">*</span>}</label>
+    <label className="field-label block">{label}{required && <span className="text-error-500 dark:text-error-300 ml-1">*</span>}</label>
     {children}
     {hint && !error && <p className="caption">{hint}</p>}
     {error && <p className="caption-error">{error}</p>}
@@ -518,7 +518,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
             {tabs.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 className={cn('flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors',
-                  activeTab === tab.id ? 'border-cat-1 text-cat-1' : 'border-transparent text-neutral-500 hover:text-neutral-700')}>
+                  activeTab === tab.id ? 'border-cat-1 text-cat-1 dark:text-cat-1-fg' : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700')}>
                 <tab.icon className="w-4 h-4" />{tab.label}
               </button>
             ))}
@@ -529,11 +529,11 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
           {activeTab === 'basic' && (
             <div className="space-y-6">
               <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 dark:bg-warning-500/10 dark:border-warning-500/30">
-                <p className="text-body-sm text-warning-800 dark:text-warning-300"><AlertTriangle className="w-4 h-4 inline mr-1" />Fields marked with <span className="text-error-500">*</span> are mandatory.</p>
+                <p className="text-body-sm text-warning-800 dark:text-warning-300"><AlertTriangle className="w-4 h-4 inline mr-1" />Fields marked with <span className="text-error-500 dark:text-error-300">*</span> are mandatory.</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Entity Code" required error={errors.entityCode} hint="Unique ID (e.g., ACME-UK)">
-                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-body-sm', isEditMode && 'bg-neutral-100')} placeholder="ACME-UK" />
+                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-body-sm', isEditMode && 'bg-neutral-100 dark:bg-primary-800')} placeholder="ACME-UK" />
                 </FormField>
                 <FormField label="Entity Name" required error={errors.entityName}>
                   <input type="text" value={formData.entityName} onChange={(e) => updateField('entityName', e.target.value)} maxLength={200} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="ACME Corporation UK Ltd" />
@@ -668,7 +668,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
               {/* IHB Section - Merged */}
               <div className="border-t pt-4">
                 <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 mb-4 dark:bg-cat-2/15 dark:border-cat-2/30">
-                  <p className="text-body-sm text-cat-2"><Banknote className="w-4 h-4 inline mr-1" />In-House Banking for intercompany lending/borrowing.</p>
+                  <p className="text-body-sm text-cat-2 dark:text-cat-2-fg"><Banknote className="w-4 h-4 inline mr-1" />In-House Banking for intercompany lending/borrowing.</p>
                 </div>
                 <CheckboxField
                   checked={formData.ihbEnabled}
@@ -859,7 +859,7 @@ const HierarchyTreeNode: React.FC<{
               </Badge>
             )}
             {entity.isTreasuryCenter && (
-              <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
+              <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                 <Crown className="w-3 h-3 mr-1" />Treasury
               </Badge>
             )}
@@ -893,7 +893,7 @@ const HierarchyTreeNode: React.FC<{
           <div className="text-right min-w-[140px]">
             <div className="flex items-center justify-end gap-2">
               {(isBreached || isNearLimit) && (
-                <AlertTriangle className={cn('w-4 h-4', isBreached ? 'text-error-500' : 'text-warning-500')} />
+                <AlertTriangle className={cn('w-4 h-4', isBreached ? 'text-error-500 dark:text-error-300' : 'text-warning-500 dark:text-warning-300')} />
               )}
               <p className={cn(
                 'text-body-sm font-semibold',
@@ -906,7 +906,7 @@ const HierarchyTreeNode: React.FC<{
               {formatCurrency(limitUtilized, limitCurrency)} / {formatCurrency(limitAmount, limitCurrency)}
             </p>
             {hasMultipleCurrencies && (
-              <p className="text-caption text-info-500">+{creditLimits.length - 1} more</p>
+              <p className="text-caption text-info-500 dark:text-info-300">+{creditLimits.length - 1} more</p>
             )}
           </div>
         ) : (
@@ -964,20 +964,20 @@ const EntityDetailPanel: React.FC<{
             <div className={cn('p-3 rounded-xl', typeConfig.bgColor)}><TypeIcon className={cn('w-6 h-6', typeConfig.color)} /></div>
             <div><h3 className="section-title">{entity.entityName}</h3><p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</p></div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded transition-colors dark:hover:bg-primary-800"><X className="w-5 h-5 text-neutral-400 dark:text-neutral-500" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded transition-colors dark:hover:bg-primary-800"><X className="w-5 h-5 text-neutral-400" /></button>
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <span className={cn('px-2 py-1 rounded-full text-caption', statusCfg.bgColor, statusCfg.color)}><StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}</span>
           <span className="px-2 py-1 rounded-full text-caption bg-neutral-100 dark:bg-primary-800">{typeConfig.label}</span>
           {entity.isBankCustomer && <span className="px-2 py-1 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank Customer</span>}
-          {entity.isTreasuryCenter && <span className="px-2 py-1 rounded-full text-caption bg-cat-2/10 text-cat-2 dark:bg-cat-2/15"><Crown className="w-3 h-3 inline" /> Treasury</span>}
+          {entity.isTreasuryCenter && <span className="px-2 py-1 rounded-full text-caption bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15"><Crown className="w-3 h-3 inline" /> Treasury</span>}
           {entity.ihbEnabled && <span className="px-2 py-1 rounded-full text-caption bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300"><PiggyBank className="w-3 h-3 inline" /> IHB</span>}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className={cn('rounded-xl p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950')}>
-          <h4 className="text-body-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')} />Internal Credit Limits</h4>
+          <h4 className="text-body-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400')} />Internal Credit Limits</h4>
           {hasLimits ? (
             <div className="space-y-3">
               {/* Multi-currency: Show each currency limit */}
@@ -1010,15 +1010,15 @@ const EntityDetailPanel: React.FC<{
                     {/* Pool Manager Section - for Regional Treasuries managing subsidiary limits */}
                     {(isLimitPoolManager || (canManagePool && idx === 0)) && (
                       <div className="mt-2 pt-2 border-t border-primary-100 dark:border-primary-700/60">
-                        <p className="text-caption font-semibold text-cat-2 mb-1"><Landmark className="w-3 h-3 inline mr-1" />Pool Manager</p>
+                        <p className="text-caption font-semibold text-cat-2 dark:text-cat-2-fg mb-1"><Landmark className="w-3 h-3 inline mr-1" />Pool Manager</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="min-w-0">
-                            <p className="text-caption text-cat-2">To Subsidiaries</p>
-                            <p className="text-body-sm font-bold text-cat-2 truncate">{formatCompactCurrency(allocatedToChildren, limitCurrency)}</p>
+                            <p className="text-caption text-cat-2 dark:text-cat-2-fg">To Subsidiaries</p>
+                            <p className="text-body-sm font-bold text-cat-2 dark:text-cat-2-fg truncate">{formatCompactCurrency(allocatedToChildren, limitCurrency)}</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-caption text-cat-2">Pool Available</p>
-                            <p className="text-body-sm font-bold text-cat-2 truncate">{formatCompactCurrency(unallocatedPool, limitCurrency)}</p>
+                            <p className="text-caption text-cat-2 dark:text-cat-2-fg">Pool Available</p>
+                            <p className="text-body-sm font-bold text-cat-2 dark:text-cat-2-fg truncate">{formatCompactCurrency(unallocatedPool, limitCurrency)}</p>
                           </div>
                         </div>
                       </div>
@@ -1044,7 +1044,7 @@ const EntityDetailPanel: React.FC<{
             </div>
           ) : (
             <div className="text-center py-4">
-              <CreditCard className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-600" />
+              <CreditCard className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
               <p className="body-sm">No limit allocated</p>
               {groupLimits.length > 0 && (
                 <div className="mt-2">
@@ -1064,11 +1064,11 @@ const EntityDetailPanel: React.FC<{
         </div>
 
         <div className={cn('rounded-xl p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
-          <h4 className="text-body-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400 dark:text-neutral-500')} />Banking Relationship</h4>
+          <h4 className="text-body-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />Banking Relationship</h4>
           {entity.isBankCustomer ? (
             <div className="space-y-2">
               <div className="flex justify-between"><span className="body-sm">Status</span><span className="text-body-sm text-success-700 dark:text-success-300"><CheckCircle className="w-4 h-4 inline" /> Bank Customer</span></div>
-              {entity.bancsCustomerId && <div className="flex justify-between"><span className="body-sm">BANCS ID</span><span className="text-body-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 transition-colors dark:text-neutral-500"><Copy className="w-3 h-3 inline" /></button></span></div>}
+              {entity.bancsCustomerId && <div className="flex justify-between"><span className="body-sm">BANCS ID</span><span className="text-body-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 transition-colors dark:text-neutral-400"><Copy className="w-3 h-3 inline" /></button></span></div>}
             </div>
           ) : <p className="body-sm text-center">Not a bank customer</p>}
         </div>
@@ -1094,7 +1094,7 @@ const EntityDetailPanel: React.FC<{
               { enabled: entity.isTreasuryCenter, label: 'Treasury Center', icon: Landmark },
               { enabled: entity.ihbEnabled, label: 'IHB Enabled', icon: Zap },
             ].map(cap => (
-              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-body-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-500')}>
+              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-body-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-400')}>
                 <cap.icon className="w-4 h-4" /><span className="flex-1">{cap.label}</span>{cap.enabled ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
               </div>
             ))}
@@ -1311,7 +1311,7 @@ const LegalEntitiesPage: React.FC = () => {
       </div>
     )
   ) : (
-    <span className="text-neutral-400 dark:text-neutral-500">No group limit configured</span>
+    <span className="text-neutral-400">No group limit configured</span>
   );
 
   // Register the page-level toolbar in the Layout header — same pattern as
@@ -1392,7 +1392,7 @@ const LegalEntitiesPage: React.FC = () => {
             <span>
               <strong className="text-primary-700 dark:text-neutral-200">{stats.activeEntities}</strong> active
               {stats.treasuryCenters > 0 && (
-                <> · <strong className="text-cat-2">{stats.treasuryCenters}</strong> treasury {stats.treasuryCenters === 1 ? 'center' : 'centers'}</>
+                <> · <strong className="text-cat-2 dark:text-cat-2-fg">{stats.treasuryCenters}</strong> treasury {stats.treasuryCenters === 1 ? 'center' : 'centers'}</>
               )}
               {stats.ihbEnabledEntities > 0 && (
                 <> · <strong className="text-info-700 dark:text-info-300">{stats.ihbEnabledEntities}</strong> IHB-enabled</>
@@ -1439,7 +1439,7 @@ const LegalEntitiesPage: React.FC = () => {
             {/* Search & Filters */}
             <div className="px-4 py-3 border-b border-neutral-200 flex flex-wrap gap-4 dark:border-primary-800">
               <div className="flex-1 relative min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input 
                   type="text" 
                   placeholder="Search entities..." 
@@ -1484,9 +1484,9 @@ const LegalEntitiesPage: React.FC = () => {
                 </div>
               ) : rootEntities.length === 0 ? (
                 <div className="text-center py-12">
-                  <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+                  <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No entities found</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Create your first legal entity to get started</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Create your first legal entity to get started</p>
                 </div>
               ) : (
                 rootEntities.map(entity => (
@@ -1524,9 +1524,9 @@ const LegalEntitiesPage: React.FC = () => {
             />
           ) : (
             <Card className="h-full flex flex-col items-center justify-center animate-fade-in" style={{ animationDelay: '0.45s' }}>
-              <Eye className="w-12 h-12 text-neutral-300 mb-4 dark:text-neutral-600" />
+              <Eye className="w-12 h-12 text-neutral-300 mb-4 dark:text-neutral-400" />
               <p className="text-neutral-500 font-medium dark:text-neutral-400">Select an Entity</p>
-              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Click on an entity to view details</p>
+              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Click on an entity to view details</p>
             </Card>
           )}
         </div>
@@ -1549,7 +1549,7 @@ const LegalEntitiesPage: React.FC = () => {
             <span className="caption">Branch</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2" /></div>
+            <div className="p-1.5 rounded bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div>
             <span className="caption">Treasury Center</span>
           </div>
           <div className="flex items-center gap-2">

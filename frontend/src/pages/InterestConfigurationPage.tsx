@@ -315,7 +315,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
           </div>
         </div>
 
-        <div className="h-10 w-px bg-primary-200" />
+        <div className="h-10 w-px bg-primary-200 dark:bg-primary-700" />
 
         {/* Program Selector */}
         <div className="flex items-center gap-2">
@@ -748,7 +748,7 @@ const InterestConfigurationPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search configurations..."
@@ -795,7 +795,7 @@ const InterestConfigurationPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
           </div>
         </Card>
       )}
@@ -816,7 +816,7 @@ const InterestConfigurationPage: React.FC = () => {
           {filteredConfigs.length === 0 && !error && (
             <div className="col-span-full text-center py-12">
               <div className="w-16 h-16 rounded-xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Settings className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                <Settings className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 font-medium dark:text-neutral-400">No interest configurations found</p>
               <Button variant="outline" className="mt-4" onClick={handleCreate} disabled={!selectedCorporateId}>

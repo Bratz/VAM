@@ -436,10 +436,10 @@ const kycStatusConfig: Record<string, { label: string; color: string; icon: Reac
 
 const partyTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
   INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-  CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+  CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
   EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
   VENDOR: { label: 'Vendor', icon: Building2, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  CUSTOMER: { label: 'Customer', icon: UserCheck, color: 'text-cat-3', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
+  CUSTOMER: { label: 'Customer', icon: UserCheck, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15' },
 };
 
 // ============================================================================
@@ -564,7 +564,7 @@ const PartyPicker: React.FC<{
 
   const partyTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
     INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
-    CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
+    CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15' },
     EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
   };
 
@@ -583,7 +583,7 @@ const PartyPicker: React.FC<{
             </p>
           </div>
           <button type="button" onClick={handleClear} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-full">
-            <X className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+            <X className="w-5 h-5 text-neutral-400" />
           </button>
         </div>
       ) : (
@@ -596,8 +596,8 @@ const PartyPicker: React.FC<{
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
-          {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 animate-spin" />}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+          {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 animate-spin" />}
         </div>
       )}
 
@@ -665,19 +665,19 @@ const PartyPicker: React.FC<{
                               {party.city && <span>• {party.city}</span>}
                             </div>
                           </div>
-                          {party.kycStatus === 'VERIFIED' && <Shield className="w-4 h-4 text-success-500" />}
+                          {party.kycStatus === 'VERIFIED' && <Shield className="w-4 h-4 text-success-500 dark:text-success-300" />}
                         </div>
                       );
                     })}
                   </div>
                 ) : searchQuery.length >= 2 ? (
                   <div className="p-4 text-center text-neutral-500 dark:text-neutral-400">
-                    <User className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
+                    <User className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
                     <p className="text-body-sm">No customers found</p>
                   </div>
                 ) : (
                   <div className="p-4 text-center text-neutral-500 dark:text-neutral-400">
-                    <Search className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
+                    <Search className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" />
                     <p className="text-body-sm">Type at least 2 characters</p>
                   </div>
                 )}
@@ -749,7 +749,7 @@ const ProgramCard: React.FC<{
           <span className="caption">
             {program.currency} • Since {new Date(program.launchDate).toLocaleDateString()}
           </span>
-          <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <ChevronRight className="w-4 h-4 text-neutral-400" />
         </div>
       </div>
     </Card>
@@ -791,7 +791,7 @@ const WalletRow: React.FC<{
       <td className="data-table-cell">
         <div className="flex items-center gap-1">
           <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
-          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" /></button>
+          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400" /></button>
         </div>
         <p className="caption">{wallet.programCode || wallet.programName}</p>
       </td>
@@ -802,11 +802,11 @@ const WalletRow: React.FC<{
       <td className="data-table-cell">
         <div className="space-y-1.5 w-28">
           <div>
-            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
+            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
             <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
           </div>
           <div>
-            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
+            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
             <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
           </div>
         </div>
@@ -1479,7 +1479,7 @@ const WalletPage: React.FC = () => {
                 </select>
               </div>
             ) : (
-              <p className="text-body-sm text-neutral-400 dark:text-neutral-500">Select program first</p>
+              <p className="text-body-sm text-neutral-400">Select program first</p>
             )}
           </div>
 
@@ -1625,7 +1625,7 @@ const WalletPage: React.FC = () => {
                 <h3 className="section-title">{walletDetail.holderName}</h3>
                 <p className="body-sm">{walletDetail.holderMobile}</p>
                 {walletDetail.partyId && <span className="text-caption text-primary-500">Linked to Party</span>}
-                {walletDetail.hierarchyPath && <p className="text-caption text-neutral-400 dark:text-neutral-500 font-mono mt-1">{walletDetail.hierarchyPath}</p>}
+                {walletDetail.hierarchyPath && <p className="text-caption text-neutral-400 font-mono mt-1">{walletDetail.hierarchyPath}</p>}
               </div>
               <div className="flex flex-col gap-2">
                 <Badge variant={walletStatusConfig[walletDetail.status]?.color as any}>{walletDetail.status}</Badge>

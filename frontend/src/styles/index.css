@@ -67,7 +67,7 @@
   }
 
   body {
-    @apply font-sans text-primary-900;
+    @apply font-sans text-primary-900 dark:text-neutral-50;
     /* Phase 11 Tier 1 (2026-05-17): was -0.011em. Negative tracking on
      * 14–16px sans body causes character collision and reading fatigue
      * over long sessions — treasury users live in this app all day. */

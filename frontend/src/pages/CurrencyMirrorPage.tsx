@@ -139,11 +139,11 @@ const CURRENCY_COLORS: Record<string, { bg: string; text: string; border: string
   // `solid` — saturated fill for use ON dark surfaces (the navy hero card's distribution bar).
   USD: { bg: 'bg-success-50 dark:bg-success-500/10',     text: 'text-success-600 dark:text-success-300',     border: 'border-success-200 dark:border-success-500/30',     solid: 'bg-success-400' },
   EUR: { bg: 'bg-info-50 dark:bg-info-500/10',       text: 'text-info-600 dark:text-info-300',       border: 'border-info-200 dark:border-info-500/30',       solid: 'bg-info-400' },
-  GBP: { bg: 'bg-cat-2-soft dark:bg-cat-2/15',   text: 'text-cat-2',   border: 'border-cat-2/20 dark:border-cat-2/30',   solid: 'bg-cat-2' },
+  GBP: { bg: 'bg-cat-2-soft dark:bg-cat-2/15',   text: 'text-cat-2 dark:text-cat-2-fg',   border: 'border-cat-2/20 dark:border-cat-2/30',   solid: 'bg-cat-2' },
   AED: { bg: 'bg-warning-50 dark:bg-warning-500/10',     text: 'text-warning-600 dark:text-warning-300',     border: 'border-warning-200 dark:border-warning-500/30',     solid: 'bg-warning-400' },
-  SAR: { bg: 'bg-cat-5-soft dark:bg-cat-5/15', text: 'text-cat-5', border: 'border-cat-5/20 dark:border-cat-5/30', solid: 'bg-cat-5' },
+  SAR: { bg: 'bg-cat-5-soft dark:bg-cat-5/15', text: 'text-cat-5 dark:text-cat-5-fg', border: 'border-cat-5/20 dark:border-cat-5/30', solid: 'bg-cat-5' },
   CHF: { bg: 'bg-error-50 dark:bg-error-500/10',         text: 'text-error-600 dark:text-error-300',         border: 'border-error-200 dark:border-error-500/30',         solid: 'bg-error-400' },
-  JPY: { bg: 'bg-cat-4-soft dark:bg-cat-4/15',       text: 'text-cat-4',       border: 'border-cat-4/20 dark:border-cat-4/30',       solid: 'bg-cat-4' },
+  JPY: { bg: 'bg-cat-4-soft dark:bg-cat-4/15',       text: 'text-cat-4 dark:text-cat-4-fg',       border: 'border-cat-4/20 dark:border-cat-4/30',       solid: 'bg-cat-4' },
   INR: { bg: 'bg-warning-50 dark:bg-warning-500/10',   text: 'text-warning-600 dark:text-warning-300',   border: 'border-warning-200 dark:border-warning-500/30',   solid: 'bg-warning-400' },
 };
 
@@ -214,7 +214,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
         </div>
 
         <div className="flex items-center gap-2 py-2 border-y border-dashed border-neutral-200 dark:border-primary-800">
-          <ArrowRightLeft className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
           <span className="body-sm">
             1 {breakdown.currency} = {breakdown.fxRate?.toFixed(4) || 'N/A'} {baseCurrency}
           </span>
@@ -283,7 +283,7 @@ const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", fromStyle.bg)}>
             <CurrencyIcon currency={rate.fromCurrency} className={cn("w-4 h-4", fromStyle.text)} />
           </div>
-          <ArrowRightLeft className="w-4 h-4 text-neutral-400 dark:text-neutral-500 mx-2" />
+          <ArrowRightLeft className="w-4 h-4 text-neutral-400 mx-2" />
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", toStyle.bg)}>
             <CurrencyIcon currency={rate.toCurrency} className={cn("w-4 h-4", toStyle.text)} />
           </div>
@@ -775,9 +775,9 @@ const CurrencyMirrorPage: React.FC = () => {
         </div>
       ) : (
         <Card className="p-12 text-center animate-fade-in" style={{ animationDelay: '0.25s' }}>
-          <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+          <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-400 mx-auto mb-4" />
           <p className="text-neutral-500 dark:text-neutral-400">No currency mirrors found</p>
-          <p className="text-body-sm text-neutral-400 dark:text-neutral-500 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
+          <p className="text-body-sm text-neutral-400 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
         </Card>
       )}
 

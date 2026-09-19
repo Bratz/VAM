@@ -159,7 +159,7 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
             </div>
           </div>
         </div>
-        <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-500" />
+        <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-400" />
       </div>
     </Card>
   );

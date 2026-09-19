@@ -142,10 +142,10 @@ const Toast: React.FC<{ toast: ToastNotification; onDismiss: (id: string) => voi
   }, [toast.id, toast.duration, onDismiss]);
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-success-500" />,
-    error: <XCircle className="w-5 h-5 text-error-500" />,
-    warning: <AlertTriangle className="w-5 h-5 text-warning-500" />,
-    info: <Info className="w-5 h-5 text-info-500" />,
+    success: <CheckCircle2 className="w-5 h-5 text-success-500 dark:text-success-300" />,
+    error: <XCircle className="w-5 h-5 text-error-500 dark:text-error-300" />,
+    warning: <AlertTriangle className="w-5 h-5 text-warning-500 dark:text-warning-300" />,
+    info: <Info className="w-5 h-5 text-info-500 dark:text-info-300" />,
   };
 
   const bgColors = {
@@ -163,7 +163,7 @@ const Toast: React.FC<{ toast: ToastNotification; onDismiss: (id: string) => voi
         <p className="body-sm mt-0.5">{toast.message}</p>
       </div>
       <button onClick={() => onDismiss(toast.id)} className="p-1 hover:bg-white/50 dark:hover:bg-primary-900/50 rounded">
-        <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+        <X className="w-4 h-4 text-neutral-400" />
       </button>
     </div>
   );

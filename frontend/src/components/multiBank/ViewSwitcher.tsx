@@ -50,7 +50,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ value, onChange }) =
             'px-3 py-1.5 text-body-sm font-medium transition-colors',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
             active
-              ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+              ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
               : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-primary-800',
           )}
         >

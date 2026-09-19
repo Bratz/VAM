@@ -54,10 +54,10 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
     <div className="space-y-6">
       {/* Inherit Program Defaults Toggle */}
       {program && (
-        <div className="flex items-center justify-between p-4 bg-primary-50 rounded-lg border border-primary-100">
+        <div className="flex items-center justify-between p-4 bg-primary-50 dark:bg-primary-800/40 rounded-lg border border-primary-100">
           <div>
-            <h4 className="font-medium text-primary-900">Inherit Program Defaults</h4>
-            <p className="text-body-sm text-primary-700">
+            <h4 className="font-medium text-primary-900 dark:text-neutral-50">Inherit Program Defaults</h4>
+            <p className="text-body-sm text-primary-700 dark:text-neutral-200">
               Apply default limits, KYC requirements, and wallet settings from the program
             </p>
           </div>
@@ -68,7 +68,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
               onChange={(e) => updateField('inheritProgramDefaults', e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
+            <div className="w-11 h-6 bg-neutral-200 dark:bg-primary-800 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600" />
           </label>
         </div>
       )}

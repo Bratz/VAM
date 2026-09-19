@@ -352,7 +352,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
           </div>
           <div className="border-t border-neutral-200 mt-3 pt-3 flex justify-between items-center dark:border-primary-800">
             <span className="font-semibold text-neutral-700 dark:text-neutral-200">Total Amount</span>
-            <span className="text-body-lg font-bold text-cat-1">{formatCurrency(totalAmount, currency)}</span>
+            <span className="text-body-lg font-bold text-cat-1 dark:text-cat-1-fg">{formatCurrency(totalAmount, currency)}</span>
           </div>
         </div>
 
@@ -393,7 +393,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
             type="checkbox"
             checked={generateViban}
             onChange={(e) => setGenerateViban(e.target.checked)}
-            className="w-4 h-4 rounded border-neutral-300 text-cat-1 focus:ring-cat-1 dark:border-primary-700"
+            className="w-4 h-4 rounded border-neutral-300 text-cat-1 dark:text-cat-1-fg focus:ring-cat-1 dark:border-primary-700"
           />
           <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
         </label>
@@ -401,12 +401,12 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
         {/* Preview Card */}
         {previewLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-cat-1" />
+            <Loader2 className="w-6 h-6 animate-spin text-cat-1 dark:text-cat-1-fg" />
             <span className="ml-2 text-neutral-500 dark:text-neutral-400">Loading preview...</span>
           </div>
         ) : preview && (
           <Card className="p-4 bg-gradient-to-br from-cat-1-soft to-info-50 border-cat-1/20 dark:border-cat-1/30 dark:from-cat-1/15 dark:to-info-500/15">
-            <h4 className="text-body-sm font-semibold text-cat-1 mb-3 flex items-center gap-2">
+            <h4 className="text-body-sm font-semibold text-cat-1 dark:text-cat-1-fg mb-3 flex items-center gap-2">
               <Calculator className="w-4 h-4" />
               COBO Preview
             </h4>
@@ -426,7 +426,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
               
               <div className="border-t border-cat-1/20 pt-2 flex justify-between dark:border-cat-1/30">
                 <span className="font-semibold text-neutral-700 dark:text-neutral-200">Net to Subsidiary</span>
-                <span className="text-body-lg font-bold text-cat-5">{formatCurrency(preview.netAmount, preview.currencyCode)}</span>
+                <span className="text-body-lg font-bold text-cat-5 dark:text-cat-5-fg">{formatCurrency(preview.netAmount, preview.currencyCode)}</span>
               </div>
               
               {preview.ihbDepositPreview && (
@@ -435,7 +435,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
                     <strong>IHB Deposit:</strong> {formatCurrency(preview.ihbDepositPreview.depositAmount, preview.currencyCode)} 
                     @ {preview.ihbDepositPreview.interestRate}% p.a.
                   </p>
-                  <p className="text-caption text-cat-5 mt-1">
+                  <p className="text-caption text-cat-5 dark:text-cat-5-fg mt-1">
                     Est. Monthly Interest: {formatCurrency(preview.ihbDepositPreview.estimatedMonthlyInterest, preview.currencyCode)}
                   </p>
                 </div>
@@ -1086,7 +1086,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input
               placeholder="Search invoices..."
               value={searchQuery}
@@ -1229,7 +1229,7 @@ const EnhancedReceivablesPage: React.FC = () => {
         <div className="p-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-cat-1" />
+              <Loader2 className="w-8 h-8 animate-spin text-cat-1 dark:text-cat-1-fg" />
               <span className="ml-3 text-neutral-500 dark:text-neutral-400">Loading receivables...</span>
             </div>
           ) : (
@@ -1239,7 +1239,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <DataTable
                   data={filteredInvoices}
                   keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyIcon={<FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No invoices found"
                   columns={[
                     {
@@ -1349,7 +1349,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                           {invoice.assignedViban ? (
                             <div className="flex items-center gap-1">
                               <span className="text-caption font-mono text-neutral-600 dark:text-neutral-300">{invoice.assignedViban.slice(0, 10)}...</span>
-                              <button onClick={() => navigator.clipboard.writeText(invoice.assignedViban!)} className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300">
+                              <button onClick={() => navigator.clipboard.writeText(invoice.assignedViban!)} className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-400 dark:hover:text-neutral-300">
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
@@ -1416,7 +1416,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <DataTable
                   data={intercompanyInvoices}
                   keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No intercompany invoices found"
                   columns={[
                     {
@@ -1497,7 +1497,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <DataTable
                   data={pendingNettingInvoices}
                   keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<GitMerge className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyIcon={<GitMerge className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No receivables pending netting"
                   columns={[
                     {
@@ -1563,7 +1563,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <DataTable
                   data={vibans}
                   keyExtractor={(viban) => viban.id}
-                  emptyIcon={<QrCode className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyIcon={<QrCode className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No VIBANs generated"
                   columns={[
                     {
@@ -1574,7 +1574,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                           <span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
                           <button
                             onClick={() => navigator.clipboard.writeText(viban.virtualIban)}
-                            className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300"
+                            className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-400 dark:hover:text-neutral-300"
                           >
                             <Copy className="w-4 h-4" />
                           </button>
@@ -1627,7 +1627,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Expires',
                       render: (_, viban) => (
                         <span className="text-body-sm">
-                          {viban.expiresAt ? formatDate(viban.expiresAt) : <span className="text-neutral-400 dark:text-neutral-500">No expiry</span>}
+                          {viban.expiresAt ? formatDate(viban.expiresAt) : <span className="text-neutral-400">No expiry</span>}
                         </span>
                       ),
                     },
@@ -1640,7 +1640,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 <DataTable
                   data={coboHistoryInvoices}
                   keyExtractor={(invoice) => invoice.id}
-                  emptyIcon={<ArrowDownLeft className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+                  emptyIcon={<ArrowDownLeft className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
                   emptyTitle="No COBO collections found"
                   columns={[
                     {

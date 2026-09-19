@@ -99,15 +99,15 @@ const formatDateString = (date: Date | string | null | undefined): string => {
 
 export const currencyConfig: Record<string, { symbol: string; name: string; color: string; bgColor: string }> = {
   AED: { symbol: 'د.إ', name: 'UAE Dirham', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10' },
-  USD: { symbol: '$', name: 'US Dollar', color: 'text-success-700', bgColor: 'bg-success-50' },
-  EUR: { symbol: '€', name: 'Euro', color: 'text-info-700', bgColor: 'bg-info-50' },
-  GBP: { symbol: '£', name: 'British Pound', color: 'text-accent-700', bgColor: 'bg-accent-50' },
+  USD: { symbol: '$', name: 'US Dollar', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/15' },
+  EUR: { symbol: '€', name: 'Euro', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/15' },
+  GBP: { symbol: '£', name: 'British Pound', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-50 dark:bg-accent-500/15' },
   SAR: { symbol: 'ر.س', name: 'Saudi Riyal', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
   QAR: { symbol: 'ر.ق', name: 'Qatari Riyal', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10' },
   KWD: { symbol: 'د.ك', name: 'Kuwaiti Dinar', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
   CHF: { symbol: 'CHF', name: 'Swiss Franc', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10' },
-  JPY: { symbol: '¥', name: 'Japanese Yen', color: 'text-accent-700', bgColor: 'bg-accent-50' },
-  INR: { symbol: '₹', name: 'Indian Rupee', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-50' },
+  JPY: { symbol: '¥', name: 'Japanese Yen', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-50 dark:bg-accent-500/15' },
+  INR: { symbol: '₹', name: 'Indian Rupee', color: 'text-primary-700 dark:text-neutral-200', bgColor: 'bg-primary-50 dark:bg-primary-800/40' },
 };
 
 export const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
@@ -285,7 +285,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-primary-900 dark:text-neutral-50 tracking-tight">{entity.entityName}</p>
-                <p className="text-body-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono">{entity.entityCode}</p>
+                <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{entity.entityCode}</p>
               </div>
               {entity.isBankCustomer && (
                 <span className="badge badge-sm bg-success-50 dark:bg-success-500/10 text-success-700 dark:text-success-400 border border-success-200/60 dark:border-success-500/20 dark:text-success-300">
@@ -373,8 +373,8 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                   ? 'bg-info-50/80 dark:bg-info-500/10 border-info-200/60 dark:border-info-500/20'
                   : 'bg-white dark:bg-primary-900/40 dark:bg-white border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30'
                 )}>
-                  <p className={cn('text-caption font-medium tracking-wide uppercase', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400 dark:text-neutral-500')}>External Ceiling</p>
-                  <p className={cn('text-body-lg font-bold currency-value', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-400 dark:text-neutral-500 dark:text-neutral-400')}>
+                  <p className={cn('text-caption font-medium tracking-wide uppercase', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')}>External Ceiling</p>
+                  <p className={cn('text-body-lg font-bold currency-value', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-400 dark:text-neutral-400')}>
                     {externalCeiling ? formatCurrency(externalCeiling, entity.functionalCurrency) : 'N/A'}
                   </p>
                 </div>
@@ -393,13 +393,13 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                       type="text"
                       value={limitName}
                       onChange={(e) => setLimitName(e.target.value)}
-                      className="form-input dark:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-50 dark:placeholder:text-neutral-500 dark:text-neutral-400 dark:text-neutral-500"
+                      className="form-input dark:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-50 dark:placeholder:text-neutral-400 dark:text-neutral-400"
                       required
                     />
                   </div>
                   <div>
                     <label className="form-label dark:text-neutral-50">
-                      Amount <span className="text-neutral-400 dark:text-neutral-500 dark:text-neutral-400 font-normal">(max: <span className="currency-value">{formatCurrency(maxAllocation, currency)}</span>)</span>
+                      Amount <span className="text-neutral-400 dark:text-neutral-400 font-normal">(max: <span className="currency-value">{formatCurrency(maxAllocation, currency)}</span>)</span>
                     </label>
                     <input
                       type="number"
@@ -444,7 +444,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                       onChange={(e) => setHardLimit(e.target.checked)}
                       className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
                     />
-                    <Lock className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+                    <Lock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     <span className="text-body-sm text-primary-900 dark:text-neutral-50 dark:text-neutral-200">Hard Limit - Block transactions when exceeded</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">

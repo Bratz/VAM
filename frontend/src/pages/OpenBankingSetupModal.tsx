@@ -171,7 +171,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                 "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
                 step > idx + 1 && "bg-neutral-100 dark:bg-primary-800 text-neutral-900 dark:text-neutral-50",
-                step < idx + 1 && "text-neutral-400 dark:text-neutral-500"
+                step < idx + 1 && "text-neutral-400"
               )}>
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
                 <span className="hidden sm:inline">{label}</span>
@@ -222,7 +222,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
           {step === 2 && (
             <div className="space-y-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-neutral-400 dark:text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search for your bank..."
@@ -234,7 +234,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
 
               {loading ? (
                 <div className="py-12 text-center">
-                  <Loader2 className="w-6 h-6 text-neutral-400 dark:text-neutral-500 animate-spin mx-auto mb-2" />
+                  <Loader2 className="w-6 h-6 text-neutral-400 animate-spin mx-auto mb-2" />
                   <p className="body-sm">Loading banks...</p>
                 </div>
               ) : (
@@ -272,7 +272,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                         <div className="flex items-center gap-2">
                           {aspsp.supportsAis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">AIS</span>}
                           {aspsp.supportsPis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">PIS</span>}
-                          <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                          <ChevronRight className="w-4 h-4 text-neutral-400" />
                         </div>
                       </button>
                     ))
@@ -325,7 +325,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                             {perm.label}
                             {isRequired && <span className="ml-1 text-caption opacity-60">(Required)</span>}
                           </p>
-                          <p className={cn("text-caption mt-0.5", isSelected && isSupported ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>
+                          <p className={cn("text-caption mt-0.5", isSelected && isSupported ? "text-neutral-300 dark:text-neutral-400" : "text-neutral-500 dark:text-neutral-400")}>
                             {perm.desc}
                           </p>
                         </div>
@@ -357,7 +357,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
             <div className="text-center py-8">
               {authorizing ? (
                 <div>
-                  <Loader2 className="w-12 h-12 text-neutral-400 dark:text-neutral-500 animate-spin mx-auto mb-4" />
+                  <Loader2 className="w-12 h-12 text-neutral-400 animate-spin mx-auto mb-4" />
                   <p className="body-strong">Preparing Authorization</p>
                   <p className="caption mt-1">Redirecting to {selectedAspsp.name}...</p>
                 </div>

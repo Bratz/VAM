@@ -215,7 +215,7 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
 
           {isInitialized && (
             <p className="mt-2 caption flex items-center gap-1">
-              <Check className="w-3 h-3 text-success-500" />
+              <Check className="w-3 h-3 text-success-500 dark:text-success-300" />
               Already has a configured hierarchy
             </p>
           )}
@@ -249,7 +249,7 @@ const HierarchyPreview: React.FC<HierarchyPreviewProps> = ({
       <div className="text-neutral-500 dark:text-neutral-400">│ Currency: {baseCurrency}</div>
       {exceptionCurrencies.length > 0 && (
         <>
-          <div className="text-neutral-400 dark:text-neutral-500 mt-2">│</div>
+          <div className="text-neutral-400 mt-2">│</div>
           {exceptionCurrencies.map((currency, i) => (
             <div key={currency} className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
               {i === exceptionCurrencies.length - 1 ? '└─' : '├─'}
@@ -463,7 +463,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
 
                     {availableCorporates.length === 0 ? (
                       <div className="text-center py-8 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-                        <Building2 className="w-12 h-12 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
+                        <Building2 className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
                         <p className="text-neutral-600 dark:text-neutral-300">All corporates already have hierarchies</p>
                       </div>
                     ) : (
@@ -703,7 +703,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                     'px-5 py-2 text-body-sm font-medium rounded-lg',
                     canProceed()
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                   )}
                 >
                   Next →
@@ -716,7 +716,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                     'px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2',
                     !submitting
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                   )}
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

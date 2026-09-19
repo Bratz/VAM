@@ -33,12 +33,12 @@ const STATUS_CONFIG: Record<string, { label: string; variant: string; icon: any 
 };
 
 const AGREEMENT_TYPE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
-  MASTER: { label: 'Master Agreement', icon: Shield, color: 'text-cat-2', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
+  MASTER: { label: 'Master Agreement', icon: Shield, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2/10 dark:bg-cat-2/15' },
   FACILITY: { label: 'Facility Agreement', icon: Building2, color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
   BILATERAL: { label: 'Bilateral', icon: FileText, color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   SYNDICATED: { label: 'Syndicated', icon: Landmark, color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
-  REVOLVING: { label: 'Revolving', icon: RefreshCw, color: 'text-cat-3', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
-  TERM: { label: 'Term', icon: Calendar, color: 'text-cat-1', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
+  REVOLVING: { label: 'Revolving', icon: RefreshCw, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3/10 dark:bg-cat-3/15' },
+  TERM: { label: 'Term', icon: Calendar, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1/10 dark:bg-cat-1/15' },
 };
 
 // Helper to extract data
@@ -303,7 +303,7 @@ const CreditAgreementsPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
           </div>
         </Card>
       )}
@@ -351,7 +351,7 @@ const CreditAgreementsPage: React.FC = () => {
       </StatStrip>
 
       <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search agreements..." className="pl-9" /></div>
+        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search agreements..." className="pl-9" /></div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Types</option>{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Status</option>{Object.entries(STATUS_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
       </div>
@@ -367,7 +367,7 @@ const CreditAgreementsPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <Card className="p-12 text-center animate-fade-in" style={{ animationDelay: '0.2s' }}><FileText className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" /><p className="text-neutral-500 dark:text-neutral-400">No credit agreements found</p><Button className="mt-4" onClick={() => setShowCreateModal(true)}><Plus className="w-4 h-4 mr-2" /> Add Agreement</Button></Card>
+        <Card className="p-12 text-center animate-fade-in" style={{ animationDelay: '0.2s' }}><FileText className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No credit agreements found</p><Button className="mt-4" onClick={() => setShowCreateModal(true)}><Plus className="w-4 h-4 mr-2" /> Add Agreement</Button></Card>
       )}
 
       {/* Create Modal */}

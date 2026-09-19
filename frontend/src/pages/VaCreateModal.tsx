@@ -179,7 +179,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
           )}>
             <Building2 className={cn(
               "w-6 h-6",
-              selectedId === corp.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400 dark:text-neutral-500"
+              selectedId === corp.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400"
             )} />
           </div>
           <div className="flex-1">
@@ -226,7 +226,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-        <span className="ml-2 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Loading programs...</span>
+        <span className="ml-2 text-neutral-500 dark:text-neutral-400">Loading programs...</span>
       </div>
     );
   }
@@ -272,7 +272,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
             )}>
               <Layers className={cn(
                 "w-6 h-6",
-                selectedId === program.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400 dark:text-neutral-500"
+                selectedId === program.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-500 dark:text-neutral-400"
               )} />
             </div>
             <div className="flex-1">
@@ -373,11 +373,11 @@ const PlacementStep: React.FC<PlacementStepProps> = ({
           <div className="flex items-center gap-1 flex-wrap text-body-sm">
             {selection.pathLabels.map((label, i) => (
               <React.Fragment key={`${label}-${i}`}>
-                {i > 0 && <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
+                {i > 0 && <ChevronRight className="w-4 h-4 text-neutral-400" />}
                 <Badge variant={i === selection.pathLabels.length - 1 && selection.dimensionValues ? 'info' : 'neutral'} size="sm">{label}</Badge>
               </React.Fragment>
             ))}
-            <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
             <Badge variant="success" size="sm">New VA</Badge>
           </div>
         </div>
@@ -443,11 +443,11 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
         <div className="flex items-center gap-1 flex-wrap">
           {placement.map((value, i) => (
             <React.Fragment key={`${value}-${i}`}>
-              {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />}
+              {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
               <Badge variant="neutral" size="sm">{value}</Badge>
             </React.Fragment>
           ))}
-          <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+          <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <Badge variant="success" size="sm">New VA</Badge>
         </div>
         <div className="mt-2">
@@ -479,7 +479,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
       {/* VA Name */}
       <div>
         <label className="field-label block mb-1">
-          Account Name <span className="text-error-500">*</span>
+          Account Name <span className="text-error-500 dark:text-error-300">*</span>
         </label>
         <Input
           value={vaName}
@@ -488,7 +488,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
           maxLength={100}
         />
         {errors.vaName && (
-          <p className="text-body-sm text-error-500 mt-1">{errors.vaName}</p>
+          <p className="text-body-sm text-error-500 dark:text-error-300 mt-1">{errors.vaName}</p>
         )}
       </div>
 
@@ -503,7 +503,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
       {/* External Reference */}
       <div>
         <label className="field-label block mb-1">
-          External Reference <span className="text-neutral-400 dark:text-neutral-500">(Optional)</span>
+          External Reference <span className="text-neutral-400">(Optional)</span>
         </label>
         <Input
           value={externalReference}
@@ -773,7 +773,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
               <div
                 className={cn(
                   "flex items-center gap-2 cursor-pointer",
-                  currentStep >= step.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-400 dark:text-neutral-500"
+                  currentStep >= step.id ? "text-primary-600 dark:text-primary-200" : "text-neutral-400"
                 )}
                 onClick={() => currentStep > step.id && setCurrentStep(step.id)}
               >
@@ -781,7 +781,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                   "w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium",
                   currentStep === step.id ? "bg-primary-600 text-white" :
                   currentStep > step.id ? "bg-primary-100 text-primary-600 dark:text-primary-200 dark:bg-primary-700" :
-                  "bg-neutral-100 text-neutral-400 dark:text-neutral-500 dark:bg-primary-800"
+                  "bg-neutral-100 text-neutral-400 dark:bg-primary-800"
                 )}>
                   {currentStep > step.id ? (
                     <CheckCircle className="w-5 h-5" />
@@ -791,7 +791,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                 </div>
                 <span className={cn(
                   "text-body-sm font-medium hidden sm:inline",
-                  currentStep >= step.id ? "text-primary-900 dark:text-neutral-50" : "text-neutral-400 dark:text-neutral-500"
+                  currentStep >= step.id ? "text-primary-900 dark:text-neutral-50" : "text-neutral-400"
                 )}>
                   {step.title}
                 </span>
@@ -817,7 +817,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
             )}
             {selectedProgram && currentStep > 2 && (
               <>
-                <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                <ChevronRight className="w-4 h-4 text-neutral-400" />
                 <Badge variant="info" size="sm">
                   <Layers className="w-3 h-3 mr-1" />
                   {selectedProgram.programCode} ({selectedProgram.currencyCode})

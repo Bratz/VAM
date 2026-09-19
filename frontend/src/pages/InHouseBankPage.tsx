@@ -258,10 +258,10 @@ const ihbUnifiedApi = {
 const programTypeConfig: Record<string, { label: string; color: string }> = {
   COLLECTION: { label: 'Collection', color: 'text-success-600 dark:text-success-300' },
   WALLET: { label: 'Wallet', color: 'text-primary-600 dark:text-primary-200' },
-  IHB: { label: 'In-House Bank', color: 'text-cat-2' },
+  IHB: { label: 'In-House Bank', color: 'text-cat-2 dark:text-cat-2-fg' },
   PAYABLES: { label: 'Payables', color: 'text-warning-600 dark:text-warning-300' },
   VIBAN: { label: 'VIBAN', color: 'text-info-600 dark:text-info-300' },
-  ESCROW: { label: 'Escrow', color: 'text-cat-3' },
+  ESCROW: { label: 'Escrow', color: 'text-cat-3 dark:text-cat-3-fg' },
 };
 
 // Picker now uses the shared `<ScopeSelector mode="corporate-program">`
@@ -458,7 +458,7 @@ const EntityCard: React.FC<{
           )}
           {/* Create Current Account - for Participants (canBorrow) */}
           {isParticipant && onCreateCurrentAccount && !entity.settlementVaId && (
-            <Button variant="ghost" size="sm" className="flex-1 text-cat-2 hover:bg-cat-2-soft dark:hover:bg-cat-2/15" onClick={onCreateCurrentAccount}>
+            <Button variant="ghost" size="sm" className="flex-1 text-cat-2 dark:text-cat-2-fg hover:bg-cat-2-soft dark:hover:bg-cat-2/15" onClick={onCreateCurrentAccount}>
               <Wallet className="w-4 h-4 mr-1" /> Open Account
             </Button>
           )}
@@ -593,7 +593,7 @@ const InHouseBankPage: React.FC = () => {
         leftIcon={<Wallet className="w-4 h-4" />}
         onClick={() => setShowCurrentAccountModal(true)}
         disabled={!selectedCorporateId}
-        className="text-cat-2 border-cat-2/20 hover:bg-cat-2-soft dark:border-cat-2/30 dark:hover:bg-cat-2/15"
+        className="text-cat-2 dark:text-cat-2-fg border-cat-2/20 hover:bg-cat-2-soft dark:border-cat-2/30 dark:hover:bg-cat-2/15"
       >
         New Current Account
       </Button>
@@ -779,7 +779,7 @@ const InHouseBankPage: React.FC = () => {
                     <p className="text-caption font-medium text-warning-700 uppercase tracking-wide dark:text-warning-300">Treasury Indicative Rates</p>
                     <p className="text-body-sm text-neutral-700 mt-0.5 dark:text-neutral-200">
                       <span className="font-semibold text-warning-800 dark:text-warning-300">Lending: {treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</span>
-                      <span className="mx-3 text-neutral-300 dark:text-neutral-600">|</span>
+                      <span className="mx-3 text-neutral-300 dark:text-neutral-400">|</span>
                       <span className="font-semibold text-success-700 dark:text-success-300">Deposit: {treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</span>
                     </p>
                   </div>
@@ -834,7 +834,7 @@ const InHouseBankPage: React.FC = () => {
                 {tab.count !== undefined && (
                   <span className={cn(
                     'ml-2 px-2 py-0.5 rounded-full text-caption',
-                    activeTab === tab.id ? 'bg-primary-200 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
+                    activeTab === tab.id ? 'bg-primary-200 dark:bg-primary-700 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                   )}>
                     {tab.count}
                   </span>
@@ -869,9 +869,9 @@ const InHouseBankPage: React.FC = () => {
               ))}
               {entities.length === 0 && (
                 <div className="col-span-full text-center py-12">
-                  <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
+                  <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No IHB-enabled entities</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Enable IHB on Legal Entities to start intercompany operations</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Enable IHB on Legal Entities to start intercompany operations</p>
                 </div>
               )}
             </div>
@@ -928,7 +928,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Account Category & Type */}
                         <div className="flex gap-2 mb-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                             {account.accountCategory || 'TRANSACTION'}
                           </span>
                           {account.ihbSweepEnabled && (
@@ -1035,7 +1035,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Internal Interest Config Reference */}
                         {account.internalInterestConfigId && (
-                          <div className="mt-2 text-caption text-neutral-400 truncate dark:text-neutral-500">
+                          <div className="mt-2 text-caption text-neutral-400 truncate dark:text-neutral-400">
                             Config: {account.internalInterestConfigId.substring(0, 8)}...
                           </div>
                         )}
@@ -1211,11 +1211,11 @@ const InHouseBankPage: React.FC = () => {
           <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:bg-cat-2/15">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
-                <Wallet className="w-5 h-5 text-cat-2" />
+                <Wallet className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
               </div>
               <div>
-                <p className="text-body-sm font-semibold text-cat-2">IHB Current Account</p>
-                <p className="text-caption text-cat-2 mt-1">
+                <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
+                <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
                   Creates a TRANSACTION VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
                   This account supports running balance with credit interest (positive balance) and
                   debit interest (overdraft). The IHB flag allows any operational VA to participate
@@ -1242,7 +1242,7 @@ const InHouseBankPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={fillCurrentAccountRatesFromTreasury} className="text-caption text-cat-2">
+                <Button variant="ghost" size="sm" onClick={fillCurrentAccountRatesFromTreasury} className="text-caption text-cat-2 dark:text-cat-2-fg">
                   <TrendingUp className="w-3 h-3 mr-1" /> Use Treasury Rates
                 </Button>
               </div>

@@ -33,7 +33,7 @@ export const HeaderHelpPopover: React.FC<{ description: React.ReactNode }> = ({ 
         className={cn(
           'p-1 rounded-full transition-colors',
           'text-neutral-400 hover:text-primary-700 hover:bg-neutral-100',
-          'dark:text-neutral-500 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60'
+          'dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60'
         )}
       >
         <HelpCircle className="w-4 h-4" />

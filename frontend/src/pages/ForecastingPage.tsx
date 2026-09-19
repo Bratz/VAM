@@ -313,7 +313,7 @@ const ForecastingPage: React.FC = () => {
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
-              <Sparkles className="w-3.5 h-3.5 text-accent-500" />
+              <Sparkles className="w-3.5 h-3.5 text-accent-500 dark:text-accent-300" />
               Cash Forecast
             </div>
             <p className="body-sm text-neutral-600 dark:text-neutral-300 max-w-xl">
@@ -382,7 +382,7 @@ const ForecastingPage: React.FC = () => {
       ) : errored ? (
         <Card padding="lg">
           <div className="text-center py-10">
-            <AlertTriangle className="w-10 h-10 mx-auto text-error-500 mb-3" />
+            <AlertTriangle className="w-10 h-10 mx-auto text-error-500 dark:text-error-300 mb-3" />
             <p className="body text-error-600 dark:text-error-300">
               Couldn't load the forecast. Try "Run forecast now" or refresh the page.
             </p>
@@ -713,7 +713,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
                   {row.cells.map((v, i) => (
                     <td key={i} className={cn(
                       'text-right py-2 px-2 amount',
-                      v === 0 ? 'text-neutral-300 dark:text-neutral-600'
+                      v === 0 ? 'text-neutral-300 dark:text-neutral-400'
                         : v > 0 ? 'text-success-600 dark:text-success-300'
                         : 'text-error-600 dark:text-error-300'
                     )}>
@@ -724,7 +724,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
                     'text-right py-2 pl-3 amount font-semibold',
                     row.total > 0 ? 'text-success-700 dark:text-success-200'
                       : row.total < 0 ? 'text-error-700 dark:text-error-200'
-                      : 'text-neutral-500'
+                      : 'text-neutral-500 dark:text-neutral-400'
                   )}>
                     <TileAmount value={row.total} currency={currency} />
                   </td>
@@ -791,7 +791,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                         </span>
                         <span className={cn(
                           'text-caption font-semibold px-1.5 py-0 leading-4 rounded-full',
-                          SOURCE_LABELS[line.source]?.tone ?? 'bg-neutral-100 text-neutral-600'
+                          SOURCE_LABELS[line.source]?.tone ?? 'bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300'
                         )}>
                           {SOURCE_LABELS[line.source]?.label ?? line.source}
                         </span>
@@ -800,7 +800,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                         {FULL_DATE_FMT(line.valueDate)} · {line.currency}
                       </p>
                       {line.sourceRef && (
-                        <p className="text-caption font-mono text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
+                        <p className="text-caption font-mono text-neutral-400 mt-0.5 truncate">
                           {line.sourceRef}
                         </p>
                       )}

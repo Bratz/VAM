@@ -288,7 +288,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                               ? 'bg-primary-600 text-white'
                               : index === previewTemplate.levels.length - 1
                               ? 'bg-success-600 text-white'
-                              : 'bg-neutral-200 text-neutral-700 dark:text-neutral-200'
+                              : 'bg-neutral-200 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200'
                           )}
                         >
                           {level.levelNumber}
@@ -323,7 +323,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                             {level.allowedValues.slice(0, 4).map((v) => (
                               <span
                                 key={v}
-                                className="text-caption px-1.5 py-0.5 bg-neutral-200 rounded"
+                                className="text-caption px-1.5 py-0.5 bg-neutral-200 dark:bg-primary-800 rounded"
                               >
                                 {v}
                               </span>

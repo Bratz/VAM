@@ -42,7 +42,7 @@ const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 
   const variants = {
     default: 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200', success: 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300',
     warning: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300', error: 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300',
-    info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300', purple: 'bg-cat-2/10 text-cat-2 dark:bg-cat-2/15',
+    info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300', purple: 'bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15',
     orange: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
   };
   const sizes = { sm: 'px-2 py-0.5 text-caption', md: 'px-3 py-1 text-body-sm' };
@@ -72,9 +72,9 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'secon
 const getOperationIcon = (type: OperationType) => {
   switch (type) {
     case 'MOVE_TRANSACTION_VA': return <Package className="w-5 h-5 text-info-600 dark:text-info-300" />;
-    case 'MOVE_AGGREGATION': return <Folder className="w-5 h-5 text-cat-1" />;
+    case 'MOVE_AGGREGATION': return <Folder className="w-5 h-5 text-cat-1 dark:text-cat-1-fg" />;
     case 'ACQUISITION': return <Building2 className="w-5 h-5 text-success-600 dark:text-success-300" />;
-    case 'MERGER': return <GitMerge className="w-5 h-5 text-cat-2" />;
+    case 'MERGER': return <GitMerge className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />;
     case 'DIVESTITURE': return <GitBranch className="w-5 h-5 text-warning-600 dark:text-warning-300" />;
     case 'HIERARCHY_INIT': return <Globe className="w-5 h-5 text-primary-600 dark:text-primary-200" />;
     default: return <Settings className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />;
@@ -194,7 +194,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
         <div className="flex-1 min-w-[200px]">
           <label className="block label-cased mb-1">Search</label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               value={filters.searchQuery}
@@ -405,9 +405,9 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
           </div>
         ) : operations.length === 0 ? (
           <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
+            <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
             <p className="text-neutral-500 dark:text-neutral-400">No operations found</p>
-            <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your filters</p>
+            <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Try adjusting your filters</p>
           </div>
         ) : (
           <DataTable

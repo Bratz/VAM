@@ -918,7 +918,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                       <div className="w-32">
                         <div className="flex justify-between text-caption mb-1">
                           <span>{formatCurrency(agent.dailyUsed)}</span>
-                          <span className="text-neutral-400 dark:text-neutral-500">{formatCurrency(agent.dailyLimit)}</span>
+                          <span className="text-neutral-400">{formatCurrency(agent.dailyLimit)}</span>
                         </div>
                         <ProgressBar
                           value={(agent.dailyUsed / agent.dailyLimit) * 100}

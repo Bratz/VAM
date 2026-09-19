@@ -225,7 +225,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         {/* Search */}
         <div className={cn('px-4 py-4', collapsed && 'lg:hidden')}>
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="text"
               value={searchQuery}
@@ -233,8 +233,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               placeholder="Search menu..."
               className={cn(
                 'w-full h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
-                'bg-neutral-50/80 text-body-sm text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
-                'dark:bg-primary-950/60 dark:border-primary-800 dark:text-neutral-100 dark:placeholder:text-neutral-500',
+                'bg-neutral-50/80 dark:bg-primary-950/50 text-body-sm text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
+                'dark:bg-primary-950/60 dark:border-primary-800 dark:text-neutral-100 dark:placeholder:text-neutral-400',
                 'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                 'dark:focus:border-accent-400 dark:focus:bg-primary-950 dark:focus:ring-accent-400/20',
                 'transition-all duration-200'
@@ -305,7 +305,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         'w-full flex items-center gap-3 pl-[10px] pr-3 py-1.5 rounded-lg text-body-sm font-medium',
                         'border-l-2 transition-colors duration-200',
                         isComingSoon
-                          ? 'border-transparent text-neutral-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
+                          ? 'border-transparent text-neutral-400 cursor-not-allowed opacity-60'
                           : isActive
                           ? 'border-accent-500 dark:border-accent-400 bg-primary-800 dark:bg-primary-700/80 text-white'
                           : 'border-transparent text-neutral-600 hover:bg-neutral-100 hover:text-primary-900 dark:text-neutral-300 dark:hover:bg-primary-800/60 dark:hover:text-neutral-50'
@@ -314,10 +314,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       <span className={cn(
                         'transition-colors',
                         isComingSoon
-                          ? 'text-neutral-300 dark:text-neutral-700'
+                          ? 'text-neutral-300 dark:text-neutral-400'
                           : isActive
                           ? 'text-white'
-                          : 'text-neutral-400 dark:text-neutral-500 group-hover:text-primary-600'
+                          : 'text-neutral-400 group-hover:text-primary-600'
                       )}>
                         {item.icon}
                       </span>
@@ -368,7 +368,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             title="Documentation & support"
             className={cn(
               'flex items-center gap-2 px-2 py-1.5 rounded-lg text-caption font-medium',
-              'text-neutral-500 hover:text-primary-700 hover:bg-neutral-100',
+              'text-neutral-500 dark:text-neutral-400 hover:text-primary-700 hover:bg-neutral-100',
               'dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60',
               'transition-colors'
             )}
@@ -502,7 +502,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 placeholder="Search accounts, transactions..."
                 className={cn(
                   'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-xl border border-neutral-200 dark:border-primary-800',
-                  'bg-neutral-50/80 text-body-sm placeholder:text-neutral-400',
+                  'bg-neutral-50/80 dark:bg-primary-950/50 text-body-sm placeholder:text-neutral-400',
                   'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                   'transition-all duration-200'
                 )}
@@ -606,7 +606,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                       </div>
                     ))}
                   </div>
-                  <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 dark:border-primary-800/60">
+                  <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
                     <button className="w-full text-body-sm text-primary-600 hover:text-primary-700 font-medium py-1.5 dark:text-primary-200">
                       View All Notifications
                     </button>
@@ -617,7 +617,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           </div>
 
           {/* Divider */}
-          <div className="hidden md:block w-px h-8 bg-neutral-200 mx-2" />
+          <div className="hidden md:block w-px h-8 bg-neutral-200 dark:bg-primary-800 mx-2" />
 
           {/* User Menu */}
           <div className="relative">
@@ -652,7 +652,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                   'bg-white rounded-2xl shadow-2xl border border-neutral-200/60 z-20 overflow-hidden dark:bg-primary-900',
                   'animate-scale-in origin-top-right'
                 )}>
-                  <div className="px-4 py-4 border-b border-neutral-100 bg-neutral-50/50 dark:border-primary-800/60">
+                  <div className="px-4 py-4 border-b border-neutral-100 bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
                     <div className="flex items-center gap-3">
                       <Avatar name="John Doe" size="md" />
                       <div>

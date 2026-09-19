@@ -139,7 +139,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
   return (
     <div className={cn(
       'border rounded-lg transition-all',
-      isExpanded ? 'border-primary-300 bg-primary-50/50' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800'
+      isExpanded ? 'border-primary-300 bg-primary-50/50 dark:bg-primary-800/40' : 'border-neutral-200 hover:border-neutral-300 dark:border-primary-800'
     )}>
       {/* Header */}
       <div
@@ -508,12 +508,12 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
           <div className="flex items-center gap-2 caption">
             {hasChanges ? (
               <>
-                <AlertCircle className="w-3 h-3 text-warning-500" />
+                <AlertCircle className="w-3 h-3 text-warning-500 dark:text-warning-300" />
                 <span className="text-warning-600 dark:text-warning-300">Unsaved changes</span>
               </>
             ) : (
               <>
-                <CheckCircle className="w-3 h-3 text-success-500" />
+                <CheckCircle className="w-3 h-3 text-success-500 dark:text-success-300" />
                 <span>All changes saved</span>
               </>
             )}

@@ -598,7 +598,7 @@ const BeneficiariesPage: React.FC = () => {
                   className={cn(
                     beneficiary.beneficiaryType === 'CORPORATE'
                       ? "bg-info-50 text-info-700 border-info-100 dark:bg-info-500/10 dark:text-info-300 dark:border-info-500/30"
-                      : "bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30"
+                      : "bg-cat-2-soft text-cat-2 dark:text-cat-2-fg border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30"
                   )}
                 >
                   {beneficiary.beneficiaryType || 'INDIVIDUAL'}

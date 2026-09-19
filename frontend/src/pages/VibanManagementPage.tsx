@@ -829,7 +829,7 @@ const VibanManagementPage: React.FC = () => {
           {notification.type === 'error' && <AlertCircle className="w-5 h-5 text-error-600 flex-shrink-0 dark:text-error-300" />}
           {notification.type === 'info' && <AlertCircle className="w-5 h-5 text-info-600 flex-shrink-0 dark:text-info-300" />}
           <span className="flex-1">{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-500">
+          <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -1142,7 +1142,7 @@ const PoolsTab: React.FC<{
       {/* Filters */}
       <Card><div className="p-4 flex gap-4">
         <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <Input className="pl-9" placeholder="Search pools..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
         </div>
         <select value={selectedProgram || ''} onChange={e => setSelectedProgram(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
@@ -1232,7 +1232,7 @@ const PoolsTab: React.FC<{
           );
         })}
       </div>
-      {pools.length === 0 && <Card><div className="text-center py-12"><Database className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" /><p className="text-neutral-500 dark:text-neutral-400">No pools found</p></div></Card>}
+      {pools.length === 0 && <Card><div className="text-center py-12"><Database className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No pools found</p></div></Card>}
     </div>
   );
 };
@@ -1256,7 +1256,7 @@ const VibansTab: React.FC<{
       <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="p-4 flex gap-4">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <Input className="pl-9" placeholder="Search VIBANs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <select value={selectedPool || ''} onChange={e => setSelectedPool(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
@@ -1293,7 +1293,7 @@ const VibansTab: React.FC<{
                   <td className="data-table-cell">
                     <div className="flex items-center gap-2">
                       <button onClick={() => copyToClipboard(v.viban, v.id)} className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-primary-800">
-                        {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />}
+                        {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400" />}
                       </button>
                       <span className="font-mono text-body-sm">{v.viban}</span>
                     </div>
@@ -1310,18 +1310,18 @@ const VibansTab: React.FC<{
                         {v.customerName && <p className="caption mt-0.5">Customer: {v.customerName}</p>}
                       </div>
                     ) : (
-                      <span className="text-neutral-400 text-body-sm italic dark:text-neutral-500">Not assigned</span>
+                      <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
                     )}
                   </td>
                   <td className="data-table-cell">
                     {v.referenceType ? (
                       <div className="flex items-center gap-2">
                         {v.referenceType === 'ORDER' && <ShoppingCart className="w-3 h-3 text-primary-500" />}
-                        {v.referenceType === 'INVOICE' && <FileText className="w-3 h-3 text-info-500" />}
-                        {v.referenceType === 'TERMINAL' && <CreditCard className="w-3 h-3 text-success-500" />}
+                        {v.referenceType === 'INVOICE' && <FileText className="w-3 h-3 text-info-500 dark:text-info-300" />}
+                        {v.referenceType === 'TERMINAL' && <CreditCard className="w-3 h-3 text-success-500 dark:text-success-300" />}
                         <span className="text-body-sm">{v.referenceId}</span>
                       </div>
-                    ) : <span className="text-neutral-400 dark:text-neutral-500">-</span>}
+                    ) : <span className="text-neutral-400">-</span>}
                   </td>
                   <td className="data-table-cell">{getStatusBadge(v.status)}</td>
                   <td className="data-table-cell text-right text-body-sm">{v.timesUsed || 0}</td>
@@ -1337,7 +1337,7 @@ const VibansTab: React.FC<{
             </tbody>
           </table>
         </div>
-        {vibans.length === 0 && <div className="text-center py-12"><Hash className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" /><p className="text-neutral-500 dark:text-neutral-400">No VIBANs found</p></div>}
+        {vibans.length === 0 && <div className="text-center py-12"><Hash className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" /><p className="text-neutral-500 dark:text-neutral-400">No VIBANs found</p></div>}
       </Card>
     </div>
   );
@@ -2073,26 +2073,26 @@ const PoolDetailView: React.FC<{
                     {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
                     {v.customerName && (
                       <p className="caption mt-0.5 flex items-center gap-1">
-                        <span className="text-neutral-400 dark:text-neutral-500">Customer:</span> {v.customerName}
+                        <span className="text-neutral-400">Customer:</span> {v.customerName}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <span className="text-neutral-400 text-body-sm italic dark:text-neutral-500">Not assigned</span>
+                  <span className="text-neutral-400 text-body-sm italic dark:text-neutral-400">Not assigned</span>
                 )}
               </td>
               <td className="p-3">
                 {v.referenceType ? (
                   <div className="flex items-center gap-2">
                     {v.referenceType === 'ORDER' && <ShoppingCart className="w-3.5 h-3.5 text-primary-500" />}
-                    {v.referenceType === 'INVOICE' && <FileText className="w-3.5 h-3.5 text-info-500" />}
-                    {v.referenceType === 'TERMINAL' && <CreditCard className="w-3.5 h-3.5 text-success-500" />}
+                    {v.referenceType === 'INVOICE' && <FileText className="w-3.5 h-3.5 text-info-500 dark:text-info-300" />}
+                    {v.referenceType === 'TERMINAL' && <CreditCard className="w-3.5 h-3.5 text-success-500 dark:text-success-300" />}
                     <div>
                       <p className="text-body-sm font-medium">{v.referenceId}</p>
                       <p className="caption">{v.referenceType}</p>
                     </div>
                   </div>
-                ) : <span className="text-neutral-400 text-body-sm dark:text-neutral-500">-</span>}
+                ) : <span className="text-neutral-400 text-body-sm dark:text-neutral-400">-</span>}
               </td>
               <td className="p-3 text-body-sm text-right font-medium">{v.timesUsed || 0}</td>
               <td className="p-3 text-body-sm text-right font-medium">

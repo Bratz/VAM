@@ -68,7 +68,7 @@ const RELATIONSHIP_CONFIG: Record<RelationshipType, {
 }> = {
   OWNER: { label: 'Owner', icon: Key, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner with full control' },
   BENEFICIARY: { label: 'Beneficiary', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receives benefits from the account' },
-  AUTHORIZED: { label: 'Authorized', icon: UserCheck, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to perform transactions within limits' },
+  AUTHORIZED: { label: 'Authorized', icon: UserCheck, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to perform transactions within limits' },
   GUARANTOR: { label: 'Guarantor', icon: Shield, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantees obligations on the account' },
   COLLATERAL: { label: 'Collateral', icon: Lock, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Account used as collateral for facilities' },
 };
@@ -186,17 +186,17 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
       >
-        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
+        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400')}>
           {getSelectedLabel()}
         </span>
-        <ChevronDown className={cn('w-4 h-4 text-neutral-400 dark:text-neutral-500', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('w-4 h-4 text-neutral-400', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-80 overflow-hidden dark:bg-primary-900 dark:border-primary-800">
           <div className="p-2 border-b">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search..."
@@ -265,7 +265,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                       style={{ paddingLeft: `${(node.level || 0) * 12 + 12}px` }}
                     >
                       <div className={cn('p-1.5 rounded', node.type === 'GROUP' ? 'bg-primary-900' : 'bg-cat-1/10 dark:bg-cat-1/15')}>
-                        <Icon className={cn('w-3 h-3', node.type === 'GROUP' ? 'text-white' : 'text-cat-1')} />
+                        <Icon className={cn('w-3 h-3', node.type === 'GROUP' ? 'text-white' : 'text-cat-1 dark:text-cat-1-fg')} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</p>
@@ -314,17 +314,17 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
       >
-        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
+        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400')}>
           {selectedEntity ? `${selectedEntity.entityName} (${selectedEntity.entityCode})` : 'Select Entity...'}
         </span>
-        <ChevronDown className={cn('w-4 h-4 text-neutral-400 dark:text-neutral-500', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('w-4 h-4 text-neutral-400', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg max-h-64 overflow-hidden dark:bg-primary-900 dark:border-primary-800">
           <div className="p-2 border-b">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded dark:border-primary-800" autoFocus />
             </div>
           </div>
@@ -336,7 +336,7 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
             ) : (
               filteredEntities.map(entity => (
                 <button key={entity.id} type="button" onClick={() => { onSelect(entity.id); setIsOpen(false); }} className={cn('w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 text-left dark:hover:bg-primary-800/50', selectedId === entity.id && 'bg-primary-50 dark:bg-primary-800/40')}>
-                  <div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1" /></div>
+                  <div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{entity.entityName}</p>
                     <p className="caption">{entity.entityCode} • {entity.entityType}</p>
@@ -609,7 +609,7 @@ const AccountAttachmentsPage: React.FC = () => {
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
@@ -631,7 +631,7 @@ const AccountAttachmentsPage: React.FC = () => {
           keyExtractor={(att) => att.id}
           loading={loading}
           onRowClick={(att) => { setSelectedAttachment(att); setShowDetailModal(true); }}
-          emptyIcon={<Link2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyIcon={<Link2 className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
           emptyTitle="No attachments found"
           emptyDescription="Try adjusting your filters or create a new attachment."
           columns={[
@@ -719,10 +719,10 @@ const AccountAttachmentsPage: React.FC = () => {
             </div>
             {selectedAttachment.relationshipType === 'AUTHORIZED' && (
               <div className="bg-cat-2-soft rounded-lg p-4 dark:bg-cat-2/15">
-                <h4 className="text-body-sm font-medium text-cat-2 mb-3">Authorization Limits</h4>
+                <h4 className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg mb-3">Authorization Limits</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-caption text-cat-2">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount) : 'Unlimited'}</p></div>
-                  <div><p className="text-caption text-cat-2">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit) : 'Unlimited'}</p></div>
+                  <div><p className="text-caption text-cat-2 dark:text-cat-2-fg">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount) : 'Unlimited'}</p></div>
+                  <div><p className="text-caption text-cat-2 dark:text-cat-2-fg">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit) : 'Unlimited'}</p></div>
                 </div>
               </div>
             )}
@@ -780,12 +780,12 @@ const AccountAttachmentsPage: React.FC = () => {
 
           {createForm.relationshipType === 'AUTHORIZED' && (
             <div className="p-4 bg-cat-2-soft rounded-lg space-y-4 dark:bg-cat-2/15">
-              <h4 className="text-body-sm font-medium text-cat-2 flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
+              <h4 className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
                 <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded text-cat-2" /><span className="text-body-sm">Require Dual Authorization</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded text-cat-2 dark:text-cat-2-fg" /><span className="text-body-sm">Require Dual Authorization</span></label>
             </div>
           )}
 

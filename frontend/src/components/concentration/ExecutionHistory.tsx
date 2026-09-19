@@ -22,7 +22,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
   if (executions.length === 0) {
     return (
       <Card className="text-center py-8">
-        <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
+        <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-400 mx-auto mb-2" />
         <p className="text-neutral-500 dark:text-neutral-400">No execution history yet</p>
         <p className="caption mt-1">Execute sweep rules to see history here</p>
       </Card>
@@ -61,11 +61,11 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
                 <td className="p-4 text-caption">
                   <div className="flex items-center gap-1">
                     <span className="font-medium">{(exec as any).sourceEntityCode || ''}</span>
-                    <ArrowRight className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
+                    <ArrowRight className="w-3 h-3 text-neutral-400" />
                     <span className="font-medium">{(exec as any).targetEntityCode || ''}</span>
                   </div>
                   {((exec as any).sourceAccountNumber || (exec as any).targetAccountNumber) && (
-                    <div className="text-neutral-400 dark:text-neutral-500 font-mono mt-0.5">
+                    <div className="text-neutral-400 font-mono mt-0.5">
                       {(exec as any).sourceAccountNumber?.slice(-6) || ''}
                       {' → '}
                       {(exec as any).targetAccountNumber?.slice(-6) || ''}
@@ -81,7 +81,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
                   />
                   {/* Balance change indicator */}
                   {(exec as any).balanceBefore !== undefined && (exec as any).balanceAfter !== undefined && (
-                    <div className="text-caption text-neutral-400 dark:text-neutral-500 font-normal">
+                    <div className="text-caption text-neutral-400 font-normal">
                       {formatCurrency((exec as any).balanceBefore, (exec as any).currencyCode || 'AED')} → {formatCurrency((exec as any).balanceAfter, (exec as any).currencyCode || 'AED')}
                     </div>
                   )}

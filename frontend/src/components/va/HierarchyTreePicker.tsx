@@ -214,7 +214,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
           {/* Codified dimension value as a secondary hint when it differs
               from the display name. */}
           {n.nodeName && n.dimensionValue && n.nodeName !== n.dimensionValue && (
-            <span className="text-caption font-mono text-neutral-400 dark:text-neutral-500 truncate shrink-0 max-w-[90px]">
+            <span className="text-caption font-mono text-neutral-400 truncate shrink-0 max-w-[90px]">
               {n.dimensionValue}
             </span>
           )}
@@ -248,14 +248,14 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
               </p>
               <button onClick={() => { setGrowFrom(null); setGrowValues({}); onChange(null); }}
                 className="p-0.5 rounded hover:bg-info-100 dark:hover:bg-info-500/20">
-                <X className="w-3.5 h-3.5 text-info-500" />
+                <X className="w-3.5 h-3.5 text-info-500 dark:text-info-300" />
               </button>
             </div>
             {growLevels.map(l => {
               const LevelIcon = DIMENSION_ICONS[l.dimensionType] || Folder;
               return (
                 <div key={l.levelNumber} className="flex items-center gap-2">
-                  <LevelIcon className="w-4 h-4 text-info-500 shrink-0" />
+                  <LevelIcon className="w-4 h-4 text-info-500 dark:text-info-300 shrink-0" />
                   <span className="caption w-24 shrink-0">
                     L{l.levelNumber} {l.levelName}
                   </span>

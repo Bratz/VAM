@@ -342,10 +342,10 @@ const programTypeConfig: Record<string, { label: string; icon: React.ElementType
   PAYABLES: { label: 'Payables', icon: Banknote, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Payables management' },
   // NEW: Additional Program Types
   RECEIVABLES: { label: 'Receivables', icon: DollarSign, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Receivables management' },
-  LOYALTY: { label: 'Loyalty', icon: TrendingUp, color: 'text-cat-4', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15', description: 'Loyalty/rewards program' },
-  GIFT_CARD: { label: 'Gift Card', icon: Gift, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Gift card program' },
-  CORPORATE_CARD: { label: 'Corporate Card', icon: CreditCard, color: 'text-cat-1', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15', description: 'Corporate card program' },
-  MOBILE_MONEY: { label: 'Mobile Money', icon: Smartphone, color: 'text-cat-3', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15', description: 'Mobile money/agent banking' },
+  LOYALTY: { label: 'Loyalty', icon: TrendingUp, color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15', description: 'Loyalty/rewards program' },
+  GIFT_CARD: { label: 'Gift Card', icon: Gift, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Gift card program' },
+  CORPORATE_CARD: { label: 'Corporate Card', icon: CreditCard, color: 'text-cat-1 dark:text-cat-1-fg', bgColor: 'bg-cat-1-soft dark:bg-cat-1/15', description: 'Corporate card program' },
+  MOBILE_MONEY: { label: 'Mobile Money', icon: Smartphone, color: 'text-cat-3 dark:text-cat-3-fg', bgColor: 'bg-cat-3-soft dark:bg-cat-3/15', description: 'Mobile money/agent banking' },
 };
 
 type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
@@ -628,7 +628,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   ].map(f => (
                     <div key={f.label} className="flex items-center justify-between">
                       <span className="body-sm">{f.label}</span>
-                      {f.value ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
+                      {f.value ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
                     </div>
                   ))}
                 </Card>
@@ -645,7 +645,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       ].filter(f => f.value).map(f => (
                         <div key={f.label} className="flex items-center justify-between">
                           <span className="body-sm">{f.label}</span>
-                          <CheckCircle className="w-4 h-4 text-success-500" />
+                          <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" />
                         </div>
                       ))}
                     </Card>
@@ -723,7 +723,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     </Card>
 
                     <h3 className="body-strong font-semibold flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-error-500" />Exception VAs
+                      <XCircle className="w-4 h-4 text-error-500 dark:text-error-300" />Exception VAs
                     </h3>
                     {hierarchyLoading ? (
                       <div className="flex items-center gap-2 p-4"><Loader2 className="w-4 h-4 animate-spin" /><span className="body-sm">Loading...</span></div>
@@ -784,7 +784,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       </div>
                     ) : (
                       <Card padding="sm" className="text-center py-12">
-                        <FolderTree className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
+                        <FolderTree className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                         <p className="text-neutral-500 mb-2 dark:text-neutral-400">No Settlement VAs created yet</p>
                         <p className="caption">Settlement VAs are created when hierarchy nodes are added</p>
                       </Card>
@@ -971,7 +971,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         </Card>
                       ) : (
                         <Card padding="sm" className="text-center py-8">
-                          <Hash className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
+                          <Hash className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                           <p className="text-neutral-500 mb-2 dark:text-neutral-400">No VIBAN Pool Assigned</p>
                           <p className="caption">Assign a VIBAN pool to enable VIBAN generation</p>
                         </Card>
@@ -1248,7 +1248,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                 </>
               ) : (
                 <div className="text-center py-12">
-                  <Wallet className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                  <Wallet className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p className="text-neutral-500 dark:text-neutral-400">No wallet fee configuration found</p>
                 </div>
               )}
@@ -1260,7 +1260,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
             <div className="space-y-4">
               {detail.recentVirtualAccounts.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                  <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                  <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p>No virtual accounts in this program</p>
                 </div>
               ) : (
@@ -1279,7 +1279,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(va.currentBalance, program.currencyCode)}</p>
                           <Badge variant={va.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{va.status}</Badge>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                        <ChevronRight className="w-4 h-4 text-neutral-400" />
                       </div>
                     </Card>
                   ))}
@@ -1342,7 +1342,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center justify-between">
                       <span className="body-sm">KYC Required</span>
-                      {program.kycRequired ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
+                      {program.kycRequired ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
                     </div>
                     <div>
                       <p className="caption mb-1">Minimum KYC Level</p>
@@ -1364,7 +1364,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     ].map(cap => (
                       <div key={cap.label} className="flex items-center justify-between">
                         <span className="body-sm">{cap.label}</span>
-                        {cap.value ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
+                        {cap.value ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
                       </div>
                     ))}
                   </div>
@@ -1436,7 +1436,7 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
         </p>
       </div>
       
-      <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+      <ChevronRight className="w-4 h-4 text-neutral-400" />
       
       <div className="flex-1 flex items-center gap-2">
         <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
@@ -2085,7 +2085,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     )}>
                       {isComplete ? <CheckCircle className="w-4 h-4" /> : stepNum}
                     </div>
-                    <span className={cn('text-caption mt-1', isActive ? 'text-primary-600 font-medium dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')}>
+                    <span className={cn('text-caption mt-1', isActive ? 'text-primary-600 font-medium dark:text-primary-200' : 'text-neutral-400')}>
                       {label}
                     </span>
                   </div>
@@ -2241,7 +2241,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             {!isEdit && (
               <div className="border-t pt-4">
                 <label className="field-label block mb-1">
-                  Physical Account <span className="text-neutral-400 font-normal dark:text-neutral-500">(Optional)</span>
+                  Physical Account <span className="text-neutral-400 font-normal dark:text-neutral-400">(Optional)</span>
                 </label>
                 <select
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -2329,7 +2329,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               <h4 className="label">Capabilities (affects configuration steps)</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: 'hierarchyEnabled', label: 'Multi-Level Hierarchy', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2', step: 'Hierarchy Config' },
+                  { key: 'hierarchyEnabled', label: 'Multi-Level Hierarchy', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
                   { key: 'vibanEnabled', label: 'VIBAN Support', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
                   { key: 'walletEnabled', label: 'Wallet Features', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
                   { key: 'escrowEnabled', label: 'Escrow Features', icon: Shield, desc: 'Hold funds with release conditions', color: 'text-success-600 dark:text-success-300', step: null },
@@ -2377,10 +2377,10 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <h4 className="label">Extended Capabilities</h4>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: 'loyaltyEnabled', label: 'Loyalty Program', icon: TrendingUp, desc: 'Points, tiers, rewards', color: 'text-cat-4', forType: 'LOYALTY' },
-                    { key: 'giftCardEnabled', label: 'Gift Cards', icon: Gift, desc: 'Gift card issuance', color: 'text-cat-2', forType: 'GIFT_CARD' },
-                    { key: 'corporateCardEnabled', label: 'Corporate Cards', icon: CreditCard, desc: 'Expense cards, limits', color: 'text-cat-1', forType: 'CORPORATE_CARD' },
-                    { key: 'mobileMoneyEnabled', label: 'Mobile Money', icon: Smartphone, desc: 'Agent banking, M-Pesa style', color: 'text-cat-3', forType: 'MOBILE_MONEY' },
+                    { key: 'loyaltyEnabled', label: 'Loyalty Program', icon: TrendingUp, desc: 'Points, tiers, rewards', color: 'text-cat-4 dark:text-cat-4-fg', forType: 'LOYALTY' },
+                    { key: 'giftCardEnabled', label: 'Gift Cards', icon: Gift, desc: 'Gift card issuance', color: 'text-cat-2 dark:text-cat-2-fg', forType: 'GIFT_CARD' },
+                    { key: 'corporateCardEnabled', label: 'Corporate Cards', icon: CreditCard, desc: 'Expense cards, limits', color: 'text-cat-1 dark:text-cat-1-fg', forType: 'CORPORATE_CARD' },
+                    { key: 'mobileMoneyEnabled', label: 'Mobile Money', icon: Smartphone, desc: 'Agent banking, M-Pesa style', color: 'text-cat-3 dark:text-cat-3-fg', forType: 'MOBILE_MONEY' },
                   ].filter(f => f.forType === formData.programType || formData[f.key as keyof typeof formData]).map(f => {
                     const Icon = f.icon;
                     const isChecked = formData[f.key as keyof typeof formData] as boolean;
@@ -2429,8 +2429,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {formData.hierarchyEnabled && (
               <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 flex items-start gap-2 dark:bg-cat-2/15 dark:border-cat-2/30">
-                <GitBranch className="w-4 h-4 text-cat-2 mt-0.5" />
-                <p className="text-body-sm text-cat-2">
+                <GitBranch className="w-4 h-4 text-cat-2 dark:text-cat-2-fg mt-0.5" />
+                <p className="text-body-sm text-cat-2 dark:text-cat-2-fg">
                   Hierarchy is enabled. You'll configure the hierarchy template and depth in the next step.
                 </p>
               </div>
@@ -2493,11 +2493,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                 </span>
                               )}
                               <div className="flex items-center gap-2 mb-2">
-                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2' : template.color)} />
+                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : template.color)} />
                                 <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
                               <p className="caption mb-2">{template.description}</p>
-                              <p className="text-caption text-neutral-400 truncate dark:text-neutral-500" title={levelPath}>{levelPath}</p>
+                              <p className="text-caption text-neutral-400 truncate dark:text-neutral-400" title={levelPath}>{levelPath}</p>
                             </button>
                           );
                         })}
@@ -2529,7 +2529,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               )}
                             >
                               <div className="flex items-center gap-2">
-                                <Icon className={cn('w-4 h-4', isSelected ? 'text-cat-2' : 'text-neutral-400 dark:text-neutral-500')} />
+                                <Icon className={cn('w-4 h-4', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : 'text-neutral-400')} />
                                 <span className="text-caption font-medium truncate">{template.name}</span>
                               </div>
                             </button>
@@ -2562,7 +2562,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               )}
                             >
                               <div className="flex items-center gap-2 mb-2">
-                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2' : template.color)} />
+                                <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : template.color)} />
                                 <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
                               <p className="caption truncate" title={levelPath}>{levelPath}</p>
@@ -2608,7 +2608,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <button
                     type="button"
                     onClick={() => setShowLevelCustomization(!showLevelCustomization)}
-                    className="text-caption text-cat-2 flex items-center gap-1"
+                    className="text-caption text-cat-2 dark:text-cat-2-fg flex items-center gap-1"
                   >
                     {showLevelCustomization ? 'Collapse All' : 'Customize Levels'}
                     {showLevelCustomization ? <ChevronRight className="w-3 h-3 rotate-90" /> : <ChevronRight className="w-3 h-3" />}
@@ -2645,12 +2645,12 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                           {isRoot && <Badge variant="info" size="sm">Root</Badge>}
                           {isLeaf && <Badge variant="success" size="sm">Leaf</Badge>}
                           {level.allowedValues && level.allowedValues.length > 0 && (
-                            <span className="text-caption bg-cat-2/10 text-cat-2 px-2 py-0.5 rounded-full dark:bg-cat-2/15">
+                            <span className="text-caption bg-cat-2/10 text-cat-2 dark:text-cat-2-fg px-2 py-0.5 rounded-full dark:bg-cat-2/15">
                               {level.allowedValues.length} values
                             </span>
                           )}
                           <ChevronRight className={cn(
-                            'w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-500',
+                            'w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400',
                             isExpanded && 'rotate-90'
                           )} />
                         </button>
@@ -2730,7 +2730,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                           updated[idx] = { ...updated[idx], allowedValues: [...suggestedForType] };
                                           setHierarchyLevelConfigs(updated);
                                         }}
-                                        className="text-caption text-cat-2"
+                                        className="text-caption text-cat-2 dark:text-cat-2-fg"
                                       >
                                         + Add suggested
                                       </button>
@@ -2746,7 +2746,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   level.allowedValues.map((value, vIdx) => (
                                     <span
                                       key={vIdx}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-cat-2/10 text-cat-2 text-caption rounded-full dark:bg-cat-2/15"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-cat-2/10 text-cat-2 dark:text-cat-2-fg text-caption rounded-full dark:bg-cat-2/15"
                                     >
                                       {value}
                                       <button
@@ -2766,7 +2766,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-caption text-neutral-400 italic dark:text-neutral-500">No restrictions (any value allowed)</span>
+                                  <span className="text-caption text-neutral-400 italic dark:text-neutral-400">No restrictions (any value allowed)</span>
                                 )}
                               </div>
 
@@ -2825,7 +2825,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], isRequired: e.target.checked };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="rounded text-cat-2"
+                                className="rounded text-cat-2 dark:text-cat-2-fg"
                               />
                               <span className="text-neutral-600 dark:text-neutral-300">This level is required (must have a value)</span>
                             </label>
@@ -2841,7 +2841,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <span>
                     {hierarchyLevelConfigs.slice(0, formData.hierarchyDepth).filter(l => l.allowedValues && l.allowedValues.length > 0).length} of {formData.hierarchyDepth} levels have restrictions
                   </span>
-                  <span className="text-neutral-400 dark:text-neutral-500">
+                  <span className="text-neutral-400">
                     Click any level to customize
                   </span>
                 </div>
@@ -2999,7 +2999,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Per Transaction Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3012,7 +3012,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Daily Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3025,7 +3025,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Monthly Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3045,7 +3045,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Maximum Balance</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3059,7 +3059,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <div>
                   <label className="block label-cased mb-1">Minimum Balance</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3198,7 +3198,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
-                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
+                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
@@ -3216,7 +3216,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
-                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
+                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
@@ -3234,7 +3234,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
-                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
+                    <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
@@ -3341,7 +3341,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               />
               <div>
                 <span className="body-strong flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-success-500" />
+                  <Zap className="w-4 h-4 text-success-500 dark:text-success-300" />
                   Real-time Balance Propagation
                 </span>
                 <p className="caption">Instantly update parent balances when child accounts change</p>
@@ -3388,7 +3388,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   {formData.autoReconciliation && <Badge variant="neutral">Auto-Recon</Badge>}
                   {formData.realtimeBalancePropagation && <Badge variant="success">Real-time</Badge>}
                   {!formData.vibanEnabled && !formData.walletEnabled && !formData.escrowEnabled && !formData.ihbEnabled && (
-                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Standard features only</span>
+                    <span className="text-body-sm text-neutral-400">Standard features only</span>
                   )}
                 </div>
               </div>
@@ -3867,7 +3867,7 @@ const ProgramsPage: React.FC = () => {
       <Card padding="md">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
             <input type="text" placeholder="Search programs..." className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <select className="px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ProgramStatus | 'ALL')}>
@@ -3911,8 +3911,8 @@ const ProgramsPage: React.FC = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
-                            {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500" /></span>}
-                            {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500" /></span>}
+                            {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500 dark:text-accent-300" /></span>}
+                            {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500 dark:text-success-300" /></span>}
                           </div>
                           <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
                         </div>
@@ -4030,7 +4030,7 @@ const ProgramsPage: React.FC = () => {
         {/* Empty State - Graceful handling when no data */}
         {filteredPrograms.length === 0 && !loading && (
           <div className="text-center py-12">
-            <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+            <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
             <p className="text-body-lg font-medium text-primary-900 dark:text-neutral-50">No programs found</p>
             <p className="body-sm mt-1">
               {searchQuery || typeFilter !== 'ALL' || statusFilter !== 'ALL' 

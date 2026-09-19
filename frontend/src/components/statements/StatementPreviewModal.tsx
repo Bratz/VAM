@@ -265,7 +265,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, label, className }) => {
     >
       <span className="truncate max-w-[180px]">{value}</span>
       {copied ? (
-        <CheckCircle className="w-3.5 h-3.5 text-success-500 shrink-0" />
+        <CheckCircle className="w-3.5 h-3.5 text-success-500 dark:text-success-300 shrink-0" />
       ) : (
         <Copy className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
       )}
@@ -349,9 +349,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
         {collapsible && (
           <button className="p-1 hover:bg-neutral-200 rounded transition-colors">
             {isOpen ? (
-              <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             )}
           </button>
         )}
@@ -523,9 +523,9 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         {/* Expand Button */}
         <button className="p-1 hover:bg-neutral-200 rounded shrink-0">
           {expanded ? (
-            <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+            <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+            <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           )}
         </button>
 
@@ -540,7 +540,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" />
           )}
           {entry.reversalIndicator && (
-            <RotateCcw className="w-3 h-3 text-warning-500 absolute -bottom-1 -right-1" />
+            <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-1 -right-1" />
           )}
         </div>
 
@@ -554,7 +554,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
               <Badge variant="warning" size="xs">Reversal</Badge>
             )}
           </div>
-          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 truncate">
             {entry.description || entry.remittanceInfo || '-'}
           </p>
         </div>
@@ -723,7 +723,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
                 <div className="space-y-1">
                   {details.charges.map((charge, idx) => (
                     <div key={idx} className="flex justify-between text-caption">
-                      <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{charge.bearer || `Charge ${idx + 1}`}</span>
+                      <span className="text-neutral-500 dark:text-neutral-400">{charge.bearer || `Charge ${idx + 1}`}</span>
                       <span className="font-medium text-error-600 dark:text-error-300">
                         -{formatCurrency(charge.amount, charge.currency)}
                       </span>
@@ -796,7 +796,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               <ArrowUpRight className="w-5 h-5 text-error-600 dark:text-error-300" />
             )}
             {entry.reversalIndicator && (
-              <RotateCcw className="w-3 h-3 text-warning-500 absolute -bottom-0.5 -right-0.5" />
+              <RotateCcw className="w-3 h-3 text-warning-500 dark:text-warning-300 absolute -bottom-0.5 -right-0.5" />
             )}
           </div>
 
@@ -830,11 +830,11 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               {entry.reversalIndicator && (
                 <Badge variant="warning" size="xs">Reversal</Badge>
               )}
-              <span className="text-caption text-neutral-400 dark:text-neutral-500 font-mono truncate">
+              <span className="text-caption text-neutral-400 font-mono truncate">
                 {entry.entryReference || entry.reference}
               </span>
               <ChevronDown className={cn(
-                'w-4 h-4 text-neutral-400 dark:text-neutral-500 ml-auto transition-transform',
+                'w-4 h-4 text-neutral-400 ml-auto transition-transform',
                 expanded && 'rotate-180'
               )} />
             </div>
@@ -1271,7 +1271,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
               <div className="max-h-[500px] overflow-y-auto">
                 {/* Table Header */}
                 <div className="bg-neutral-50 dark:bg-primary-950 px-4 py-3 border-b border-neutral-200 dark:border-primary-800 sticky top-0 z-10">
-                  <div className="flex items-center gap-4 text-caption font-medium text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 uppercase">
+                  <div className="flex items-center gap-4 text-caption font-medium text-neutral-500 dark:text-neutral-400 uppercase">
                     <div className="w-8"></div>
                     <div className="w-9"></div>
                     <div className="flex-1">Entry Reference / Description</div>
@@ -1292,8 +1292,8 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 ))}
 
                 {filteredEntries.length === 0 && (
-                  <div className="text-center py-12 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
+                  <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
                     <p className="font-medium">No entries found</p>
                     <p className="text-body-sm">Try adjusting your search or filters</p>
                   </div>
@@ -1314,8 +1314,8 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 ))}
 
                 {filteredEntries.length === 0 && (
-                  <div className="text-center py-12 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
-                    <FileText className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
+                  <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
+                    <FileText className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-400" />
                     <p className="font-medium">No entries found</p>
                   </div>
                 )}

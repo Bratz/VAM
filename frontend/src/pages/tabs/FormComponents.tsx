@@ -31,7 +31,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   <div className={cn('space-y-1.5', className)}>
     <label className="field-label block">
       {label}
-      {required && <span className="text-error-500 ml-1">*</span>}
+      {required && <span className="text-error-500 dark:text-error-300 ml-1">*</span>}
     </label>
     {children}
     {hint && !error && (
@@ -85,7 +85,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
       'bg-white bg-no-repeat bg-right',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
-      disabled && 'bg-neutral-100 cursor-not-allowed opacity-60',
+      disabled && 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed opacity-60',
       className
     )}
     style={{
@@ -158,7 +158,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
         error ? 'border-error-500' : 'border-neutral-300',
-        disabled && 'bg-neutral-100 cursor-not-allowed',
+        disabled && 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed',
         prefix && 'pl-12',
         suffix && 'pr-12',
         className
@@ -193,7 +193,7 @@ export const TextInput: React.FC<TextInputProps> = ({
       'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
-      disabled && 'bg-neutral-100 cursor-not-allowed',
+      disabled && 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed',
       className
     )}
     {...props}
@@ -220,7 +220,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
       'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors resize-y min-h-[80px]',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
-      disabled && 'bg-neutral-100 cursor-not-allowed',
+      disabled && 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed',
       className
     )}
     {...props}
@@ -306,7 +306,7 @@ export const Toggle: React.FC<ToggleProps> = ({
       className={cn(
         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-        checked ? 'bg-primary-600' : 'bg-neutral-200',
+        checked ? 'bg-primary-600' : 'bg-neutral-200 dark:bg-primary-800',
         disabled && 'cursor-not-allowed'
       )}
     >
@@ -354,7 +354,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
-      disabled && 'bg-neutral-100 cursor-not-allowed',
+      disabled && 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed',
       className
     )}
   />

@@ -170,7 +170,7 @@ const filteredNodes = nodes.filter((node) => {
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
           type="text"
           value={searchQuery}
@@ -429,7 +429,7 @@ const ValidationPanel: React.FC<ValidationPanelProps> = ({ validation, loading }
         )}
 
         {validation.settlementVaWillReResolve && (
-          <div className="flex items-center gap-2 text-body-sm text-cat-2">
+          <div className="flex items-center gap-2 text-body-sm text-cat-2 dark:text-cat-2-fg">
             <Scale className="w-4 h-4" />
             <span>Settlement VA will re-resolve</span>
           </div>
@@ -700,7 +700,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                       {label}
                     </span>
                   </button>
-                  {i < 2 && <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600" />}
+                  {i < 2 && <ChevronRight className="w-4 h-4 text-neutral-300 dark:text-neutral-400" />}
                 </React.Fragment>
               ))}
             </div>
@@ -714,7 +714,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
               </div>
             ) : error ? (
               <div className="text-center py-8">
-                <AlertTriangle className="w-12 h-12 text-error-500 mx-auto mb-3" />
+                <AlertTriangle className="w-12 h-12 text-error-500 dark:text-error-300 mx-auto mb-3" />
                 <p className="text-error-600 dark:text-error-300">{error}</p>
                 <button
                   onClick={loadData}
@@ -879,7 +879,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                   className={cn(
                     'px-4 py-2 text-body-sm font-medium rounded-lg transition-colors',
                     (step === 1 && !selectedVa) || (step === 2 && !selectedParent)
-                      ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                       : 'bg-primary-600 text-white hover:bg-primary-700'
                   )}
                 >
@@ -892,7 +892,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                   className={cn(
                     'px-6 py-2 text-body-sm font-medium rounded-lg transition-colors flex items-center gap-2',
                     submitting || validating || (validation && !validation.valid)
-                      ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                      ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 cursor-not-allowed'
                       : 'bg-primary-600 text-white hover:bg-primary-700'
                   )}
                 >

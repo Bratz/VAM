@@ -146,7 +146,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
               onClick={() => setZoomToFit(false)}
               className={`px-2 py-1 text-caption transition-colors ${
                 !zoomToFit
-                  ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                  ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
                   : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
               }`}
             >
@@ -157,7 +157,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
               onClick={() => setZoomToFit(true)}
               className={`px-2 py-1 text-caption transition-colors ${
                 zoomToFit
-                  ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                  ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
                   : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
               }`}
             >

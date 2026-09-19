@@ -169,7 +169,7 @@ const SPECIAL_VA_CONFIG: Record<VaSpecialType, {
   SETTLEMENT: {
     label: 'Settlement',
     icon: Scale,
-    color: 'text-cat-2',
+    color: 'text-cat-2 dark:text-cat-2-fg',
     bgColor: 'bg-cat-2-soft dark:bg-cat-2/15',
     borderColor: 'border-cat-2/30 dark:border-cat-2/30',
     description: 'Receives fee postings from covered VAs',
@@ -215,18 +215,18 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           className="flex items-start gap-4 p-4 rounded-xl border-2 border-cat-1/20 dark:border-cat-1/30 bg-cat-1-soft dark:bg-cat-1/15 hover:border-cat-1/40 dark:hover:border-cat-1/40 hover:bg-cat-1/10 dark:hover:bg-cat-1/25 transition-all text-left group"
         >
           <div className="w-12 h-12 rounded-xl bg-cat-1/10 dark:bg-cat-1/15 group-hover:bg-cat-1/20 dark:group-hover:bg-cat-1/25 flex items-center justify-center flex-shrink-0">
-            <FolderPlus className="w-6 h-6 text-cat-1" />
+            <FolderPlus className="w-6 h-6 text-cat-1 dark:text-cat-1-fg" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-body font-semibold text-cat-1">Add AGGREGATION</h3>
+              <h3 className="text-body font-semibold text-cat-1 dark:text-cat-1-fg">Add AGGREGATION</h3>
               <Badge variant="info" size="sm">Intermediate</Badge>
             </div>
-            <p className="text-body-sm text-cat-1 mt-1">
+            <p className="text-body-sm text-cat-1 dark:text-cat-1-fg mt-1">
               Creates a grouping node that can contain other AGGREGATIONs or Transaction VAs.
               Used for organizing hierarchy by region, entity, department, etc.
             </p>
-            <div className="flex items-center gap-4 mt-2 text-caption text-cat-1">
+            <div className="flex items-center gap-4 mt-2 text-caption text-cat-1 dark:text-cat-1-fg">
               <span className="flex items-center gap-1">
                 <Layers className="w-3 h-3" /> Can have children
               </span>
@@ -273,18 +273,18 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           className="flex items-start gap-4 p-4 rounded-xl border-2 border-cat-2/20 dark:border-cat-2/30 bg-cat-2-soft dark:bg-cat-2/15 hover:border-cat-2/40 dark:hover:border-cat-2/40 hover:bg-cat-2/10 dark:hover:bg-cat-2/25 transition-all text-left group"
         >
           <div className="w-12 h-12 rounded-xl bg-cat-2/10 dark:bg-cat-2/15 group-hover:bg-cat-2/20 dark:group-hover:bg-cat-2/25 flex items-center justify-center flex-shrink-0">
-            <PiggyBank className="w-6 h-6 text-cat-2" />
+            <PiggyBank className="w-6 h-6 text-cat-2 dark:text-cat-2-fg" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-body font-semibold text-cat-2">Add IHB Current Account</h3>
-              <Badge variant="default" size="sm" className="bg-cat-2/10 dark:bg-cat-2/15 text-cat-2">IHB</Badge>
+              <h3 className="text-body font-semibold text-cat-2 dark:text-cat-2-fg">Add IHB Current Account</h3>
+              <Badge variant="default" size="sm" className="bg-cat-2/10 dark:bg-cat-2/15 text-cat-2 dark:text-cat-2-fg">IHB</Badge>
             </div>
-            <p className="text-body-sm text-cat-2 mt-1">
+            <p className="text-body-sm text-cat-2 dark:text-cat-2-fg mt-1">
               Creates a Transaction VA with IHB participation enabled. Supports credit/debit
               interest and participates in corporate treasury sweeps.
             </p>
-            <div className="flex items-center gap-4 mt-2 text-caption text-cat-2">
+            <div className="flex items-center gap-4 mt-2 text-caption text-cat-2 dark:text-cat-2-fg">
               <span className="flex items-center gap-1">
                 <Percent className="w-3 h-3" /> Earns/pays interest
               </span>
@@ -424,10 +424,10 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
         )}
         
         <div className="flex items-start gap-3 p-3 bg-cat-1-soft dark:bg-cat-1/15 rounded-lg border border-cat-1/20 dark:border-cat-1/30">
-          <Layers className="w-5 h-5 text-cat-1 mt-0.5" />
+          <Layers className="w-5 h-5 text-cat-1 dark:text-cat-1-fg mt-0.5" />
           <div>
-            <p className="text-body-sm font-medium text-cat-1">AGGREGATION Node</p>
-            <p className="text-caption text-cat-1 mt-0.5">Creates an intermediate grouping node for organizing the hierarchy.</p>
+            <p className="text-body-sm font-medium text-cat-1 dark:text-cat-1-fg">AGGREGATION Node</p>
+            <p className="text-caption text-cat-1 dark:text-cat-1-fg mt-0.5">Creates an intermediate grouping node for organizing the hierarchy.</p>
           </div>
         </div>
         
@@ -443,7 +443,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
         )}
         
         <div>
-          <label className="field-label block mb-1">Name <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-1">Name <span className="text-error-500 dark:text-error-300">*</span></label>
           <Input 
             placeholder="e.g., EMEA Region, UAE Operations" 
             value={formData.name} 
@@ -452,7 +452,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
         </div>
         
         <div>
-          <label className="field-label block mb-1">Code <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-1">Code <span className="text-error-500 dark:text-error-300">*</span></label>
           <Input 
             placeholder="e.g., AGG-EMEA" 
             value={formData.code} 
@@ -762,7 +762,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
               <Badge variant="neutral" size="sm">{parentNode.currencyCode}</Badge>
             </div>
             {parentNode.accountNumber && (
-              <p className="text-caption text-neutral-400 mt-1 font-mono dark:text-neutral-500">{parentNode.accountNumber}</p>
+              <p className="text-caption text-neutral-400 mt-1 font-mono dark:text-neutral-400">{parentNode.accountNumber}</p>
             )}
           </div>
         ) : (
@@ -775,7 +775,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
         )}
         
         <div>
-          <label className="field-label block mb-1">Account Name <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-1">Account Name <span className="text-error-500 dark:text-error-300">*</span></label>
           <Input 
             placeholder="e.g., Main Operating Account" 
             value={formData.name} 
@@ -816,7 +816,7 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
         </div>
 
         <div>
-          <label className="field-label block mb-1">External Reference <span className="text-neutral-400 dark:text-neutral-500">(Optional)</span></label>
+          <label className="field-label block mb-1">External Reference <span className="text-neutral-400">(Optional)</span></label>
           <Input
             value={formData.externalReference}
             onChange={(e) => setFormData(prev => ({ ...prev, externalReference: e.target.value }))}
@@ -1015,23 +1015,23 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         <div className="bg-gradient-to-r from-cat-2-soft to-cat-1-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-1/15">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
-              <PiggyBank className="w-5 h-5 text-cat-2" />
+              <PiggyBank className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-body-sm font-semibold text-cat-2">IHB Current Account</p>
+                <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
                 {programName && (
-                  <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
+                  <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                     {programName}
                   </Badge>
                 )}
               </div>
-              <p className="text-caption text-cat-2 mt-1">
+              <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
                 Creates a Transaction VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
                 Supports credit/debit interest and participates in treasury sweeps.
               </p>
               {programCurrency && (
-                <p className="text-caption text-cat-2 mt-1">
+                <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
                   Program currency: <span className="font-semibold">{programCurrency}</span>
                 </p>
               )}
@@ -1068,7 +1068,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                   </div>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={fillFromTreasuryRates} className="text-caption text-cat-2">
+              <Button variant="ghost" size="sm" onClick={fillFromTreasuryRates} className="text-caption text-cat-2 dark:text-cat-2-fg">
                 <TrendingUp className="w-3 h-3 mr-1" /> Use Treasury Rates
               </Button>
             </div>
@@ -1078,7 +1078,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         {/* Participant Entity Selection */}
         <div>
           <label className="field-label block mb-1">
-            Participant Entity <span className="text-error-500">*</span>
+            Participant Entity <span className="text-error-500 dark:text-error-300">*</span>
           </label>
           <select
             value={formData.participantEntityId}
@@ -1187,7 +1187,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 type="checkbox"
                 checked={formData.ihbSweepEnabled}
                 onChange={(e) => setFormData(prev => ({ ...prev, ihbSweepEnabled: e.target.checked }))}
-                className="w-4 h-4 rounded border-neutral-300 text-cat-2 focus:ring-cat-2 dark:border-primary-700"
+                className="w-4 h-4 rounded border-neutral-300 text-cat-2 dark:text-cat-2-fg focus:ring-cat-2 dark:border-primary-700"
               />
               <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Enable Auto-Sweep to Treasury</span>
             </label>
@@ -1380,7 +1380,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
           <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
           <span className="body-strong font-semibold">Currency Breakdown</span>
         </div>
-        <button onClick={onClose} className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300">
+        <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
           <span className="text-body-lg">&times;</span>
         </button>
       </div>
@@ -1542,7 +1542,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
       {/* Target Balance */}
       {(ihb.targetCashBalance || 0) > 0 && (
         <div className="flex items-center gap-2 text-body-sm">
-          <Target className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <Target className="w-4 h-4 text-neutral-400" />
           <span className="text-neutral-500 dark:text-neutral-400">Target Balance:</span>
           <span className="font-medium">{formatCurrency(ihb.targetCashBalance, currency)}</span>
         </div>
@@ -1637,7 +1637,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       return { bg: 'bg-cyan-50 dark:bg-cyan-500/10', text: 'text-cyan-700 dark:text-cyan-300', icon: Coins, border: 'border-2 border-dashed border-cyan-400 dark:border-cyan-500/30' };
     }
     if (specialType === 'SETTLEMENT') {
-      return { bg: 'bg-cat-2-soft dark:bg-cat-2/15', text: 'text-cat-2', icon: Scale, border: 'border-2 border-cat-2/30 dark:border-cat-2/30' };
+      return { bg: 'bg-cat-2-soft dark:bg-cat-2/15', text: 'text-cat-2 dark:text-cat-2-fg', icon: Scale, border: 'border-2 border-cat-2/30 dark:border-cat-2/30' };
     }
     if (specialType === 'EXCEPTION') {
       return { bg: 'bg-warning-50 dark:bg-warning-500/10', text: 'text-warning-600 dark:text-warning-300', icon: AlertTriangle, border: 'border-2 border-warning-300 dark:border-warning-500/30' };
@@ -1645,7 +1645,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     switch (node.type) {
       case 'GROUP': return { bg: 'bg-primary-900', text: 'text-white', icon: Globe, border: '' };
       case 'REGION': return { bg: 'bg-info-100 dark:bg-info-500/20', text: 'text-info-800 dark:text-info-300', icon: MapPin, border: '' };
-      case 'ENTITY': return { bg: 'bg-cat-1/10 dark:bg-cat-1/15', text: 'text-cat-1', icon: Building2, border: '' };
+      case 'ENTITY': return { bg: 'bg-cat-1/10 dark:bg-cat-1/15', text: 'text-cat-1 dark:text-cat-1-fg', icon: Building2, border: '' };
       case 'VIRTUAL_ACCOUNT': return { bg: 'bg-success-50 dark:bg-success-500/10', text: 'text-success-700 dark:text-success-300', icon: Wallet, border: '' };
       case 'SHADOW_ACCOUNT': return { bg: 'bg-warning-100 dark:bg-warning-500/20', text: 'text-warning-800 dark:text-warning-300', icon: Layers, border: 'border-2 border-dashed border-warning-400' };
       default: return { bg: 'bg-neutral-100 dark:bg-primary-800', text: 'text-neutral-700 dark:text-neutral-200', icon: Wallet, border: '' };
@@ -1804,8 +1804,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <div className="text-right min-w-[130px]">
           <div className="flex items-center justify-end gap-1">
             {hasIcActivity && (node.netPosition >= node.consolidatedBalance
-              ? <ArrowUpRight className="w-4 h-4 text-success-500" />
-              : <ArrowDownRight className="w-4 h-4 text-error-500" />)}
+              ? <ArrowUpRight className="w-4 h-4 text-success-500 dark:text-success-300" />
+              : <ArrowDownRight className="w-4 h-4 text-error-500 dark:text-error-300" />)}
             <p className={cn('text-body-sm font-bold',
               !hasIcActivity ? 'text-primary-900 dark:text-neutral-50'
                 : node.netPosition >= node.consolidatedBalance ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
@@ -1829,7 +1829,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             }}
             className="p-1 hover:bg-neutral-200 rounded opacity-40 group-hover:opacity-100 transition-opacity"
           >
-            <MoreVertical className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <MoreVertical className="w-4 h-4 text-neutral-400" />
           </button>
           {showContextMenu && (
             <div className={cn(
@@ -1841,22 +1841,22 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   {/* Node types listed directly — no intermediate chooser modal. */}
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'aggregation'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                    <FolderPlus className="w-4 h-4 text-cat-1" />Add Aggregation Node
+                    <FolderPlus className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" />Add Aggregation Node
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'transaction'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-success-600" />Add Transaction VA
+                    <CreditCard className="w-4 h-4 text-success-600 dark:text-success-300" />Add Transaction VA
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'ihb-current-account'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                    <PiggyBank className="w-4 h-4 text-info-500" />Add IHB Current Account
+                    <PiggyBank className="w-4 h-4 text-info-500 dark:text-info-300" />Add IHB Current Account
                   </button>
                 </>
               )}
               {canAddChildren && onCreateSettlementVa && (
                 <button onClick={(e) => { e.stopPropagation(); onCreateSettlementVa(node.id); setShowContextMenu(false); }}
                   className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-cat-2" />Create Settlement VA
+                  <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />Create Settlement VA
                 </button>
               )}
               
@@ -1867,12 +1867,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   {node.ihb?.enabled ? (
                     <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
                       className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                      <Settings className="w-4 h-4 text-info-500" />IHB Settings
+                      <Settings className="w-4 h-4 text-info-500 dark:text-info-300" />IHB Settings
                     </button>
                   ) : (
                     <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
                       className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                      <Power className="w-4 h-4 text-success-500" />Enable IHB
+                      <Power className="w-4 h-4 text-success-500 dark:text-success-300" />Enable IHB
                     </button>
                   )}
                 </>
@@ -2000,8 +2000,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     fetchBreakdown();
   }, [node?.id, node?.accountCategory]);
 
-  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-neutral-400 dark:text-neutral-500" /></div>;
-  if (!node) return <div className="h-full flex items-center justify-center text-neutral-400 dark:text-neutral-500"><p>Select an entity to view details</p></div>;
+  if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-neutral-400" /></div>;
+  if (!node) return <div className="h-full flex items-center justify-center text-neutral-400"><p>Select an entity to view details</p></div>;
 
   const displayData = detail || node;
   const icNet = (displayData.intercompanyReceivable || 0) - (displayData.intercompanyPayable || 0);
@@ -2663,7 +2663,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingDown className="w-4 h-4 text-error-500" />
+                        <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
                         <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Lending Rate</span>
                       </div>
                       <p className="stat-value-error">
@@ -2678,7 +2678,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     </div>
                     <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-4 h-4 text-success-500" />
+                        <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
                         <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
                       </div>
                       <p className="stat-value-success">
@@ -2895,7 +2895,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               {/* Borrowing Rates */}
               <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="w-4 h-4 text-error-500" />
+                  <TrendingDown className="w-4 h-4 text-error-500 dark:text-error-300" />
                   <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Borrowing Rate</span>
                 </div>
                 <p className="stat-value-error">{treasuryRates.indicativeLendingRate?.toFixed(2)}%</p>
@@ -2910,7 +2910,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               {/* Deposit Rates */}
               <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-success-500" />
+                  <TrendingUp className="w-4 h-4 text-success-500 dark:text-success-300" />
                   <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
                 </div>
                 <p className="stat-value-success">{treasuryRates.indicativeDepositRate?.toFixed(2)}%</p>
@@ -2933,7 +2933,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         {isEnabling && !willBeTreasuryCenter && loadingRates && (
           <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border animate-pulse">
             <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-neutral-400 dark:text-neutral-500" />
+              <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
               <span className="body-sm">Loading Treasury rates...</span>
             </div>
           </div>
@@ -3518,7 +3518,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       if (currencyCount > 0) parts.push(`for ${currencyCount} currency(ies)`);
       message += ` Created ${parts.join(' ')}.`;
     }
-    toast.success(message, { duration: 5000, icon: <Sparkles className="w-5 h-5 text-accent-500" /> });
+    toast.success(message, { duration: 5000, icon: <Sparkles className="w-5 h-5 text-accent-500 dark:text-accent-300" /> });
     
     // Refresh hierarchy status
     if (selectedProgramId) {
@@ -3735,7 +3735,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Building className="w-10 h-10 text-neutral-400 dark:text-neutral-500" />
+              <Building className="w-10 h-10 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Select a Corporate</h2>
             <p className="text-neutral-500 max-w-md dark:text-neutral-400">
@@ -3767,7 +3767,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Layers className="w-10 h-10 text-neutral-400 dark:text-neutral-500" />
+              <Layers className="w-10 h-10 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Select a Program</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
@@ -3836,7 +3836,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <div className="w-20 h-20 bg-neutral-100 dark:bg-primary-800 rounded-full flex items-center justify-center mb-4">
-              <Globe className="w-10 h-10 text-neutral-400 dark:text-neutral-500" />
+              <Globe className="w-10 h-10 text-neutral-400" />
             </div>
             <h2 className="section-title mb-2">Hierarchy Not Initialized</h2>
             <p className="text-neutral-500 mb-6 max-w-md dark:text-neutral-400">
@@ -3912,7 +3912,7 @@ const TreasuryHierarchyPage: React.FC = () => {
           onProgramChange={handleProgramChange}
         />
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <AlertCircle className="w-12 h-12 text-error-500" />
+          <AlertCircle className="w-12 h-12 text-error-500 dark:text-error-300" />
           <p className="text-error-600 dark:text-error-300">{error}</p>
           <Button onClick={loadData}>Retry</Button>
         </div>
@@ -4132,7 +4132,7 @@ const TreasuryHierarchyPage: React.FC = () => {
                 />
               ) : (
                 <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
-                  <Globe className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                  <Globe className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p>No hierarchy data available</p>
                 </div>
               )}
@@ -4166,10 +4166,10 @@ const TreasuryHierarchyPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-6">
           <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1" /></div><span className="caption">Entity</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div><span className="caption">Entity</span></div>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2" /></div><span className="caption">Settlement VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div><span className="caption">Settlement VA</span></div>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
           <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
@@ -4231,10 +4231,10 @@ const TreasuryHierarchyPage: React.FC = () => {
       <Modal isOpen={showCreateSettlementVa} onClose={() => setShowCreateSettlementVa(false)} title="Create Settlement VA" size="md">
         <div className="p-4 space-y-4">
           <div className="flex items-start gap-3 p-3 bg-cat-2-soft dark:bg-cat-2/15 rounded-lg border border-cat-2/20 dark:border-cat-2/30">
-            <Scale className="w-5 h-5 text-cat-2 mt-0.5" />
+            <Scale className="w-5 h-5 text-cat-2 dark:text-cat-2-fg mt-0.5" />
             <div>
-              <p className="text-body-sm font-medium text-cat-2">Settlement Virtual Account</p>
-              <p className="text-caption text-cat-2 mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
+              <p className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg">Settlement Virtual Account</p>
+              <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
             </div>
           </div>
           <div><label className="field-label block mb-1">VA Name</label><Input placeholder="e.g., GCC Settlement Account" /></div>

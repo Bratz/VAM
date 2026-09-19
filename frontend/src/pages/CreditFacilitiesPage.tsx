@@ -353,7 +353,7 @@ const CreditFacilitiesPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
               <span className="text-error-700 font-medium dark:text-error-300">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1">×</button>
+            <button onClick={() => setError(null)} className="text-error-500 dark:text-error-300 hover:text-error-700 p-1">×</button>
           </div>
         </Card>
       )}
@@ -420,7 +420,7 @@ const CreditFacilitiesPage: React.FC = () => {
       {/* Filters */}
       <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.35s' }}>
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -466,7 +466,7 @@ const CreditFacilitiesPage: React.FC = () => {
         </div>
       ) : (
         <Card className="p-12 text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <Wallet className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+          <Wallet className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
           <p className="text-neutral-500 dark:text-neutral-400">No credit facilities found</p>
           <Button className="mt-4" onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" /> Add Facility

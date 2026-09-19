@@ -244,7 +244,7 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
             )}
           </div>
           <div className="pb-5 min-w-0">
-            <p className={`text-body-sm ${step.status === 'pending' ? 'text-neutral-400 dark:text-neutral-500' : 'font-semibold text-primary-900 dark:text-neutral-50'}`}>
+            <p className={`text-body-sm ${step.status === 'pending' ? 'text-neutral-400' : 'font-semibold text-primary-900 dark:text-neutral-50'}`}>
               {step.title}
             </p>
             {step.subtitle && (
@@ -510,7 +510,7 @@ const FileIngestUploadPage: React.FC = () => {
                 className="hidden"
                 id="ingest-file-upload"
               />
-              <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 scale-110' : 'text-neutral-400 dark:text-neutral-500'}`} />
+              <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 dark:text-accent-300 scale-110' : 'text-neutral-400'}`} />
               <p className="body-sm">
                 Drop your file here, or{' '}
                 <label htmlFor="ingest-file-upload" className="text-accent-600 dark:text-accent-300 font-medium cursor-pointer hover:underline">
@@ -651,7 +651,7 @@ const FileIngestUploadPage: React.FC = () => {
             />
             {job.stage === 'BLOCKED' && job.blockedReason && (
               <div className="mb-4 p-3 rounded-lg bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 flex items-start gap-2">
-                <PauseCircle className="w-4 h-4 text-error-500 mt-0.5 shrink-0" />
+                <PauseCircle className="w-4 h-4 text-error-500 dark:text-error-300 mt-0.5 shrink-0" />
                 <p className="text-body-sm text-error-700 dark:text-error-300">{job.blockedReason}</p>
               </div>
             )}
@@ -685,17 +685,17 @@ const FileIngestUploadPage: React.FC = () => {
                 <p className="text-heading-sm font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
               </Card>
               <Card padding="sm" className="text-center">
-                <CheckCircle2 className="w-4 h-4 text-success-500 mx-auto" />
+                <CheckCircle2 className="w-4 h-4 text-success-500 dark:text-success-300 mx-auto" />
                 <p className="text-heading-sm font-semibold text-success-700 dark:text-success-300 mt-0.5">{doneSummary.processed}</p>
                 <p className="caption">Processed</p>
               </Card>
               <Card padding="sm" className="text-center">
-                <AlertTriangle className="w-4 h-4 text-warning-500 mx-auto" />
+                <AlertTriangle className="w-4 h-4 text-warning-500 dark:text-warning-300 mx-auto" />
                 <p className="text-heading-sm font-semibold text-warning-700 dark:text-warning-300 mt-0.5">{doneSummary.quarantined}</p>
                 <p className="caption">Quarantined</p>
               </Card>
               <Card padding="sm" className="text-center">
-                <XCircle className="w-4 h-4 text-error-500 mx-auto" />
+                <XCircle className="w-4 h-4 text-error-500 dark:text-error-300 mx-auto" />
                 <p className="text-heading-sm font-semibold text-error-700 dark:text-error-300 mt-0.5">{doneSummary.failed}</p>
                 <p className="caption">Failed</p>
               </Card>

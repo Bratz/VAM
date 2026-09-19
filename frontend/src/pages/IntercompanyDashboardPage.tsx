@@ -420,7 +420,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
               'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium',
               step === s ? 'bg-primary-600 text-white' : 
               ['form', 'preview', 'result'].indexOf(step) > i ? 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300' : 
-              'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-500'
+              'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-400'
             )}>
               {i + 1}
             </div>
@@ -670,7 +670,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
                 <p className="caption">{pair.entity1Name}</p>
               </div>
             </div>
-            <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
+            <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 bg-info-100 rounded-xl flex items-center justify-center dark:bg-info-500/20">
                 <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
@@ -771,7 +771,7 @@ const TransactionRow: React.FC<{ transaction: IntercompanyTransaction; onView: (
         <p className="caption">{transaction.payingEntityName}</p>
       </td>
       <td className="data-table-cell text-center">
-        <ArrowRight className="w-4 h-4 text-neutral-400 inline dark:text-neutral-500" />
+        <ArrowRight className="w-4 h-4 text-neutral-400 inline dark:text-neutral-400" />
       </td>
       <td className="data-table-cell">
         <p className="body-strong">{transaction.behalfEntityCode}</p>
@@ -1035,7 +1035,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           onEntityChange={setSelectedEntityId}
         />
         <Card className="text-center py-12">
-          <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+          <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
           <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Select a Corporate</h3>
           <p className="text-neutral-500 dark:text-neutral-400">Please select a corporate to view intercompany data</p>
         </Card>
@@ -1145,7 +1145,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             className={cn(
               'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
               activeTab === tab.id
-                ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
+                ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
                 : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
             )}
           >
@@ -1307,7 +1307,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                          <CreditCard className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                          <CreditCard className="w-8 h-8 text-neutral-400" />
                         </div>
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No POBO transactions found</p>
                         <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowPoboModal(true)}>
@@ -1404,7 +1404,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center">
                         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                          <Wallet className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                          <Wallet className="w-8 h-8 text-neutral-400" />
                         </div>
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No COBO collections found</p>
                         <Button size="sm" variant="outline" className="mt-4" onClick={() => setShowCoboModal(true)}>
@@ -1436,7 +1436,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         {tx.viban ? (
                           <code className="text-caption bg-info-50 text-info-700 px-2 py-1 rounded-lg font-medium dark:bg-info-500/10 dark:text-info-300">{tx.viban}</code>
                         ) : (
-                          <span className="text-neutral-400 dark:text-neutral-500">—</span>
+                          <span className="text-neutral-400">—</span>
                         )}
                       </td>
                       <td className="data-table-cell">
@@ -1492,7 +1492,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               {entityPairs.filter(p => p.pendingTransactions > 0).length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-success-100 flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
-                    <CheckCircle className="w-8 h-8 text-success-500" />
+                    <CheckCircle className="w-8 h-8 text-success-500 dark:text-success-300" />
                   </div>
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
                 </div>
@@ -1509,7 +1509,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                           <p className="caption">{pair.entity1Name}</p>
                         </div>
                       </div>
-                      <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
+                      <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-info-100 rounded-xl flex items-center justify-center dark:bg-info-500/20">
                           <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
@@ -1563,10 +1563,10 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               {intercompanyVas.length === 0 ? (
                 <div className="px-4 py-12 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                    <Wallet className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                    <Wallet className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">No intercompany virtual accounts configured</p>
-                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Intercompany VAs will appear here when created</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Intercompany VAs will appear here when created</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -1835,7 +1835,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center">
                       <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                        <Receipt className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                        <Receipt className="w-8 h-8 text-neutral-400" />
                       </div>
                       <p className="text-neutral-500 dark:text-neutral-400">No transactions found</p>
                     </td>
@@ -1855,7 +1855,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {entitiesWithPositions.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
               <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <Building2 className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                <Building2 className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No entities with intercompany positions</p>
             </Card>
@@ -1921,7 +1921,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           {entityPairs.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
               <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
-                <ArrowLeftRight className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
+                <ArrowLeftRight className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No entity pairs with intercompany positions</p>
             </Card>

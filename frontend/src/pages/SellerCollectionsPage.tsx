@@ -145,7 +145,7 @@ const SellerCollectionsPage: React.FC = () => {
         <>
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="p-4 relative">
-              <Search className="w-4 h-4 absolute left-7 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
+              <Search className="w-4 h-4 absolute left-7 top-1/2 -translate-y-1/2 text-neutral-400" />
               <Input className="pl-9" placeholder="Search by reference or seller..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
           </Card>
@@ -154,7 +154,7 @@ const SellerCollectionsPage: React.FC = () => {
             <DataTable
               data={filteredCollections}
               keyExtractor={(c) => c.id}
-              emptyIcon={<ShoppingBag className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+              emptyIcon={<ShoppingBag className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
               emptyTitle="No collections found"
               columns={[
                 {

@@ -454,13 +454,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           {/* Success checkmark */}
           {success && !rightIcon && (
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-success-500">
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-success-500 dark:text-success-300">
               <Check className={iconSizes[inputSize]} />
             </div>
           )}
           {/* Error icon */}
           {error && !rightIcon && !success && (
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-error-500">
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-error-500 dark:text-error-300">
               <AlertCircle className={iconSizes[inputSize]} />
             </div>
           )}
@@ -620,7 +620,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               // Error state
               error && 'border-error-500 focus:border-error-500 focus:ring-error-500/20',
               // Disabled state
-              disabled && 'bg-neutral-100 text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:bg-primary-800 dark:text-neutral-500 dark:text-neutral-400',
+              disabled && 'bg-neutral-100 text-neutral-500 cursor-not-allowed hover:border-neutral-300 dark:bg-primary-800 dark:text-neutral-400',
               // Size
               sizeStyles[selectSize],
               className
@@ -647,7 +647,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           {/* Custom dropdown arrow */}
           <div className={cn(
             'absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none',
-            disabled ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-500 dark:text-neutral-400'
+            disabled ? 'text-neutral-400' : 'text-neutral-500 dark:text-neutral-400'
           )}>
             <ChevronDown className={selectSize === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
           </div>
@@ -785,22 +785,22 @@ export const Divider: React.FC<DividerProps> = ({
   orientation = 'horizontal',
 }) => {
   if (orientation === 'vertical') {
-    return <div className={cn('w-px h-full bg-neutral-200', className)} />;
+    return <div className={cn('w-px h-full bg-neutral-200 dark:bg-primary-800', className)} />;
   }
 
   if (label) {
     return (
       <div className={cn('flex items-center gap-4', className)}>
-        <div className="flex-1 h-px bg-neutral-200" />
+        <div className="flex-1 h-px bg-neutral-200 dark:bg-primary-800" />
         <span className="label">
           {label}
         </span>
-        <div className="flex-1 h-px bg-neutral-200" />
+        <div className="flex-1 h-px bg-neutral-200 dark:bg-primary-800" />
       </div>
     );
   }
 
-  return <div className={cn('h-px w-full bg-neutral-200', className)} />;
+  return <div className={cn('h-px w-full bg-neutral-200 dark:bg-primary-800', className)} />;
 };
 
 // ==================== Loading Spinner ====================
@@ -946,7 +946,7 @@ export const Progress: React.FC<ProgressProps> = ({
         </div>
       )}
       <div className={cn(
-        'w-full bg-neutral-200 rounded-full overflow-hidden',
+        'w-full bg-neutral-200 dark:bg-primary-800 rounded-full overflow-hidden',
         sizes[size]
       )}>
         <div

@@ -189,7 +189,7 @@ export const Tabs: React.FC<TabsProps> = ({
           {tab.badge !== undefined && (
             <span className={cn(
               'text-caption px-1.5 py-0.5 rounded-full',
-              activeTab === tab.id ? 'bg-white/20' : 'bg-neutral-200'
+              activeTab === tab.id ? 'bg-white/20' : 'bg-neutral-200 dark:bg-primary-800'
             )}>
               {tab.badge}
             </span>
@@ -292,7 +292,7 @@ export const Stepper: React.FC<StepperProps> = ({
                 isHorizontal 
                   ? 'flex-1 h-0.5 mx-4' 
                   : 'w-0.5 h-8 ml-5 my-2',
-                index < currentStep ? 'bg-success-500' : 'bg-neutral-200'
+                index < currentStep ? 'bg-success-500' : 'bg-neutral-200 dark:bg-primary-800'
               )} />
             )}
           </Fragment>
@@ -350,7 +350,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
           )}
         </div>
       )}
-      <div className={cn('w-full bg-neutral-200 rounded-full overflow-hidden', sizes[size])}>
+      <div className={cn('w-full bg-neutral-200 dark:bg-primary-800 rounded-full overflow-hidden', sizes[size])}>
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500 ease-out',

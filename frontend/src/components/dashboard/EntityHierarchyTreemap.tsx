@@ -341,7 +341,7 @@ export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
           {path.length > 1 && <ChevronLeft size={14} className="shrink-0" />}
           {path.map((node, i) => (
             <React.Fragment key={node.id}>
-              {i > 0 && <span className="text-neutral-400 dark:text-neutral-600">›</span>}
+              {i > 0 && <span className="text-neutral-400">›</span>}
               {i === path.length - 1 ? (
                 <span className="font-semibold text-primary-900 dark:text-white">{node.name}</span>
               ) : (
@@ -356,7 +356,7 @@ export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
             </React.Fragment>
           ))}
           {currentComposition.length > 1 && (
-            <span className="text-neutral-400 dark:text-neutral-600">
+            <span className="text-neutral-400">
               · {currentComposition.map((c) => formatCurrency(c.amount, c.currency)).join(' · ')}
             </span>
           )}

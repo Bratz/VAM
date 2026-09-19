@@ -69,7 +69,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) =
 
 /** Three-dot pulse shown before any tokens arrive. */
 const ThinkingIndicator: React.FC = () => (
-  <span className="inline-flex items-center gap-1 text-neutral-400 dark:text-neutral-500">
+  <span className="inline-flex items-center gap-1 text-neutral-400">
     <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }} />
     <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '120ms' }} />
     <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" style={{ animationDelay: '240ms' }} />

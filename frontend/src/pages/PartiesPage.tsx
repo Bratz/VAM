@@ -122,10 +122,10 @@ const icSettlementConfig: Record<IcSettlementMethod, { label: string; icon: Reac
 const PoboBadge: React.FC<{ eligible?: boolean; defaultPayerCode?: string }> = ({ eligible, defaultPayerCode }) => {
   if (!eligible) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-info-50 to-cat-1-soft text-cat-1 border border-cat-1/20 dark:border-cat-1/30 dark:from-info-500/15 dark:to-cat-1/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-info-50 to-cat-1-soft text-cat-1 dark:text-cat-1-fg border border-cat-1/20 dark:border-cat-1/30 dark:from-info-500/15 dark:to-cat-1/15">
       <Wallet className="w-3 h-3" />
       POBO
-      {defaultPayerCode && <span className="text-cat-1 font-normal">→ {defaultPayerCode}</span>}
+      {defaultPayerCode && <span className="text-cat-1 dark:text-cat-1-fg font-normal">→ {defaultPayerCode}</span>}
     </span>
   );
 };
@@ -135,10 +135,10 @@ const IntercompanyBadge: React.FC<{ isIntercompany?: boolean; linkedEntityCode?:
   if (!isIntercompany) return null;
   const SettlementIcon = settlementMethod ? icSettlementConfig[settlementMethod]?.icon : Link2;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-2-soft to-cat-4-soft text-cat-2 border border-cat-2/20 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-4/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-2-soft to-cat-4-soft text-cat-2 dark:text-cat-2-fg border border-cat-2/20 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-4/15">
       <Link2 className="w-3 h-3" />
       IC
-      {linkedEntityCode && <span className="text-cat-2 font-normal">↔ {linkedEntityCode}</span>}
+      {linkedEntityCode && <span className="text-cat-2 dark:text-cat-2-fg font-normal">↔ {linkedEntityCode}</span>}
       {settlementMethod && <SettlementIcon className="w-3 h-3 ml-1" />}
     </span>
   );
@@ -147,7 +147,7 @@ const IntercompanyBadge: React.FC<{ isIntercompany?: boolean; linkedEntityCode?:
 const NettingBadge: React.FC<{ eligible?: boolean }> = ({ eligible }) => {
   if (!eligible) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-5-soft to-cat-3-soft text-cat-3 border border-cat-3/20 dark:border-cat-3/30 dark:from-cat-5/15 dark:to-cat-3/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-5-soft to-cat-3-soft text-cat-3 dark:text-cat-3-fg border border-cat-3/20 dark:border-cat-3/30 dark:from-cat-5/15 dark:to-cat-3/15">
       <Repeat className="w-3 h-3" />
       Netting
     </span>
@@ -1049,7 +1049,7 @@ const PartyFormModal: React.FC<{
               {/* Bank Accounts List */}
               {bankAccounts.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
-                  <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                  <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No bank accounts added yet</p>
                   <p className="text-body-sm mt-1">Add a bank account to enable payments to this party</p>
                 </div>
@@ -1133,7 +1133,7 @@ const PartyFormModal: React.FC<{
 
               {documents.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
-                  <Shield className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
+                  <Shield className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No documents uploaded yet</p>
                   <p className="text-body-sm mt-1">
                     {isEditMode
@@ -1297,13 +1297,13 @@ const PartyFormModal: React.FC<{
 
                   <div className="flex items-start gap-4 p-4 bg-cat-2-soft rounded-lg border border-cat-2/20 dark:bg-cat-2/15 dark:border-cat-2/30">
                     <div className="p-2 bg-cat-2/10 rounded-lg dark:bg-cat-2/15">
-                      <Link2 className="w-5 h-5 text-cat-2" />
+                      <Link2 className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-cat-2">Intercompany Party</h4>
-                          <p className="text-body-sm text-cat-2">This party represents another legal entity within the group</p>
+                          <h4 className="font-medium text-cat-2 dark:text-cat-2-fg">Intercompany Party</h4>
+                          <p className="text-body-sm text-cat-2 dark:text-cat-2-fg">This party represents another legal entity within the group</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1320,13 +1320,13 @@ const PartyFormModal: React.FC<{
 
                   <div className="flex items-start gap-4 p-4 bg-cat-3-soft rounded-lg border border-cat-3/20 dark:bg-cat-3/15 dark:border-cat-3/30">
                     <div className="p-2 bg-cat-3/10 rounded-lg dark:bg-cat-3/15">
-                      <Repeat className="w-5 h-5 text-cat-3" />
+                      <Repeat className="w-5 h-5 text-cat-3 dark:text-cat-3-fg" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-cat-3">Netting Eligible</h4>
-                          <p className="text-body-sm text-cat-3">Include transactions in netting cycles for settlement optimization</p>
+                          <h4 className="font-medium text-cat-3 dark:text-cat-3-fg">Netting Eligible</h4>
+                          <p className="text-body-sm text-cat-3 dark:text-cat-3-fg">Include transactions in netting cycles for settlement optimization</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1613,7 +1613,7 @@ const PartyDetailModal: React.FC<{
           <div className="flex items-center gap-4">
             <div className={cn('w-14 h-14 rounded-xl flex items-center justify-center',
               party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-              <TypeIcon className={cn('w-7 h-7', party.isIntercompany ? 'text-cat-2' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
+              <TypeIcon className={cn('w-7 h-7', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -1674,9 +1674,9 @@ const PartyDetailModal: React.FC<{
                 </Card>
                 <h3 className="body-strong font-semibold">Contact</h3>
                 <Card padding="sm" className="space-y-3">
-                  {party.contactName && <div className="flex items-center gap-2"><User className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.contactName}</p></div>}
-                  {party.contactEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><a href={`mailto:${party.contactEmail}`} className="text-body-sm text-info-600 hover:underline dark:text-info-300">{party.contactEmail}</a></div>}
-                  {party.city && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.city}, {party.country}</p></div>}
+                  {party.contactName && <div className="flex items-center gap-2"><User className="w-4 h-4 text-neutral-400" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.contactName}</p></div>}
+                  {party.contactEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-neutral-400" /><a href={`mailto:${party.contactEmail}`} className="text-body-sm text-info-600 hover:underline dark:text-info-300">{party.contactEmail}</a></div>}
+                  {party.city && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-neutral-400" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.city}, {party.country}</p></div>}
                 </Card>
               </div>
               <div className="space-y-4">
@@ -1706,7 +1706,7 @@ const PartyDetailModal: React.FC<{
 
               {/* Add Bank Account Form */}
               {showBankAccountForm && (
-                <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
+                <Card className="border-primary-200 bg-primary-50/30 dark:bg-primary-800/40 animate-fade-in dark:border-primary-700">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="body-strong font-semibold">New Bank Account</h4>
@@ -1820,7 +1820,7 @@ const PartyDetailModal: React.FC<{
                 </div>
               ) : !showBankAccountForm && (
                 <div className="text-center py-12">
-                  <CreditCard className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+                  <CreditCard className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
                   <p className="body-sm">No bank accounts configured</p>
                   <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowBankAccountForm(true)}>
                     <Plus className="w-4 h-4 mr-1" /> Add Bank Account
@@ -1872,7 +1872,7 @@ const PartyDetailModal: React.FC<{
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <Shield className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
+                  <Shield className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
                   <p className="body-sm">No documents uploaded</p>
                   <Button variant="outline" size="sm" className="mt-4">
                     <Plus className="w-4 h-4 mr-1" /> Upload Document
@@ -1913,7 +1913,7 @@ const PartyDetailModal: React.FC<{
                 </Card>
 
                 {showKycForm && (
-                  <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
+                  <Card className="border-primary-200 bg-primary-50/30 dark:bg-primary-800/40 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
                       <h4 className="body-strong">Update KYC Status</h4>
                       <div>
@@ -1972,7 +1972,7 @@ const PartyDetailModal: React.FC<{
                 </Card>
 
                 {showRiskForm && (
-                  <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
+                  <Card className="border-primary-200 bg-primary-50/30 dark:bg-primary-800/40 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
                       <h4 className="body-strong">Update Risk Rating</h4>
                       <div>
@@ -2080,8 +2080,8 @@ const PartyDetailModal: React.FC<{
                 <Card padding="md" className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-cat-1-soft rounded-lg dark:bg-cat-1/15">
                     <div className="flex items-center gap-3">
-                      <Wallet className="w-6 h-6 text-cat-1" />
-                      <div><p className="text-body-sm font-medium text-cat-1">POBO Enabled</p><p className="text-caption text-cat-1">Treasury can pay on behalf of subsidiaries</p></div>
+                      <Wallet className="w-6 h-6 text-cat-1 dark:text-cat-1-fg" />
+                      <div><p className="text-body-sm font-medium text-cat-1 dark:text-cat-1-fg">POBO Enabled</p><p className="text-caption text-cat-1 dark:text-cat-1-fg">Treasury can pay on behalf of subsidiaries</p></div>
                     </div>
                     <Badge variant="success" size="sm">Active</Badge>
                   </div>
@@ -2095,9 +2095,9 @@ const PartyDetailModal: React.FC<{
                   <div className="space-y-3">
                     <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center text-body-sm font-semibold text-info-700 dark:bg-info-500/20 dark:text-info-300">1</div><div><p className="text-body-sm font-medium">Subsidiary creates payable</p><p className="caption">{party.owningEntityCode}</p></div></div>
                     <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-body-sm font-semibold text-cat-1 dark:bg-cat-1/15">2</div><div><p className="text-body-sm font-medium">Treasury pays vendor</p><p className="caption">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
+                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-body-sm font-semibold text-cat-1 dark:text-cat-1-fg dark:bg-cat-1/15">2</div><div><p className="text-body-sm font-medium">Treasury pays vendor</p><p className="caption">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
                     <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-body-sm font-semibold text-cat-2 dark:bg-cat-2/15">3</div><div><p className="text-body-sm font-medium">IC Recharge created</p><p className="caption">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
+                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">3</div><div><p className="text-body-sm font-medium">IC Recharge created</p><p className="caption">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
                   </div>
                 </Card>
               </div>
@@ -2112,8 +2112,8 @@ const PartyDetailModal: React.FC<{
                 <Card padding="md" className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-cat-2-soft rounded-lg dark:bg-cat-2/15">
                     <div className="flex items-center gap-3">
-                      <Link2 className="w-6 h-6 text-cat-2" />
-                      <div><p className="text-body-sm font-medium text-cat-2">Intercompany Party</p><p className="text-caption text-cat-2">Represents a group entity</p></div>
+                      <Link2 className="w-6 h-6 text-cat-2 dark:text-cat-2-fg" />
+                      <div><p className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg">Intercompany Party</p><p className="text-caption text-cat-2 dark:text-cat-2-fg">Represents a group entity</p></div>
                     </div>
                     <Badge variant="info" size="sm">IC</Badge>
                   </div>
@@ -2139,7 +2139,7 @@ const PartyDetailModal: React.FC<{
                     </>
                   ) : (
                     <div className="text-center py-6">
-                      <DollarSign className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-600" />
+                      <DollarSign className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-400" />
                       <p className="body-sm">No credit limit configured</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowIcCreditForm(true)}>Set Credit Limit</Button>
                     </div>
@@ -2148,7 +2148,7 @@ const PartyDetailModal: React.FC<{
 
                 {/* IC Credit Limit Form */}
                 {showIcCreditForm && (
-                  <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
+                  <Card className="border-primary-200 bg-primary-50/30 dark:bg-primary-800/40 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
                       <h4 className="body-strong">
                         {party.icCreditLimit ? 'Update Credit Limit' : 'Set Credit Limit'}
@@ -2497,8 +2497,8 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.24s' }}
               >
-                <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-cat-1" /><span className="text-caption text-cat-1">POBO Ready</span></div>
-                <p className="stat-value-xs text-cat-1 mt-1">{displayStats.poboEligibleVendors}</p>
+                <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" /><span className="text-caption text-cat-1 dark:text-cat-1-fg">POBO Ready</span></div>
+                <p className="stat-value-xs text-cat-1 dark:text-cat-1-fg mt-1">{displayStats.poboEligibleVendors}</p>
               </Card>
             </div>
             <div onClick={() => setIcFilter(!icFilter)} className="cursor-pointer">
@@ -2511,8 +2511,8 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.27s' }}
               >
-                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-cat-2" /><span className="text-caption text-cat-2">Intercompany</span></div>
-                <p className="stat-value-xs text-cat-2 mt-1">{displayStats.intercompanyParties}</p>
+                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" /><span className="text-caption text-cat-2 dark:text-cat-2-fg">Intercompany</span></div>
+                <p className="stat-value-xs text-cat-2 dark:text-cat-2-fg mt-1">{displayStats.intercompanyParties}</p>
               </Card>
             </div>
             <div onClick={() => setNettingFilter(!nettingFilter)} className="cursor-pointer">
@@ -2525,8 +2525,8 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.3s' }}
               >
-                <div className="flex items-center gap-2"><Repeat className="w-4 h-4 text-cat-3" /><span className="text-caption text-cat-3">Netting</span></div>
-                <p className="stat-value-xs text-cat-3 mt-1">{displayStats.nettingEligibleParties}</p>
+                <div className="flex items-center gap-2"><Repeat className="w-4 h-4 text-cat-3 dark:text-cat-3-fg" /><span className="text-caption text-cat-3 dark:text-cat-3-fg">Netting</span></div>
+                <p className="stat-value-xs text-cat-3 dark:text-cat-3-fg mt-1">{displayStats.nettingEligibleParties}</p>
               </Card>
             </div>
           </div>
@@ -2549,7 +2549,7 @@ const PartiesPage: React.FC = () => {
           <Card>
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                 <input type="text" placeholder="Search by name, code, or tax ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700" />
               </div>
               <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value as any)} className="px-4 py-2.5 border border-neutral-300 rounded-lg dark:border-primary-700 min-w-[180px]">
@@ -2567,7 +2567,7 @@ const PartiesPage: React.FC = () => {
               data={parties}
               keyExtractor={(party) => party.id}
               onRowClick={(party) => setSelectedParty(party)}
-              emptyIcon={<Users className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+              emptyIcon={<Users className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
               emptyTitle="No parties found"
               emptyDescription="Try adjusting your search or filters"
               columns={[
@@ -2579,7 +2579,7 @@ const PartiesPage: React.FC = () => {
                     return (
                       <div className="flex items-center gap-3">
                         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
-                          <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
+                          <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
                         </div>
                         <div><p className="body-strong font-semibold">{party.displayName || party.legalName}</p><p className="caption">{party.partyCode}</p></div>
                       </div>

@@ -554,7 +554,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   active
                     ? 'border-accent-500 text-primary-900 dark:text-neutral-50 font-medium'
                     : t.disabled
-                      ? 'border-transparent text-neutral-300 dark:text-neutral-600 cursor-not-allowed'
+                      ? 'border-transparent text-neutral-300 dark:text-neutral-400 cursor-not-allowed'
                       : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-primary-800 dark:hover:text-neutral-100',
                 )}
               >
@@ -650,7 +650,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     className={cn(
                       'px-3 py-1 text-caption transition-colors capitalize',
                       view === v
-                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
                         : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
                     )}
                   >
@@ -854,8 +854,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           <td colSpan={7} className="px-3 py-[9px]">
                             <span className="inline-flex items-center gap-1.5">
                               {isExpanded
-                                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
-                                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />}
+                                ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
+                                : <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />}
                               <span className="label">{g.label}</span>
                             </span>
                             <span className="caption ml-2">{g.meta}</span>
@@ -873,7 +873,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                             </td>
                             <td className="px-3 py-[9px]">
                               <div className="text-neutral-600 dark:text-neutral-300">{s.bankName || s.bankBic}</div>
-                              <div className="font-mono text-caption text-neutral-400 dark:text-neutral-500">{s.bankBic}</div>
+                              <div className="font-mono text-caption text-neutral-400">{s.bankBic}</div>
                             </td>
                             <td className="px-3 py-[9px] text-right text-primary-900 dark:text-neutral-50">
                               <Amount value={s.bankBalance} currency={s.currencyCode} showCurrency={false} />
@@ -953,7 +953,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     className={cn(
                       'px-3 py-1 text-caption transition-colors',
                       positionView === v
-                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
+                        ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-white'
                         : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
                     )}
                   >
@@ -1119,7 +1119,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">
                             {t.description || t.counterpartyName || t.movementType}
                           </p>
-                          <p className="font-mono text-caption text-neutral-400 dark:text-neutral-500 truncate">
+                          <p className="font-mono text-caption text-neutral-400 truncate">
                             {t.vaNumber || t.vaName} · {t.referenceNumber}
                           </p>
                         </div>
@@ -1246,7 +1246,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             <Wallet className="w-3.5 h-3.5" /> {bankCount} banks · {acctCount} accounts connected
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <AlertTriangle className={cn('w-3.5 h-3.5', staleCount ? 'text-warning-500' : 'text-neutral-400')} />
+            <AlertTriangle className={cn('w-3.5 h-3.5', staleCount ? 'text-warning-500 dark:text-warning-300' : 'text-neutral-400')} />
             {staleCount} stale balance{staleCount === 1 ? '' : 's'}
           </span>
         </div>

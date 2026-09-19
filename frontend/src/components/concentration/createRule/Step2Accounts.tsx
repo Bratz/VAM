@@ -110,7 +110,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
             ) : accounts.length === 0 ? (
               <Card className="text-center py-12">
                 <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-3">
-                  <Building2 className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
+                  <Building2 className="w-6 h-6 text-neutral-400" />
                 </div>
                 <p className="text-neutral-500 dark:text-neutral-400">No accounts found for this corporate</p>
               </Card>

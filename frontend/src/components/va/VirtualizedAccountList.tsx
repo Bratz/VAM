@@ -157,7 +157,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 text-neutral-400 dark:text-neutral-500" style={{ height }}>
+        <div className="flex flex-col items-center justify-center gap-2 text-neutral-400" style={{ height }}>
           <Inbox className="w-8 h-8" />
           <p className="text-body-sm">No accounts to display</p>
         </div>

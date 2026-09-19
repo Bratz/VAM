@@ -336,8 +336,8 @@ const formatAccountNumber = (acc: PhysicalAccount) => acc.iban ? acc.iban.replac
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'ROOT': return <Globe className="w-4 h-4 text-cat-2" />;
-    case 'AGGREGATION': return <Layers className="w-4 h-4 text-cat-1" />;
+    case 'ROOT': return <Globe className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
+    case 'AGGREGATION': return <Layers className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" />;
     default: return <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
   }
 };
@@ -355,14 +355,14 @@ const getCategoryColor = (category: string) => {
 const RELATIONSHIP_TYPE_CONFIG: Record<string, { label: string; icon: React.FC<any>; color: string; bgColor: string; description: string }> = {
   OWNER: { label: 'Owner', icon: User, color: 'text-info-600 dark:text-info-300', bgColor: 'bg-info-50 dark:bg-info-500/10', description: 'Primary owner of the account' },
   BENEFICIARY: { label: 'Beneficiary', icon: Users, color: 'text-success-600 dark:text-success-300', bgColor: 'bg-success-50 dark:bg-success-500/10', description: 'Beneficiary with read access' },
-  AUTHORIZED: { label: 'Authorized', icon: Shield, color: 'text-cat-2', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to transact with limits' },
+  AUTHORIZED: { label: 'Authorized', icon: Shield, color: 'text-cat-2 dark:text-cat-2-fg', bgColor: 'bg-cat-2-soft dark:bg-cat-2/15', description: 'Authorized to transact with limits' },
   GUARANTOR: { label: 'Guarantor', icon: FileCheck, color: 'text-warning-600 dark:text-warning-300', bgColor: 'bg-warning-50 dark:bg-warning-500/10', description: 'Guarantor for credit facilities' },
   COLLATERAL: { label: 'Collateral', icon: Banknote, color: 'text-error-600 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10', description: 'Collateral pledge for facilities' },
 };
 
 const getEntityTypeIcon = (type?: string) => {
   switch (type) {
-    case 'HOLDING': return <Building2 className="w-4 h-4 text-cat-2" />;
+    case 'HOLDING': return <Building2 className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />;
     case 'TREASURY_CENTER': return <Banknote className="w-4 h-4 text-warning-600 dark:text-warning-300" />;
     case 'SUBSIDIARY': return <Building2 className="w-4 h-4 text-info-600 dark:text-info-300" />;
     case 'BRANCH': return <GitBranch className="w-4 h-4 text-success-600 dark:text-success-300" />;
@@ -624,7 +624,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         {/* Hierarchy Node Selection */}
         <div>
           <label className="field-label block mb-2">
-            Select Parent Node (AGGREGATION) <span className="text-error-500">*</span>
+            Select Parent Node (AGGREGATION) <span className="text-error-500 dark:text-error-300">*</span>
           </label>
           
           {loadingNodes ? (
@@ -895,7 +895,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                         <Badge variant={att.isPrimary ? 'info' : 'neutral'} size="sm" className="ml-2">{att.relationshipType}</Badge>
                       </div>
                     </div>
-                    <button onClick={() => handleRemoveAttachment(att)} className="text-neutral-400 dark:text-neutral-500 hover:text-error-500 dark:hover:text-error-300 p-1" title="Remove attachment">
+                    <button onClick={() => handleRemoveAttachment(att)} className="text-neutral-400 hover:text-error-500 dark:hover:text-error-300 p-1" title="Remove attachment">
                       <Unlink className="w-4 h-4" />
                     </button>
                   </div>
@@ -906,7 +906,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
         )}
 
         <div>
-          <label className="field-label block mb-2">Relationship Type <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-2">Relationship Type <span className="text-error-500 dark:text-error-300">*</span></label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {Object.entries(RELATIONSHIP_TYPE_CONFIG).map(([type, config]) => {
               const TypeIcon = config.icon;
@@ -927,9 +927,9 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
         </div>
 
         <div>
-          <label className="field-label block mb-2">Legal Entity <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-2">Legal Entity <span className="text-error-500 dark:text-error-300">*</span></label>
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
           {filteredEntities.length === 0 ? (
@@ -1081,7 +1081,7 @@ const CreateAccountModal: React.FC<{
         {!corporateId && <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg flex items-start gap-2 text-warning-700 dark:bg-warning-500/10 dark:border-warning-500/30 dark:text-warning-300"><AlertTriangle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">Please select a Corporate first.</span></div>}
         
         <div>
-          <label className="field-label block mb-1">Legal Entity <span className="text-error-500">*</span></label>
+          <label className="field-label block mb-1">Legal Entity <span className="text-error-500 dark:text-error-300">*</span></label>
           {eligibleEntities.length > 0 ? (
             <select required value={formData.legalEntityId} onChange={(e) => handleEntityChange(e.target.value)} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" disabled={!corporateId}>
               <option value="">Select Legal Entity...</option>
@@ -1499,7 +1499,7 @@ const PhysicalAccountsPage: React.FC = () => {
       <Card>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input type="text" placeholder="Search accounts..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -1527,7 +1527,7 @@ const PhysicalAccountsPage: React.FC = () => {
           currentPage={page + 1}
           totalCount={totalElements}
           onPageChange={(p) => setPage(p - 1)}
-          emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-600" />}
+          emptyIcon={<Building2 className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
           emptyTitle="No accounts found"
           emptyDescription="Try adjusting your filters or add a new account."
           mobileCardRenderer={(account, idx) => (
@@ -1578,7 +1578,7 @@ const PhysicalAccountsPage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-500" />
+                <ChevronRight className="w-5 h-5 text-neutral-400 shrink-0 mt-4 dark:text-neutral-400" />
               </div>
             </Card>
           )}
@@ -1637,7 +1637,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   <span className="text-caption text-success-600 font-medium dark:text-success-300">Linked</span>
                 </div>
               ) : (
-                <span className="text-neutral-400 dark:text-neutral-500">—</span>
+                <span className="text-neutral-400">—</span>
               ),
             },
             {
@@ -1646,7 +1646,7 @@ const PhysicalAccountsPage: React.FC = () => {
               align: 'center',
               render: (_, account) => (account.legalEntityId || account.entityId)
                 ? <Building2 className="w-4 h-4 text-info-600 mx-auto dark:text-info-300" />
-                : <span className="text-neutral-400 dark:text-neutral-500">—</span>,
+                : <span className="text-neutral-400">—</span>,
             },
             { key: 'syncStatus', header: 'Sync', align: 'center', render: (_, account) => <Badge variant={account.syncStatus === 'SYNCED' ? 'success' : 'warning'} size="sm">{account.syncStatus}</Badge> },
             {
@@ -1657,11 +1657,11 @@ const PhysicalAccountsPage: React.FC = () => {
               render: (_, account) => (
                 <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
                   {!hasShadow(account) ? (
-                    <Button variant="ghost" size="sm" onClick={() => handleLinkToHierarchy(account)} title="Link to Hierarchy" className="text-cat-1 hover:bg-cat-1-soft dark:hover:bg-cat-1/15">
+                    <Button variant="ghost" size="sm" onClick={() => handleLinkToHierarchy(account)} title="Link to Hierarchy" className="text-cat-1 dark:text-cat-1-fg hover:bg-cat-1-soft dark:hover:bg-cat-1/15">
                       <GitBranch className="w-4 h-4" />
                     </Button>
                   ) : (
-                    <Button variant="ghost" size="sm" onClick={() => handleAttachToEntity(account)} title="Attach to Entity" className="text-info-600 hover:bg-info-50 dark:hover:bg-info-500/10">
+                    <Button variant="ghost" size="sm" onClick={() => handleAttachToEntity(account)} title="Attach to Entity" className="text-info-600 dark:text-info-300 hover:bg-info-50 dark:hover:bg-info-500/10">
                       <UserPlus className="w-4 h-4" />
                     </Button>
                   )}

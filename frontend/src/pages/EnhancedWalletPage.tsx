@@ -627,7 +627,7 @@ const ProgramCard: React.FC<{
           <span className="caption">
             {program.currency} • Since {new Date(program.launchDate).toLocaleDateString()}
           </span>
-          <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+          <ChevronRight className="w-4 h-4 text-neutral-400" />
         </div>
       </div>
     </Card>
@@ -669,7 +669,7 @@ const WalletRow: React.FC<{
         <div className="flex items-center gap-1">
           <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
           <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded">
-            <Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
+            <Copy className="w-3 h-3 text-neutral-400" />
           </button>
         </div>
         <p className="caption">{wallet.programCode || wallet.programName}</p>
@@ -1461,7 +1461,7 @@ const WalletPage: React.FC = () => {
                 <h3 className="section-title">{walletDetail.holderName}</h3>
                 <p className="body-sm">{walletDetail.holderMobile}</p>
                 {walletDetail.holderEmail && <p className="body-sm">{walletDetail.holderEmail}</p>}
-                {walletDetail.viban && <div className="flex items-center gap-1 mt-1"><span className="caption">VIBAN:</span><span className="text-caption font-mono text-primary-600 dark:text-primary-200">{walletDetail.viban}</span><button onClick={() => navigator.clipboard.writeText(walletDetail.viban || '')} className="p-0.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded"><Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" /></button></div>}
+                {walletDetail.viban && <div className="flex items-center gap-1 mt-1"><span className="caption">VIBAN:</span><span className="text-caption font-mono text-primary-600 dark:text-primary-200">{walletDetail.viban}</span><button onClick={() => navigator.clipboard.writeText(walletDetail.viban || '')} className="p-0.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded"><Copy className="w-3 h-3 text-neutral-400" /></button></div>}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <Badge variant={walletStatusConfig[walletDetail.status]?.color as any}>{walletDetail.status}</Badge>

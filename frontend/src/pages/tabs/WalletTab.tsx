@@ -184,7 +184,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               onClick={() => updateField('kycLevel', parseInt(level.value))}
               className={`p-3 rounded-lg border text-left transition-all ${
                 formData.kycLevel?.toString() === level.value
-                  ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
               }`}
             >
@@ -241,7 +241,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
       {showLoyalty && (
         <div className="border-t border-neutral-200 pt-6">
           <div className="flex items-center gap-2 mb-4">
-            <Star className="w-5 h-5 text-warning-500" />
+            <Star className="w-5 h-5 text-warning-500 dark:text-warning-300" />
             <h4 className="body-strong">Loyalty Configuration</h4>
           </div>
           
@@ -279,8 +279,8 @@ export const WalletTab: React.FC<WalletTabProps> = ({
                 onClick={() => updateField('loyaltyTier', tier.value)}
                 className={`px-4 py-2 rounded-full border text-body-sm font-medium transition-all ${
                   formData.loyaltyTier === tier.value
-                    ? 'border-primary-500 bg-primary-100 text-primary-700'
-                    : 'border-neutral-300 hover:border-primary-300 text-neutral-600'
+                    ? 'border-primary-500 bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200'
+                    : 'border-neutral-300 hover:border-primary-300 text-neutral-600 dark:text-neutral-300'
                 }`}
               >
                 {tier.label}

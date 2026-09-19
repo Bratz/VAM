@@ -293,11 +293,11 @@ const EscrowPage: React.FC = () => {
                 render: (_, contract) => (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Seller:</span>
+                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-400">Seller:</span>
                       <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{contract.sellerName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Buyer:</span>
+                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-400">Buyer:</span>
                       <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{contract.buyerName}</span>
                     </div>
                   </div>
@@ -357,7 +357,7 @@ const EscrowPage: React.FC = () => {
                 header: 'Expires',
                 render: (_, contract) => (
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                    <Calendar className="w-4 h-4 text-neutral-400" />
                     <span className="body-sm">{formatDate(contract.expiryDate)}</span>
                   </div>
                 ),

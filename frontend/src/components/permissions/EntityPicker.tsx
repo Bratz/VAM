@@ -58,7 +58,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none dark:text-neutral-500" />
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none dark:text-neutral-400" />
         </div>
       )}
 
@@ -85,7 +85,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none dark:text-neutral-500" />
+          <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none dark:text-neutral-400" />
         </div>
       )}
 

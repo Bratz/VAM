@@ -225,10 +225,10 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
   }, [toast.id, toast.duration, onDismiss]);
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-success-500" />,
-    error: <XCircle className="w-5 h-5 text-error-500" />,
-    warning: <AlertTriangle className="w-5 h-5 text-warning-500" />,
-    info: <Info className="w-5 h-5 text-info-500" />,
+    success: <CheckCircle2 className="w-5 h-5 text-success-500 dark:text-success-300" />,
+    error: <XCircle className="w-5 h-5 text-error-500 dark:text-error-300" />,
+    warning: <AlertTriangle className="w-5 h-5 text-warning-500 dark:text-warning-300" />,
+    info: <Info className="w-5 h-5 text-info-500 dark:text-info-300" />,
   };
 
   const bgColors = {
@@ -252,7 +252,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
         onClick={() => onDismiss(toast.id)}
         className="p-1 hover:bg-white dark:bg-primary-900/50 rounded"
       >
-        <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+        <X className="w-4 h-4 text-neutral-400" />
       </button>
     </div>
   );
@@ -341,7 +341,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
                   {exception.exceptionVaNumber || 'Exception VA'}
                 </p>
               </div>
-              <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0" />
+              <ArrowRight className="w-4 h-4 text-neutral-400 shrink-0" />
               <div className="flex-1 p-2 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800">
                 <p className="caption">To</p>
                 <p className="font-mono font-medium text-primary-900 dark:text-neutral-50 truncate">
@@ -354,21 +354,21 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           {/* Details */}
           <div className="space-y-2">
             <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Exception</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Exception</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{exception.exceptionNumber}</span>
             </div>
             <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Target Account</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Target Account</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{targetVa.vaName}</span>
             </div>
             {notes && (
               <div className="flex justify-between text-body-sm">
-                <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Notes</span>
+                <span className="text-neutral-500 dark:text-neutral-400">Notes</span>
                 <span className="font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[200px]">{notes}</span>
               </div>
             )}
             <div className="flex justify-between text-body-sm">
-              <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Post-Allocation Balance</span>
+              <span className="text-neutral-500 dark:text-neutral-400">Post-Allocation Balance</span>
               <span className="font-medium text-success-600 dark:text-success-300">
                 {formatCurrency(targetVa.balance + exception.amount, targetVa.currencyCode)}
               </span>
@@ -858,7 +858,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         return { bg: 'bg-primary-900', text: 'text-white', icon: Globe };
       case 'CONSOLIDATION':
         if (node.levelNumber <= 2) return { bg: 'bg-info-100 dark:bg-info-500/20', text: 'text-info-800 dark:text-info-300', icon: MapPin };
-        if (node.levelNumber <= 4) return { bg: 'bg-cat-2/10 dark:bg-cat-2/15', text: 'text-cat-2', icon: Building2 };
+        if (node.levelNumber <= 4) return { bg: 'bg-cat-2/10 dark:bg-cat-2/15', text: 'text-cat-2 dark:text-cat-2-fg', icon: Building2 };
         return { bg: 'bg-warning-100 dark:bg-warning-500/20', text: 'text-warning-800 dark:text-warning-300', icon: Layers };
       case 'VIRTUAL_ACCOUNT':
         return { bg: 'bg-success-100 dark:bg-success-500/20', text: 'text-success-700 dark:text-success-300', icon: Wallet };
@@ -897,9 +897,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className="p-0.5 hover:bg-neutral-200 rounded shrink-0"
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500" />
+              <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             )}
           </button>
         ) : (
@@ -917,7 +917,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               <Badge variant="success" size="sm">VA</Badge>
             )}
           </div>
-          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono truncate">{node.nodeCode}</p>
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono truncate">{node.nodeCode}</p>
         </div>
 
         <span className="label-cased shrink-0">
@@ -1452,7 +1452,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'suggested'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
-                  : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
               )}
               onClick={() => setActiveTab('suggested')}
             >
@@ -1467,7 +1467,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'search'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
-                  : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
               )}
               onClick={() => setActiveTab('search')}
             >
@@ -1479,7 +1479,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'hierarchy'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
-                  : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
               )}
               onClick={() => setActiveTab('hierarchy')}
             >
@@ -1500,7 +1500,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   </div>
                 ) : suggestedTargets.length === 0 ? (
                   <div className="text-center py-12">
-                    <Sparkles className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
+                    <Sparkles className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">No suggested matches found</p>
                     <p className="caption mt-1">Try searching or browsing the hierarchy</p>
                   </div>
@@ -1527,7 +1527,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                             onChange={() => handleSelectSuggested(va)}
                             className="text-primary-600 dark:text-primary-200"
                           />
-                          <Wallet className="w-5 h-5 text-neutral-400 dark:text-neutral-500 shrink-0" />
+                          <Wallet className="w-5 h-5 text-neutral-400 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="body-strong">{va.vaNumber}</p>
@@ -1538,7 +1538,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                                 {confidencePercent}% match
                               </Badge>
                             </div>
-                            <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
+                            <p className="text-caption text-neutral-500 dark:text-neutral-400 truncate">{va.vaName}</p>
                             {va.matchReason && (
                               <p className="text-caption text-primary-600 dark:text-primary-200 mt-0.5 italic">{va.matchReason}</p>
                             )}
@@ -1560,7 +1560,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             {activeTab === 'search' && (
               <div className="space-y-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
                     type="text"
                     placeholder="Search by VA number, name, or entity..."
@@ -1593,14 +1593,14 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           onChange={() => setSelectedVa(va)}
                           className="text-primary-600 dark:text-primary-200"
                         />
-                        <Wallet className="w-5 h-5 text-neutral-400 dark:text-neutral-500 shrink-0" />
+                        <Wallet className="w-5 h-5 text-neutral-400 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="body-strong">{va.vaNumber}</p>
                             <Badge variant="neutral" size="sm">{va.levelName}</Badge>
                           </div>
-                          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
-                          <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{va.hierarchyPath}</p>
+                          <p className="text-caption text-neutral-500 dark:text-neutral-400 truncate">{va.vaName}</p>
+                          <p className="text-caption text-neutral-400 truncate">{va.hierarchyPath}</p>
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">
@@ -1612,12 +1612,12 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   </div>
                 ) : searchQuery.length >= 2 && !searching ? (
                   <div className="text-center py-8">
-                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
+                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">No results found for "{searchQuery}"</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
+                    <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                     <p className="body-sm">Enter at least 2 characters to search</p>
                   </div>
                 )}
@@ -1629,7 +1629,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               <div className="space-y-3">
                 {/* Hierarchy Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
                     type="text"
                     placeholder="Filter hierarchy..."
@@ -1670,7 +1670,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <TreePine className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
+                      <TreePine className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-400" />
                       <p className="body-sm">No hierarchy data available</p>
                     </div>
                   )}
@@ -1719,7 +1719,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           {/* Allocation Notes */}
           <div>
             <label className="block body-strong mb-1.5">
-              Allocation Notes <span className="text-neutral-400 dark:text-neutral-500 font-normal">(optional)</span>
+              Allocation Notes <span className="text-neutral-400 font-normal">(optional)</span>
             </label>
             <textarea
               className="w-full px-4 py-2.5 rounded-lg border border-neutral-300 dark:border-primary-700 text-primary-900 dark:text-neutral-50 resize-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
