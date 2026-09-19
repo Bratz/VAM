@@ -6,8 +6,6 @@
 //
 //   - `AttentionItem`   — anything the treasurer needs to act on or
 //                         consciously dismiss this morning.
-//   - `TodayHorizon`    — the position the treasurer is steering toward by
-//                         end-of-day, with FX-honest disclosure.
 //
 // The shape is permanent from V1 so the V2 backend (which will replace the
 // client-side composition in `cockpitApi`) can return the same payload.
@@ -104,46 +102,4 @@ export interface AttentionItem {
   /** ISO timestamp; if set in the past, the row is back; if future, snoozed. */
   snoozedUntil?: string;
   createdAt: string;
-}
-
-// ----------------------------------------------------------------------------
-// Today's Horizon
-// ----------------------------------------------------------------------------
-
-export interface FxRateDisclosure {
-  baseCurrency: string;
-  rates: Array<{
-    pair: string;     // 'GBP/USD'
-    rate: number;     // 1.2812
-    source: string;   // 'WMR 10:00 fix'
-    asOf: string;     // ISO timestamp
-  }>;
-}
-
-export interface TodayHorizon {
-  /** The base used for any non-per-currency totals on the horizon panel. */
-  baseCurrency: string;
-  netPositionEndOfDay: number;
-  openingBalance: number;
-  scheduledOutflowsNext8h: number;
-  expectedInflowsNext8h: number;
-  creditHeadroom: number;
-  /** 24 entries (0..23 in user's local TZ). Hours with no flow show 0. */
-  hourlyFlows: Array<{
-    hour: number;
-    inflow: number;
-    outflow: number;
-  }>;
-  /** Disclosed FX rates used to derive the base-currency totals above. */
-  fxDisclosure: FxRateDisclosure;
-  /**
-   * Per-currency breakdown so hover/click on a converted figure can reveal the
-   * native components — the FX-honesty contract.
-   */
-  byCurrency: Array<{
-    currencyCode: string;
-    netPositionEndOfDay: number;
-    scheduledOutflowsNext8h: number;
-    expectedInflowsNext8h: number;
-  }>;
 }

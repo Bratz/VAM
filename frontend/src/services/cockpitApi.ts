@@ -33,7 +33,6 @@
 // ============================================================================
 
 import {
-  apiClient,
   multiBankLiquidityApi,
   dashboardApi,
   payablesApi,
@@ -48,8 +47,6 @@ import {
   AttentionItem,
   AttentionSeverity,
   AttentionTimePressure,
-  TodayHorizon,
-  FxRateDisclosure,
 } from '../types/cockpit';
 
 // ============================================================================
@@ -400,29 +397,6 @@ function compareItems(a: AttentionItem, b: AttentionItem): number {
 }
 
 // ============================================================================
-// V1 FX disclosure stub — hardcoded WMR fix rates. V2 reads from a rate
-// service; the schema is permanent.
-// ============================================================================
-
-const V1_FX_DISCLOSURE: FxRateDisclosure = {
-  baseCurrency: 'USD',
-  rates: [
-    { pair: 'GBP/USD', rate: 1.2812, source: 'WMR 10:00 fix', asOf: new Date().toISOString() },
-    { pair: 'EUR/USD', rate: 1.0731, source: 'WMR 10:00 fix', asOf: new Date().toISOString() },
-    { pair: 'AED/USD', rate: 0.2722, source: 'WMR 10:00 fix', asOf: new Date().toISOString() },
-  ],
-};
-
-function rateToBase(currency: string): number {
-  if (currency === V1_FX_DISCLOSURE.baseCurrency) return 1;
-  const direct = V1_FX_DISCLOSURE.rates.find((r) => r.pair === `${currency}/${V1_FX_DISCLOSURE.baseCurrency}`);
-  if (direct) return direct.rate;
-  // Unknown currencies fall through at 1:1 — V2 fetches missing rates on
-  // demand. The footer disclosure makes the gap visible to the user.
-  return 1;
-}
-
-// ============================================================================
 // Public surface
 // ============================================================================
 
@@ -448,119 +422,5 @@ export const cockpitApi = {
     }
     items.sort(compareItems);
     return items;
-  },
-
-  /**
-   * Compose today's horizon. V1 derives most numbers from the multi-bank
-   * summary + recent transactions; the FX disclosure is the V1 hardcoded
-   * stub above. V2 swaps to a dedicated `/cockpit/horizon` endpoint.
-   */
-  async getTodayHorizon(entityId?: string): Promise<TodayHorizon> {
-    // Phase 11 defect fix (2026-05-17): the parameter was previously named
-    // `_entityId` and ignored, so the cockpit's Today-Horizon panel never
-    // responded to the corporate picker. Thread it into the corporate-aware
-    // inputs. `dashboardApi.getStats()` stays corporate-agnostic — its
-    // endpoint takes no corporateId; it is a minor contributor and is
-    // flagged for a V2 follow-up rather than faked with an ignored param.
-    const [mbSettled, txSettled, statsSettled] = await Promise.allSettled([
-      multiBankLiquidityApi.getSummary(entityId || undefined),
-      transactionsApi.getRecent(200, entityId || undefined),
-      dashboardApi.getStats(),
-    ]);
-
-    // Per-currency aggregation from multi-bank.
-    const summary = mbSettled.status === 'fulfilled' ? mbSettled.value?.data : undefined;
-    const byCurrencyMap = new Map<string, { net: number; outflows: number; inflows: number }>();
-    if (summary) {
-      for (const bank of summary.banks) {
-        for (const ccy of bank.currencies) {
-          const cur = byCurrencyMap.get(ccy.currencyCode) ?? { net: 0, outflows: 0, inflows: 0 };
-          cur.net += ccy.totalEffective || 0;
-          byCurrencyMap.set(ccy.currencyCode, cur);
-        }
-      }
-    }
-
-    // Hourly flow buckets — last/next 24h split out of recent transactions.
-    const hourlyFlows = Array.from({ length: 24 }, (_, hour) => ({ hour, inflow: 0, outflow: 0 }));
-    const transactions = txSettled.status === 'fulfilled' ? (txSettled.value?.data ?? []) : [];
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    let scheduledOut = 0;
-    let expectedIn = 0;
-    const next8h = Date.now() + 8 * 60 * 60 * 1000;
-    for (const t of transactions as Transaction[]) {
-      const tDate = new Date(t.transactionDate || t.createdAt);
-      const tMs = tDate.getTime();
-      if (tDate < todayStart) continue;
-      const hour = tDate.getHours();
-      const isInflow = ['CREDIT', 'TRANSFER_IN', 'SWEEP_IN', 'POOL_CREDIT', 'TOPUP', 'INTEREST', 'SETTLEMENT_CREDIT'].includes(t.movementType);
-      const baseAmount = t.amount * rateToBase(t.currencyCode);
-      if (isInflow) {
-        hourlyFlows[hour].inflow += baseAmount;
-        if (tMs > Date.now() && tMs <= next8h) expectedIn += baseAmount;
-      } else {
-        hourlyFlows[hour].outflow += baseAmount;
-        if (tMs > Date.now() && tMs <= next8h) scheduledOut += baseAmount;
-      }
-      // Also add per-currency to the byCurrency map's flow lanes.
-      const c = byCurrencyMap.get(t.currencyCode) ?? { net: 0, outflows: 0, inflows: 0 };
-      if (tMs > Date.now() && tMs <= next8h) {
-        if (isInflow) c.inflows += t.amount;
-        else c.outflows += t.amount;
-      }
-      byCurrencyMap.set(t.currencyCode, c);
-    }
-
-    const stats = statsSettled.status === 'fulfilled' ? statsSettled.value : undefined;
-    const opening = stats?.totalBalance ?? 0;
-    const netEod = opening + expectedIn - scheduledOut;
-
-    return {
-      baseCurrency: V1_FX_DISCLOSURE.baseCurrency,
-      netPositionEndOfDay: netEod,
-      openingBalance: opening,
-      scheduledOutflowsNext8h: scheduledOut,
-      expectedInflowsNext8h: expectedIn,
-      // V1 doesn't have a credit-headroom endpoint. Use availableBalance as
-      // a proxy; V2 plugs in the real credit-line aggregate.
-      creditHeadroom: stats?.availableBalance ?? 0,
-      hourlyFlows,
-      fxDisclosure: V1_FX_DISCLOSURE,
-      byCurrency: Array.from(byCurrencyMap.entries())
-        .map(([currencyCode, agg]) => ({
-          currencyCode,
-          netPositionEndOfDay: agg.net,
-          scheduledOutflowsNext8h: agg.outflows,
-          expectedInflowsNext8h: agg.inflows,
-        }))
-        .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode)),
-    };
-  },
-
-  /**
-   * Snooze an item until end-of-day. V1 fires a POST and returns; the inbox
-   * removes the item optimistically and refetches when convenient.
-   */
-  async snoozeItem(itemId: string, reason: string): Promise<void> {
-    try {
-      await apiClient.post(`/cockpit/v1/attention/${encodeURIComponent(itemId)}/snooze`, { reason });
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[cockpit] snoozeItem failed (non-blocking):', err);
-    }
-  },
-
-  /**
-   * Execute an action on an attention item. Returns the audit ID (the
-   * audit trail wraps every action). Failures throw — callers are expected
-   * to surface a toast.
-   */
-  async executeAction(itemId: string, actionId: string, payload?: unknown): Promise<{ auditId: string }> {
-    const res = await apiClient.post<{ auditId: string }>(
-      `/cockpit/v1/attention/${encodeURIComponent(itemId)}/actions/${encodeURIComponent(actionId)}`,
-      payload ?? {},
-    );
-    return res.data ?? { auditId: '' };
   },
 };
