@@ -27,6 +27,7 @@
         "-Dspring-boot.run.jvmArguments=-Djdk.net.unixdomain.tmpdir=C:\\Temp"
       ],
       "port": 8091
-    }
+    },
+    {"name": "storybook", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "frontend", "run", "storybook", "--", "--no-open"], "port": 6006}
   ]
 }

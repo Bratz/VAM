@@ -48,3 +48,6 @@ Thumbs.db
 *.tmp
 *.bak
 .claude/worktrees/
+
+*storybook.log
+storybook-static
