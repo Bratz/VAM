@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { cn } from '../../utils';
 import {
   ChevronDown,
@@ -32,6 +32,17 @@ export interface Column<T> {
   mobileHidden?: boolean;
   // Custom render function
   render?: (value: unknown, row: T, index: number) => React.ReactNode;
+  /**
+   * Desktop table only. Approximate width (px, including cell padding) this column needs.
+   * Used with `dropOrder` to decide what fits; defaults to 140.
+   */
+  minWidth?: number;
+  /**
+   * Desktop table only. When the table's container is too narrow for every column, columns
+   * with a `dropOrder` are hidden highest-first until the rest fit. Columns without one are
+   * never hidden. Hidden columns still appear in the mobile cards unless `mobileHidden`.
+   */
+  dropOrder?: number;
 }
 
 export interface DataTableProps<T> {
@@ -119,6 +130,33 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const [localSearch, setLocalSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Width of the table's container, so columns can be dropped by what actually fits (the
+  // sidebar collapsing changes this without the viewport changing, so breakpoints can't do it).
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerWidth(el.clientWidth);
+    const ro = new ResizeObserver(() => setContainerWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const visibleColumns = useMemo(() => {
+    if (containerWidth == null) return columns;
+    const needed = (cols: Column<T>[]) => cols.reduce((sum, c) => sum + (c.minWidth ?? 140), selectable ? 48 : 0);
+    // Keep the always-shown columns, then add optional ones by priority (lowest dropOrder first),
+    // skipping any that don't fit so a narrower low-priority column can still take leftover space.
+    const keep = new Set(columns.filter((c) => c.dropOrder == null));
+    const optional = columns.filter((c) => c.dropOrder != null).sort((a, b) => (a.dropOrder as number) - (b.dropOrder as number));
+    for (const c of optional) {
+      if (needed(columns.filter((x) => keep.has(x) || x === c)) <= containerWidth) keep.add(c);
+    }
+    const cols = columns.filter((c) => keep.has(c));
+    return cols;
+  }, [columns, containerWidth, selectable]);
+
   const effectiveStriped = hairline ? false : striped;
 
   const handleSort = (key: string) => {
@@ -193,7 +231,7 @@ export function DataTable<T>({
                   </button>
                 </th>
               )}
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <th
                   key={String(col.key)}
                   className={cn(
@@ -239,7 +277,7 @@ export function DataTable<T>({
                       <Skeleton width={20} height={20} variant="rectangular" />
                     </td>
                   )}
-                  {columns.map((col) => (
+                  {visibleColumns.map((col) => (
                     <td key={String(col.key)} className="px-4 py-4">
                       <Skeleton width="80%" />
                     </td>
@@ -248,7 +286,7 @@ export function DataTable<T>({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16">
+                <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="py-16">
                   <EmptyState
                     icon={emptyIcon}
                     title={emptyTitle}
@@ -290,7 +328,7 @@ export function DataTable<T>({
                         </button>
                       </td>
                     )}
-                    {columns.map((col) => {
+                    {visibleColumns.map((col) => {
                       const value = col.key.toString().includes('.')
                         ? col.key.toString().split('.').reduce((obj: unknown, key: string) => (obj as Record<string, unknown>)?.[key], row)
                         : (row as Record<string, unknown>)[col.key as string];
@@ -574,7 +612,7 @@ export function DataTable<T>({
       )}
 
       {/* Table / Cards */}
-      <div className={cn(
+      <div ref={containerRef} className={cn(
         hairline
           ? 'border-b border-neutral-300 dark:border-primary-700'
           : 'bg-white rounded-2xl border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800 shadow-sm'

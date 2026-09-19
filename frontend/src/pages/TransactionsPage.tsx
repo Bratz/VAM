@@ -1699,7 +1699,7 @@ const TransactionsPage: React.FC = () => {
   // Ledger (individual) view columns
   const transactionColumns: Column<Transaction>[] = [
     {
-      key: 'referenceNumber', header: 'Reference', mobileLabel: true,
+      key: 'referenceNumber', header: 'Reference', mobileLabel: true, minWidth: 270,
       render: (_, t) => (
         <div className="flex items-center gap-3">
           <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', getMovementBgClass(t.movementType))}>
@@ -1713,7 +1713,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'vaName', header: 'Account', mobileHidden: true,
+      key: 'vaName', header: 'Account', mobileHidden: true, minWidth: 190, dropOrder: 1,
       render: (_, t) => (
         <div className="min-w-0">
           <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.vaName}</p>
@@ -1722,7 +1722,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'counterpartyName', header: 'Counterparty',
+      key: 'counterpartyName', header: 'Counterparty', minWidth: 320, dropOrder: 2,
       render: (_, t) => (
         <div className="min-w-0">
           <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
@@ -1733,7 +1733,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'amount', header: 'Amount', align: 'right', mobileValue: true,
+      key: 'amount', header: 'Amount', align: 'right', mobileValue: true, minWidth: 160,
       render: (_, t) => (
         <p className={cn('text-sm font-semibold', getAmountColorClass(t.movementType))}>
           {isCredit(t.movementType) ? '+' : '-'}{formatCurrency(t.amount, t.currencyCode)}
@@ -1741,7 +1741,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'status', header: 'Status',
+      key: 'status', header: 'Status', minWidth: 146,
       render: (_, t) => (
         <div className="flex items-center gap-2">
           <StatusIcon status={t.status} />
@@ -1750,7 +1750,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'transactionDate', header: 'Date', mobileHidden: true,
+      key: 'transactionDate', header: 'Date', mobileHidden: true, minWidth: 150, dropOrder: 3,
       render: (_, t) => (
         <div>
           <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
@@ -1759,11 +1759,11 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'channel', header: 'Channel', mobileHidden: true,
+      key: 'channel', header: 'Channel', mobileHidden: true, minWidth: 110, dropOrder: 4,
       render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
     },
     {
-      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true,
+      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true, minWidth: 90,
       render: (_, t) => (
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button
@@ -1790,7 +1790,7 @@ const TransactionsPage: React.FC = () => {
   // Business (grouped) view columns
   const groupedColumns: Column<GroupedTransaction>[] = [
     {
-      key: 'primaryReferenceNumber', header: 'Operation', mobileLabel: true,
+      key: 'primaryReferenceNumber', header: 'Operation', mobileLabel: true, minWidth: 335,
       render: (_, t) => (
         <div className="flex items-center gap-3">
           <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', t.isCredit ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10')}>
@@ -1813,7 +1813,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'userVaName', header: 'Account', mobileHidden: true,
+      key: 'userVaName', header: 'Account', mobileHidden: true, minWidth: 220, dropOrder: 1,
       render: (_, t) => (
         <div className="min-w-0">
           <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.userVaName || '-'}</p>
@@ -1822,7 +1822,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'counterpartyName', header: 'Counterparty',
+      key: 'counterpartyName', header: 'Counterparty', minWidth: 320, dropOrder: 2,
       render: (_, t) => (
         <div className="min-w-0">
           <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
@@ -1833,7 +1833,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'netAmount', header: 'Net Amount', align: 'right', mobileValue: true,
+      key: 'netAmount', header: 'Net Amount', align: 'right', mobileValue: true, minWidth: 130,
       render: (_, t) => (
         <div>
           <p className={cn('text-sm font-semibold', t.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
@@ -1848,7 +1848,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'status', header: 'Status',
+      key: 'status', header: 'Status', minWidth: 146,
       render: (_, t) => (
         <div className="flex items-center gap-2">
           <StatusIcon status={t.status} />
@@ -1857,7 +1857,7 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'transactionDate', header: 'Date', mobileHidden: true,
+      key: 'transactionDate', header: 'Date', mobileHidden: true, minWidth: 150, dropOrder: 3,
       render: (_, t) => (
         <div>
           <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
@@ -1866,11 +1866,11 @@ const TransactionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'channel', header: 'Channel', mobileHidden: true,
+      key: 'channel', header: 'Channel', mobileHidden: true, minWidth: 110, dropOrder: 4,
       render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
     },
     {
-      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true,
+      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true, minWidth: 100,
       render: (_, t) => (
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button
