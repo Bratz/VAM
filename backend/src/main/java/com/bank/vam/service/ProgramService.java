@@ -56,6 +56,8 @@ public class ProgramService {
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final VibanPoolRepository vibanPoolRepository;
     private final HierarchyService hierarchyService;
+    private final com.bank.vam.service.treasury.FxRateService fxRateService;
+    private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     // ========================================================================
     // CRUD OPERATIONS
@@ -635,10 +637,24 @@ public class ProgramService {
             .mapToLong(p -> virtualAccountRepository.countByProgramId(p.getId()))
             .sum();
 
-        BigDecimal totalBalance = programs.stream()
-            .map(p -> virtualAccountRepository.sumBalanceByProgramId(p.getId()))
-            .filter(b -> b != null)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Programs hold balances in different currencies: group by currency, then convert each group to
+        // the market reporting currency. Adding raw amounts across currencies produced a meaningless total.
+        java.util.Map<String, BigDecimal> balancesByCurrency = new java.util.TreeMap<>();
+        for (Program p : programs) {
+            BigDecimal b = virtualAccountRepository.sumBalanceByProgramId(p.getId());
+            if (b != null && p.getCurrencyCode() != null) balancesByCurrency.merge(p.getCurrencyCode(), b, BigDecimal::add);
+        }
+        String reportingCurrency = marketProfile.getDefaultCurrency();
+        List<String> excludedCurrencies = new java.util.ArrayList<>();
+        BigDecimal totalBalance = BigDecimal.ZERO;
+        for (java.util.Map.Entry<String, BigDecimal> e : balancesByCurrency.entrySet()) {
+            try {
+                totalBalance = totalBalance.add(fxRateService.convert(e.getValue(), e.getKey(), reportingCurrency));
+            } catch (RuntimeException ex) {
+                log.warn("No FX rate {} -> {} for program stats; excluding", e.getKey(), reportingCurrency);
+                excludedCurrencies.add(e.getKey());
+            }
+        }
 
         return ProgramStatsResponse.builder()
             .totalPrograms(totalPrograms)
@@ -660,6 +676,9 @@ public class ProgramService {
             .vibanEnabledPrograms(vibanEnabledPrograms)
             .totalVirtualAccounts(totalVirtualAccounts)
             .totalBalance(totalBalance)
+            .reportingCurrency(reportingCurrency)
+            .balancesByCurrency(balancesByCurrency)
+            .excludedCurrencies(excludedCurrencies)
             .build();
     }
 

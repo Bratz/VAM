@@ -383,7 +383,13 @@ public class ProgramDto {
 
         // Totals
         private Long totalVirtualAccounts;
+        /** All program balances converted to {@link #reportingCurrency} at mid rates. */
         private BigDecimal totalBalance;
+        private String reportingCurrency;
+        /** Unconverted balances per program currency. */
+        private java.util.Map<String, BigDecimal> balancesByCurrency;
+        /** Currencies with no FX rate to the reporting currency (left out of totalBalance). */
+        private List<String> excludedCurrencies;
     }
 
     @Data
