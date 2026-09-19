@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, X, TrendingUp, XCircle, Pencil } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
+import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, TrendingUp, Pencil } from 'lucide-react';
+import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
 import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
@@ -870,8 +870,8 @@ const VibanManagementPage: React.FC = () => {
       {/* Tab Content */}
       {activeTab === 'overview' && <OverviewTab stats={stats} pools={pools} formatNumber={formatNumber} formatCurrency={formatCurrency} />}
       {activeTab === 'pools' && (
-        <PoolsTab pools={filteredPools} programs={programs} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          selectedProgram={selectedProgram} setSelectedProgram={setSelectedProgram} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+        <PoolsTab pools={filteredPools} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+          statusFilter={statusFilter} setStatusFilter={setStatusFilter}
           onEdit={(p) => { setEditingPool(p); setShowPoolModal(true); }} onDelete={handleDeletePool}
           onGenerate={(id) => { setGeneratePoolId(id); setShowGenerateModal(true); }}
           onViewDetails={(p) => { setEditingPool(p); setShowPoolDetailModal(true); }}
@@ -1006,35 +1006,17 @@ const OverviewTab: React.FC<{
 
       {/* Payment Stats */}
       <div className="grid grid-cols-2 gap-4">
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="stat-value-sm">{formatNumber(stats.totalPaymentsRouted)}</p>
-              <p className="body-sm">Payments Routed</p>
-            </div>
-          </div>
-        </Card>
-        <Card hover className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="stat-value-sm">{formatCurrency(stats.totalAmountRouted)}</p>
-              <p className="body-sm">Amount Routed</p>
-            </div>
-          </div>
-        </Card>
+        <StatTile layout="row" tone="primary" label="Payments Routed" value={formatNumber(stats.totalPaymentsRouted)}
+          icon={<Activity className="w-5 h-5" />} delay="0.45s" />
+        <StatTile layout="row" tone="success" label="Amount Routed" value={formatCurrency(stats.totalAmountRouted)}
+          icon={<CreditCard className="w-5 h-5" />} delay="0.5s" />
       </div>
 
       {/* Low Threshold Alert */}
       {lowThresholdPools.length > 0 && (
         <Card className="border-warning-200 bg-warning-50 animate-fade-in dark:border-warning-500/30 dark:bg-warning-500/10" style={{ animationDelay: '0.55s' }}>
           <div className="flex items-center gap-3 mb-3">
-            <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
+            <StatusIconBadge tone="warning" icon={AlertTriangle} />
             <h3 className="font-medium text-warning-800 dark:text-warning-300">Low Availability Alert</h3>
           </div>
           <p className="text-body-sm text-warning-700 mb-3 dark:text-warning-300">{lowThresholdPools.length} pool(s) running low:</p>
@@ -1052,9 +1034,7 @@ const OverviewTab: React.FC<{
       {/* Pool Summary */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
         <div className="p-4 border-b flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-            <Database className="w-5 h-5 text-white" />
-          </div>
+          <StatusIconBadge tone="primary" icon={Database} />
           <h3 className="font-medium">Pool Summary</h3>
         </div>
         <div className="divide-y">
@@ -1093,33 +1073,25 @@ const OverviewTab: React.FC<{
 // ============================================================================
 
 const PoolsTab: React.FC<{
-  pools: VibanPool[]; programs: Program[]; searchQuery: string; setSearchQuery: (q: string) => void;
-  selectedProgram: string | null; setSelectedProgram: (id: string | null) => void;
+  pools: VibanPool[]; searchQuery: string; setSearchQuery: (q: string) => void;
   statusFilter: string; setStatusFilter: (s: string) => void;
   onEdit: (pool: VibanPool) => void; onDelete: (id: string) => void; onGenerate: (poolId: string) => void;
   onViewDetails: (pool: VibanPool) => void; onAssignToVA: (poolId: string) => void; onBulkAssign: (poolId: string) => void;
   getStatusBadge: (status: string) => React.ReactNode;
   formatTtl: (minutes: number) => string; formatNumber: (n: number) => string; processing: boolean;
-}> = ({ pools, programs, searchQuery, setSearchQuery, selectedProgram, setSelectedProgram, statusFilter, setStatusFilter,
+}> = ({ pools, searchQuery, setSearchQuery, statusFilter, setStatusFilter,
        onEdit, onDelete, onGenerate, onViewDetails, onAssignToVA, onBulkAssign, getStatusBadge, formatTtl, formatNumber, processing }) => {
   return (
     <div className="space-y-4">
       {/* Filters */}
       <Card><div className="p-4 flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <Input className="pl-9" placeholder="Search pools..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-        </div>
-        <select value={selectedProgram || ''} onChange={e => setSelectedProgram(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
-          <option value="">All Programs</option>
-          {programs.map(p => <option key={p.id} value={p.id}>{p.programName}</option>)}
-        </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-body-sm">
+        <div className="flex-1"><Input inputSize="sm" leftIcon={<Search className="w-4 h-4" />} aria-label="Search pools" placeholder="Search pools..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+        <div className="w-48 shrink-0"><Select selectSize="sm" aria-label="Status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="ALL">All Status</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
           <option value="EXHAUSTED">Exhausted</option>
-        </select>
+        </Select></div>
       </div></Card>
 
       {/* Pools Grid */}
@@ -1223,20 +1195,17 @@ const VibansTab: React.FC<{
     <div className="space-y-4">
       <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="p-4 flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <Input className="pl-9" placeholder="Search VIBANs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-          </div>
-          <select value={selectedPool || ''} onChange={e => setSelectedPool(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
+          <div className="flex-1"><Input inputSize="sm" leftIcon={<Search className="w-4 h-4" />} aria-label="Search VIBANs" placeholder="Search VIBANs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></div>
+          <div className="w-48 shrink-0"><Select selectSize="sm" aria-label="Pool" value={selectedPool || ''} onChange={e => setSelectedPool(e.target.value || null)}>
             <option value="">All Pools</option>{pools.map(p => <option key={p.id} value={p.id}>{p.poolName}</option>)}
-          </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-body-sm">
+          </Select></div>
+          <div className="w-48 shrink-0"><Select selectSize="sm" aria-label="Status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="ALL">All Status</option>
             <option value="ACTIVE">Active (Assigned)</option>
             <option value="RETURNED">Available (In Pool)</option>
             <option value="PARTIAL">Reserved</option>
             <option value="EXPIRED">Expired</option>
-          </select>
+          </Select></div>
         </div>
       </Card>
 
