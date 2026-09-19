@@ -34,7 +34,8 @@ type Tone =
   | 'info'
   | 'primary'
   | 'neutral'
-  | 'accent';
+  | 'accent'
+  | 'cat-1' | 'cat-2' | 'cat-3' | 'cat-4' | 'cat-5' | 'cat-6' | 'cat-7' | 'cat-8';
 
 interface StatusIconBadgeProps {
   /** Semantic tone — drives background + icon colour together. */
@@ -57,6 +58,11 @@ interface StatusIconBadgeProps {
    * (e.g. legend rows, sub-cards).
    */
   subtle?: boolean;
+  /**
+   * Filled variant for selected / active states: solid tone background with white icon.
+   * Not available for `neutral`-subtle semantics; use with primary/accent/status tones.
+   */
+  solid?: boolean;
   /** Extra utility classes (e.g. `shrink-0`, `mt-1`). */
   className?: string;
 }
@@ -72,7 +78,42 @@ interface ToneClasses {
   subtle: { bg: string; text: string };
 }
 
+const CAT1: ToneClasses = {
+  default: { bg: 'bg-cat-1-soft dark:bg-cat-1/15', text: 'text-cat-1 dark:text-cat-1-fg' },
+  subtle:  { bg: 'bg-cat-1-soft dark:bg-cat-1/10', text: 'text-cat-1 dark:text-cat-1-fg' },
+};
+const CAT2: ToneClasses = {
+  default: { bg: 'bg-cat-2-soft dark:bg-cat-2/15', text: 'text-cat-2 dark:text-cat-2-fg' },
+  subtle:  { bg: 'bg-cat-2-soft dark:bg-cat-2/10', text: 'text-cat-2 dark:text-cat-2-fg' },
+};
+const CAT3: ToneClasses = {
+  default: { bg: 'bg-cat-3-soft dark:bg-cat-3/15', text: 'text-cat-3 dark:text-cat-3-fg' },
+  subtle:  { bg: 'bg-cat-3-soft dark:bg-cat-3/10', text: 'text-cat-3 dark:text-cat-3-fg' },
+};
+const CAT4: ToneClasses = {
+  default: { bg: 'bg-cat-4-soft dark:bg-cat-4/15', text: 'text-cat-4 dark:text-cat-4-fg' },
+  subtle:  { bg: 'bg-cat-4-soft dark:bg-cat-4/10', text: 'text-cat-4 dark:text-cat-4-fg' },
+};
+const CAT5: ToneClasses = {
+  default: { bg: 'bg-cat-5-soft dark:bg-cat-5/15', text: 'text-cat-5 dark:text-cat-5-fg' },
+  subtle:  { bg: 'bg-cat-5-soft dark:bg-cat-5/10', text: 'text-cat-5 dark:text-cat-5-fg' },
+};
+const CAT6: ToneClasses = {
+  default: { bg: 'bg-cat-6-soft dark:bg-cat-6/15', text: 'text-cat-6 dark:text-cat-6-fg' },
+  subtle:  { bg: 'bg-cat-6-soft dark:bg-cat-6/10', text: 'text-cat-6 dark:text-cat-6-fg' },
+};
+const CAT7: ToneClasses = {
+  default: { bg: 'bg-cat-7-soft dark:bg-cat-7/15', text: 'text-cat-7 dark:text-cat-7-fg' },
+  subtle:  { bg: 'bg-cat-7-soft dark:bg-cat-7/10', text: 'text-cat-7 dark:text-cat-7-fg' },
+};
+const CAT8: ToneClasses = {
+  default: { bg: 'bg-cat-8-soft dark:bg-cat-8/15', text: 'text-cat-8 dark:text-cat-8-fg' },
+  subtle:  { bg: 'bg-cat-8-soft dark:bg-cat-8/10', text: 'text-cat-8 dark:text-cat-8-fg' },
+};
+
 const TONE_CLASSES: Record<Tone, ToneClasses> = {
+  'cat-1': CAT1, 'cat-2': CAT2, 'cat-3': CAT3, 'cat-4': CAT4,
+  'cat-5': CAT5, 'cat-6': CAT6, 'cat-7': CAT7, 'cat-8': CAT8,
   success: {
     default: { bg: 'bg-success-100 dark:bg-success-500/20', text: 'text-success-600 dark:text-success-300' },
     subtle:  { bg: 'bg-success-50 dark:bg-success-500/10',  text: 'text-success-600 dark:text-success-300' },
@@ -108,6 +149,19 @@ const TONE_CLASSES: Record<Tone, ToneClasses> = {
   },
 };
 
+// Solid (filled) backgrounds for selected / active states. Literal class names so Tailwind can see them.
+const SOLID_BG: Record<Tone, string> = {
+  success: 'bg-success-600 dark:bg-success-500',
+  warning: 'bg-warning-600 dark:bg-warning-500',
+  error: 'bg-error-600 dark:bg-error-500',
+  info: 'bg-info-600 dark:bg-info-500',
+  primary: 'bg-primary-900 dark:bg-accent-500',
+  neutral: 'bg-neutral-900 dark:bg-primary-700',
+  accent: 'bg-accent-600 dark:bg-accent-500',
+  'cat-1': 'bg-cat-1', 'cat-2': 'bg-cat-2', 'cat-3': 'bg-cat-3', 'cat-4': 'bg-cat-4',
+  'cat-5': 'bg-cat-5', 'cat-6': 'bg-cat-6', 'cat-7': 'bg-cat-7', 'cat-8': 'bg-cat-8',
+};
+
 // Size pairs — outer dimensions plus the icon's matching tailwind size class.
 const SIZE_CLASSES = {
   sm: { box: 'w-8 h-8',  icon: 'w-4 h-4' },
@@ -127,6 +181,7 @@ export const StatusIconBadge: React.FC<StatusIconBadgeProps> = ({
   size = 'md',
   rounded = 'lg',
   subtle = false,
+  solid = false,
   className,
 }) => {
   const tonePair = TONE_CLASSES[tone][subtle ? 'subtle' : 'default'];
@@ -138,11 +193,11 @@ export const StatusIconBadge: React.FC<StatusIconBadgeProps> = ({
         dim.box,
         ROUNDED_CLASSES[rounded],
         'flex items-center justify-center',
-        tonePair.bg,
+        solid ? SOLID_BG[tone] : tonePair.bg,
         className
       )}
     >
-      <Icon className={cn(dim.icon, tonePair.text)} />
+      <Icon className={cn(dim.icon, solid ? 'text-white' : tonePair.text)} />
     </div>
   );
 };

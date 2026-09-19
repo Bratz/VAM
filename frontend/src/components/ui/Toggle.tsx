@@ -9,10 +9,12 @@ export interface ToggleProps
   description?: React.ReactNode;
   error?: string;
   size?: 'sm' | 'md';
+  /** `inline` (default): switch then label. `split`: full-width row, label left and switch right. */
+  layout?: 'inline' | 'split';
 }
 
 export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
-  ({ checked, onChange, label, description, error, disabled, size = 'md', className, id, ...props }, ref) => {
+  ({ checked, onChange, label, description, error, disabled, size = 'md', layout = 'inline', className, id, ...props }, ref) => {
     const autoId = React.useId();
     const inputId = id ?? autoId;
     const errId = error ? `${inputId}-err` : undefined;
@@ -25,7 +27,10 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
       <div className={className}>
         <label
           htmlFor={inputId}
-          className={cn('inline-flex items-start gap-3', disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
+          className={cn(
+            layout === 'split' ? 'flex w-full flex-row-reverse items-center justify-between gap-4' : 'inline-flex items-start gap-3',
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          )}
         >
           <span className="relative inline-flex shrink-0">
             <input

@@ -10,10 +10,12 @@ export interface CheckboxProps
   error?: string;
   indeterminate?: boolean;
   size?: 'sm' | 'md';
+  /** `plain` (default) or `card`: a bordered, tinted-when-checked row for option lists. */
+  variant?: 'plain' | 'card';
 }
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ checked, onChange, label, description, error, indeterminate = false, disabled, size = 'md', className, id, ...props }, ref) => {
+  ({ checked, onChange, label, description, error, indeterminate = false, disabled, size = 'md', variant = 'plain', className, id, ...props }, ref) => {
     const autoId = React.useId();
     const inputId = id ?? autoId;
     const errId = error ? `${inputId}-err` : undefined;
@@ -34,7 +36,12 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
       <div className={className}>
         <label
           htmlFor={inputId}
-          className={cn('inline-flex items-start gap-3', disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer')}
+          className={cn(
+            variant === 'card'
+              ? 'flex w-full items-start gap-3 rounded-lg border border-neutral-200 bg-white p-3 transition-colors dark:border-primary-800 dark:bg-primary-900 has-[:checked]:border-primary-300 has-[:checked]:bg-primary-50 dark:has-[:checked]:border-primary-600 dark:has-[:checked]:bg-primary-800/40'
+              : 'inline-flex items-start gap-3',
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+          )}
         >
           <span className="relative inline-flex shrink-0">
             <input

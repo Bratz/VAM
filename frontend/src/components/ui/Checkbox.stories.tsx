@@ -53,3 +53,38 @@ export const States: Story = {
     </div>
   ),
 };
+
+/** `variant="card"`: a bordered option row that tints when checked (for option lists). */
+export const Card: Story = {
+  render: function Render() {
+    const [a, setA] = useState(true);
+    const [b, setB] = useState(false);
+    return (
+      <div className="max-w-md space-y-2">
+        <Checkbox variant="card" size="sm" label="Include child accounts" description="Roll balances up from nested accounts" checked={a} onChange={setA} />
+        <Checkbox variant="card" size="sm" label="Include closed accounts" description="Show accounts closed in the period" checked={b} onChange={setB} />
+      </div>
+    );
+  },
+};
+
+/** Label-less checkbox (e.g. table row selection) must carry an aria-label. */
+export const RowSelect: Story = {
+  render: function Render() {
+    const [sel, setSel] = useState<string[]>(['INV-2']);
+    const rows = ['INV-1', 'INV-2', 'INV-3'];
+    const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+    return (
+      <table className="body-sm">
+        <tbody>
+          {rows.map((id) => (
+            <tr key={id}>
+              <td className="pr-4 py-1"><Checkbox size="sm" aria-label={`Select ${id}`} checked={sel.includes(id)} onChange={() => toggle(id)} /></td>
+              <td>{id}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+};

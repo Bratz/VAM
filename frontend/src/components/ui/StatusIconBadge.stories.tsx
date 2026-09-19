@@ -44,3 +44,33 @@ export const Matrix: Story = {
     </div>
   ),
 };
+
+const CATS = ['cat-1', 'cat-2', 'cat-3', 'cat-4', 'cat-5', 'cat-6', 'cat-7', 'cat-8'] as const;
+
+/** Categorical tones (hierarchy levels, account types): identity, not status. */
+export const CategoryTones: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-3">
+      {CATS.map((tone) => (
+        <div key={tone} className="flex flex-col items-center gap-1">
+          <StatusIconBadge tone={tone} icon={CheckCircle} />
+          <span className="caption">{tone}</span>
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/** `solid` is the filled variant for selected / active states. */
+export const Solid: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-3">
+      {[...TONES, 'cat-1' as const, 'cat-2' as const].map((tone) => (
+        <div key={tone} className="flex flex-col items-center gap-1">
+          <StatusIconBadge tone={tone} icon={CheckCircle} solid />
+          <span className="caption">{tone}</span>
+        </div>
+      ))}
+    </div>
+  ),
+};

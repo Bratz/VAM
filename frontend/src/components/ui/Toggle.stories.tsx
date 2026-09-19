@@ -34,3 +34,17 @@ export const Matrix: Story = {
     </div>
   ),
 };
+
+/** `layout="split"`: full-width settings row with the label on the left and the switch on the right. */
+export const Split: Story = {
+  render: function Render() {
+    const [a, setA] = useState(true);
+    const [b, setB] = useState(false);
+    return (
+      <div className="max-w-md divide-y divide-neutral-200 dark:divide-primary-800">
+        <div className="py-3"><Toggle layout="split" label="Apply VAT" description="Add VAT to the invoice total" checked={a} onChange={setA} /></div>
+        <div className="py-3"><Toggle layout="split" label="Reverse charge" description="Buyer accounts for VAT" checked={b} onChange={setB} /></div>
+      </div>
+    );
+  },
+};
