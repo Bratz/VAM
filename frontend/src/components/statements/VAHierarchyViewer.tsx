@@ -142,7 +142,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             onToggle(node.id);
           }}
           className={cn(
-            'w-6 h-6 flex items-center justify-center rounded transition-colors',
+            'w-6 h-6 flex items-center justify-center rounded-md transition-colors',
             hasChildren ? 'hover:bg-neutral-200 dark:hover:bg-primary-700' : 'invisible'
           )}
         >
@@ -374,7 +374,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
           </div>
           {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-center gap-3" style={{ paddingLeft: `${(i % 3) * 24}px` }}>
-              <Skeleton className="w-6 h-6 rounded" />
+              <Skeleton className="w-6 h-6 rounded-md" />
               <Skeleton className="w-8 h-8 rounded-lg" />
               <div className="flex-1">
                 <Skeleton className="h-4 w-32 mb-1" />
@@ -419,7 +419,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
       <div className="p-4 border-b border-neutral-200 dark:border-primary-800 bg-gradient-to-r from-neutral-50 to-white dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cat-2/10 dark:bg-cat-2/15 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-cat-2/10 dark:bg-cat-2/15 flex items-center justify-center">
               <Layers className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
             </div>
             <div>
@@ -465,7 +465,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
             const Icon = config.icon;
             return (
               <div key={key} className="flex items-center gap-1">
-                <div className={cn('w-4 h-4 rounded flex items-center justify-center', config.bgColor)}>
+                <div className={cn('w-4 h-4 rounded-md flex items-center justify-center', config.bgColor)}>
                   <Icon className={cn('w-2.5 h-2.5', config.color)} />
                 </div>
                 <span className="text-neutral-600 dark:text-neutral-300">{config.label}</span>

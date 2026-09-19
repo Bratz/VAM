@@ -87,7 +87,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
               onClick={() => isClickable && onClick(segment)}
               disabled={!isClickable}
               className={cn(
-                'flex items-center gap-1 rounded px-1 py-0.5 transition-colors',
+                'flex items-center gap-1 rounded-md px-1 py-0.5 transition-colors',
                 isClickable && 'hover:bg-neutral-100 cursor-pointer dark:hover:bg-primary-800',
                 !isClickable && 'cursor-default'
               )}

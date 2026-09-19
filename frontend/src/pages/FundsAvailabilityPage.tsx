@@ -157,7 +157,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
           </div>
 
           {!result.approved && result.rejectionReason && (
-            <div className="mt-2 p-2 bg-error-100 rounded text-body-sm text-error-700 dark:bg-error-500/20 dark:text-error-300">
+            <div className="mt-2 p-2 bg-error-100 rounded-md text-body-sm text-error-700 dark:bg-error-500/20 dark:text-error-300">
               <strong>Rejection:</strong> {result.rejectionReason}
               {result.shortfall && (
                 <span className="ml-2">
@@ -170,16 +170,16 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
           {/* Expanded Details */}
           {expanded && (
             <div className="mt-3 pt-3 border-t border-neutral-200 grid grid-cols-2 gap-3 text-body-sm dark:border-primary-800">
-              <div className="p-2 bg-white rounded dark:bg-primary-900">
+              <div className="p-2 bg-white rounded-md dark:bg-primary-900">
                 <p className="text-neutral-500 dark:text-neutral-400">External Limit</p>
                 <p className="font-medium">{formatCurrency(result.externalLimitAvailable, result.vaCurrency)}</p>
               </div>
-              <div className="p-2 bg-white rounded dark:bg-primary-900">
+              <div className="p-2 bg-white rounded-md dark:bg-primary-900">
                 <p className="text-neutral-500 dark:text-neutral-400">Internal Limit</p>
                 <p className="font-medium">{formatCurrency(result.internalLimitAvailable, result.vaCurrency)}</p>
               </div>
               {result.limitUsageRequired && result.limitUsageRequired > 0 && (
-                <div className="col-span-2 p-2 bg-warning-100 rounded dark:bg-warning-500/20">
+                <div className="col-span-2 p-2 bg-warning-100 rounded-md dark:bg-warning-500/20">
                   <p className="text-warning-700 dark:text-warning-300">
                     <CreditCard className="w-4 h-4 inline mr-1" />
                     Limit usage required: {formatCurrency(result.limitUsageRequired, result.vaCurrency)}
@@ -208,7 +208,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
     <div className="space-y-4">
       {/* Summary Header */}
       <div className={cn(
-        "p-4 rounded-xl",
+        "p-4 rounded-lg",
         result.approved ? "bg-success-100 border-2 border-success-300 dark:bg-success-500/20" : "bg-error-100 border-2 border-error-300 dark:bg-error-500/20"
       )}>
         <div className="flex items-center gap-4">
@@ -249,7 +249,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
       </div>
 
       {/* Level-by-Level Results */}
-      <div className="bg-white rounded-xl border p-4 dark:bg-primary-900">
+      <div className="bg-white rounded-lg border p-4 dark:bg-primary-900">
         <h4 className="body-strong font-semibold mb-4 flex items-center gap-2">
           <Layers className="w-4 h-4" />
           Hierarchy Check ({result.levelsChecked} levels)
@@ -269,7 +269,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
 
       {/* Rejection Details */}
       {!result.approved && (
-        <div className="bg-error-50 border border-error-200 rounded-xl p-4 dark:bg-error-500/10 dark:border-error-500/30">
+        <div className="bg-error-50 border border-error-200 rounded-lg p-4 dark:bg-error-500/10 dark:border-error-500/30">
           <h4 className="text-body-sm font-semibold text-error-800 flex items-center gap-2 dark:text-error-300">
             <AlertCircle className="w-4 h-4" />
             Transaction Cannot Proceed

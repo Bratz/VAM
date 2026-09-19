@@ -167,7 +167,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
           key={corp.id}
           onClick={() => onSelect(corp.id)}
           className={cn(
-            "flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left",
+            "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
             selectedId === corp.id
               ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40"
               : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"
@@ -260,7 +260,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
             key={program.id}
             onClick={() => onSelect(program.id)}
             className={cn(
-              "flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left",
+              "flex items-center gap-4 p-4 rounded-lg border-2 transition-all text-left",
               selectedId === program.id
                 ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40"
                 : "border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50"

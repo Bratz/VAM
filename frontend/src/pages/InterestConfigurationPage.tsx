@@ -164,7 +164,7 @@ const StatCard: React.FC<{
         )}
       </div>
       <div className={cn(
-        "w-10 h-10 rounded-xl flex items-center justify-center",
+        "w-10 h-10 rounded-lg flex items-center justify-center",
         color === 'info' && 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300',
         color === 'success' && 'bg-success-100 text-success-600 dark:bg-success-500/20 dark:text-success-300',
         color === 'accent' && 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300',
@@ -187,7 +187,7 @@ const ConfigCard: React.FC<{
     <div className="flex items-start justify-between mb-3">
       <div className="flex items-center gap-2">
         <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center",
+          "w-10 h-10 rounded-lg flex items-center justify-center",
           config.configType === 'EXTERNAL' ? 'bg-info-100 text-info-600 dark:bg-info-500/20 dark:text-info-300' : 'bg-accent-100 text-accent-600 dark:bg-accent-500/20 dark:text-accent-300'
         )}>
           {config.configType === 'EXTERNAL' ? <Building2 className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
@@ -203,7 +203,7 @@ const ConfigCard: React.FC<{
     </div>
 
     <div className="grid grid-cols-2 gap-3 mb-3">
-      <div className="bg-success-50 rounded-xl p-3 dark:bg-success-500/10">
+      <div className="bg-success-50 rounded-lg p-3 dark:bg-success-500/10">
         <p className="text-caption text-success-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-success-300">
           <TrendingUp className="w-3 h-3" /> Credit
         </p>
@@ -219,7 +219,7 @@ const ConfigCard: React.FC<{
           </p>
         )}
       </div>
-      <div className="bg-error-50 rounded-xl p-3 dark:bg-error-500/10">
+      <div className="bg-error-50 rounded-lg p-3 dark:bg-error-500/10">
         <p className="text-caption text-error-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-error-300">
           <TrendingDown className="w-3 h-3" /> Debit
         </p>
@@ -815,7 +815,7 @@ const InterestConfigurationPage: React.FC = () => {
           ))}
           {filteredConfigs.length === 0 && !error && (
             <div className="col-span-full text-center py-12">
-              <div className="w-16 h-16 rounded-xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                 <Settings className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 font-medium dark:text-neutral-400">No interest configurations found</p>
@@ -851,7 +851,7 @@ const InterestConfigurationPage: React.FC = () => {
 
             {/* Rates */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-success-50 rounded-xl p-4 dark:bg-success-500/10">
+              <div className="bg-success-50 rounded-lg p-4 dark:bg-success-500/10">
                 <h4 className="text-body-sm font-semibold text-success-700 mb-3 uppercase tracking-wider dark:text-success-300">Credit Interest</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between">
@@ -873,7 +873,7 @@ const InterestConfigurationPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-error-50 rounded-xl p-4 dark:bg-error-500/10">
+              <div className="bg-error-50 rounded-lg p-4 dark:bg-error-500/10">
                 <h4 className="text-body-sm font-semibold text-error-700 mb-3 uppercase tracking-wider dark:text-error-300">Debit Interest</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between">
@@ -1028,7 +1028,7 @@ const InterestConfigurationPage: React.FC = () => {
           </div>
 
           {/* Credit Interest */}
-          <div className="bg-success-50 rounded-xl p-4 dark:bg-success-500/10">
+          <div className="bg-success-50 rounded-lg p-4 dark:bg-success-500/10">
             <h4 className="text-body-sm font-semibold text-success-800 mb-4 flex items-center gap-2 dark:text-success-300">
               <TrendingUp className="w-4 h-4" /> Credit Interest (on positive balances)
             </h4>
@@ -1082,7 +1082,7 @@ const InterestConfigurationPage: React.FC = () => {
           </div>
 
           {/* Debit Interest */}
-          <div className="bg-error-50 rounded-xl p-4 dark:bg-error-500/10">
+          <div className="bg-error-50 rounded-lg p-4 dark:bg-error-500/10">
             <h4 className="text-body-sm font-semibold text-error-800 mb-4 flex items-center gap-2 dark:text-error-300">
               <TrendingDown className="w-4 h-4" /> Debit Interest (on negative/overdraft)
             </h4>

@@ -253,7 +253,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
               <div className="flex items-center gap-3 mb-4">
                 <div
                   className={cn(
-                    'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
+                    'w-12 h-12 rounded-lg flex items-center justify-center shrink-0',
                     previewTemplate.bgColor
                   )}
                 >
@@ -323,7 +323,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                             {level.allowedValues.slice(0, 4).map((v) => (
                               <span
                                 key={v}
-                                className="text-caption px-1.5 py-0.5 bg-neutral-200 dark:bg-primary-800 rounded"
+                                className="text-caption px-1.5 py-0.5 bg-neutral-200 dark:bg-primary-800 rounded-md"
                               >
                                 {v}
                               </span>

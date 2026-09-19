@@ -145,7 +145,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
           {children.length > 0 ? (
             <button
               onClick={(e) => { e.stopPropagation(); toggle(nodeId(n)); }}
-              className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-primary-700"
+              className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-700"
             >
               {isExpanded
                 ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />

@@ -155,7 +155,7 @@ const CorporateCard: React.FC<CorporateCardProps> = ({ corporate, selected, onSe
       onClick={onSelect}
       disabled={disabled}
       className={cn(
-        'w-full text-left p-4 rounded-xl border-2 transition-all',
+        'w-full text-left p-4 rounded-lg border-2 transition-all',
         selected
           ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
           : disabled
@@ -654,7 +654,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                             type="button"
                             onClick={() => setSelectedPolicy(policy.policy)}
                             className={cn(
-                              'w-full text-left p-4 rounded-xl border-2 transition-all',
+                              'w-full text-left p-4 rounded-lg border-2 transition-all',
                               selectedPolicy === policy.policy
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40'
                                 : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'
@@ -793,7 +793,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                         type="checkbox"
                         checked={confirmBoardApproval}
                         onChange={(e) => setConfirmBoardApproval(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-primary-600 rounded border-neutral-300 dark:border-primary-700 focus:ring-primary-500 dark:text-primary-200"
+                        className="mt-1 w-4 h-4 text-primary-600 rounded-md border-neutral-300 dark:border-primary-700 focus:ring-primary-500 dark:text-primary-200"
                       />
                       <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
                         I confirm this acquisition has been approved by the board and all necessary

@@ -217,7 +217,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
               onClick={(e) => { e.stopPropagation(); onRefreshRow(rate); }}
               disabled={refreshingIds.has(rate.id)}
               aria-label={`Refresh ${rate.fromCurrency}/${rate.toCurrency}`}
-              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 p-2 -m-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
             >
               {refreshingIds.has(rate.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             </button>
@@ -604,7 +604,7 @@ const FxRatesPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
-            className="inline-flex items-center gap-1 text-caption text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 rounded"
+            className="inline-flex items-center gap-1 text-caption text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 rounded-md"
           >
             <X className="w-3 h-3" /> Clear filter
           </button>

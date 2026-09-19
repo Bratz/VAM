@@ -1043,7 +1043,7 @@ const OverviewTab: React.FC<{
       <div className="grid grid-cols-2 gap-4">
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
               <Activity className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -1054,7 +1054,7 @@ const OverviewTab: React.FC<{
         </Card>
         <Card hover className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
               <CreditCard className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -1087,7 +1087,7 @@ const OverviewTab: React.FC<{
       {/* Pool Summary */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
         <div className="p-4 border-b flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
             <Database className="w-5 h-5 text-white" />
           </div>
           <h3 className="font-medium">Pool Summary</h3>
@@ -1292,7 +1292,7 @@ const VibansTab: React.FC<{
                 <tr key={v.id} className="data-table-row group">
                   <td className="data-table-cell">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => copyToClipboard(v.viban, v.id)} className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-primary-800">
+                      <button onClick={() => copyToClipboard(v.viban, v.id)} className="p-1 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800">
                         {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400" />}
                       </button>
                       <span className="font-mono text-body-sm">{v.viban}</span>
@@ -1400,7 +1400,7 @@ const PoolForm: React.FC<{
           <div><label className="field-label block mb-1">TTL (minutes)</label><Input type="number" value={formData.assignmentTtlMinutes} onChange={e => setFormData(p => ({ ...p, assignmentTtlMinutes: parseInt(e.target.value) }))} min={0} /><p className="caption mt-1">0 = Permanent</p></div>
           <div><label className="field-label block mb-1">Low Threshold (%)</label><Input type="number" value={formData.lowThresholdPercent} onChange={e => setFormData(p => ({ ...p, lowThresholdPercent: parseInt(e.target.value) }))} min={5} max={50} /></div>
         </div>
-        <div className="flex items-center gap-2"><input type="checkbox" id="autoReturn" checked={formData.autoReturnExpired} onChange={e => setFormData(p => ({ ...p, autoReturnExpired: e.target.checked }))} className="rounded" /><label htmlFor="autoReturn" className="text-body-sm">Auto-return expired VIBANs</label></div>
+        <div className="flex items-center gap-2"><input type="checkbox" id="autoReturn" checked={formData.autoReturnExpired} onChange={e => setFormData(p => ({ ...p, autoReturnExpired: e.target.checked }))} className="rounded-md" /><label htmlFor="autoReturn" className="text-body-sm">Auto-return expired VIBANs</label></div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
@@ -1622,7 +1622,7 @@ const AssignForm: React.FC<{
             type="checkbox"
             checked={isPrimary}
             onChange={e => setIsPrimary(e.target.checked)}
-            className="w-4 h-4 rounded text-primary-600 dark:text-primary-200"
+            className="w-4 h-4 rounded-md text-primary-600 dark:text-primary-200"
           />
           <div>
             <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBAN</span>
@@ -1930,7 +1930,7 @@ const BulkAssignForm: React.FC<{
                 <select
                   value={pa.partyId}
                   onChange={e => handlePartyChange(idx, e.target.value, pa.referenceId)}
-                  className="flex-1 px-2 py-1 border rounded text-body-sm"
+                  className="flex-1 px-2 py-1 border rounded-md text-body-sm"
                 >
                   <option value="">No party</option>
                   {activeParties.map(p => (
@@ -1944,7 +1944,7 @@ const BulkAssignForm: React.FC<{
                   placeholder="Reference ID"
                   value={pa.referenceId || ''}
                   onChange={e => handlePartyChange(idx, pa.partyId, e.target.value)}
-                  className="w-32 px-2 py-1 border rounded text-body-sm"
+                  className="w-32 px-2 py-1 border rounded-md text-body-sm"
                 />
               </div>
             ))
@@ -1959,7 +1959,7 @@ const BulkAssignForm: React.FC<{
             type="checkbox"
             checked={isPrimary}
             onChange={e => setIsPrimary(e.target.checked)}
-            className="w-4 h-4 rounded text-primary-600 dark:text-primary-200"
+            className="w-4 h-4 rounded-md text-primary-600 dark:text-primary-200"
           />
           <div>
             <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBANs</span>

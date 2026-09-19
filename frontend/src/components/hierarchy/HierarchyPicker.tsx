@@ -167,7 +167,7 @@ const PickerNode: React.FC<PickerNodeProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -179,7 +179,7 @@ const PickerNode: React.FC<PickerNodeProps> = ({
           <span className="w-5" />
         )}
 
-        <div className={cn('p-1.5 rounded', style.bg)}>
+        <div className={cn('p-1.5 rounded-md', style.bg)}>
           <Icon className={cn('w-3.5 h-3.5', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
         </div>
 
@@ -195,7 +195,7 @@ const PickerNode: React.FC<PickerNodeProps> = ({
         )}
 
         {showViban && node.primaryViban && (
-          <span className="text-caption font-mono text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded dark:text-primary-200 dark:bg-primary-800/40">
+          <span className="text-caption font-mono text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded-md dark:text-primary-200 dark:bg-primary-800/40">
             {node.primaryViban.slice(-8)}
           </span>
         )}
@@ -395,7 +395,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
           {selectedNode && !disabled && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded"
+              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
             >
               <X className="w-4 h-4 text-neutral-400" />
             </button>

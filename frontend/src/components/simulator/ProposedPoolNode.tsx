@@ -28,7 +28,7 @@ export const ProposedPoolNode: React.FC<ProposedPoolNodeProps> = ({
   return (
     <div
       className={cn(
-        'rounded-xl border border-neutral-200/80 dark:border-primary-800/60',
+        'rounded-lg border border-neutral-200/80 dark:border-primary-800/60',
         'border-l-2 border-l-info-500',
         'bg-white dark:bg-primary-900/40',
         className,

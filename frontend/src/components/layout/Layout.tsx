@@ -205,14 +205,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-xl transition-colors"
+            className="lg:hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
           </button>
           <button
             onClick={onToggleCollapse}
             className={cn(
-              'hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-xl transition-colors',
+              'hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors',
               !collapsed && 'lg:inline-flex'
             )}
             title="Collapse sidebar"
@@ -232,7 +232,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search menu..."
               className={cn(
-                'w-full h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
+                'w-full h-10 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-primary-800',
                 'bg-neutral-50/80 dark:bg-primary-950/50 text-body-sm text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
                 'dark:bg-primary-950/60 dark:border-primary-800 dark:text-neutral-100 dark:placeholder:text-neutral-400',
                 'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
@@ -443,7 +443,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
+            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
           >
             <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -501,7 +501,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 type="text"
                 placeholder="Search accounts, transactions..."
                 className={cn(
-                  'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-xl border border-neutral-200 dark:border-primary-800',
+                  'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-lg border border-neutral-200 dark:border-primary-800',
                   'bg-neutral-50/80 dark:bg-primary-950/50 text-body-sm placeholder:text-neutral-400',
                   'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                   'transition-all duration-200'
@@ -511,7 +511,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                   switched to mono (Geist Mono) so the keyboard glyph reads as
                   "code/keystroke" alongside our numerics-and-code mono rule.
                   Generic sans previously made it look like a label, not a key. */}
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 label-cased bg-white dark:bg-primary-900 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-primary-800 font-mono font-medium tracking-tight">
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 label-cased bg-white dark:bg-primary-900 px-1.5 py-0.5 rounded-md border border-neutral-200 dark:border-primary-800 font-mono font-medium tracking-tight">
                 ⌘K
               </kbd>
             </div>
@@ -542,7 +542,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           {/* Mobile Search Button */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
+            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
           >
             <Search className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -552,7 +552,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             onClick={toggleMode}
             aria-label={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             title={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-xl transition-colors"
+            className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
           >
             {resolvedMode === 'dark'
               ? <Sun className="w-5 h-5 text-accent-400" />
@@ -563,7 +563,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
+              className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
             >
               <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-error-500 rounded-full ring-2 ring-white" />
@@ -574,7 +574,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
                 <div className={cn(
                   'absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)]',
-                  'bg-white rounded-2xl shadow-2xl border border-neutral-200/60 z-20 overflow-hidden dark:bg-primary-900',
+                  'bg-white rounded-lg shadow-2xl border border-neutral-200/60 z-20 overflow-hidden dark:bg-primary-900',
                   'animate-scale-in origin-top-right'
                 )}>
                   <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
@@ -623,7 +623,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 p-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
+              className="flex items-center gap-3 p-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
             >
               <Avatar name="John Doe" size="sm" />
               <div className="hidden md:block text-left">
@@ -649,7 +649,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 <div className="fixed inset-0 z-10" onClick={() => setShowUserMenu(false)} />
                 <div className={cn(
                   'absolute right-0 top-full mt-2 w-64',
-                  'bg-white rounded-2xl shadow-2xl border border-neutral-200/60 z-20 overflow-hidden dark:bg-primary-900',
+                  'bg-white rounded-lg shadow-2xl border border-neutral-200/60 z-20 overflow-hidden dark:bg-primary-900',
                   'animate-scale-in origin-top-right'
                 )}>
                   <div className="px-4 py-4 border-b border-neutral-100 bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
@@ -694,7 +694,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               placeholder="Search..."
               autoFocus
               className={cn(
-                'w-full h-11 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
+                'w-full h-11 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-primary-800',
                 'bg-neutral-50 text-body placeholder:text-neutral-400 dark:bg-primary-950',
                 'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10'
               )}
@@ -811,7 +811,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
         onClick={onClose}
       />
       <div className={cn(
-        'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl dark:bg-primary-900',
+        'fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-lg dark:bg-primary-900',
         'shadow-[0_-10px_40px_rgba(70,73,76,0.15)]',
         'animate-slide-in-up safe-bottom',
         'max-h-[85vh] overflow-hidden flex flex-col'
@@ -833,9 +833,9 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
             {quickActions.map((action) => (
               <button
                 key={action.action}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-primary-800/50 active:bg-neutral-100 transition-colors"
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 active:bg-neutral-100 transition-colors"
               >
-                <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 dark:bg-primary-800/40 dark:text-primary-200">
+                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600 dark:bg-primary-800/40 dark:text-primary-200">
                   {action.icon}
                 </div>
                 <span className="text-caption font-medium text-neutral-700 dark:text-neutral-200">{action.label}</span>
@@ -868,7 +868,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                         key={item.href}
                         onClick={() => { onNavigate(item.href); onClose(); }}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-3 rounded-xl',
+                          'w-full flex items-center gap-3 px-3 py-3 rounded-lg',
                           'transition-colors active:bg-neutral-100',
                           isActive
                             ? 'bg-primary-50 text-primary-700 dark:bg-primary-800/40 dark:text-neutral-200'
@@ -907,7 +907,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
         <div className="p-4 border-t border-neutral-100 dark:border-primary-800/60">
           <button
             onClick={onClose}
-            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-xl font-medium hover:bg-neutral-200 dark:hover:bg-primary-700 transition-colors dark:bg-primary-800 dark:text-neutral-200"
+            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-lg font-medium hover:bg-neutral-200 dark:hover:bg-primary-700 transition-colors dark:bg-primary-800 dark:text-neutral-200"
           >
             Close
           </button>

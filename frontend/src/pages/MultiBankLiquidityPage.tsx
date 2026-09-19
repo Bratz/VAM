@@ -280,8 +280,8 @@ const MultiBankLiquidityPage: React.FC = () => {
     return (
       <Page>
         <div>
-          <div className="h-3 w-20 bg-neutral-200 dark:bg-primary-800 rounded animate-pulse" />
-          <div className="h-4 w-64 bg-neutral-200 dark:bg-primary-800 rounded mt-2 animate-pulse" />
+          <div className="h-3 w-20 bg-neutral-200 dark:bg-primary-800 rounded-md animate-pulse" />
+          <div className="h-4 w-64 bg-neutral-200 dark:bg-primary-800 rounded-md mt-2 animate-pulse" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (

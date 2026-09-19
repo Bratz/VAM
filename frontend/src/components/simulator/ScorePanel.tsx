@@ -158,7 +158,7 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
                   <button
                     type="button"
                     onClick={() => onRenewConsent(w)}
-                    className="shrink-0 inline-flex items-center gap-1 body-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+                    className="shrink-0 inline-flex items-center gap-1 body-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
                   >
                     Renew
                     <ArrowRight className="w-4 h-4" aria-hidden />
@@ -186,7 +186,7 @@ export const ScorePanel: React.FC<ScorePanelProps> = ({
       <button
         type="button"
         onClick={() => setAssumptionsOpen(true)}
-        className="mt-4 inline-flex items-center gap-1 body-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+        className="mt-4 inline-flex items-center gap-1 body-sm font-medium text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded-md"
       >
         View assumptions
         <ArrowRight className="w-4 h-4" aria-hidden />

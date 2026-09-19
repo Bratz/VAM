@@ -180,7 +180,7 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
       onClick={onSelect}
       disabled={disabled || isInitialized}
       className={cn(
-        'w-full text-left p-4 rounded-xl border-2 transition-all',
+        'w-full text-left p-4 rounded-lg border-2 transition-all',
         selected
           ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
           : isInitialized
@@ -550,7 +550,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                           type="checkbox"
                           checked={createExceptionVa}
                           onChange={(e) => setCreateExceptionVa(e.target.checked)}
-                          className="w-5 h-5 text-warning-600 rounded border-warning-300 dark:border-warning-500/30 focus:ring-warning-500 dark:text-warning-300"
+                          className="w-5 h-5 text-warning-600 rounded-md border-warning-300 dark:border-warning-500/30 focus:ring-warning-500 dark:text-warning-300"
                         />
                         <div>
                           <span className="font-medium text-warning-800 dark:text-warning-300">

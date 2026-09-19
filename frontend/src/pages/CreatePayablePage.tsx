@@ -416,10 +416,10 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
   
   if (selectedVendor) {
     return (
-      <div className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-white rounded-xl p-5 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
+      <div className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-white rounded-lg p-5 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-700 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-700 rounded-lg flex items-center justify-center">
               <Building2 className="w-6 h-6 text-primary-600 dark:text-primary-200" />
             </div>
             <div>
@@ -459,14 +459,14 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
           onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
           placeholder="Search vendors by name or code..."
-          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-xl text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-400 transition-all"
+          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-lg text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-400 transition-all"
         />
         {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-neutral-400" />}
       </div>
       {showDropdown && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-          <div className="absolute z-20 mt-2 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl shadow-xl max-h-80 overflow-y-auto">
+          <div className="absolute z-20 mt-2 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-xl max-h-80 overflow-y-auto">
             {results.length === 0 ? (
               <div className="p-4 text-center text-neutral-500 dark:text-neutral-400"><Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-400" /><p>No vendors found</p></div>
             ) : results.map((vendor) => (
@@ -712,7 +712,7 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
           <div key={charge.id} className="flex items-center gap-3 mb-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
             <span className="flex-1 text-body-sm font-medium">{charge.description}</span>
             <span className="font-semibold">{formatCurrency(charge.amount, formData.currencyCode)}</span>
-            <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded text-error-500 dark:text-error-300 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
+            <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded-md text-error-500 dark:text-error-300 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
           </div>
         ))}
         <div className="flex flex-wrap gap-2">
@@ -743,9 +743,9 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
   if (!poboEligibility.eligible) {
     return (
       <div className="space-y-4">
-        <div className="border-2 border-neutral-200 dark:border-primary-800 rounded-xl p-5 bg-neutral-50 dark:bg-primary-950">
+        <div className="border-2 border-neutral-200 dark:border-primary-800 rounded-lg p-5 bg-neutral-50 dark:bg-primary-950">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-neutral-100 dark:bg-primary-800">
+            <div className="p-3 rounded-lg bg-neutral-100 dark:bg-primary-800">
               <ArrowLeftRight className="w-6 h-6 text-neutral-400" />
             </div>
             <div className="flex-1">
@@ -779,10 +779,10 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
 
   return (
     <div className="space-y-6">
-      <div className={`border-2 rounded-xl p-5 transition-all ${formData.poboEnabled ? 'border-accent-500 bg-accent-50/30' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:hover:border-primary-700`}>
+      <div className={`border-2 rounded-lg p-5 transition-all ${formData.poboEnabled ? 'border-accent-500 bg-accent-50/30' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:hover:border-primary-700`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl ${formData.poboEnabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-neutral-100 dark:bg-primary-800'}`}>
+            <div className={`p-3 rounded-lg ${formData.poboEnabled ? 'bg-accent-100 dark:bg-accent-500/20' : 'bg-neutral-100 dark:bg-primary-800'}`}>
               <ArrowLeftRight className={`w-6 h-6 ${formData.poboEnabled ? 'text-accent-600 dark:text-accent-300' : 'text-neutral-500 dark:text-neutral-400'}`} />
             </div>
             <div>
@@ -859,7 +859,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
   <div className="space-y-6">
     <div>
       <label className="field-label block mb-2">Attachments</label>
-      <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-xl p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
+      <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
         <Upload className="w-10 h-10 text-neutral-400 mx-auto mb-3" />
         <p className="text-neutral-600 dark:text-neutral-300 font-medium">Drop files here or click to upload</p>
         <p className="text-body-sm text-neutral-400 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
@@ -927,7 +927,7 @@ const SummarySidebar: React.FC<{
   const daysUntilDue = formData.dueDate ? Math.ceil((new Date(formData.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
   
   return (
-    <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 shadow-sm sticky top-24">
+    <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 shadow-sm sticky top-24">
       <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
         <h3 className="section-title flex items-center gap-2"><Receipt className="w-5 h-5 text-primary-600 dark:text-primary-200" />Payment Summary</h3>
       </div>
@@ -1386,7 +1386,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     // same offset would overlap it. Inner wrapper narrows to max-w-5xl to
     // match <Page maxWidth="narrow"> below.
     <div>
-      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl mb-6">
+      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg mb-6">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1411,7 +1411,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
       {/* Main Content */}
       <Page maxWidth="narrow" className="py-6">
         {/* Corporate/Entity Context Banner */}
-        <div className="mb-6 bg-gradient-to-r from-primary-50 to-white border border-primary-200 rounded-xl p-4 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
+        <div className="mb-6 bg-gradient-to-r from-primary-50 to-white border border-primary-200 rounded-lg p-4 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <div className="flex flex-wrap items-center gap-4">
               <div className="p-2 bg-primary-100 dark:bg-primary-700 rounded-lg">

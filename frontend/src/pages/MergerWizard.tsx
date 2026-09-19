@@ -139,7 +139,7 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
       onClick={onSelect}
       disabled={disabled || !isInitialized}
       className={cn(
-        'w-full text-left p-4 rounded-xl border-2 transition-all',
+        'w-full text-left p-4 rounded-lg border-2 transition-all',
         selected
           ? 'border-cat-2 bg-cat-2-soft dark:bg-cat-2/15 ring-2 ring-cat-2/20'
           : disabled || !isInitialized
@@ -551,7 +551,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                             type="button"
                             onClick={() => setSelectedPolicy(policy.policy)}
                             className={cn(
-                              'w-full text-left p-4 rounded-xl border-2 transition-all',
+                              'w-full text-left p-4 rounded-lg border-2 transition-all',
                               selectedPolicy === policy.policy
                                 ? 'border-cat-2 bg-cat-2-soft dark:bg-cat-2/15'
                                 : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'
@@ -693,7 +693,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         type="checkbox"
                         checked={confirmBoardApproval}
                         onChange={(e) => setConfirmBoardApproval(e.target.checked)}
-                        className="mt-1 w-4 h-4 text-cat-2 dark:text-cat-2-fg rounded border-neutral-300 dark:border-primary-700 focus:ring-cat-2"
+                        className="mt-1 w-4 h-4 text-cat-2 dark:text-cat-2-fg rounded-md border-neutral-300 dark:border-primary-700 focus:ring-cat-2"
                       />
                       <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
                         I confirm this merger has been approved by the boards of both corporates and

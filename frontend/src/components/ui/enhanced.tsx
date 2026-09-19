@@ -74,7 +74,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         className={cn(
-          'relative bg-white rounded-2xl shadow-strong w-full mx-4 flex flex-col dark:bg-primary-900',
+          'relative bg-white rounded-lg shadow-xl w-full mx-4 flex flex-col dark:bg-primary-900',
           'animate-scale-in max-h-[90vh]',
           sizes[size]
         )}
@@ -104,7 +104,7 @@ export const Modal: React.FC<ModalProps> = ({
         
         {/* Footer - Fixed at bottom */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-2xl shrink-0 dark:border-primary-800 dark:bg-primary-950">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-lg shrink-0 dark:border-primary-800 dark:bg-primary-950">
             {footer}
           </div>
         )}
@@ -142,9 +142,9 @@ export const Tabs: React.FC<TabsProps> = ({
 }) => {
   const variants = {
     default: {
-      container: 'bg-neutral-100 p-1 rounded-xl dark:bg-primary-800',
+      container: 'bg-neutral-100 p-1 rounded-lg dark:bg-primary-800',
       tab: 'rounded-lg',
-      active: 'bg-white shadow-soft text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
+      active: 'bg-white shadow-sm text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
       inactive: 'text-neutral-600 hover:text-primary-900 dark:hover:text-neutral-50 dark:text-neutral-300',
     },
     pills: {
@@ -420,7 +420,7 @@ export const Alert: React.FC<AlertProps> = ({
 
   return (
     <div className={cn(
-      'flex gap-3 p-4 rounded-xl border',
+      'flex gap-3 p-4 rounded-lg border',
       style.container,
       className
     )}>
@@ -432,7 +432,7 @@ export const Alert: React.FC<AlertProps> = ({
       {onClose && (
         <button
           onClick={onClose}
-          className="flex-shrink-0 p-1 hover:bg-black/5 rounded"
+          className="flex-shrink-0 p-1 hover:bg-black/5 rounded-md"
         >
           <X className="w-4 h-4" />
         </button>
@@ -447,7 +447,7 @@ interface AvatarProps {
   src?: string;
   name?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'circle' | 'rounded';
+  variant?: 'circle' | 'rounded-md';
   status?: 'online' | 'offline' | 'busy' | 'away';
   className?: string;
 }

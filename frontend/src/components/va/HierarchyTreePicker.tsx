@@ -198,7 +198,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
           {children.length > 0 ? (
             <button
               onClick={(e) => { e.stopPropagation(); toggle(n.id); }}
-              className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-primary-700"
+              className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-700"
             >
               {isExpanded
                 ? <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
@@ -247,7 +247,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
                 New branch under {nodeLabel(n)} — intermediate nodes are auto-created
               </p>
               <button onClick={() => { setGrowFrom(null); setGrowValues({}); onChange(null); }}
-                className="p-0.5 rounded hover:bg-info-100 dark:hover:bg-info-500/20">
+                className="p-0.5 rounded-md hover:bg-info-100 dark:hover:bg-info-500/20">
                 <X className="w-3.5 h-3.5 text-info-500 dark:text-info-300" />
               </button>
             </div>

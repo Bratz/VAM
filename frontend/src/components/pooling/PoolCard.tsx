@@ -32,7 +32,7 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-primary-600 flex items-center justify-center">
             <Layers className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -70,13 +70,13 @@ export const PoolCard: React.FC<PoolCardProps> = ({ pool, onView, onCalculateInt
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-neutral-50 dark:bg-primary-950 rounded-xl p-3">
+        <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
           <p className="label">Pool Balance</p>
           <p className="section-title mt-0.5">
             <TileAmount value={pool.totalBalance || 0} currency={pool.poolCurrency} />
           </p>
         </div>
-        <div className="bg-success-50 dark:bg-success-500/10 rounded-xl p-3">
+        <div className="bg-success-50 dark:bg-success-500/10 rounded-lg p-3">
           <p className="label">Savings YTD</p>
           <p className="text-body-lg font-semibold text-success-700 dark:text-success-300 mt-0.5">
             <TileAmount value={pool.interestSavingsYtd || 0} currency={pool.poolCurrency} />

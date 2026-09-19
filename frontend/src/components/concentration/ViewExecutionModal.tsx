@@ -34,7 +34,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className={cn(
-                'w-12 h-12 rounded-xl flex items-center justify-center',
+                'w-12 h-12 rounded-lg flex items-center justify-center',
                 exec.status === 'SUCCESS' && 'bg-success-100 dark:bg-success-500/20',
                 exec.status === 'FAILED' && 'bg-error-100 dark:bg-error-500/20',
                 exec.status === 'SKIPPED' && 'bg-warning-100 dark:bg-warning-500/20',
@@ -131,7 +131,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {/* Execution Time */}
         <Card padding="sm" className="bg-neutral-50/50 dark:bg-primary-950/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
               <Clock className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
             </div>
             <div>

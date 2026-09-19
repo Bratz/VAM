@@ -999,7 +999,7 @@ const SimulatorPage: React.FC = () => {
       />
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 body-sm text-error-700 dark:text-error-300">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10 body-sm text-error-700 dark:text-error-300">
           <AlertCircle className="w-4 h-4 shrink-0" />
           {error}
         </div>

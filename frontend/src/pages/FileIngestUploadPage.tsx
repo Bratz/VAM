@@ -552,7 +552,7 @@ const FileIngestUploadPage: React.FC = () => {
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
                 <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12rem]">{file.name}</span>
-                <button onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
+                <button onClick={() => setFile(null)} className="p-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
                   <X className="w-3.5 h-3.5 text-neutral-400" />
                 </button>
               </div>

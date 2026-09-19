@@ -91,7 +91,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
         // for wrapped copy instead of losing it.
         'flex flex-col lg:flex-row lg:items-center lg:justify-between lg:min-h-[66px] gap-3',
         // bg-primary-800 = banner slate (#4c5c68) per the palette spec.
-        'rounded-xl bg-primary-800 text-white px-4 py-3 lg:py-0'
+        'rounded-lg bg-primary-800 text-white px-4 py-3 lg:py-0'
       )}
     >
       <div className="flex items-start gap-3 min-w-0">

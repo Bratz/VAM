@@ -224,7 +224,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              className="w-4 h-4 rounded border-neutral-300 dark:border-primary-700"
+              className="w-4 h-4 rounded-md border-neutral-300 dark:border-primary-700"
               checked={level.isRequired || false}
               onChange={(e) => onChange({ ...level, isRequired: e.target.checked })}
             />
@@ -254,7 +254,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
               {(level.allowedValues || []).map((value) => (
                 <span
                   key={value}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-neutral-200 rounded text-body-sm dark:bg-primary-900 dark:border-primary-800"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-neutral-200 rounded-md text-body-sm dark:bg-primary-900 dark:border-primary-800"
                 >
                   {value}
                   <button
@@ -300,7 +300,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
                           ...level,
                           allowedValues: [...(level.allowedValues || []), value],
                         })}
-                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 dark:hover:bg-primary-800/50 rounded transition-colors dark:bg-primary-800"
+                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 dark:hover:bg-primary-800/50 rounded-md transition-colors dark:bg-primary-800"
                       >
                         + {value}
                       </button>

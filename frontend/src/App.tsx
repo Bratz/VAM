@@ -256,9 +256,9 @@ const BaaSDashboardPage: React.FC = () => (
       ))}
     </div>
     {/* Partner Performance Card */}
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Performance</h2>
@@ -271,7 +271,7 @@ const BaaSDashboardPage: React.FC = () => (
         ].map((partner, i) => (
           <div key={i} className="flex items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors group">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-700 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary-100 dark:bg-primary-700 rounded-lg flex items-center justify-center">
                 <span className="text-primary-700 dark:text-neutral-200 font-semibold">{partner.name.charAt(0)}</span>
               </div>
               <div>
@@ -319,15 +319,15 @@ const BaaSPartnersPage: React.FC = () => (
       ))}
     </div>
     {/* Partner List Card */}
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Partner Directory</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <Building2 className="w-8 h-8 text-neutral-400" />
         </div>
         <p className="text-neutral-500 dark:text-neutral-400">Partner management interface coming soon...</p>
@@ -362,15 +362,15 @@ const BaaSCardsPage: React.FC = () => (
       ))}
     </div>
     {/* Cards List */}
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.3s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Virtual Card Programs</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-neutral-400" />
         </div>
         <p className="text-neutral-500 dark:text-neutral-400">Virtual cards interface coming soon...</p>
@@ -401,15 +401,15 @@ const BaaSSettlementsPage: React.FC = () => (
       ))}
     </div>
     {/* Content Card */}
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
           <Wallet className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Settlement Cycles</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <Wallet className="w-8 h-8 text-neutral-400" />
         </div>
         <p className="text-neutral-500 dark:text-neutral-400">Settlements interface coming soon...</p>
@@ -440,15 +440,15 @@ const BaaSTransactionsPage: React.FC = () => (
       ))}
     </div>
     {/* Content Card */}
-    <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 animate-fade-in" style={{ animationDelay: '0.25s' }}>
       <div className="p-5 border-b border-neutral-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <TrendingUp className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-body-lg font-semibold text-primary-900 dark:text-neutral-50">Transaction History</h2>
       </div>
       <div className="p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-4">
           <TrendingUp className="w-8 h-8 text-neutral-400" />
         </div>
         <p className="text-neutral-500 dark:text-neutral-400">BaaS transactions interface coming soon...</p>

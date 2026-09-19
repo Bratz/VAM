@@ -65,7 +65,7 @@ export const Composer: React.FC = () => {
         placeholder={isStreaming ? 'Copilot is thinking…' : 'Ask about positions, sweeps, statements…'}
         className={[
           'flex-1 resize-none min-h-[40px]',
-          'px-3 py-2 rounded-xl',
+          'px-3 py-2 rounded-lg',
           'text-body-sm text-primary-900 dark:text-neutral-100',
           'bg-neutral-50 dark:bg-primary-900/60',
           'border border-neutral-200 dark:border-primary-700',
@@ -78,7 +78,7 @@ export const Composer: React.FC = () => {
         type="submit"
         disabled={isStreaming || !value.trim()}
         className={[
-          'shrink-0 h-10 w-10 rounded-xl',
+          'shrink-0 h-10 w-10 rounded-lg',
           'bg-primary-700 hover:bg-primary-800 dark:bg-primary-800 dark:hover:bg-primary-700',
           'text-white',
           'disabled:opacity-40 disabled:cursor-not-allowed',

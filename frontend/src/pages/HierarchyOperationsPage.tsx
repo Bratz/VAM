@@ -134,7 +134,7 @@ const Card: React.FC<{
 }> = ({ children, className, padding = 'md' }) => {
   const paddings = { none: '', sm: 'p-4', md: 'p-6', lg: 'p-8' };
   return (
-    <div className={cn('bg-white rounded-xl shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>
+    <div className={cn('bg-white rounded-lg shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>
       {children}
     </div>
   );
@@ -190,9 +190,9 @@ const QuickActionCard: React.FC<{ action: QuickAction }> = ({ action }) => {
   return (
     <button
       onClick={action.onClick}
-      className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl border border-neutral-200 hover:border-primary-300 hover:shadow-md transition-all group dark:bg-primary-900 dark:border-primary-800"
+      className="flex flex-col items-center gap-3 p-6 bg-white rounded-lg border border-neutral-200 hover:border-primary-300 hover:shadow-md transition-all group dark:bg-primary-900 dark:border-primary-800"
     >
-      <div className={cn('p-3 rounded-xl transition-colors', colorClasses)}>
+      <div className={cn('p-3 rounded-lg transition-colors', colorClasses)}>
         <Icon className="w-6 h-6" />
       </div>
       <div className="text-center">
@@ -251,7 +251,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
         style={{ marginLeft: `${level * 24}px` }}
       >
         {hasChildren ? (
-          <button onClick={() => onToggle(node.id)} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
+          <button onClick={() => onToggle(node.id)} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-5" />}
@@ -264,7 +264,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <MoreVertical className="w-4 h-4 text-neutral-400" />
             </button>
@@ -865,11 +865,11 @@ const HierarchyOperationsPage: React.FC = () => {
                   <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50 dark:border-primary-800/60 dark:bg-primary-950">
                     <div className="flex flex-wrap items-center gap-4 caption">
                       <span className="font-medium">Legend:</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-primary-900" />ROOT</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-info-100 dark:bg-info-500/20" />AGGREGATION</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-success-50 dark:bg-success-500/10" />TRANSACTION</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-cyan-50 border border-dashed border-cyan-300 dark:bg-cyan-500/10" />MIRROR</span>
-                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-warning-50 border border-warning-300 dark:bg-warning-500/10" />EXCEPTION</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-primary-900" />ROOT</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-info-100 dark:bg-info-500/20" />AGGREGATION</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-success-50 dark:bg-success-500/10" />TRANSACTION</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-cyan-50 border border-dashed border-cyan-300 dark:bg-cyan-500/10" />MIRROR</span>
+                      <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-md bg-warning-50 border border-warning-300 dark:bg-warning-500/10" />EXCEPTION</span>
                     </div>
                   </div>
                 )}

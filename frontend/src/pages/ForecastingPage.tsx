@@ -325,7 +325,7 @@ const ForecastingPage: React.FC = () => {
 
           <div className="flex items-center gap-3 flex-wrap">
             {/* Horizon toggle */}
-            <div role="tablist" aria-label="Forecast horizon" className="inline-flex rounded-xl border border-neutral-200 dark:border-primary-800/60 overflow-hidden">
+            <div role="tablist" aria-label="Forecast horizon" className="inline-flex rounded-lg border border-neutral-200 dark:border-primary-800/60 overflow-hidden">
               {HORIZON_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -350,7 +350,7 @@ const ForecastingPage: React.FC = () => {
               onChange={setCurrency}
               allowEmpty
               emptyLabel="All ccy"
-              className="h-9 text-body-sm rounded-xl border-neutral-200 dark:border-primary-800/60"
+              className="h-9 text-body-sm rounded-lg border-neutral-200 dark:border-primary-800/60"
             />
 
             <Button
@@ -677,7 +677,7 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
       </div>
       {loading ? (
         <div className="space-y-2">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 rounded" />)}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 rounded-md" />)}
         </div>
       ) : !table || table.length === 0 ? (
         <p className="body-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
@@ -781,7 +781,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
               {lines.map((line) => (
                 <li
                   key={line.id}
-                  className="border border-neutral-200 dark:border-primary-800/60 rounded-xl px-3 py-2.5 bg-neutral-50/40 dark:bg-primary-950/40"
+                  className="border border-neutral-200 dark:border-primary-800/60 rounded-lg px-3 py-2.5 bg-neutral-50/40 dark:bg-primary-950/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -838,7 +838,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
 const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, running }) => (
   <Card padding="lg">
     <div className="text-center py-12">
-      <div className="w-16 h-16 rounded-2xl bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center mx-auto mb-4">
+      <div className="w-16 h-16 rounded-lg bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center mx-auto mb-4">
         <Sparkles className="w-8 h-8 text-accent-600 dark:text-accent-300" />
       </div>
       <h2 className="page-title-display text-heading-md text-primary-900 dark:text-neutral-50">
@@ -864,17 +864,17 @@ const LoadingState: React.FC = () => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-32 rounded-2xl" />
+        <Skeleton key={i} className="h-32 rounded-lg" />
       ))}
     </div>
     <Card padding="md">
       <Skeleton className="h-6 w-40 mb-4" />
-      <Skeleton className="h-[300px] rounded-xl" />
+      <Skeleton className="h-[300px] rounded-lg" />
     </Card>
     <Card padding="md">
       <Skeleton className="h-6 w-40 mb-4" />
       <div className="space-y-2">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 rounded" />)}
+        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 rounded-md" />)}
       </div>
     </Card>
   </>

@@ -250,7 +250,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="p-1 hover:bg-white dark:hover:bg-primary-800 dark:bg-primary-900/50 rounded"
+        className="p-1 hover:bg-white dark:hover:bg-primary-800 dark:bg-primary-900/50 rounded-md"
       >
         <X className="w-4 h-4 text-neutral-400" />
       </button>
@@ -326,7 +326,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     >
       <div className="space-y-4">
           {/* Transfer Summary */}
-          <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
+          <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
             <div className="flex items-center justify-between mb-3">
               <span className="body-sm">Amount to Transfer</span>
               <span className="stat-value-sm text-primary-900 dark:text-neutral-50">
@@ -894,7 +894,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded shrink-0"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md shrink-0"
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -906,7 +906,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           <span className="w-5 shrink-0" />
         )}
 
-        <div className={cn('p-1.5 rounded shrink-0', style.bg)}>
+        <div className={cn('p-1.5 rounded-md shrink-0', style.bg)}>
           <Icon className={cn('w-3.5 h-3.5', node.nodeType === 'MASTER' ? 'text-white' : style.text)} />
         </div>
 
@@ -1382,7 +1382,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             <div className="flex items-center gap-3 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
               <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 shrink-0" />
               <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
-              <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-error-100 dark:hover:bg-error-500/20 rounded">
+              <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-error-100 dark:hover:bg-error-500/20 rounded-md">
                 <X className="w-4 h-4 text-error-600 dark:text-error-300" />
               </button>
             </div>
@@ -1425,7 +1425,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           )}
 
           {/* Exception Summary */}
-          <div className="flex items-center gap-4 p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
+          <div className="flex items-center gap-4 p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
             <div className="p-3 bg-warning-100 dark:bg-warning-500/20 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-warning-700 dark:text-warning-300" />
             </div>
@@ -1693,7 +1693,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
 
           {/* Selected VA Display */}
           {selectedVa && (
-            <div className="bg-primary-50 rounded-xl p-4 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
+            <div className="bg-primary-50 rounded-lg p-4 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
@@ -1708,7 +1708,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 </div>
                 <button
                   onClick={() => setSelectedVa(null)}
-                  className="p-1 hover:bg-primary-100 rounded dark:hover:bg-primary-700"
+                  className="p-1 hover:bg-primary-100 rounded-md dark:hover:bg-primary-700"
                 >
                   <X className="w-4 h-4 text-primary-600 dark:text-primary-200" />
                 </button>

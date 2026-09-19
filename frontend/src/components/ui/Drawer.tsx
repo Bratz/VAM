@@ -61,7 +61,7 @@ export const Drawer: React.FC<DrawerProps> = ({
       <div
         className={cn(
           'relative bg-white dark:bg-primary-900 w-full h-full flex flex-col',
-          'shadow-strong animate-slide-in-right',
+          'shadow-xl animate-slide-in-right',
           sizes[size],
         )}
       >
@@ -79,7 +79,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-2 -m-2 text-neutral-500 hover:text-primary-900 dark:text-neutral-400 dark:hover:text-neutral-50 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
+            className="p-2 -m-2 text-neutral-500 hover:text-primary-900 dark:text-neutral-400 dark:hover:text-neutral-50 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400"
           >
             <X className="w-5 h-5" />
           </button>

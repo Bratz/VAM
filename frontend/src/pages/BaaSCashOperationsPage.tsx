@@ -356,7 +356,7 @@ const StatCard: React.FC<{
           </div>
         )}
       </div>
-      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", iconBg)}>{icon}</div>
+      <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", iconBg)}>{icon}</div>
     </div>
   </Card>
 );
@@ -678,7 +678,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <button
           onClick={() => setShowCashInModal(true)}
-          className="p-4 bg-success-50 dark:bg-success-500/10 hover:bg-success-100 border border-success-200 rounded-xl transition-all hover:shadow-md text-left animate-fade-in dark:hover:bg-success-500/20 dark:border-success-500/30"
+          className="p-4 bg-success-50 dark:bg-success-500/10 hover:bg-success-100 border border-success-200 rounded-lg transition-all hover:shadow-md text-left animate-fade-in dark:hover:bg-success-500/20 dark:border-success-500/30"
           style={{ animationDelay: '0.3s' }}
         >
           <StatusIconBadge tone="success" icon={ArrowDownRight} size="lg" className="mb-3" />
@@ -687,7 +687,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         </button>
         <button
           onClick={() => setShowCashOutModal(true)}
-          className="p-4 bg-error-50 dark:bg-error-500/10 hover:bg-error-100 border border-error-200 rounded-xl transition-all hover:shadow-md text-left animate-fade-in dark:hover:bg-error-500/20 dark:border-error-500/30"
+          className="p-4 bg-error-50 dark:bg-error-500/10 hover:bg-error-100 border border-error-200 rounded-lg transition-all hover:shadow-md text-left animate-fade-in dark:hover:bg-error-500/20 dark:border-error-500/30"
           style={{ animationDelay: '0.35s' }}
         >
           <StatusIconBadge tone="error" icon={ArrowUpRight} size="lg" className="mb-3" />
@@ -696,10 +696,10 @@ const BaaSCashOperationsPage: React.FC = () => {
         </button>
         <button
           onClick={() => setShowTransferModal(true)}
-          className="p-4 bg-info-50 dark:bg-info-500/10 hover:bg-info-100 dark:hover:bg-info-500/20 border border-info-200 dark:border-info-500/30 rounded-xl transition-all hover:shadow-md text-left animate-fade-in"
+          className="p-4 bg-info-50 dark:bg-info-500/10 hover:bg-info-100 dark:hover:bg-info-500/20 border border-info-200 dark:border-info-500/30 rounded-lg transition-all hover:shadow-md text-left animate-fade-in"
           style={{ animationDelay: '0.4s' }}
         >
-          <div className="w-12 h-12 rounded-xl bg-info-100 dark:bg-info-500/20 flex items-center justify-center mb-3">
+          <div className="w-12 h-12 rounded-lg bg-info-100 dark:bg-info-500/20 flex items-center justify-center mb-3">
             <ArrowLeftRight className="w-6 h-6 text-info-600 dark:text-info-300" />
           </div>
           <p className="font-semibold text-info-900">Transfer</p>
@@ -707,7 +707,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         </button>
         <button
           onClick={() => setShowBulkLoadModal(true)}
-          className="p-4 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-xl transition-all hover:shadow-md text-left animate-fade-in dark:bg-accent-500/10 dark:hover:bg-accent-500/20 dark:border-accent-500/30"
+          className="p-4 bg-accent-50 hover:bg-accent-100 border border-accent-200 rounded-lg transition-all hover:shadow-md text-left animate-fade-in dark:bg-accent-500/10 dark:hover:bg-accent-500/20 dark:border-accent-500/30"
           style={{ animationDelay: '0.45s' }}
         >
           <StatusIconBadge tone="accent" icon={Upload} size="lg" className="mb-3 dark:bg-accent-500/20" />
@@ -880,7 +880,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <div className="flex items-center gap-3">
               {/* Phase 12 Task G: flat tonal medallion (gradient + white-icon
                   recipe retired in Phase 8). */}
-              <div className="w-10 h-10 rounded-xl bg-accent-100 dark:bg-accent-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-accent-100 dark:bg-accent-500/20 flex items-center justify-center">
                 <Store className="w-5 h-5 text-accent-700 dark:text-accent-300" />
               </div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Agent Network</h3>
@@ -946,7 +946,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
                 <Upload className="w-5 h-5 text-primary-700 dark:text-primary-200" />
               </div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Bulk Top-up / Load</h3>
@@ -995,7 +995,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
           <Card className="animate-fade-in" style={{ animationDelay: '0.55s' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-info-100 dark:bg-info-500/20 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-info-100 dark:bg-info-500/20 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-info-700 dark:text-info-300" />
               </div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Recent Bulk Operations</h3>
@@ -1006,7 +1006,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                 { id: 2, date: '2024-02-11', count: 200, total: 100000, status: 'Completed', success: 200 },
                 { id: 3, date: '2024-02-10', count: 50, total: 25000, status: 'Partial', success: 47 },
               ].map((op) => (
-                <div key={op.id} className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-xl hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors">
+                <div key={op.id} className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <span className="body-sm">{op.date}</span>
                     <Badge variant={op.status === 'Completed' ? 'success' : 'warning'}>{op.status}</Badge>
@@ -1069,7 +1069,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
           {/* Wallet Info */}
           {walletLookup && (
-            <div className="p-4 bg-success-50 dark:bg-success-500/10 border border-success-200 rounded-xl dark:border-success-500/30">
+            <div className="p-4 bg-success-50 dark:bg-success-500/10 border border-success-200 rounded-lg dark:border-success-500/30">
               <div className="flex items-center gap-3">
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
@@ -1100,7 +1100,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   key={ch}
                   onClick={() => setCashInForm({ ...cashInForm, channel: ch })}
                   className={cn(
-                    "p-3 border rounded-xl text-center transition-colors",
+                    "p-3 border rounded-lg text-center transition-colors",
                     cashInForm.channel === ch
                       ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 text-primary-700 dark:text-neutral-200"
                       : "border-neutral-300 dark:border-primary-700 hover:border-neutral-400"
@@ -1185,7 +1185,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
           {/* Wallet Info */}
           {walletLookup && (
-            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-xl">
+            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
@@ -1220,7 +1220,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   key={ch}
                   onClick={() => setCashOutForm({ ...cashOutForm, channel: ch })}
                   className={cn(
-                    "p-3 border rounded-xl text-center transition-colors",
+                    "p-3 border rounded-lg text-center transition-colors",
                     cashOutForm.channel === ch
                       ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 text-primary-700 dark:text-neutral-200"
                       : "border-neutral-300 dark:border-primary-700 hover:border-neutral-400"
@@ -1297,7 +1297,7 @@ const BaaSCashOperationsPage: React.FC = () => {
           </div>
 
           {walletLookup && (
-            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-xl">
+            <div className="p-4 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
               <div className="flex items-center gap-3">
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
@@ -1345,10 +1345,10 @@ const BaaSCashOperationsPage: React.FC = () => {
       >
         {selectedOperation && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-primary-950 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className={cn(
-                  "p-3 rounded-xl",
+                  "p-3 rounded-lg",
                   operationTypeConfig[selectedOperation.type].direction === 'in' 
                     ? "bg-success-100 dark:bg-success-500/20 text-success-600 dark:text-success-300" 
                     : "bg-error-100 dark:bg-error-500/20 text-error-600 dark:text-error-300"

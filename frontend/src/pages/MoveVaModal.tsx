@@ -304,7 +304,7 @@ const ParentSelectionTree: React.FC<ParentSelectionTreeProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-800 rounded"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-800 rounded-md"
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />

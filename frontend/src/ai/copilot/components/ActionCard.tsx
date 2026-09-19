@@ -67,7 +67,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
   return (
     <div
       className={[
-        'mt-2 rounded-xl border overflow-hidden',
+        'mt-2 rounded-lg border overflow-hidden',
         'bg-warning-50/60 dark:bg-warning-900/20',
         'border-warning-200 dark:border-warning-800',
       ].join(' ')}
@@ -149,7 +149,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({ action }) => {
                 type="button"
                 onClick={onConfirm}
                 disabled={isMutating}
-                className="px-2 py-1 text-caption rounded border border-error-300 hover:bg-error-50 dark:border-error-700 dark:hover:bg-error-900/40"
+                className="px-2 py-1 text-caption rounded-md border border-error-300 hover:bg-error-50 dark:border-error-700 dark:hover:bg-error-900/40"
               >
                 Retry
               </button>

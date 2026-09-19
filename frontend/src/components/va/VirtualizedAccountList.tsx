@@ -101,7 +101,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
           <button
             onClick={(e) => { e.stopPropagation(); toggleOne(item.id); }}
             className={cn(
-              'w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200',
+              'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200',
               isSelected
                 ? 'bg-primary-600 border-primary-600'
                 : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'
@@ -128,7 +128,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
             <button
               onClick={toggleAll}
               className={cn(
-                'w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-200',
+                'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all duration-200',
                 allFilteredSelected
                   ? 'bg-primary-600 border-primary-600'
                   : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'

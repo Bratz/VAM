@@ -51,7 +51,7 @@ const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 
 
 const Card: React.FC<{ children: React.ReactNode; className?: string; padding?: 'none' | 'sm' | 'md' }> = ({ children, className, padding = 'md' }) => {
   const paddings = { none: '', sm: 'p-4', md: 'p-6' };
-  return <div className={cn('bg-white rounded-xl shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>{children}</div>;
+  return <div className={cn('bg-white rounded-lg shadow-sm border border-neutral-200 dark:bg-primary-900 dark:border-primary-800', paddings[padding], className)}>{children}</div>;
 };
 
 const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'secondary' | 'ghost' | 'outline'; size?: 'sm' | 'md'; onClick?: () => void; disabled?: boolean; className?: string }> = ({ children, variant = 'primary', size = 'md', onClick, disabled, className }) => {

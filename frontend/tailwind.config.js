@@ -22,6 +22,26 @@ export default {
       'stat':       ['2.25rem',  { lineHeight: '2.5rem' }],    // 36/40  was text-4xl
       'display':    ['3rem',     { lineHeight: '1' }],         // 48/48  was text-5xl
     },
+    // Shape scale — the ONLY radii and shadows (replaces the Tailwind defaults, so rounded-xl/2xl/3xl,
+    // bare `rounded` and shadow-soft/medium/strong don't exist).
+    borderRadius: {
+      none: '0',
+      sm: '0.25rem',   // 4px  — checkboxes, code chips
+      md: '0.5rem',    // 8px  — tooltips, small tags
+      lg: '0.75rem',   // 12px — controls and surfaces: buttons, inputs, cards, modals, popovers, medallions
+      full: '9999px',  // pills, badges, avatars, dots
+    },
+    // Elevation — four levels, mapped from the canonical tokens in design-system/variables.css.
+    boxShadow: {
+      none: 'none',
+      DEFAULT: 'var(--shadow-rest)',
+      sm: 'var(--shadow-rest)',     // cards at rest
+      md: 'var(--shadow-hover)',    // hover / raised
+      lg: 'var(--shadow-popover)',  // dropdowns, popovers, tooltips
+      xl: 'var(--shadow-modal)',    // modals, drawers
+      '2xl': 'var(--shadow-modal)',
+      inner: 'var(--shadow-inner)',
+    },
     extend: {
       // Swiss Minimalist Design System
       colors: {
@@ -203,14 +223,6 @@ export default {
       // `lg`, so card surfaces unify visually whether the author wrote
       // `rounded-lg`, `rounded-xl`, or `rounded-2xl`. No page sweep
       // required — the alias resolves at compile time.
-      borderRadius: {
-        'sm':      '0.25rem',  // 4px  — badges, pills, chips
-        'DEFAULT': '0.5rem',   // 8px  — was 6px, aligned to md
-        'md':      '0.5rem',   // 8px  — buttons, inputs
-        'lg':      '0.75rem',  // 12px — cards, modals (canonical)
-        'xl':      '0.75rem',  // was 16px → canonical lg
-        '2xl':     '0.75rem',  // was 24px → canonical lg
-      },
       // Box shadows — Phase 3 + post-review (2026-05-13). Tailwind utility
       // classes `shadow-soft / -medium / -strong` previously had hardcoded
       // values that bypassed the canonical shadow tokens declared in
@@ -227,15 +239,6 @@ export default {
       // authored without the silent-fallback bug that hit
       // `shadow-dropdown` (it was referenced in 2 pages but never defined
       // — those dropdowns rendered with no shadow at all).
-      boxShadow: {
-        // rgba triple is ink (#46494c) — palette swap (was navy #102a43).
-        'soft':       '0 1px 3px rgba(70, 73, 76, 0.06), 0 1px 2px rgba(70, 73, 76, 0.04)',
-        'medium':     '0 4px 6px -1px rgba(70, 73, 76, 0.07), 0 2px 4px -1px rgba(70, 73, 76, 0.04)',
-        'strong':     '0 25px 50px -12px rgba(70, 73, 76, 0.20)',
-        'popover':    '0 10px 15px -3px rgba(70, 73, 76, 0.08), 0 4px 6px -2px rgba(70, 73, 76, 0.04)',
-        'dropdown':   '0 10px 15px -3px rgba(70, 73, 76, 0.08), 0 4px 6px -2px rgba(70, 73, 76, 0.04)',
-        'inner-soft': 'inset 0 2px 4px 0 rgba(70, 73, 76, 0.04)',
-      },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',

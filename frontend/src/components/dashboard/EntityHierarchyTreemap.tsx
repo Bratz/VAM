@@ -150,7 +150,7 @@ export const FlatBreakdownTreemap: React.FC<FlatBreakdownTreemapProps> = ({
   onItemClick,
 }) => {
   if (loading) {
-    return <div className="h-[220px] animate-pulse bg-neutral-100 dark:bg-primary-800/40 rounded" />;
+    return <div className="h-[220px] animate-pulse bg-neutral-100 dark:bg-primary-800/40 rounded-md" />;
   }
 
   if (data.length === 0) {

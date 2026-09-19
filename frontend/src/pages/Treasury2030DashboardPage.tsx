@@ -1124,7 +1124,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           </p>
                         </div>
                         <span className={cn(
-                          'shrink-0 rounded px-1.5 py-0.5 text-caption font-medium',
+                          'shrink-0 rounded-md px-1.5 py-0.5 text-caption font-medium',
                           cr
                             ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
                             : 'bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300',

@@ -212,9 +212,9 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
         {/* AGGREGATION Option */}
         <button
           onClick={() => onSelect('aggregation')}
-          className="flex items-start gap-4 p-4 rounded-xl border-2 border-cat-1/20 dark:border-cat-1/30 bg-cat-1-soft dark:bg-cat-1/15 hover:border-cat-1/40 dark:hover:border-cat-1/40 hover:bg-cat-1/10 dark:hover:bg-cat-1/25 transition-all text-left group"
+          className="flex items-start gap-4 p-4 rounded-lg border-2 border-cat-1/20 dark:border-cat-1/30 bg-cat-1-soft dark:bg-cat-1/15 hover:border-cat-1/40 dark:hover:border-cat-1/40 hover:bg-cat-1/10 dark:hover:bg-cat-1/25 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-xl bg-cat-1/10 dark:bg-cat-1/15 group-hover:bg-cat-1/20 dark:group-hover:bg-cat-1/25 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-cat-1/10 dark:bg-cat-1/15 group-hover:bg-cat-1/20 dark:group-hover:bg-cat-1/25 flex items-center justify-center flex-shrink-0">
             <FolderPlus className="w-6 h-6 text-cat-1 dark:text-cat-1-fg" />
           </div>
           <div className="flex-1">
@@ -241,9 +241,9 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
         {/* TRANSACTION VA Option */}
         <button
           onClick={() => onSelect('transaction')}
-          className="flex items-start gap-4 p-4 rounded-xl border-2 border-success-200 dark:border-success-500/30 bg-success-50 dark:bg-success-500/10 hover:border-success-400 dark:hover:border-success-500/40 hover:bg-success-100 dark:hover:bg-success-500/20 transition-all text-left group"
+          className="flex items-start gap-4 p-4 rounded-lg border-2 border-success-200 dark:border-success-500/30 bg-success-50 dark:bg-success-500/10 hover:border-success-400 dark:hover:border-success-500/40 hover:bg-success-100 dark:hover:bg-success-500/20 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-xl bg-success-100 dark:bg-success-500/20 group-hover:bg-success-200 dark:group-hover:bg-success-500/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-success-100 dark:bg-success-500/20 group-hover:bg-success-200 dark:group-hover:bg-success-500/30 flex items-center justify-center flex-shrink-0">
             <Wallet className="w-6 h-6 text-success-600 dark:text-success-300" />
           </div>
           <div className="flex-1">
@@ -270,9 +270,9 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
         {/* IHB CURRENT ACCOUNT Option */}
         <button
           onClick={() => onSelect('ihb-current-account')}
-          className="flex items-start gap-4 p-4 rounded-xl border-2 border-cat-2/20 dark:border-cat-2/30 bg-cat-2-soft dark:bg-cat-2/15 hover:border-cat-2/40 dark:hover:border-cat-2/40 hover:bg-cat-2/10 dark:hover:bg-cat-2/25 transition-all text-left group"
+          className="flex items-start gap-4 p-4 rounded-lg border-2 border-cat-2/20 dark:border-cat-2/30 bg-cat-2-soft dark:bg-cat-2/15 hover:border-cat-2/40 dark:hover:border-cat-2/40 hover:bg-cat-2/10 dark:hover:bg-cat-2/25 transition-all text-left group"
         >
-          <div className="w-12 h-12 rounded-xl bg-cat-2/10 dark:bg-cat-2/15 group-hover:bg-cat-2/20 dark:group-hover:bg-cat-2/25 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-cat-2/10 dark:bg-cat-2/15 group-hover:bg-cat-2/20 dark:group-hover:bg-cat-2/25 flex items-center justify-center flex-shrink-0">
             <PiggyBank className="w-6 h-6 text-cat-2 dark:text-cat-2-fg" />
           </div>
           <div className="flex-1">
@@ -523,7 +523,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ...prev,
                         ihbConfig: { ...prev.ihbConfig, canLend: e.target.checked }
                       }))}
-                      className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
+                      className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
                     />
                     <span className="text-body-sm">Can Lend</span>
                     {formData.ihbConfig.canLend && (
@@ -541,7 +541,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ...prev,
                         ihbConfig: { ...prev.ihbConfig, canBorrow: e.target.checked }
                       }))}
-                      className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
+                      className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
                     />
                     <span className="text-body-sm">Can Borrow</span>
                   </label>
@@ -594,7 +594,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ...prev,
                         ihbConfig: { ...prev.ihbConfig, sweepFrequency: e.target.value as 'DAILY' | 'REAL_TIME' }
                       }))}
-                      className="px-2 py-1 border border-neutral-300 rounded text-body-sm dark:border-primary-700"
+                      className="px-2 py-1 border border-neutral-300 rounded-md text-body-sm dark:border-primary-700"
                       disabled={!formData.ihbConfig.enableSweep}
                     >
                       <option value="DAILY">Daily @ 6PM</option>
@@ -617,7 +617,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 
                 {/* Treasury Center Info */}
                 {treasuryCenter && !formData.ihbConfig.canLend && (
-                  <div className="flex items-center gap-2 p-2 bg-warning-50 dark:bg-warning-500/10 rounded border border-warning-200 dark:border-warning-500/30">
+                  <div className="flex items-center gap-2 p-2 bg-warning-50 dark:bg-warning-500/10 rounded-md border border-warning-200 dark:border-warning-500/30">
                     <Crown className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                     <span className="text-body-sm text-warning-700 dark:text-warning-300">
                       Treasury Center: <strong>{treasuryCenter.entityCode}</strong> - {treasuryCenter.entityName}
@@ -626,7 +626,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 )}
                 
                 {formData.ihbConfig.canLend && !treasuryCenter && (
-                  <div className="flex items-center gap-2 p-2 bg-success-50 dark:bg-success-500/10 rounded border border-success-200 dark:border-success-500/30">
+                  <div className="flex items-center gap-2 p-2 bg-success-50 dark:bg-success-500/10 rounded-md border border-success-200 dark:border-success-500/30">
                     <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
                     <span className="text-body-sm text-success-700 dark:text-success-300">
                       This entity will become the <strong>Treasury Center</strong>
@@ -1014,7 +1014,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         {/* Description Banner */}
         <div className="bg-gradient-to-r from-cat-2-soft to-cat-1-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-1/15">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
+            <div className="w-10 h-10 rounded-lg bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
               <PiggyBank className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
             </div>
             <div>
@@ -1027,7 +1027,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 )}
               </div>
               <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
-                Creates a Transaction VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
+                Creates a Transaction VA with <span className="font-mono bg-cat-2/10 px-1 rounded-md dark:bg-cat-2/15">ihbParticipant=true</span>.
                 Supports credit/debit interest and participates in treasury sweeps.
               </p>
               {programCurrency && (
@@ -1187,7 +1187,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 type="checkbox"
                 checked={formData.ihbSweepEnabled}
                 onChange={(e) => setFormData(prev => ({ ...prev, ihbSweepEnabled: e.target.checked }))}
-                className="w-4 h-4 rounded border-neutral-300 text-cat-2 dark:text-cat-2-fg focus:ring-cat-2 dark:border-primary-700"
+                className="w-4 h-4 rounded-md border-neutral-300 text-cat-2 dark:text-cat-2-fg focus:ring-cat-2 dark:border-primary-700"
               />
               <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Enable Auto-Sweep to Treasury</span>
             </label>
@@ -1393,7 +1393,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(Number(e.target.value))}
-              className="flex-1 text-caption bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded px-2 py-1 focus:ring-1 focus:ring-cyan-500"
+              className="flex-1 text-caption bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-md px-2 py-1 focus:ring-1 focus:ring-cyan-500"
             >
               {levels.map((lvl) => (
                 <option key={lvl.level} value={lvl.level}>
@@ -1679,7 +1679,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         onClick={() => onSelect(node)}
       >
         {hasChildren ? (
-          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
+          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-6" />}
@@ -1827,7 +1827,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               setMenuUp(window.innerHeight - rect.bottom < 340);
               setShowContextMenu(!showContextMenu);
             }}
-            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded opacity-40 group-hover:opacity-100 transition-opacity"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-40 group-hover:opacity-100 transition-opacity"
           >
             <MoreVertical className="w-4 h-4 text-neutral-400" />
           </button>
@@ -2631,7 +2631,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     Interest Rate Configuration
                   </label>
                   {loadingConfigs ? (
-                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-primary-900 rounded border">
+                    <div className="flex items-center gap-2 p-2 bg-white dark:bg-primary-900 rounded-md border">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span className="body-sm">Loading configurations...</span>
                     </div>
@@ -2696,7 +2696,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 
                 {/* No config selected warning */}
                 {!selectedConfigId && !loadingConfigs && (
-                  <div className="p-3 bg-warning-50 rounded border border-warning-200 mt-3 dark:bg-warning-500/10 dark:border-warning-500/30">
+                  <div className="p-3 bg-warning-50 rounded-md border border-warning-200 mt-3 dark:bg-warning-500/10 dark:border-warning-500/30">
                     <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
                       <AlertCircle className="w-4 h-4" />
                       <span className="text-body-sm">No rate configuration selected. Default rates (5% EIBOR) will be used.</span>
@@ -2738,7 +2738,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                       <select
                         value={newConfigForm.debitBaseRateType}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitBaseRateType: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       >
                         <option value="EIBOR">EIBOR</option>
                         <option value="SOFR">SOFR</option>
@@ -2754,7 +2754,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                         step="0.001"
                         value={newConfigForm.debitBaseRate}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitBaseRate: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       />
                     </div>
                     <div>
@@ -2764,7 +2764,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                         step="0.001"
                         value={newConfigForm.debitSpread}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitSpread: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       />
                     </div>
                   </div>
@@ -2784,7 +2784,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                       <select
                         value={newConfigForm.creditBaseRateType}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditBaseRateType: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       >
                         <option value="EIBOR">EIBOR</option>
                         <option value="SOFR">SOFR</option>
@@ -2800,7 +2800,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                         step="0.001"
                         value={newConfigForm.creditBaseRate}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditBaseRate: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       />
                     </div>
                     <div>
@@ -2810,7 +2810,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                         step="0.001"
                         value={newConfigForm.creditSpread}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditSpread: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-body-sm"
+                        className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                       />
                     </div>
                   </div>
@@ -2826,7 +2826,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <select
                       value={newConfigForm.dayCountConvention}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, dayCountConvention: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-body-sm"
+                      className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                     >
                       <option value="ACT/360">ACT/360</option>
                       <option value="ACT/365">ACT/365</option>
@@ -2838,7 +2838,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <select
                       value={newConfigForm.compoundingFrequency}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, compoundingFrequency: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-body-sm"
+                      className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                     >
                       <option value="DAILY">Daily</option>
                       <option value="MONTHLY">Monthly</option>
@@ -2850,7 +2850,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <select
                       value={newConfigForm.postingFrequency}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, postingFrequency: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-body-sm"
+                      className="w-full px-2 py-1.5 border rounded-md text-body-sm"
                     >
                       <option value="DAILY">Daily</option>
                       <option value="MONTHLY">Monthly</option>
@@ -2997,7 +2997,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               type="checkbox"
               checked={config.canLend}
               onChange={(e) => setConfig(prev => ({ ...prev, canLend: e.target.checked }))}
-              className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
+              className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
               disabled={!isEnabling && entity?.canLend}
             />
             <span className="text-body-sm">Can Lend</span>
@@ -3013,7 +3013,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               type="checkbox"
               checked={config.canBorrow}
               onChange={(e) => setConfig(prev => ({ ...prev, canBorrow: e.target.checked }))}
-              className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
+              className="rounded-md border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
             />
             <span className="text-body-sm">Can Borrow</span>
           </label>
@@ -4010,10 +4010,10 @@ const TreasuryHierarchyPage: React.FC = () => {
           `.stat-value-sm`'s default `text-primary-900` — otherwise it renders
           navy-on-navy and disappears in light mode. Same fix we applied to
           the Currency Mirrors hero value. */}
-      <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 text-white rounded-xl p-5 animate-fade-in" style={{ animationDelay: '0.45s' }}>
+      <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.45s' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+            <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
               <Banknote className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -4034,10 +4034,10 @@ const TreasuryHierarchyPage: React.FC = () => {
 
       {/* Shadow Accounts Banner */}
       {shadowAccounts.length > 0 && (
-        <div className="bg-gradient-to-r from-warning-700 via-warning-600 to-warning-700 text-white rounded-xl p-5 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <div className="bg-gradient-to-r from-warning-700 via-warning-600 to-warning-700 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
+              <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
                 <Layers className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -4082,16 +4082,16 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Hierarchy Tree */}
         <div className="lg:col-span-2">
-          <div className="bg-white dark:bg-primary-900 rounded-xl shadow-sm border border-neutral-100 dark:border-primary-800/60">
+          <div className="bg-white dark:bg-primary-900 rounded-lg shadow-sm border border-neutral-100 dark:border-primary-800/60">
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
               <h2 className="section-title">Virtual Account Hierarchy</h2>
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 body-sm">
-                  <input type="checkbox" checked={showSystemVas} onChange={(e) => setShowSystemVas(e.target.checked)} className="rounded text-primary-600 dark:text-primary-200" />
+                  <input type="checkbox" checked={showSystemVas} onChange={(e) => setShowSystemVas(e.target.checked)} className="rounded-md text-primary-600 dark:text-primary-200" />
                   System VAs
                 </label>
                 <label className="flex items-center gap-2 body-sm">
-                  <input type="checkbox" checked={showInterest} onChange={(e) => setShowInterest(e.target.checked)} className="rounded text-primary-600 dark:text-primary-200" />
+                  <input type="checkbox" checked={showInterest} onChange={(e) => setShowInterest(e.target.checked)} className="rounded-md text-primary-600 dark:text-primary-200" />
                   Interest
                 </label>
                 {/* Discoverable creation entry: works off the selected node
@@ -4142,7 +4142,7 @@ const TreasuryHierarchyPage: React.FC = () => {
 
         {/* Detail Panel */}
         <div>
-          <div className="bg-white dark:bg-primary-900 rounded-xl shadow-sm border border-neutral-100 dark:border-primary-800/60 p-4">
+          <div className="bg-white dark:bg-primary-900 rounded-lg shadow-sm border border-neutral-100 dark:border-primary-800/60 p-4">
             <h3 className="section-title mb-4">Entity Details</h3>
             <DetailPanel
               node={selectedNode}
@@ -4162,17 +4162,17 @@ const TreasuryHierarchyPage: React.FC = () => {
       </div>
 
       {/* Legend */}
-      <div className="bg-white dark:bg-primary-900 rounded-xl p-4 shadow-sm border border-neutral-100 dark:border-primary-800/60">
+      <div className="bg-white dark:bg-primary-900 rounded-lg p-4 shadow-sm border border-neutral-100 dark:border-primary-800/60">
         <div className="flex flex-wrap items-center gap-6">
           <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div><span className="caption">Entity</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div><span className="caption">Settlement VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div><span className="caption">Entity</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div><span className="caption">Settlement VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded-md bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
         </div>
       </div>
 

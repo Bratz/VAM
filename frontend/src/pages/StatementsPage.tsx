@@ -457,7 +457,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
       >
         {/* Expand Button */}
         <td className="data-table-cell w-10">
-          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
+          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
             {expanded ? (
               <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
@@ -851,7 +851,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
     >
       <div className="flex items-start gap-3">
         <div className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative",
+          "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative",
           isDebitTxn ? 'bg-error-50 dark:bg-error-500/10' : 'bg-success-50 dark:bg-success-500/10'
         )}>
           {isDebitTxn ? (
@@ -975,7 +975,7 @@ const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
               e.stopPropagation();
               setExpanded(!expanded);
             }}
-            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
           >
             {expanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1115,7 +1115,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={cn('bg-white rounded-xl border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800', className)}>
+    <div className={cn('bg-white rounded-lg border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800', className)}>
       <div
         className={cn(
           'flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-primary-950',
@@ -1131,7 +1131,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           {badge}
         </div>
         {collapsible && (
-          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors">
+          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md transition-colors">
             {isOpen ? (
               <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
@@ -1720,7 +1720,7 @@ const StatementsPage: React.FC = () => {
                     type="checkbox"
                     checked={includeChildren}
                     onChange={(e) => setIncludeChildren(e.target.checked)}
-                    className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
+                    className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                   />
                   <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Include Children</span>
                 </label>

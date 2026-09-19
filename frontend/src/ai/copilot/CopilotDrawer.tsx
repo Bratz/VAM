@@ -71,7 +71,7 @@ export const CopilotDrawer: React.FC = () => {
                   'dark:from-primary-900 dark:to-primary-950',
                   'text-white',
                 ].join(' ')}>
-                  <div className="shrink-0 w-9 h-9 rounded-xl bg-accent-400/20 flex items-center justify-center">
+                  <div className="shrink-0 w-9 h-9 rounded-lg bg-accent-400/20 flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-accent-300" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1 min-w-0">

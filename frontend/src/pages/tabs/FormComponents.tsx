@@ -255,7 +255,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       checked={checked}
       onChange={(e) => onChange(e.target.checked)}
       disabled={disabled}
-      className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+      className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded-md focus:ring-primary-500"
     />
     <div>
       <span className="body-strong">{label}</span>

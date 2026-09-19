@@ -393,7 +393,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
             type="checkbox"
             checked={generateViban}
             onChange={(e) => setGenerateViban(e.target.checked)}
-            className="w-4 h-4 rounded border-neutral-300 text-cat-1 dark:text-cat-1-fg focus:ring-cat-1 dark:border-primary-700"
+            className="w-4 h-4 rounded-md border-neutral-300 text-cat-1 dark:text-cat-1-fg focus:ring-cat-1 dark:border-primary-700"
           />
           <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
         </label>
@@ -1185,7 +1185,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       {/* Error Display */}
       {error && (
         <Card className="animate-fade-in border-error-200 bg-error-50 dark:border-error-500/30 dark:bg-error-500/10">
-          <div className="h-1 bg-gradient-to-r from-error-100 via-error-200 to-error-100 rounded-t-xl" />
+          <div className="h-1 bg-gradient-to-r from-error-100 via-error-200 to-error-100 rounded-t-lg" />
           <div className="p-4 flex items-center gap-3">
             <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
             <span className="flex-1 text-body-sm text-error-700 dark:text-error-300">{error}</span>
@@ -1198,7 +1198,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
       {/* Main Content Card */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.45s' }}>
-        <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-xl dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
+        <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-lg dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
         {/* Tabs */}
         <div className="border-b border-neutral-200 dark:border-primary-800">
           <div className="flex gap-1 px-4">
@@ -1254,7 +1254,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                             checked={selectedIds.has(invoice.id)}
                             onChange={() => handleSelectInvoice(invoice.id)}
                             disabled={!isSelectable}
-                            className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700 dark:text-primary-200"
+                            className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50 dark:border-primary-700 dark:text-primary-200"
                           />
                         );
                       },

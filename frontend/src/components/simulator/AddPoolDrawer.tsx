@@ -156,7 +156,7 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
               </span>
             )}
           </div>
-          <div className="rounded-xl border border-neutral-300 dark:border-primary-700 divide-y divide-neutral-100 dark:divide-primary-800/40 max-h-40 overflow-auto">
+          <div className="rounded-lg border border-neutral-300 dark:border-primary-700 divide-y divide-neutral-100 dark:divide-primary-800/40 max-h-40 overflow-auto">
             {eligible.length === 0 ? (
               <p className="px-3 py-3 body-sm text-neutral-500 dark:text-neutral-400">
                 No home-bank (INTERNAL) shadows yet. Only home-bank accounts

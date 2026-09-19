@@ -43,7 +43,7 @@ export const HeaderHelpPopover: React.FC<{ description: React.ReactNode }> = ({ 
         <div
           className={cn(
             'absolute left-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] p-4',
-            'bg-white rounded-2xl shadow-2xl border border-neutral-200/60 z-20',
+            'bg-white rounded-lg shadow-2xl border border-neutral-200/60 z-20',
             'dark:bg-primary-900 dark:border-primary-800/60',
             'animate-scale-in origin-top-left body-sm'
           )}

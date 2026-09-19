@@ -311,7 +311,7 @@ const LineItemRow: React.FC<{
           value={item.description}
           onChange={(e) => onChange(index, 'description', e.target.value)}
           placeholder="Description"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -320,7 +320,7 @@ const LineItemRow: React.FC<{
           value={item.itemCode}
           onChange={(e) => onChange(index, 'itemCode', e.target.value)}
           placeholder="Code"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -328,14 +328,14 @@ const LineItemRow: React.FC<{
           type="number"
           value={item.quantity}
           onChange={(e) => onChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.unit}
           onChange={(e) => onChange(index, 'unit', e.target.value)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         >
           {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -346,7 +346,7 @@ const LineItemRow: React.FC<{
           value={item.unitPrice}
           onChange={(e) => onChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
           placeholder="Price"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -355,14 +355,14 @@ const LineItemRow: React.FC<{
           value={item.discountPercent}
           onChange={(e) => onChange(index, 'discountPercent', parseFloat(e.target.value) || 0)}
           placeholder="%"
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.taxCode}
           onChange={(e) => onChange(index, 'taxCode', e.target.value)}
-          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md focus:border-primary-500 focus:outline-none"
         >
           {taxConfigs.map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
         </select>
@@ -373,7 +373,7 @@ const LineItemRow: React.FC<{
         </span>
         <button
           onClick={() => onRemove(index)}
-          className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded dark:hover:bg-error-500/10"
+          className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -726,7 +726,7 @@ const TaxChargesTab: React.FC<{
               <option value="fixed">{currency}</option>
               <option value="percent">%</option>
             </select>
-            <button onClick={() => removeCharge(index)} className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded dark:hover:bg-error-500/10">
+            <button onClick={() => removeCharge(index)} className="p-1 text-error-500 dark:text-error-300 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10">
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -759,7 +759,7 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, percent: parseFloat(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
+                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
               />
               <span className="body-sm">% off if paid within</span>
               <input
@@ -769,7 +769,7 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, days: parseInt(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
+                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
               />
               <span className="body-sm">days</span>
             </div>
@@ -802,7 +802,7 @@ const TaxChargesTab: React.FC<{
                 ...prev,
                 latePaymentFee: { ...prev.latePaymentFee, percent: parseFloat(e.target.value) || 0 }
               }))}
-              className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
+              className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-md"
             />
             <span className="body-sm">% per month after due date</span>
           </div>
@@ -966,7 +966,7 @@ const HierarchyTab: React.FC<{
               <p className="body-strong">{node.name}</p>
               <p className="caption">{node.path}</p>
             </div>
-            <span className="caption px-2 py-1 bg-neutral-100 dark:bg-primary-800 rounded">
+            <span className="caption px-2 py-1 bg-neutral-100 dark:bg-primary-800 rounded-md">
               {node.level}
             </span>
           </button>
@@ -1057,7 +1057,7 @@ const DocumentsTab: React.FC<{
                   <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
                   <span className="caption">({(file.size / 1024).toFixed(1)} KB)</span>
                 </div>
-                <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
+                <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
                   <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 </button>
               </div>
@@ -1625,7 +1625,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // second sticky element at the same offset would overlap it.
     <div>
       {/* Header */}
-      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-xl shadow-sm mb-6">
+      <div className="bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-sm mb-6">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1668,7 +1668,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       {/* Main Content */}
       <Page maxWidth="narrow" className="py-8">
         {/* Corporate & Entity Context Banner */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-info-50 to-cat-1-soft border border-info-200 rounded-xl dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
+        <div className="mb-6 p-4 bg-gradient-to-r from-info-50 to-cat-1-soft border border-info-200 rounded-lg dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
@@ -1723,7 +1723,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           {/* Left Column - Main Form */}
           <div className="md:col-span-2 space-y-6">
             {/* Customer Selection */}
-            <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
               <SectionHeader
                 icon={<Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />}
                 iconBg="bg-info-50 dark:bg-info-500/10"
@@ -1785,7 +1785,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="body-sm">{selectedCustomer.code}</p>
                       {selectedCustomer.email && <p className="body-sm mt-1">{selectedCustomer.email}</p>}
                     </div>
-                    <button onClick={() => { setSelectedCustomer(null); setCustomerSearch(''); setFormData(prev => ({ ...prev, customerId: '' })); }} className="p-1 hover:bg-info-100 rounded dark:hover:bg-info-500/20">
+                    <button onClick={() => { setSelectedCustomer(null); setCustomerSearch(''); setFormData(prev => ({ ...prev, customerId: '' })); }} className="p-1 hover:bg-info-100 rounded-md dark:hover:bg-info-500/20">
                       <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     </button>
                   </div>
@@ -1808,7 +1808,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="caption">Assigned VIBAN</p>
                       <div className="flex items-center gap-2 mt-1">
                         <code className="text-body-sm font-mono text-info-700 dark:text-info-300">{selectedCustomer.assignedViban}</code>
-                        <button onClick={() => copyToClipboard(selectedCustomer.assignedViban!)} className="p-1 hover:bg-info-100 rounded dark:hover:bg-info-500/20">
+                        <button onClick={() => copyToClipboard(selectedCustomer.assignedViban!)} className="p-1 hover:bg-info-100 rounded-md dark:hover:bg-info-500/20">
                           <Copy className="w-3 h-3 text-info-600 dark:text-info-300" />
                         </button>
                       </div>
@@ -1819,7 +1819,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
 
             {/* Invoice Details */}
-            <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
               <SectionHeader
                 icon={<FileText className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />}
                 iconBg="bg-cat-2-soft dark:bg-cat-2/15"
@@ -1883,7 +1883,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
 
             {/* Collection Account & VIBAN */}
-            <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
+            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
               <SectionHeader
                 icon={<Landmark className="w-5 h-5 text-success-600 dark:text-success-300" />}
                 iconBg="bg-success-50 dark:bg-success-500/10"
@@ -1913,7 +1913,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{account.iban}</p>
                       <div className="flex items-center gap-2 mt-1 justify-end">
                         <span className="label-cased">{account.currency}</span>
-                        {account.isDefault && <span className="px-2 py-0.5 bg-info-100 text-info-700 text-caption font-medium rounded dark:bg-info-500/20 dark:text-info-300">Default</span>}
+                        {account.isDefault && <span className="px-2 py-0.5 bg-info-100 text-info-700 text-caption font-medium rounded-md dark:bg-info-500/20 dark:text-info-300">Default</span>}
                       </div>
                     </div>
                   </button>
@@ -1948,7 +1948,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
 
             {/* Optional Tabs */}
-            <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 overflow-hidden">
+            <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 overflow-hidden">
               <div className="flex flex-wrap border-b border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-950">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
@@ -1999,7 +1999,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           {/* Right Column - Summary */}
           <div className="col-span-1">
             <div className="sticky top-24 space-y-4">
-              <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
+              <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-6">
                 <h3 className="body-strong font-semibold mb-4">Summary</h3>
                 <div className="space-y-4">
                   <div>
@@ -2040,12 +2040,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
                       <p className="caption mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
-                        {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
-                        {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
-                        {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded dark:bg-success-500/10 dark:text-success-300">COBO</span>}
-                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 dark:text-cat-2-fg text-caption rounded dark:bg-cat-2/15">Hierarchy</span>}
-                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-caption rounded">{formData.attachments.length} files</span>}
-                        {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
+                        {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded-md dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
+                        {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded-md dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
+                        {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded-md dark:bg-success-500/10 dark:text-success-300">COBO</span>}
+                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 dark:text-cat-2-fg text-caption rounded-md dark:bg-cat-2/15">Hierarchy</span>}
+                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-caption rounded-md">{formData.attachments.length} files</span>}
+                        {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded-md dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
                       </div>
                     </div>
                   )}
@@ -2053,7 +2053,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               </div>
 
               {!canSubmit && (
-                <div className="bg-warning-50 border border-warning-200 rounded-xl p-4 dark:bg-warning-500/10 dark:border-warning-500/30">
+                <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 dark:bg-warning-500/10 dark:border-warning-500/30">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
                     <div>
@@ -2070,7 +2070,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               )}
 
               {canSubmit && (
-                <div className="bg-success-50 border border-success-200 rounded-xl p-4 dark:bg-success-500/10 dark:border-success-500/30">
+                <div className="bg-success-50 border border-success-200 rounded-lg p-4 dark:bg-success-500/10 dark:border-success-500/30">
                   <div className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
                     <div>
@@ -2142,7 +2142,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             <div>
               <p className="caption mb-1">Payment link</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-body-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded border border-neutral-200 dark:border-primary-800 font-mono truncate">
+                <code className="flex-1 text-body-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded-md border border-neutral-200 dark:border-primary-800 font-mono truncate">
                   {createdInvoice.paymentLink}
                 </code>
                 <button

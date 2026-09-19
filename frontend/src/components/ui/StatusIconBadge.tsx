@@ -116,7 +116,7 @@ const SIZE_CLASSES = {
 
 const ROUNDED_CLASSES = {
   lg: 'rounded-lg',
-  xl: 'rounded-xl',
+  xl: 'rounded-lg',
   full: 'rounded-full',
 } as const;
 

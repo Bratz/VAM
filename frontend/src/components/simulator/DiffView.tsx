@@ -95,7 +95,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
         )}
       </Card>
 
-      <div className="flex items-start gap-2 px-4 py-3 rounded-xl border border-info-200 bg-info-50 dark:border-info-500/30 dark:bg-info-500/10">
+      <div className="flex items-start gap-2 px-4 py-3 rounded-lg border border-info-200 bg-info-50 dark:border-info-500/30 dark:bg-info-500/10">
         <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-info-600 dark:text-info-300" />
         <p className="body-sm text-info-800 dark:text-info-200">
           Activation writes to the live virtual_accounts and sweep_rules and

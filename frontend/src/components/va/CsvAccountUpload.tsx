@@ -107,7 +107,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
             <FileText className="w-4 h-4 shrink-0" />
             <span className="truncate">{fileName}</span>
           </div>
-          <button onClick={reset} className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
+          <button onClick={reset} className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
             <X className="w-3.5 h-3.5 text-neutral-400" />
           </button>
         </div>
@@ -143,7 +143,7 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
               </p>
               <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
                 {unmatched.map(u => (
-                  <span key={u} className="text-caption font-mono px-1.5 py-0.5 rounded bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
+                  <span key={u} className="text-caption font-mono px-1.5 py-0.5 rounded-md bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
                     {u}
                   </span>
                 ))}

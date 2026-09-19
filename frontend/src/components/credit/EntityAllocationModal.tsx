@@ -278,7 +278,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
           {/* Entity Info */}
-          <div className="bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl p-4 border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30">
+          <div className="bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-lg p-4 border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30">
             <div className="flex items-center gap-3">
               <div className={cn('p-2 rounded-lg', typeConfig.bgColor, 'dark:bg-opacity-20')}>
                 <TypeIcon className={cn('w-5 h-5', typeConfig.color)} />
@@ -302,7 +302,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
 
           {/* Error */}
           {error && (
-            <div className="bg-error-50 dark:bg-error-500/10 rounded-xl p-4 border border-error-200/60 dark:border-error-500/20 animate-shake">
+            <div className="bg-error-50 dark:bg-error-500/10 rounded-lg p-4 border border-error-200/60 dark:border-error-500/20 animate-shake">
               <p className="text-body-sm text-error-700 dark:text-error-400 dark:text-error-300">
                 <AlertTriangle className="w-4 h-4 inline mr-1" />
                 {error}
@@ -331,7 +331,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                     }}
                     disabled={isEditing}
                     className={cn(
-                      'px-4 py-3 rounded-xl border-2 transition-premium text-left',
+                      'px-4 py-3 rounded-lg border-2 transition-premium text-left',
                       isSelected
                         ? 'border-primary-500 bg-primary-50/80 dark:bg-primary-500/15 dark:border-primary-400 backdrop-blur-sm'
                         : 'border-neutral-200 dark:border-primary-800 dark:border-primary-700 hover:border-neutral-300 dark:hover:border-primary-600 bg-white dark:bg-primary-900/40 dark:hover:border-primary-700',
@@ -365,11 +365,11 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
             <>
               {/* Pool Info */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-primary-50/80 dark:bg-primary-500/10 backdrop-blur-sm rounded-xl border border-primary-200/60 dark:border-primary-500/20">
+                <div className="p-3 bg-primary-50/80 dark:bg-primary-500/10 backdrop-blur-sm rounded-lg border border-primary-200/60 dark:border-primary-500/20">
                   <p className="text-caption font-medium text-primary-700 dark:text-neutral-200 dark:text-primary-300 tracking-wide uppercase">Group Available</p>
                   <p className="text-body-lg font-bold text-primary-700 dark:text-neutral-200 dark:text-primary-300 currency-value">{formatCurrency(maxFromGroup, currency)}</p>
                 </div>
-                <div className={cn('p-3 backdrop-blur-sm rounded-xl border', externalCeiling
+                <div className={cn('p-3 backdrop-blur-sm rounded-lg border', externalCeiling
                   ? 'bg-info-50/80 dark:bg-info-500/10 border-info-200/60 dark:border-info-500/20'
                   : 'bg-white dark:bg-primary-900/40 border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30'
                 )}>
@@ -378,7 +378,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                     {externalCeiling ? formatCurrency(externalCeiling, entity.functionalCurrency) : 'N/A'}
                   </p>
                 </div>
-                <div className="p-3 bg-success-50/80 dark:bg-success-500/10 backdrop-blur-sm border border-success-200/60 dark:border-success-500/20 rounded-xl">
+                <div className="p-3 bg-success-50/80 dark:bg-success-500/10 backdrop-blur-sm border border-success-200/60 dark:border-success-500/20 rounded-lg">
                   <p className="text-caption font-medium text-success-700 dark:text-success-300 tracking-wide uppercase">Max Allocation</p>
                   <p className="text-body-lg font-bold text-success-700 dark:text-success-300 currency-value">{formatCurrency(maxAllocation, currency)}</p>
                 </div>
@@ -435,14 +435,14 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                 </div>
 
                 {/* Control Settings */}
-                <div className="p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 space-y-3">
+                <div className="p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-lg border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 space-y-3">
                   <p className="body-strong font-semibold tracking-tight">Control Settings</p>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={hardLimit}
                       onChange={(e) => setHardLimit(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
+                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded-md border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
                     />
                     <Lock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     <span className="text-body-sm text-primary-900 dark:text-neutral-50 dark:text-neutral-200">Hard Limit - Block transactions when exceeded</span>
@@ -452,7 +452,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                       type="checkbox"
                       checked={requiresApproval}
                       onChange={(e) => setRequiresApproval(e.target.checked)}
-                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
+                      className="w-4 h-4 text-primary-600 dark:text-primary-200 dark:text-primary-400 rounded-md border-neutral-300 dark:border-primary-700 dark:border-primary-600 dark:bg-primary-800"
                     />
                     <span className="text-body-sm text-primary-900 dark:text-neutral-50 dark:text-neutral-200">Require Approval</span>
                     {requiresApproval && (
@@ -484,7 +484,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                   Advanced Settings
                 </button>
                 {showAdvanced && (
-                  <div className="mt-4 space-y-4 p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 animate-slide-up">
+                  <div className="mt-4 space-y-4 p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-lg border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 animate-slide-up">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="form-label dark:text-neutral-50">Warning Threshold (%)</label>
@@ -558,7 +558,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
 
           {/* No Group Limit Warning */}
           {!groupLimit && (
-            <div className="bg-warning-50/80 dark:bg-warning-500/10 backdrop-blur-sm border border-warning-200/60 dark:border-warning-500/20 rounded-xl p-4">
+            <div className="bg-warning-50/80 dark:bg-warning-500/10 backdrop-blur-sm border border-warning-200/60 dark:border-warning-500/20 rounded-lg p-4">
               <p className="text-body-sm text-warning-700 dark:text-warning-400 dark:text-warning-300">
                 <AlertTriangle className="w-4 h-4 inline mr-1" />
                 No group limit for {currency}. Please select a different currency or create a group limit first.
@@ -571,14 +571,14 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 border-2 border-neutral-300 dark:border-primary-700 dark:border-primary-600 rounded-xl text-body-sm font-medium text-primary-900 dark:text-neutral-50 dark:text-neutral-200 hover:bg-neutral-50 dark:bg-primary-950 dark:hover:bg-primary-800/50 dark:hover:bg-primary-800 transition-premium tracking-wide"
+              className="px-4 py-2.5 border-2 border-neutral-300 dark:border-primary-700 dark:border-primary-600 rounded-lg text-body-sm font-medium text-primary-900 dark:text-neutral-50 dark:text-neutral-200 hover:bg-neutral-50 dark:bg-primary-950 dark:hover:bg-primary-800/50 dark:hover:bg-primary-800 transition-premium tracking-wide"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !limitName || amount <= 0 || amount > maxAllocation || amount < minAmount || !groupLimit}
-              className="px-5 py-2.5 bg-primary-900 dark:bg-primary-600 text-white rounded-xl text-body-sm font-medium disabled:opacity-50 hover:bg-primary-800 dark:hover:bg-primary-500 transition-premium tracking-wide shadow-sm hover:shadow-md"
+              className="px-5 py-2.5 bg-primary-900 dark:bg-primary-600 text-white rounded-lg text-body-sm font-medium disabled:opacity-50 hover:bg-primary-800 dark:hover:bg-primary-500 transition-premium tracking-wide shadow-sm hover:shadow-md"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin inline mr-1.5" />}
               {isEditing ? 'Update Limit' : 'Allocate Limit'}

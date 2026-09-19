@@ -594,7 +594,7 @@
 @layer components {
   /* ========== CARD SYSTEM ========== */
   .card-base {
-    @apply bg-white rounded-xl border border-neutral-200/80;
+    @apply bg-white rounded-lg border border-neutral-200/80;
     @apply dark:bg-primary-900 dark:border-primary-800/60;
     box-shadow: var(--shadow-sm);
     transition: box-shadow var(--duration-normal) var(--ease-out-expo),
@@ -765,7 +765,7 @@
      a navy element competing with the surrounding chrome. Light mode was
      already neutral and is unchanged. */
   .skeleton {
-    @apply bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded;
+    @apply bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 rounded-md;
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s ease-in-out infinite;
   }
@@ -780,11 +780,11 @@
   }
 
   .skeleton-text {
-    @apply skeleton h-4 rounded;
+    @apply skeleton h-4 rounded-md;
   }
 
   .skeleton-heading {
-    @apply skeleton h-6 rounded;
+    @apply skeleton h-6 rounded-md;
   }
 
   .skeleton-avatar {
@@ -792,7 +792,7 @@
   }
 
   .skeleton-card {
-    @apply skeleton rounded-xl;
+    @apply skeleton rounded-lg;
   }
 
   /* ========== FORM ELEMENTS - Premium ========== */
@@ -802,7 +802,7 @@
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border border-neutral-300 rounded-xl text-body text-primary-900;
+    @apply w-full px-4 py-3 border border-neutral-300 rounded-lg text-body text-primary-900;
     @apply bg-white placeholder:text-neutral-400;
     box-shadow: var(--shadow-inner);
     transition: border-color var(--duration-fast),
@@ -905,7 +905,7 @@
 
   /* ========== BOTTOM SHEET (Mobile) ========== */
   .bottom-sheet {
-    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-3xl;
+    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-lg;
     box-shadow: 0 -10px 40px rgba(70, 73, 76, 0.15);
     padding-bottom: var(--safe-area-inset-bottom);
   }
@@ -1469,9 +1469,9 @@
     @apply text-black bg-white;
   }
 
-  .shadow-soft,
-  .shadow-medium,
-  .shadow-strong,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-xl,
   .shadow-premium {
     box-shadow: none !important;
   }

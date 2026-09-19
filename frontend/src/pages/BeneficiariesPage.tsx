@@ -33,7 +33,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, iconCol
     return (
       <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
         <div className="flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="w-12 h-12 rounded-lg" />
           <div className="flex-1">
             <Skeleton className="h-3 w-20 mb-2" />
             <Skeleton className="h-7 w-16" />
@@ -46,7 +46,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, iconCol
   return (
     <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       <div className="flex items-center gap-3">
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", iconBg)}>
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", iconBg)}>
           <span className={iconColor}>{icon}</span>
         </div>
         <div>
@@ -90,7 +90,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
       {showActions && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
             <button
               onClick={() => { onView(beneficiary); setShowActions(false); }}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:text-neutral-50"
@@ -146,7 +146,7 @@ const BeneficiaryMobileCard: React.FC<BeneficiaryMobileCardProps> = ({
     >
       <div className="flex items-start gap-3">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+          "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
           beneficiary.beneficiaryType === 'CORPORATE' ? "bg-info-50 dark:bg-info-500/10" : "bg-primary-50 dark:bg-primary-800/40"
         )}>
           {beneficiary.beneficiaryType === 'CORPORATE' ? (
@@ -567,7 +567,7 @@ const BeneficiariesPage: React.FC = () => {
               render: (_, beneficiary) => (
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
                     beneficiary.beneficiaryType === 'CORPORATE' ? "bg-info-50 dark:bg-info-500/10" : "bg-primary-50 dark:bg-primary-800/40"
                   )}>
                     {beneficiary.beneficiaryType === 'CORPORATE' ? (
@@ -684,7 +684,7 @@ const BeneficiariesPage: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className={cn(
-                "w-16 h-16 rounded-2xl flex items-center justify-center",
+                "w-16 h-16 rounded-lg flex items-center justify-center",
                 selectedBeneficiary.beneficiaryType === 'CORPORATE' ? "bg-info-100 dark:bg-info-500/20" : "bg-primary-100 dark:bg-primary-700"
               )}>
                 {selectedBeneficiary.beneficiaryType === 'CORPORATE' ? (

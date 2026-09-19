@@ -204,7 +204,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, varia
           <p className="stat-value-sm">{value}</p>
           {subtitle && <p className="caption mt-1">{subtitle}</p>}
         </div>
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', iconBg[variant])}>
+        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', iconBg[variant])}>
           <div className={iconColor[variant]}>{icon}</div>
         </div>
       </div>
@@ -231,14 +231,14 @@ const TransferTypeCard: React.FC<TransferTypeCardProps> = ({
   <div
     onClick={onClick}
     className={cn(
-      'p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200',
+      'p-5 rounded-lg border-2 cursor-pointer transition-all duration-200',
       selected
         ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-white shadow-lg shadow-primary-100/50 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40'
         : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50'
     )}
   >
     <div className={cn(
-      'w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors',
+      'w-12 h-12 rounded-lg flex items-center justify-center mb-4 transition-colors',
       selected ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800'
     )}>
       <div className={selected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}>{icon}</div>
@@ -302,9 +302,9 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
         }))}
       />
       {selectedAccount && (
-        <div className="mt-4 p-4 bg-white/60 rounded-xl border border-neutral-100 dark:bg-primary-900/60 dark:border-primary-800/60">
+        <div className="mt-4 p-4 bg-white/60 rounded-lg border border-neutral-100 dark:bg-primary-900/60 dark:border-primary-800/60">
           <div className="flex items-center gap-4">
-            <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', styles.icon)}>
+            <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center', styles.icon)}>
               <Building2 className={cn('w-6 h-6', styles.iconColor)} />
             </div>
             <div className="flex-1 min-w-0">
@@ -426,12 +426,12 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   const completionPct = Math.round((completionSteps / 3) * 100);
 
   return (
-    <div className="bg-white rounded-xl border border-neutral-200 shadow-sm sticky top-24 dark:bg-primary-900 dark:border-primary-800">
+    <div className="bg-white rounded-lg border border-neutral-200 shadow-sm sticky top-24 dark:bg-primary-900 dark:border-primary-800">
       {/* Header */}
       <div className="p-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50 to-white dark:border-primary-800/60 dark:from-primary-950 dark:to-primary-900">
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center',
+            'w-10 h-10 rounded-lg flex items-center justify-center',
             typeInfo.color === 'info' ? 'bg-info-100 dark:bg-info-500/20' :
             typeInfo.color === 'primary' ? 'bg-primary-100 dark:bg-primary-700' :
             typeInfo.color === 'success' ? 'bg-success-100 dark:bg-success-500/20' :
@@ -836,7 +836,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
             : 'bg-error-50/50 border-error-200 dark:border-error-500/30'
         )}>
           <div className={cn(
-            'w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4',
+            'w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4',
             isSuccess ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20'
           )}>
             {isSuccess ? (
@@ -856,7 +856,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
         {/* Details */}
         <div className="space-y-3">
           {result.amount && (
-            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
+            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
               <span className="text-neutral-600 dark:text-neutral-300">Amount</span>
               <span className="stat-value-xs">
                 {formatCurrency(result.amount, result.currencyCode || result.currency || 'AED')}
@@ -864,19 +864,19 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
             </div>
           )}
           {result.balanceBefore !== undefined && (
-            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
+            <div className="flex justify-between items-center p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
               <span className="text-neutral-600 dark:text-neutral-300">Balance Before</span>
               <span className="font-semibold">{formatCurrency(result.balanceBefore, result.currencyCode || result.currency)}</span>
             </div>
           )}
           {result.balanceAfter !== undefined && (
-            <div className="flex justify-between items-center p-4 bg-success-50 rounded-xl border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
+            <div className="flex justify-between items-center p-4 bg-success-50 rounded-lg border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
               <span className="text-success-700 dark:text-success-300">Balance After</span>
               <span className="font-bold text-success-700 dark:text-success-300">{formatCurrency(result.balanceAfter, result.currencyCode || result.currency)}</span>
             </div>
           )}
           {(result.feeAmount > 0 || result.totalFee > 0) && (
-            <div className="p-4 bg-warning-50 rounded-xl border border-warning-200 space-y-2 dark:bg-warning-500/10 dark:border-warning-500/30">
+            <div className="p-4 bg-warning-50 rounded-lg border border-warning-200 space-y-2 dark:bg-warning-500/10 dark:border-warning-500/30">
               <div className="flex justify-between items-center">
                 <span className="text-warning-700 dark:text-warning-300">Fee Applied</span>
                 <span className="font-semibold text-warning-700 dark:text-warning-300">
@@ -891,7 +891,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
 
           {/* Beneficiary details for outward payments */}
           {(result.beneficiaryName || result.creditorName) && (
-            <div className="p-4 bg-primary-50 rounded-xl border border-primary-200 space-y-2 dark:bg-primary-800/40 dark:border-primary-700">
+            <div className="p-4 bg-primary-50 rounded-lg border border-primary-200 space-y-2 dark:bg-primary-800/40 dark:border-primary-700">
               <div className="flex items-center gap-2 text-primary-700 mb-2 dark:text-neutral-200">
                 <Globe className="w-4 h-4" />
                 <span className="font-medium text-body-sm">Beneficiary</span>
@@ -972,7 +972,7 @@ const XmlViewerModal: React.FC<XmlViewerModalProps> = ({ isOpen, onClose, xml })
           </div>
         </Card>
 
-        <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-caption overflow-auto max-h-[400px] font-mono">
+        <pre className="bg-neutral-900 text-success-400 p-6 rounded-lg text-caption overflow-auto max-h-[400px] font-mono">
           {xml}
         </pre>
       </div>
@@ -1097,7 +1097,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className={cn(
-                'w-14 h-14 rounded-2xl flex items-center justify-center',
+                'w-14 h-14 rounded-lg flex items-center justify-center',
                 transferTypeInfo.variant === 'info' ? 'bg-info-100 dark:bg-info-500/20' :
                 transferTypeInfo.variant === 'primary' ? 'bg-primary-100 dark:bg-primary-700' :
                 transferTypeInfo.variant === 'warning' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-neutral-100 dark:bg-primary-800'
@@ -1199,14 +1199,14 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                 <Card>
                   <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <Hash className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Reference Number</p>
                         <p className="body-strong">{transaction.referenceNumber}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <Calendar className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Transaction Date</p>
@@ -1221,7 +1221,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <DollarSign className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Amount</p>
@@ -1230,7 +1230,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <ArrowRightLeft className="w-4 h-4 text-neutral-400" />
                       <div>
                         <p className="caption">Movement Type</p>
@@ -1238,7 +1238,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </div>
                     {transaction.valueDate && (
-                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                         <Calendar className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">Value Date</p>
@@ -1247,7 +1247,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     )}
                     {transaction.externalReference && (
-                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                      <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                         <FileText className="w-4 h-4 text-neutral-400" />
                         <div>
                           <p className="caption">External Reference</p>
@@ -1259,7 +1259,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
 
                   {/* Description/Narration */}
                   {transaction.description && (
-                    <div className="mt-4 p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="mt-4 p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <p className="caption mb-1">Description / Remittance Info</p>
                       <p className="text-body-sm text-primary-900 dark:text-neutral-50">{transaction.description}</p>
                     </div>
@@ -1287,7 +1287,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-3 dark:text-neutral-300">Related Transactions</h4>
                       <div className="space-y-2">
                         {transactionDetail.relatedTransactions.map((related) => (
-                          <div key={related.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                          <div key={related.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                             <div className="flex items-center gap-3">
                               <Badge variant={related.movementType.includes('CREDIT') ? 'success' : 'info'} size="sm">
                                 {related.movementType}
@@ -1334,13 +1334,13 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </Card>
 
-                    <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-caption overflow-auto max-h-[400px] font-mono">
+                    <pre className="bg-neutral-900 text-success-400 p-6 rounded-lg text-caption overflow-auto max-h-[400px] font-mono">
                       {isoMessage.xml}
                     </pre>
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                    <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                       <FileCode className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No ISO 20022 message available</p>
@@ -1456,19 +1456,19 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                 <div className="flex items-center gap-2 text-caption text-primary-700 flex-wrap dark:text-neutral-200">
                                   {isInwardCollection ? (
                                     <>
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">External Sender</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">External Sender</span>
                                       <ArrowRight className="w-3 h-3" />
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">Bank (CBS)</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">Bank (CBS)</span>
                                       <ArrowRight className="w-3 h-3" />
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">Your VA</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">Your VA</span>
                                     </>
                                   ) : (
                                     <>
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">Your VA</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">Your VA</span>
                                       <ArrowRight className="w-3 h-3" />
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">Bank (CBS)</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">Bank (CBS)</span>
                                       <ArrowRight className="w-3 h-3" />
-                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">Beneficiary</span>
+                                      <span className="font-mono bg-primary-100 px-2 py-1 rounded-md dark:bg-primary-700">Beneficiary</span>
                                     </>
                                   )}
                                 </div>
@@ -1647,12 +1647,12 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                               <div className="mt-3 p-3 bg-white/60 rounded-lg dark:bg-primary-900/60">
                                 <p className="text-caption font-medium text-warning-800 mb-2 dark:text-warning-300">Intercompany Flow:</p>
                                 <div className="flex items-center gap-2 text-caption text-warning-700 dark:text-warning-300">
-                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">Treasury VA</span>
+                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded-md dark:bg-warning-500/20">Treasury VA</span>
                                   <ArrowRight className="w-3 h-3" />
-                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">External Beneficiary</span>
+                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded-md dark:bg-warning-500/20">External Beneficiary</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-caption text-warning-700 mt-2 dark:text-warning-300">
-                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">Subsidiary</span>
+                                  <span className="font-mono bg-warning-100 px-2 py-1 rounded-md dark:bg-warning-500/20">Subsidiary</span>
                                   <ArrowRight className="w-3 h-3" />
                                   <span>Owes Treasury (IC Receivable)</span>
                                 </div>
@@ -1664,7 +1664,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     </Card>
                   ) : (
                     <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                      <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                         <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                       </div>
                       <p className="text-neutral-500 dark:text-neutral-400">No accounting entries found</p>
@@ -2594,7 +2594,7 @@ export default function TransfersPage() {
             key={tab.id}
             onClick={() => { setActiveTab(tab.id as TabType); if (tab.id === 'new') resetForm(); }}
             className={cn(
-              'flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium transition-all duration-200',
+              'flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200',
               activeTab === tab.id
                 ? 'bg-primary-600 text-white shadow-lg shadow-primary-200'
                 : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200 dark:bg-primary-900 dark:text-neutral-300 dark:hover:bg-primary-800/50 dark:border-primary-800'
@@ -2675,7 +2675,7 @@ export default function TransfersPage() {
                 <h3 className="section-title mb-6">Payer Details</h3>
                 <div className="space-y-4">
                   {/* Payer Picker from Parties (CUSTOMER role) */}
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
                     <div className="flex items-center gap-3 mb-4">
                       <StatusIconBadge tone="success" icon={UserCheck} className="dark:bg-success-500/20" />
                       <div>
@@ -2705,7 +2705,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-success-200 rounded-xl text-body-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-success-500/30"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-success-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-success-500/30"
                         >
                           <option value="">-- Select a payer --</option>
                           {filteredPayers.map((p) => (
@@ -2719,7 +2719,7 @@ export default function TransfersPage() {
 
                       {/* Selected Payer Display */}
                       {formData.selectedPayerId && (
-                        <div className="p-3 bg-success-50 rounded-xl border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
+                        <div className="p-3 bg-success-50 rounded-lg border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
                           <div className="flex items-center gap-3">
                             <StatusIconBadge tone="success" icon={Building2} rounded="lg" className="dark:bg-success-500/20" />
                             <div className="flex-1">
@@ -2790,7 +2790,7 @@ export default function TransfersPage() {
               <Card className="animate-fade-in">
                 <h3 className="section-title mb-6">Destination Account</h3>
                 <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-success-50/50 to-white border border-success-100 dark:border-success-500/30">
                     <div className="flex items-center gap-3 mb-4">
                       <StatusIconBadge tone="success" icon={ArrowDownLeft} className="dark:bg-success-500/20" />
                       <div>
@@ -2833,7 +2833,7 @@ export default function TransfersPage() {
 
                       {/* Selected Destination Display */}
                       {(formData.targetVibanOrVa || formData.toVaId) && (
-                        <div className="p-3 bg-success-50 rounded-xl border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
+                        <div className="p-3 bg-success-50 rounded-lg border border-success-200 dark:bg-success-500/10 dark:border-success-500/30">
                           <div className="flex items-center gap-3">
                             <StatusIconBadge tone="success" icon={Wallet} rounded="lg" className="dark:bg-success-500/20" />
                             <div className="flex-1">
@@ -2861,7 +2861,7 @@ export default function TransfersPage() {
                 <h3 className="section-title mb-6">Beneficiary Details</h3>
                 <div className="space-y-4">
                   {/* Beneficiary Picker from Parties - Primary Selection */}
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-primary-50/50 to-white border border-primary-100 dark:border-primary-700/60">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary-50/50 to-white border border-primary-100 dark:border-primary-700/60">
                     <div className="flex items-center gap-3 mb-4">
                       <StatusIconBadge tone="primary" icon={UserCheck} className="dark:bg-primary-700" />
                       <div>
@@ -2891,7 +2891,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-primary-200 rounded-xl text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-primary-700"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-primary-700"
                         >
                           <option value="">-- Select a beneficiary --</option>
                           {filteredBeneficiaries.map((b) => (
@@ -2919,7 +2919,7 @@ export default function TransfersPage() {
                       const selectedBeneficiary = beneficiaries.find(b => b.party.id === formData.selectedBeneficiaryId);
                       if (!selectedBeneficiary) return null;
                       return (
-                        <div className="mt-4 p-4 bg-white rounded-xl border border-primary-200 shadow-sm dark:bg-primary-900 dark:border-primary-700">
+                        <div className="mt-4 p-4 bg-white rounded-lg border border-primary-200 shadow-sm dark:bg-primary-900 dark:border-primary-700">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
@@ -2994,7 +2994,7 @@ export default function TransfersPage() {
 
                   {/* Manual Entry Section - Collapsed by default if beneficiary selected */}
                   <details className={cn(
-                    "group rounded-xl border transition-all",
+                    "group rounded-lg border transition-all",
                     formData.selectedBeneficiaryId
                       ? "bg-neutral-50 border-neutral-200 dark:bg-primary-950 dark:border-primary-800"
                       : "bg-white border-primary-200 dark:bg-primary-900 dark:border-primary-700"
@@ -3100,8 +3100,8 @@ export default function TransfersPage() {
                 </div>
 
                 {bulkItems.length === 0 ? (
-                  <div className="text-center py-12 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                    <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                  <div className="text-center py-12 bg-neutral-50 rounded-lg dark:bg-primary-950">
+                    <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                       <Users className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No recipients added yet</p>
@@ -3277,7 +3277,7 @@ export default function TransfersPage() {
 
           {recentTransfers.length === 0 ? (
             <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                 <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No transfer history found</p>

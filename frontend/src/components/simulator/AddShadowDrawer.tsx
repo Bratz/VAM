@@ -114,7 +114,7 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
     >
       <div className="space-y-4">
         {/* Frozen Physical Account context */}
-        <div className="rounded-xl border border-neutral-200/80 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-900/40 px-4 py-3">
+        <div className="rounded-lg border border-neutral-200/80 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-900/40 px-4 py-3">
           <div className="flex items-center gap-2">
             <Building2
               className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0"

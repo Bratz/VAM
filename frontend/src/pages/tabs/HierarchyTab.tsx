@@ -132,7 +132,7 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md transition-colors"
           >
             <ChevronRight 
               className={cn(
@@ -146,7 +146,7 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
         )}
         
         {/* Node Icon */}
-        <div className={cn('p-1 rounded', typeConfig.bg)}>
+        <div className={cn('p-1 rounded-md', typeConfig.bg)}>
           <TypeIcon className={cn('w-4 h-4', typeConfig.color)} />
         </div>
 

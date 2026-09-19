@@ -62,7 +62,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
 const EmptyState: React.FC<{ onCreateRule: () => void }> = ({ onCreateRule }) => (
   <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
     <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mb-4">
+      <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mb-4">
         <Layers className="w-6 h-6 text-neutral-400" />
       </div>
       <p className="body-strong mb-1">No Sweep Rules</p>

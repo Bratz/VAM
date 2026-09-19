@@ -221,7 +221,7 @@ export function DataTable<T>({
                   <button
                     onClick={handleSelectAll}
                     className={cn(
-                      'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200',
+                      'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
                       allSelected
                         ? 'bg-primary-600 border-primary-600'
                         : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'
@@ -318,7 +318,7 @@ export function DataTable<T>({
                         <button
                           onClick={() => handleSelectRow(key)}
                           className={cn(
-                            'w-5 h-5 rounded border-2 flex items-center justify-center transition-all duration-200',
+                            'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
                             isSelected
                               ? 'bg-primary-600 border-primary-600'
                               : 'border-neutral-300 hover:border-primary-400 dark:border-primary-700'
@@ -367,7 +367,7 @@ export function DataTable<T>({
       <div className="lg:hidden space-y-3">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-neutral-200 p-4 dark:bg-primary-900 dark:border-primary-800">
+            <div key={i} className="bg-white rounded-lg border border-neutral-200 p-4 dark:bg-primary-900 dark:border-primary-800">
               <div className="flex justify-between items-start mb-3">
                 <Skeleton width="50%" height={20} />
                 <Skeleton width="20%" height={20} />
@@ -403,7 +403,7 @@ export function DataTable<T>({
                 key={key}
                 onClick={() => onRowClick?.(row)}
                 className={cn(
-                  'bg-white rounded-2xl border border-neutral-200 p-4 dark:bg-primary-900 dark:border-primary-800',
+                  'bg-white rounded-lg border border-neutral-200 p-4 dark:bg-primary-900 dark:border-primary-800',
                   'transition-all duration-200',
                   'active:scale-[0.99]',
                   onRowClick && 'cursor-pointer',
@@ -538,7 +538,7 @@ export function DataTable<T>({
                   key={page}
                   onClick={() => onPageChange?.(page)}
                   className={cn(
-                    'w-9 h-9 rounded-xl text-body-sm font-medium transition-all duration-200',
+                    'w-9 h-9 rounded-lg text-body-sm font-medium transition-all duration-200',
                     currentPage === page
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300'
@@ -587,7 +587,7 @@ export function DataTable<T>({
                   onChange={handleSearch}
                   placeholder={searchPlaceholder}
                   className={cn(
-                    'w-full h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
+                    'w-full h-10 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-primary-800',
                     'bg-white text-body-sm placeholder:text-neutral-400 dark:bg-primary-900',
                     'focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10',
                     'transition-all duration-200'
@@ -615,7 +615,7 @@ export function DataTable<T>({
       <div ref={containerRef} className={cn(
         hairline
           ? 'border-b border-neutral-300 dark:border-primary-700'
-          : 'bg-white rounded-2xl border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800 shadow-sm'
+          : 'bg-white rounded-lg border border-neutral-200 overflow-hidden dark:bg-primary-900 dark:border-primary-800 shadow-sm'
       )}>
         <DesktopTable />
         <MobileCards />

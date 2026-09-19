@@ -71,7 +71,7 @@ export const ProposeDrawer: React.FC<ProposeDrawerProps> = ({
       }
     >
       <div className="space-y-4">
-        <div className="flex items-start gap-2 px-3 py-2 rounded-xl border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10">
+        <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-warning-200 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/10">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-warning-600 dark:text-warning-300" />
           <p className="body-sm text-warning-800 dark:text-warning-200">
             This is the only path from the sandbox to live operations. It

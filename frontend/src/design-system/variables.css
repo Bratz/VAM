@@ -350,7 +350,7 @@
        full        — circles, fully rounded elements
      The previous `xl` (16px) and `2xl` (24px) values are gone — that 4–12px
      spread on cards never carried meaning, just inconsistency. Everything
-     formerly `rounded-xl` or `rounded-2xl` now reads as `lg` (12px). The
+     formerly `rounded-lg` or `rounded-lg` now reads as `lg` (12px). The
      Tailwind config matches so Tailwind utility callers also collapse. */
 
   --radius-none: 0;
@@ -360,7 +360,7 @@
   --radius-full: 9999px;
 
   /* LEGACY ALIASES — kept so existing callers (incl. Tailwind `rounded-default`,
-     `rounded-xl`, `rounded-2xl` and direct CSS `var(--radius-xl)`) stay green. */
+     `rounded-lg`, `rounded-lg` and direct CSS `var(--radius-xl)`) stay green. */
   --radius-default: var(--radius-md);   /* was: 6px */
   --radius-xl:      var(--radius-lg);   /* was: 16px → maps to 12px */
   --radius-2xl:     var(--radius-lg);   /* was: 24px → maps to 12px */

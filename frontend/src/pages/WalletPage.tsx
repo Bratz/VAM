@@ -477,7 +477,7 @@ const StatCard: React.FC<{
           </div>
         )}
       </div>
-      <div className={cn("p-3 rounded-xl flex-shrink-0", iconBg)}>{icon}</div>
+      <div className={cn("p-3 rounded-lg flex-shrink-0", iconBg)}>{icon}</div>
     </div>
   </Card>
 );
@@ -607,7 +607,7 @@ const PartyPicker: React.FC<{
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">Create New Customer</h3>
-                <button type="button" onClick={() => setShowCreateForm(false)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded"><X className="w-5 h-5" /></button>
+                <button type="button" onClick={() => setShowCreateForm(false)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md"><X className="w-5 h-5" /></button>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(['INDIVIDUAL', 'CORPORATE', 'EMPLOYEE'] as const).map(type => {
@@ -712,7 +712,7 @@ const ProgramCard: React.FC<{
     <Card hover className="cursor-pointer" onClick={onClick}>
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center">
             <Wallet className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -782,7 +782,7 @@ const WalletRow: React.FC<{
           <div>
             <div className="flex items-center gap-2">
               <p className="body-strong">{wallet.holderName}</p>
-              {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded dark:bg-info-500/20 dark:text-info-300">Linked</span>}
+              {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded-md dark:bg-info-500/20 dark:text-info-300">Linked</span>}
             </div>
             <p className="caption">{wallet.holderMobile}</p>
           </div>
@@ -791,7 +791,7 @@ const WalletRow: React.FC<{
       <td className="data-table-cell">
         <div className="flex items-center gap-1">
           <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
-          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400" /></button>
+          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400" /></button>
         </div>
         <p className="caption">{wallet.programCode || wallet.programName}</p>
       </td>
@@ -827,7 +827,7 @@ const WalletRow: React.FC<{
           {showActions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-primary-900 rounded-xl shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-20">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-primary-900 rounded-lg shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-20">
                 <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
                 <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Edit className="w-4 h-4" /> Edit Limits</button>
                 <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
@@ -864,7 +864,7 @@ const WalletMobileCard: React.FC<{
   const kycStatus = kycStatusConfig[wallet.kycStatus] || kycStatusConfig.PENDING;
 
   return (
-    <div className="p-4 border border-neutral-200 dark:border-primary-800 rounded-xl hover:border-primary-200 hover:shadow-sm transition-all" onClick={onView}>
+    <div className="p-4 border border-neutral-200 dark:border-primary-800 rounded-lg hover:border-primary-200 hover:shadow-sm transition-all" onClick={onView}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
@@ -1273,19 +1273,19 @@ const WalletPage: React.FC = () => {
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
+              <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
                 <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="group-hover:bg-primary-200 transition-colors" />
                 <span className="field-label">Issue Wallet</span>
               </button>
-              <button onClick={() => setShowBulkLoadModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-neutral-200 dark:border-primary-800 hover:border-success-300 hover:bg-success-50 dark:bg-success-500/10 transition-all group dark:hover:bg-success-500/10">
+              <button onClick={() => setShowBulkLoadModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-success-300 hover:bg-success-50 dark:bg-success-500/10 transition-all group dark:hover:bg-success-500/10">
                 <StatusIconBadge tone="success" icon={Upload} rounded="lg" className="group-hover:bg-success-200 transition-colors" />
                 <span className="field-label">Bulk Load</span>
               </button>
-              <button onClick={navigateToProgramsPage} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-neutral-200 dark:border-primary-800 hover:border-info-300 hover:bg-info-50 dark:bg-info-500/10 transition-all group dark:hover:bg-info-500/10">
+              <button onClick={navigateToProgramsPage} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-info-300 hover:bg-info-50 dark:bg-info-500/10 transition-all group dark:hover:bg-info-500/10">
                 <StatusIconBadge tone="info" icon={Settings} rounded="lg" className="group-hover:bg-info-200 transition-colors" />
                 <span className="field-label">Programs</span>
               </button>
-              <button onClick={() => setActiveTab('wallets')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-neutral-200 dark:border-primary-800 hover:border-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 transition-all group dark:hover:bg-warning-500/10">
+              <button onClick={() => setActiveTab('wallets')} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-primary-800 hover:border-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 transition-all group dark:hover:bg-warning-500/10">
                 <StatusIconBadge tone="warning" icon={Search} rounded="lg" className="group-hover:bg-warning-200 transition-colors" />
                 <span className="field-label">Search</span>
               </button>
@@ -1512,7 +1512,7 @@ const WalletPage: React.FC = () => {
               </div>
             </div>
             <label className="flex items-center gap-2 p-3 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-              <input type="checkbox" checked={issueForm.autoTriggerKyc || false} onChange={(e) => setIssueForm({ ...issueForm, autoTriggerKyc: e.target.checked })} className="rounded" />
+              <input type="checkbox" checked={issueForm.autoTriggerKyc || false} onChange={(e) => setIssueForm({ ...issueForm, autoTriggerKyc: e.target.checked })} className="rounded-md" />
               <div><span className="text-body-sm font-medium">Auto-trigger KYC</span><p className="caption">Start KYC if customer has ID</p></div>
             </label>
           </div>
@@ -1650,7 +1650,7 @@ const WalletPage: React.FC = () => {
                 <h4 className="font-medium mb-3">Recent Transactions</h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {walletDetail.recentTransactions.map(txn => (
-                    <div key={txn.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded">
+                    <div key={txn.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-md">
                       <div className="flex items-center gap-2">
                         {txn.type.includes('CREDIT') || txn.type.includes('TOPUP') ? <ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> : <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" />}
                         <div><p className="text-body-sm">{txn.description || txn.type}</p><p className="caption">{new Date(txn.transactionDate).toLocaleString()}</p></div>

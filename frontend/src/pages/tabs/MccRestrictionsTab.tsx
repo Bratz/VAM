@@ -152,7 +152,7 @@ const CodeTagList: React.FC<CodeTagListProps> = ({
           <button
             type="button"
             onClick={() => onRemove(code)}
-            className="ml-1 p-0.5 rounded hover:bg-black/10 transition-colors"
+            className="ml-1 p-0.5 rounded-md hover:bg-black/10 transition-colors"
           >
             <X className="w-3 h-3" />
           </button>
@@ -335,7 +335,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                         addToList('mccWhitelist', code, mccWhitelist);
                       }}
                       className={cn(
-                        'px-2 py-1 text-caption rounded border transition-colors',
+                        'px-2 py-1 text-caption rounded-md border transition-colors',
                         mccWhitelist.includes(mcc.code.split('-')[0])
                           ? 'bg-success-100 dark:bg-success-500/15 border-success-300 text-success-700 dark:text-success-300'
                           : mccBlacklist.includes(mcc.code.split('-')[0])
@@ -462,7 +462,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                 }
               }}
               className={cn(
-                'px-2 py-1 text-caption rounded border transition-colors',
+                'px-2 py-1 text-caption rounded-md border transition-colors',
                 countryWhitelist.includes(country.code)
                   ? 'bg-info-100 dark:bg-info-500/15 border-info-300 text-info-700 dark:text-info-300'
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800/50'

@@ -311,7 +311,7 @@ const StatCard: React.FC<StatCardProps> = ({
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-3 w-20" />
           </div>
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="w-12 h-12 rounded-lg" />
         </div>
       </Card>
     );
@@ -337,7 +337,7 @@ const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         <div className={cn(
-          'p-3 rounded-xl transition-transform duration-300',
+          'p-3 rounded-lg transition-transform duration-300',
           iconBg,
           onClick && 'group-hover:scale-110'
         )}>
@@ -472,7 +472,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
         </div>
 
         <div className={cn(
-          'p-3 rounded-xl transition-transform duration-300 hover:scale-110',
+          'p-3 rounded-lg transition-transform duration-300 hover:scale-110',
           entity.isTreasuryCenter
             ? 'bg-warning-100 dark:bg-warning-500/20'
             : 'bg-primary-100 dark:bg-primary-700'
@@ -702,8 +702,8 @@ const PyramidView: React.FC<PyramidViewProps> = ({
   return (
     <div className="flex flex-col items-center gap-6 py-10 animate-fade-in">
       {/* Corporate Total - Top of Pyramid */}
-      <div className="w-72 bg-neutral-800 rounded-2xl p-6 text-center shadow-xl">
-        <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+      <div className="w-72 bg-neutral-800 rounded-lg p-6 text-center shadow-xl">
+        <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
           <Globe className="w-7 h-7 text-white" />
         </div>
         <p className="text-white/70 text-body-sm font-medium">Corporate Total</p>
@@ -718,7 +718,7 @@ const PyramidView: React.FC<PyramidViewProps> = ({
       {/* Treasury Center - Second Level */}
       {treasuryCenter && (
         <div
-          className="w-80 bg-warning-500 rounded-2xl p-5 text-center shadow-lg cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+          className="w-80 bg-warning-500 rounded-lg p-5 text-center shadow-lg cursor-pointer transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
           onClick={() => onEntityClick(treasuryCenter.entityId)}
         >
           <div className="flex items-center justify-center gap-2 mb-2">
@@ -741,7 +741,7 @@ const PyramidView: React.FC<PyramidViewProps> = ({
             <div
               key={entity.entityId}
               className={cn(
-                'rounded-xl p-4 text-center shadow-md cursor-pointer',
+                'rounded-lg p-4 text-center shadow-md cursor-pointer',
                 'transform hover:scale-105 transition-all duration-300 hover:shadow-lg',
                 colorClasses[index % colorClasses.length]
               )}
@@ -933,7 +933,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
           </div>
 
           {/* Entity Icon */}
-          <div className={cn('p-2 rounded-xl transition-transform duration-300 hover:scale-110', typeStyle.bg)}>
+          <div className={cn('p-2 rounded-lg transition-transform duration-300 hover:scale-110', typeStyle.bg)}>
             {typeStyle.icon}
           </div>
 
@@ -1563,7 +1563,7 @@ const EntityBalanceTreePage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
-                'w-64 h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
+                'w-64 h-10 pl-10 pr-4 rounded-lg border border-neutral-200 dark:border-primary-800',
                 'bg-white text-body-sm placeholder:text-neutral-400 dark:bg-primary-900',
                 'focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10',
                 'transition-all duration-200'
@@ -1582,7 +1582,7 @@ const EntityBalanceTreePage: React.FC = () => {
             Collapse
           </Button>
 
-          <div className="flex items-center gap-1 bg-neutral-100 rounded-xl p-1 ml-2 dark:bg-primary-800">
+          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 ml-2 dark:bg-primary-800">
             <button
               onClick={() => setViewMode('hierarchy')}
               title="Hierarchy View"
@@ -1665,7 +1665,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-error-50 border border-error-200 rounded-2xl p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
+        <div className="bg-error-50 border border-error-200 rounded-lg p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
             <span className="text-error-800 font-medium dark:text-error-300">{error}</span>
@@ -1705,7 +1705,7 @@ const EntityBalanceTreePage: React.FC = () => {
             <Card className="overflow-hidden animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <div className="p-4 border-b border-neutral-100 bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:border-primary-800/60 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-primary-100 dark:bg-primary-700">
+                  <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-700">
                     <TreeDeciduous className="w-5 h-5 text-primary-600 dark:text-primary-200" />
                   </div>
                   <div>
@@ -1735,7 +1735,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
               {filteredHierarchy.length === 0 && (
                 <div className="text-center py-20">
-                  <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                     <TreeDeciduous className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
@@ -1762,7 +1762,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
               {filteredEntities.length === 0 && (
                 <div className="text-center py-20 animate-fade-in">
-                  <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                     <Wallet className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
@@ -1784,25 +1784,25 @@ const EntityBalanceTreePage: React.FC = () => {
         >
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <p className="label-cased">Account Name</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.name}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <p className="label-cased">Account Number</p>
                   <p className="font-mono text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.accountNumber || 'N/A'}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <p className="label-cased">Currency</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.currencyCode}</p>
                 </div>
-                <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <p className="label-cased">Category</p>
                   <Badge className="mt-1">{selectedAccount.accountCategory || selectedAccount.type}</Badge>
                 </div>
               </div>
 
-              <div className="p-4 bg-success-50 rounded-xl border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
+              <div className="p-4 bg-success-50 rounded-lg border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
                 <p className="text-body-sm text-neutral-500 font-medium dark:text-neutral-400">Current Balance</p>
                 <p className={cn(
                   'stat-value mt-1',

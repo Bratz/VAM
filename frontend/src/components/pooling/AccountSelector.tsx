@@ -161,7 +161,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                 )}
               >
                 <div className={cn(
-                  'w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0',
+                  'w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0',
                   isSelected ? 'border-primary-500 bg-primary-500' : 'border-neutral-300 dark:border-primary-700'
                 )}>
                   {isSelected && <Check className="w-3 h-3 text-white" />}

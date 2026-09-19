@@ -121,7 +121,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
 
           {activeRules.length === 0 ? (
             <Card className="text-center py-12">
-              <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mx-auto mb-3">
                 <Layers className="w-6 h-6 text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No active rules to execute</p>
@@ -183,7 +183,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
 
       {phase === 'running' && (
         <div className="text-center py-12 animate-fade-in">
-          <div className="w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-700 flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center mx-auto mb-6">
             <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
           </div>
           <p className="body-lg">Executing Sweeps...</p>
@@ -209,7 +209,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
       {phase === 'complete' && results && (
         <div className="space-y-6 animate-fade-in">
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-2xl bg-success-100 dark:bg-success-500/20 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-lg bg-success-100 dark:bg-success-500/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-300" />
             </div>
             <p className="body-lg">Sweeps Complete</p>
@@ -248,7 +248,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
       {phase === 'failed' && (
         <div className="space-y-6 animate-fade-in">
           <div className="text-center py-6">
-            <div className="w-16 h-16 rounded-2xl bg-error-100 dark:bg-error-500/20 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-lg bg-error-100 dark:bg-error-500/20 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-error-600 dark:text-error-300" />
             </div>
             <p className="body-lg">Sweep Run Failed</p>

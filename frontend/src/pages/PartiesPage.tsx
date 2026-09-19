@@ -174,7 +174,7 @@ const IcCreditBadge: React.FC<{ limit?: number; exposure?: number }> = ({ limit,
 const OwningEntityBadge: React.FC<{ entityCode?: string }> = ({ entityCode }) => {
   if (!entityCode) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded label-cased bg-neutral-100 dark:bg-primary-800">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md label-cased bg-neutral-100 dark:bg-primary-800">
       <Building className="w-3 h-3" />
       {entityCode}
     </span>
@@ -849,7 +849,7 @@ const PartyFormModal: React.FC<{
                           type="checkbox"
                           checked={formData.ecommerceEnabled}
                           onChange={(e) => setFormData(prev => ({ ...prev, ecommerceEnabled: e.target.checked }))}
-                          className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
+                          className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                         />
                         <span className="text-body-sm text-neutral-700 dark:text-neutral-200">E-commerce Enabled</span>
                       </label>
@@ -1012,7 +1012,7 @@ const PartyFormModal: React.FC<{
                           type="checkbox"
                           checked={bankAccountForm.isPrimary}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
-                          className="w-4 h-4 rounded border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200"
+                          className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200"
                         />
                         <span className="field-label">Set as Primary Account</span>
                       </label>
@@ -1611,7 +1611,7 @@ const PartyDetailModal: React.FC<{
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-neutral-200 dark:border-primary-800">
           <div className="flex items-center gap-4">
-            <div className={cn('w-14 h-14 rounded-xl flex items-center justify-center',
+            <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center',
               party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
               <TypeIcon className={cn('w-7 h-7', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
             </div>
@@ -1625,7 +1625,7 @@ const PartyDetailModal: React.FC<{
                 {rolesArray.map((role) => {
                   const config = roleConfig[role];
                   return config ? (
-                    <span key={role} className={cn('px-2 py-0.5 rounded text-caption font-medium', config.bgColor, config.color)}>{config.label}</span>
+                    <span key={role} className={cn('px-2 py-0.5 rounded-md text-caption font-medium', config.bgColor, config.color)}>{config.label}</span>
                   ) : null;
                 })}
               </div>
@@ -1652,7 +1652,7 @@ const PartyDetailModal: React.FC<{
                 activeTab === tab.id ? 'bg-white text-primary-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50' : 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300 dark:hover:text-neutral-50')}>
               {tab.label}
               {tab.count !== undefined && (
-                <span className={cn('px-1.5 py-0.5 rounded text-caption', activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-200 dark:bg-primary-800')}>{tab.count}</span>
+                <span className={cn('px-1.5 py-0.5 rounded-md text-caption', activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-200 dark:bg-primary-800')}>{tab.count}</span>
               )}
             </button>
           ))}
@@ -1770,7 +1770,7 @@ const PartyDetailModal: React.FC<{
                             type="checkbox"
                             checked={bankAccountForm.isPrimary}
                             onChange={(e) => setBankAccountForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
-                            className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
+                            className="w-4 h-4 rounded-md border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                           />
                           <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Set as primary account</span>
                         </label>
@@ -1790,7 +1790,7 @@ const PartyDetailModal: React.FC<{
               {bankAccounts.length > 0 ? (
                 <div className="space-y-3">
                   {bankAccounts.map((account) => (
-                    <Card key={account.id} padding="sm" className="hover:shadow-medium transition-shadow group">
+                    <Card key={account.id} padding="sm" className="hover:shadow-md transition-shadow group">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', account.isPrimary ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-100 dark:bg-primary-800')}>
@@ -1841,7 +1841,7 @@ const PartyDetailModal: React.FC<{
               {documents.length > 0 ? (
                 <div className="space-y-3">
                   {documents.map((doc: any) => (
-                    <Card key={doc.id} padding="sm" className="hover:shadow-medium transition-shadow">
+                    <Card key={doc.id} padding="sm" className="hover:shadow-md transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
                           <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center',
@@ -2085,8 +2085,8 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="success" size="sm">Active</Badge>
                   </div>
-                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
-                  <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
                 </Card>
               </div>
               <div className="space-y-4">
@@ -2117,8 +2117,8 @@ const PartyDetailModal: React.FC<{
                     </div>
                     <Badge variant="info" size="sm">IC</Badge>
                   </div>
-                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
-                  <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
+                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
+                  <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded-md dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
                   <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="caption">Auto-enabled for IC parties</span></div>
                 </Card>
               </div>
@@ -2578,7 +2578,7 @@ const PartiesPage: React.FC = () => {
                     const TypeIcon = typeConfig[party.partyType]?.icon || Building2;
                     return (
                       <div className="flex items-center gap-3">
-                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
+                        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
                           <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2 dark:text-cat-2-fg' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
                         </div>
                         <div><p className="body-strong font-semibold">{party.displayName || party.legalName}</p><p className="caption">{party.partyCode}</p></div>
@@ -2594,7 +2594,7 @@ const PartiesPage: React.FC = () => {
                     <div className="flex flex-wrap gap-1">
                       {party.roles.slice(0, 2).map((role) => {
                         const config = roleConfig[role];
-                        return config ? <span key={role} className={cn('px-2 py-0.5 rounded text-caption font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
+                        return config ? <span key={role} className={cn('px-2 py-0.5 rounded-md text-caption font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
                       })}
                     </div>
                   ),

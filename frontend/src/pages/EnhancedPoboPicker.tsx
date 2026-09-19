@@ -102,7 +102,7 @@ const EntityPositionCard: React.FC<{
       </div>
 
       {role === 'PAYER' && amount && !hasCapacity && (
-        <div className="flex items-center gap-1 caption-warning bg-warning-50 dark:bg-warning-500/10 rounded p-2">
+        <div className="flex items-center gap-1 caption-warning bg-warning-50 dark:bg-warning-500/10 rounded-md p-2">
           <AlertTriangle className="w-3 h-3" />
           <span>Insufficient credit limit for this transaction</span>
         </div>
@@ -170,21 +170,21 @@ const IhbLoanPreview: React.FC<{
 
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Principal</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-info-600 dark:text-info-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-caption text-primary-700 bg-white dark:bg-primary-900 rounded p-2 dark:text-neutral-200">
+        <div className="flex items-center gap-2 text-caption text-primary-700 bg-white dark:bg-primary-900 rounded-md p-2 dark:text-neutral-200">
           <Info className="w-4 h-4" />
           <span>Loan will be automatically settled during monthly intercompany netting</span>
         </div>

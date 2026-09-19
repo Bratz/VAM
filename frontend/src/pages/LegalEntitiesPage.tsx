@@ -400,7 +400,7 @@ const FormField: React.FC<{ label: string; required?: boolean; error?: string; h
 
 const CheckboxField: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }> = ({ checked, onChange, label, description }) => (
   <label className={cn('flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all', checked ? 'bg-primary-50 border-primary-300 dark:bg-primary-800/40' : 'bg-white border-neutral-200 hover:bg-neutral-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800/50')}>
-    <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200" />
+    <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded-md border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200" />
     <div><p className="body-strong">{label}</p>{description && <p className="caption mt-0.5">{description}</p>}</div>
   </label>
 );
@@ -838,7 +838,7 @@ const HierarchyTreeNode: React.FC<{
         {hasChildren ? (
           <button 
             onClick={(e) => { e.stopPropagation(); onToggle(entity.id); }} 
-            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md transition-colors"
           >
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-600 dark:text-neutral-300" /> : <ChevronRight className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />}
           </button>
@@ -957,14 +957,14 @@ const EntityDetailPanel: React.FC<{
   const availableGroupCurrencies = groupLimits.filter(g => !existingCurrencies.has(g.currency));
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-neutral-100 h-full flex flex-col dark:bg-primary-900 dark:border-primary-800/60">
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-100 h-full flex flex-col dark:bg-primary-900 dark:border-primary-800/60">
       <div className="p-4 border-b border-neutral-200 dark:border-primary-800">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('p-3 rounded-xl', typeConfig.bgColor)}><TypeIcon className={cn('w-6 h-6', typeConfig.color)} /></div>
+            <div className={cn('p-3 rounded-lg', typeConfig.bgColor)}><TypeIcon className={cn('w-6 h-6', typeConfig.color)} /></div>
             <div><h3 className="section-title">{entity.entityName}</h3><p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</p></div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded transition-colors dark:hover:bg-primary-800"><X className="w-5 h-5 text-neutral-400" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded-md transition-colors dark:hover:bg-primary-800"><X className="w-5 h-5 text-neutral-400" /></button>
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
           <span className={cn('px-2 py-1 rounded-full text-caption', statusCfg.bgColor, statusCfg.color)}><StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}</span>
@@ -976,7 +976,7 @@ const EntityDetailPanel: React.FC<{
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        <div className={cn('rounded-xl p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950')}>
+        <div className={cn('rounded-lg p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950')}>
           <h4 className="text-body-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400')} />Internal Credit Limits</h4>
           {hasLimits ? (
             <div className="space-y-3">
@@ -1063,7 +1063,7 @@ const EntityDetailPanel: React.FC<{
           )}
         </div>
 
-        <div className={cn('rounded-xl p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
+        <div className={cn('rounded-lg p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
           <h4 className="text-body-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400')} />Banking Relationship</h4>
           {entity.isBankCustomer ? (
             <div className="space-y-2">
@@ -1372,7 +1372,7 @@ const LegalEntitiesPage: React.FC = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-error-50 border border-error-200 rounded-xl p-4 dark:bg-error-500/10 dark:border-error-500/30">
+        <div className="bg-error-50 border border-error-200 rounded-lg p-4 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
             <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
@@ -1418,7 +1418,7 @@ const LegalEntitiesPage: React.FC = () => {
           <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
                   <GitBranch className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -1537,31 +1537,31 @@ const LegalEntitiesPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-6">
           <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-primary-100 dark:bg-primary-700"><Crown className="w-3 h-3 text-primary-700 dark:text-neutral-200" /></div>
+            <div className="p-1.5 rounded-md bg-primary-100 dark:bg-primary-700"><Crown className="w-3 h-3 text-primary-700 dark:text-neutral-200" /></div>
             <span className="caption">Holding</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-info-100 dark:bg-info-500/20"><Building2 className="w-3 h-3 text-info-700 dark:text-info-300" /></div>
+            <div className="p-1.5 rounded-md bg-info-100 dark:bg-info-500/20"><Building2 className="w-3 h-3 text-info-700 dark:text-info-300" /></div>
             <span className="caption">Subsidiary</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-cyan-100 dark:bg-cyan-500/20"><Building className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
+            <div className="p-1.5 rounded-md bg-cyan-100 dark:bg-cyan-500/20"><Building className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
             <span className="caption">Branch</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div>
+            <div className="p-1.5 rounded-md bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2 dark:text-cat-2-fg" /></div>
             <span className="caption">Treasury Center</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-success-100 dark:bg-success-500/20"><Wallet className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
+            <div className="p-1.5 rounded-md bg-success-100 dark:bg-success-500/20"><Wallet className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
             <span className="caption">Bank Customer</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-info-50 border border-info-300 dark:bg-info-500/10"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div>
+            <div className="p-1.5 rounded-md bg-info-50 border border-info-300 dark:bg-info-500/10"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div>
             <span className="caption">IHB Enabled</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded bg-warning-100 dark:bg-warning-500/20"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div>
+            <div className="p-1.5 rounded-md bg-warning-100 dark:bg-warning-500/20"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div>
             <span className="caption">Near Limit</span>
           </div>
         </div>

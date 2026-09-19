@@ -168,7 +168,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
 
         {hover && (
           <div
-            className="fixed z-10 pointer-events-none rounded-xl px-3.5 py-2.5 text-body-sm"
+            className="fixed z-10 pointer-events-none rounded-lg px-3.5 py-2.5 text-body-sm"
             style={{ left: hover.x + 12, top: hover.y + 12, backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
           >
             <p className="font-semibold">{hover.name}</p>
@@ -195,7 +195,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
           {showUnmapped && (
             <div
               onMouseLeave={() => setShowUnmapped(false)}
-              className="absolute z-10 left-0 top-full mt-1 min-w-[220px] rounded-xl px-3.5 py-2.5 text-body-sm"
+              className="absolute z-10 left-0 top-full mt-1 min-w-[220px] rounded-lg px-3.5 py-2.5 text-body-sm"
               style={{ backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
             >
               <p className="font-semibold mb-1">Not shown on map</p>

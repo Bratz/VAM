@@ -283,7 +283,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
               type="button"
               onClick={() => setShowFormatDropdown(!showFormatDropdown)}
               className={cn(
-                'w-full h-11 px-4 rounded-xl border bg-white dark:bg-primary-900',
+                'w-full h-11 px-4 rounded-lg border bg-white dark:bg-primary-900',
                 'flex items-center justify-between',
                 'text-primary-900 text-body dark:text-neutral-50',
                 'border-neutral-300 hover:border-neutral-400 dark:border-primary-700',
@@ -307,7 +307,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
                   className="fixed inset-0 z-10"
                   onClick={() => setShowFormatDropdown(false)}
                 />
-                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-neutral-200 py-1 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+                <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
                   {FORMAT_OPTIONS.map((format) => {
                     const Icon = format.icon;
                     return (

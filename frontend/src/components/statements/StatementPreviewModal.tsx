@@ -331,7 +331,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className={cn('bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 overflow-hidden', className)}>
+    <div className={cn('bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 overflow-hidden', className)}>
       <div
         className={cn(
           'flex items-center justify-between px-4 py-3 bg-neutral-50 dark:bg-primary-950',
@@ -347,7 +347,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           {badge}
         </div>
         {collapsible && (
-          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors">
+          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md transition-colors">
             {isOpen ? (
               <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
@@ -521,7 +521,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         onClick={() => setExpanded(!expanded)}
       >
         {/* Expand Button */}
-        <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded shrink-0">
+        <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md shrink-0">
           {expanded ? (
             <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           ) : (
@@ -787,7 +787,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
       >
         <div className="flex items-start gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative',
+            'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative',
             isCredit ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10'
           )}>
             {isCredit ? (
@@ -1035,7 +1035,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
       title={
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center',
+            'w-10 h-10 rounded-lg flex items-center justify-center',
             statementType === 'camt054' ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-700'
           )}>
             {statementType === 'camt054' ? (
@@ -1064,11 +1064,11 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
         {loading && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-32 rounded-xl" />
-              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-lg" />
+              <Skeleton className="h-32 rounded-lg" />
             </div>
-            <Skeleton className="h-24 rounded-xl" />
-            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-10 rounded-lg" />
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-16 rounded-lg" />
@@ -1267,7 +1267,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             </div>
 
             {/* Entries Table (Desktop) */}
-            <div className="hidden md:block border rounded-xl overflow-hidden">
+            <div className="hidden md:block border rounded-lg overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {/* Table Header */}
                 <div className="bg-neutral-50 dark:bg-primary-950 px-4 py-3 border-b border-neutral-200 dark:border-primary-800 sticky top-0 z-10">
@@ -1302,7 +1302,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             </div>
 
             {/* Entries Cards (Mobile) */}
-            <div className="md:hidden border rounded-xl overflow-hidden">
+            <div className="md:hidden border rounded-lg overflow-hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {filteredEntries.map((entry, idx) => (
                   <EntryMobileCard

@@ -385,7 +385,7 @@ const StatsCard: React.FC<{ title: string; value: string | number; subtitle?: st
     return (
       <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
         <div className="flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="w-12 h-12 rounded-lg" />
           <div className="flex-1">
             <Skeleton className="h-3 w-16 mb-2" />
             <Skeleton className="h-6 w-20" />
@@ -422,9 +422,9 @@ const StatsCard: React.FC<{ title: string; value: string | number; subtitle?: st
 const BankCard: React.FC<{ bank: BankSummary; isSelected: boolean; onClick: () => void }> = ({ bank, isSelected, onClick }) => {
   const isHomeBank = bank.bankRelationship === 'INTERNAL';
   return (
-    <Card className={cn("cursor-pointer hover:shadow-medium transition-all", isSelected && "ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-800/40")} onClick={onClick}>
+    <Card className={cn("cursor-pointer hover:shadow-md transition-all", isSelected && "ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-800/40")} onClick={onClick}>
       <div className="flex items-center gap-4">
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-neutral-100 dark:bg-primary-800")}>
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-neutral-100 dark:bg-primary-800")}>
           {isHomeBank ? <Building2 className="w-6 h-6 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-6 h-6 text-neutral-600 dark:text-neutral-300" />}
         </div>
         <div className="flex-1 min-w-0">
@@ -594,7 +594,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         <div className="p-4 bg-info-50 border border-info-200 rounded-lg dark:bg-info-500/10 dark:border-info-500/30">
           <div className="flex items-start gap-4">
             <div className={cn(
-              "w-12 h-12 rounded-xl flex items-center justify-center",
+              "w-12 h-12 rounded-lg flex items-center justify-center",
               account.isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-info-100 dark:bg-info-500/20"
             )}>
               {account.isHomeBank ? (
@@ -887,7 +887,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                 return (
                   <div key={att.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className={cn("w-6 h-6 rounded flex items-center justify-center", typeConfig?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
+                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", typeConfig?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
                         <TypeIcon className={cn("w-3 h-3", typeConfig?.color || 'text-neutral-600 dark:text-neutral-300')} />
                       </div>
                       <div>
@@ -1421,7 +1421,7 @@ const PhysicalAccountsPage: React.FC = () => {
                       {otherCurrencies.slice(0, 5).map(([ccy, amt]) => (
                         <span
                           key={ccy}
-                          className="font-mono text-caption px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
+                          className="font-mono text-caption px-1.5 py-0.5 rounded-md bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
                         >
                           {ccy} <TileAmount value={amt} currency={ccy} showCurrency={false} />
                         </span>
@@ -1540,7 +1540,7 @@ const PhysicalAccountsPage: React.FC = () => {
             >
               <div className="flex items-start gap-3">
                 <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                  "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
                   account.isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-info-50 dark:bg-info-500/10"
                 )}>
                   {account.isHomeBank ? (
@@ -1589,7 +1589,7 @@ const PhysicalAccountsPage: React.FC = () => {
               render: (_, account) => (
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+                    'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
                     account.isHomeBank ? 'bg-primary-100 dark:bg-primary-700' : 'bg-info-50 dark:bg-info-500/10'
                   )}>
                     {account.isHomeBank ? <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-5 h-5 text-info-600 dark:text-info-300" />}
@@ -1597,7 +1597,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="body text-primary-900 truncate dark:text-neutral-50">{account.accountName}</p>
-                      <span className={cn("px-1.5 py-0.5 rounded text-caption shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
+                      <span className={cn("px-1.5 py-0.5 rounded-md text-caption shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
                         {account.isHomeBank ? <Server className="w-3 h-3 inline" /> : <Wifi className="w-3 h-3 inline" />}
                       </span>
                     </div>
@@ -1679,7 +1679,7 @@ const PhysicalAccountsPage: React.FC = () => {
         {selectedAccount && (
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className={cn("w-16 h-16 rounded-xl flex items-center justify-center", selectedAccount.isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-info-100 dark:bg-info-500/20")}>
+              <div className={cn("w-16 h-16 rounded-lg flex items-center justify-center", selectedAccount.isHomeBank ? "bg-primary-100 dark:bg-primary-700" : "bg-info-100 dark:bg-info-500/20")}>
                 {selectedAccount.isHomeBank ? <Building2 className="w-8 h-8 text-primary-700 dark:text-neutral-200" /> : <Globe className="w-8 h-8 text-info-600 dark:text-info-300" />}
               </div>
               <div className="flex-1">

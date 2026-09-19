@@ -276,7 +276,7 @@ const intercompanyApi = {
 
 const LoadingSpinner: React.FC<{ text?: string }> = ({ text = 'Loading...' }) => (
   <div className="flex items-center justify-center py-12 animate-fade-in">
-    <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center dark:bg-primary-700">
+    <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
       <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
     </div>
     <span className="ml-3 text-neutral-600 font-medium dark:text-neutral-300">{text}</span>
@@ -518,7 +518,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
                   type="checkbox" 
                   checked={formData.generateViban}
                   onChange={(e) => setFormData({ ...formData, generateViban: e.target.checked })}
-                  className="rounded text-primary-600 dark:text-primary-200"
+                  className="rounded-md text-primary-600 dark:text-primary-200"
                 />
                 <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
               </label>
@@ -658,12 +658,12 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
     <Card hover className="group">
       <div className="p-4">
         {/* Premium Gradient Header */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-info-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center dark:bg-primary-700">
+              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
                 <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
               </div>
               <div>
@@ -673,7 +673,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
             </div>
             <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-info-100 rounded-xl flex items-center justify-center dark:bg-info-500/20">
+              <div className="w-10 h-10 bg-info-100 rounded-lg flex items-center justify-center dark:bg-info-500/20">
                 <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
               </div>
               <div>
@@ -688,20 +688,20 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-3 bg-error-50 rounded-xl dark:bg-error-500/10">
+          <div className="text-center p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
             <p className="label">{pair.entity1Code} owes</p>
             <p className="font-semibold text-error-700 mt-1 dark:text-error-300">
               {formatCompactCurrency(pair.entity1OwesEntity2, 'AED')}
             </p>
           </div>
-          <div className="text-center p-3 bg-success-50 rounded-xl dark:bg-success-500/10">
+          <div className="text-center p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
             <p className="label">{pair.entity2Code} owes</p>
             <p className="font-semibold text-success-700 mt-1 dark:text-success-300">
               {formatCompactCurrency(pair.entity2OwesEntity1, 'AED')}
             </p>
           </div>
           <div className={cn(
-            'text-center p-3 rounded-xl',
+            'text-center p-3 rounded-lg',
             pair.netPosition > 0 ? 'bg-primary-50 dark:bg-primary-800/40' : 'bg-info-50 dark:bg-info-500/10'
           )}>
             <p className="label">Net Position</p>
@@ -1168,7 +1168,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <div className="grid grid-cols-3 gap-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="col-span-2">
             <Card hover>
-              <div className="h-1 bg-gradient-to-r from-primary-500 via-info-500 to-accent-500 rounded-t-xl" />
+              <div className="h-1 bg-gradient-to-r from-primary-500 via-info-500 to-accent-500 rounded-t-lg" />
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <StatusIconBadge tone="primary" icon={BarChart3} className="dark:bg-primary-700" />
@@ -1180,7 +1180,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatTile tone="primary" label="Net Position" value={<TileAmount value={positionSummary.netPosition} currency={positionSummary.currency} />} />
                 </StatStrip>
 
-                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center gap-6">
                     <div>
                       <p className="label">Pending Transactions</p>
@@ -1229,11 +1229,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <div className="p-4">
                 <h4 className="body-strong font-semibold mb-3">Settlement Options</h4>
                 <div className="space-y-2 text-body-sm">
-                  <div className="flex items-center gap-2 p-2.5 bg-warning-50 rounded-xl dark:bg-warning-500/10">
+                  <div className="flex items-center gap-2 p-2.5 bg-warning-50 rounded-lg dark:bg-warning-500/10">
                     <Zap className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                     <span className="font-medium text-neutral-700 dark:text-neutral-200">Direct Payment</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2.5 bg-primary-50 rounded-xl dark:bg-primary-800/40">
+                  <div className="flex items-center gap-2 p-2.5 bg-primary-50 rounded-lg dark:bg-primary-800/40">
                     <GitMerge className="w-4 h-4 text-primary-600 dark:text-primary-200" />
                     <span className="font-medium text-neutral-700 dark:text-neutral-200">Multilateral Netting</span>
                   </div>
@@ -1267,7 +1267,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           </StatStrip>
 
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-primary-500/50 via-white to-primary-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-primary-700" />
@@ -1309,7 +1309,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   {transactions.filter(poboTransactionFilter).length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                        <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                           <CreditCard className="w-8 h-8 text-neutral-400" />
                         </div>
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No POBO transactions found</p>
@@ -1373,7 +1373,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           </StatStrip>
 
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
@@ -1406,7 +1406,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   {transactions.filter(coboTransactionFilter).length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                        <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                           <Wallet className="w-8 h-8 text-neutral-400" />
                         </div>
                         <p className="text-neutral-500 font-medium dark:text-neutral-400">No COBO collections found</p>
@@ -1481,7 +1481,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Entity Pairs for Settlement */}
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-success-500/50 via-white to-success-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
               <div className="flex items-center gap-3">
                 <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" className="dark:bg-success-500/20" />
@@ -1494,7 +1494,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
               {entityPairs.filter(p => p.pendingTransactions > 0).length === 0 ? (
                 <div className="px-4 py-12 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-success-100 flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
+                  <div className="w-16 h-16 rounded-lg bg-success-100 flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
                     <CheckCircle className="w-8 h-8 text-success-500 dark:text-success-300" />
                   </div>
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
@@ -1504,7 +1504,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center dark:bg-primary-700">
+                        <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
                           <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
                         </div>
                         <div>
@@ -1514,7 +1514,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                       </div>
                       <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-400" />
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-info-100 rounded-xl flex items-center justify-center dark:bg-info-500/20">
+                        <div className="w-10 h-10 bg-info-100 rounded-lg flex items-center justify-center dark:bg-info-500/20">
                           <Building2 className="w-5 h-5 text-info-600 dark:text-info-300" />
                         </div>
                         <div>
@@ -1549,7 +1549,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
           {/* Intercompany Virtual Accounts */}
           <Card hover>
-            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+            <div className="h-1 bg-gradient-to-r from-info-500/50 via-white to-info-500/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
             <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1565,7 +1565,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
               {intercompanyVas.length === 0 ? (
                 <div className="px-4 py-12 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                  <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                     <Wallet className="w-8 h-8 text-neutral-400" />
                   </div>
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">No intercompany virtual accounts configured</p>
@@ -1574,7 +1574,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                   {intercompanyVas.map((va: any) => (
-                    <div key={va.id} className="p-4 rounded-xl border border-neutral-200 hover:border-info-300 hover:shadow-sm transition-all bg-white dark:border-primary-800 dark:bg-primary-900">
+                    <div key={va.id} className="p-4 rounded-lg border border-neutral-200 hover:border-info-300 hover:shadow-sm transition-all bg-white dark:border-primary-800 dark:bg-primary-900">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-info-500/20" />
@@ -1837,7 +1837,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 {transactions.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+                      <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                         <Receipt className="w-8 h-8 text-neutral-400" />
                       </div>
                       <p className="text-neutral-500 dark:text-neutral-400">No transactions found</p>
@@ -1857,7 +1857,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {entitiesWithPositions.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                 <Building2 className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No entities with intercompany positions</p>
@@ -1866,10 +1866,10 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             <Card key={entity.id} hover className="animate-fade-in" style={{ animationDelay: `${0.05 + i * 0.05}s` }}>
               <div className="p-4">
                 {/* Premium Gradient Header */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
 
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center dark:bg-primary-700">
+                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center dark:bg-primary-700">
                     <Building2 className="w-6 h-6 text-primary-600 dark:text-primary-200" />
                   </div>
                   <div className="flex-1">
@@ -1902,11 +1902,11 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-body-sm">
-                    <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <p className="label">Limit</p>
                       <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency="AED" /></p>
                     </div>
-                    <div className="p-3 bg-success-50 rounded-xl dark:bg-success-500/10">
+                    <div className="p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
                       <p className="label">Available</p>
                       <p className="font-semibold text-success-600 mt-1 dark:text-success-300"><TileAmount value={entity.availableLimit || 0} currency="AED" /></p>
                     </div>
@@ -1923,7 +1923,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         <div className="grid gap-4 md:grid-cols-2">
           {entityPairs.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
-              <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+              <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                 <ArrowLeftRight className="w-8 h-8 text-neutral-400" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No entity pairs with intercompany positions</p>

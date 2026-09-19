@@ -36,7 +36,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
   if (isLoading) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className="animate-pulse bg-neutral-200 h-8 w-32 rounded dark:bg-primary-800" />
+        <div className="animate-pulse bg-neutral-200 h-8 w-32 rounded-md dark:bg-primary-800" />
       </div>
     );
   }

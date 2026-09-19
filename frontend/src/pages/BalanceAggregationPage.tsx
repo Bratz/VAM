@@ -122,7 +122,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
         {hasChildren ? (
           <button
             onClick={(e) => { e.stopPropagation(); toggleExpand(node.nodeId); }}
-            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded mr-1"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md mr-1"
           >
             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -130,7 +130,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
           <span className="w-6" />
         )}
 
-        <div className={cn("w-6 h-6 rounded flex items-center justify-center mr-2", config.bgColor)}>
+        <div className={cn("w-6 h-6 rounded-md flex items-center justify-center mr-2", config.bgColor)}>
           <Icon className={cn("w-3 h-3", config.color)} />
         </div>
 
@@ -234,7 +234,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
             return (
               <div key={p.currency} className="flex items-center justify-between text-body-sm">
                 <div className="flex items-center gap-2">
-                  <div className={cn("w-3 h-3 rounded", colors[i % colors.length])} />
+                  <div className={cn("w-3 h-3 rounded-md", colors[i % colors.length])} />
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{p.currency}</span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -735,7 +735,7 @@ const BalanceAggregationPage: React.FC = () => {
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-4">
               <div className={cn(
-                "w-12 h-12 rounded-xl flex items-center justify-center",
+                "w-12 h-12 rounded-lg flex items-center justify-center",
                 NODE_TYPE_CONFIG[selectedNode.nodeType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800'
               )}>
                 {(() => {

@@ -185,14 +185,14 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
 
   return (
     <div className={cn(
-      "bg-white dark:bg-primary-900 rounded-xl border shadow-sm hover:shadow-md transition-all",
+      "bg-white dark:bg-primary-900 rounded-lg border shadow-sm hover:shadow-md transition-all",
       style.border
     )}>
       {/* Header */}
-      <div className={cn("p-4 rounded-t-xl", style.bg)}>
+      <div className={cn("p-4 rounded-t-lg", style.bg)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn("w-12 h-12 rounded-xl bg-white dark:bg-primary-900 shadow-sm flex items-center justify-center")}>
+            <div className={cn("w-12 h-12 rounded-lg bg-white dark:bg-primary-900 shadow-sm flex items-center justify-center")}>
               <CurrencyIcon currency={breakdown.currency} className={cn("w-6 h-6", style.text)} />
             </div>
             <div>
@@ -238,7 +238,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50/50 dark:bg-primary-950/50 rounded-b-xl">
+      <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50/50 dark:bg-primary-950/50 rounded-b-lg">
         <div className="flex items-center justify-between caption mb-3">
           <span className="font-mono">{breakdown.mirrorVaNumber}</span>
           {rateAge !== null && (
@@ -791,7 +791,7 @@ const CurrencyMirrorPage: React.FC = () => {
         {selectedMirror && (
           <div className="p-4 space-y-6">
             <div className="flex items-center gap-4">
-              <div className={cn("w-16 h-16 rounded-xl flex items-center justify-center", getCurrencyStyle(selectedMirror.currency).bg)}>
+              <div className={cn("w-16 h-16 rounded-lg flex items-center justify-center", getCurrencyStyle(selectedMirror.currency).bg)}>
                 <CurrencyIcon currency={selectedMirror.currency} className={cn("w-8 h-8", getCurrencyStyle(selectedMirror.currency).text)} />
               </div>
               <div>
@@ -805,13 +805,13 @@ const CurrencyMirrorPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-xl">
+              <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                 <p className="body-sm">Original Balance</p>
                 <p className="stat-value-sm">
                   {formatCurrency(selectedMirror.originalBalance, selectedMirror.currency)}
                 </p>
               </div>
-              <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-xl">
+              <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg">
                 <p className="body-sm">Converted ({baseCurrency})</p>
                 <p className="stat-value-sm text-success-600 dark:text-success-300">
                   {formatCurrency(selectedMirror.convertedBalance, baseCurrency)}
@@ -819,7 +819,7 @@ const CurrencyMirrorPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 border rounded-xl">
+            <div className="p-4 border rounded-lg">
               <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-3">FX Rate Information</h4>
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -939,7 +939,7 @@ const CurrencyMirrorPage: React.FC = () => {
           </Button>
 
           {convertedResult !== null && (
-            <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-xl text-center">
+            <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg text-center">
               <p className="body-sm">
                 {formatCurrency(converterAmount, converterFrom)} =
               </p>

@@ -99,7 +99,7 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
     )}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", typeConfig.bgColor)}>
+          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", typeConfig.bgColor)}>
             <TypeIcon className={cn("w-5 h-5", typeConfig.color)} />
           </div>
           <div>

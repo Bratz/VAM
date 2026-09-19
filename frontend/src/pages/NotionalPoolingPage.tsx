@@ -51,7 +51,7 @@ const LoadingSpinner: React.FC = () => (
     {[1, 2, 3, 4].map(i => (
       <Card key={i} padding="sm">
         <div className="flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-xl" />
+          <Skeleton className="w-10 h-10 rounded-lg" />
           <div className="space-y-2">
             <Skeleton className="h-6 w-16" />
             <Skeleton className="h-3 w-20" />

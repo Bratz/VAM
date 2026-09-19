@@ -560,7 +560,7 @@ const StatCard: React.FC<{
           </div>
         )}
       </div>
-      <div className={cn("p-3 rounded-xl", iconBg)}>{icon}</div>
+      <div className={cn("p-3 rounded-lg", iconBg)}>{icon}</div>
     </div>
   </Card>
 );
@@ -582,7 +582,7 @@ const ProgramCard: React.FC<{
         <div className="flex items-center gap-3">
           {/* Phase 12 Task G: flat tonal medallion (gradient + white-icon
               recipe retired in Phase 8). */}
-          <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center">
             <Wallet className="w-6 h-6 text-primary-700 dark:text-primary-200" />
           </div>
           <div>
@@ -668,7 +668,7 @@ const WalletRow: React.FC<{
       <td className="px-6 py-4">
         <div className="flex items-center gap-1">
           <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
-          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded">
+          <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md">
             <Copy className="w-3 h-3 text-neutral-400" />
           </button>
         </div>
@@ -1337,7 +1337,7 @@ const WalletPage: React.FC = () => {
             <Input label="Max Topup" type="number" value={createProgramForm.maxTopup?.toString() || ''} onChange={(e) => setCreateProgramForm({ ...createProgramForm, maxTopup: parseFloat(e.target.value) || undefined })} />
           </div>
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={createProgramForm.kycRequired} onChange={(e) => setCreateProgramForm({ ...createProgramForm, kycRequired: e.target.checked })} className="rounded border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={createProgramForm.kycRequired} onChange={(e) => setCreateProgramForm({ ...createProgramForm, kycRequired: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
             <Input label="Expiry Days" type="number" className="w-32" value={createProgramForm.expiryDays?.toString() || ''} onChange={(e) => setCreateProgramForm({ ...createProgramForm, expiryDays: parseInt(e.target.value) || undefined })} />
           </div>
         </div>
@@ -1353,7 +1353,7 @@ const WalletPage: React.FC = () => {
             <Input label="Monthly Limit" type="number" value={editProgramForm.monthlySpendLimit?.toString() || ''} onChange={(e) => setEditProgramForm({ ...editProgramForm, monthlySpendLimit: parseFloat(e.target.value) || undefined })} />
           </div>
           <Input label="Max Balance" type="number" value={editProgramForm.maxBalance?.toString() || ''} onChange={(e) => setEditProgramForm({ ...editProgramForm, maxBalance: parseFloat(e.target.value) || undefined })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={editProgramForm.kycRequired} onChange={(e) => setEditProgramForm({ ...editProgramForm, kycRequired: e.target.checked })} className="rounded border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={editProgramForm.kycRequired} onChange={(e) => setEditProgramForm({ ...editProgramForm, kycRequired: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm">KYC Required</span></label>
         </div>
       </Modal>
 
@@ -1442,7 +1442,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Alert variant="warning">Blocking a wallet will prevent all transactions. This action requires manual review to reverse.</Alert>
           <Input label="Reason *" placeholder="Enter reason for blocking" value={blockForm.reason} onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} className="rounded border-neutral-300 dark:border-primary-700" /><span className="text-body-sm text-error-600 dark:text-error-300">Permanent block (cannot be reversed)</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} className="rounded-md border-neutral-300 dark:border-primary-700" /><span className="text-body-sm text-error-600 dark:text-error-300">Permanent block (cannot be reversed)</span></label>
         </div>
       </Modal>
 
@@ -1461,7 +1461,7 @@ const WalletPage: React.FC = () => {
                 <h3 className="section-title">{walletDetail.holderName}</h3>
                 <p className="body-sm">{walletDetail.holderMobile}</p>
                 {walletDetail.holderEmail && <p className="body-sm">{walletDetail.holderEmail}</p>}
-                {walletDetail.viban && <div className="flex items-center gap-1 mt-1"><span className="caption">VIBAN:</span><span className="text-caption font-mono text-primary-600 dark:text-primary-200">{walletDetail.viban}</span><button onClick={() => navigator.clipboard.writeText(walletDetail.viban || '')} className="p-0.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded"><Copy className="w-3 h-3 text-neutral-400" /></button></div>}
+                {walletDetail.viban && <div className="flex items-center gap-1 mt-1"><span className="caption">VIBAN:</span><span className="text-caption font-mono text-primary-600 dark:text-primary-200">{walletDetail.viban}</span><button onClick={() => navigator.clipboard.writeText(walletDetail.viban || '')} className="p-0.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-md"><Copy className="w-3 h-3 text-neutral-400" /></button></div>}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <Badge variant={walletStatusConfig[walletDetail.status]?.color as any}>{walletDetail.status}</Badge>

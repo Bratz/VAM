@@ -59,7 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = cn(
       // Base layout & typography
       'inline-flex items-center justify-center font-medium',
-      'rounded-xl whitespace-nowrap select-none',
+      'rounded-lg whitespace-nowrap select-none',
       // Premium transitions
       'transition-all duration-200 ease-out',
       'transform-gpu will-change-transform',
@@ -299,7 +299,7 @@ export const Card: React.FC<CardProps> = ({
       style={style}
       className={cn(
         // Base styles
-        'rounded-2xl',
+        'rounded-lg',
         bordered && 'border border-neutral-200/80 dark:border-primary-800/60',
         // Background — dark variant flips to elevated navy panel
         gradient
@@ -346,7 +346,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   <div className={cn('flex items-start justify-between gap-4 mb-5', className)}>
     <div className="flex items-start gap-3">
       {icon && (
-        <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0 dark:bg-primary-800/40">
+        <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 dark:bg-primary-800/40">
           {icon}
         </div>
       )}
@@ -389,7 +389,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const sizeStyles: Record<string, string> = {
       sm: 'h-9 px-3 text-body-sm',
       md: 'h-11 px-4 text-body',
-      lg: 'h-13 px-5 text-body',
+      lg: 'h-12 px-5 text-body',
     };
 
     const iconSizes: Record<string, string> = {
@@ -419,7 +419,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             disabled={disabled}
             className={cn(
               // Base styles
-              'w-full rounded-xl border bg-white dark:bg-primary-900',
+              'w-full rounded-lg border bg-white dark:bg-primary-900',
               'text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
               // Transitions
               'transition-all duration-200',
@@ -523,7 +523,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           disabled={disabled}
           className={cn(
             // Base (mirrors Input)
-            'w-full rounded-xl border bg-white dark:bg-primary-900',
+            'w-full rounded-lg border bg-white dark:bg-primary-900',
             'text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
             'transition-all duration-200',
             'border-neutral-300 dark:border-primary-700',
@@ -587,7 +587,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const sizeStyles: Record<string, string> = {
       sm: 'h-9 px-3 pr-9 text-body-sm',
       md: 'h-11 px-4 pr-10 text-body',
-      lg: 'h-13 px-5 pr-12 text-body',
+      lg: 'h-12 px-5 pr-12 text-body',
     };
 
     return (
@@ -603,7 +603,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             disabled={disabled}
             className={cn(
               // Base styles
-              'w-full rounded-xl border bg-white appearance-none cursor-pointer dark:bg-primary-900',
+              'w-full rounded-lg border bg-white appearance-none cursor-pointer dark:bg-primary-900',
               'text-primary-900 dark:text-neutral-50',
               // Dark mode surface — flips to navy panel with light text and softer border.
               // Note: native <option> elements still render with the OS theme; that's a browser limitation.
@@ -689,8 +689,8 @@ export const Skeleton: React.FC<SkeletonProps> = ({
     text: 'h-4 rounded-lg',
     heading: 'h-7 rounded-lg',
     circular: 'rounded-full',
-    rectangular: 'rounded-xl',
-    card: 'rounded-2xl',
+    rectangular: 'rounded-lg',
+    card: 'rounded-lg',
   };
 
   if (lines > 1 && variant === 'text') {
@@ -747,7 +747,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   )}>
     {icon && (
       <div className={cn(
-        'rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-5 dark:bg-primary-800',
+        'rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-400 mb-5 dark:bg-primary-800',
         compact ? 'w-14 h-14' : 'w-20 h-20'
       )}>
         {icon}

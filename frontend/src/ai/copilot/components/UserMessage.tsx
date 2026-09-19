@@ -14,7 +14,7 @@ export const UserMessage: React.FC<UserMessageProps> = ({ message }) => (
   <div className="flex justify-end">
     <div className="max-w-[85%] flex flex-col items-end gap-1">
       <div className={[
-        'px-4 py-2.5 rounded-2xl rounded-tr-md',
+        'px-4 py-2.5 rounded-lg rounded-tr-md',
         'bg-primary-700 dark:bg-primary-700',
         'text-white text-body-sm leading-relaxed',
         'shadow-sm',

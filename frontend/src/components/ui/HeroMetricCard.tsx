@@ -52,7 +52,7 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
   return (
     <div
       className={cn(
-        'relative rounded-2xl overflow-hidden animate-fade-in',
+        'relative rounded-lg overflow-hidden animate-fade-in',
         'border border-neutral-200/70 dark:border-primary-800/60',
         'bg-gradient-to-br from-white via-white to-accent-50/40',
         'dark:from-primary-900/60 dark:via-primary-900/40 dark:to-accent-500/[0.06]',
@@ -80,7 +80,7 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
           row of these cards (confirmed live on Cash Forecast: icons at
           three different heights despite the cards being the same size). */}
       {icon && (
-        <div className="absolute top-6 right-6 shrink-0 w-14 h-14 rounded-2xl bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center">
+        <div className="absolute top-6 right-6 shrink-0 w-14 h-14 rounded-lg bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center">
           {icon}
         </div>
       )}

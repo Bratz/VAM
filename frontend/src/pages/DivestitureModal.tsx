@@ -72,7 +72,7 @@ const AggregationNode: React.FC<AggregationNodeProps> = ({ node, selectedId, onS
         onClick={() => onSelect(node)}
       >
         {aggregationChildren.length > 0 ? (
-          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-800 rounded">
+          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-800 rounded-md">
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-5" />}
@@ -297,7 +297,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                     </div>
 
                     <label className="flex items-start gap-3 p-4 bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                      <input type="checkbox" checked={confirmApproval} onChange={(e) => setConfirmApproval(e.target.checked)} className="mt-1 w-4 h-4 text-warning-600 rounded border-neutral-300 dark:border-primary-700 focus:ring-warning-500 dark:text-warning-300" />
+                      <input type="checkbox" checked={confirmApproval} onChange={(e) => setConfirmApproval(e.target.checked)} className="mt-1 w-4 h-4 text-warning-600 rounded-md border-neutral-300 dark:border-primary-700 focus:ring-warning-500 dark:text-warning-300" />
                       <span className="text-body-sm text-neutral-700 dark:text-neutral-200">I confirm this divestiture has been approved and all requirements have been met.</span>
                     </label>
 

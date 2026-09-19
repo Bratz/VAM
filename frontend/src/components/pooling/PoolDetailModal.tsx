@@ -85,10 +85,10 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={pool.poolName} size="lg">
       {/* Pool Header Info */}
-      <div className="bg-primary-50 dark:bg-primary-500/10 rounded-xl p-4 mb-6">
+      <div className="bg-primary-50 dark:bg-primary-500/10 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-lg bg-primary-600 flex items-center justify-center">
               <Layers className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -134,7 +134,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
 
       {/* Interest Calculation Result */}
       {interestResult && (
-        <div className="bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-xl p-4 mb-6">
+        <div className="bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-2 mb-3">
             <Calculator className="w-5 h-5 text-success-600 dark:text-success-300" />
             <h4 className="font-medium text-success-800 dark:text-success-300">Interest Calculation Result</h4>

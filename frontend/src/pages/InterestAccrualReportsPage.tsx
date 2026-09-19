@@ -530,7 +530,7 @@ const InterestAccrualReportsPage: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', ['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20')}>
+                <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center', ['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20')}>
                   <AccrualTypeIcon type={selectedAccrual.accrualType} />
                 </div>
                 <div>
@@ -542,7 +542,7 @@ const InterestAccrualReportsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
+              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
                 <h4 className="label mb-3">Entity Information</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Entity</span><span className="font-medium">{selectedAccrual.entityName || '-'}</span></div>
@@ -550,7 +550,7 @@ const InterestAccrualReportsPage: React.FC = () => {
                   {selectedAccrual.loanReference && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Loan Ref</span><span className="font-mono">{selectedAccrual.loanReference}</span></div>}
                 </div>
               </div>
-              <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
+              <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
                 <h4 className="label mb-3">Period Details</h4>
                 <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Period Start</span><span className="font-medium">{formatDate(selectedAccrual.periodStart)}</span></div>
@@ -560,7 +560,7 @@ const InterestAccrualReportsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-primary-50 rounded-xl p-4 dark:bg-primary-800/40">
+            <div className="bg-primary-50 rounded-lg p-4 dark:bg-primary-800/40">
               <h4 className="text-caption font-semibold text-primary-700 mb-3 uppercase tracking-wider dark:text-neutral-200">Interest Calculation</h4>
               <div className="grid grid-cols-3 gap-4 text-body-sm">
                 <div><p className="label">Principal Balance</p><p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">{formatCurrency(selectedAccrual.principalBalance, selectedAccrual.currency)}</p></div>

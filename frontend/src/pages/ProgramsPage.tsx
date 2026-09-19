@@ -509,7 +509,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-neutral-200 dark:border-primary-800">
-          <div className={cn('w-14 h-14 rounded-xl flex items-center justify-center', programTypeConfig[program.programType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
+          <div className={cn('w-14 h-14 rounded-lg flex items-center justify-center', programTypeConfig[program.programType]?.bgColor || 'bg-neutral-100 dark:bg-primary-800')}>
             <TypeIcon className={cn('w-7 h-7', programTypeConfig[program.programType]?.color || 'text-neutral-600 dark:text-neutral-300')} />
           </div>
           <div className="flex-1 min-w-0">
@@ -567,7 +567,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               {tab.id === 'hierarchy' && <GitBranch className="w-3.5 h-3.5" />}
               {tab.id === 'viban' && <Hash className="w-3.5 h-3.5" />}
               {tab.label}
-              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-100 rounded dark:bg-primary-800">{tab.count}</span>}
+              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-100 rounded-md dark:bg-primary-800">{tab.count}</span>}
               {tab.badge && <Badge variant="warning" size="sm">{tab.badge}</Badge>}
             </button>
           ))}
@@ -889,7 +889,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         </div>
                         {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' && (
                           <div className="pt-2 border-t">
-                            <div className="flex items-start gap-2 text-caption text-info-700 bg-info-50 p-2 rounded dark:text-info-300 dark:bg-info-500/10">
+                            <div className="flex items-start gap-2 text-caption text-info-700 bg-info-50 p-2 rounded-md dark:text-info-300 dark:bg-info-500/10">
                               <Info className="w-3 h-3 mt-0.5" />
                               <span>VIBANs encode hierarchy path for automatic routing</span>
                             </div>
@@ -1439,19 +1439,19 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       <ChevronRight className="w-4 h-4 text-neutral-400" />
       
       <div className="flex-1 flex items-center gap-2">
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
         <span className="caption">%</span>
         <span className="caption">+</span>
         <span className="caption">{currencyCode}</span>
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
       
       <label className="flex items-center gap-1 cursor-pointer">
-        <input type="checkbox" checked={isWaived} onChange={e => onWaiverChange(e.target.checked)} className="rounded" />
+        <input type="checkbox" checked={isWaived} onChange={e => onWaiverChange(e.target.checked)} className="rounded-md" />
         <span className="caption">Waive</span>
       </label>
       
@@ -2090,7 +2090,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     </span>
                   </div>
                   {i < (isEdit ? 1 : stepLabels.length - 1) && (
-                    <div className={cn('w-12 h-1 mx-1 rounded', isComplete ? 'bg-success-500' : 'bg-neutral-200 dark:bg-primary-800')} />
+                    <div className={cn('w-12 h-1 mx-1 rounded-md', isComplete ? 'bg-success-500' : 'bg-neutral-200 dark:bg-primary-800')} />
                   )}
                 </React.Fragment>
               );
@@ -2669,7 +2669,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], levelName: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded-md dark:border-primary-700"
                               />
                             </div>
 
@@ -2683,7 +2683,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], dimensionType: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded-md dark:border-primary-700"
                               >
                                 <option value="CURRENCY">💱 Currency</option>
                                 <option value="REGION">🌍 Region</option>
@@ -2775,7 +2775,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                 <input
                                   type="text"
                                   placeholder="Add value..."
-                                  className="flex-1 px-2 py-1 text-caption border border-neutral-300 rounded dark:border-primary-700"
+                                  className="flex-1 px-2 py-1 text-caption border border-neutral-300 rounded-md dark:border-primary-700"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -2808,7 +2808,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                       input.value = '';
                                     }
                                   }}
-                                  className="px-2 py-1 text-caption bg-cat-2 text-white rounded hover:bg-cat-2/90"
+                                  className="px-2 py-1 text-caption bg-cat-2 text-white rounded-md hover:bg-cat-2/90"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
@@ -2825,7 +2825,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], isRequired: e.target.checked };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="rounded text-cat-2 dark:text-cat-2-fg"
+                                className="rounded-md text-cat-2 dark:text-cat-2-fg"
                               />
                               <span className="text-neutral-600 dark:text-neutral-300">This level is required (must have a value)</span>
                             </label>
@@ -3199,7 +3199,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
@@ -3217,7 +3217,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
@@ -3235,7 +3235,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />
@@ -3410,25 +3410,25 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <h4 className="label mb-2">Wallet Limits</h4>
                   <div className="grid grid-cols-3 gap-2 text-caption">
                     {formData.defaultPerTransactionLimit && (
-                      <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                         <span className="text-neutral-500 dark:text-neutral-400">Per Txn:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultPerTransactionLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultDailyLimit && (
-                      <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                         <span className="text-neutral-500 dark:text-neutral-400">Daily:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultDailyLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultMonthlyLimit && (
-                      <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                         <span className="text-neutral-500 dark:text-neutral-400">Monthly:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultMonthlyLimit, formData.currencyCode)}</span>
                       </div>
                     )}
                     {formData.defaultMaxBalance && (
-                      <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                      <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                         <span className="text-neutral-500 dark:text-neutral-400">Max Balance:</span>
                         <span className="font-medium ml-1">{formatCurrency(formData.defaultMaxBalance, formData.currencyCode)}</span>
                       </div>
@@ -3464,7 +3464,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </h4>
                   {/* Transaction Fees */}
                   <div className="grid grid-cols-3 gap-2 text-caption mb-2">
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Topup:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.topup.waived ? 'Waived' : 
@@ -3472,7 +3472,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       </span>
                       {(chargeOverrides.topup.percent !== undefined || chargeOverrides.topup.flat !== undefined) && !chargeOverrides.topup.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Withdrawal:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.withdrawal.waived ? 'Waived' : 
@@ -3480,7 +3480,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       </span>
                       {(chargeOverrides.withdrawal.percent !== undefined || chargeOverrides.withdrawal.flat !== undefined) && !chargeOverrides.withdrawal.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Transfer:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.transfer.waived ? 'Waived' : 
@@ -3491,21 +3491,21 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                   {/* Fixed Fees */}
                   <div className="grid grid-cols-3 gap-2 text-caption">
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Issuance:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.issuance.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.issuance.flat ?? walletCharges.issuance.fixed}`}
                       </span>
                       {chargeOverrides.issuance.flat !== undefined && !chargeOverrides.issuance.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Monthly:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.monthly.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.monthly.flat ?? walletCharges.monthly.fixed}`}
                       </span>
                       {chargeOverrides.monthly.flat !== undefined && !chargeOverrides.monthly.waived && <Badge variant="info" size="sm" className="ml-1">Override</Badge>}
                     </div>
-                    <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
+                    <div className="p-2 bg-neutral-100 rounded-md dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Inactivity:</span>
                       <span className="font-medium ml-1">
                         {chargeOverrides.inactivity.waived ? 'Waived' : `${formData.currencyCode} ${chargeOverrides.inactivity.flat ?? walletCharges.inactivity.fixed}`}
@@ -3854,7 +3854,7 @@ const ProgramsPage: React.FC = () => {
           const Icon = tab.icon;
           return (
             <div key={tab.id} onClick={() => setTypeFilter(tab.id)} className="cursor-pointer">
-              <Card padding="sm" className={cn('transition-all hover:shadow-medium', typeFilter === tab.id && 'ring-2 ring-primary-500')}>
+              <Card padding="sm" className={cn('transition-all hover:shadow-md', typeFilter === tab.id && 'ring-2 ring-primary-500')}>
                 <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption truncate">{tab.label}</span></div>
                 <p className="text-body-lg font-semibold text-primary-900 mt-1 dark:text-neutral-50">{tab.count}</p>
               </Card>

@@ -202,7 +202,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded dark:border-primary-800"
+                className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded-md dark:border-primary-800"
                 autoFocus
               />
             </div>
@@ -241,7 +241,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                     onClick={() => { onSelect(va.id); setIsOpen(false); }}
                     className={cn('w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 text-left dark:hover:bg-primary-800/50', selectedId === va.id && 'bg-primary-50 dark:bg-primary-800/40')}
                   >
-                    <div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div>
+                    <div className="p-1.5 rounded-md bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{va.vaNumber}</p>
                       <p className="caption truncate">{va.vaName}</p>
@@ -264,7 +264,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                       className={cn('w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 text-left dark:hover:bg-primary-800/50', selectedId === node.id && 'bg-primary-50 dark:bg-primary-800/40')}
                       style={{ paddingLeft: `${(node.level || 0) * 12 + 12}px` }}
                     >
-                      <div className={cn('p-1.5 rounded', node.type === 'GROUP' ? 'bg-primary-900' : 'bg-cat-1/10 dark:bg-cat-1/15')}>
+                      <div className={cn('p-1.5 rounded-md', node.type === 'GROUP' ? 'bg-primary-900' : 'bg-cat-1/10 dark:bg-cat-1/15')}>
                         <Icon className={cn('w-3 h-3', node.type === 'GROUP' ? 'text-white' : 'text-cat-1 dark:text-cat-1-fg')} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -325,7 +325,7 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded dark:border-primary-800" autoFocus />
+              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded-md dark:border-primary-800" autoFocus />
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
@@ -336,7 +336,7 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
             ) : (
               filteredEntities.map(entity => (
                 <button key={entity.id} type="button" onClick={() => { onSelect(entity.id); setIsOpen(false); }} className={cn('w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 text-left dark:hover:bg-primary-800/50', selectedId === entity.id && 'bg-primary-50 dark:bg-primary-800/40')}>
-                  <div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div>
+                  <div className="p-1.5 rounded-md bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1 dark:text-cat-1-fg" /></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{entity.entityName}</p>
                     <p className="caption">{entity.entityCode} • {entity.entityType}</p>
@@ -561,7 +561,7 @@ const AccountAttachmentsPage: React.FC = () => {
       />
 
       {error && (
-        <div className="bg-error-50 border border-error-200 rounded-xl p-4 dark:bg-error-500/10 dark:border-error-500/30">
+        <div className="bg-error-50 border border-error-200 rounded-lg p-4 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-error-700 dark:text-error-300"><AlertTriangle className="w-5 h-5" /><span>{error}</span></div>
             <button onClick={() => setError(null)} className="text-error-400 hover:text-error-600"><X className="w-4 h-4" /></button>
@@ -643,7 +643,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 const Icon = cfg?.icon || Link2;
                 return (
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
+                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
                     <div className="min-w-0"><p className="text-body-sm font-semibold text-primary-900 truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="caption truncate">{att.entityName || 'Unknown Entity'}</p></div>
                   </div>
                 );
@@ -769,7 +769,7 @@ const AccountAttachmentsPage: React.FC = () => {
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={createForm.isPrimary} onChange={(e) => setCreateForm(p => ({ ...p, isPrimary: e.target.checked }))} className="rounded text-primary-600 dark:text-primary-200" />
+            <input type="checkbox" checked={createForm.isPrimary} onChange={(e) => setCreateForm(p => ({ ...p, isPrimary: e.target.checked }))} className="rounded-md text-primary-600 dark:text-primary-200" />
             <span className="text-body-sm">Set as Primary</span>
           </label>
 
@@ -785,7 +785,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
                 <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded text-cat-2 dark:text-cat-2-fg" /><span className="text-body-sm">Require Dual Authorization</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded-md text-cat-2 dark:text-cat-2-fg" /><span className="text-body-sm">Require Dual Authorization</span></label>
             </div>
           )}
 

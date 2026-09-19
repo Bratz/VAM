@@ -410,7 +410,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
 
   if (groupLimits.length === 0) {
     return (
-      <div className="bg-white rounded-xl border-2 border-dashed border-primary-300 p-8 text-center mb-6 dark:bg-primary-900">
+      <div className="bg-white rounded-lg border-2 border-dashed border-primary-300 p-8 text-center mb-6 dark:bg-primary-900">
         <Target className="w-12 h-12 text-primary-300 mx-auto mb-4" />
         <h3 className="text-body-lg font-semibold text-neutral-900 mb-2 dark:text-neutral-50">No Group Limits Set</h3>
         <p className="body-sm mb-4 max-w-md mx-auto">
@@ -431,10 +431,10 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
   const allocationPct = safePercent(allocated, limitAmount);
 
   return (
-    <div className="bg-gradient-to-r from-primary-50 via-primary-100/50 to-primary-50 rounded-xl border border-primary-200 p-6 mb-6 dark:border-primary-700">
+    <div className="bg-gradient-to-r from-primary-50 via-primary-100/50 to-primary-50 rounded-lg border border-primary-200 p-6 mb-6 dark:border-primary-700">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary-100 rounded-xl dark:bg-primary-700">
+          <div className="p-3 bg-primary-100 rounded-lg dark:bg-primary-700">
             <Layers className="w-8 h-8 text-primary-700 dark:text-neutral-200" />
           </div>
           <div>
@@ -476,7 +476,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
       {/* Selected Currency Details */}
       {selectedLimit && (
         <>
-          <div className="bg-white/80 rounded-xl p-4 mb-4 dark:bg-primary-900/80">
+          <div className="bg-white/80 rounded-lg p-4 mb-4 dark:bg-primary-900/80">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <span className={cn("text-heading-sm font-bold", currencyConfig[selectedCurrency!]?.color || 'text-neutral-900 dark:text-neutral-50')}>
@@ -546,7 +546,7 @@ const StatsCards: React.FC<{
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="label">Currencies</p>
@@ -557,7 +557,7 @@ const StatsCards: React.FC<{
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.15s' }}>
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.15s' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="label">Total Limits</p>
@@ -575,7 +575,7 @@ const StatsCards: React.FC<{
         )}
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.2s' }}>
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.2s' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="label">Entity Limits</p>
@@ -586,14 +586,14 @@ const StatsCards: React.FC<{
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.25s' }}>
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-neutral-100 hover:shadow-md transition-shadow animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.25s' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="label">Utilization</p>
             <p className={cn('mt-1', utilizationPercent > 80 ? 'stat-value-warning' : 'stat-value-success')}>{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${utilizationPercent.toFixed(0)}%`}</p>
             <p className="caption mt-1">across all currencies</p>
           </div>
-          <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', utilizationPercent > 80 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-success-100 dark:bg-success-500/20')}>
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', utilizationPercent > 80 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-success-100 dark:bg-success-500/20')}>
             {utilizationPercent > 80 ? <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" /> : <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />}
           </div>
         </div>
@@ -655,7 +655,7 @@ const EntityTreeNode: React.FC<{
       >
         <div className="flex items-center gap-3">
           {hasChildren ? (
-            <button type="button" onClick={() => onToggle(entity.id)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
+            <button type="button" onClick={() => onToggle(entity.id)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
               {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
             </button>
           ) : <span className="w-6" />}
@@ -717,9 +717,9 @@ const EntityTreeNode: React.FC<{
                     <p className="caption mt-0.5">{utilizationPct.toFixed(0)}% utilized</p>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded dark:hover:bg-primary-800" title="Edit limit"><Edit className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" /></button>
-                    <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-3.5 h-3.5 text-primary-500" /></button>
-                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" /></button>
+                    <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800" title="Edit limit"><Edit className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" /></button>
+                    <button type="button" onClick={() => onManageVaLimits(entity, currency)} className="p-1.5 hover:bg-primary-50 rounded-md dark:hover:bg-primary-800/40" title="Manage VA limits"><CreditCard className="w-3.5 h-3.5 text-primary-500" /></button>
+                    <button type="button" onClick={() => onDelete(entity.id, currency)} className="p-1.5 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10" title="Delete limit"><Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" /></button>
                   </div>
                 </div>
               );
@@ -1016,7 +1016,7 @@ const VaLimitsModal: React.FC<{
                             </div>
                             <p className="caption">{utilizationPct.toFixed(0)}% utilized</p>
                           </div>
-                          <button type="button" onClick={() => handleDeleteVaLimit(va.id)} className="p-2 hover:bg-error-50 rounded dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" /></button>
+                          <button type="button" onClick={() => handleDeleteVaLimit(va.id)} className="p-2 hover:bg-error-50 rounded-md dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4 text-error-500 dark:text-error-300" /></button>
                         </div>
                       );
                     })}
@@ -1265,7 +1265,7 @@ const CreditLimitsPage: React.FC = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-error-50 border border-error-200 rounded-xl p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
+        <div className="bg-error-50 border border-error-200 rounded-lg p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
             <p className="text-body-sm text-error-700 font-medium dark:text-error-300">{error}</p>
@@ -1281,7 +1281,7 @@ const CreditLimitsPage: React.FC = () => {
           <MultiCurrencyGroupLimitsCard groupLimits={groupLimits} onEdit={handleEditGroupLimit} onAddCurrency={handleAddGroupCurrency} />
 
           {groupLimits.length > 0 && (
-            <div className="bg-white rounded-xl border border-neutral-100 shadow-sm animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-white rounded-lg border border-neutral-100 shadow-sm animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.2s' }}>
               <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="primary" icon={GitBranch} className="dark:bg-primary-700" />
@@ -1330,14 +1330,14 @@ const CreditLimitsPage: React.FC = () => {
           )}
 
           {groupLimits.length === 0 && !loading && (
-            <div className="bg-white rounded-xl border border-neutral-100 p-8 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.15s' }}>
+            <div className="bg-white rounded-lg border border-neutral-100 p-8 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.15s' }}>
               <AlertTriangle className="w-12 h-12 text-warning-500 dark:text-warning-300 mx-auto mb-4" />
               <p className="text-neutral-600 dark:text-neutral-300">Create a Group Limit first to allocate to entities</p>
             </div>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
+        <div className="bg-white rounded-lg border border-neutral-100 p-12 text-center animate-fade-in dark:bg-primary-900 dark:border-primary-800/60" style={{ animationDelay: '0.1s' }}>
           <Building className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-400" />
           <p className="text-neutral-500 dark:text-neutral-400">Select a corporate to view credit limits</p>
         </div>

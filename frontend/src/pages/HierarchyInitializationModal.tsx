@@ -448,7 +448,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     type="checkbox"
                     checked={createCurrencyMirror}
                     onChange={(e) => setCreateCurrencyMirror(e.target.checked)}
-                    className="w-5 h-5 rounded border-neutral-300 dark:border-primary-700 text-cyan-600 focus:ring-cyan-500 dark:text-cyan-300"
+                    className="w-5 h-5 rounded-md border-neutral-300 dark:border-primary-700 text-cyan-600 focus:ring-cyan-500 dark:text-cyan-300"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -469,7 +469,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     type="checkbox"
                     checked={createExceptionVa}
                     onChange={(e) => setCreateExceptionVa(e.target.checked)}
-                    className="w-5 h-5 rounded border-neutral-300 dark:border-primary-700 text-warning-600 focus:ring-warning-500 dark:text-warning-300"
+                    className="w-5 h-5 rounded-md border-neutral-300 dark:border-primary-700 text-warning-600 focus:ring-warning-500 dark:text-warning-300"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -569,7 +569,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
                       <span className="body-sm">Base Currency</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-info-100 dark:bg-info-500/20 text-info-700 dark:text-info-300 text-body-sm font-medium">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-info-100 dark:bg-info-500/20 text-info-700 dark:text-info-300 text-body-sm font-medium">
                         {baseCurrency}
                       </span>
                     </div>

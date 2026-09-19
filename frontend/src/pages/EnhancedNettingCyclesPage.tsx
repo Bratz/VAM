@@ -69,7 +69,7 @@ interface SettlementInstruction {
 
 const LoadingSpinner: React.FC = () => (
   <div className="flex items-center justify-center py-12 animate-fade-in">
-    <div className="w-12 h-12 rounded-xl bg-primary-100 flex items-center justify-center dark:bg-primary-700">
+    <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
       <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
     </div>
     <span className="ml-3 text-neutral-600 font-medium dark:text-neutral-300">Loading netting cycles...</span>
@@ -229,7 +229,7 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
               id="autoPopulate"
               checked={formData.autoPopulate}
               onChange={(e) => setFormData({ ...formData, autoPopulate: e.target.checked })}
-              className="rounded text-primary-600 dark:text-primary-200"
+              className="rounded-md text-primary-600 dark:text-primary-200"
             />
             <label htmlFor="autoPopulate" className="text-body-sm text-neutral-700 dark:text-neutral-200">
               Auto-populate with eligible intercompany payables, receivables, and recharges
@@ -242,7 +242,7 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
                 id="includePending"
                 checked={formData.includePending}
                 onChange={(e) => setFormData({ ...formData, includePending: e.target.checked })}
-                className="rounded text-warning-600 dark:text-warning-300"
+                className="rounded-md text-warning-600 dark:text-warning-300"
               />
               <label htmlFor="includePending" className="body-sm">
                 Include pending (unapproved) POBO recharges
@@ -522,7 +522,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
           </div>
 
           {entries.length === 0 ? (
-            <div className="text-center py-12 bg-neutral-50 rounded-xl dark:bg-primary-950">
+            <div className="text-center py-12 bg-neutral-50 rounded-lg dark:bg-primary-950">
               <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-4 dark:bg-primary-800" />
               <h4 className="body-lg mb-1">No entries yet</h4>
               <p className="caption mb-4">
@@ -542,7 +542,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
               )}
             </div>
           ) : (
-            <div className="border rounded-xl overflow-hidden">
+            <div className="border rounded-lg overflow-hidden">
               <table className="data-table">
                 <thead className="data-table-header">
                   <tr>
@@ -611,20 +611,20 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-error-50 rounded-xl border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
+                    <div className="text-center p-3 bg-error-50 rounded-lg border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
                       <p className="label">Payables</p>
                       <p className="text-body-lg font-semibold text-error-700 mt-1 dark:text-error-300">
                         <TileAmount value={pos.grossPayables} currency={pos.currency} />
                       </p>
                     </div>
-                    <div className="text-center p-3 bg-success-50 rounded-xl border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
+                    <div className="text-center p-3 bg-success-50 rounded-lg border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
                       <p className="label">Receivables</p>
                       <p className="text-body-lg font-semibold text-success-700 mt-1 dark:text-success-300">
                         <TileAmount value={pos.grossReceivables} currency={pos.currency} />
                       </p>
                     </div>
                     <div className={cn(
-                      'text-center p-3 rounded-xl border',
+                      'text-center p-3 rounded-lg border',
                       pos.netDirection === 'RECEIVE' ? 'bg-success-100 border-success-200 dark:bg-success-500/20 dark:border-success-500/30' : 'bg-error-100 border-error-200 dark:bg-error-500/20 dark:border-error-500/30'
                     )}>
                       <p className="label">Net Position</p>
@@ -647,7 +647,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
       {/* Settlement Tab */}
       {activeTab === 'settlement' && (
         <div className="space-y-4">
-          <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-xl border border-info-200/60">
+          <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-lg border border-info-200/60">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
               <p className="text-body-sm text-info-800 dark:text-info-300">
@@ -733,7 +733,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
     <Card hover className="group">
       <div className="p-4">
         {/* Premium Gradient Header */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-success-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-xl" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-50/50 via-white to-success-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-t-lg" />
 
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -751,7 +751,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
           </div>
           <button
             onClick={onViewDetails}
-            className="p-2 hover:bg-neutral-100 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-primary-800"
+            className="p-2 hover:bg-neutral-100 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-primary-800"
           >
             <Eye className="w-5 h-5 text-neutral-400" />
           </button>
@@ -759,13 +759,13 @@ const CycleCard: React.FC<CycleCardProps> = ({
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-neutral-50 rounded-xl p-3 dark:bg-primary-950">
+          <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
             <p className="label">Gross</p>
             <p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">
               <TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />
             </p>
           </div>
-          <div className="bg-success-50 rounded-xl p-3 dark:bg-success-500/10">
+          <div className="bg-success-50 rounded-lg p-3 dark:bg-success-500/10">
             <p className="label">Net</p>
             <p className="text-body-lg font-bold text-success-700 mt-1 dark:text-success-300">
               <TileAmount value={cycle.totalNet || 0} currency={cycle.baseCurrency} />
@@ -775,7 +775,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
 
         {/* Savings Banner */}
         {cycle.savingsAmount > 0 && (
-          <div className="bg-gradient-to-r from-accent-50 to-accent-100 rounded-xl p-3 mb-4 flex justify-between items-center">
+          <div className="bg-gradient-to-r from-accent-50 to-accent-100 rounded-lg p-3 mb-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-accent-200 dark:bg-accent-500/15 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-accent-700 dark:text-accent-300" />
@@ -1052,7 +1052,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
       {/* Cycles Grid */}
       {filteredCycles.length === 0 ? (
         <Card className="text-center py-12 animate-fade-in" style={{ animationDelay: '0.45s' }}>
-          <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
+          <div className="w-16 h-16 rounded-lg bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
             <GitMerge className="w-8 h-8 text-neutral-400" />
           </div>
           <h3 className="section-title mb-2">No Netting Cycles</h3>

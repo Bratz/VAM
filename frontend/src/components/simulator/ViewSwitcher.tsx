@@ -33,7 +33,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
     role="tablist"
     aria-label="Simulator view"
     className={cn(
-      'inline-flex items-center gap-1 p-1 rounded-xl',
+      'inline-flex items-center gap-1 p-1 rounded-lg',
       'bg-neutral-100 dark:bg-primary-800/60',
       className,
     )}

@@ -139,7 +139,7 @@ const VibanDisplay: React.FC<{
         </div>
 
         {validUntil && (
-          <div className="flex items-center gap-2 text-caption text-info-700 dark:text-info-300 bg-white dark:bg-primary-900 rounded p-2">
+          <div className="flex items-center gap-2 text-caption text-info-700 dark:text-info-300 bg-white dark:bg-primary-900 rounded-md p-2">
             <Clock className="w-4 h-4" />
             <span>VIBAN valid until: {formatDate(validUntil)}</span>
           </div>
@@ -172,7 +172,7 @@ const VibanDisplay: React.FC<{
           <div className="text-center p-4">
             <div className="w-48 h-48 mx-auto bg-white p-4 rounded-lg border dark:bg-primary-900">
               {/* QR Code would be rendered here - using placeholder */}
-              <div className="w-full h-full bg-neutral-100 dark:bg-primary-800 flex items-center justify-center rounded">
+              <div className="w-full h-full bg-neutral-100 dark:bg-primary-800 flex items-center justify-center rounded-md">
                 <QrCode className="w-24 h-24 text-neutral-400" />
               </div>
             </div>
@@ -220,7 +220,7 @@ const IhbDepositPreview: React.FC<{
             <div className="flex items-center gap-2">
               <div className="w-8 h-0.5 bg-success-300" />
               <ArrowRight className="w-4 h-4 text-success-500 dark:text-success-300" />
-              <div className="flex flex-col items-center px-3 py-1 bg-success-100 rounded dark:bg-success-500/20">
+              <div className="flex flex-col items-center px-3 py-1 bg-success-100 rounded-md dark:bg-success-500/20">
                 <p className="text-body-sm font-bold text-success-700 dark:text-success-300">{formatCurrency(amount, currencyCode)}</p>
                 <p className="caption-success">@ {interestRate}% p.a.</p>
               </div>
@@ -237,21 +237,21 @@ const IhbDepositPreview: React.FC<{
 
         {/* Interest Breakdown */}
         <div className="grid grid-cols-3 gap-2 text-caption">
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Amount</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Daily Interest</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(dailyInterest, currencyCode)}</p>
           </div>
-          <div className="bg-white dark:bg-primary-900 rounded p-2">
+          <div className="bg-white dark:bg-primary-900 rounded-md p-2">
             <p className="text-neutral-500 dark:text-neutral-400">Est. Monthly</p>
             <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(monthlyInterest, currencyCode)}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-caption text-success-700 dark:text-success-300 bg-white dark:bg-primary-900 rounded p-2">
+        <div className="flex items-center gap-2 text-caption text-success-700 dark:text-success-300 bg-white dark:bg-primary-900 rounded-md p-2">
           <Info className="w-4 h-4" />
           <span>Funds will be deposited to {behalfEntity.entityName} during settlement</span>
         </div>
@@ -544,7 +544,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                     onGenerateVibanChange(e.target.checked);
                     if (!e.target.checked) setGeneratedViban(null);
                   }}
-                  className="w-4 h-4 rounded border-neutral-300 dark:border-primary-700 text-info-600 dark:text-info-300"
+                  className="w-4 h-4 rounded-md border-neutral-300 dark:border-primary-700 text-info-600 dark:text-info-300"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">

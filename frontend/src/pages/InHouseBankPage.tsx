@@ -303,7 +303,7 @@ const EntityCard: React.FC<{
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center',
+              'w-10 h-10 rounded-lg flex items-center justify-center',
               isTreasuryCenter ? 'bg-warning-100 dark:bg-warning-500/20' : isPositive ? 'bg-success-100 dark:bg-success-500/20' : 'bg-error-100 dark:bg-error-500/20'
             )}>
               {isTreasuryCenter ? (
@@ -753,7 +753,7 @@ const InHouseBankPage: React.FC = () => {
       {!selectedCorporateId && (
         <Card padding="md" className="bg-gradient-to-r from-neutral-50 via-white to-neutral-50 border-neutral-200 animate-fade-in dark:border-primary-800 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-warning-100 flex items-center justify-center mb-4 dark:bg-warning-500/20">
+            <div className="w-16 h-16 rounded-lg bg-warning-100 flex items-center justify-center mb-4 dark:bg-warning-500/20">
               <Building2 className="w-8 h-8 text-warning-600 dark:text-warning-300" />
             </div>
             <p className="section-title">Select a Corporate</p>
@@ -772,7 +772,7 @@ const InHouseBankPage: React.FC = () => {
             <Card padding="sm" className="bg-gradient-to-r from-warning-50/50 via-white to-success-50/50 border-warning-200/60 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.15s' }}>
               <div className="flex items-center justify-between p-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-warning-100 flex items-center justify-center flex-shrink-0 dark:bg-warning-500/20">
+                  <div className="w-10 h-10 rounded-lg bg-warning-100 flex items-center justify-center flex-shrink-0 dark:bg-warning-500/20">
                     <TrendingUp className="w-5 h-5 text-warning-600 dark:text-warning-300" />
                   </div>
                   <div>
@@ -895,7 +895,7 @@ const InHouseBankPage: React.FC = () => {
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className={cn(
-                              'w-10 h-10 rounded-xl flex items-center justify-center',
+                              'w-10 h-10 rounded-lg flex items-center justify-center',
                               account.positionType === 'CREDIT' ? 'bg-success-100 dark:bg-success-500/20' :
                               account.positionType === 'DEBIT' ? 'bg-error-100 dark:bg-error-500/20' : 'bg-neutral-100 dark:bg-primary-800'
                             )}>
@@ -928,11 +928,11 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Account Category & Type */}
                         <div className="flex gap-2 mb-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-caption font-medium bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                             {account.accountCategory || 'TRANSACTION'}
                           </span>
                           {account.ihbSweepEnabled && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-caption font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
                               <RefreshCw className="w-3 h-3 mr-1" />
                               Sweep: {account.ihbSweepFrequency || 'DAILY'}
                             </span>
@@ -1080,7 +1080,7 @@ const InHouseBankPage: React.FC = () => {
             )}>
               <div className="flex items-center gap-3 mb-3">
                 <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  "w-10 h-10 rounded-lg flex items-center justify-center",
                   selectedEntity.canLend && !selectedEntity.canBorrow ? "bg-warning-100 dark:bg-warning-500/20" : "bg-primary-100 dark:bg-primary-700"
                 )}>
                   <Building2 className={cn(
@@ -1210,13 +1210,13 @@ const InHouseBankPage: React.FC = () => {
           {/* Description */}
           <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-4 dark:border-cat-2/30 dark:bg-cat-2/15">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
+              <div className="w-10 h-10 rounded-lg bg-cat-2/10 flex items-center justify-center flex-shrink-0 dark:bg-cat-2/15">
                 <Wallet className="w-5 h-5 text-cat-2 dark:text-cat-2-fg" />
               </div>
               <div>
                 <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
                 <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">
-                  Creates a TRANSACTION VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
+                  Creates a TRANSACTION VA with <span className="font-mono bg-cat-2/10 px-1 rounded-md dark:bg-cat-2/15">ihbParticipant=true</span>.
                   This account supports running balance with credit interest (positive balance) and
                   debit interest (overdraft). The IHB flag allows any operational VA to participate
                   in treasury interest schemes.
@@ -1358,7 +1358,7 @@ const InHouseBankPage: React.FC = () => {
                     type="checkbox"
                     checked={currentAccountForm.ihbSweepEnabled}
                     onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, ihbSweepEnabled: e.target.checked })}
-                    className="rounded border-neutral-300 dark:border-primary-700"
+                    className="rounded-md border-neutral-300 dark:border-primary-700"
                   />
                   Enable Auto-Sweep
                 </label>

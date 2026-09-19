@@ -411,7 +411,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
             style={{ animationDelay: `${idx * 0.05}s` }}
           >
             <div className="flex items-center gap-3">
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", colors.iconBg)}>
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", colors.iconBg)}>
                 <Icon className={cn("w-5 h-5", colors.iconColor)} />
               </div>
               <div className="min-w-0">
@@ -462,7 +462,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
       <td className="data-table-cell">
         <div className="flex items-center gap-3">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
+            "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105",
             categoryConfig.bgColor
           )}>
             <CategoryIcon className={cn("w-5 h-5", categoryConfig.color)} />
@@ -552,7 +552,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
           {showActions && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
                 <button
                   onClick={() => { onView(account); setShowActions(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
@@ -626,7 +626,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
     >
       <div className="flex items-start gap-3">
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+          "w-12 h-12 rounded-lg flex items-center justify-center shrink-0",
           categoryConfig.bgColor
         )}>
           <CategoryIcon className={cn("w-6 h-6", categoryConfig.color)} />
@@ -722,7 +722,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
         {/* Expand Toggle */}
         <button 
           onClick={(e) => { e.stopPropagation(); onToggle(account.id); }}
-          className={cn("w-5 h-5 flex items-center justify-center rounded", hasChildren ? "hover:bg-neutral-200 dark:hover:bg-primary-700" : "invisible")}
+          className={cn("w-5 h-5 flex items-center justify-center rounded-md", hasChildren ? "hover:bg-neutral-200 dark:hover:bg-primary-700" : "invisible")}
         >
           {hasChildren && (
             <ChevronRightIcon className={cn("w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400", isExpanded && "rotate-90")} />
@@ -1894,7 +1894,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
             const Icon = config.icon;
             return (
               <div key={cat} className="flex items-center gap-1.5">
-                <div className={cn("w-5 h-5 rounded flex items-center justify-center", config.bgColor)}>
+                <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", config.bgColor)}>
                   <Icon className={cn("w-3 h-3", config.color)} />
                 </div>
                 <span className="text-neutral-600 dark:text-neutral-300">{config.label}</span>

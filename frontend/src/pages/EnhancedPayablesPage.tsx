@@ -1218,7 +1218,7 @@ const EnhancedPayablesPage: React.FC = () => {
 
       {/* Main Content Card */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-        <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-xl dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
+        <div className="h-1 bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 rounded-t-lg dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" />
 
         {/* Tabs & Search */}
         <div className="flex items-center justify-between gap-4 px-4 pt-4 pb-2 border-b border-neutral-200 dark:border-primary-800">

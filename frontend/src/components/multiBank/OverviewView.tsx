@@ -249,7 +249,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       {currencies.map((c) => (
         <span
           key={c.currencyCode}
-          className="amount text-caption px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
+          className="amount text-caption px-1.5 py-0.5 rounded-md bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
         >
           {formatCurrency(c.totalEffective, c.currencyCode)}
         </span>
@@ -354,7 +354,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       title="Converted using this platform's stored FX rates, which are seeded reference data — not a live market feed. Treat this total as indicative, not a live mark."
-                      className="inline-flex items-center gap-1 text-caption px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
+                      className="inline-flex items-center gap-1 text-caption px-1.5 py-0.5 rounded-md bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
                     >
                       <Info className="w-3 h-3" />
                       Indicative rates

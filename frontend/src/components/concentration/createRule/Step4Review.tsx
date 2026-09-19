@@ -33,21 +33,21 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
+        <div className="bg-white/60 dark:bg-primary-900/60 rounded-lg p-3 border border-neutral-200/60 dark:border-primary-800">
           <p className="label mb-1">Corporate</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{selectedCorporate?.legalName || selectedCorporate?.tradeName || '-'}</p>
         </div>
         {selectedProgram && (
-          <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
+          <div className="bg-white/60 dark:bg-primary-900/60 rounded-lg p-3 border border-neutral-200/60 dark:border-primary-800">
             <p className="label mb-1">Program</p>
             <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{selectedProgram.programName}</p>
           </div>
         )}
-        <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
+        <div className="bg-white/60 dark:bg-primary-900/60 rounded-lg p-3 border border-neutral-200/60 dark:border-primary-800">
           <p className="label mb-1">Currency</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{formData.currencyCode}</p>
         </div>
-        <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
+        <div className="bg-white/60 dark:bg-primary-900/60 rounded-lg p-3 border border-neutral-200/60 dark:border-primary-800">
           <p className="label mb-1">Priority</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{formData.priority}</p>
         </div>

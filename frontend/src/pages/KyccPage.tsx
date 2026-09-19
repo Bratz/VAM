@@ -32,7 +32,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, loading
     return (
       <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
         <div className="flex items-center gap-3">
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="w-12 h-12 rounded-lg" />
           <div className="flex-1">
             <Skeleton className="h-3 w-20 mb-2" />
             <Skeleton className="h-7 w-16" />
@@ -45,7 +45,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, loading
   return (
     <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
       <div className="flex items-center gap-3">
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", iconBg)}>
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center shrink-0", iconBg)}>
           {icon}
         </div>
         <div>
@@ -183,7 +183,7 @@ const RejectForm: React.FC<RejectFormProps> = ({ onSubmit, loading, onCancel }) 
       <div>
         <label className="form-label">Rejection Reason *</label>
         <textarea
-          className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-body-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
+          className="w-full px-4 py-3 border border-neutral-300 rounded-lg text-body-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Enter reason for rejection..."
@@ -315,7 +315,7 @@ const KyccPage: React.FC = () => {
           <div className="p-6 space-y-4">
             {[0, 1, 2, 3, 4].map((i) => (
               <div key={i} className="flex items-center gap-4">
-                <Skeleton className="w-10 h-10 rounded-xl" />
+                <Skeleton className="w-10 h-10 rounded-lg" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-1/3" />
                   <Skeleton className="h-3 w-1/4" />
@@ -483,7 +483,7 @@ const KyccPage: React.FC = () => {
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center dark:bg-primary-700">
+              <div className="w-16 h-16 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
                 <Shield className="w-8 h-8 text-primary-600 dark:text-primary-200" />
               </div>
               <div>
@@ -527,7 +527,7 @@ const KyccPage: React.FC = () => {
                 <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Documents</h4>
                 <div className="space-y-2">
                   {selectedKyc.documents.map((doc: any, idx: number) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                         <span className="text-body-sm text-primary-900 dark:text-neutral-50">{doc.type} - {doc.fileName}</span>
@@ -546,19 +546,19 @@ const KyccPage: React.FC = () => {
               <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
                 <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Screening Results</h4>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
+                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
                     <p className="caption mb-1">Sanctions</p>
                     <Badge variant={selectedKyc.screeningResults.sanctionsHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.sanctionsHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
+                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
                     <p className="caption mb-1">PEP</p>
                     <Badge variant={selectedKyc.screeningResults.pepHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.pepHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
+                  <div className="p-3 bg-neutral-50 rounded-lg text-center dark:bg-primary-950">
                     <p className="caption mb-1">Adverse Media</p>
                     <Badge variant={selectedKyc.screeningResults.adverseMedia ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.adverseMedia ? 'HIT' : 'CLEAR'}
