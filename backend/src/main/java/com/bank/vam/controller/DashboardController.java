@@ -5,6 +5,8 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.PhysicalAccount;
+import com.bank.vam.entity.payables.Payable;
+import com.bank.vam.repository.payables.PayableRepository;
 import com.bank.vam.entity.treasury.NettingCycle;
 import com.bank.vam.entity.treasury.NotionalPool;
 import com.bank.vam.entity.treasury.SweepRule;
@@ -45,6 +47,7 @@ public class DashboardController {
     private final SweepRuleRepository sweepRuleRepository;
     private final NotionalPoolRepository notionalPoolRepository;
     private final NettingCycleRepository nettingCycleRepository;
+    private final PayableRepository payableRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     // ============================================================================
@@ -495,7 +498,8 @@ public class DashboardController {
 
     @GetMapping("/pending-approvals")
     @Operation(summary = "Get all pending approvals across modules")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getPendingApprovals() {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPendingApprovals(
+            @RequestParam(required = false) UUID corporateId) {
         Map<String, Object> approvals = new HashMap<>();
         
         // Pending netting cycles
@@ -550,17 +554,35 @@ public class DashboardController {
         approvals.put("kycApplications", pendingKyc);
         approvals.put("kycCount", pendingKyc.size());
         
-        // Pending payables (mock - would need PayablesRepository)
-        List<Map<String, Object>> pendingPayables = Arrays.asList(
-            Map.of("id", UUID.randomUUID().toString(), "invoiceNumber", "INV-2024-001", 
-                   "vendorName", "Emirates Supplies Co", "amount", 125000, 
-                   "dueDate", LocalDate.now().plusDays(5).toString()),
-            Map.of("id", UUID.randomUUID().toString(), "invoiceNumber", "INV-2024-002",
-                   "vendorName", "Dubai Logistics", "amount", 85000,
-                   "dueDate", LocalDate.now().plusDays(7).toString())
-        );
+        // Payables the user can act on now: awaiting approval, or approved/scheduled with a source VA
+        // (payable via Pay Now). Earliest due first; payablesCount is the true total, list is capped.
+        List<Map<String, Object>> pendingPayables = new ArrayList<>();
+        int payablesCount = 0;
+        try {
+            List<Payable.PayableStatus> payableNow = List.of(Payable.PayableStatus.APPROVED,
+                Payable.PayableStatus.SCHEDULED, Payable.PayableStatus.PARTIAL, Payable.PayableStatus.POBO_APPROVED);
+            PageRequest top = PageRequest.of(0, 5, org.springframework.data.domain.Sort.by("dueDate").ascending());
+            org.springframework.data.domain.Page<Payable> page = corporateId != null
+                ? payableRepository.findDashboardActionableByCorporate(corporateId, Payable.PayableStatus.PENDING_APPROVAL, payableNow, top)
+                : payableRepository.findDashboardActionable(Payable.PayableStatus.PENDING_APPROVAL, payableNow, top);
+            payablesCount = (int) page.getTotalElements();
+            for (Payable p : page.getContent()) {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", p.getId().toString());
+                item.put("invoiceNumber", p.getInvoiceNumber() != null ? p.getInvoiceNumber() : p.getPayableNumber());
+                item.put("vendorName", p.getVendorName());
+                item.put("amount", p.getOutstandingAmount() != null ? p.getOutstandingAmount() : p.getNetAmount());
+                item.put("currencyCode", p.getCurrencyCode());
+                item.put("dueDate", p.getDueDate() != null ? p.getDueDate().toString() : null);
+                item.put("status", p.getStatus().name());
+                item.put("action", p.getStatus() == Payable.PayableStatus.PENDING_APPROVAL ? "APPROVE" : "PAY");
+                pendingPayables.add(item);
+            }
+        } catch (Exception e) {
+            log.warn("Error fetching actionable payables: {}", e.getMessage());
+        }
         approvals.put("payables", pendingPayables);
-        approvals.put("payablesCount", pendingPayables.size());
+        approvals.put("payablesCount", payablesCount);
         
         // Pending transactions
         List<Map<String, Object>> pendingTxns = new ArrayList<>();
@@ -588,7 +610,7 @@ public class DashboardController {
         
         // Total pending count
         int totalPending = pendingNetting.size() + pendingKyc.size() + 
-                          pendingPayables.size() + pendingTxns.size();
+                          payablesCount + pendingTxns.size();
         approvals.put("totalPending", totalPending);
         
         return ResponseEntity.ok(ApiResponse.success(approvals));

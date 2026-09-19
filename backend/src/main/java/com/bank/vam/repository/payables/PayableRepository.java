@@ -31,6 +31,19 @@ import java.util.UUID;
 @Repository
 public interface PayableRepository extends JpaRepository<Payable, UUID> {
 
+    // Dashboard "Payments" block: payables the user can act on right now -- awaiting approval,
+    // or approved/scheduled with a source VA (Payable.canBePaid + VA required by executePayment).
+    @Query("SELECT p FROM Payable p WHERE p.corporateId = :corporateId AND (p.status = :approval " +
+           "OR (p.status IN :payable AND p.virtualAccountId IS NOT NULL))")
+    Page<Payable> findDashboardActionableByCorporate(@Param("corporateId") UUID corporateId,
+            @Param("approval") PayableStatus approval, @Param("payable") List<PayableStatus> payable, Pageable pageable);
+
+    @Query("SELECT p FROM Payable p WHERE p.status = :approval " +
+           "OR (p.status IN :payable AND p.virtualAccountId IS NOT NULL)")
+    Page<Payable> findDashboardActionable(@Param("approval") PayableStatus approval,
+            @Param("payable") List<PayableStatus> payable, Pageable pageable);
+
+
     // ========================================================================
     // BASIC LOOKUPS
     // ========================================================================
