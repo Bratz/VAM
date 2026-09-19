@@ -89,7 +89,7 @@ export const Modal: React.FC<ModalProps> = ({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 -mt-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                className="p-2 -mr-2 -mt-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
               </button>
@@ -145,7 +145,7 @@ export const Tabs: React.FC<TabsProps> = ({
       container: 'bg-neutral-100 p-1 rounded-xl dark:bg-primary-800',
       tab: 'rounded-lg',
       active: 'bg-white shadow-soft text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
-      inactive: 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300',
+      inactive: 'text-neutral-600 hover:text-primary-900 dark:hover:text-neutral-50 dark:text-neutral-300',
     },
     pills: {
       container: 'gap-2',
@@ -157,7 +157,7 @@ export const Tabs: React.FC<TabsProps> = ({
       container: 'border-b border-neutral-200 dark:border-primary-800',
       tab: 'border-b-2 -mb-px',
       active: 'border-primary-900 text-primary-900 dark:text-neutral-50',
-      inactive: 'border-transparent text-neutral-500 hover:text-primary-900 hover:border-neutral-300 dark:text-neutral-400',
+      inactive: 'border-transparent text-neutral-500 hover:text-primary-900 dark:hover:text-neutral-50 hover:border-neutral-300 dark:text-neutral-400',
     },
   };
 

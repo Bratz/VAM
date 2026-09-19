@@ -32,7 +32,7 @@ export const HeaderHelpPopover: React.FC<{ description: React.ReactNode }> = ({ 
         aria-expanded={open}
         className={cn(
           'p-1 rounded-full transition-colors',
-          'text-neutral-400 hover:text-primary-700 hover:bg-neutral-100',
+          'text-neutral-400 hover:text-primary-700 dark:hover:text-primary-200 hover:bg-neutral-100 dark:hover:bg-primary-800/50',
           'dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60'
         )}
       >

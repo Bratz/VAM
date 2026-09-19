@@ -119,7 +119,7 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
           'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all',
           isSelected 
             ? 'bg-primary-100 dark:bg-primary-700 border-2 border-primary-400' 
-            : 'hover:bg-neutral-50 border-2 border-transparent',
+            : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50 border-2 border-transparent',
           matchesSearch && searchQuery && 'ring-2 ring-warning-200'
         )}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
@@ -132,7 +132,7 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-1 hover:bg-neutral-200 rounded transition-colors"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors"
           >
             <ChevronRight 
               className={cn(

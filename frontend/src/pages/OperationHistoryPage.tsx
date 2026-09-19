@@ -57,9 +57,9 @@ const Card: React.FC<{ children: React.ReactNode; className?: string; padding?: 
 const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'secondary' | 'ghost' | 'outline'; size?: 'sm' | 'md'; onClick?: () => void; disabled?: boolean; className?: string }> = ({ children, variant = 'primary', size = 'md', onClick, disabled, className }) => {
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-300',
-    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-200',
-    ghost: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300',
-    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-primary-700 dark:text-neutral-200',
+    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-200',
+    ghost: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300',
+    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-200',
   };
   const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm' };
   return <button onClick={onClick} disabled={disabled} className={cn('rounded-lg font-medium transition-colors flex items-center gap-2 disabled:cursor-not-allowed', variants[variant], sizes[size], className)}>{children}</button>;

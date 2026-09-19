@@ -252,7 +252,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                           setStep(3);
                         }}
                         className={cn(
-                          "w-full p-4 flex items-center justify-between border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors dark:border-primary-800/60",
+                          "w-full p-4 flex items-center justify-between border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:border-primary-800/60",
                           selectedAspsp?.aspspId === aspsp.aspspId && "bg-neutral-50 dark:bg-primary-950"
                         )}
                       >
@@ -388,7 +388,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
           <button
             onClick={step === 1 ? resetAndClose : () => setStep(step - 1)}
-            className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors"
+            className="px-4 py-2 body-sm hover:text-neutral-900 dark:hover:text-neutral-50 transition-colors"
             disabled={authorizing}
           >
             {step === 1 ? 'Cancel' : 'Back'}

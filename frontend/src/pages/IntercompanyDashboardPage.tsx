@@ -1146,7 +1146,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
               activeTab === tab.id
                 ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:bg-primary-800/40 dark:text-neutral-200'
-                : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
+                : 'border-transparent text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
             )}
           >
             <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-primary-600 dark:text-primary-200' : '')} />
@@ -1497,7 +1497,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
                 </div>
               ) : entityPairs.filter(p => p.pendingTransactions > 0).map((pair, i) => (
-                <div key={`${pair.entity1Id}-${pair.entity2Id}`} className="p-4 hover:bg-primary-50/30 transition-colors group">
+                <div key={`${pair.entity1Id}-${pair.entity2Id}`} className="p-4 hover:bg-primary-50/30 dark:hover:bg-primary-800/50 transition-colors group">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-3">

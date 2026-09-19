@@ -269,7 +269,7 @@ const BaaSDashboardPage: React.FC = () => (
           { name: 'Fintech Partner B', wallets: 3500, volume: 'AED 125M', status: 'Active' },
           { name: 'Fintech Partner C', wallets: 1250, volume: 'AED 4.5M', status: 'Active' },
         ].map((partner, i) => (
-          <div key={i} className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors group">
+          <div key={i} className="flex items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors group">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary-100 dark:bg-primary-700 rounded-xl flex items-center justify-center">
                 <span className="text-primary-700 dark:text-neutral-200 font-semibold">{partner.name.charAt(0)}</span>

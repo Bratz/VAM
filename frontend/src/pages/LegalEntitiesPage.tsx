@@ -518,7 +518,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
             {tabs.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
                 className={cn('flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors',
-                  activeTab === tab.id ? 'border-cat-1 text-cat-1 dark:text-cat-1-fg' : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700')}>
+                  activeTab === tab.id ? 'border-cat-1 text-cat-1 dark:text-cat-1-fg' : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-50')}>
                 <tab.icon className="w-4 h-4" />{tab.label}
               </button>
             ))}
@@ -838,7 +838,7 @@ const HierarchyTreeNode: React.FC<{
         {hasChildren ? (
           <button 
             onClick={(e) => { e.stopPropagation(); onToggle(entity.id); }} 
-            className="p-1 hover:bg-neutral-200 rounded transition-colors"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors"
           >
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-600 dark:text-neutral-300" /> : <ChevronRight className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />}
           </button>
@@ -1068,7 +1068,7 @@ const EntityDetailPanel: React.FC<{
           {entity.isBankCustomer ? (
             <div className="space-y-2">
               <div className="flex justify-between"><span className="body-sm">Status</span><span className="text-body-sm text-success-700 dark:text-success-300"><CheckCircle className="w-4 h-4 inline" /> Bank Customer</span></div>
-              {entity.bancsCustomerId && <div className="flex justify-between"><span className="body-sm">BANCS ID</span><span className="text-body-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 transition-colors dark:text-neutral-400"><Copy className="w-3 h-3 inline" /></button></span></div>}
+              {entity.bancsCustomerId && <div className="flex justify-between"><span className="body-sm">BANCS ID</span><span className="text-body-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 dark:hover:text-primary-200 transition-colors dark:text-neutral-400"><Copy className="w-3 h-3 inline" /></button></span></div>}
             </div>
           ) : <p className="body-sm text-center">Not a bank customer</p>}
         </div>

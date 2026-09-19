@@ -368,7 +368,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             title="Documentation & support"
             className={cn(
               'flex items-center gap-2 px-2 py-1.5 rounded-lg text-caption font-medium',
-              'text-neutral-500 dark:text-neutral-400 hover:text-primary-700 hover:bg-neutral-100',
+              'text-neutral-500 dark:text-neutral-400 hover:text-primary-700 dark:hover:text-primary-200 hover:bg-neutral-100 dark:hover:bg-primary-800/50',
               'dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60',
               'transition-colors'
             )}
@@ -443,7 +443,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 rounded-xl transition-colors"
+            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
           >
             <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -542,7 +542,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           {/* Mobile Search Button */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 rounded-xl transition-colors"
+            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
           >
             <Search className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -563,7 +563,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2.5 hover:bg-neutral-100 rounded-xl transition-colors"
+              className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
             >
               <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-error-500 rounded-full ring-2 ring-white" />
@@ -579,7 +579,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 )}>
                   <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
                     <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Notifications</h3>
-                    <button className="text-body-sm text-primary-600 hover:text-primary-700 font-medium dark:text-primary-200">
+                    <button className="text-body-sm text-primary-600 hover:text-primary-700 dark:hover:text-primary-200 font-medium dark:text-primary-200">
                       Mark all read
                     </button>
                   </div>
@@ -587,7 +587,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                     {notifications.map((n) => (
                       <div
                         key={n.id}
-                        className="p-4 hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0 transition-colors dark:border-primary-800/60"
+                        className="p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer border-b border-neutral-100 last:border-0 transition-colors dark:border-primary-800/60"
                       >
                         <div className="flex items-start gap-3">
                           <div className={cn(
@@ -607,7 +607,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                     ))}
                   </div>
                   <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 dark:bg-primary-950/50 dark:border-primary-800/60">
-                    <button className="w-full text-body-sm text-primary-600 hover:text-primary-700 font-medium py-1.5 dark:text-primary-200">
+                    <button className="w-full text-body-sm text-primary-600 hover:text-primary-700 dark:hover:text-primary-200 font-medium py-1.5 dark:text-primary-200">
                       View All Notifications
                     </button>
                   </div>
@@ -623,7 +623,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 p-2 hover:bg-neutral-100 rounded-xl transition-colors"
+              className="flex items-center gap-3 p-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-xl transition-colors"
             >
               <Avatar name="John Doe" size="sm" />
               <div className="hidden md:block text-left">
@@ -662,11 +662,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                     </div>
                   </div>
                   <div className="py-2">
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:text-neutral-200">
                       <User className="w-4 h-4 text-neutral-400" />
                       Profile Settings
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:text-neutral-200">
                       <Settings className="w-4 h-4 text-neutral-400" />
                       Preferences
                     </button>
@@ -833,7 +833,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
             {quickActions.map((action) => (
               <button
                 key={action.action}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-primary-800/50 active:bg-neutral-100 transition-colors"
               >
                 <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 dark:bg-primary-800/40 dark:text-primary-200">
                   {action.icon}
@@ -872,7 +872,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                           'transition-colors active:bg-neutral-100',
                           isActive
                             ? 'bg-primary-50 text-primary-700 dark:bg-primary-800/40 dark:text-neutral-200'
-                            : 'text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200'
+                            : 'text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:text-neutral-200'
                         )}
                       >
                         <span className={isActive ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400'}>
@@ -907,7 +907,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
         <div className="p-4 border-t border-neutral-100 dark:border-primary-800/60">
           <button
             onClick={onClose}
-            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-xl font-medium hover:bg-neutral-200 transition-colors dark:bg-primary-800 dark:text-neutral-200"
+            className="w-full h-12 bg-neutral-100 text-neutral-700 rounded-xl font-medium hover:bg-neutral-200 dark:hover:bg-primary-700 transition-colors dark:bg-primary-800 dark:text-neutral-200"
           >
             Close
           </button>

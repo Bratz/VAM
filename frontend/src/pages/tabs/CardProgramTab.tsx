@@ -128,7 +128,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
                 'p-4 rounded-lg border text-left transition-all',
                 formData.cardProgramType === type.value
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
-                  : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
+                  : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
               )}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -371,7 +371,7 @@ const QuickAssignButton: React.FC<QuickAssignButtonProps> = ({
       'px-4 py-2 rounded-lg border text-body-sm font-medium transition-colors',
       selected
         ? 'border-primary-500 bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200'
-        : 'border-neutral-200 hover:border-primary-300 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50'
+        : 'border-neutral-200 hover:border-primary-300 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
     )}
   >
     {label}

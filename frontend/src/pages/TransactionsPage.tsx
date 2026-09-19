@@ -703,7 +703,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
                   'px-4 py-3 rounded-xl text-body-sm font-medium transition-all duration-200',
                   type === t
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 shadow-sm dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
                 )}
                 onClick={() => setType(t)}
               >
@@ -1259,7 +1259,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                   'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'viban'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
                 )}
               >
                 <CreditCard className="w-4 h-4" />
@@ -1272,7 +1272,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                   'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'select'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
-                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
+                    : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-300'
                 )}
               >
                 <Building2 className="w-4 h-4" />

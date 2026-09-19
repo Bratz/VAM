@@ -250,7 +250,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="p-1 hover:bg-white dark:bg-primary-900/50 rounded"
+        className="p-1 hover:bg-white dark:hover:bg-primary-800 dark:bg-primary-900/50 rounded"
       >
         <X className="w-4 h-4 text-neutral-400" />
       </button>
@@ -894,7 +894,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-0.5 hover:bg-neutral-200 rounded shrink-0"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded shrink-0"
           >
             {isExpanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />

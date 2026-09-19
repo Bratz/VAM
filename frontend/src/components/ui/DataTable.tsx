@@ -239,7 +239,7 @@ export function DataTable<T>({
                     compact ? 'py-2.5' : 'py-3.5',
                     col.align === 'center' && 'text-center',
                     col.align === 'right' && 'text-right',
-                    col.sortable && 'cursor-pointer select-none hover:text-neutral-700 transition-colors'
+                    col.sortable && 'cursor-pointer select-none hover:text-neutral-700 dark:hover:text-neutral-50 transition-colors'
                   )}
                   style={{ width: col.width }}
                   onClick={() => col.sortable && handleSort(String(col.key))}
@@ -541,7 +541,7 @@ export function DataTable<T>({
                     'w-9 h-9 rounded-xl text-body-sm font-medium transition-all duration-200',
                     currentPage === page
                       ? 'bg-primary-600 text-white shadow-md'
-                      : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300'
+                      : 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300'
                   )}
                 >
                   {page}

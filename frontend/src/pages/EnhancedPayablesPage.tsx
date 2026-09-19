@@ -706,7 +706,7 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => onViewDetails(payable)}
-        className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
+        className="p-1.5 text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
         title="View Details"
       >
         <Eye className="w-4 h-4" />
@@ -714,7 +714,7 @@ const PayableActionsCell: React.FC<PayableActionsCellProps> = ({
       {canSubmit && (
         <button
           onClick={() => onSubmit(payable)}
-          className="p-1.5 text-neutral-500 hover:text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
+          className="p-1.5 text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 dark:text-primary-200 hover:bg-primary-50 dark:bg-primary-800/40 rounded-lg transition-colors dark:text-neutral-400 dark:hover:bg-primary-800/40"
           title="Submit for Approval"
         >
           <Send className="w-4 h-4" />

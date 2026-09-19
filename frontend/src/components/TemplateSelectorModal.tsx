@@ -156,7 +156,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                         'p-4 border rounded-lg cursor-pointer transition-all',
                         isSelected
                           ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40'
-                          : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 dark:border-primary-800'
+                          : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-800'
                       )}
                     >
                       <div className="flex items-start gap-3">

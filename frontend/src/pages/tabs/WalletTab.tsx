@@ -185,7 +185,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               className={`p-3 rounded-lg border text-left transition-all ${
                 formData.kycLevel?.toString() === level.value
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-2 ring-primary-200'
-                  : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
+                  : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50 dark:hover:bg-primary-800/50'
               }`}
             >
               <div className="font-medium text-body-sm">Level {level.value}</div>

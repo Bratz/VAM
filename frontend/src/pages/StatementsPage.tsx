@@ -251,7 +251,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, className }) => {
     <button
       onClick={handleCopy}
       className={cn(
-        'inline-flex items-center gap-1 text-caption font-mono text-neutral-600 hover:text-primary-600 transition-colors group dark:text-neutral-300',
+        'inline-flex items-center gap-1 text-caption font-mono text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 transition-colors group dark:text-neutral-300',
         className
       )}
       title="Copy to clipboard"
@@ -457,7 +457,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
       >
         {/* Expand Button */}
         <td className="data-table-cell w-10">
-          <button className="p-1 hover:bg-neutral-200 rounded">
+          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
             {expanded ? (
               <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (
@@ -975,7 +975,7 @@ const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
               e.stopPropagation();
               setExpanded(!expanded);
             }}
-            className="p-0.5 hover:bg-neutral-200 rounded"
+            className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded"
           >
             {expanded ? (
               <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1131,7 +1131,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           {badge}
         </div>
         {collapsible && (
-          <button className="p-1 hover:bg-neutral-200 rounded transition-colors">
+          <button className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded transition-colors">
             {isOpen ? (
               <ChevronUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             ) : (

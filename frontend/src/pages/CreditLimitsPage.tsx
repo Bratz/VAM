@@ -442,7 +442,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
             <p className="body-sm mt-0.5">{groupLimits.length} {groupLimits.length === 1 ? 'currency' : 'currencies'} configured</p>
           </div>
         </div>
-        <button type="button" onClick={onAddCurrency} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-body-sm font-medium hover:bg-primary-200 flex items-center gap-1 dark:bg-primary-700 dark:text-neutral-200">
+        <button type="button" onClick={onAddCurrency} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-body-sm font-medium hover:bg-primary-200 dark:hover:bg-primary-700 flex items-center gap-1 dark:bg-primary-700 dark:text-neutral-200">
           <Plus className="w-4 h-4" /> Add Currency
         </button>
       </div>
@@ -462,7 +462,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
               onClick={() => setSelectedCurrency(currency)}
               className={cn(
                 "px-4 py-2 rounded-lg text-body-sm font-medium transition-all flex items-center gap-2",
-                isSelected ? "bg-white shadow-md border-2 border-primary-500 dark:bg-primary-900" : "bg-white/60 hover:bg-white border border-transparent dark:bg-primary-900/60"
+                isSelected ? "bg-white shadow-md border-2 border-primary-500 dark:bg-primary-900" : "bg-white/60 hover:bg-white dark:hover:bg-primary-800 border border-transparent dark:bg-primary-900/60"
               )}
             >
               <span className={cn("font-bold", config.color)}>{currency}</span>
@@ -655,7 +655,7 @@ const EntityTreeNode: React.FC<{
       >
         <div className="flex items-center gap-3">
           {hasChildren ? (
-            <button type="button" onClick={() => onToggle(entity.id)} className="p-1 hover:bg-neutral-200 rounded">
+            <button type="button" onClick={() => onToggle(entity.id)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
               {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
             </button>
           ) : <span className="w-6" />}

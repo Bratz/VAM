@@ -312,7 +312,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
         <button
           type="button"
           onClick={() => setShowMccPicker(!showMccPicker)}
-          className="flex items-center gap-2 text-body-sm font-medium text-primary-600 hover:text-primary-700"
+          className="flex items-center gap-2 text-body-sm font-medium text-primary-600 hover:text-primary-700 dark:hover:text-primary-200"
         >
           <Search className="w-4 h-4" />
           {showMccPicker ? 'Hide' : 'Show'} MCC Reference
@@ -340,7 +340,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                           ? 'bg-success-100 dark:bg-success-500/15 border-success-300 text-success-700 dark:text-success-300'
                           : mccBlacklist.includes(mcc.code.split('-')[0])
                           ? 'bg-error-100 dark:bg-error-500/15 border-error-300 text-error-700 dark:text-error-300'
-                          : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50'
+                          : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800/50'
                       )}
                       title={mcc.label}
                     >
@@ -465,7 +465,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                 'px-2 py-1 text-caption rounded border transition-colors',
                 countryWhitelist.includes(country.code)
                   ? 'bg-info-100 dark:bg-info-500/15 border-info-300 text-info-700 dark:text-info-300'
-                  : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50'
+                  : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800/50'
               )}
               title={country.name}
             >

@@ -151,9 +151,9 @@ const Button: React.FC<{
 }> = ({ children, variant = 'primary', size = 'md', onClick, disabled, className }) => {
   const variants = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-300',
-    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-200',
-    ghost: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300',
-    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-primary-700 dark:text-neutral-200',
+    secondary: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 dark:hover:bg-primary-700 dark:bg-primary-800 dark:text-neutral-200',
+    ghost: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-primary-800/50 dark:text-neutral-300',
+    outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:border-primary-700 dark:text-neutral-200',
   };
   const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm', lg: 'px-6 py-3 text-body' };
   return (
@@ -251,7 +251,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
         style={{ marginLeft: `${level * 24}px` }}
       >
         {hasChildren ? (
-          <button onClick={() => onToggle(node.id)} className="p-0.5 hover:bg-neutral-200 rounded">
+          <button onClick={() => onToggle(node.id)} className="p-0.5 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-5" />}
@@ -264,7 +264,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 hover:bg-neutral-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+              className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <MoreVertical className="w-4 h-4 text-neutral-400" />
             </button>
@@ -335,7 +335,7 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
           <span>by {operation.performedBy}</span>
         </div>
       </div>
-      <button onClick={() => onViewDetails(operation.id)} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:bg-primary-800 dark:text-neutral-400">
+      <button onClick={() => onViewDetails(operation.id)} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 dark:hover:bg-primary-800 dark:text-neutral-400">
         <Eye className="w-4 h-4" />
       </button>
     </div>

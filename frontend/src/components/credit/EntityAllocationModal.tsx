@@ -278,7 +278,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
           {/* Entity Info */}
-          <div className="bg-white dark:bg-primary-900/60 dark:bg-white backdrop-blur-sm rounded-xl p-4 border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30">
+          <div className="bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl p-4 border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30">
             <div className="flex items-center gap-3">
               <div className={cn('p-2 rounded-lg', typeConfig.bgColor, 'dark:bg-opacity-20')}>
                 <TypeIcon className={cn('w-5 h-5', typeConfig.color)} />
@@ -334,7 +334,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                       'px-4 py-3 rounded-xl border-2 transition-premium text-left',
                       isSelected
                         ? 'border-primary-500 bg-primary-50/80 dark:bg-primary-500/15 dark:border-primary-400 backdrop-blur-sm'
-                        : 'border-neutral-200 dark:border-primary-800 dark:border-primary-700 hover:border-neutral-300 dark:hover:border-primary-600 bg-white dark:bg-primary-900/40 dark:bg-white dark:hover:border-primary-700',
+                        : 'border-neutral-200 dark:border-primary-800 dark:border-primary-700 hover:border-neutral-300 dark:hover:border-primary-600 bg-white dark:bg-primary-900/40 dark:hover:border-primary-700',
                       isEditing && 'cursor-not-allowed opacity-50'
                     )}
                   >
@@ -371,7 +371,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                 </div>
                 <div className={cn('p-3 backdrop-blur-sm rounded-xl border', externalCeiling
                   ? 'bg-info-50/80 dark:bg-info-500/10 border-info-200/60 dark:border-info-500/20'
-                  : 'bg-white dark:bg-primary-900/40 dark:bg-white border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30'
+                  : 'bg-white dark:bg-primary-900/40 border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30'
                 )}>
                   <p className={cn('text-caption font-medium tracking-wide uppercase', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400')}>External Ceiling</p>
                   <p className={cn('text-body-lg font-bold currency-value', externalCeiling ? 'text-info-700 dark:text-info-300' : 'text-neutral-400 dark:text-neutral-400')}>
@@ -435,7 +435,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                 </div>
 
                 {/* Control Settings */}
-                <div className="p-4 bg-white dark:bg-primary-900/60 dark:bg-white backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 space-y-3">
+                <div className="p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 space-y-3">
                   <p className="body-strong font-semibold tracking-tight">Control Settings</p>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -484,7 +484,7 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
                   Advanced Settings
                 </button>
                 {showAdvanced && (
-                  <div className="mt-4 space-y-4 p-4 bg-white dark:bg-primary-900/60 dark:bg-white backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 animate-slide-up">
+                  <div className="mt-4 space-y-4 p-4 bg-white dark:bg-primary-900/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-primary-800/60 dark:border-primary-700/30 animate-slide-up">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="form-label dark:text-neutral-50">Warning Threshold (%)</label>

@@ -722,7 +722,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
         {/* Expand Toggle */}
         <button 
           onClick={(e) => { e.stopPropagation(); onToggle(account.id); }}
-          className={cn("w-5 h-5 flex items-center justify-center rounded", hasChildren ? "hover:bg-neutral-200" : "invisible")}
+          className={cn("w-5 h-5 flex items-center justify-center rounded", hasChildren ? "hover:bg-neutral-200 dark:hover:bg-primary-700" : "invisible")}
         >
           {hasChildren && (
             <ChevronRightIcon className={cn("w-4 h-4 text-neutral-400 transition-transform dark:text-neutral-400", isExpanded && "rotate-90")} />
@@ -954,7 +954,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
       subtitle={(
         <span className="flex items-center gap-2 body-sm">
           <span className="font-mono">{account.vaNumber}</span>
-          <button onClick={copyVaNumber} className="hover:text-primary-600">
+          <button onClick={copyVaNumber} className="hover:text-primary-600 dark:hover:text-primary-200">
             <Copy className="w-3.5 h-3.5" />
           </button>
         </span>
@@ -976,7 +976,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               "flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-primary-600 text-primary-600 dark:text-primary-200"
-                : "border-transparent text-neutral-500 hover:text-primary-600 dark:text-neutral-400"
+                : "border-transparent text-neutral-500 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-400"
             )}
           >
             <tab.icon className="w-4 h-4" />
@@ -1695,7 +1695,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 onClick={() => setViewMode('table')}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'table' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:text-neutral-300"
+                  viewMode === 'table' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
                 )}
               >
                 <CreditCard className="w-4 h-4" /> Table
@@ -1704,7 +1704,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 onClick={() => setViewMode('tree')}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
-                  viewMode === 'tree' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:text-neutral-300"
+                  viewMode === 'tree' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300"
                 )}
               >
                 <FolderTree className="w-4 h-4" /> Tree

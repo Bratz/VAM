@@ -83,7 +83,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={() => setShowActions(!showActions)}
-        className="p-2 hover:bg-neutral-100 rounded-lg transition-all"
+        className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-all"
       >
         <MoreHorizontal className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
       </button>
@@ -93,7 +93,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
           <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
             <button
               onClick={() => { onView(beneficiary); setShowActions(false); }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors dark:text-neutral-50"
             >
               <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
             </button>

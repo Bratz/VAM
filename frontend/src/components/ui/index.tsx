@@ -82,19 +82,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       ),
       secondary: cn(
         'bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-neutral-50',
-        'hover:bg-primary-200 hover:shadow-md',
+        'hover:bg-primary-200 dark:hover:bg-primary-700 hover:shadow-md',
         'active:bg-primary-300',
         'focus-visible:ring-primary-500'
       ),
       outline: cn(
         'border-2 border-primary-200 bg-white text-primary-900 dark:bg-primary-900 dark:text-neutral-50',
-        'hover:border-primary-300 hover:bg-primary-50 hover:shadow-md',
+        'hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-800/50 hover:shadow-md',
         'active:bg-primary-100',
         'focus-visible:ring-primary-500'
       ),
       ghost: cn(
         'bg-transparent text-primary-900 dark:text-neutral-50',
-        'hover:bg-primary-50',
+        'hover:bg-primary-50 dark:hover:bg-primary-800/50',
         'active:bg-primary-100',
         'focus-visible:ring-primary-500'
       ),

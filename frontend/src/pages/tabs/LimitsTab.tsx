@@ -386,7 +386,7 @@ const PresetButton: React.FC<PresetButtonProps> = ({ label, description, onClick
   <button
     type="button"
     onClick={onClick}
-    className="px-4 py-2 border border-neutral-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-colors text-left"
+    className="px-4 py-2 border border-neutral-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-800/50 transition-colors text-left"
   >
     <div className="body-strong">{label}</div>
     <div className="caption">{description}</div>

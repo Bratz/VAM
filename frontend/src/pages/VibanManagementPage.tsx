@@ -829,7 +829,7 @@ const VibanManagementPage: React.FC = () => {
           {notification.type === 'error' && <AlertCircle className="w-5 h-5 text-error-600 flex-shrink-0 dark:text-error-300" />}
           {notification.type === 'info' && <AlertCircle className="w-5 h-5 text-info-600 flex-shrink-0 dark:text-info-300" />}
           <span className="flex-1">{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:text-neutral-400">
+          <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 dark:text-neutral-400">
             <X className="w-4 h-4" />
           </button>
         </div>

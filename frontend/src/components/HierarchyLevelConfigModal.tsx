@@ -241,7 +241,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
               {hasSuggestedValues && (
                 <button
                   onClick={handleApplySuggested}
-                  className="text-caption text-primary-600 hover:text-primary-700 flex items-center gap-1 dark:text-primary-200"
+                  className="text-caption text-primary-600 hover:text-primary-700 dark:hover:text-primary-200 flex items-center gap-1 dark:text-primary-200"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Apply suggested
@@ -300,7 +300,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
                           ...level,
                           allowedValues: [...(level.allowedValues || []), value],
                         })}
-                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 rounded transition-colors dark:bg-primary-800"
+                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 dark:hover:bg-primary-800/50 rounded transition-colors dark:bg-primary-800"
                       >
                         + {value}
                       </button>

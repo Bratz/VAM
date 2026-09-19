@@ -122,7 +122,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
         {hasChildren ? (
           <button
             onClick={(e) => { e.stopPropagation(); toggleExpand(node.nodeId); }}
-            className="p-1 hover:bg-neutral-200 rounded mr-1"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded mr-1"
           >
             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>

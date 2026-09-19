@@ -143,7 +143,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           }}
           className={cn(
             'w-6 h-6 flex items-center justify-center rounded transition-colors',
-            hasChildren ? 'hover:bg-neutral-200' : 'invisible'
+            hasChildren ? 'hover:bg-neutral-200 dark:hover:bg-primary-700' : 'invisible'
           )}
         >
           {hasChildren && (

@@ -911,7 +911,7 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
       {/* Entity Header */}
       <div
         className={cn(
-          'border-b border-neutral-100 hover:bg-neutral-50/70 transition-all duration-200 dark:border-primary-800/60',
+          'border-b border-neutral-100 hover:bg-neutral-50/70 dark:hover:bg-primary-800/50 transition-all duration-200 dark:border-primary-800/60',
           depth === 0 && 'bg-gradient-to-r from-neutral-50 via-white to-neutral-50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900',
           entity.isTreasuryCenter && 'bg-gradient-to-r from-warning-50/30 via-white to-warning-50/30 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900'
         )}
@@ -1590,7 +1590,7 @@ const EntityBalanceTreePage: React.FC = () => {
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'hierarchy'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
-                  : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
+                  : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
               <TreeDeciduous className="w-4 h-4" />
@@ -1602,7 +1602,7 @@ const EntityBalanceTreePage: React.FC = () => {
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'flat'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
-                  : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
+                  : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
               <LayoutGrid className="w-4 h-4" />
@@ -1614,7 +1614,7 @@ const EntityBalanceTreePage: React.FC = () => {
                 'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'pyramid'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
-                  : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
+                  : 'text-neutral-600 hover:text-primary-600 dark:hover:text-primary-200 dark:text-neutral-300'
               )}
             >
               <Layers className="w-4 h-4" />

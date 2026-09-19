@@ -535,7 +535,7 @@ const LineItemsTab: React.FC<{
           {/* Add Button */}
           <button
             onClick={addLineItem}
-            className="w-full py-2 border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg body-sm hover:border-primary-400 hover:text-primary-600 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2 border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg body-sm hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-200 transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Line Item
@@ -1057,7 +1057,7 @@ const DocumentsTab: React.FC<{
                   <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
                   <span className="caption">({(file.size / 1024).toFixed(1)} KB)</span>
                 </div>
-                <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 rounded">
+                <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
                   <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 </button>
               </div>
@@ -1960,7 +1960,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                         'flex items-center gap-2 px-4 py-3 text-body-sm font-medium transition-colors border-b-2 -mb-px',
                         activeTab === tab.id
                           ? 'text-primary-600 dark:text-primary-200 border-primary-600 bg-white dark:bg-primary-900'
-                          : 'text-neutral-600 dark:text-neutral-300 border-transparent hover:text-neutral-900 dark:text-neutral-50 hover:bg-white dark:bg-primary-900 dark:hover:text-neutral-50'
+                          : 'text-neutral-600 dark:text-neutral-300 border-transparent hover:text-neutral-900 dark:text-neutral-50 hover:bg-white dark:hover:bg-primary-800 dark:bg-primary-900 dark:hover:text-neutral-50'
                       )}
                     >
                       <Icon className="w-4 h-4" />

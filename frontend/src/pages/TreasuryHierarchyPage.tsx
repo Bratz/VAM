@@ -1679,7 +1679,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         onClick={() => onSelect(node)}
       >
         {hasChildren ? (
-          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 rounded">
+          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded">
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-6" />}
@@ -1827,7 +1827,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               setMenuUp(window.innerHeight - rect.bottom < 340);
               setShowContextMenu(!showContextMenu);
             }}
-            className="p-1 hover:bg-neutral-200 rounded opacity-40 group-hover:opacity-100 transition-opacity"
+            className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded opacity-40 group-hover:opacity-100 transition-opacity"
           >
             <MoreVertical className="w-4 h-4 text-neutral-400" />
           </button>
