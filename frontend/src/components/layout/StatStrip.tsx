@@ -14,7 +14,7 @@ import { cn } from '../../utils';
  *  - 3 children → grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
  *  - 4 children → grid-cols-2 lg:grid-cols-4
  *  - 5 children → grid-cols-2 md:grid-cols-3 lg:grid-cols-5
- *  - 6+ children → grid-cols-2 md:grid-cols-3 lg:grid-cols-6
+ *  - 6+ children → grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 (3 below that — six tiles won't fit currency figures)
  *    (DISCOURAGED; prefer demoting metrics or splitting into two strips)
  *
  * Children should be `<Card>` from the design system or equivalent tile.
@@ -37,7 +37,7 @@ const gridClassByCols: Record<number, string> = {
   3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
   4: 'grid-cols-2 lg:grid-cols-4',
   5: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
-  6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6',
+  6: 'grid-cols-2 md:grid-cols-3 2xl:grid-cols-6',
 };
 
 export const StatStrip: React.FC<StatStripProps> = ({

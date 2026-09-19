@@ -1130,7 +1130,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-4">
           <StatsCard
             title="Total Receivables"
             value={formatCurrency(stats.totalReceivables)}
