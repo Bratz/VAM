@@ -47,7 +47,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
       <StatusIconBadge tone="error" icon={AlertCircle} />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
-        <p className="text-sm text-error-600 dark:text-error-300">{message}</p>
+        <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
       </div>
       <Button variant="outline" size="sm" onClick={onRetry}>
         Retry
@@ -65,8 +65,8 @@ const EmptyState: React.FC<{ onCreateRule: () => void }> = ({ onCreateRule }) =>
       <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-primary-800 flex items-center justify-center mb-4">
         <Layers className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
       </div>
-      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-1">No Sweep Rules</p>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Get started by creating your first sweep rule</p>
+      <p className="body-strong mb-1">No Sweep Rules</p>
+      <p className="caption mb-6">Get started by creating your first sweep rule</p>
       <Button onClick={onCreateRule} leftIcon={<Plus className="w-4 h-4" />}>
         Create Sweep Rule
       </Button>
@@ -324,7 +324,7 @@ const CashConcentrationPage: React.FC = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as 'rules' | 'history')}
               className={cn(
-                'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-all duration-200',
+                'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
                 activeTab === tab.id
                   ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
                   : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
@@ -333,7 +333,7 @@ const CashConcentrationPage: React.FC = () => {
               <tab.icon className={cn('w-4 h-4', activeTab === tab.id ? 'text-primary-600 dark:text-primary-200' : '')} />
               {tab.label}
               <span className={cn(
-                'px-1.5 py-0.5 text-xs rounded-full font-medium',
+                'px-1.5 py-0.5 text-caption rounded-full font-medium',
                 activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
               )}>{tab.count}</span>
             </button>

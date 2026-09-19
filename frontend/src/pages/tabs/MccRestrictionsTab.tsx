@@ -140,7 +140,7 @@ const CodeTagList: React.FC<CodeTagListProps> = ({
 }) => {
   if (codes.length === 0) {
     return (
-      <span className="text-xs text-neutral-400 italic">{emptyMessage}</span>
+      <span className="text-caption text-neutral-400 italic">{emptyMessage}</span>
     );
   }
 
@@ -240,10 +240,10 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-3">
           <CheckCircle className="w-5 h-5 text-success-600" />
-          <h4 className="text-sm font-medium text-neutral-900">MCC Whitelist</h4>
+          <h4 className="body-strong">MCC Whitelist</h4>
           <Badge variant="success" size="sm">{mccWhitelist.length} codes</Badge>
         </div>
-        <p className="text-xs text-neutral-500 mb-3">
+        <p className="caption mb-3">
           Only allow transactions at these merchant category codes. Leave empty to allow all.
         </p>
         
@@ -274,14 +274,14 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Ban className="w-5 h-5 text-error-600" />
-            <h4 className="text-sm font-medium text-neutral-900">MCC Blacklist</h4>
+            <h4 className="body-strong">MCC Blacklist</h4>
             <Badge variant="error" size="sm">{mccBlacklist.length} codes</Badge>
           </div>
           <Button size="sm" variant="ghost" onClick={addCommonBlocklist}>
             Add Common Blocks
           </Button>
         </div>
-        <p className="text-xs text-neutral-500 mb-3">
+        <p className="caption mb-3">
           Block transactions at these merchant category codes.
         </p>
         
@@ -312,7 +312,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
         <button
           type="button"
           onClick={() => setShowMccPicker(!showMccPicker)}
-          className="flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+          className="flex items-center gap-2 text-body-sm font-medium text-primary-600 hover:text-primary-700"
         >
           <Search className="w-4 h-4" />
           {showMccPicker ? 'Hide' : 'Show'} MCC Reference
@@ -322,7 +322,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
           <div className="mt-4 border border-neutral-200 rounded-lg max-h-60 overflow-y-auto">
             {MCC_CATEGORIES.map((category) => (
               <div key={category.category} className="border-b border-neutral-100 last:border-b-0">
-                <div className="px-3 py-2 bg-neutral-50 font-medium text-sm">
+                <div className="px-3 py-2 bg-neutral-50 font-medium text-body-sm">
                   {category.category}
                 </div>
                 <div className="p-2 flex flex-wrap gap-1">
@@ -335,7 +335,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                         addToList('mccWhitelist', code, mccWhitelist);
                       }}
                       className={cn(
-                        'px-2 py-1 text-xs rounded border transition-colors',
+                        'px-2 py-1 text-caption rounded border transition-colors',
                         mccWhitelist.includes(mcc.code.split('-')[0])
                           ? 'bg-success-100 border-success-300 text-success-700'
                           : mccBlacklist.includes(mcc.code.split('-')[0])
@@ -358,10 +358,10 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-3">
           <Store className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Merchant Whitelist</h4>
+          <h4 className="body-strong">Merchant Whitelist</h4>
           <Badge variant="info" size="sm">{merchantWhitelist.length} merchants</Badge>
         </div>
-        <p className="text-xs text-neutral-500 mb-3">
+        <p className="caption mb-3">
           Only allow transactions at specific merchants (by merchant ID or name).
         </p>
         
@@ -405,10 +405,10 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-3">
           <Globe className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Country Whitelist</h4>
+          <h4 className="body-strong">Country Whitelist</h4>
           <Badge variant="info" size="sm">{countryWhitelist.length} countries</Badge>
         </div>
-        <p className="text-xs text-neutral-500 mb-3">
+        <p className="caption mb-3">
           Only allow transactions in these countries. Leave empty to allow all.
         </p>
         
@@ -462,7 +462,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
                 }
               }}
               className={cn(
-                'px-2 py-1 text-xs rounded border transition-colors',
+                'px-2 py-1 text-caption rounded border transition-colors',
                 countryWhitelist.includes(country.code)
                   ? 'bg-info-100 border-info-300 text-info-700'
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-primary-50'
@@ -482,7 +482,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
           <Info className="w-4 h-4" />
           <div>
             <strong>Restrictions Summary:</strong>
-            <ul className="text-sm mt-1 list-disc list-inside">
+            <ul className="text-body-sm mt-1 list-disc list-inside">
               {mccWhitelist.length > 0 && (
                 <li>{mccWhitelist.length} MCC(s) whitelisted</li>
               )}

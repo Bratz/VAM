@@ -59,7 +59,7 @@ const UtilizationBar: React.FC<{ utilized: number; limit: number; currency: stri
       <div className="relative h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
         <div className={cn("absolute left-0 top-0 h-full transition-all rounded-full", getColor())} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
-      <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
+      <div className="flex justify-between caption">
         <span>{formatCurrency(utilized, currency)} / {formatCurrency(limit, currency)}</span>
         <span>{pct.toFixed(1)}%</span>
       </div>
@@ -94,14 +94,14 @@ const AgreementCard: React.FC<AgreementCardProps> = ({ agreement, onView, onUtil
           </div>
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{agreement.agreementName}</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{agreement.counterpartyBankName || 'Bank'}</p>
+            <p className="body-sm">{agreement.counterpartyBankName || 'Bank'}</p>
           </div>
         </div>
-        <Badge className={cn("text-xs", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
+        <Badge className={cn("text-caption", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
       </div>
 
       {agreement.externalReference && (
-        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">Ref: {agreement.externalReference}</p>
+        <p className="mt-2 caption">Ref: {agreement.externalReference}</p>
       )}
 
       <div className="mt-4">
@@ -112,7 +112,7 @@ const AgreementCard: React.FC<AgreementCardProps> = ({ agreement, onView, onUtil
         <UtilizationBar utilized={agreement.totalUtilized} limit={agreement.totalLimit} currency={agreement.limitCurrency} />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-caption">
         <div><span className="text-neutral-500 dark:text-neutral-400">Available:</span><span className={cn("ml-1 font-medium", agreement.availableLimit > 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>{formatCurrency(agreement.availableLimit, agreement.limitCurrency)}</span></div>
         <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400"><Calendar className="w-3 h-3" /><span>Expires: {formatDate(agreement.expiryDate)}</span></div>
         {agreement.baseRateType && <div><span className="text-neutral-500 dark:text-neutral-400">Rate:</span><span className="ml-1 font-medium">{agreement.baseRateType} + {agreement.spreadBps}bps</span></div>}
@@ -352,8 +352,8 @@ const CreditAgreementsPage: React.FC = () => {
 
       <div className="flex gap-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search agreements..." className="pl-9" /></div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Types</option>{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
-        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Status</option>{Object.entries(STATUS_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Types</option>{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"><option value="">All Status</option>{Object.entries(STATUS_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select>
       </div>
 
       {filteredAgreements.length > 0 ? (
@@ -394,7 +394,7 @@ const CreditAgreementsPage: React.FC = () => {
       <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Agreement Details" size="lg">
         {selectedAgreement && (
           <div className="p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="ml-2 font-medium">{selectedAgreement.agreementName}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <span className="ml-2 font-medium">{AGREEMENT_TYPE_CONFIG[selectedAgreement.agreementType]?.label}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Status:</span> <span className="ml-2 font-medium">{selectedAgreement.status}</span></div>
@@ -414,8 +414,8 @@ const CreditAgreementsPage: React.FC = () => {
       <Modal isOpen={showUtilizeModal} onClose={() => setShowUtilizeModal(false)} title="Utilize Credit" size="md">
         {selectedAgreement && (
           <div className="p-4 space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Utilize from: <strong>{selectedAgreement.agreementName}</strong></p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Available: {formatCurrency(selectedAgreement.availableLimit, selectedAgreement.limitCurrency)}</p>
+            <p className="body-sm">Utilize from: <strong>{selectedAgreement.agreementName}</strong></p>
+            <p className="body-sm">Available: {formatCurrency(selectedAgreement.availableLimit, selectedAgreement.limitCurrency)}</p>
             <div><label className="field-label block mb-1">Amount to Utilize</label><Input type="number" value={actionAmount} onChange={(e) => setActionAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" /></div>
             <div className="flex justify-end gap-2 pt-4 border-t"><Button variant="ghost" onClick={() => setShowUtilizeModal(false)}>Cancel</Button><Button onClick={handleUtilize} disabled={processing || actionAmount <= 0 || actionAmount > selectedAgreement.availableLimit}>{processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowUpRight className="w-4 h-4 mr-2" />}Utilize</Button></div>
           </div>
@@ -426,8 +426,8 @@ const CreditAgreementsPage: React.FC = () => {
       <Modal isOpen={showReleaseModal} onClose={() => setShowReleaseModal(false)} title="Release Credit" size="md">
         {selectedAgreement && (
           <div className="p-4 space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Release to: <strong>{selectedAgreement.agreementName}</strong></p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Utilized: {formatCurrency(selectedAgreement.totalUtilized, selectedAgreement.limitCurrency)}</p>
+            <p className="body-sm">Release to: <strong>{selectedAgreement.agreementName}</strong></p>
+            <p className="body-sm">Utilized: {formatCurrency(selectedAgreement.totalUtilized, selectedAgreement.limitCurrency)}</p>
             <div><label className="field-label block mb-1">Amount to Release</label><Input type="number" value={actionAmount} onChange={(e) => setActionAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" /></div>
             <div className="flex justify-end gap-2 pt-4 border-t"><Button variant="ghost" onClick={() => setShowReleaseModal(false)}>Cancel</Button><Button onClick={handleRelease} disabled={processing || actionAmount <= 0 || actionAmount > selectedAgreement.totalUtilized}>{processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowDownRight className="w-4 h-4 mr-2" />}Release</Button></div>
           </div>

@@ -227,7 +227,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
           <StatusIconBadge tone="primary" icon={FileText} className="dark:bg-primary-700" />
           <div>
             <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Download Statement</h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="caption">
               {vaNumber} - {accountName}
             </p>
           </div>
@@ -285,7 +285,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
               className={cn(
                 'w-full h-11 px-4 rounded-xl border bg-white dark:bg-primary-900',
                 'flex items-center justify-between',
-                'text-primary-900 text-base dark:text-neutral-50',
+                'text-primary-900 text-body dark:text-neutral-50',
                 'border-neutral-300 hover:border-neutral-400 dark:border-primary-700',
                 'focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
                 'transition-all duration-200'
@@ -330,12 +330,12 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
                         )} />
                         <div>
                           <p className={cn(
-                            'text-sm font-medium',
+                            'text-body-sm font-medium',
                             selectedFormat === format.value ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-900 dark:text-neutral-50'
                           )}>
                             {format.label}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <p className="caption">
                             {format.description}
                           </p>
                         </div>
@@ -402,10 +402,10 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
               </div>
             </div>
             <div>
-              <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+              <span className="body-strong">
                 Include Child Accounts
               </span>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 Aggregate transactions from all {childAccountCount} child accounts
               </p>
             </div>
@@ -418,34 +418,34 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
         <div className="mt-4 pt-4 border-t border-neutral-100 animate-fade-in dark:border-primary-800/60">
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
-            <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">Statement Preview</span>
+            <span className="body-strong">Statement Preview</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Opening Balance</p>
-              <p className="text-sm font-bold text-primary-900 dark:text-neutral-50">
+              <p className="caption mb-1">Opening Balance</p>
+              <p className="text-body-sm font-bold text-primary-900 dark:text-neutral-50">
                 {formatCurrency(previewSummary.openingBalance, currencyCode)}
               </p>
             </div>
             <div className="bg-success-50 rounded-lg p-3 dark:bg-success-500/10">
-              <p className="text-xs text-success-600 mb-1 dark:text-success-300">
+              <p className="caption-success mb-1">
                 Total Credits ({previewSummary.creditCount})
               </p>
-              <p className="text-sm font-bold text-success-700 dark:text-success-300">
+              <p className="text-body-sm font-bold text-success-700 dark:text-success-300">
                 +{formatCurrency(previewSummary.totalCredits, currencyCode)}
               </p>
             </div>
             <div className="bg-error-50 rounded-lg p-3 dark:bg-error-500/10">
-              <p className="text-xs text-error-600 mb-1 dark:text-error-300">
+              <p className="caption-error mb-1">
                 Total Debits ({previewSummary.debitCount})
               </p>
-              <p className="text-sm font-bold text-error-700 dark:text-error-300">
+              <p className="text-body-sm font-bold text-error-700 dark:text-error-300">
                 -{formatCurrency(previewSummary.totalDebits, currencyCode)}
               </p>
             </div>
             <div className="bg-primary-50 rounded-lg p-3 dark:bg-primary-800/40">
-              <p className="text-xs text-primary-600 mb-1 dark:text-primary-200">Closing Balance</p>
-              <p className="text-sm font-bold text-primary-900 dark:text-neutral-50">
+              <p className="text-caption text-primary-600 mb-1 dark:text-primary-200">Closing Balance</p>
+              <p className="text-body-sm font-bold text-primary-900 dark:text-neutral-50">
                 {formatCurrency(previewSummary.closingBalance, currencyCode)}
               </p>
             </div>

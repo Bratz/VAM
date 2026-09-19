@@ -49,7 +49,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
             value={currentCorporateId || ''}
             onChange={(e) => switchCorporate(e.target.value)}
             className={`appearance-none bg-white border border-neutral-300 rounded-lg pr-8 pl-3 ${
-              compact ? 'py-1 text-sm' : 'py-2'
+              compact ? 'py-1 text-body-sm' : 'py-2'
             } focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-primary-900 dark:border-primary-700`}
           >
             {corporates.map((corp) => (
@@ -75,7 +75,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
             value={currentEntityId || ''}
             onChange={(e) => switchEntity(e.target.value)}
             className={`w-full truncate appearance-none bg-white border border-neutral-300 rounded-lg pr-8 pl-3 ${
-              compact ? 'py-1 text-sm' : 'py-2'
+              compact ? 'py-1 text-body-sm' : 'py-2'
             } focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-primary-900 dark:border-primary-700`}
           >
             {filteredEntities.map((entity) => (
@@ -90,7 +90,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
       )}
 
       {showRoleBadge && currentEntity && (
-        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${currentEntity.isTreasuryCenter ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-300'}`}>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-caption font-medium ${currentEntity.isTreasuryCenter ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-300'}`}>
           <Building2 className="w-3 h-3" />
           {currentEntity.isTreasuryCenter ? 'Treasury' : 'Subsidiary'}
         </div>

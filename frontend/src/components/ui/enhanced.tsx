@@ -84,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="flex items-start justify-between p-6 border-b border-neutral-200 shrink-0 dark:border-primary-800">
             <div>
               {title && <h2 className="section-title">{title}</h2>}
-              {subtitle && <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">{subtitle}</p>}
+              {subtitle && <p className="body-sm mt-1">{subtitle}</p>}
             </div>
             {showCloseButton && (
               <button
@@ -162,8 +162,8 @@ export const Tabs: React.FC<TabsProps> = ({
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
+    sm: 'px-3 py-1.5 text-body-sm',
+    md: 'px-4 py-2 text-body',
   };
 
   const style = variants[variant];
@@ -188,7 +188,7 @@ export const Tabs: React.FC<TabsProps> = ({
           {tab.label}
           {tab.badge !== undefined && (
             <span className={cn(
-              'text-xs px-1.5 py-0.5 rounded-full',
+              'text-caption px-1.5 py-0.5 rounded-full',
               activeTab === tab.id ? 'bg-white/20' : 'bg-neutral-200'
             )}>
               {tab.badge}
@@ -259,7 +259,7 @@ export const Stepper: React.FC<StepperProps> = ({
                 ) : step.icon ? (
                   step.icon
                 ) : (
-                  <span className={size === 'sm' ? 'text-sm' : 'text-base'}>
+                  <span className={size === 'sm' ? 'text-body-sm' : 'text-body'}>
                     {index + 1}
                   </span>
                 )}
@@ -272,13 +272,13 @@ export const Stepper: React.FC<StepperProps> = ({
               )}>
                 <p className={cn(
                   'font-medium',
-                  size === 'sm' ? 'text-sm' : 'text-base',
+                  size === 'sm' ? 'text-body-sm' : 'text-body',
                   isActive ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-600 dark:text-neutral-300'
                 )}>
                   {step.title}
                 </p>
                 {step.description && (
-                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                  <p className="caption mt-0.5">
                     {step.description}
                   </p>
                 )}
@@ -342,9 +342,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     <div className="w-full">
       {(showLabel || label) && (
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">{label}</span>
+          <span className="body-sm">{label}</span>
           {showLabel && (
-            <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+            <span className="body-strong">
               {Math.round(percentage)}%
             </span>
           )}
@@ -427,7 +427,7 @@ export const Alert: React.FC<AlertProps> = ({
       <div className="flex-shrink-0">{style.icon}</div>
       <div className="flex-1">
         {title && <p className={cn('font-medium mb-1', style.title)}>{title}</p>}
-        <div className={cn('text-sm', style.content)}>{children}</div>
+        <div className={cn('text-body-sm', style.content)}>{children}</div>
       </div>
       {onClose && (
         <button
@@ -470,11 +470,11 @@ export const Avatar: React.FC<AvatarProps> = ({
   };
 
   const sizes = {
-    xs: 'w-6 h-6 text-xs',
-    sm: 'w-8 h-8 text-sm',
-    md: 'w-10 h-10 text-base',
-    lg: 'w-12 h-12 text-lg',
-    xl: 'w-16 h-16 text-lg font-semibold',
+    xs: 'w-6 h-6 text-caption',
+    sm: 'w-8 h-8 text-body-sm',
+    md: 'w-10 h-10 text-body',
+    lg: 'w-12 h-12 text-body-lg',
+    xl: 'w-16 h-16 text-body-lg font-semibold',
   };
 
   const statusColors = {
@@ -568,7 +568,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
       {children}
       {show && (
         <div className={cn(
-          'absolute z-50 px-2 py-1 text-xs text-white bg-primary-900 rounded-md whitespace-nowrap',
+          'absolute z-50 px-2 py-1 text-caption text-white bg-primary-900 rounded-md whitespace-nowrap',
           'animate-fade-in',
           positions[position]
         )}>

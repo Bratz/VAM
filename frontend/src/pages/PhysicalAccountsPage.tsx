@@ -434,7 +434,7 @@ const BankCard: React.FC<{ bank: BankSummary; isSelected: boolean; onClick: () =
                 MultiBankLiquidity conformance pass: 10px uppercase, accent
                 tone for home bank, neutral for external. */}
             <span className={cn(
-              "text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full",
+              "text-caption font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full",
               isHomeBank
                 ? "bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300"
                 : "bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300",
@@ -586,7 +586,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         {error && (
           <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
+            <span className="text-body-sm">{error}</span>
           </div>
         )}
 
@@ -605,8 +605,8 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">{account.accountName}</h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">{account.bankName}</p>
-              <p className="text-xs text-neutral-500 font-mono mt-1 dark:text-neutral-400">
+              <p className="body-sm">{account.bankName}</p>
+              <p className="text-caption text-neutral-500 font-mono mt-1 dark:text-neutral-400">
                 {account.iban || account.accountNumber}
               </p>
               <div className="flex items-center gap-3 mt-2">
@@ -676,10 +676,10 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
                           {node.accountCategory}
                         </Badge>
                       </div>
-                      <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{node.vaNumber}</p>
+                      <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{node.vaNumber}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{node.currencyCode}</p>
+                      <p className="caption">{node.currencyCode}</p>
                       {node.aggregatedBalance !== undefined && (
                         <p className="field-label">
                           {formatCurrency(node.aggregatedBalance, node.currencyCode)}
@@ -700,7 +700,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         <div className="p-3 bg-info-50 border border-info-200 rounded-lg dark:bg-info-500/10 dark:border-info-500/30">
           <div className="flex items-start gap-2">
             <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-            <div className="text-sm text-info-700 dark:text-info-300">
+            <div className="text-body-sm text-info-700 dark:text-info-300">
               <p className="font-medium">What happens when you link?</p>
               <ul className="mt-1 space-y-0.5 text-info-600 dark:text-info-300">
                 <li>• A Shadow Account (PHYSICAL_MIRROR) is created under the selected node</li>
@@ -717,7 +717,7 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
           <div className="p-3 bg-success-50 border border-success-200 rounded-lg dark:bg-success-500/10 dark:border-success-500/30">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
-              <span className="text-sm text-success-700 dark:text-success-300">
+              <span className="text-body-sm text-success-700 dark:text-success-300">
                 Shadow Account will be created under: <strong>{selectedNode.vaName}</strong>
               </span>
             </div>
@@ -857,7 +857,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
       <div className="space-y-5">
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-sm">{error}</span>
+            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span className="text-body-sm">{error}</span>
           </div>
         )}
 
@@ -866,17 +866,17 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
             <StatusIconBadge tone="info" icon={Layers} rounded="lg" />
             <div className="flex-1">
               <p className="font-medium text-primary-900 dark:text-neutral-50">{shadow.vaName}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{shadow.vaNumber}</p>
+              <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{shadow.vaNumber}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{shadow.currencyCode}</p>
+              <p className="caption">{shadow.currencyCode}</p>
               <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(shadow.bankBalance, shadow.currencyCode)}</p>
             </div>
           </div>
         </div>
 
         {loadingAttachments ? (
-          <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400"><Loader2 className="w-4 h-4 animate-spin" />Loading attachments...</div>
+          <div className="flex items-center gap-2 body-sm"><Loader2 className="w-4 h-4 animate-spin" />Loading attachments...</div>
         ) : existingAttachments.length > 0 && (
           <div>
             <label className="field-label block mb-2">Current Attachments</label>
@@ -891,7 +891,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                         <TypeIcon className={cn("w-3 h-3", typeConfig?.color || 'text-neutral-600 dark:text-neutral-300')} />
                       </div>
                       <div>
-                        <span className="text-sm font-medium">{att.entityName || att.legalEntityId}</span>
+                        <span className="text-body-sm font-medium">{att.entityName || att.legalEntityId}</span>
                         <Badge variant={att.isPrimary ? 'info' : 'neutral'} size="sm" className="ml-2">{att.relationshipType}</Badge>
                       </div>
                     </div>
@@ -917,9 +917,9 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                     isSelected ? "border-primary-500 bg-primary-50 dark:bg-primary-800/40 ring-1 ring-primary-200 dark:ring-primary-700" : "border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50")}>
                   <div className="flex items-center gap-2">
                     <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", config.bgColor)}><TypeIcon className={cn("w-4 h-4", config.color)} /></div>
-                    <p className="text-sm font-medium">{config.label}</p>
+                    <p className="text-body-sm font-medium">{config.label}</p>
                   </div>
-                  {isSelected && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">{config.description}</p>}
+                  {isSelected && <p className="caption mt-2">{config.description}</p>}
                 </button>
               );
             })}
@@ -933,7 +933,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
             <Input placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
           {filteredEntities.length === 0 ? (
-            <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg text-sm text-warning-700 dark:text-warning-300">
+            <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg text-body-sm text-warning-700 dark:text-warning-300">
               No entities found for this corporate.
             </div>
           ) : (
@@ -951,10 +951,10 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-100 dark:bg-primary-800">{getEntityTypeIcon(entity.entityType)}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.shortName || entity.entityName}</span>
+                          <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.shortName || entity.entityName}</span>
                           {entity.entityType && <Badge variant="neutral" size="sm">{entity.entityType}</Badge>}
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        <div className="flex items-center gap-2 caption">
                           <span className="font-mono">{entity.entityCode}</span><span>•</span><span>{entity.functionalCurrency}</span>
                         </div>
                       </div>
@@ -979,7 +979,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
           <div className="p-3 bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
-              <span className="text-sm text-success-700 dark:text-success-300">Will attach as <strong>{selectedRelationType.label}</strong> to <strong>{selectedEntity.shortName || selectedEntity.entityName}</strong></span>
+              <span className="text-body-sm text-success-700 dark:text-success-300">Will attach as <strong>{selectedRelationType.label}</strong> to <strong>{selectedEntity.shortName || selectedEntity.entityName}</strong></span>
             </div>
           </div>
         )}
@@ -1077,8 +1077,8 @@ const CreateAccountModal: React.FC<{
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isExternal ? "Link External Bank Account" : "Add Home Bank Account"} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300"><AlertCircle className="w-5 h-5 mt-0.5" /><span className="text-sm">{error}</span></div>}
-        {!corporateId && <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg flex items-start gap-2 text-warning-700 dark:bg-warning-500/10 dark:border-warning-500/30 dark:text-warning-300"><AlertTriangle className="w-5 h-5 mt-0.5" /><span className="text-sm">Please select a Corporate first.</span></div>}
+        {error && <div className="p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-300"><AlertCircle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">{error}</span></div>}
+        {!corporateId && <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg flex items-start gap-2 text-warning-700 dark:bg-warning-500/10 dark:border-warning-500/30 dark:text-warning-300"><AlertTriangle className="w-5 h-5 mt-0.5" /><span className="text-body-sm">Please select a Corporate first.</span></div>}
         
         <div>
           <label className="field-label block mb-1">Legal Entity <span className="text-error-500">*</span></label>
@@ -1087,13 +1087,13 @@ const CreateAccountModal: React.FC<{
               <option value="">Select Legal Entity...</option>
               {eligibleEntities.map(entity => <option key={entity.id} value={entity.id}>{entity.entityCode} - {entity.entityName}{entity.isTreasuryCenter ? ' ⭐' : ''} [{entity.functionalCurrency}]</option>)}
             </select>
-          ) : <div className="p-3 bg-neutral-50 border rounded-lg text-sm text-neutral-600 dark:bg-primary-950 dark:text-neutral-300">{corporateId ? 'No eligible entities.' : 'Select a corporate first.'}</div>}
+          ) : <div className="p-3 bg-neutral-50 border rounded-lg body-sm dark:bg-primary-950">{corporateId ? 'No eligible entities.' : 'Select a corporate first.'}</div>}
         </div>
         
         {selectedEntity && (
           <div className="p-3 bg-info-50 border border-info-200 rounded-lg dark:bg-info-500/10 dark:border-info-500/30">
             <div className="flex items-center gap-2 text-info-800 dark:text-info-300"><Building2 className="w-4 h-4" /><span className="font-medium">{selectedEntity.entityCode}</span><span>{selectedEntity.entityName}</span></div>
-            <div className="mt-1 text-xs text-info-600 dark:text-info-300">Country: {selectedEntity.countryCode || 'N/A'} | Currency: {selectedEntity.functionalCurrency}</div>
+            <div className="mt-1 caption-info">Country: {selectedEntity.countryCode || 'N/A'} | Currency: {selectedEntity.functionalCurrency}</div>
           </div>
         )}
 
@@ -1421,7 +1421,7 @@ const PhysicalAccountsPage: React.FC = () => {
                       {otherCurrencies.slice(0, 5).map(([ccy, amt]) => (
                         <span
                           key={ccy}
-                          className="font-mono text-xs px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
+                          className="font-mono text-caption px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300 tracking-wide"
                         >
                           {ccy} <TileAmount value={amt} currency={ccy} showCurrency={false} />
                         </span>
@@ -1503,11 +1503,11 @@ const PhysicalAccountsPage: React.FC = () => {
             <input type="text" placeholder="Search accounts..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" />
           </div>
           <div className="flex gap-2 flex-wrap">
-            <select value={currencyFilter} onChange={(e) => { setCurrencyFilter(e.target.value); setPage(0); }} className="px-3 py-2 border rounded-lg text-sm">
+            <select value={currencyFilter} onChange={(e) => { setCurrencyFilter(e.target.value); setPage(0); }} className="px-3 py-2 border rounded-lg text-body-sm">
               <option value="ALL">All Currencies</option>
               {currencies.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} className="px-3 py-2 border rounded-lg text-sm">
+            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }} className="px-3 py-2 border rounded-lg text-body-sm">
               <option value="ALL">All Status</option><option value="ACTIVE">Active</option><option value="DORMANT">Dormant</option><option value="CLOSED">Closed</option>
             </select>
             {hasActiveFilters && <Button variant="ghost" size="sm" onClick={clearFilters}><X className="w-4 h-4 mr-1" />Clear</Button>}
@@ -1553,7 +1553,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="font-semibold text-primary-900 truncate dark:text-neutral-50">{account.accountName}</h3>
-                      <p className="text-xs text-neutral-500 font-mono mt-0.5 truncate dark:text-neutral-400">{account.iban || account.accountNumber}</p>
+                      <p className="text-caption text-neutral-500 font-mono mt-0.5 truncate dark:text-neutral-400">{account.iban || account.accountNumber}</p>
                     </div>
                     <Badge variant={account.syncStatus === 'SYNCED' ? 'success' : 'warning'} size="sm">
                       {account.syncStatus}
@@ -1567,12 +1567,12 @@ const PhysicalAccountsPage: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Bank</p>
+                      <p className="caption">Bank</p>
                       <p className="field-label">{account.bankName}</p>
                     </div>
                   </div>
                   {hasShadow(account) && (
-                    <div className="mt-2 flex items-center gap-1 text-xs text-success-600 dark:text-success-300">
+                    <div className="mt-2 flex items-center gap-1 caption-success">
                       <Layers className="w-3 h-3" />
                       <span>Linked to hierarchy</span>
                     </div>
@@ -1597,7 +1597,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="body text-primary-900 truncate dark:text-neutral-50">{account.accountName}</p>
-                      <span className={cn("px-1.5 py-0.5 rounded text-xs shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
+                      <span className={cn("px-1.5 py-0.5 rounded text-caption shrink-0", account.isHomeBank ? "bg-primary-50 text-primary-600 dark:bg-primary-800/40 dark:text-primary-200" : "bg-info-50 text-info-600 dark:bg-info-500/10 dark:text-info-300")}>
                         {account.isHomeBank ? <Server className="w-3 h-3 inline" /> : <Wifi className="w-3 h-3 inline" />}
                       </span>
                     </div>
@@ -1612,7 +1612,7 @@ const PhysicalAccountsPage: React.FC = () => {
               render: (_, account) => (
                 <>
                   <p className="body-sm text-primary-900 dark:text-neutral-50">{account.entityName || '-'}</p>
-                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{account.entityCode || '-'}</p>
+                  <p className="caption mt-0.5">{account.entityCode || '-'}</p>
                 </>
               ),
             },
@@ -1634,7 +1634,7 @@ const PhysicalAccountsPage: React.FC = () => {
               render: (_, account) => hasShadow(account) ? (
                 <div className="flex items-center justify-center gap-1">
                   <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
-                  <span className="text-xs text-success-600 font-medium dark:text-success-300">Linked</span>
+                  <span className="text-caption text-success-600 font-medium dark:text-success-300">Linked</span>
                 </div>
               ) : (
                 <span className="text-neutral-400 dark:text-neutral-500">—</span>
@@ -1694,7 +1694,7 @@ const PhysicalAccountsPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-3 gap-4">
               {/* Per-tone stat-value utilities pick up Fraunces + tabular-nums
-                  + the semantic tone in one class. Replaces the `text-lg
+                  + the semantic tone in one class. Replaces the `text-body-lg
                   font-semibold` + per-tone text-* recipe. */}
               <Card padding="sm">
                 <p className="label">Current Balance</p>
@@ -1743,8 +1743,8 @@ const PhysicalAccountsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
-                      <span className="text-sm text-success-700 dark:text-success-300">
-                        <strong>{shadow.vaName}</strong> <span className="font-mono text-xs">({shadow.vaNumber})</span>
+                      <span className="text-body-sm text-success-700 dark:text-success-300">
+                        <strong>{shadow.vaName}</strong> <span className="font-mono text-caption">({shadow.vaNumber})</span>
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1754,11 +1754,11 @@ const PhysicalAccountsPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Bank Balance</p><p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(shadow.bankBalance, shadow.currencyCode)}</p></div>
-                    <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p><p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(shadow.bankAvailableBalance, shadow.currencyCode)}</p></div>
-                    <div><p className="text-xs text-neutral-500 dark:text-neutral-400">On Hold</p><p className="font-semibold text-warning-600 dark:text-warning-300">{onHold > 0 ? formatCurrency(onHold, shadow.currencyCode) : '—'}</p></div>
+                    <div><p className="caption">Bank Balance</p><p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(shadow.bankBalance, shadow.currencyCode)}</p></div>
+                    <div><p className="caption">Available</p><p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(shadow.bankAvailableBalance, shadow.currencyCode)}</p></div>
+                    <div><p className="caption">On Hold</p><p className="font-semibold text-warning-600 dark:text-warning-300">{onHold > 0 ? formatCurrency(onHold, shadow.currencyCode) : '—'}</p></div>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center justify-between caption">
                     <span className="flex items-center gap-1"><Database className="w-3 h-3" />{SHADOW_DATA_SOURCE_LABELS[shadow.balanceDataSource] || shadow.balanceDataSource}</span>
                     {shadow.bankBalanceAt && <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Last synced: {new Date(shadow.bankBalanceAt).toLocaleString()}</span>}
                   </div>

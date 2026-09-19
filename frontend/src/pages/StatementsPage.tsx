@@ -251,7 +251,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, className }) => {
     <button
       onClick={handleCopy}
       className={cn(
-        'inline-flex items-center gap-1 text-xs font-mono text-neutral-600 hover:text-primary-600 transition-colors group dark:text-neutral-300',
+        'inline-flex items-center gap-1 text-caption font-mono text-neutral-600 hover:text-primary-600 transition-colors group dark:text-neutral-300',
         className
       )}
       title="Copy to clipboard"
@@ -367,7 +367,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
         {/* Compact mode keeps a 10px label for grid density; full mode uses
             the canonical `.label` recipe (12px uppercase, tracked). */}
         {compact ? (
-          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          <span className="label-cased">
             {typeLabels[type]}
           </span>
         ) : (
@@ -384,7 +384,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
       )}>
         {isDebit && '-'}{formatCurrency(amount, currency)}
       </p>
-      <p className={cn('text-neutral-500 mt-0.5 dark:text-neutral-400', 'text-xs')}>
+      <p className={cn('text-neutral-500 mt-0.5 dark:text-neutral-400', 'text-caption')}>
         {formatDate(date)}
       </p>
     </div>
@@ -483,11 +483,11 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
               )}
             </div>
             <div>
-              <span className="text-sm text-primary-900 block dark:text-neutral-50">
+              <span className="text-body-sm text-primary-900 block dark:text-neutral-50">
                 {formatDate(entry.bookingDate)}
               </span>
               {entry.valueDate && entry.valueDate !== entry.bookingDate && (
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                <span className="caption">
                   Value: {formatDate(entry.valueDate)}
                 </span>
               )}
@@ -507,11 +507,11 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
         {/* Description */}
         <td className="data-table-cell">
-          <span className="text-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
+          <span className="text-body-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
             {description}
           </span>
           {entry.bankTransactionCode && (
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="caption">
               {entry.bankTransactionCode.domain}/{entry.bankTransactionCode.family}/{entry.bankTransactionCode.subFamily}
             </span>
           )}
@@ -571,7 +571,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                   <Hash className="w-3.5 h-3.5" />
                   Transaction References
                 </h5>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1 text-caption">
                   {entry.entryReference && (
                     <div className="flex justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400">Entry Ref</span>
@@ -618,7 +618,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     <CreditCard className="w-3.5 h-3.5" />
                     Bank Transaction Code
                   </h5>
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1 text-caption">
                     <div className="flex justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400">Domain</span>
                       <span className="font-medium">{entry.bankTransactionCode.domain || '-'}</span>
@@ -642,7 +642,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     <User className="w-3.5 h-3.5" />
                     Debtor
                   </h5>
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1 text-caption">
                     {relatedParties.debtor.name && (
                       <div className="flex justify-between">
                         <span className="text-neutral-500 dark:text-neutral-400">Name</span>
@@ -672,7 +672,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     <User className="w-3.5 h-3.5" />
                     Creditor
                   </h5>
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1 text-caption">
                     {relatedParties.creditor.name && (
                       <div className="flex justify-between">
                         <span className="text-neutral-500 dark:text-neutral-400">Name</span>
@@ -702,7 +702,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     <FileText className="w-3.5 h-3.5" />
                     Remittance Info
                   </h5>
-                  <div className="space-y-1 text-xs">
+                  <div className="space-y-1 text-caption">
                     {remittanceInfo.unstructured?.map((info, idx) => (
                       <p key={idx} className="text-neutral-600 break-words dark:text-neutral-300">{info}</p>
                     ))}
@@ -729,7 +729,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     <Info className="w-3.5 h-3.5" />
                     Additional Info
                   </h5>
-                  <p className="text-xs text-neutral-600 break-words dark:text-neutral-300">{entry.additionalEntryInfo}</p>
+                  <p className="caption break-words">{entry.additionalEntryInfo}</p>
                 </div>
               )}
             </div>
@@ -768,16 +768,16 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction: tx, curren
               <ArrowDownLeft className="w-4 h-4 text-success-600 dark:text-success-300" />
             )}
           </div>
-          <span className="text-sm text-primary-900 dark:text-neutral-50">
+          <span className="text-body-sm text-primary-900 dark:text-neutral-50">
             {new Date(tx.transactionDate).toLocaleDateString()}
           </span>
         </div>
       </td>
       <td className="data-table-cell">
-        <span className="font-mono text-xs text-neutral-600 dark:text-neutral-300">{tx.referenceNumber}</span>
+        <span className="font-mono text-caption text-neutral-600 dark:text-neutral-300">{tx.referenceNumber}</span>
       </td>
       <td className="data-table-cell">
-        <span className="text-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
+        <span className="text-body-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
           {tx.description || '-'}
         </span>
       </td>
@@ -870,7 +870,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
               <p className="body-sm text-primary-900 truncate dark:text-neutral-50">
                 {description}
               </p>
-              <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+              <p className="caption mt-0.5">
                 {formatDate(date)}
               </p>
             </div>
@@ -882,7 +882,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
                 {isDebitTxn ? '-' : '+'}{formatCurrency(amount, currencyCode)}
               </p>
               {tx.balanceAfter !== undefined && (
-                <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                <p className="caption mt-0.5">
                   Bal: {formatCurrency(tx.balanceAfter, currencyCode)}
                 </p>
               )}
@@ -897,7 +897,7 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
             {isISO20022 && tx.reversalIndicator && (
               <Badge variant="warning" size="xs">REV</Badge>
             )}
-            <span className="text-xs text-neutral-400 font-mono truncate dark:text-neutral-500">
+            <span className="text-caption text-neutral-400 font-mono truncate dark:text-neutral-500">
               {tx.entryReference || tx.referenceNumber}
             </span>
             <ChevronDown className={cn(
@@ -910,19 +910,19 @@ const TransactionMobileCard: React.FC<TransactionMobileCardProps> = ({
           {expanded && isISO20022 && (
             <div className="mt-3 pt-3 border-t border-neutral-200 space-y-2 animate-fade-in dark:border-primary-800">
               {tx.accountServicerRef && (
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-caption">
                   <span className="text-neutral-500 dark:text-neutral-400">Acct Svcr Ref</span>
                   <CopyButton value={tx.accountServicerRef} />
                 </div>
               )}
               {tx.entryDetails?.transactionDetails?.[0]?.references?.endToEndId && (
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-caption">
                   <span className="text-neutral-500 dark:text-neutral-400">E2E ID</span>
                   <CopyButton value={tx.entryDetails.transactionDetails[0].references.endToEndId} />
                 </div>
               )}
               {tx.bankTransactionCode && (
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-caption">
                   <span className="text-neutral-500 dark:text-neutral-400">BTC</span>
                   <span className="font-mono">
                     {tx.bankTransactionCode.domain}/{tx.bankTransactionCode.family}
@@ -1062,7 +1062,7 @@ const HistoryMobileCard: React.FC<HistoryMobileCardProps> = ({ statement: stmt, 
               <p className="body-sm text-primary-900 truncate dark:text-neutral-50">
                 {stmt.vaNumber}
               </p>
-              <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+              <p className="caption mt-0.5">
                 {stmt.fromDate} - {stmt.toDate}
               </p>
             </div>
@@ -1070,7 +1070,7 @@ const HistoryMobileCard: React.FC<HistoryMobileCardProps> = ({ statement: stmt, 
           </div>
 
           <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
-            <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-1 caption">
               <Clock className="w-3 h-3" />
               {new Date(stmt.generatedAt).toLocaleDateString()}
             </div>
@@ -1161,7 +1161,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon }) => {
 
   return (
     <div className="flex items-start justify-between py-1">
-      <span className="text-xs text-neutral-500 flex items-center gap-1 dark:text-neutral-400">
+      <span className="caption flex items-center gap-1">
         {icon}
         {label}
       </span>
@@ -1169,7 +1169,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon }) => {
         <CopyButton value={value} />
       ) : (
         // Info-row value: small body text at primary-900 — no font-X needed.
-        <span className="text-xs text-primary-900 text-right max-w-[150px] truncate dark:text-neutral-50">
+        <span className="text-caption text-primary-900 text-right max-w-[150px] truncate dark:text-neutral-50">
           {value}
         </span>
       )}
@@ -1612,7 +1612,7 @@ const StatementsPage: React.FC = () => {
             <StatusIconBadge tone="info" icon={Network} className="dark:bg-info-500/20" />
             <div>
               <h3 className="section-title">Account Hierarchy</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 {aggregatedBalance?.childAccountCount || 0} child accounts |
                 Aggregated: {aggregatedBalance ? formatCurrency(aggregatedBalance.aggregatedBalance, aggregatedBalance.currencyCode) : '-'}
               </p>
@@ -1653,7 +1653,7 @@ const StatementsPage: React.FC = () => {
             <StatusIconBadge tone="primary" icon={FileText} className="dark:bg-primary-700" />
             <div>
               <h3 className="section-title">ISO 20022 Statement Generator</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Generate camt.053 / 054-compliant statements</p>
+              <p className="caption">Generate camt.053 / 054-compliant statements</p>
             </div>
           </div>
         </div>
@@ -1722,7 +1722,7 @@ const StatementsPage: React.FC = () => {
                     onChange={(e) => setIncludeChildren(e.target.checked)}
                     className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                   />
-                  <span className="text-sm text-neutral-700 dark:text-neutral-200">Include Children</span>
+                  <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Include Children</span>
                 </label>
               </div>
             )}
@@ -1791,7 +1791,7 @@ const StatementsPage: React.FC = () => {
             <StatusIconBadge tone="error" icon={AlertCircle} className="shrink-0 dark:bg-error-500/20" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-error-800 dark:text-error-300">Error</p>
-              <p className="text-sm text-error-700 truncate dark:text-error-300">{error}</p>
+              <p className="text-body-sm text-error-700 truncate dark:text-error-300">{error}</p>
             </div>
             <Button
               variant="ghost"
@@ -1829,11 +1829,11 @@ const StatementsPage: React.FC = () => {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="body-sm">
                   {statement.account?.name || statement.vaNumber || statement.vaName} |
                   {statement.account?.iban || statement.viban || ''}
                 </p>
-                <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">
+                <p className="caption mt-1">
                   Period: {statement.fromDate || fromDate} to {statement.toDate || toDate}
                 </p>
               </div>
@@ -2043,15 +2043,15 @@ const StatementsPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="text-center p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <p className="stat-value-sm">{statement.totalEntries || (statement.entries?.length || 0)}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Entries</p>
+                  <p className="caption">Total Entries</p>
                 </div>
                 <div className="text-center p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
                   <p className="stat-value-sm text-success-600 dark:text-success-300">+{formatCurrency(statement.totalCredits || 0, statementCurrency)}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{statement.creditCount || 0} Credits</p>
+                  <p className="caption">{statement.creditCount || 0} Credits</p>
                 </div>
                 <div className="text-center p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
                   <p className="stat-value-sm text-error-600 dark:text-error-300">-{formatCurrency(statement.totalDebits || 0, statementCurrency)}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{statement.debitCount || 0} Debits</p>
+                  <p className="caption">{statement.debitCount || 0} Debits</p>
                 </div>
                 <div className={cn(
                   'text-center p-3 rounded-lg',
@@ -2064,7 +2064,7 @@ const StatementsPage: React.FC = () => {
                     {(statement.totalCredits || 0) >= (statement.totalDebits || 0) ? '+' : ''}
                     {formatCurrency((statement.totalCredits || 0) - (statement.totalDebits || 0), statementCurrency)}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Net Amount</p>
+                  <p className="caption">Net Amount</p>
                 </div>
               </div>
             </SectionCard>
@@ -2082,7 +2082,7 @@ const StatementsPage: React.FC = () => {
                   <div key={child.vaId} className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                     <p className="body-sm text-primary-900 truncate dark:text-neutral-50">{child.vaName}</p>
                     <p className="code">{child.vaNumber}</p>
-                    <div className="mt-2 flex justify-between text-xs">
+                    <div className="mt-2 flex justify-between text-caption">
                       <span className="text-success-600 dark:text-success-300">+{formatCurrency(child.totalCredits, child.currencyCode)}</span>
                       <span className="text-error-600 dark:text-error-300">-{formatCurrency(child.totalDebits, child.currencyCode)}</span>
                       <span className="font-medium">{child.entryCount} txns</span>
@@ -2102,7 +2102,7 @@ const StatementsPage: React.FC = () => {
                   {statement.entries?.length || statement.transactions?.length || 0} entries
                 </Badge>
               </h4>
-              <p className="text-xs text-neutral-500 hidden sm:block dark:text-neutral-400">
+              <p className="caption hidden sm:block">
                 Click on any entry to expand details
               </p>
             </div>
@@ -2235,15 +2235,15 @@ const StatementsPage: React.FC = () => {
                   {filteredHistory.map((stmt: any) => (
                     <tr key={stmt.id} className="data-table-row group">
                       <td className="data-table-cell">
-                        <span className="font-mono text-sm text-primary-900 dark:text-neutral-50">
+                        <span className="font-mono text-body-sm text-primary-900 dark:text-neutral-50">
                           {stmt.statementReference}
                         </span>
                       </td>
                       <td className="data-table-cell">
-                        <span className="text-sm text-neutral-700 dark:text-neutral-200">{stmt.vaNumber}</span>
+                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{stmt.vaNumber}</span>
                       </td>
                       <td className="data-table-cell">
-                        <span className="text-sm text-neutral-700 dark:text-neutral-200">
+                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
                           {stmt.fromDate} - {stmt.toDate}
                         </span>
                       </td>
@@ -2256,7 +2256,7 @@ const StatementsPage: React.FC = () => {
                         </Badge>
                       </td>
                       <td className="data-table-cell">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                        <span className="body-sm">
                           {new Date(stmt.generatedAt).toLocaleDateString()}
                         </span>
                       </td>

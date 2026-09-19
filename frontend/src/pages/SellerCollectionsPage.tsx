@@ -83,7 +83,7 @@ const SellerCollectionsPage: React.FC = () => {
               <StatusIconBadge tone="primary" icon={CreditCard} className="dark:bg-primary-700" />
             </div>
             <p className="stat-value-sm mt-3">{collections.length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Collections</p>
+            <p className="label">Total Collections</p>
           </div>
         </Card>
         <Card hover>
@@ -92,7 +92,7 @@ const SellerCollectionsPage: React.FC = () => {
               <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
             </div>
             <p className="stat-value-sm mt-3 text-success-600 dark:text-success-300">{formatCurrency(collections.reduce((sum, c) => sum + (c.amount || 0), 0))}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Amount</p>
+            <p className="label">Total Amount</p>
           </div>
         </Card>
         <Card hover>
@@ -101,7 +101,7 @@ const SellerCollectionsPage: React.FC = () => {
               <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
             </div>
             <p className="stat-value-warning mt-3">{settlements.filter(s => s.status === 'PENDING').length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Pending Settlements</p>
+            <p className="label">Pending Settlements</p>
           </div>
         </Card>
         <Card hover>
@@ -110,7 +110,7 @@ const SellerCollectionsPage: React.FC = () => {
               <StatusIconBadge tone="info" icon={CheckCircle} className="dark:bg-info-500/20" />
             </div>
             <p className="stat-value-sm mt-3">{formatCurrency(settlements.filter(s => s.status === 'COMPLETED').reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Settled Amount</p>
+            <p className="label">Settled Amount</p>
           </div>
         </Card>
       </div>
@@ -127,13 +127,13 @@ const SellerCollectionsPage: React.FC = () => {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-neutral-200 animate-fade-in dark:border-primary-800" style={{ animationDelay: '0.15s' }}>
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'collections' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
+          className={`px-4 py-2 text-body-sm font-medium transition-colors ${activeTab === 'collections' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
           onClick={() => setActiveTab('collections')}
         >
           Collections ({collections.length})
         </button>
         <button
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'settlements' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
+          className={`px-4 py-2 text-body-sm font-medium transition-colors ${activeTab === 'settlements' ? 'border-b-2 border-primary-500 text-primary-600 dark:text-primary-200' : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'} dark:text-primary-200 dark:hover:text-neutral-200`}
           onClick={() => setActiveTab('settlements')}
         >
           Settlements ({settlements.length})
@@ -163,15 +163,15 @@ const SellerCollectionsPage: React.FC = () => {
                   render: (_, c) => (
                     <div className="flex items-center gap-2">
                       <ShoppingBag className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                      <span className="font-mono text-sm">{c.transactionRef}</span>
+                      <span className="font-mono text-body-sm">{c.transactionRef}</span>
                     </div>
                   ),
                 },
-                { key: 'merchantName', header: 'Seller', render: (_, c) => <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{c.merchantName}</span> },
+                { key: 'merchantName', header: 'Seller', render: (_, c) => <span className="body-strong">{c.merchantName}</span> },
                 { key: 'paymentMethod', header: 'Payment Method', render: (_, c) => <Badge variant="neutral">{c.paymentMethod}</Badge> },
                 { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
                 { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
-                { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(c.transactionDate).toLocaleString()}</span> },
+                { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="body-sm">{new Date(c.transactionDate).toLocaleString()}</span> },
                 {
                   key: 'actions',
                   header: 'Actions',
@@ -193,7 +193,7 @@ const SellerCollectionsPage: React.FC = () => {
         <>
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="p-4 flex justify-between items-center">
-              <h3 className="text-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Settlement Batches</h3>
+              <h3 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Settlement Batches</h3>
               <Button onClick={handleProcessSettlements} disabled={processing}>
                 {processing && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Process Settlements
               </Button>
@@ -206,13 +206,13 @@ const SellerCollectionsPage: React.FC = () => {
               keyExtractor={(s) => s.id}
               emptyTitle="No settlements found"
               columns={[
-                { key: 'settlementRef', header: 'Settlement Ref', render: (_, s) => <span className="font-mono text-sm">{s.settlementRef}</span> },
-                { key: 'merchantName', header: 'Seller', render: (_, s) => <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{s.merchantName}</span> },
+                { key: 'settlementRef', header: 'Settlement Ref', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementRef}</span> },
+                { key: 'merchantName', header: 'Seller', render: (_, s) => <span className="body-strong">{s.merchantName}</span> },
                 { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount)}</span> },
                 { key: 'commission', header: 'Commission', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission)}</span> },
                 { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount)}</span> },
                 { key: 'status', header: 'Status', render: (_, s) => getStatusBadge(s.status) },
-                { key: 'settlementDate', header: 'Date', render: (_, s) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{s.settlementDate}</span> },
+                { key: 'settlementDate', header: 'Date', render: (_, s) => <span className="body-sm">{s.settlementDate}</span> },
               ]}
             />
           </Card>
@@ -225,28 +225,28 @@ const SellerCollectionsPage: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Reference</p>
+                <p className="label mb-1">Reference</p>
                 <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.transactionRef}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Seller</p>
+                <p className="label mb-1">Seller</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.merchantName}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Amount</p>
-                {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-xl font-bold` hand-roll (same 20px scale). */}
+                <p className="label mb-1">Amount</p>
+                {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-bold` hand-roll (same 20px scale). */}
                 <p className="stat-value-xs">{formatCurrency(selectedItem.amount, selectedItem.currencyCode || 'AED')}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Status</p>
+                <p className="label mb-1">Status</p>
                 {getStatusBadge(selectedItem.status)}
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Payment Method</p>
+                <p className="label mb-1">Payment Method</p>
                 <Badge variant="neutral">{selectedItem.paymentMethod}</Badge>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Date</p>
+                <p className="label mb-1">Date</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{new Date(selectedItem.transactionDate).toLocaleString()}</p>
               </div>
             </div>

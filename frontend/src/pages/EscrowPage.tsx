@@ -140,7 +140,7 @@ const StatCard: React.FC<{
           <p className="stat-value-sm mt-1">{value}</p>
           {trend && (
             <p className={cn(
-              'text-xs mt-1',
+              'text-caption mt-1',
               trend.positive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
             )}>
               {trend.positive ? '↑' : '↓'} {trend.value}% vs last month
@@ -281,8 +281,8 @@ const EscrowPage: React.FC = () => {
                       <Shield className={cn('w-5 h-5', contract.disputeRaised ? 'text-error-600 dark:text-error-300' : 'text-primary-600 dark:text-primary-200')} />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{contract.contractName}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{contract.contractReference}</p>
+                      <p className="body-strong">{contract.contractName}</p>
+                      <p className="caption">{contract.contractReference}</p>
                     </div>
                   </div>
                 ),
@@ -293,12 +293,12 @@ const EscrowPage: React.FC = () => {
                 render: (_, contract) => (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Seller:</span>
-                      <span className="text-sm text-neutral-900 dark:text-neutral-50">{contract.sellerName}</span>
+                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Seller:</span>
+                      <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{contract.sellerName}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Buyer:</span>
-                      <span className="text-sm text-neutral-900 dark:text-neutral-50">{contract.buyerName}</span>
+                      <span className="text-caption text-neutral-400 uppercase tracking-wider dark:text-neutral-500">Buyer:</span>
+                      <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{contract.buyerName}</span>
                     </div>
                   </div>
                 ),
@@ -308,8 +308,8 @@ const EscrowPage: React.FC = () => {
                 header: 'Amount',
                 render: (_, contract) => (
                   <>
-                    <p className="text-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(contract.contractAmount, contract.currency)}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Balance: {formatCurrency(contract.escrowBalance, contract.currency)}</p>
+                    <p className="text-body-sm font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(contract.contractAmount, contract.currency)}</p>
+                    <p className="caption">Balance: {formatCurrency(contract.escrowBalance, contract.currency)}</p>
                   </>
                 ),
               },
@@ -327,7 +327,7 @@ const EscrowPage: React.FC = () => {
                       {contract.disputeRaised && (
                         <div className="flex items-center gap-1 mt-1 text-error-600 dark:text-error-300">
                           <Flag className="w-3 h-3" />
-                          <span className="text-xs">Dispute raised</span>
+                          <span className="text-caption">Dispute raised</span>
                         </div>
                       )}
                     </>
@@ -341,14 +341,14 @@ const EscrowPage: React.FC = () => {
                   const progress = contract.totalMilestones > 0 ? (contract.milestonesCompleted / contract.totalMilestones) * 100 : 0;
                   return contract.releaseType === 'MILESTONE' ? (
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between text-caption">
                         <span className="text-neutral-500 dark:text-neutral-400">Milestones</span>
                         <span className="text-neutral-900 font-medium dark:text-neutral-50">{contract.milestonesCompleted}/{contract.totalMilestones}</span>
                       </div>
                       <ProgressBar value={progress} size="sm" variant={progress === 100 ? 'success' : 'default'} />
                     </div>
                   ) : (
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Full Release</span>
+                    <span className="body-sm">Full Release</span>
                   );
                 },
               },
@@ -358,7 +358,7 @@ const EscrowPage: React.FC = () => {
                 render: (_, contract) => (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                    <span className="text-sm text-neutral-600 dark:text-neutral-300">{formatDate(contract.expiryDate)}</span>
+                    <span className="body-sm">{formatDate(contract.expiryDate)}</span>
                   </div>
                 ),
               },
@@ -377,8 +377,8 @@ const EscrowPage: React.FC = () => {
         ) : (
           <div className="flex flex-col items-center justify-center py-16">
             <StatusIconBadge tone="neutral" icon={Shield} size="lg" className="mb-4 dark:bg-primary-800" />
-            <p className="text-sm font-medium text-neutral-900 mb-1 dark:text-neutral-50">No contracts found</p>
-            <p className="text-xs text-neutral-500 mb-4 dark:text-neutral-400">Create your first escrow contract to get started</p>
+            <p className="body-strong mb-1">No contracts found</p>
+            <p className="caption mb-4">Create your first escrow contract to get started</p>
             <Button size="sm" onClick={() => setShowCreateModal(true)}>
               Create Contract
             </Button>

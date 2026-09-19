@@ -88,7 +88,7 @@ const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+              'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium transition-colors',
               currentStep > step.id
                 ? 'bg-success-500 text-white'
                 : currentStep === step.id
@@ -101,7 +101,7 @@ const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
           <div className="hidden sm:block">
             <p
               className={cn(
-                'text-sm font-medium',
+                'text-body-sm font-medium',
                 currentStep >= step.id ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500'
               )}
             >
@@ -274,7 +274,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
             </div>
             <div>
               <span className="block">Initialize Hierarchy</span>
-              <span className="block text-sm font-normal text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <span className="block text-body-sm font-normal text-neutral-500 dark:text-neutral-400 mt-0.5">
                 {programName} • {corporateName}
               </span>
             </div>
@@ -301,10 +301,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex items-start gap-2">
                     <Info className="w-5 h-5 text-info-600 dark:text-info-300 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-info-800 dark:text-info-300">
+                      <p className="text-body-sm font-medium text-info-800 dark:text-info-300">
                         About ROOT Account
                       </p>
-                      <p className="text-sm text-info-700 dark:text-info-300 mt-1">
+                      <p className="text-body-sm text-info-700 dark:text-info-300 mt-1">
                         The ROOT account is the top-level aggregation point for your
                         entire treasury hierarchy. All balances will roll up to this
                         account.
@@ -339,7 +339,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     placeholder="e.g., ROOT"
                     className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
                   />
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="caption mt-1">
                     Short identifier used in hierarchy paths
                   </p>
                 </div>
@@ -360,7 +360,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="caption mt-1">
                     Primary currency for balance consolidation
                   </p>
                 </div>
@@ -390,10 +390,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                           className="mt-1"
                         />
                         <div>
-                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                          <p className="body-strong">
                             {template.name}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                          <p className="caption mt-0.5">
                             {template.description}
                           </p>
                         </div>
@@ -412,10 +412,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex items-start gap-2">
                     <Coins className="w-5 h-5 text-cyan-600 dark:text-cyan-300 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-cyan-800 dark:text-cyan-300">
+                      <p className="text-body-sm font-medium text-cyan-800 dark:text-cyan-300">
                         About Currency Mirrors (M-Nodes)
                       </p>
-                      <p className="text-sm text-cyan-700 dark:text-cyan-300 mt-1">
+                      <p className="text-body-sm text-cyan-700 dark:text-cyan-300 mt-1">
                         Currency Mirrors aggregate all balances of the same currency 
                         <strong> without FX conversion</strong>. They appear as siblings 
                         at the ROOT level and help track currency-wise positions accurately.
@@ -430,10 +430,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-warning-800 dark:text-warning-300">
+                      <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">
                         About Exception Accounts
                       </p>
-                      <p className="text-sm text-warning-700 dark:text-warning-300 mt-1">
+                      <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1">
                         Exception accounts receive unmatched transactions that cannot
                         be routed to a specific virtual account. These are
                         system-managed and help prevent transaction failures.
@@ -453,11 +453,11 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <p className="body-strong">
                         Create Currency Mirror for {baseCurrency}
                       </p>
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="caption mt-0.5">
                       Recommended for accurate multi-currency balance tracking
                     </p>
                   </div>
@@ -474,11 +474,11 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <p className="body-strong">
                         Create Exception VA for {baseCurrency}
                       </p>
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="caption mt-0.5">
                       Recommended for catching unmatched transactions
                     </p>
                   </div>
@@ -490,7 +490,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     <label className="field-label block mb-2">
                       Additional Currencies
                     </label>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                    <p className="caption mb-3">
                       Select additional currencies for{' '}
                       {createCurrencyMirror && createExceptionVa
                         ? 'Currency Mirrors and Exception VAs'
@@ -505,7 +505,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                           type="button"
                           onClick={() => toggleCurrency(currency.code)}
                           className={cn(
-                            'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                            'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors',
                             additionalCurrencies.includes(currency.code)
                               ? 'bg-primary-600 text-white'
                               : 'bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-primary-800'
@@ -517,10 +517,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                     </div>
                     {additionalCurrencies.length > 0 && (
                       <div className="mt-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-                        <p className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                        <p className="text-caption font-medium text-neutral-700 dark:text-neutral-200">
                           Selected: {allCurrencies.join(', ')}
                         </p>
-                        <div className="flex gap-4 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        <div className="flex gap-4 mt-2 caption">
                           {createCurrencyMirror && (
                             <span className="flex items-center gap-1">
                               <Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" />
@@ -545,58 +545,58 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
             {step === 3 && (
               <div className="space-y-6">
                 <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-4">
+                  <h3 className="body-strong font-semibold mb-4">
                     Configuration Summary
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Program</span>
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-sm">Program</span>
+                      <span className="body-strong">
                         {programName} ({programCode})
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">ROOT Name</span>
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-sm">ROOT Name</span>
+                      <span className="body-strong">
                         {rootName}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">ROOT Code</span>
-                      <span className="text-sm font-mono font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-sm">ROOT Code</span>
+                      <span className="text-body-sm font-mono font-medium text-neutral-900 dark:text-neutral-50">
                         {rootCode}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Base Currency</span>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-info-100 dark:bg-info-500/20 text-info-700 dark:text-info-300 text-sm font-medium">
+                      <span className="body-sm">Base Currency</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-info-100 dark:bg-info-500/20 text-info-700 dark:text-info-300 text-body-sm font-medium">
                         {baseCurrency}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Template</span>
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-sm">Template</span>
+                      <span className="body-strong">
                         {TEMPLATES.find((t) => t.code === templateType)?.name ||
                           'None'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-neutral-200 dark:border-primary-800">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                      <span className="body-sm flex items-center gap-1">
                         <Coins className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-300" />
                         Currency Mirrors
                       </span>
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-strong">
                         {createCurrencyMirror
                           ? allCurrencies.join(', ')
                           : 'None'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+                      <span className="body-sm flex items-center gap-1">
                         <AlertTriangle className="w-3.5 h-3.5 text-warning-600 dark:text-warning-300" />
                         Exception VAs
                       </span>
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                      <span className="body-strong">
                         {createExceptionVa
                           ? allCurrencies.join(', ')
                           : 'None'}
@@ -610,10 +610,10 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                   <div className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-success-600 dark:text-success-300 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-success-800 dark:text-success-300">
+                      <p className="text-body-sm font-medium text-success-800 dark:text-success-300">
                         This will create:
                       </p>
-                      <ul className="text-sm text-success-700 dark:text-success-300 mt-2 space-y-1">
+                      <ul className="text-body-sm text-success-700 dark:text-success-300 mt-2 space-y-1">
                         <li>• 1 ROOT hierarchy node at Level 1</li>
                         <li>• 1 ROOT virtual account ({baseCurrency})</li>
                         {templateType && (
@@ -648,7 +648,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                 <div className="p-4 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
-                    <p className="text-sm text-warning-700 dark:text-warning-300">
+                    <p className="text-body-sm text-warning-700 dark:text-warning-300">
                       This action cannot be undone. Make sure the configuration is
                       correct before proceeding.
                     </p>
@@ -662,7 +662,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
               <div className="mt-4 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 mt-0.5" />
-                  <p className="text-sm text-error-700 dark:text-error-300">{error}</p>
+                  <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
                 </div>
               </div>
             )}
@@ -682,7 +682,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
                 className={cn(
-                  'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                  'px-4 py-2 text-body-sm font-medium rounded-lg transition-colors',
                   canProceed()
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
                     : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
@@ -694,7 +694,7 @@ export const HierarchyInitializationModal: React.FC<HierarchyInitializationModal
               <button
                 onClick={handleInitialize}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-body-sm font-medium bg-success-600 text-white rounded-lg hover:bg-success-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Initialize Hierarchy

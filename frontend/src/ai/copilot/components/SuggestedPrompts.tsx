@@ -59,7 +59,7 @@ export const SuggestedPrompts: React.FC = () => {
 
   return (
     <div className="p-5">
-      <p className="text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-3">
+      <p className="label mb-3">
         Try one of these
       </p>
       <div className="grid grid-cols-1 gap-2">
@@ -79,9 +79,9 @@ export const SuggestedPrompts: React.FC = () => {
             ].join(' ')}
           >
             <span className="shrink-0">{p.icon}</span>
-            <span className="text-sm flex-1 min-w-0">
+            <span className="text-body-sm flex-1 min-w-0">
               <span className="font-medium">{p.label}</span>
-              <span className="block text-xs opacity-80 truncate">{p.text}</span>
+              <span className="block text-caption opacity-80 truncate">{p.text}</span>
             </span>
           </button>
         ))}
@@ -92,7 +92,7 @@ export const SuggestedPrompts: React.FC = () => {
           no button, since wiring an actual MCP connection is a separate task. */}
       <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-dashed border-neutral-200 dark:border-primary-800 bg-neutral-50 dark:bg-primary-900/30 px-3 py-2.5">
         <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent-500 dark:text-accent-300" />
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+        <p className="text-caption text-neutral-500 dark:text-neutral-400 leading-relaxed">
           This is a lightweight intent router, not a full model — it only understands the prompts above.
           Connect Claude via an MCP server for open-ended reasoning across your treasury data.
         </p>

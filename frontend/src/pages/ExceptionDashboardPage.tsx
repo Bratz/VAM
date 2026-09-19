@@ -159,8 +159,8 @@ const Toast: React.FC<{ toast: ToastNotification; onDismiss: (id: string) => voi
     <div className={cn('flex items-start gap-3 p-4 rounded-lg border shadow-lg', bgColors[toast.type])}>
       {icons[toast.type]}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{toast.title}</p>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-0.5">{toast.message}</p>
+        <p className="body-strong">{toast.title}</p>
+        <p className="body-sm mt-0.5">{toast.message}</p>
       </div>
       <button onClick={() => onDismiss(toast.id)} className="p-1 hover:bg-white/50 dark:hover:bg-primary-900/50 rounded">
         <X className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
@@ -230,15 +230,15 @@ const ExceptionRow: React.FC<{
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50 truncate">{exception.exceptionNumber}</p>
+              <p className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50 truncate">{exception.exceptionNumber}</p>
               <Badge variant={statusConfig.variant} size="sm"><StatusIcon className="w-3 h-3 mr-1" />{statusConfig.label}</Badge>
               {ageInDays > 30 && <Badge variant="error" size="sm"><Clock className="w-3 h-3 mr-1" />Aged</Badge>}
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 truncate">{typeConfig.label}{exception.remitterName && ` • ${exception.remitterName}`}</p>
+            <p className="caption mt-1 truncate">{typeConfig.label}{exception.remitterName && ` • ${exception.remitterName}`}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(exception.amount, exception.currencyCode)}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{ageInDays === 0 ? 'Today' : `${ageInDays} day${ageInDays > 1 ? 's' : ''} ago`}</p>
+            <p className="body-strong font-semibold">{formatCurrency(exception.amount, exception.currencyCode)}</p>
+            <p className="caption">{ageInDays === 0 ? 'Today' : `${ageInDays} day${ageInDays > 1 ? 's' : ''} ago`}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onView(); }}><Eye className="w-4 h-4" /></Button>
@@ -290,27 +290,27 @@ const ExceptionDetailDrawer: React.FC<{
     >
       <div className="p-6 space-y-6">
         <div className="bg-primary-50 dark:bg-primary-800/40 rounded-xl p-4">
-          <p className="text-sm text-primary-600 dark:text-primary-200 mb-1">Exception Amount</p>
+          <p className="text-body-sm text-primary-600 dark:text-primary-200 mb-1">Exception Amount</p>
           <p className="stat-value">{formatCurrency(exception.amount, exception.currencyCode)}</p>
         </div>
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Details</h3>
+          <h3 className="body-strong font-semibold">Details</h3>
           <div className="grid grid-cols-2 gap-4">
-            {exception.remitterName && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Remitter</p><p className="text-sm text-primary-900 dark:text-neutral-50">{exception.remitterName}</p></div>}
-            {exception.bankReference && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Bank Ref</p><p className="text-sm text-primary-900 dark:text-neutral-50 font-mono">{exception.bankReference}</p></div>}
-            {exception.exceptionVaNumber && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Exception VA</p><p className="text-sm text-primary-900 dark:text-neutral-50 font-mono">{exception.exceptionVaNumber}</p></div>}
-            <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Created</p><p className="text-sm text-primary-900 dark:text-neutral-50">{new Date(exception.createdAt).toLocaleDateString()}</p></div>
+            {exception.remitterName && <div><p className="caption">Remitter</p><p className="text-body-sm text-primary-900 dark:text-neutral-50">{exception.remitterName}</p></div>}
+            {exception.bankReference && <div><p className="caption">Bank Ref</p><p className="text-body-sm text-primary-900 dark:text-neutral-50 font-mono">{exception.bankReference}</p></div>}
+            {exception.exceptionVaNumber && <div><p className="caption">Exception VA</p><p className="text-body-sm text-primary-900 dark:text-neutral-50 font-mono">{exception.exceptionVaNumber}</p></div>}
+            <div><p className="caption">Created</p><p className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(exception.createdAt).toLocaleDateString()}</p></div>
           </div>
         </div>
         {exception.status === 'RESOLVED' && exception.allocatedToVaNumber && (
           <div className="bg-success-50 dark:bg-success-500/10 rounded-lg p-4 border border-success-200 dark:border-success-500/30">
-            <h3 className="text-sm font-semibold text-success-800 dark:text-success-300 mb-2">Resolution</h3>
-            <p className="text-sm text-success-700 dark:text-success-300">Allocated to: <span className="font-mono">{exception.allocatedToVaNumber}</span></p>
-            {exception.allocatedBy && <p className="text-xs text-success-600 dark:text-success-300 mt-1">by {exception.allocatedBy} on {exception.allocatedAt && new Date(exception.allocatedAt).toLocaleString()}</p>}
+            <h3 className="text-body-sm font-semibold text-success-800 dark:text-success-300 mb-2">Resolution</h3>
+            <p className="text-body-sm text-success-700 dark:text-success-300">Allocated to: <span className="font-mono">{exception.allocatedToVaNumber}</span></p>
+            {exception.allocatedBy && <p className="caption-success mt-1">by {exception.allocatedBy} on {exception.allocatedAt && new Date(exception.allocatedAt).toLocaleString()}</p>}
           </div>
         )}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50 flex items-center gap-2"><History className="w-4 h-4" />Timeline</h3>
+          <h3 className="body-strong font-semibold flex items-center gap-2"><History className="w-4 h-4" />Timeline</h3>
           <EventTimeline entries={timeline} loading={loading} />
         </div>
       </div>
@@ -491,7 +491,7 @@ const ExceptionDashboardPage: React.FC = () => {
               <StatusIconBadge tone="warning" icon={AlertTriangle} />
               <div>
                 <h3 className="section-title">Exception Transactions</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{totalElements} exception{totalElements !== 1 ? 's' : ''} found</p>
+                <p className="body-sm">{totalElements} exception{totalElements !== 1 ? 's' : ''} found</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -507,7 +507,7 @@ const ExceptionDashboardPage: React.FC = () => {
           <div className="p-6">
             <div className="flex items-center gap-3 p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
               <StatusIconBadge tone="error" icon={AlertCircle} className="shrink-0" />
-              <p className="text-sm text-error-700 dark:text-error-300">{error}</p>
+              <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
             </div>
           </div>
         ) : exceptions.length === 0 ? (

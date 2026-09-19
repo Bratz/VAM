@@ -192,13 +192,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               {/* Brand wordmark in Fraunces — ties the sidebar to the serif accent used on page titles.
                   Pulled from src/branding.ts so a rebrand is a single-file change. */}
               <h1
-                className="font-display text-primary-900 dark:text-neutral-50 text-xl tracking-tight"
+                className="font-display text-primary-900 dark:text-neutral-50 text-heading-sm tracking-tight"
                 style={{ fontWeight: 500, letterSpacing: '-0.015em' }}
                 title={BRAND.tagline}
               >
                 {BRAND.name}
               </h1>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+              <p className="label-cased">
                 {BRAND.shortSubtitle}
               </p>
             </div>
@@ -233,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               placeholder="Search menu..."
               className={cn(
                 'w-full h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
-                'bg-neutral-50/80 text-sm text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
+                'bg-neutral-50/80 text-body-sm text-primary-900 placeholder:text-neutral-400 dark:text-neutral-50',
                 'dark:bg-primary-950/60 dark:border-primary-800 dark:text-neutral-100 dark:placeholder:text-neutral-500',
                 'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                 'dark:focus:border-accent-400 dark:focus:bg-primary-950 dark:focus:ring-accent-400/20',
@@ -263,7 +263,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                     // 5.18:1 respectively (computed via the W3C
                     // relative-luminance formula against the actual
                     // rendered backgrounds).
-                    'text-xs font-semibold text-neutral-500 dark:text-neutral-300',
+                    'text-caption font-semibold text-neutral-500 dark:text-neutral-300',
                     'hover:text-neutral-600 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50'
                   )}
                 >
@@ -302,7 +302,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         // items prevents layout shift when an item becomes
                         // active. Rounded-lg (12px) replaces rounded-xl per the
                         // canonical radius scale collapse.
-                        'w-full flex items-center gap-3 pl-[10px] pr-3 py-1.5 rounded-lg text-[13px] font-medium',
+                        'w-full flex items-center gap-3 pl-[10px] pr-3 py-1.5 rounded-lg text-body-sm font-medium',
                         'border-l-2 transition-colors duration-200',
                         isComingSoon
                           ? 'border-transparent text-neutral-400 dark:text-neutral-600 cursor-not-allowed opacity-60'
@@ -325,21 +325,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       {item.isNew && !isComingSoon && (
                         <span className={cn(
                           collapsed && 'lg:hidden',
-                          'text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide',
+                          'text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide',
                           isActive ? 'bg-white/25 text-white' : 'bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300'
                         )}>
                           New
                         </span>
                       )}
                       {isComingSoon && (
-                        <span className={cn(collapsed && 'lg:hidden', 'text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400')}>
+                        <span className={cn(collapsed && 'lg:hidden', 'text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400')}>
                           Soon
                         </span>
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
                           collapsed && 'lg:hidden',
-                          'text-xs font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
+                          'text-caption font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
                           getBadgeStyle(isActive, item.badgeColor)
                         )}>
                           {item.badge}
@@ -367,7 +367,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             type="button"
             title="Documentation & support"
             className={cn(
-              'flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium',
+              'flex items-center gap-2 px-2 py-1.5 rounded-lg text-caption font-medium',
               'text-neutral-500 hover:text-primary-700 hover:bg-neutral-100',
               'dark:text-neutral-400 dark:hover:text-neutral-50 dark:hover:bg-primary-800/60',
               'transition-colors'
@@ -389,7 +389,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
           )}
           {/* Same neutral-400/dark:neutral-500 contrast failure as the
               section headers above (2.20:1 light, 1.45:1 dark) — same fix. */}
-          <span className={cn('text-xs text-neutral-500 dark:text-neutral-300 uppercase tracking-wider', collapsed && 'lg:hidden')}>
+          <span className={cn('text-caption text-neutral-500 dark:text-neutral-300 uppercase tracking-wider', collapsed && 'lg:hidden')}>
             {BRAND.name} v1.0
           </span>
         </div>
@@ -474,7 +474,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 from the text it annotates. min-w-0 lets this still shrink
                 and truncate on the rare title that's longer than even the
                 grown wrapper allows. */}
-            <h1 className="page-title-display text-xl leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap truncate min-w-0">
+            <h1 className="page-title-display text-heading-sm leading-tight text-primary-900 dark:text-neutral-50 whitespace-nowrap truncate min-w-0">
               {registeredTitle || pageTitles[currentPage] || BRAND.name}
             </h1>
             {registeredDescription && <HeaderHelpPopover description={registeredDescription} />}
@@ -502,7 +502,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 placeholder="Search accounts, transactions..."
                 className={cn(
                   'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-xl border border-neutral-200 dark:border-primary-800',
-                  'bg-neutral-50/80 text-sm placeholder:text-neutral-400',
+                  'bg-neutral-50/80 text-body-sm placeholder:text-neutral-400',
                   'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                   'transition-all duration-200'
                 )}
@@ -579,7 +579,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                 )}>
                   <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
                     <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Notifications</h3>
-                    <button className="text-sm text-primary-600 hover:text-primary-700 font-medium dark:text-primary-200">
+                    <button className="text-body-sm text-primary-600 hover:text-primary-700 font-medium dark:text-primary-200">
                       Mark all read
                     </button>
                   </div>
@@ -598,16 +598,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                             n.type === 'error' && 'bg-error-500'
                           )} />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{n.title}</p>
-                            <p className="text-sm text-neutral-500 mt-0.5 line-clamp-2 dark:text-neutral-400">{n.message}</p>
-                            <p className="text-xs text-neutral-400 mt-1.5">{n.time}</p>
+                            <p className="body-strong">{n.title}</p>
+                            <p className="body-sm mt-0.5 line-clamp-2">{n.message}</p>
+                            <p className="caption mt-1.5">{n.time}</p>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 dark:border-primary-800/60">
-                    <button className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium py-1.5 dark:text-primary-200">
+                    <button className="w-full text-body-sm text-primary-600 hover:text-primary-700 font-medium py-1.5 dark:text-primary-200">
                       View All Notifications
                     </button>
                   </div>
@@ -627,11 +627,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             >
               <Avatar name="John Doe" size="sm" />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">John Doe</p>
+                <p className="body-strong">John Doe</p>
                 {/* Role only — the entity code is now shown in the EntityPicker
                     above, so the (MNC-HOLDING) suffix here was redundant. */}
                 <p className={cn(
-                  'text-xs font-medium',
+                  'text-caption font-medium',
                   // dark:text-neutral-400 measured 4.11:1 against this
                   // header's dark background, just under the 4.5:1 minimum
                   // for 12px text — bumped to neutral-300 (5.18:1) to match
@@ -656,23 +656,23 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                     <div className="flex items-center gap-3">
                       <Avatar name="John Doe" size="md" />
                       <div>
-                        <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">John Doe</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">john.doe@company.com</p>
+                        <p className="body-strong font-semibold">John Doe</p>
+                        <p className="caption">john.doe@company.com</p>
                       </div>
                     </div>
                   </div>
                   <div className="py-2">
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
                       <User className="w-4 h-4 text-neutral-400" />
                       Profile Settings
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors dark:text-neutral-200">
                       <Settings className="w-4 h-4 text-neutral-400" />
                       Preferences
                     </button>
                   </div>
                   <div className="border-t border-neutral-100 py-2 dark:border-primary-800/60">
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300">
+                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-body-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300">
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </button>
@@ -695,7 +695,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               autoFocus
               className={cn(
                 'w-full h-11 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
-                'bg-neutral-50 text-base placeholder:text-neutral-400 dark:bg-primary-950',
+                'bg-neutral-50 text-body placeholder:text-neutral-400 dark:bg-primary-950',
                 'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10'
               )}
             />
@@ -764,7 +764,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreCl
                 {item.icon}
               </div>
               <span className={cn(
-                'text-xs font-medium mt-0.5',
+                'text-caption font-medium mt-0.5',
                 isActive && 'text-primary-700 dark:text-neutral-50'
               )}>
                 {item.label}
@@ -828,7 +828,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
 
         {/* Quick Actions */}
         <div className="px-4 py-4 border-b border-neutral-100 dark:border-primary-800/60">
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider px-2 mb-3">Quick Actions</p>
+          <p className="text-caption font-semibold text-neutral-400 uppercase tracking-wider px-2 mb-3">Quick Actions</p>
           <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action) => (
               <button
@@ -838,7 +838,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                 <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center text-primary-600 dark:bg-primary-800/40 dark:text-primary-200">
                   {action.icon}
                 </div>
-                <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">{action.label}</span>
+                <span className="text-caption font-medium text-neutral-700 dark:text-neutral-200">{action.label}</span>
               </button>
             ))}
           </div>
@@ -857,7 +857,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                     section headers (density pass removed it there; this
                     mobile "More" sheet is a separate render path that got
                     missed at the time). */}
-                <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 px-2 mb-2">
+                <p className="text-caption font-semibold text-neutral-500 dark:text-neutral-300 px-2 mb-2">
                   {section.title}
                 </p>
                 <div className="space-y-0.5">
@@ -878,10 +878,10 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                         <span className={isActive ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400'}>
                           {item.icon}
                         </span>
-                        <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+                        <span className="flex-1 text-left text-body-sm font-medium">{item.label}</span>
                         {item.badge && (
                           <span className={cn(
-                            'text-xs font-semibold px-2 py-0.5 rounded-full',
+                            'text-caption font-semibold px-2 py-0.5 rounded-full',
                             item.badgeColor === 'warning' ? 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300' :
                             item.badgeColor === 'error' ? 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300' :
                             'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200'
@@ -890,7 +890,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNav
                           </span>
                         )}
                         {item.isNew && (
-                          <span className="text-xs font-bold px-1.5 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 uppercase dark:bg-accent-500/20 dark:text-accent-300">
+                          <span className="text-caption font-bold px-1.5 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 uppercase dark:bg-accent-500/20 dark:text-accent-300">
                             New
                           </span>
                         )}
@@ -1012,7 +1012,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
 
         {/* Footer - Desktop only */}
         <footer className="hidden lg:block border-t border-neutral-200/60 bg-white/80 backdrop-blur-sm py-4 px-8">
-          <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center justify-between caption">
             <span>© {BRAND.copyrightYear} {BRAND.name}. All rights reserved.</span>
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">

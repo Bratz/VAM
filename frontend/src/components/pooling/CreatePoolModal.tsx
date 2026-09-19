@@ -76,18 +76,18 @@ export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClos
       {/* Step Indicator */}
       <div className="flex items-center gap-2 mb-6">
         <div className={cn(
-          'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium',
+          'flex items-center gap-2 px-3 py-1.5 rounded-full text-body-sm font-medium',
           step === 1 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
         )}>
-          <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">1</span>
+          <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-caption">1</span>
           Pool Details
         </div>
         <ArrowRight className="w-4 h-4 text-neutral-300 dark:text-neutral-600" />
         <div className={cn(
-          'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium',
+          'flex items-center gap-2 px-3 py-1.5 rounded-full text-body-sm font-medium',
           step === 2 ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-neutral-100 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400'
         )}>
-          <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">2</span>
+          <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-caption">2</span>
           Add Members
         </div>
       </div>
@@ -179,8 +179,8 @@ export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClos
           <div className="bg-info-50 dark:bg-info-500/10 rounded-lg p-3 flex items-start gap-2">
             <Info className="w-4 h-4 text-info-600 dark:text-info-300 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-info-800 dark:text-info-300">Select Pool Members</p>
-              <p className="text-xs text-info-600 dark:text-info-300">
+              <p className="text-body-sm font-medium text-info-800 dark:text-info-300">Select Pool Members</p>
+              <p className="caption-info">
                 Choose accounts to participate in this notional pool.
                 Only {formData.poolCurrency} accounts are shown.
               </p>

@@ -249,7 +249,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
       {currencies.map((c) => (
         <span
           key={c.currencyCode}
-          className="amount text-xs px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
+          className="amount text-caption px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-primary-800/60 text-neutral-700 dark:text-neutral-200"
         >
           {formatCurrency(c.totalEffective, c.currencyCode)}
         </span>
@@ -354,19 +354,19 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       title="Converted using this platform's stored FX rates, which are seeded reference data — not a live market feed. Treat this total as indicative, not a live mark."
-                      className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
+                      className="inline-flex items-center gap-1 text-caption px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 border border-warning-200 dark:bg-warning-500/10 dark:text-warning-300 dark:border-warning-500/30"
                     >
                       <Info className="w-3 h-3" />
                       Indicative rates
                     </span>
                     {consolidated.excluded > 0 && (
-                      <span className="text-xs text-warning-600 dark:text-warning-400">
+                      <span className="caption-warning">
                         {consolidated.excluded} currenc{consolidated.excluded === 1 ? 'y' : 'ies'} excluded — no rate available
                       </span>
                     )}
                     <span
                       title="Outstanding sweep instructions not yet reflected on the bank statement — a settlement-timing float, not a structural liquidity restriction."
-                      className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"
+                      className="inline-flex items-center gap-1 caption"
                     >
                       In transit (pending sweeps)
                       <Info className="w-3 h-3" />
@@ -391,7 +391,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                           aria-selected={period === key}
                           onClick={() => setPeriod(key)}
                           className={cn(
-                            'px-2.5 py-1 text-xs font-medium transition-colors',
+                            'px-2.5 py-1 text-caption font-medium transition-colors',
                             period === key
                               ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
                               : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-primary-800',
@@ -464,7 +464,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
           {bankDistribution.segments.map(({ bank, pct, hasValue, colour }) => (
-            <span key={bank.bankBic} className="inline-flex items-center gap-1.5 text-xs">
+            <span key={bank.bankBic} className="inline-flex items-center gap-1.5 text-caption">
               <span className={cn('w-2 h-2 rounded-sm', colour)} />
               <span className={cn(
                 bank.homeBank
@@ -573,7 +573,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                         primary text recipe but at xs size; we want sm here
                         so the code line-aligns with the right-side stat. */}
                     {/* eslint-disable-next-line no-restricted-syntax */}
-                    <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{c.currencyCode}</span>
+                    <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{c.currencyCode}</span>
                     <span className="body-sm text-neutral-500 dark:text-neutral-400">
                       {c.shadowCount} mirror{c.shadowCount === 1 ? '' : 's'} · {c.bankShares.length} bank{c.bankShares.length === 1 ? '' : 's'}
                     </span>
@@ -626,7 +626,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             }}
             aria-current={filter === key ? 'true' : undefined}
             className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
+              'px-3 py-1 rounded-full text-caption font-medium transition-colors border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
               filter === key
                 ? 'bg-primary-900 text-white border-primary-900 dark:bg-accent-500 dark:text-primary-950 dark:border-accent-500'
                 : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100 dark:bg-primary-900 dark:text-neutral-300 dark:border-primary-800 dark:hover:bg-primary-800',

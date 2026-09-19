@@ -30,7 +30,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
                 {rule.status}
               </Badge>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{rule.ruleReference}</p>
+            <p className="body-sm">{rule.ruleReference}</p>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -60,7 +60,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-3 gap-4 text-body-sm">
           <div>
             <p className="text-neutral-500 dark:text-neutral-400">Type</p>
             <p className="font-medium">{typeConfig.short}</p>
@@ -77,14 +77,14 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
 
         {/* Source accounts count indicator */}
         {rule.sourceAccounts && rule.sourceAccounts.length > 0 && (
-          <div className="mt-3 pt-3 border-t flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="mt-3 pt-3 border-t flex items-center gap-2 caption">
             <Building2 className="w-3 h-3" />
             <span>{rule.sourceAccounts.length} source account(s)</span>
           </div>
         )}
 
         {rule.lastExecution && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="mt-2 flex items-center gap-2 caption">
             <Clock className="w-3 h-3" />
             <span>Last run: {formatRelativeTime(rule.lastExecution)}</span>
           </div>

@@ -45,7 +45,7 @@ const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 
     info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300', purple: 'bg-cat-2/10 text-cat-2 dark:bg-cat-2/15',
     orange: 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300',
   };
-  const sizes = { sm: 'px-2 py-0.5 text-xs', md: 'px-3 py-1 text-sm' };
+  const sizes = { sm: 'px-2 py-0.5 text-caption', md: 'px-3 py-1 text-body-sm' };
   return <span className={cn('font-medium rounded-full', variants[variant], sizes[size])}>{children}</span>;
 };
 
@@ -61,7 +61,7 @@ const Button: React.FC<{ children: React.ReactNode; variant?: 'primary' | 'secon
     ghost: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300',
     outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-primary-700 dark:text-neutral-200',
   };
-  const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm' };
+  const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm' };
   return <button onClick={onClick} disabled={disabled} className={cn('rounded-lg font-medium transition-colors flex items-center gap-2 disabled:cursor-not-allowed', variants[variant], sizes[size], className)}>{children}</button>;
 };
 
@@ -119,35 +119,35 @@ const OperationDetailModal: React.FC<OperationDetailModalProps> = ({ operation, 
     >
       <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Status</span>
+              <span className="body-sm">Status</span>
               {getStatusBadge(operation.status)}
             </div>
 
             <div>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Summary</span>
+              <span className="body-sm">Summary</span>
               <p className="font-medium text-primary-900 mt-1 dark:text-neutral-50">{operation.summary}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">Performed By</span>
+                <span className="body-sm">Performed By</span>
                 <p className="font-medium text-primary-900 mt-1 dark:text-neutral-50">{operation.performedBy}</p>
               </div>
               <div>
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">Date</span>
+                <span className="body-sm">Date</span>
                 <p className="font-medium text-primary-900 mt-1 dark:text-neutral-50">{new Date(operation.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
 
             <div>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Time</span>
+              <span className="body-sm">Time</span>
               <p className="font-medium text-primary-900 mt-1 dark:text-neutral-50">{new Date(operation.createdAt).toLocaleTimeString()}</p>
             </div>
 
             {operation.details && (
               <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
                 <span className="field-label">Additional Details</span>
-                <dl className="mt-2 space-y-2 text-sm">
+                <dl className="mt-2 space-y-2 text-body-sm">
                   {operation.details.sourceNode && (
                     <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Source:</dt><dd className="font-medium">{operation.details.sourceNode}</dd></div>
                   )}
@@ -192,7 +192,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
     <Card padding="sm" className="mb-6">
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-neutral-500 mb-1 dark:text-neutral-400">Search</label>
+          <label className="block label-cased mb-1">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
             <input
@@ -200,17 +200,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
               value={filters.searchQuery}
               onChange={(e) => onChange({ ...filters, searchQuery: e.target.value })}
               placeholder="Search operations..."
-              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
             />
           </div>
         </div>
 
         <div className="w-[180px]">
-          <label className="block text-xs font-medium text-neutral-500 mb-1 dark:text-neutral-400">Operation Type</label>
+          <label className="block label-cased mb-1">Operation Type</label>
           <select
             value={filters.operationType}
             onChange={(e) => onChange({ ...filters, operationType: e.target.value as OperationType | 'ALL' })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
           >
             {operationTypes.map((type) => (
               <option key={type} value={type}>{type === 'ALL' ? 'All Types' : type.replace(/_/g, ' ')}</option>
@@ -219,11 +219,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
         </div>
 
         <div className="w-[140px]">
-          <label className="block text-xs font-medium text-neutral-500 mb-1 dark:text-neutral-400">Status</label>
+          <label className="block label-cased mb-1">Status</label>
           <select
             value={filters.status}
             onChange={(e) => onChange({ ...filters, status: e.target.value as OperationStatus | 'ALL' })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
           >
             {statuses.map((status) => (
               <option key={status} value={status}>{status === 'ALL' ? 'All Statuses' : status}</option>
@@ -232,22 +232,22 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
         </div>
 
         <div className="w-[140px]">
-          <label className="block text-xs font-medium text-neutral-500 mb-1 dark:text-neutral-400">From Date</label>
+          <label className="block label-cased mb-1">From Date</label>
           <input
             type="date"
             value={filters.dateFrom}
             onChange={(e) => onChange({ ...filters, dateFrom: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
           />
         </div>
 
         <div className="w-[140px]">
-          <label className="block text-xs font-medium text-neutral-500 mb-1 dark:text-neutral-400">To Date</label>
+          <label className="block label-cased mb-1">To Date</label>
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => onChange({ ...filters, dateTo: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
           />
         </div>
 
@@ -379,7 +379,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
           <select
             value={selectedCorporateId}
             onChange={(e) => { setSelectedCorporateId(e.target.value); setPage(0); }}
-            className="px-4 py-2 border border-neutral-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700 dark:bg-primary-900"
+            className="px-4 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-700 dark:bg-primary-900"
           >
             {corporates.map((corp) => (<option key={corp.id} value={corp.id}>{corp.name}</option>))}
           </select>
@@ -407,7 +407,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
           <div className="text-center py-12">
             <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
             <p className="text-neutral-500 dark:text-neutral-400">No operations found</p>
-            <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your filters</p>
+            <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your filters</p>
           </div>
         ) : (
           <DataTable
@@ -427,20 +427,20 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
                     <div className="p-2 bg-neutral-100 rounded-lg dark:bg-primary-800">{getOperationIcon(op.operationType)}</div>
                     <div>
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{op.operationType.replace(/_/g, ' ')}</p>
-                      <p className="text-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{op.summary}</p>
+                      <p className="text-body-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{op.summary}</p>
                     </div>
                   </div>
                 ),
               },
               { key: 'status', header: 'Status', render: (_, op) => getStatusBadge(op.status) },
-              { key: 'performedBy', header: 'Performed By', render: (_, op) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{op.performedBy}</span> },
+              { key: 'performedBy', header: 'Performed By', render: (_, op) => <span className="body-sm">{op.performedBy}</span> },
               {
                 key: 'createdAt',
                 header: 'Date',
                 render: (_, op) => (
-                  <div className="text-sm text-neutral-600 dark:text-neutral-300">
+                  <div className="body-sm">
                     <div>{new Date(op.createdAt).toLocaleDateString()}</div>
-                    <div className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(op.createdAt).toLocaleTimeString()}</div>
+                    <div className="caption">{new Date(op.createdAt).toLocaleTimeString()}</div>
                   </div>
                 ),
               },

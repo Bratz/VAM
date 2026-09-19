@@ -393,15 +393,15 @@ const FormField: React.FC<{ label: string; required?: boolean; error?: string; h
   <div className="space-y-1">
     <label className="field-label block">{label}{required && <span className="text-error-500 ml-1">*</span>}</label>
     {children}
-    {hint && !error && <p className="text-xs text-neutral-500 dark:text-neutral-400">{hint}</p>}
-    {error && <p className="text-xs text-error-600 dark:text-error-300">{error}</p>}
+    {hint && !error && <p className="caption">{hint}</p>}
+    {error && <p className="caption-error">{error}</p>}
   </div>
 );
 
 const CheckboxField: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }> = ({ checked, onChange, label, description }) => (
   <label className={cn('flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all', checked ? 'bg-primary-50 border-primary-300 dark:bg-primary-800/40' : 'bg-white border-neutral-200 hover:bg-neutral-50 dark:bg-primary-900 dark:border-primary-800 dark:hover:bg-primary-800/50')}>
     <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-primary-600 dark:border-primary-700 dark:text-primary-200" />
-    <div><p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{label}</p>{description && <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{description}</p>}</div>
+    <div><p className="body-strong">{label}</p>{description && <p className="caption mt-0.5">{description}</p>}</div>
   </label>
 );
 
@@ -517,7 +517,7 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
           <nav className="flex gap-1 -mb-px">
             {tabs.map(tab => (
               <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
-                className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                className={cn('flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors',
                   activeTab === tab.id ? 'border-cat-1 text-cat-1' : 'border-transparent text-neutral-500 hover:text-neutral-700')}>
                 <tab.icon className="w-4 h-4" />{tab.label}
               </button>
@@ -529,59 +529,59 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
           {activeTab === 'basic' && (
             <div className="space-y-6">
               <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 dark:bg-warning-500/10 dark:border-warning-500/30">
-                <p className="text-sm text-warning-800 dark:text-warning-300"><AlertTriangle className="w-4 h-4 inline mr-1" />Fields marked with <span className="text-error-500">*</span> are mandatory.</p>
+                <p className="text-body-sm text-warning-800 dark:text-warning-300"><AlertTriangle className="w-4 h-4 inline mr-1" />Fields marked with <span className="text-error-500">*</span> are mandatory.</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Entity Code" required error={errors.entityCode} hint="Unique ID (e.g., ACME-UK)">
-                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-sm', isEditMode && 'bg-neutral-100')} placeholder="ACME-UK" />
+                  <input type="text" value={formData.entityCode} onChange={(e) => updateField('entityCode', e.target.value.toUpperCase())} disabled={isEditMode} maxLength={20} className={cn('w-full px-3 py-2 border rounded-lg text-body-sm', isEditMode && 'bg-neutral-100')} placeholder="ACME-UK" />
                 </FormField>
                 <FormField label="Entity Name" required error={errors.entityName}>
-                  <input type="text" value={formData.entityName} onChange={(e) => updateField('entityName', e.target.value)} maxLength={200} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="ACME Corporation UK Ltd" />
+                  <input type="text" value={formData.entityName} onChange={(e) => updateField('entityName', e.target.value)} maxLength={200} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="ACME Corporation UK Ltd" />
                 </FormField>
                 <FormField label="Short Name" hint="Display name">
-                  <input type="text" value={formData.shortName} onChange={(e) => updateField('shortName', e.target.value)} maxLength={50} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="ACME UK" />
+                  <input type="text" value={formData.shortName} onChange={(e) => updateField('shortName', e.target.value)} maxLength={50} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="ACME UK" />
                 </FormField>
                 <FormField label="Entity Type" required>
-                  <select value={formData.entityType} onChange={(e) => updateField('entityType', e.target.value as EntityType)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.entityType} onChange={(e) => updateField('entityType', e.target.value as EntityType)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     {Object.entries(entityTypeConfig).map(([value, cfg]) => <option key={value} value={value}>{cfg.label}</option>)}
                   </select>
                 </FormField>
                 <FormField label="Legal Form" hint="LLC, Ltd, GmbH, etc.">
-                  <select value={formData.legalForm} onChange={(e) => updateField('legalForm', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.legalForm} onChange={(e) => updateField('legalForm', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     <option value="">Select...</option>
                     {LEGAL_FORMS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                   </select>
                 </FormField>
                 <FormField label="Parent Entity">
-                  <select value={formData.parentEntityId} onChange={(e) => updateField('parentEntityId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.parentEntityId} onChange={(e) => updateField('parentEntityId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     <option value="">None (Root Entity)</option>
                     {potentialParents.map(e => <option key={e.id} value={e.id}>{e.entityCode} - {e.entityName}</option>)}
                   </select>
                 </FormField>
                 <FormField label="Ownership %" hint="0-100">
-                  <input type="number" value={formData.ownershipPercent} onChange={(e) => updateField('ownershipPercent', parseFloat(e.target.value) || 0)} min={0} max={100} step={0.01} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                  <input type="number" value={formData.ownershipPercent} onChange={(e) => updateField('ownershipPercent', parseFloat(e.target.value) || 0)} min={0} max={100} step={0.01} className="w-full px-3 py-2 border rounded-lg text-body-sm" />
                 </FormField>
                 <FormField label="Consolidation">
-                  <select value={formData.consolidationMethod} onChange={(e) => updateField('consolidationMethod', e.target.value as ConsolidationMethod)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.consolidationMethod} onChange={(e) => updateField('consolidationMethod', e.target.value as ConsolidationMethod)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     {Object.entries(consolidationConfig).map(([value, cfg]) => <option key={value} value={value}>{cfg.label}</option>)}
                   </select>
                 </FormField>
                 <FormField label="Status">
-                  <select value={formData.status} onChange={(e) => updateField('status', e.target.value as EntityStatus)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.status} onChange={(e) => updateField('status', e.target.value as EntityStatus)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     {Object.entries(statusConfig).map(([value, cfg]) => <option key={value} value={value}>{cfg.label}</option>)}
                   </select>
                 </FormField>
               </div>
               <div className="border-t pt-4">
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2"><DollarSign className="w-4 h-4" />Currency</h4>
+                <h4 className="text-body-sm font-semibold mb-3 flex items-center gap-2"><DollarSign className="w-4 h-4" />Currency</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Functional Currency" required error={errors.functionalCurrency}>
-                    <select value={formData.functionalCurrency} onChange={(e) => updateField('functionalCurrency', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                    <select value={formData.functionalCurrency} onChange={(e) => updateField('functionalCurrency', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </FormField>
                   <FormField label="Reporting Currency">
-                    <select value={formData.reportingCurrency} onChange={(e) => updateField('reportingCurrency', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                    <select value={formData.reportingCurrency} onChange={(e) => updateField('reportingCurrency', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                       <option value="">Same as functional</option>
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -589,22 +589,22 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                 </div>
               </div>
               <div className="border-t pt-4">
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2"><Wallet className="w-4 h-4" />Bank Relationship</h4>
+                <h4 className="text-body-sm font-semibold mb-3 flex items-center gap-2"><Wallet className="w-4 h-4" />Bank Relationship</h4>
                 <CheckboxField checked={formData.isBankCustomer} onChange={(v) => updateField('isBankCustomer', v)} label="Is Bank Customer" description="Has direct banking relationship with external limits" />
                 {formData.isBankCustomer && (
                   <div className="mt-3">
                     <FormField label="BANCS Customer ID" required error={errors.bancsCustomerId}>
-                      <input type="text" value={formData.bancsCustomerId} onChange={(e) => updateField('bancsCustomerId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="CIF-123456" />
+                      <input type="text" value={formData.bancsCustomerId} onChange={(e) => updateField('bancsCustomerId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="CIF-123456" />
                     </FormField>
                   </div>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-4 border-t pt-4">
                 <FormField label="Effective From">
-                  <input type="date" value={formData.effectiveFrom} onChange={(e) => updateField('effectiveFrom', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                  <input type="date" value={formData.effectiveFrom} onChange={(e) => updateField('effectiveFrom', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" />
                 </FormField>
                 <FormField label="Effective To" hint="Leave empty for no end">
-                  <input type="date" value={formData.effectiveTo} onChange={(e) => updateField('effectiveTo', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                  <input type="date" value={formData.effectiveTo} onChange={(e) => updateField('effectiveTo', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" />
                 </FormField>
               </div>
             </div>
@@ -614,19 +614,19 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Country">
-                  <select value={formData.countryCode} onChange={(e) => updateField('countryCode', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                  <select value={formData.countryCode} onChange={(e) => updateField('countryCode', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
                     <option value="">Select...</option>
                     {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
                   </select>
                 </FormField>
                 <FormField label="Jurisdiction" hint="DIFC, ADGM, etc.">
-                  <input type="text" value={formData.jurisdiction} onChange={(e) => updateField('jurisdiction', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g., DIFC, England & Wales" />
+                  <input type="text" value={formData.jurisdiction} onChange={(e) => updateField('jurisdiction', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="e.g., DIFC, England & Wales" />
                 </FormField>
                 <FormField label="Tax ID">
-                  <input type="text" value={formData.taxId} onChange={(e) => updateField('taxId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Tax identification number" />
+                  <input type="text" value={formData.taxId} onChange={(e) => updateField('taxId', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="Tax identification number" />
                 </FormField>
                 <FormField label="Registration Number">
-                  <input type="text" value={formData.registrationNumber} onChange={(e) => updateField('registrationNumber', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Company registration" />
+                  <input type="text" value={formData.registrationNumber} onChange={(e) => updateField('registrationNumber', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="Company registration" />
                 </FormField>
               </div>
             </div>
@@ -657,18 +657,18 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
               {/* Credit Limit Info - Managed via CreditLimitService */}
               <div className="border-t pt-4">
                 <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
-                  <p className="text-sm text-info-800 dark:text-info-300">
+                  <p className="text-body-sm text-info-800 dark:text-info-300">
                     <CreditCard className="w-4 h-4 inline mr-1" />
                     <strong>Internal Credit Limits</strong> are managed via the "Allocate Limit" button in the entity details panel (right side).
                   </p>
-                  <p className="text-xs text-info-600 mt-1 dark:text-info-300">Limits are allocated from the Group Limit and tracked via CreditLimitService.</p>
+                  <p className="caption-info mt-1">Limits are allocated from the Group Limit and tracked via CreditLimitService.</p>
                 </div>
               </div>
 
               {/* IHB Section - Merged */}
               <div className="border-t pt-4">
                 <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 mb-4 dark:bg-cat-2/15 dark:border-cat-2/30">
-                  <p className="text-sm text-cat-2"><Banknote className="w-4 h-4 inline mr-1" />In-House Banking for intercompany lending/borrowing.</p>
+                  <p className="text-body-sm text-cat-2"><Banknote className="w-4 h-4 inline mr-1" />In-House Banking for intercompany lending/borrowing.</p>
                 </div>
                 <CheckboxField
                   checked={formData.ihbEnabled}
@@ -695,10 +695,10 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
                     </div>
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <FormField label="Lending Spread %" hint="Added when lending">
-                        <input type="number" value={formData.lendingRateSpread} onChange={(e) => updateField('lendingRateSpread', parseFloat(e.target.value) || 0)} min={0} max={10} step={0.01} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        <input type="number" value={formData.lendingRateSpread} onChange={(e) => updateField('lendingRateSpread', parseFloat(e.target.value) || 0)} min={0} max={10} step={0.01} className="w-full px-3 py-2 border rounded-lg text-body-sm" />
                       </FormField>
                       <FormField label="Borrowing Spread %" hint="Added when borrowing">
-                        <input type="number" value={formData.borrowingRateSpread} onChange={(e) => updateField('borrowingRateSpread', parseFloat(e.target.value) || 0)} min={0} max={10} step={0.01} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        <input type="number" value={formData.borrowingRateSpread} onChange={(e) => updateField('borrowingRateSpread', parseFloat(e.target.value) || 0)} min={0} max={10} step={0.01} className="w-full px-3 py-2 border rounded-lg text-body-sm" />
                       </FormField>
                     </div>
                   </>
@@ -711,24 +711,24 @@ const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, enti
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Contact Email" error={errors.contactEmail}>
-                  <input type="email" value={formData.contactEmail} onChange={(e) => updateField('contactEmail', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="finance@acme.com" />
+                  <input type="email" value={formData.contactEmail} onChange={(e) => updateField('contactEmail', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="finance@acme.com" />
                 </FormField>
                 <FormField label="Contact Phone">
-                  <input type="tel" value={formData.contactPhone} onChange={(e) => updateField('contactPhone', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="+971 4 123 4567" />
+                  <input type="tel" value={formData.contactPhone} onChange={(e) => updateField('contactPhone', e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" placeholder="+971 4 123 4567" />
                 </FormField>
               </div>
               <FormField label="Registered Address">
-                <textarea value={formData.registeredAddress} onChange={(e) => updateField('registeredAddress', e.target.value)} rows={4} maxLength={500} className="w-full px-3 py-2 border rounded-lg text-sm resize-none" placeholder="123 Business Park&#10;Dubai, UAE" />
+                <textarea value={formData.registeredAddress} onChange={(e) => updateField('registeredAddress', e.target.value)} rows={4} maxLength={500} className="w-full px-3 py-2 border rounded-lg text-body-sm resize-none" placeholder="123 Business Park&#10;Dubai, UAE" />
               </FormField>
             </div>
           )}
         </form>
 
         <div className="border-t px-6 py-4 flex justify-between items-center bg-neutral-50 dark:bg-primary-950 dark:border-primary-800">
-          <div className="text-sm text-neutral-500 dark:text-neutral-400">{isEditMode && entity && `Last updated: ${new Date(entity.updatedAt || entity.createdAt).toLocaleDateString()}`}</div>
+          <div className="body-sm">{isEditMode && entity && `Last updated: ${new Date(entity.updatedAt || entity.createdAt).toLocaleDateString()}`}</div>
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">Cancel</button>
-            <button type="submit" onClick={handleSubmit} disabled={saving} className="px-4 py-2 bg-cat-1 text-white rounded-lg text-sm disabled:opacity-50 flex items-center gap-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-body-sm">Cancel</button>
+            <button type="submit" onClick={handleSubmit} disabled={saving} className="px-4 py-2 bg-cat-1 text-white rounded-lg text-body-sm disabled:opacity-50 flex items-center gap-2">
               {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Saving...</> : <><Save className="w-4 h-4" />{isEditMode ? 'Update' : 'Create'}</>}
             </button>
           </div>
@@ -852,7 +852,7 @@ const HierarchyTreeNode: React.FC<{
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{entity.entityName}</p>
+            <p className="text-body-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{entity.entityName}</p>
             {entity.isBankCustomer && (
               <Badge variant="success" size="sm" className="flex items-center gap-1">
                 <Wallet className="w-3 h-3" /> Bank
@@ -868,19 +868,19 @@ const HierarchyTreeNode: React.FC<{
                 <PiggyBank className="w-3 h-3" /> IHB
               </Badge>
             )}
-            <span className={cn('px-2 py-0.5 rounded-full text-xs', statusCfg.bgColor, statusCfg.color)}>
+            <span className={cn('px-2 py-0.5 rounded-full text-caption', statusCfg.bgColor, statusCfg.color)}>
               {statusCfg.label}
             </span>
           </div>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</span>
+            <span className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</span>
             {entity.bancsCustomerId && (
-              <span className="text-xs text-info-600 flex items-center gap-1 dark:text-info-300">
+              <span className="caption-info flex items-center gap-1">
                 <Link2 className="w-3 h-3" />{entity.bancsCustomerId}
               </span>
             )}
             {entity.countryCode && (
-              <span className="text-xs text-neutral-400 flex items-center gap-1 dark:text-neutral-500">
+              <span className="caption flex items-center gap-1">
                 <Globe className="w-3 h-3" />{entity.countryCode}
               </span>
             )}
@@ -896,22 +896,22 @@ const HierarchyTreeNode: React.FC<{
                 <AlertTriangle className={cn('w-4 h-4', isBreached ? 'text-error-500' : 'text-warning-500')} />
               )}
               <p className={cn(
-                'text-sm font-semibold',
+                'text-body-sm font-semibold',
                 isBreached ? 'text-error-600 dark:text-error-300' : isNearLimit ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-900 dark:text-neutral-50'
               )}>
                 {utilizationPercent.toFixed(0)}%
               </p>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="caption">
               {formatCurrency(limitUtilized, limitCurrency)} / {formatCurrency(limitAmount, limitCurrency)}
             </p>
             {hasMultipleCurrencies && (
-              <p className="text-xs text-info-500">+{creditLimits.length - 1} more</p>
+              <p className="text-caption text-info-500">+{creditLimits.length - 1} more</p>
             )}
           </div>
         ) : (
           <div className="text-right min-w-[100px]">
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">No limit</span>
+            <span className="caption">No limit</span>
           </div>
         )}
       </div>
@@ -962,22 +962,22 @@ const EntityDetailPanel: React.FC<{
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className={cn('p-3 rounded-xl', typeConfig.bgColor)}><TypeIcon className={cn('w-6 h-6', typeConfig.color)} /></div>
-            <div><h3 className="section-title">{entity.entityName}</h3><p className="text-sm text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</p></div>
+            <div><h3 className="section-title">{entity.entityName}</h3><p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{entity.entityCode}</p></div>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded transition-colors dark:hover:bg-primary-800"><X className="w-5 h-5 text-neutral-400 dark:text-neutral-500" /></button>
         </div>
         <div className="flex flex-wrap gap-2 mt-3">
-          <span className={cn('px-2 py-1 rounded-full text-xs', statusCfg.bgColor, statusCfg.color)}><StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}</span>
-          <span className="px-2 py-1 rounded-full text-xs bg-neutral-100 dark:bg-primary-800">{typeConfig.label}</span>
-          {entity.isBankCustomer && <span className="px-2 py-1 rounded-full text-xs bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank Customer</span>}
-          {entity.isTreasuryCenter && <span className="px-2 py-1 rounded-full text-xs bg-cat-2/10 text-cat-2 dark:bg-cat-2/15"><Crown className="w-3 h-3 inline" /> Treasury</span>}
-          {entity.ihbEnabled && <span className="px-2 py-1 rounded-full text-xs bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300"><PiggyBank className="w-3 h-3 inline" /> IHB</span>}
+          <span className={cn('px-2 py-1 rounded-full text-caption', statusCfg.bgColor, statusCfg.color)}><StatusIcon className="w-3 h-3 inline mr-1" />{statusCfg.label}</span>
+          <span className="px-2 py-1 rounded-full text-caption bg-neutral-100 dark:bg-primary-800">{typeConfig.label}</span>
+          {entity.isBankCustomer && <span className="px-2 py-1 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank Customer</span>}
+          {entity.isTreasuryCenter && <span className="px-2 py-1 rounded-full text-caption bg-cat-2/10 text-cat-2 dark:bg-cat-2/15"><Crown className="w-3 h-3 inline" /> Treasury</span>}
+          {entity.ihbEnabled && <span className="px-2 py-1 rounded-full text-caption bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300"><PiggyBank className="w-3 h-3 inline" /> IHB</span>}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className={cn('rounded-xl p-4', hasLimits ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950')}>
-          <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')} />Internal Credit Limits</h4>
+          <h4 className="text-body-sm font-semibold flex items-center gap-2 mb-3"><CreditCard className={cn('w-4 h-4', hasLimits ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')} />Internal Credit Limits</h4>
           {hasLimits ? (
             <div className="space-y-3">
               {/* Multi-currency: Show each currency limit */}
@@ -1000,30 +1000,30 @@ const EntityDetailPanel: React.FC<{
                       </Button>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="min-w-0"><p className="text-xs text-neutral-500 dark:text-neutral-400">Allocated</p><p className="text-sm font-bold text-neutral-900 truncate dark:text-neutral-50" title={formatCurrency(limitAmount, limitCurrency)}>{formatCompactCurrency(limitAmount, limitCurrency)}</p></div>
-                      <div className="min-w-0"><p className="text-xs text-neutral-500 dark:text-neutral-400">Utilized</p><p className="text-sm font-bold text-warning-600 truncate dark:text-warning-300" title={formatCurrency(limitUtilized, limitCurrency)}>{formatCompactCurrency(limitUtilized, limitCurrency)}</p></div>
-                      <div className="min-w-0"><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p><p className="text-sm font-bold text-success-600 truncate dark:text-success-300" title={formatCurrency(availableLimit, limitCurrency)}>{formatCompactCurrency(availableLimit, limitCurrency)}</p></div>
+                      <div className="min-w-0"><p className="caption">Allocated</p><p className="text-body-sm font-bold text-neutral-900 truncate dark:text-neutral-50" title={formatCurrency(limitAmount, limitCurrency)}>{formatCompactCurrency(limitAmount, limitCurrency)}</p></div>
+                      <div className="min-w-0"><p className="caption">Utilized</p><p className="text-body-sm font-bold text-warning-600 truncate dark:text-warning-300" title={formatCurrency(limitUtilized, limitCurrency)}>{formatCompactCurrency(limitUtilized, limitCurrency)}</p></div>
+                      <div className="min-w-0"><p className="caption">Available</p><p className="text-body-sm font-bold text-success-600 truncate dark:text-success-300" title={formatCurrency(availableLimit, limitCurrency)}>{formatCompactCurrency(availableLimit, limitCurrency)}</p></div>
                     </div>
                     <div className="w-full bg-neutral-200 rounded-full h-2 mt-2 dark:bg-primary-800"><div className={cn('h-2 rounded-full', utilizationPercent > 95 ? 'bg-error-500' : utilizationPercent > 80 ? 'bg-warning-500' : 'bg-success-500')} style={{ width: `${Math.min(utilizationPercent, 100)}%` }} /></div>
-                    <p className="text-xs text-neutral-500 text-right mt-1 dark:text-neutral-400">{utilizationPercent.toFixed(1)}% utilized</p>
+                    <p className="caption text-right mt-1">{utilizationPercent.toFixed(1)}% utilized</p>
 
                     {/* Pool Manager Section - for Regional Treasuries managing subsidiary limits */}
                     {(isLimitPoolManager || (canManagePool && idx === 0)) && (
                       <div className="mt-2 pt-2 border-t border-primary-100 dark:border-primary-700/60">
-                        <p className="text-xs font-semibold text-cat-2 mb-1"><Landmark className="w-3 h-3 inline mr-1" />Pool Manager</p>
+                        <p className="text-caption font-semibold text-cat-2 mb-1"><Landmark className="w-3 h-3 inline mr-1" />Pool Manager</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="min-w-0">
-                            <p className="text-xs text-cat-2">To Subsidiaries</p>
-                            <p className="text-sm font-bold text-cat-2 truncate">{formatCompactCurrency(allocatedToChildren, limitCurrency)}</p>
+                            <p className="text-caption text-cat-2">To Subsidiaries</p>
+                            <p className="text-body-sm font-bold text-cat-2 truncate">{formatCompactCurrency(allocatedToChildren, limitCurrency)}</p>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs text-cat-2">Pool Available</p>
-                            <p className="text-sm font-bold text-cat-2 truncate">{formatCompactCurrency(unallocatedPool, limitCurrency)}</p>
+                            <p className="text-caption text-cat-2">Pool Available</p>
+                            <p className="text-body-sm font-bold text-cat-2 truncate">{formatCompactCurrency(unallocatedPool, limitCurrency)}</p>
                           </div>
                         </div>
                       </div>
                     )}
-                    <p className="text-xs text-primary-700 mt-1 dark:text-neutral-200"><Info className="w-3 h-3 inline" /> {limit.parentLimitId ? 'Sub-limit from parent pool' : 'From Group Limit'}</p>
+                    <p className="text-caption text-primary-700 mt-1 dark:text-neutral-200"><Info className="w-3 h-3 inline" /> {limit.parentLimitId ? 'Sub-limit from parent pool' : 'From Group Limit'}</p>
                   </div>
                 );
               })}
@@ -1031,7 +1031,7 @@ const EntityDetailPanel: React.FC<{
               {/* Add limit in another currency */}
               {availableGroupCurrencies.length > 0 && (
                 <div className="pt-2 border-t border-primary-200 dark:border-primary-700">
-                  <p className="text-xs text-neutral-500 mb-2 dark:text-neutral-400">Add limit in another currency:</p>
+                  <p className="caption mb-2">Add limit in another currency:</p>
                   <div className="flex flex-wrap gap-2">
                     {availableGroupCurrencies.map(g => (
                       <Button key={g.currency} variant="outline" size="sm" onClick={() => onAllocateLimit(entity, g.currency)}>
@@ -1045,10 +1045,10 @@ const EntityDetailPanel: React.FC<{
           ) : (
             <div className="text-center py-4">
               <CreditCard className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-600" />
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">No limit allocated</p>
+              <p className="body-sm">No limit allocated</p>
               {groupLimits.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-xs text-neutral-400 mb-2 dark:text-neutral-500">Available from Group Limits:</p>
+                  <p className="caption mb-2">Available from Group Limits:</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {groupLimits.map(g => (
                       <Badge key={g.currency} variant="info" size="sm">
@@ -1064,18 +1064,18 @@ const EntityDetailPanel: React.FC<{
         </div>
 
         <div className={cn('rounded-xl p-4', entity.isBankCustomer ? 'bg-success-50 border border-success-200 dark:bg-success-500/10 dark:border-success-500/30' : 'bg-neutral-50 dark:bg-primary-950')}>
-          <h4 className="text-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400 dark:text-neutral-500')} />Banking Relationship</h4>
+          <h4 className="text-body-sm font-semibold mb-3"><Wallet className={cn('w-4 h-4 inline mr-1', entity.isBankCustomer ? 'text-success-600 dark:text-success-300' : 'text-neutral-400 dark:text-neutral-500')} />Banking Relationship</h4>
           {entity.isBankCustomer ? (
             <div className="space-y-2">
-              <div className="flex justify-between"><span className="text-sm text-neutral-600 dark:text-neutral-300">Status</span><span className="text-sm text-success-700 dark:text-success-300"><CheckCircle className="w-4 h-4 inline" /> Bank Customer</span></div>
-              {entity.bancsCustomerId && <div className="flex justify-between"><span className="text-sm text-neutral-600 dark:text-neutral-300">BANCS ID</span><span className="text-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 transition-colors dark:text-neutral-500"><Copy className="w-3 h-3 inline" /></button></span></div>}
+              <div className="flex justify-between"><span className="body-sm">Status</span><span className="text-body-sm text-success-700 dark:text-success-300"><CheckCircle className="w-4 h-4 inline" /> Bank Customer</span></div>
+              {entity.bancsCustomerId && <div className="flex justify-between"><span className="body-sm">BANCS ID</span><span className="text-body-sm font-mono">{entity.bancsCustomerId}<button onClick={() => { navigator.clipboard.writeText(entity.bancsCustomerId!); toast.success('Copied!'); }} className="ml-2 text-neutral-400 hover:text-primary-600 transition-colors dark:text-neutral-500"><Copy className="w-3 h-3 inline" /></button></span></div>}
             </div>
-          ) : <p className="text-sm text-neutral-500 text-center dark:text-neutral-400">Not a bank customer</p>}
+          ) : <p className="body-sm text-center">Not a bank customer</p>}
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-100">Entity Details</h4>
-          <div className="space-y-2 text-sm">
+          <h4 className="text-body-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-100">Entity Details</h4>
+          <div className="space-y-2 text-body-sm">
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Building2 className="w-4 h-4 inline mr-1" />Type</span><span className="text-neutral-900 dark:text-neutral-50">{typeConfig.label}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Globe className="w-4 h-4 inline mr-1" />Country</span><span className="text-neutral-900 dark:text-neutral-50">{entity.countryCode || '-'}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Banknote className="w-4 h-4 inline mr-1" />Currency</span><span className="text-neutral-900 dark:text-neutral-50">{entity.functionalCurrency}</span></div>
@@ -1084,7 +1084,7 @@ const EntityDetailPanel: React.FC<{
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-100">Treasury Capabilities</h4>
+          <h4 className="text-body-sm font-semibold mb-3 text-neutral-800 dark:text-neutral-100">Treasury Capabilities</h4>
           <div className="grid grid-cols-2 gap-2">
             {[
               { enabled: entity.isBankCustomer, label: 'Bank Customer', icon: Wallet },
@@ -1094,7 +1094,7 @@ const EntityDetailPanel: React.FC<{
               { enabled: entity.isTreasuryCenter, label: 'Treasury Center', icon: Landmark },
               { enabled: entity.ihbEnabled, label: 'IHB Enabled', icon: Zap },
             ].map(cap => (
-              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-500')}>
+              <div key={cap.label} className={cn('flex items-center gap-2 px-3 py-2 rounded-lg text-body-sm transition-colors', cap.enabled ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300' : 'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-500')}>
                 <cap.icon className="w-4 h-4" /><span className="flex-1">{cap.label}</span>{cap.enabled ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
               </div>
             ))}
@@ -1301,7 +1301,7 @@ const LegalEntitiesPage: React.FC = () => {
         {groupLimits.map(g => (
           <span
             key={g.currency || 'N/A'}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-accent-50 text-accent-700 ring-1 ring-accent-200 dark:bg-accent-500/15 dark:text-accent-300 dark:ring-accent-500/30"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-caption font-medium bg-accent-50 text-accent-700 ring-1 ring-accent-200 dark:bg-accent-500/15 dark:text-accent-300 dark:ring-accent-500/30"
             title={`${g.currency}: ${formatCompactCurrency(g.limitAmount || 0, g.currency || 'AED')}`}
           >
             <span className="font-semibold">{g.currency || 'N/A'}</span>
@@ -1350,9 +1350,9 @@ const LegalEntitiesPage: React.FC = () => {
               <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Corporate</span>
+              <span className="caption">Corporate</span>
               <select
-                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-sm bg-white min-w-[240px] focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800 dark:bg-primary-900"
+                className="px-3 py-1.5 border border-neutral-200 rounded-lg text-body-sm bg-white min-w-[240px] focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800 dark:bg-primary-900"
                 value={selectedCorporateId}
                 onChange={(e) => setSelectedCorporateId(e.target.value)}
               >
@@ -1363,7 +1363,7 @@ const LegalEntitiesPage: React.FC = () => {
           </div>
           <div className="flex-1" />
           {selectedCorporateId && (
-            <span className="text-sm text-primary-700 dark:text-neutral-200">
+            <span className="text-body-sm text-primary-700 dark:text-neutral-200">
               <span className="font-medium">{corporates.find(c => c.id === selectedCorporateId)?.legalName}</span>
             </span>
           )}
@@ -1375,7 +1375,7 @@ const LegalEntitiesPage: React.FC = () => {
         <div className="bg-error-50 border border-error-200 rounded-xl p-4 dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
-            <p className="text-sm text-error-700 dark:text-error-300">{error}</p>
+            <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
           </div>
         </div>
       )}
@@ -1423,7 +1423,7 @@ const LegalEntitiesPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="section-title">Entity Hierarchy</h2>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{entities.length} entities</p>
+                  <p className="body-sm">{entities.length} entities</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1445,11 +1445,11 @@ const LegalEntitiesPage: React.FC = () => {
                   placeholder="Search entities..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
-                  className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+                  className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
                 />
               </div>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
                 value={filterType} 
                 onChange={(e) => setFilterType(e.target.value)}
               >
@@ -1457,7 +1457,7 @@ const LegalEntitiesPage: React.FC = () => {
                 {Object.entries(entityTypeConfig).map(([t, c]) => <option key={t} value={t}>{c.label}</option>)}
               </select>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
                 value={filterStatus} 
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
@@ -1465,7 +1465,7 @@ const LegalEntitiesPage: React.FC = () => {
                 {Object.entries(statusConfig).map(([s, c]) => <option key={s} value={s}>{c.label}</option>)}
               </select>
               <select 
-                className="px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+                className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
                 value={filterBankCustomer} 
                 onChange={(e) => setFilterBankCustomer(e.target.value)}
               >
@@ -1486,7 +1486,7 @@ const LegalEntitiesPage: React.FC = () => {
                 <div className="text-center py-12">
                   <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
                   <p className="text-neutral-500 dark:text-neutral-400">No entities found</p>
-                  <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Create your first legal entity to get started</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Create your first legal entity to get started</p>
                 </div>
               ) : (
                 rootEntities.map(entity => (
@@ -1526,7 +1526,7 @@ const LegalEntitiesPage: React.FC = () => {
             <Card className="h-full flex flex-col items-center justify-center animate-fade-in" style={{ animationDelay: '0.45s' }}>
               <Eye className="w-12 h-12 text-neutral-300 mb-4 dark:text-neutral-600" />
               <p className="text-neutral-500 font-medium dark:text-neutral-400">Select an Entity</p>
-              <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Click on an entity to view details</p>
+              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Click on an entity to view details</p>
             </Card>
           )}
         </div>
@@ -1535,34 +1535,34 @@ const LegalEntitiesPage: React.FC = () => {
       {/* Legend */}
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
         <div className="flex flex-wrap items-center gap-6">
-          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
+          <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-primary-100 dark:bg-primary-700"><Crown className="w-3 h-3 text-primary-700 dark:text-neutral-200" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Holding</span>
+            <span className="caption">Holding</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-info-100 dark:bg-info-500/20"><Building2 className="w-3 h-3 text-info-700 dark:text-info-300" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Subsidiary</span>
+            <span className="caption">Subsidiary</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-cyan-100 dark:bg-cyan-500/20"><Building className="w-3 h-3 text-cyan-700 dark:text-cyan-300" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Branch</span>
+            <span className="caption">Branch</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-cat-2/10 border border-cat-2/30 dark:bg-cat-2/15"><Landmark className="w-3 h-3 text-cat-2" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Treasury Center</span>
+            <span className="caption">Treasury Center</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-success-100 dark:bg-success-500/20"><Wallet className="w-3 h-3 text-success-700 dark:text-success-300" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Bank Customer</span>
+            <span className="caption">Bank Customer</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-info-50 border border-info-300 dark:bg-info-500/10"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">IHB Enabled</span>
+            <span className="caption">IHB Enabled</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded bg-warning-100 dark:bg-warning-500/20"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">Near Limit</span>
+            <span className="caption">Near Limit</span>
           </div>
         </div>
       </Card>

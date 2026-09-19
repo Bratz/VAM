@@ -245,8 +245,8 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
     )}>
       {icons[toast.type]}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{toast.title}</p>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-0.5">{toast.message}</p>
+        <p className="body-strong">{toast.title}</p>
+        <p className="body-sm mt-0.5">{toast.message}</p>
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
@@ -328,22 +328,22 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           {/* Transfer Summary */}
           <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">Amount to Transfer</span>
+              <span className="body-sm">Amount to Transfer</span>
               <span className="stat-value-sm text-primary-900 dark:text-neutral-50">
                 {formatCurrency(exception.amount, exception.currencyCode)}
               </span>
             </div>
             
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-body-sm">
               <div className="flex-1 p-2 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">From</p>
+                <p className="caption">From</p>
                 <p className="font-mono font-medium text-primary-900 dark:text-neutral-50 truncate">
                   {exception.exceptionVaNumber || 'Exception VA'}
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0" />
               <div className="flex-1 p-2 bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">To</p>
+                <p className="caption">To</p>
                 <p className="font-mono font-medium text-primary-900 dark:text-neutral-50 truncate">
                   {targetVa.vaNumber}
                 </p>
@@ -353,21 +353,21 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
           {/* Details */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Exception</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{exception.exceptionNumber}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Target Account</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{targetVa.vaName}</span>
             </div>
             {notes && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Notes</span>
                 <span className="font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[200px]">{notes}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Post-Allocation Balance</span>
               <span className="font-medium text-success-600 dark:text-success-300">
                 {formatCurrency(targetVa.balance + exception.amount, targetVa.currencyCode)}
@@ -378,7 +378,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           {/* Warning */}
           <div className="flex items-start gap-2 p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
             <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
-            <p className="text-xs text-warning-700 dark:text-warning-300">
+            <p className="text-caption text-warning-700 dark:text-warning-300">
               This action will permanently allocate the exception amount to the target account. 
               This operation cannot be undone without creating a reversal.
             </p>
@@ -912,15 +912,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{node.nodeName}</p>
+            <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{node.nodeName}</p>
             {node.nodeType === 'VIRTUAL_ACCOUNT' && (
               <Badge variant="success" size="sm">VA</Badge>
             )}
           </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono truncate">{node.nodeCode}</p>
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono truncate">{node.nodeCode}</p>
         </div>
 
-        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300 shrink-0">
+        <span className="label-cased shrink-0">
           {formatCurrency(node.aggregatedBalance, node.currencyCode)}
         </span>
 
@@ -1337,13 +1337,13 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             {/* Validation Status */}
             <div className="flex items-center gap-2">
               {isValidating && (
-                <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+                <span className="flex items-center gap-1 caption">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Validating...
                 </span>
               )}
               {!isValidating && selectedVa && validationErrors.length === 0 && (
-                <span className="flex items-center gap-1 text-xs text-success-600 dark:text-success-300">
+                <span className="flex items-center gap-1 caption-success">
                   <CheckCircle2 className="w-3 h-3" />
                   Ready to allocate
                 </span>
@@ -1381,7 +1381,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           {error && (
             <div className="flex items-center gap-3 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
               <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 shrink-0" />
-              <p className="text-sm text-error-700 dark:text-error-300">{error}</p>
+              <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
               <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-error-100 dark:hover:bg-error-500/20 rounded">
                 <X className="w-4 h-4 text-error-600 dark:text-error-300" />
               </button>
@@ -1393,11 +1393,11 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <XCircle className="w-4 h-4 text-error-600 dark:text-error-300" />
-                <span className="text-sm font-medium text-error-700 dark:text-error-300">Validation Errors</span>
+                <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Validation Errors</span>
               </div>
               <ul className="space-y-1">
                 {validationErrors.map((err, idx) => (
-                  <li key={idx} className="text-xs text-error-600 dark:text-error-300 flex items-start gap-1">
+                  <li key={idx} className="caption-error flex items-start gap-1">
                     <span className="mt-1">•</span>
                     <span>{err.message}</span>
                   </li>
@@ -1411,11 +1411,11 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                <span className="text-sm font-medium text-warning-700 dark:text-warning-300">Warnings</span>
+                <span className="text-body-sm font-medium text-warning-700 dark:text-warning-300">Warnings</span>
               </div>
               <ul className="space-y-1">
                 {validationWarnings.map((warn, idx) => (
-                  <li key={idx} className="text-xs text-warning-600 dark:text-warning-300 flex items-start gap-1">
+                  <li key={idx} className="caption-warning flex items-start gap-1">
                     <span className="mt-1">•</span>
                     <span>{warn.message}</span>
                   </li>
@@ -1430,16 +1430,16 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               <AlertTriangle className="w-6 h-6 text-warning-700 dark:text-warning-300" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{exception.exceptionNumber}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+              <p className="body-strong">{exception.exceptionNumber}</p>
+              <p className="caption">
                 {exception.remitterName || EXCEPTION_TYPE_CONFIG[exception.exceptionType].label}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-primary-900 dark:text-neutral-50">
+              <p className="text-body-lg font-bold text-primary-900 dark:text-neutral-50">
                 {formatCurrency(exception.amount, exception.currencyCode)}
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+              <p className="caption">
                 {exception.status === 'OPEN' ? 'Ready to allocate' : exception.status}
               </p>
             </div>
@@ -1449,7 +1449,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
           <div className="flex border-b border-neutral-200 dark:border-primary-800">
             <button
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'suggested'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
                   : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
@@ -1464,7 +1464,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             </button>
             <button
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'search'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
                   : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
@@ -1476,7 +1476,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
             </button>
             <button
               className={cn(
-                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+                'flex items-center gap-2 px-4 py-2.5 text-body-sm font-medium border-b-2 transition-colors',
                 activeTab === 'hierarchy'
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
                   : 'border-transparent text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 dark:hover:text-neutral-200'
@@ -1496,13 +1496,13 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 {searching ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                    <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Loading suggestions...</span>
+                    <span className="ml-2 body-sm">Loading suggestions...</span>
                   </div>
                 ) : suggestedTargets.length === 0 ? (
                   <div className="text-center py-12">
                     <Sparkles className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">No suggested matches found</p>
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Try searching or browsing the hierarchy</p>
+                    <p className="body-sm">No suggested matches found</p>
+                    <p className="caption mt-1">Try searching or browsing the hierarchy</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-56 overflow-y-auto">
@@ -1530,7 +1530,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                           <Wallet className="w-5 h-5 text-neutral-400 dark:text-neutral-500 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{va.vaNumber}</p>
+                              <p className="body-strong">{va.vaNumber}</p>
                               <Badge
                                 variant={confidencePercent >= 80 ? 'success' : confidencePercent >= 60 ? 'warning' : 'neutral'}
                                 size="sm"
@@ -1538,13 +1538,13 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                                 {confidencePercent}% match
                               </Badge>
                             </div>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
+                            <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
                             {va.matchReason && (
-                              <p className="text-xs text-primary-600 dark:text-primary-200 mt-0.5 italic">{va.matchReason}</p>
+                              <p className="text-caption text-primary-600 dark:text-primary-200 mt-0.5 italic">{va.matchReason}</p>
                             )}
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                            <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">
                               {formatCurrency(va.balance || 0, va.currencyCode || 'AED')}
                             </p>
                           </div>
@@ -1564,7 +1564,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   <input
                     type="text"
                     placeholder="Search by VA number, name, or entity..."
-                    className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
@@ -1596,14 +1596,14 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                         <Wallet className="w-5 h-5 text-neutral-400 dark:text-neutral-500 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{va.vaNumber}</p>
+                            <p className="body-strong">{va.vaNumber}</p>
                             <Badge variant="neutral" size="sm">{va.levelName}</Badge>
                           </div>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">{va.hierarchyPath}</p>
+                          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">{va.vaName}</p>
+                          <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{va.hierarchyPath}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                          <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">
                             {formatCurrency(va.balance, va.currencyCode)}
                           </p>
                         </div>
@@ -1613,12 +1613,12 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 ) : searchQuery.length >= 2 && !searching ? (
                   <div className="text-center py-8">
                     <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">No results found for "{searchQuery}"</p>
+                    <p className="body-sm">No results found for "{searchQuery}"</p>
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <Search className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Enter at least 2 characters to search</p>
+                    <p className="body-sm">Enter at least 2 characters to search</p>
                   </div>
                 )}
               </div>
@@ -1633,7 +1633,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   <input
                     type="text"
                     placeholder="Filter hierarchy..."
-                    className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
+                    className="w-full pl-10 pr-4 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-200 focus:border-primary-500 outline-none"
                     value={hierarchySearch}
                     onChange={(e) => setHierarchySearch(e.target.value)}
                   />
@@ -1642,7 +1642,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 {/* Info Banner */}
                 <div className="flex items-start gap-2 p-2 bg-info-50 dark:bg-info-500/10 rounded-lg border border-info-200 dark:border-info-500/30">
                   <Info className="w-4 h-4 text-info-600 dark:text-info-300 shrink-0 mt-0.5" />
-                  <p className="text-xs text-info-700 dark:text-info-300">
+                  <p className="text-caption text-info-700 dark:text-info-300">
                     Click on a <Badge variant="success" size="sm">VA</Badge> node to select it as the allocation target. 
                     Currency filter: <span className="font-semibold">{exception.currencyCode}</span>
                   </p>
@@ -1653,7 +1653,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   {hierarchyLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                      <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Loading hierarchy...</span>
+                      <span className="ml-2 body-sm">Loading hierarchy...</span>
                     </div>
                   ) : hierarchy ? (
                     <div className="max-h-64 overflow-y-auto p-2">
@@ -1671,7 +1671,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                   ) : (
                     <div className="text-center py-12">
                       <TreePine className="w-10 h-10 mx-auto text-neutral-300 mb-2 dark:text-neutral-600" />
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">No hierarchy data available</p>
+                      <p className="body-sm">No hierarchy data available</p>
                     </div>
                   )}
 
@@ -1698,11 +1698,11 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
                   <div>
-                    <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">Selected Target</p>
-                    <p className="text-sm text-primary-700 dark:text-neutral-200 font-mono">{selectedVa.vaNumber}</p>
-                    <p className="text-xs text-primary-600 dark:text-primary-200">{selectedVa.vaName}</p>
+                    <p className="body-strong">Selected Target</p>
+                    <p className="text-body-sm text-primary-700 dark:text-neutral-200 font-mono">{selectedVa.vaNumber}</p>
+                    <p className="text-caption text-primary-600 dark:text-primary-200">{selectedVa.vaName}</p>
                     {selectedVa.hierarchyPath && (
-                      <p className="text-xs text-primary-500 mt-0.5">{selectedVa.hierarchyPath}</p>
+                      <p className="text-caption text-primary-500 mt-0.5">{selectedVa.hierarchyPath}</p>
                     )}
                   </div>
                 </div>
@@ -1718,7 +1718,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
 
           {/* Allocation Notes */}
           <div>
-            <label className="block text-sm font-medium text-primary-900 dark:text-neutral-50 mb-1.5">
+            <label className="block body-strong mb-1.5">
               Allocation Notes <span className="text-neutral-400 dark:text-neutral-500 font-normal">(optional)</span>
             </label>
             <textarea
@@ -1729,21 +1729,21 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               maxLength={500}
             />
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1 text-right">{notes.length}/500</p>
+            <p className="caption mt-1 text-right">{notes.length}/500</p>
           </div>
 
           {/* Allocation Preview Banner */}
           {selectedVa && validationErrors.length === 0 && (
             <div className="flex items-start gap-3 p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
               <CheckCircle2 className="w-5 h-5 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
-              <div className="text-sm text-success-700 dark:text-success-300">
+              <div className="text-body-sm text-success-700 dark:text-success-300">
                 <p className="font-medium mb-1">Allocation Preview</p>
                 <p>
                   {formatCurrency(exception.amount, exception.currencyCode)} will be transferred 
                   from Exception VA <span className="font-mono font-medium">{exception.exceptionVaNumber || 'EXCEPTION-VA'}</span> to 
                   target <span className="font-mono font-medium">{selectedVa.vaNumber}</span>.
                 </p>
-                <p className="text-xs text-success-600 dark:text-success-300 mt-1">
+                <p className="caption-success mt-1">
                   Target balance after allocation: {formatCurrency(selectedVa.balance + exception.amount, selectedVa.currencyCode)}
                 </p>
               </div>

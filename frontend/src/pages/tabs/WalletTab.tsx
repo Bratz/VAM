@@ -99,7 +99,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Wallet className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Wallet Configuration</h4>
+          <h4 className="body-strong">Wallet Configuration</h4>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,7 +114,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               placeholder="Select wallet type..."
             />
             {formData.walletType && (
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="caption mt-1">
                 {WALLET_TYPES.find(t => t.value === formData.walletType)?.description}
               </p>
             )}
@@ -137,7 +137,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">KYC Configuration</h4>
+          <h4 className="body-strong">KYC Configuration</h4>
           {program?.kycRequired && (
             <Badge variant="warning" size="sm">KYC Required</Badge>
           )}
@@ -155,7 +155,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               placeholder="Select KYC level..."
             />
             {selectedKycLevel && (
-              <p className="text-xs text-success-600 mt-1">
+              <p className="caption-success mt-1">
                 Limits: {selectedKycLevel.limits}
               </p>
             )}
@@ -170,7 +170,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               value={formData.expiresAt || ''}
               onChange={(e) => updateField('expiresAt', e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </FormField>
         </div>
@@ -188,8 +188,8 @@ export const WalletTab: React.FC<WalletTabProps> = ({
                   : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
               }`}
             >
-              <div className="font-medium text-sm">Level {level.value}</div>
-              <div className="text-xs text-neutral-500 mt-1">{level.limits.split(',')[0]}</div>
+              <div className="font-medium text-body-sm">Level {level.value}</div>
+              <div className="caption mt-1">{level.limits.split(',')[0]}</div>
             </button>
           ))}
         </div>
@@ -199,7 +199,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Star className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Value Type</h4>
+          <h4 className="body-strong">Value Type</h4>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -213,7 +213,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               options={VALUE_TYPES.map(t => ({ value: t.value, label: t.label }))}
             />
             {formData.valueType && (
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="caption mt-1">
                 {VALUE_TYPES.find(t => t.value === formData.valueType)?.description}
               </p>
             )}
@@ -242,7 +242,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
         <div className="border-t border-neutral-200 pt-6">
           <div className="flex items-center gap-2 mb-4">
             <Star className="w-5 h-5 text-warning-500" />
-            <h4 className="text-sm font-medium text-neutral-900">Loyalty Configuration</h4>
+            <h4 className="body-strong">Loyalty Configuration</h4>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,7 +277,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
                 key={tier.value}
                 type="button"
                 onClick={() => updateField('loyaltyTier', tier.value)}
-                className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-full border text-body-sm font-medium transition-all ${
                   formData.loyaltyTier === tier.value
                     ? 'border-primary-500 bg-primary-100 text-primary-700'
                     : 'border-neutral-300 hover:border-primary-300 text-neutral-600'
@@ -294,7 +294,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Balance Expiry</h4>
+          <h4 className="body-strong">Balance Expiry</h4>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -307,7 +307,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               value={formData.balanceExpiryDate || ''}
               onChange={(e) => updateField('balanceExpiryDate', e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </FormField>
 
@@ -322,7 +322,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
               placeholder="Select action..."
             />
             {formData.expiryAction && (
-              <p className="text-xs text-neutral-500 mt-1">
+              <p className="caption mt-1">
                 {EXPIRY_ACTIONS.find(a => a.value === formData.expiryAction)?.description}
               </p>
             )}

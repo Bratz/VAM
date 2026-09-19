@@ -71,7 +71,7 @@ const Badge: React.FC<{
     info: 'bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300',
   };
   return (
-    <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', variants[variant])}>
+    <span className={cn('px-2 py-0.5 text-caption font-medium rounded-full', variants[variant])}>
       {children}
     </span>
   );
@@ -108,7 +108,7 @@ const StepIndicator: React.FC<{
           <div className="flex items-center gap-2">
             <div
               className={cn(
-                'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all',
+                'w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold transition-all',
                 isCompleted && 'bg-primary-900 text-white ring-1 ring-accent-500/40',
                 isCurrent   && 'bg-primary-900 text-white ring-2 ring-accent-500',
                 !isCompleted && !isCurrent && 'bg-neutral-200 dark:bg-primary-800 text-neutral-500 dark:text-neutral-400',
@@ -118,7 +118,7 @@ const StepIndicator: React.FC<{
             </div>
             <span
               className={cn(
-                'text-sm font-medium hidden sm:block transition-colors',
+                'text-body-sm font-medium hidden sm:block transition-colors',
                 isCurrent ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
               )}
             >
@@ -182,12 +182,12 @@ const CorporateCard: React.FC<CorporateCardProps> = ({ corporate, selected, onSe
               <Badge variant="warning">No Hierarchy</Badge>
             )}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center gap-4 mt-2 body-sm">
             <span>{corporate.vaCount} VAs</span>
             <span>{corporate.totalBalance?.toLocaleString() || '0'} {corporate.baseCurrency}</span>
           </div>
           {disabled && (
-            <p className="mt-2 text-xs text-error-500">
+            <p className="mt-2 text-caption text-error-500">
               Target must have an initialized hierarchy
             </p>
           )}
@@ -216,7 +216,7 @@ const HierarchyPreview: React.FC<HierarchyPreviewProps> = ({
 }) => (
   <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800">
     <p className="field-label mb-3">Post-Acquisition Structure:</p>
-    <div className="font-mono text-sm space-y-1">
+    <div className="font-mono text-body-sm space-y-1">
       <div className="flex items-center gap-2">
         <Globe className="w-4 h-4 text-primary-700 dark:text-neutral-200" />
         <span className="text-primary-900 dark:text-neutral-50 font-medium">{acquirerName} (ROOT)</span>
@@ -248,7 +248,7 @@ const LimitAnalysisPanel: React.FC<LimitAnalysisPanelProps> = ({ validation, loa
     return (
       <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg flex items-center justify-center">
         <Loader2 className="w-5 h-5 animate-spin text-primary-600 dark:text-primary-200 mr-2" />
-        <span className="text-sm text-neutral-500 dark:text-neutral-400">Analyzing limits...</span>
+        <span className="body-sm">Analyzing limits...</span>
       </div>
     );
   }
@@ -261,7 +261,7 @@ const LimitAnalysisPanel: React.FC<LimitAnalysisPanelProps> = ({ validation, loa
   return (
     <div className="p-4 bg-info-50 dark:bg-info-500/10 rounded-lg border border-info-200 dark:border-info-500/30">
       <h4 className="font-medium text-info-900 dark:text-info-300 mb-3">Limit Analysis</h4>
-      <div className="space-y-2 text-sm">
+      <div className="space-y-2 text-body-sm">
         <div className="flex justify-between">
           <span className="text-info-700 dark:text-info-300">Acquirer Group Limit:</span>
           <span className="font-medium">{acquirerGroupLimit.toLocaleString()} {acquirerCurrency}</span>
@@ -503,7 +503,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                   <div className="space-y-4">
                     {/* Acquirer Info */}
                     <div className="p-4 bg-primary-50 dark:bg-primary-800/40 rounded-lg border border-primary-200 dark:border-primary-700">
-                      <p className="text-sm font-medium text-primary-700 dark:text-neutral-200 mb-2">Acquiring Corporate</p>
+                      <p className="text-body-sm font-medium text-primary-700 dark:text-neutral-200 mb-2">Acquiring Corporate</p>
                       <div className="flex items-center gap-3">
                         <Building2 className="w-5 h-5 text-primary-600 dark:text-primary-200" />
                         <span className="font-semibold text-primary-900 dark:text-neutral-50">
@@ -512,7 +512,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                         {acquirerInfo && (
                           <>
                             <Badge variant="info">{acquirerInfo.baseCurrency}</Badge>
-                            <span className="text-sm text-primary-600 dark:text-primary-200">{acquirerInfo.vaCount} VAs</span>
+                            <span className="text-body-sm text-primary-600 dark:text-primary-200">{acquirerInfo.vaCount} VAs</span>
                           </>
                         )}
                       </div>
@@ -531,7 +531,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           placeholder="Search corporates..."
-                          className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                       </div>
 
@@ -573,8 +573,8 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       <div className="flex items-start gap-3">
                         <Info className="w-5 h-5 text-info-600 dark:text-info-300 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-info-800 dark:text-info-300">Conversion to Aggregation</p>
-                          <p className="text-sm text-info-600 dark:text-info-300 mt-1">
+                          <p className="text-body-sm font-medium text-info-800 dark:text-info-300">Conversion to Aggregation</p>
+                          <p className="text-body-sm text-info-600 dark:text-info-300 mt-1">
                             The target's ROOT will become an AGGREGATION under your ROOT.
                             All VAs will be migrated and re-parented.
                           </p>
@@ -591,7 +591,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                         value={newAggregationName}
                         onChange={(e) => setNewAggregationName(e.target.value)}
                         placeholder="e.g., Acquired - GlobalTrade"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
 
@@ -604,7 +604,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                         value={newAggregationCode}
                         onChange={(e) => setNewAggregationCode(e.target.value.toUpperCase())}
                         placeholder="e.g., ACQ-GLOBAL-2024"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
 
@@ -615,7 +615,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       <select
                         value={placeUnderNodeId || ''}
                         onChange={(e) => setPlaceUnderNodeId(e.target.value || null)}
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       >
                         <option value="">ROOT (Direct under {acquirerInfo?.name || 'Group Treasury'})</option>
                         {hierarchyRoot?.children
@@ -680,11 +680,11 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                                     <Badge variant="warning">Requires Approval</Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{policy.description}</p>
+                                <p className="body-sm mt-1">{policy.description}</p>
 
                                 {/* Show limit calculation preview for COMBINE_LIMITS */}
                                 {policy.policy === 'COMBINE_LIMITS' && validation?.limitAnalysis && (
-                                  <div className="mt-3 p-3 bg-success-50 dark:bg-success-500/10 rounded-lg text-sm">
+                                  <div className="mt-3 p-3 bg-success-50 dark:bg-success-500/10 rounded-lg text-body-sm">
                                     <div className="flex items-center justify-between">
                                       <span className="text-success-700 dark:text-success-300">Your Limit:</span>
                                       <span className="font-medium">
@@ -724,7 +724,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                   <div className="space-y-6">
                     <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                       <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-4">Acquisition Summary</h4>
-                      <dl className="space-y-3 text-sm">
+                      <dl className="space-y-3 text-body-sm">
                         <div className="flex justify-between">
                           <dt className="text-neutral-500 dark:text-neutral-400">Acquirer:</dt>
                           <dd className="font-medium">{acquirerInfo?.name}</dd>
@@ -749,7 +749,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                     {validation && (
                       <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
                         <h4 className="font-medium text-success-800 dark:text-success-300 mb-2">Changes to be made:</h4>
-                        <ul className="space-y-1 text-sm text-success-700 dark:text-success-300">
+                        <ul className="space-y-1 text-body-sm text-success-700 dark:text-success-300">
                           <li className="flex items-center gap-2">
                             <Check className="w-4 h-4" />
                             {validation.targetVaCount} VAs will be migrated
@@ -778,8 +778,8 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
-                          <ul className="text-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
+                          <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
+                          <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
                             <li>• Change corporate_id for all target VAs</li>
                             <li>• Recalculate all balance aggregations</li>
                             <li>• Update hierarchy paths</li>
@@ -795,7 +795,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                         onChange={(e) => setConfirmBoardApproval(e.target.checked)}
                         className="mt-1 w-4 h-4 text-primary-600 rounded border-neutral-300 dark:border-primary-700 focus:ring-primary-500 dark:text-primary-200"
                       />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-200">
+                      <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
                         I confirm this acquisition has been approved by the board and all necessary
                         due diligence has been completed.
                       </span>
@@ -805,7 +805,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
                         <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
                           <AlertTriangle className="w-5 h-5" />
-                          <span className="text-sm font-medium">{error}</span>
+                          <span className="text-body-sm font-medium">{error}</span>
                         </div>
                       </div>
                     )}
@@ -830,7 +830,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed()}
                   className={cn(
-                    'px-5 py-2 text-sm font-medium rounded-lg',
+                    'px-5 py-2 text-body-sm font-medium rounded-lg',
                     canProceed()
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
@@ -843,7 +843,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
                   onClick={handleSubmit}
                   disabled={!canProceed() || submitting}
                   className={cn(
-                    'px-6 py-2 text-sm font-medium rounded-lg flex items-center gap-2',
+                    'px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2',
                     canProceed() && !submitting
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'

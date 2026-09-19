@@ -127,7 +127,7 @@ export const CountryExposureMap: React.FC<CountryExposureMapProps> = ({ countryT
 
         {hover && (
           <div
-            className="fixed z-10 pointer-events-none rounded-xl px-3.5 py-2.5 text-sm"
+            className="fixed z-10 pointer-events-none rounded-xl px-3.5 py-2.5 text-body-sm"
             style={{ left: hover.x + 12, top: hover.y + 12, backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
           >
             <p className="font-semibold">{hover.name}</p>

@@ -7,6 +7,21 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    // Typography scale — the ONLY font sizes. Size + line-height only (no weight/tracking/colour):
+    // those come from the semantic classes in styles/index.css (.caption, .body-sm, .label, ...).
+    // Values equal the Tailwind defaults they replaced, so text-xs->text-caption etc. is pixel-identical.
+    fontSize: {
+      'caption':    ['0.75rem',  { lineHeight: '1rem' }],      // 12/16  was text-xs
+      'body-sm':    ['0.875rem', { lineHeight: '1.25rem' }],   // 14/20  was text-sm
+      'body':       ['1rem',     { lineHeight: '1.5rem' }],    // 16/24  was text-base
+      'body-lg':    ['1.125rem', { lineHeight: '1.75rem' }],   // 18/28  was text-lg
+      'heading-sm': ['1.25rem',  { lineHeight: '1.75rem' }],   // 20/28  was text-xl
+      'heading-md': ['1.5rem',   { lineHeight: '2rem' }],      // 24/32  was text-2xl
+      'heading-lg': ['1.875rem', { lineHeight: '2.25rem' }],   // 30/36  was text-3xl
+      'stat-sm':    ['1.75rem',  { lineHeight: '2.25rem' }],   // 28/36  was text-[28px]
+      'stat':       ['2.25rem',  { lineHeight: '2.5rem' }],    // 36/40  was text-4xl
+      'display':    ['3rem',     { lineHeight: '1' }],         // 48/48  was text-5xl
+    },
     extend: {
       // Swiss Minimalist Design System
       colors: {
@@ -172,21 +187,6 @@ export default {
         sans: ['"Geist"', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         display: ['"Geist"', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'Menlo', 'monospace'],
-      },
-      fontSize: {
-        // Typography scale
-        'display-xl': ['4rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '600' }],
-        'display-lg': ['3rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '600' }],
-        'display-md': ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '600' }],
-        'display-sm': ['1.875rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'heading-xl': ['1.5rem', { lineHeight: '1.3', fontWeight: '600' }],
-        'heading-lg': ['1.25rem', { lineHeight: '1.4', fontWeight: '600' }],
-        'heading-md': ['1.125rem', { lineHeight: '1.4', fontWeight: '600' }],
-        'heading-sm': ['1rem', { lineHeight: '1.5', fontWeight: '600' }],
-        'body-lg': ['1.125rem', { lineHeight: '1.6' }],
-        'body-md': ['1rem', { lineHeight: '1.6' }],
-        'body-sm': ['0.875rem', { lineHeight: '1.5' }],
-        'caption': ['0.75rem', { lineHeight: '1.4' }],
       },
       spacing: {
         '18': '4.5rem',

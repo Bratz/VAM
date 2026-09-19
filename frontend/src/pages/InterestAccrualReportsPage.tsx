@@ -331,7 +331,7 @@ const InterestAccrualReportsPage: React.FC = () => {
               <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Corporate</span>
+              <span className="label">Corporate</span>
               <Select value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)} className="min-w-[240px]">
                 {corporates.map(corp => (
                   <option key={corp.id} value={corp.id}>{corp.legalName || corp.tradeName || corp.corporateId}</option>
@@ -397,7 +397,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       {selectedIds.size > 0 && (
         <Card padding="sm" className="bg-primary-50 border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-primary-800 dark:text-neutral-100"><strong>{selectedIds.size}</strong> accruals selected</p>
+            <p className="text-body-sm text-primary-800 dark:text-neutral-100"><strong>{selectedIds.size}</strong> accruals selected</p>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handlePostSelected}><CheckCircle className="w-4 h-4 mr-1" /> Post</Button>
               <Button size="sm" onClick={handleSettleSelected}><DollarSign className="w-4 h-4 mr-1" /> Settle</Button>
@@ -410,15 +410,15 @@ const InterestAccrualReportsPage: React.FC = () => {
         <div className="flex gap-4 animate-fade-in" style={{ animationDelay: '0.25s' }}>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-50 rounded-full dark:bg-warning-500/10">
             <Clock className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-            <span className="text-sm text-warning-700 dark:text-warning-300">{summary.pendingAccruals} Pending</span>
+            <span className="text-body-sm text-warning-700 dark:text-warning-300">{summary.pendingAccruals} Pending</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-info-50 rounded-full dark:bg-info-500/10">
             <FileText className="w-4 h-4 text-info-600 dark:text-info-300" />
-            <span className="text-sm text-info-700 dark:text-info-300">{summary.postedAccruals} Posted</span>
+            <span className="text-body-sm text-info-700 dark:text-info-300">{summary.postedAccruals} Posted</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-success-50 rounded-full dark:bg-success-500/10">
             <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
-            <span className="text-sm text-success-700 dark:text-success-300">{summary.settledAccruals} Settled</span>
+            <span className="text-body-sm text-success-700 dark:text-success-300">{summary.settledAccruals} Settled</span>
           </div>
         </div>
       )}
@@ -441,8 +441,8 @@ const InterestAccrualReportsPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <AccrualTypeIcon type={accrual.accrualType} />
                   <div>
-                    <p className="text-sm font-mono text-primary-900 dark:text-neutral-50">{accrual.accrualReference}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{getTypeLabel(accrual.accrualType)}</p>
+                    <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{accrual.accrualReference}</p>
+                    <p className="caption">{getTypeLabel(accrual.accrualType)}</p>
                   </div>
                 </div>
               ),
@@ -452,8 +452,8 @@ const InterestAccrualReportsPage: React.FC = () => {
               header: 'Entity / Account',
               render: (_, accrual) => (
                 <>
-                  <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.entityName || '-'}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.virtualAccountNumber || accrual.loanReference || accrual.depositReference}</p>
+                  <p className="text-body-sm text-primary-900 dark:text-neutral-50">{accrual.entityName || '-'}</p>
+                  <p className="caption">{accrual.virtualAccountNumber || accrual.loanReference || accrual.depositReference}</p>
                 </>
               ),
             },
@@ -462,24 +462,24 @@ const InterestAccrualReportsPage: React.FC = () => {
               header: 'Period',
               render: (_, accrual) => (
                 <>
-                  <p className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(accrual.periodStart)}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">to {formatDate(accrual.periodEnd)}</p>
+                  <p className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(accrual.periodStart)}</p>
+                  <p className="caption">to {formatDate(accrual.periodEnd)}</p>
                 </>
               ),
             },
-            { key: 'principalBalance', header: 'Principal', align: 'right', render: (_, accrual) => <span className="text-sm text-primary-900 dark:text-neutral-50">{formatCurrency(accrual.principalBalance, accrual.currency)}</span> },
+            { key: 'principalBalance', header: 'Principal', align: 'right', render: (_, accrual) => <span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatCurrency(accrual.principalBalance, accrual.currency)}</span> },
             {
               key: 'interestRate',
               header: 'Rate',
               align: 'right',
               render: (_, accrual) => (
                 <>
-                  <p className="text-sm text-primary-900 dark:text-neutral-50">{accrual.interestRate.toFixed(3)}%</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{accrual.dayCountConvention}</p>
+                  <p className="text-body-sm text-primary-900 dark:text-neutral-50">{accrual.interestRate.toFixed(3)}%</p>
+                  <p className="caption">{accrual.dayCountConvention}</p>
                 </>
               ),
             },
-            { key: 'daysInPeriod', header: 'Days', align: 'right', render: (_, accrual) => <span className="text-sm text-neutral-500 dark:text-neutral-400">{accrual.daysInPeriod} days</span> },
+            { key: 'daysInPeriod', header: 'Days', align: 'right', render: (_, accrual) => <span className="body-sm">{accrual.daysInPeriod} days</span> },
             {
               key: 'accruedAmount',
               header: 'Accrued',
@@ -487,7 +487,7 @@ const InterestAccrualReportsPage: React.FC = () => {
               render: (_, accrual) => {
                 const isCredit = ['DEPOSIT', 'VA_CREDIT'].includes(accrual.accrualType);
                 return (
-                  <span className={cn('text-sm font-semibold', isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+                  <span className={cn('text-body-sm font-semibold', isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
                     {isCredit ? '+' : '-'}{formatCurrency(accrual.accruedAmount, accrual.currency)}
                   </span>
                 );
@@ -514,7 +514,7 @@ const InterestAccrualReportsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="section-title">{selectedAccrual.accrualReference}</h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{getTypeLabel(selectedAccrual.accrualType)}</p>
+                  <p className="body-sm">{getTypeLabel(selectedAccrual.accrualType)}</p>
                 </div>
               </div>
               <Badge variant={getStatusVariant(selectedAccrual.status)} size="md">{selectedAccrual.status}</Badge>
@@ -522,16 +522,16 @@ const InterestAccrualReportsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-                <h4 className="text-xs font-semibold text-neutral-600 mb-3 uppercase tracking-wider dark:text-neutral-300">Entity Information</h4>
-                <div className="space-y-2 text-sm">
+                <h4 className="label mb-3">Entity Information</h4>
+                <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Entity</span><span className="font-medium">{selectedAccrual.entityName || '-'}</span></div>
                   {selectedAccrual.virtualAccountNumber && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">VA Number</span><span className="font-mono">{selectedAccrual.virtualAccountNumber}</span></div>}
                   {selectedAccrual.loanReference && <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Loan Ref</span><span className="font-mono">{selectedAccrual.loanReference}</span></div>}
                 </div>
               </div>
               <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-                <h4 className="text-xs font-semibold text-neutral-600 mb-3 uppercase tracking-wider dark:text-neutral-300">Period Details</h4>
-                <div className="space-y-2 text-sm">
+                <h4 className="label mb-3">Period Details</h4>
+                <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Period Start</span><span className="font-medium">{formatDate(selectedAccrual.periodStart)}</span></div>
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Period End</span><span className="font-medium">{formatDate(selectedAccrual.periodEnd)}</span></div>
                   <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400">Days</span><span className="font-medium">{selectedAccrual.daysInPeriod}</span></div>
@@ -540,11 +540,11 @@ const InterestAccrualReportsPage: React.FC = () => {
             </div>
 
             <div className="bg-primary-50 rounded-xl p-4 dark:bg-primary-800/40">
-              <h4 className="text-xs font-semibold text-primary-700 mb-3 uppercase tracking-wider dark:text-neutral-200">Interest Calculation</h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div><p className="text-neutral-600 text-xs uppercase tracking-wider dark:text-neutral-300">Principal Balance</p><p className="text-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">{formatCurrency(selectedAccrual.principalBalance, selectedAccrual.currency)}</p></div>
-                <div><p className="text-neutral-600 text-xs uppercase tracking-wider dark:text-neutral-300">Interest Rate</p><p className="text-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">{selectedAccrual.interestRate.toFixed(3)}% p.a.</p></div>
-                <div><p className="text-neutral-600 text-xs uppercase tracking-wider dark:text-neutral-300">Accrued Interest</p><p className={cn('text-lg font-bold mt-1', ['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>{formatCurrency(selectedAccrual.accruedAmount, selectedAccrual.currency)}</p></div>
+              <h4 className="text-caption font-semibold text-primary-700 mb-3 uppercase tracking-wider dark:text-neutral-200">Interest Calculation</h4>
+              <div className="grid grid-cols-3 gap-4 text-body-sm">
+                <div><p className="label">Principal Balance</p><p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">{formatCurrency(selectedAccrual.principalBalance, selectedAccrual.currency)}</p></div>
+                <div><p className="label">Interest Rate</p><p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">{selectedAccrual.interestRate.toFixed(3)}% p.a.</p></div>
+                <div><p className="label">Accrued Interest</p><p className={cn('text-body-lg font-bold mt-1', ['DEPOSIT', 'VA_CREDIT'].includes(selectedAccrual.accrualType) ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>{formatCurrency(selectedAccrual.accruedAmount, selectedAccrual.currency)}</p></div>
               </div>
             </div>
 

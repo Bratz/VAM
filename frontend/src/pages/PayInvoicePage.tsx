@@ -67,7 +67,7 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
         ) : notFound || !invoice ? (
           <Card padding="lg" className="text-center">
             <AlertTriangle className="w-8 h-8 text-warning-500 mx-auto mb-3" />
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">
+            <p className="body-strong">
               This payment link is invalid or has expired
             </p>
           </Card>
@@ -75,27 +75,27 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
           <Card padding="lg">
             <div className="flex items-center gap-2 mb-1 text-neutral-500 dark:text-neutral-400">
               <Building2 className="w-4 h-4" />
-              <span className="text-sm">{invoice.corporateName || 'Invoice'}</span>
+              <span className="text-body-sm">{invoice.corporateName || 'Invoice'}</span>
             </div>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-4">{invoice.receivableNumber}</p>
+            <p className="caption mb-4">{invoice.receivableNumber}</p>
 
-            <p className="text-3xl font-semibold text-primary-900 dark:text-neutral-50">
+            <p className="text-heading-lg font-semibold text-primary-900 dark:text-neutral-50">
               {invoice.currencyCode} {invoice.outstandingAmount.toFixed(2)}
             </p>
             {invoice.description && (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{invoice.description}</p>
+              <p className="body-sm mt-1">{invoice.description}</p>
             )}
             {invoice.dueDate && (
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Due {invoice.dueDate}</p>
+              <p className="caption mt-1">Due {invoice.dueDate}</p>
             )}
 
             {invoice.viban ? (
               <div className="mt-6 p-4 bg-accent-50 dark:bg-accent-500/10 rounded-lg border border-accent-100 dark:border-accent-500/30">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="caption mb-1">
                   Transfer the amount above to this account, quoting {invoice.receivableNumber} as the reference
                 </p>
                 <div className="flex items-center justify-between gap-2">
-                  <code className="text-sm font-mono text-primary-900 dark:text-neutral-50 break-all">{invoice.viban}</code>
+                  <code className="text-body-sm font-mono text-primary-900 dark:text-neutral-50 break-all">{invoice.viban}</code>
                   <button onClick={copyViban} className="p-2 hover:bg-accent-100 dark:hover:bg-accent-500/20 rounded-lg flex-shrink-0" title="Copy account number">
                     {copied ? <Check className="w-4 h-4 text-success-600" /> : <Copy className="w-4 h-4 text-accent-600" />}
                   </button>
@@ -104,11 +104,11 @@ const PayInvoicePage: React.FC<{ token?: string }> = ({ token }) => {
                   <div className="bg-white p-2 rounded-lg">
                     <QRCode value={window.location.href} size={128} />
                   </div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500">Scan to open this page on another device</p>
+                  <p className="caption">Scan to open this page on another device</p>
                 </div>
               </div>
             ) : (
-              <p className="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="mt-6 body-sm">
                 No collection account is set up for this invoice yet — please contact {invoice.corporateName || 'the sender'} directly.
               </p>
             )}

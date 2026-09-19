@@ -41,7 +41,7 @@ export const CopilotLauncher: React.FC = () => {
       ].filter(Boolean).join(' ')}>
         <Sparkles className="w-4 h-4 text-accent-300" strokeWidth={2.5} />
       </span>
-      <span className="text-sm font-medium tracking-tight">
+      <span className="text-body-sm font-medium tracking-tight">
         Treasury Copilot
       </span>
     </button>

@@ -550,7 +550,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 onClick={() => nav(t.page)}
                 title={t.disabled ? 'Treasury Performance workbook — coming soon' : undefined}
                 className={cn(
-                  'px-3 py-2 text-sm border-b-2 -mb-px transition-colors',
+                  'px-3 py-2 text-body-sm border-b-2 -mb-px transition-colors',
                   active
                     ? 'border-accent-500 text-primary-900 dark:text-neutral-50 font-medium'
                     : t.disabled
@@ -567,7 +567,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     visible-on-any-input-method affordance and visual
                     consistency with that existing pattern. */}
                 {t.disabled && (
-                  <span className="ml-1.5 align-middle text-xs font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
+                  <span className="ml-1.5 align-middle text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400">
                     Soon
                   </span>
                 )}
@@ -586,7 +586,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               onCorporateChange={handleCorporateChange}
             />
           </div>
-          <span className="font-mono text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
+          <span className="font-mono text-caption text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
             {acctCount} acct · {bankCount} banks · {model?.currencies.length ?? 0} ccy
           </span>
         </div>
@@ -648,7 +648,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     type="button"
                     onClick={() => setView(v)}
                     className={cn(
-                      'px-3 py-1 text-xs transition-colors capitalize',
+                      'px-3 py-1 text-caption transition-colors capitalize',
                       view === v
                         ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
                         : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
@@ -761,14 +761,14 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
               <p className="section-title">
                 Payments
-                <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-xs font-medium tabular-nums">
+                <span className="ml-2 inline-flex items-center rounded-full bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300 px-1.5 py-0.5 text-caption font-medium tabular-nums">
                   {pending?.payablesCount ?? 0} to action
                 </span>
               </p>
               <button
                 type="button"
                 onClick={() => nav('payables')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 All payments <ArrowRight className="w-3 h-3" />
               </button>
@@ -781,8 +781,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   <div key={p.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{p.vendorName}</p>
-                        <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
+                        <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{p.vendorName}</p>
+                        <p className="font-mono text-caption text-neutral-500 dark:text-neutral-400">{p.invoiceNumber}</p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="stat-value-xs text-primary-900 dark:text-neutral-50"><Amount value={p.amount} currency={p.currencyCode} showCurrency={false} /></p>
@@ -796,7 +796,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 ))
               )}
               {(pending?.totalPending ?? 0) > 0 && (
-                <div className="px-4 py-2 bg-neutral-50 dark:bg-primary-800/40 text-xs text-neutral-500 dark:text-neutral-400 flex items-center justify-between">
+                <div className="px-4 py-2 bg-neutral-50 dark:bg-primary-800/40 caption flex items-center justify-between">
                   <span className="tabular-nums">{pending?.totalPending} items pending approval (incl. {pending?.transactionsCount ?? 0} transactions)</span>
                   <button type="button" onClick={() => nav('payables')} className="font-medium text-primary-600 dark:text-accent-400 hover:underline">View all →</button>
                 </div>
@@ -812,7 +812,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <button
                 type="button"
                 onClick={() => nav('multi-bank-liquidity')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 Full liquidity view <ArrowRight className="w-3 h-3" />
               </button>
@@ -821,7 +821,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <p className="body-sm py-6 text-center">No accounts in scope.</p>
             ) : (
               <div className="overflow-x-auto scroll-fade-x">
-                <table className="w-full border-collapse text-sm">
+                <table className="w-full border-collapse text-body-sm">
                   <thead>
                     <tr className="text-left">
                       {['Account', 'Entity', 'Bank', 'Current', 'Available', 'Freshness', ''].map((h, i) => (
@@ -866,14 +866,14 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                           <tr key={s.vaId} className="hover:bg-neutral-50/50 dark:hover:bg-primary-800/30">
                             <td className="px-3 py-[9px]">
                               <div className="text-primary-900 dark:text-neutral-50">{s.vaName}</div>
-                              <div className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{s.vaNumber}</div>
+                              <div className="font-mono text-caption text-neutral-500 dark:text-neutral-400">{s.vaNumber}</div>
                             </td>
                             <td className="px-3 py-[9px] text-neutral-600 dark:text-neutral-300">
                               {s.owningEntityCode || '—'}
                             </td>
                             <td className="px-3 py-[9px]">
                               <div className="text-neutral-600 dark:text-neutral-300">{s.bankName || s.bankBic}</div>
-                              <div className="font-mono text-xs text-neutral-400 dark:text-neutral-500">{s.bankBic}</div>
+                              <div className="font-mono text-caption text-neutral-400 dark:text-neutral-500">{s.bankBic}</div>
                             </td>
                             <td className="px-3 py-[9px] text-right text-primary-900 dark:text-neutral-50">
                               <Amount value={s.bankBalance} currency={s.currencyCode} showCurrency={false} />
@@ -889,7 +889,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                                 <button
                                   type="button"
                                   onClick={() => multiBankLiquidityApi.refreshIfStale(s.vaId).then(() => load(selectedCorporateId))}
-                                  className="text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                                  className="text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
                                 >
                                   Refresh
                                 </button>
@@ -951,7 +951,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                     type="button"
                     onClick={() => setPositionView(v)}
                     className={cn(
-                      'px-3 py-1 text-xs transition-colors',
+                      'px-3 py-1 text-caption transition-colors',
                       positionView === v
                         ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
                         : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800',
@@ -1057,7 +1057,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <button
                 type="button"
                 onClick={() => nav('sweeping')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 Configure <ArrowRight className="w-3 h-3" />
               </button>
@@ -1076,11 +1076,11 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   sweepRows.map((r) => (
                     <div key={r.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
                       <div className="min-w-0">
-                        <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
+                        <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">{r.ruleName}</p>
                         <p className="caption">{r.sweepType} · {r.frequency}{r.targetAccountNumber ? ` → ${r.targetAccountNumber}` : ''}</p>
                       </div>
                       <span className={cn(
-                        'shrink-0 rounded-full px-2 py-0.5 text-xs font-medium',
+                        'shrink-0 rounded-full px-2 py-0.5 text-caption font-medium',
                         r.status === 'ACTIVE'
                           ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
                           : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300',
@@ -1101,7 +1101,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <button
                 type="button"
                 onClick={() => nav('statements')}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 <FileDown className="w-3 h-3" /> Statements
               </button>
@@ -1116,22 +1116,22 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                       <div key={t.id} className="flex items-center gap-3 px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
                         <span className="caption tabular-nums shrink-0 w-12">{fmtTime(t.transactionDate)}</span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-primary-900 dark:text-neutral-50 truncate">
+                          <p className="text-body-sm text-primary-900 dark:text-neutral-50 truncate">
                             {t.description || t.counterpartyName || t.movementType}
                           </p>
-                          <p className="font-mono text-xs text-neutral-400 dark:text-neutral-500 truncate">
+                          <p className="font-mono text-caption text-neutral-400 dark:text-neutral-500 truncate">
                             {t.vaNumber || t.vaName} · {t.referenceNumber}
                           </p>
                         </div>
                         <span className={cn(
-                          'shrink-0 rounded px-1.5 py-0.5 text-xs font-medium',
+                          'shrink-0 rounded px-1.5 py-0.5 text-caption font-medium',
                           cr
                             ? 'bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300'
                             : 'bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300',
                         )}>
                           {cr ? 'CR' : 'DR'}
                         </span>
-                        <span className="shrink-0 w-28 text-right tabular-nums text-sm text-primary-900 dark:text-neutral-50">
+                        <span className="shrink-0 w-28 text-right tabular-nums text-body-sm text-primary-900 dark:text-neutral-50">
                           {formatCurrency(t.amount, t.currencyCode)}
                         </span>
                       </div>
@@ -1150,7 +1150,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           <Card padding="none" className="overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60">
               <span className="section-title">Action queue</span>
-              <span className={cn('text-xs font-medium tabular-nums', attention.length ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-400')}>
+              <span className={cn('text-caption font-medium tabular-nums', attention.length ? 'text-warning-600 dark:text-warning-300' : 'text-neutral-400')}>
                 {attention.length}
               </span>
             </div>
@@ -1163,13 +1163,13 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   return (
                     <div key={it.id} className="px-4 py-2.5 border-b border-neutral-100 dark:border-primary-800/60 last:border-0 hover:bg-neutral-50 dark:hover:bg-primary-800/40">
                       <div className="flex items-center gap-2">
-                        <span className={cn('rounded-full px-1.5 py-0 leading-4 text-xs font-medium uppercase tracking-[0.08em]', tri.cls)}>{tri.label}</span>
-                        <span className="ml-auto text-xs text-neutral-400 dark:text-neutral-500">{it.timePressure?.displayText}</span>
+                        <span className={cn('rounded-full px-1.5 py-0 leading-4 text-caption font-medium uppercase tracking-[0.08em]', tri.cls)}>{tri.label}</span>
+                        <span className="ml-auto caption">{it.timePressure?.displayText}</span>
                       </div>
-                      <p className="text-xs font-medium text-primary-900 dark:text-neutral-50 mt-1.5 leading-snug">{it.headline}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{it.detail}</p>
+                      <p className="text-caption font-medium text-primary-900 dark:text-neutral-50 mt-1.5 leading-snug">{it.headline}</p>
+                      <p className="caption mt-0.5">{it.detail}</p>
                       {it.actions?.[0] && (
-                        <p className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-accent-400 mt-1.5">
+                        <p className="inline-flex items-center gap-1 text-caption font-medium text-primary-600 dark:text-accent-400 mt-1.5">
                           {it.actions[0].label} <ArrowRight className="w-3 h-3" />
                         </p>
                       )}
@@ -1187,7 +1187,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               <button
                 type="button"
                 onClick={() => nav('fx-rates')}
-                className="text-xs font-medium text-primary-600 dark:text-accent-400 hover:underline"
+                className="text-caption font-medium text-primary-600 dark:text-accent-400 hover:underline"
               >
                 Deal
               </button>
@@ -1198,8 +1198,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               ) : (
                 fxRows.map((r) => (
                   <div key={r.id} className="flex items-center justify-between gap-2 px-4 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
-                    <span className="font-mono text-sm text-primary-900 dark:text-neutral-50">{r.fromCurrency}/{r.toCurrency}</span>
-                    <span className="tabular-nums text-sm text-primary-900 dark:text-neutral-50">{r.rate}</span>
+                    <span className="font-mono text-body-sm text-primary-900 dark:text-neutral-50">{r.fromCurrency}/{r.toCurrency}</span>
+                    <span className="tabular-nums text-body-sm text-primary-900 dark:text-neutral-50">{r.rate}</span>
                     <span className="caption shrink-0 w-20 text-right truncate">{r.rateSource}</span>
                   </div>
                 ))
@@ -1230,7 +1230,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-accent-50 dark:bg-accent-500/15 text-accent-700 dark:text-accent-300">
                     {q.ic}
                   </span>
-                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 mt-1.5">{q.label}</p>
+                  <p className="body-strong mt-1.5">{q.label}</p>
                   <p className="caption">{q.sub}</p>
                 </button>
               ))}
@@ -1240,7 +1240,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       </div>
 
       {/* Footer stamps — honest: real connectivity, no unverifiable certs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-neutral-400 dark:text-neutral-500 pt-2 border-t border-neutral-100 dark:border-primary-800/60">
+      <div className="flex flex-wrap items-center justify-between gap-3 caption pt-2 border-t border-neutral-100 dark:border-primary-800/60">
         <div className="flex flex-wrap gap-4">
           <span className="inline-flex items-center gap-1.5">
             <Wallet className="w-3.5 h-3.5" /> {bankCount} banks · {acctCount} accounts connected

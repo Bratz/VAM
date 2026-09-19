@@ -150,7 +150,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               }}
             />
             {scopeExcluded > 0 && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 {scopeExcluded} account(s) already in this pool were excluded.
               </p>
             )}
@@ -177,7 +177,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               }}
             />
             {csvExcluded > 0 && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 {csvExcluded} account(s) already in this pool were excluded.
               </p>
             )}
@@ -195,14 +195,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
 
         {(mode === 'scope' || mode === 'csv') && bulkResult && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg px-3 py-2 text-success-700 dark:text-success-300">
+            <div className="flex items-center gap-2 text-body-sm bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 rounded-lg px-3 py-2 text-success-700 dark:text-success-300">
               Added {bulkResult.added} member(s) to pool.
             </div>
             {bulkResult.skipped.length > 0 && (
               <div className="border border-warning-200 dark:border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10 rounded-lg">
                 <button
                   onClick={() => setShowSkipped(s => !s)}
-                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-warning-700 dark:text-warning-300"
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-body-sm font-medium text-warning-700 dark:text-warning-300"
                 >
                   <span className="flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" /> {bulkResult.skipped.length} account(s) skipped
@@ -212,7 +212,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
                 {showSkipped && (
                   <div className="px-3 pb-3 space-y-1 max-h-48 overflow-y-auto">
                     {bulkResult.skipped.map(s => (
-                      <div key={s.accountId} className="text-xs text-neutral-600 dark:text-neutral-300 flex items-start gap-2">
+                      <div key={s.accountId} className="caption flex items-start gap-2">
                         <span className="font-mono text-neutral-400 dark:text-neutral-500 shrink-0">{s.accountId.slice(0, 8)}</span>
                         <span>{s.reason}</span>
                       </div>

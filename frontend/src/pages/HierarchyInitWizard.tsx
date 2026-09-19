@@ -82,7 +82,7 @@ const Badge: React.FC<{
   };
 
   return (
-    <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', variants[variant], className)}>
+    <span className={cn('px-2 py-0.5 text-caption font-medium rounded-full', variants[variant], className)}>
       {children}
     </span>
   );
@@ -99,7 +99,7 @@ const StepIndicator: React.FC<{
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold',
+              'w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold',
               i + 1 < currentStep
                 ? 'bg-success-500 text-white'
                 : i + 1 === currentStep
@@ -111,7 +111,7 @@ const StepIndicator: React.FC<{
           </div>
           <span
             className={cn(
-              'text-sm font-medium hidden sm:block',
+              'text-body-sm font-medium hidden sm:block',
               i + 1 === currentStep ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
             )}
           >
@@ -144,10 +144,10 @@ const InfoBox: React.FC<{
         <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5 flex-shrink-0" />
       )}
       <div>
-        <p className={cn('text-sm font-medium', variant === 'info' ? 'text-info-800 dark:text-info-300' : 'text-warning-800 dark:text-warning-300')}>
+        <p className={cn('text-body-sm font-medium', variant === 'info' ? 'text-info-800 dark:text-info-300' : 'text-warning-800 dark:text-warning-300')}>
           {title}
         </p>
-        <div className={cn('text-sm mt-1', variant === 'info' ? 'text-info-600 dark:text-info-300' : 'text-warning-600 dark:text-warning-300')}>
+        <div className={cn('text-body-sm mt-1', variant === 'info' ? 'text-info-600 dark:text-info-300' : 'text-warning-600 dark:text-warning-300')}>
           {children}
         </div>
       </div>
@@ -209,12 +209,12 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
             )}
           </div>
 
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="body-sm mt-1">
             Status: {corporate.status}
           </p>
 
           {isInitialized && (
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
+            <p className="mt-2 caption flex items-center gap-1">
               <Check className="w-3 h-3 text-success-500" />
               Already has a configured hierarchy
             </p>
@@ -240,7 +240,7 @@ const HierarchyPreview: React.FC<HierarchyPreviewProps> = ({
   baseCurrency,
   exceptionCurrencies,
 }) => (
-  <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800 font-mono text-sm">
+  <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border border-neutral-200 dark:border-primary-800 font-mono text-body-sm">
     <div className="flex items-center gap-2">
       <Globe className="w-4 h-4 text-primary-700 dark:text-neutral-200" />
       <span className="text-primary-900 dark:text-neutral-50 font-medium">{rootName || '[ROOT Name]'} (ROOT)</span>
@@ -499,7 +499,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                         value={rootName}
                         onChange={(e) => setRootName(e.target.value)}
                         placeholder="e.g., ACME Holdings - Group Treasury"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
 
@@ -512,7 +512,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                         value={rootCode}
                         onChange={(e) => setRootCode(e.target.value.toUpperCase())}
                         placeholder="e.g., ACME-ROOT"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     </div>
 
@@ -523,7 +523,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                       <select
                         value={baseCurrency}
                         onChange={(e) => setBaseCurrency(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                       >
                         {CURRENCY_OPTIONS.map((curr) => (
                           <option key={curr.code} value={curr.code}>
@@ -556,7 +556,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                           <span className="font-medium text-warning-800 dark:text-warning-300">
                             Create {baseCurrency} Exception Account
                           </span>
-                          <p className="text-sm text-warning-600 dark:text-warning-300 mt-0.5">
+                          <p className="text-body-sm text-warning-600 dark:text-warning-300 mt-0.5">
                             Unmatched transactions will be routed here for manual resolution
                           </p>
                         </div>
@@ -574,7 +574,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                             type="button"
                             onClick={() => toggleExceptionCurrency(curr.code)}
                             className={cn(
-                              'px-3 py-2 rounded-lg text-sm font-medium border transition-colors',
+                              'px-3 py-2 rounded-lg text-body-sm font-medium border transition-colors',
                               additionalExceptionCurrencies.includes(curr.code)
                                 ? 'bg-warning-100 dark:bg-warning-500/20 border-warning-300 dark:border-warning-500/30 text-warning-800 dark:text-warning-300'
                                 : 'bg-white dark:bg-primary-900 border-neutral-200 dark:border-primary-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-primary-700'
@@ -597,7 +597,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
 
                     {allExceptionCurrencies.length > 0 && (
                       <div className="p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg">
-                        <p className="text-sm font-medium text-warning-800 dark:text-warning-300 mb-2">
+                        <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300 mb-2">
                           Exception accounts to be created:
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -618,7 +618,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                   <div className="space-y-6">
                     <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                       <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-3">Review Your Hierarchy Setup</h4>
-                      <dl className="space-y-2 text-sm">
+                      <dl className="space-y-2 text-body-sm">
                         <div className="flex justify-between">
                           <dt className="text-neutral-500 dark:text-neutral-400">Corporate:</dt>
                           <dd className="font-medium">{selectedCorporate?.name}</dd>
@@ -648,7 +648,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
 
                     <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
                       <h4 className="font-medium text-success-800 dark:text-success-300 mb-2">What will be created:</h4>
-                      <ul className="space-y-1 text-sm text-success-700 dark:text-success-300">
+                      <ul className="space-y-1 text-body-sm text-success-700 dark:text-success-300">
                         <li className="flex items-center gap-2">
                           <Check className="w-4 h-4" />
                           ROOT account will be created
@@ -675,7 +675,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
                         <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
                           <AlertTriangle className="w-5 h-5" />
-                          <span className="text-sm font-medium">{error}</span>
+                          <span className="text-body-sm font-medium">{error}</span>
                         </div>
                       </div>
                     )}
@@ -700,7 +700,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed()}
                   className={cn(
-                    'px-5 py-2 text-sm font-medium rounded-lg',
+                    'px-5 py-2 text-body-sm font-medium rounded-lg',
                     canProceed()
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
@@ -713,7 +713,7 @@ export const HierarchyInitWizard: React.FC<HierarchyInitWizardProps> = ({
                   onClick={handleSubmit}
                   disabled={submitting}
                   className={cn(
-                    'px-6 py-2 text-sm font-medium rounded-lg flex items-center gap-2',
+                    'px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2',
                     !submitting
                       ? 'bg-primary-600 text-white hover:bg-primary-700'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'

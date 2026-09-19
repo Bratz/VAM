@@ -66,7 +66,7 @@ export const Composer: React.FC = () => {
         className={[
           'flex-1 resize-none min-h-[40px]',
           'px-3 py-2 rounded-xl',
-          'text-sm text-primary-900 dark:text-neutral-100',
+          'text-body-sm text-primary-900 dark:text-neutral-100',
           'bg-neutral-50 dark:bg-primary-900/60',
           'border border-neutral-200 dark:border-primary-700',
           'focus:outline-none focus:ring-2 focus:ring-accent-400/40 focus:border-accent-400/60',

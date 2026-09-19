@@ -412,11 +412,11 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
     return (
       <div className="bg-white rounded-xl border-2 border-dashed border-primary-300 p-8 text-center mb-6 dark:bg-primary-900">
         <Target className="w-12 h-12 text-primary-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-neutral-900 mb-2 dark:text-neutral-50">No Group Limits Set</h3>
-        <p className="text-sm text-neutral-500 mb-4 max-w-md mx-auto dark:text-neutral-400">
+        <h3 className="text-body-lg font-semibold text-neutral-900 mb-2 dark:text-neutral-50">No Group Limits Set</h3>
+        <p className="body-sm mb-4 max-w-md mx-auto">
           Create corporate-wide internal credit limits for each currency.
         </p>
-        <button type="button" onClick={onAddCurrency} className="px-4 py-2 bg-primary-900 text-white rounded-lg text-sm font-medium hover:bg-primary-800">
+        <button type="button" onClick={onAddCurrency} className="px-4 py-2 bg-primary-900 text-white rounded-lg text-body-sm font-medium hover:bg-primary-800">
           <Plus className="w-4 h-4 inline mr-1" /> Create Group Limit
         </button>
       </div>
@@ -438,11 +438,11 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
             <Layers className="w-8 h-8 text-primary-700 dark:text-neutral-200" />
           </div>
           <div>
-            <p className="text-xs text-primary-600 uppercase font-semibold tracking-wide dark:text-primary-200">Group Internal Limits</p>
-            <p className="text-sm text-neutral-600 mt-0.5 dark:text-neutral-300">{groupLimits.length} {groupLimits.length === 1 ? 'currency' : 'currencies'} configured</p>
+            <p className="text-caption text-primary-600 uppercase font-semibold tracking-wide dark:text-primary-200">Group Internal Limits</p>
+            <p className="body-sm mt-0.5">{groupLimits.length} {groupLimits.length === 1 ? 'currency' : 'currencies'} configured</p>
           </div>
         </div>
-        <button type="button" onClick={onAddCurrency} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-200 flex items-center gap-1 dark:bg-primary-700 dark:text-neutral-200">
+        <button type="button" onClick={onAddCurrency} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-body-sm font-medium hover:bg-primary-200 flex items-center gap-1 dark:bg-primary-700 dark:text-neutral-200">
           <Plus className="w-4 h-4" /> Add Currency
         </button>
       </div>
@@ -461,7 +461,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
               key={currency}
               onClick={() => setSelectedCurrency(currency)}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
+                "px-4 py-2 rounded-lg text-body-sm font-medium transition-all flex items-center gap-2",
                 isSelected ? "bg-white shadow-md border-2 border-primary-500 dark:bg-primary-900" : "bg-white/60 hover:bg-white border border-transparent dark:bg-primary-900/60"
               )}
             >
@@ -479,13 +479,13 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
           <div className="bg-white/80 rounded-xl p-4 mb-4 dark:bg-primary-900/80">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <span className={cn("text-xl font-bold", currencyConfig[selectedCurrency!]?.color || 'text-neutral-900 dark:text-neutral-50')}>
+                <span className={cn("text-heading-sm font-bold", currencyConfig[selectedCurrency!]?.color || 'text-neutral-900 dark:text-neutral-50')}>
                   <Amount value={limitAmount} currency={selectedCurrency!} />
                 </span>
                 {selectedLimit.isHardLimit ? (
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-error-50 text-error-700 flex items-center gap-1 dark:bg-error-500/10 dark:text-error-300"><Lock className="w-3 h-3" /> Hard</span>
+                  <span className="px-2 py-0.5 rounded-full text-caption bg-error-50 text-error-700 flex items-center gap-1 dark:bg-error-500/10 dark:text-error-300"><Lock className="w-3 h-3" /> Hard</span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-xs bg-warning-50 text-warning-700 flex items-center gap-1 dark:bg-warning-500/10 dark:text-warning-300"><Unlock className="w-3 h-3" /> Soft</span>
+                  <span className="px-2 py-0.5 rounded-full text-caption bg-warning-50 text-warning-700 flex items-center gap-1 dark:bg-warning-500/10 dark:text-warning-300"><Unlock className="w-3 h-3" /> Soft</span>
                 )}
               </div>
               <button type="button" onClick={() => onEdit(selectedLimit)} className="p-2 hover:bg-neutral-100 rounded-lg dark:hover:bg-primary-800"><Edit className="w-5 h-5 text-primary-600 dark:text-primary-200" /></button>
@@ -495,7 +495,7 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
               <div className="w-full bg-neutral-200 rounded-full h-3 dark:bg-primary-800">
                 <div className={cn("h-3 rounded-full", allocationPct > 95 ? "bg-error-500" : allocationPct > 80 ? "bg-warning-500" : "bg-primary-600")} style={{ width: `${allocationPct}%` }} />
               </div>
-              <div className="flex justify-between text-xs mt-1">
+              <div className="flex justify-between text-caption mt-1">
                 <span className="text-primary-700 font-medium dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /> allocated ({allocationPct.toFixed(0)}%)</span>
                 <span className="text-success-700 font-medium dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /> avail.</span>
               </div>
@@ -504,20 +504,20 @@ const MultiCurrencyGroupLimitsCard: React.FC<{
 
           <div className="grid grid-cols-4 gap-2">
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Allocated</p>
-              <p className="text-sm font-bold text-primary-700 truncate dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /></p>
+              <p className="caption">Allocated</p>
+              <p className="text-body-sm font-bold text-primary-700 truncate dark:text-neutral-200"><Amount value={allocated} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Unallocated</p>
-              <p className="text-sm font-bold text-success-700 truncate dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /></p>
+              <p className="caption">Unallocated</p>
+              <p className="text-body-sm font-bold text-success-700 truncate dark:text-success-300"><Amount value={unallocated} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Utilized</p>
-              <p className="text-sm font-bold text-warning-700 truncate dark:text-warning-300"><Amount value={utilized} currency={selectedCurrency!} /></p>
+              <p className="caption">Utilized</p>
+              <p className="text-body-sm font-bold text-warning-700 truncate dark:text-warning-300"><Amount value={utilized} currency={selectedCurrency!} /></p>
             </div>
             <div className="p-2 bg-white/60 rounded-lg min-w-0 dark:bg-primary-900/60">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-              <p className="text-sm font-bold text-info-700 truncate dark:text-info-300"><Amount value={available} currency={selectedCurrency!} /></p>
+              <p className="caption">Available</p>
+              <p className="text-body-sm font-bold text-info-700 truncate dark:text-info-300"><Amount value={available} currency={selectedCurrency!} /></p>
             </div>
           </div>
         </>
@@ -551,7 +551,7 @@ const StatsCards: React.FC<{
           <div className="flex-1">
             <p className="label">Currencies</p>
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount}</p>
-            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{currencyCount > 0 ? groupLimits.map(l => l.currency).join(', ') : 'No group limits'}</p>
+            <p className="caption mt-1">{currencyCount > 0 ? groupLimits.map(l => l.currency).join(', ') : 'No group limits'}</p>
           </div>
           <StatusIconBadge tone="primary" icon={DollarSign} className="dark:bg-primary-700" />
         </div>
@@ -562,7 +562,7 @@ const StatsCards: React.FC<{
           <div className="flex-1">
             <p className="label">Total Limits</p>
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : currencyCount > 0 ? `${currencyCount} currencies` : 'Not Set'}</p>
-            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{allocationPercent.toFixed(0)}% allocated overall</p>
+            <p className="caption mt-1">{allocationPercent.toFixed(0)}% allocated overall</p>
           </div>
           <StatusIconBadge tone="info" icon={Target} className="dark:bg-info-500/20" />
         </div>
@@ -580,7 +580,7 @@ const StatsCards: React.FC<{
           <div className="flex-1">
             <p className="label">Entity Limits</p>
             <p className="stat-value-sm mt-1">{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${allocatedEntityCount} / ${entityCount}`}</p>
-            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{entityCount > 0 ? `${entityPercent}% entities allocated` : 'No entities'}</p>
+            <p className="caption mt-1">{entityCount > 0 ? `${entityPercent}% entities allocated` : 'No entities'}</p>
           </div>
           <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
         </div>
@@ -591,7 +591,7 @@ const StatsCards: React.FC<{
           <div className="flex-1">
             <p className="label">Utilization</p>
             <p className={cn('mt-1', utilizationPercent > 80 ? 'stat-value-warning' : 'stat-value-success')}>{loading ? <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" /> : `${utilizationPercent.toFixed(0)}%`}</p>
-            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">across all currencies</p>
+            <p className="caption mt-1">across all currencies</p>
           </div>
           <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', utilizationPercent > 80 ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-success-100 dark:bg-success-500/20')}>
             {utilizationPercent > 80 ? <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" /> : <CheckCircle className="w-5 h-5 text-success-600 dark:text-success-300" />}
@@ -666,23 +666,23 @@ const EntityTreeNode: React.FC<{
 
           <div className="flex-1 min-w-[180px]">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{entity.entityCode}</span>
-              {entity.isBankCustomer && <span className="px-2 py-0.5 rounded-full text-xs bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank</span>}
-              {entity.isTreasuryCenter && <span className="px-2 py-0.5 rounded-full text-xs bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">Treasury</span>}
+              <span className="body-strong">{entity.entityCode}</span>
+              {entity.isBankCustomer && <span className="px-2 py-0.5 rounded-full text-caption bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank</span>}
+              {entity.isTreasuryCenter && <span className="px-2 py-0.5 rounded-full text-caption bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">Treasury</span>}
             </div>
-            <p className="text-xs text-neutral-500 truncate max-w-[200px] dark:text-neutral-400">{entity.entityName}</p>
+            <p className="caption truncate max-w-[200px]">{entity.entityName}</p>
           </div>
 
           <div className="w-[100px] text-right">
-            <p className="text-xs text-neutral-400 uppercase dark:text-neutral-500">External</p>
+            <p className="text-caption text-neutral-400 uppercase dark:text-neutral-500">External</p>
             {entity.isBankCustomer && externalCeiling ? (
-              <p className="text-sm font-medium text-info-700 dark:text-info-300">{formatCurrency(externalCeiling, entity.functionalCurrency)}</p>
-            ) : <p className="text-sm text-neutral-400 dark:text-neutral-500">—</p>}
+              <p className="text-body-sm font-medium text-info-700 dark:text-info-300">{formatCurrency(externalCeiling, entity.functionalCurrency)}</p>
+            ) : <p className="text-body-sm text-neutral-400 dark:text-neutral-500">—</p>}
           </div>
 
           <div className="w-[100px]">
             {missingCurrencies.length > 0 && (
-              <button type="button" onClick={() => onAllocate(entity)} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 dark:text-primary-200 dark:hover:text-neutral-200">
+              <button type="button" onClick={() => onAllocate(entity)} className="text-body-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 dark:text-primary-200 dark:hover:text-neutral-200">
                 <Plus className="w-3 h-3" /> Add Limit
               </button>
             )}
@@ -707,14 +707,14 @@ const EntityTreeNode: React.FC<{
                 )}>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={cn("font-bold text-sm", config.color)}>{currency}</span>
+                      <span className={cn("font-bold text-body-sm", config.color)}>{currency}</span>
                       {(isBreached || isNearLimit) && <AlertTriangle className={cn("w-3.5 h-3.5", isBreached ? "text-error-500" : "text-warning-500")} />}
                     </div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(limitAmount, currency)}</p>
+                    <p className="body-strong">{formatCurrency(limitAmount, currency)}</p>
                     <div className="w-20 bg-neutral-200 rounded-full h-1.5 mt-1 dark:bg-primary-800">
                       <div className={cn("h-1.5 rounded-full", isBreached ? "bg-error-500" : isNearLimit ? "bg-warning-500" : "bg-success-500")} style={{ width: `${Math.min(utilizationPct, 100)}%` }} />
                     </div>
-                    <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{utilizationPct.toFixed(0)}% utilized</p>
+                    <p className="caption mt-0.5">{utilizationPct.toFixed(0)}% utilized</p>
                   </div>
                   <div className="flex flex-col gap-1">
                     <button type="button" onClick={() => onEdit(entity, currency)} className="p-1.5 hover:bg-neutral-100 rounded dark:hover:bg-primary-800" title="Edit limit"><Edit className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" /></button>
@@ -825,11 +825,11 @@ const GroupLimitModal: React.FC<{
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isEditing && existingCurrencies.length > 0 && (
             <div className="bg-info-50 rounded-lg p-4 dark:bg-info-500/10">
-              <p className="text-sm text-info-700 dark:text-info-300"><Info className="w-4 h-4 inline mr-1" />Existing group limits: {existingCurrencies.join(', ')}</p>
+              <p className="text-body-sm text-info-700 dark:text-info-300"><Info className="w-4 h-4 inline mr-1" />Existing group limits: {existingCurrencies.join(', ')}</p>
             </div>
           )}
 
-          {error && <div className="bg-error-50 rounded-lg p-4 dark:bg-error-500/10"><p className="text-sm text-error-700 dark:text-error-300"><AlertTriangle className="w-4 h-4 inline mr-1" />{error}</p></div>}
+          {error && <div className="bg-error-50 rounded-lg p-4 dark:bg-error-500/10"><p className="text-body-sm text-error-700 dark:text-error-300"><AlertTriangle className="w-4 h-4 inline mr-1" />{error}</p></div>}
 
           <div>
             <label className="field-label block mb-1">Limit Name</label>
@@ -856,11 +856,11 @@ const GroupLimitModal: React.FC<{
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" checked={hardLimit} onChange={() => setHardLimit(true)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Lock className="w-4 h-4 text-error-500" /><span className="text-sm">Hard Limit</span>
+                <Lock className="w-4 h-4 text-error-500" /><span className="text-body-sm">Hard Limit</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" checked={!hardLimit} onChange={() => setHardLimit(false)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                <Unlock className="w-4 h-4 text-warning-500" /><span className="text-sm">Soft Limit</span>
+                <Unlock className="w-4 h-4 text-warning-500" /><span className="text-body-sm">Soft Limit</span>
               </label>
             </div>
           </div>
@@ -871,8 +871,8 @@ const GroupLimitModal: React.FC<{
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-neutral-300 rounded-lg text-sm hover:bg-neutral-50 dark:border-primary-700 dark:hover:bg-primary-800/50">Cancel</button>
-            <button type="submit" disabled={saving || !limitName || amount <= 0 || amount < minAmount} className="px-4 py-2 bg-primary-900 text-white rounded-lg text-sm disabled:opacity-50 hover:bg-primary-800">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-neutral-300 rounded-lg text-body-sm hover:bg-neutral-50 dark:border-primary-700 dark:hover:bg-primary-800/50">Cancel</button>
+            <button type="submit" disabled={saving || !limitName || amount <= 0 || amount < minAmount} className="px-4 py-2 bg-primary-900 text-white rounded-lg text-body-sm disabled:opacity-50 hover:bg-primary-800">
               {saving && <Loader2 className="w-4 h-4 animate-spin inline mr-1" />}{isEditing ? 'Update' : 'Create'}
             </button>
           </div>
@@ -968,7 +968,7 @@ const VaLimitsModal: React.FC<{
       title={`VA Limits - ${entity.entityCode}`}
       subtitle={`Allocate ${currency} credit limits to Virtual Accounts`}
       footer={
-        <button type="button" onClick={onClose} className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm hover:bg-neutral-50 dark:border-primary-700 dark:hover:bg-primary-800/50">Close</button>
+        <button type="button" onClick={onClose} className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-body-sm hover:bg-neutral-50 dark:border-primary-700 dark:hover:bg-primary-800/50">Close</button>
       }
     >
         <div>
@@ -976,13 +976,13 @@ const VaLimitsModal: React.FC<{
             <div className="bg-primary-50 rounded-lg p-4 mb-6 dark:bg-primary-800/40">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm font-medium text-primary-700 dark:text-neutral-200">Entity {currency} Limit</p>
+                  <p className="text-body-sm font-medium text-primary-700 dark:text-neutral-200">Entity {currency} Limit</p>
                   <p className="stat-value-xs">{formatCurrency(entityLimit.limitAmount, currency)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-primary-600 dark:text-primary-200">Available for VAs</p>
+                  <p className="text-body-sm text-primary-600 dark:text-primary-200">Available for VAs</p>
                   {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the
-                      raw `text-xl font-bold` (keeps the 20px scale of the sibling
+                      raw `text-heading-sm font-bold` (keeps the 20px scale of the sibling
                       .stat-value-xs figure). */}
                   <p className="stat-value-xs text-success-700 dark:text-success-300">{formatCurrency(entityUnallocated, currency)}</p>
                 </div>
@@ -990,7 +990,7 @@ const VaLimitsModal: React.FC<{
             </div>
           )}
 
-          {error && <div className="bg-error-50 rounded-lg p-4 mb-4 dark:bg-error-500/10"><p className="text-sm text-error-700 dark:text-error-300"><AlertTriangle className="w-4 h-4 inline mr-1" />{error}</p></div>}
+          {error && <div className="bg-error-50 rounded-lg p-4 mb-4 dark:bg-error-500/10"><p className="text-body-sm text-error-700 dark:text-error-300"><AlertTriangle className="w-4 h-4 inline mr-1" />{error}</p></div>}
 
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" /></div>
@@ -998,7 +998,7 @@ const VaLimitsModal: React.FC<{
             <>
               {vasWithLimit.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">VAs with Limits ({vasWithLimit.length})</h3>
+                  <h3 className="text-body-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">VAs with Limits ({vasWithLimit.length})</h3>
                   <div className="space-y-2">
                     {vasWithLimit.map(va => {
                       const limit = vaLimits[va.id];
@@ -1007,14 +1007,14 @@ const VaLimitsModal: React.FC<{
                         <div key={va.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
                           <div className="flex-1">
                             <p className="font-medium text-neutral-900 dark:text-neutral-50">{va.vaNumber}</p>
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400">{va.vaName}</p>
+                            <p className="body-sm">{va.vaName}</p>
                           </div>
                           <div className="text-right mr-4">
                             <p className="font-bold text-neutral-900 dark:text-neutral-50">{formatCurrency(safeNumber(limit?.limitAmount), currency)}</p>
                             <div className="w-24 bg-neutral-200 rounded-full h-1.5 mt-1 dark:bg-primary-800">
                               <div className={cn("h-1.5 rounded-full", utilizationPct > 80 ? "bg-warning-500" : "bg-success-500")} style={{ width: `${utilizationPct}%` }} />
                             </div>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{utilizationPct.toFixed(0)}% utilized</p>
+                            <p className="caption">{utilizationPct.toFixed(0)}% utilized</p>
                           </div>
                           <button type="button" onClick={() => handleDeleteVaLimit(va.id)} className="p-2 hover:bg-error-50 rounded dark:hover:bg-error-500/10"><Trash2 className="w-4 h-4 text-error-500" /></button>
                         </div>
@@ -1026,7 +1026,7 @@ const VaLimitsModal: React.FC<{
 
               {vasWithoutLimit.length > 0 && entityUnallocated > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Allocate to VA</h3>
+                  <h3 className="text-body-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Allocate to VA</h3>
                   <div className="space-y-3">
                     <div>
                       <label className="field-label block mb-1">Select VA</label>
@@ -1041,7 +1041,7 @@ const VaLimitsModal: React.FC<{
                         <input type="number" value={allocAmount} onChange={(e) => setAllocAmount(e.target.value === '' ? 0 : parseFloat(e.target.value))} max={entityUnallocated} step={1000} className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700" />
                       </div>
                     )}
-                    <button type="button" onClick={handleAllocate} disabled={saving || !selectedVaId || allocAmount <= 0 || allocAmount > entityUnallocated} className="w-full px-4 py-2 bg-primary-900 text-white rounded-lg text-sm disabled:opacity-50 hover:bg-primary-800">
+                    <button type="button" onClick={handleAllocate} disabled={saving || !selectedVaId || allocAmount <= 0 || allocAmount > entityUnallocated} className="w-full px-4 py-2 bg-primary-900 text-white rounded-lg text-body-sm disabled:opacity-50 hover:bg-primary-800">
                       {saving && <Loader2 className="w-4 h-4 animate-spin inline mr-1" />}Allocate to VA
                     </button>
                   </div>
@@ -1231,14 +1231,14 @@ const CreditLimitsPage: React.FC = () => {
           type="button"
           onClick={loadData}
           disabled={loading}
-          className="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg disabled:opacity-50 hover:bg-neutral-50 bg-white dark:border-primary-700 dark:hover:bg-primary-800/50 dark:bg-primary-900 inline-flex items-center"
+          className="px-3 py-1.5 text-body-sm border border-neutral-300 rounded-lg disabled:opacity-50 hover:bg-neutral-50 bg-white dark:border-primary-700 dark:hover:bg-primary-800/50 dark:bg-primary-900 inline-flex items-center"
         >
           <RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />
           Refresh
         </button>
         <button
           type="button"
-          className="px-3 py-1.5 text-sm border border-neutral-300 rounded-lg hover:bg-neutral-50 bg-white dark:border-primary-700 dark:hover:bg-primary-800/50 dark:bg-primary-900 inline-flex items-center"
+          className="px-3 py-1.5 text-body-sm border border-neutral-300 rounded-lg hover:bg-neutral-50 bg-white dark:border-primary-700 dark:hover:bg-primary-800/50 dark:bg-primary-900 inline-flex items-center"
         >
           <Download className="w-4 h-4 mr-1" />
           Export
@@ -1257,7 +1257,7 @@ const CreditLimitsPage: React.FC = () => {
       {/* Refresh + Export migrated to Aperture Layout header. Corporate
           selector stays here as a filter input. */}
       <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <select className="px-3 py-2 border border-neutral-300 rounded-lg min-w-[200px] bg-white text-sm font-medium dark:border-primary-700 dark:bg-primary-900" value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)}>
+          <select className="px-3 py-2 border border-neutral-300 rounded-lg min-w-[200px] bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900" value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)}>
             <option value="">Select Corporate...</option>
             {corporates.map(c => <option key={c.id} value={c.id}>{c.legalName}</option>)}
           </select>
@@ -1268,7 +1268,7 @@ const CreditLimitsPage: React.FC = () => {
         <div className="bg-error-50 border border-error-200 rounded-xl p-4 flex items-center justify-between animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="error" icon={AlertTriangle} className="dark:bg-error-500/20" />
-            <p className="text-sm text-error-700 font-medium dark:text-error-300">{error}</p>
+            <p className="text-body-sm text-error-700 font-medium dark:text-error-300">{error}</p>
           </div>
           <button type="button" onClick={() => setError(null)} className="text-error-500 hover:text-error-700 p-1"><X className="w-5 h-5" /></button>
         </div>
@@ -1287,19 +1287,19 @@ const CreditLimitsPage: React.FC = () => {
                   <StatusIconBadge tone="primary" icon={GitBranch} className="dark:bg-primary-700" />
                   <div>
                     <h3 className="section-title">Entity Hierarchy</h3>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{allocatedEntityCount} of {entities.length} entities with limits</p>
+                    <p className="caption">{allocatedEntityCount} of {entities.length} entities with limits</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={handleExpandAll} className="px-3 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors dark:text-primary-200 dark:hover:bg-primary-800/40">Expand All</button>
-                  <button type="button" onClick={handleCollapseAll} className="px-3 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors dark:text-primary-200 dark:hover:bg-primary-800/40">Collapse All</button>
+                  <button type="button" onClick={handleExpandAll} className="px-3 py-1.5 text-caption font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors dark:text-primary-200 dark:hover:bg-primary-800/40">Expand All</button>
+                  <button type="button" onClick={handleCollapseAll} className="px-3 py-1.5 text-caption font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors dark:text-primary-200 dark:hover:bg-primary-800/40">Collapse All</button>
                 </div>
               </div>
 
               <div className="px-4 py-3 border-b border-neutral-100 dark:border-primary-800/60">
                 <div className="relative max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                  <input type="text" placeholder="Search entities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900" />
+                  <input type="text" placeholder="Search entities..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900" />
                 </div>
               </div>
 

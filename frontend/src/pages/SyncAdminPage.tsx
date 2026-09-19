@@ -81,11 +81,11 @@ const SyncAdminPage: React.FC = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-5 gap-4">
-          <Card><div className="p-4"><p className="stat-value-sm">{stats.jobsToday}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Jobs Today</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-success">{stats.successRate}%</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Success Rate</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-sm">{stats.averageDuration}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Avg Duration</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-warning">{stats.queueDepth}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Queue Depth</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-error">{stats.failedJobs24h}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Failed (24h)</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-sm">{stats.jobsToday}</p><p className="body-sm">Jobs Today</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-success">{stats.successRate}%</p><p className="body-sm">Success Rate</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-sm">{stats.averageDuration}</p><p className="body-sm">Avg Duration</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-warning">{stats.queueDepth}</p><p className="body-sm">Queue Depth</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-error">{stats.failedJobs24h}</p><p className="body-sm">Failed (24h)</p></div></Card>
         </div>
       )}
 
@@ -129,12 +129,12 @@ const SyncAdminPage: React.FC = () => {
             {jobs.map(job => (
               <div key={job.id} className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm">{job.jobType.replace('_', ' ')}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(job.startedAt).toLocaleString()}</p>
+                  <p className="font-medium text-body-sm">{job.jobType.replace('_', ' ')}</p>
+                  <p className="caption">{new Date(job.startedAt).toLocaleString()}</p>
                 </div>
                 <div className="text-right">
                   {getStatusBadge(job.status)}
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{job.recordsProcessed} records</p>
+                  <p className="caption mt-1">{job.recordsProcessed} records</p>
                 </div>
               </div>
             ))}
@@ -150,8 +150,8 @@ const SyncAdminPage: React.FC = () => {
             {queue.map(item => (
               <div key={item.id} className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm">{item.type.replace('_', ' ')}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Retry: {item.retryCount}</p>
+                  <p className="font-medium text-body-sm">{item.type.replace('_', ' ')}</p>
+                  <p className="caption">Retry: {item.retryCount}</p>
                 </div>
                 <Badge variant={item.priority === 'HIGH' ? 'error' : 'neutral'}>{item.priority}</Badge>
               </div>
@@ -169,7 +169,7 @@ const SyncAdminPage: React.FC = () => {
           <h3 className="font-medium">Sync Logs</h3>
           <List className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
         </div>
-        <div className="divide-y max-h-80 overflow-y-auto font-mono text-sm">
+        <div className="divide-y max-h-80 overflow-y-auto font-mono text-body-sm">
           {logs.map((log, idx) => (
             <div key={idx} className="p-3 flex gap-4">
               <span className="text-neutral-400 dark:text-neutral-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleTimeString()}</span>

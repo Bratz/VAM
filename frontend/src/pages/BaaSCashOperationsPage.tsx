@@ -346,11 +346,11 @@ const StatCard: React.FC<{
   <Card hover className="animate-fade-in" style={{ animationDelay: `${delay}s` }}>
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
+        <p className="body-sm">{label}</p>
         <p className="stat-value-sm mt-1">{value}</p>
-        {subValue && <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">{subValue}</p>}
+        {subValue && <p className="caption mt-0.5">{subValue}</p>}
         {trend && (
-          <div className={cn("flex items-center gap-1 text-xs mt-1", trend.direction === 'up' ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>
+          <div className={cn("flex items-center gap-1 text-caption mt-1", trend.direction === 'up' ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>
             {trend.direction === 'up' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             <span>{trend.value}% vs yesterday</span>
           </div>
@@ -611,7 +611,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       {error && (
         <Alert variant="error" className="flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />{error}
-          <button onClick={() => setError(null)} className="ml-auto text-sm underline">Dismiss</button>
+          <button onClick={() => setError(null)} className="ml-auto text-body-sm underline">Dismiss</button>
         </Alert>
       )}
 
@@ -683,7 +683,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         >
           <StatusIconBadge tone="success" icon={ArrowDownRight} size="lg" className="mb-3" />
           <p className="font-semibold text-success-900">Cash In / Top-up</p>
-          <p className="text-sm text-success-600 dark:text-success-300">Add funds to wallet</p>
+          <p className="text-body-sm text-success-600 dark:text-success-300">Add funds to wallet</p>
         </button>
         <button
           onClick={() => setShowCashOutModal(true)}
@@ -692,7 +692,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         >
           <StatusIconBadge tone="error" icon={ArrowUpRight} size="lg" className="mb-3" />
           <p className="font-semibold text-error-900">Cash Out</p>
-          <p className="text-sm text-error-600 dark:text-error-300">Withdraw from wallet</p>
+          <p className="text-body-sm text-error-600 dark:text-error-300">Withdraw from wallet</p>
         </button>
         <button
           onClick={() => setShowTransferModal(true)}
@@ -703,7 +703,7 @@ const BaaSCashOperationsPage: React.FC = () => {
             <ArrowLeftRight className="w-6 h-6 text-info-600 dark:text-info-300" />
           </div>
           <p className="font-semibold text-info-900">Transfer</p>
-          <p className="text-sm text-info-600 dark:text-info-300">Wallet to wallet</p>
+          <p className="text-body-sm text-info-600 dark:text-info-300">Wallet to wallet</p>
         </button>
         <button
           onClick={() => setShowBulkLoadModal(true)}
@@ -712,7 +712,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         >
           <StatusIconBadge tone="accent" icon={Upload} size="lg" className="mb-3 dark:bg-accent-500/20" />
           <p className="font-semibold text-accent-900">Bulk Load</p>
-          <p className="text-sm text-accent-600 dark:text-accent-300">Multiple wallets</p>
+          <p className="text-body-sm text-accent-600 dark:text-accent-300">Multiple wallets</p>
         </button>
       </div>
 
@@ -735,7 +735,7 @@ const BaaSCashOperationsPage: React.FC = () => {
               </div>
               <div className="flex gap-2 flex-wrap">
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm"
+                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                 >
@@ -747,7 +747,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="TRANSFER">Transfer</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm"
+                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -757,7 +757,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="FAILED">Failed</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm"
+                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
                   value={channelFilter}
                   onChange={(e) => setChannelFilter(e.target.value)}
                 >
@@ -768,7 +768,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <option value="MOBILE">Mobile</option>
                 </select>
                 <select
-                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm"
+                  className="border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm"
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
                 >
@@ -821,7 +821,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                         </td>
                         <td className="data-table-cell">
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{op.walletHolderName}</p>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{op.walletReference}</p>
+                          <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{op.walletReference}</p>
                         </td>
                         <td className="data-table-cell">
                           <p className={cn(
@@ -830,29 +830,29 @@ const BaaSCashOperationsPage: React.FC = () => {
                           )}>
                             {typeConf.direction === 'in' ? '+' : '-'}{formatCurrency(op.amount)}
                           </p>
-                          {op.fee > 0 && <p className="text-xs text-neutral-400 dark:text-neutral-500">Fee: {formatCurrency(op.fee)}</p>}
+                          {op.fee > 0 && <p className="caption">Fee: {formatCurrency(op.fee)}</p>}
                         </td>
                         <td className="data-table-cell">
                           <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
                             {channelConf?.icon}
-                            <span className="text-sm">{channelConf?.label}</span>
+                            <span className="text-body-sm">{channelConf?.label}</span>
                           </div>
-                          {op.agentName && <p className="text-xs text-neutral-400 dark:text-neutral-500">{op.agentName}</p>}
+                          {op.agentName && <p className="caption">{op.agentName}</p>}
                         </td>
                         <td className="data-table-cell">
                           <Badge variant={statusConf.color as any}>{statusConf.label}</Badge>
                         </td>
                         <td className="data-table-cell">
-                          <p className="text-sm font-mono text-neutral-600 dark:text-neutral-300">{op.reference}</p>
+                          <p className="text-body-sm font-mono text-neutral-600 dark:text-neutral-300">{op.reference}</p>
                         </td>
                         <td className="data-table-cell">
-                          <p className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(op.createdAt).toLocaleTimeString()}</p>
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(op.createdAt).toLocaleDateString()}</p>
+                          <p className="body-sm">{new Date(op.createdAt).toLocaleTimeString()}</p>
+                          <p className="caption">{new Date(op.createdAt).toLocaleDateString()}</p>
                         </td>
                         <td className="data-table-cell">
                           <button
                             onClick={() => { setSelectedOperation(op); setShowDetailModal(true); }}
-                            className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200"
+                            className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-body-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200"
                           >
                             View
                           </button>
@@ -905,7 +905,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <tr key={agent.id} className="data-table-row group">
                     <td className="data-table-cell">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{agent.agentName}</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{agent.agentCode}</p>
+                      <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{agent.agentCode}</p>
                     </td>
                     <td className="data-table-cell">
                       <Badge variant={agent.agentType === 'SUPER_AGENT' ? 'info' : 'neutral'}>
@@ -916,7 +916,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                     <td className="data-table-cell font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(agent.floatBalance)}</td>
                     <td className="data-table-cell">
                       <div className="w-32">
-                        <div className="flex justify-between text-xs mb-1">
+                        <div className="flex justify-between text-caption mb-1">
                           <span>{formatCurrency(agent.dailyUsed)}</span>
                           <span className="text-neutral-400 dark:text-neutral-500">{formatCurrency(agent.dailyLimit)}</span>
                         </div>
@@ -931,7 +931,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                       <Badge variant={agent.status === 'ACTIVE' ? 'success' : 'error'}>{agent.status}</Badge>
                     </td>
                     <td className="data-table-cell">
-                      <button className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200">Manage</button>
+                      <button className="text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 text-body-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity dark:hover:text-neutral-200">Manage</button>
                     </td>
                   </tr>
                 ))}
@@ -951,7 +951,7 @@ const BaaSCashOperationsPage: React.FC = () => {
               </div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Bulk Top-up / Load</h3>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            <p className="body-sm mb-4">
               Upload a CSV file or paste data to load funds to multiple wallets at once.
             </p>
             <div className="space-y-4">
@@ -968,12 +968,12 @@ const BaaSCashOperationsPage: React.FC = () => {
                   Wallet Data (CSV Format)
                 </label>
                 <textarea
-                  className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-40 font-mono text-sm"
+                  className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-40 font-mono text-body-sm"
                   placeholder="walletReference,amount&#10;WAL-FINTA-00012345,100&#10;WAL-FINTA-00012346,250"
                   value={bulkLoadForm.csvData}
                   onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })}
                 />
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Format: walletReference,amount (one per line)</p>
+                <p className="caption mt-1">Format: walletReference,amount (one per line)</p>
               </div>
               <Input
                 label="Description"
@@ -1008,15 +1008,15 @@ const BaaSCashOperationsPage: React.FC = () => {
               ].map((op) => (
                 <div key={op.id} className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-xl hover:bg-neutral-100 dark:hover:bg-primary-800 transition-colors">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">{op.date}</span>
+                    <span className="body-sm">{op.date}</span>
                     <Badge variant={op.status === 'Completed' ? 'success' : 'warning'}>{op.status}</Badge>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(op.total)}</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">{op.success}/{op.count} wallets</p>
+                      <p className="body-sm">{op.success}/{op.count} wallets</p>
                     </div>
-                    <button className="text-primary-600 dark:text-primary-200 text-sm hover:text-primary-700 dark:text-neutral-200 dark:hover:text-neutral-200">View Details</button>
+                    <button className="text-primary-600 dark:text-primary-200 text-body-sm hover:text-primary-700 dark:text-neutral-200 dark:hover:text-neutral-200">View Details</button>
                   </div>
                 </div>
               ))}
@@ -1074,10 +1074,10 @@ const BaaSCashOperationsPage: React.FC = () => {
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{walletLookup.holderName}</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{walletLookup.holderMobile}</p>
+                  <p className="body-sm">{walletLookup.holderMobile}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Current Balance</p>
+                  <p className="body-sm">Current Balance</p>
                   <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(walletLookup.currentBalance || 0)}</p>
                 </div>
               </div>
@@ -1107,7 +1107,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   )}
                 >
                   {channelConfig[ch]?.icon}
-                  <p className="text-xs mt-1">{channelConfig[ch]?.label}</p>
+                  <p className="text-caption mt-1">{channelConfig[ch]?.label}</p>
                 </button>
               ))}
             </div>
@@ -1190,10 +1190,10 @@ const BaaSCashOperationsPage: React.FC = () => {
                 <Avatar name={walletLookup.holderName} size="md" />
                 <div className="flex-1">
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{walletLookup.holderName}</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{walletLookup.holderMobile}</p>
+                  <p className="body-sm">{walletLookup.holderMobile}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Available Balance</p>
+                  <p className="body-sm">Available Balance</p>
                   <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(walletLookup.availableBalance || 0)}</p>
                 </div>
               </div>
@@ -1227,7 +1227,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   )}
                 >
                   {channelConfig[ch]?.icon}
-                  <p className="text-xs mt-1">{channelConfig[ch]?.label}</p>
+                  <p className="text-caption mt-1">{channelConfig[ch]?.label}</p>
                 </button>
               ))}
             </div>
@@ -1304,7 +1304,7 @@ const BaaSCashOperationsPage: React.FC = () => {
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{walletLookup.holderName}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Available</p>
+                  <p className="body-sm">Available</p>
                   <p className="font-semibold text-success-600 dark:text-success-300">{formatCurrency(walletLookup.availableBalance || 0)}</p>
                 </div>
               </div>
@@ -1364,7 +1364,7 @@ const BaaSCashOperationsPage: React.FC = () => {
               </div>
               <div className="text-right">
                 {/* Phase 12 Task E: .stat-value-{success|error} replaces the raw
-                    `text-2xl font-bold` + colour pair (identical scale/colours). */}
+                    `text-heading-md font-bold` + colour pair (identical scale/colours). */}
                 <p className={
                   operationTypeConfig[selectedOperation.type].direction === 'in' ? 'stat-value-success' : 'stat-value-error'
                 }>
@@ -1372,12 +1372,12 @@ const BaaSCashOperationsPage: React.FC = () => {
                   {formatCurrency(selectedOperation.amount)}
                 </p>
                 {selectedOperation.fee > 0 && (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Fee: {formatCurrency(selectedOperation.fee)}</p>
+                  <p className="body-sm">Fee: {formatCurrency(selectedOperation.fee)}</p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Wallet</p>
                 <p className="font-medium text-primary-900 dark:text-neutral-50">{selectedOperation.walletHolderName}</p>
@@ -1413,7 +1413,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
             {selectedOperation.description && (
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Description</p>
+                <p className="body-sm">Description</p>
                 <p className="text-primary-900 dark:text-neutral-50">{selectedOperation.description}</p>
               </div>
             )}

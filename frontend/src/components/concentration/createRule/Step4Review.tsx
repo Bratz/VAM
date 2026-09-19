@@ -25,8 +25,8 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
       <div className="flex items-center gap-4 mb-6">
         <StatusIconBadge tone="primary" icon={Layers} size="lg" />
         <div>
-          <h3 className="font-semibold text-primary-900 dark:text-neutral-50 text-lg">{formData.ruleName}</h3>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <h3 className="font-semibold text-primary-900 dark:text-neutral-50 text-body-lg">{formData.ruleName}</h3>
+          <p className="body-sm">
             {SWEEP_TYPES[formData.sweepType as keyof typeof SWEEP_TYPES]?.label} • {formData.frequency}
           </p>
         </div>
@@ -34,21 +34,21 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Corporate</p>
+          <p className="label mb-1">Corporate</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{selectedCorporate?.legalName || selectedCorporate?.tradeName || '-'}</p>
         </div>
         {selectedProgram && (
           <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Program</p>
+            <p className="label mb-1">Program</p>
             <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{selectedProgram.programName}</p>
           </div>
         )}
         <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Currency</p>
+          <p className="label mb-1">Currency</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{formData.currencyCode}</p>
         </div>
         <div className="bg-white/60 dark:bg-primary-900/60 rounded-xl p-3 border border-neutral-200/60 dark:border-primary-800">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Priority</p>
+          <p className="label mb-1">Priority</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{formData.priority}</p>
         </div>
       </div>
@@ -56,15 +56,15 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
 
     {/* Account Flow */}
     <Card>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Account Flow</p>
+      <p className="label mb-4">Account Flow</p>
       <div className="flex items-center gap-4">
         {/* Source Accounts */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <StatusIconBadge tone="warning" icon={Building2} size="sm" rounded="lg" />
             <div>
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">Source Accounts</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{formData.sourceAccounts.length} account(s)</p>
+              <p className="body-strong">Source Accounts</p>
+              <p className="caption">{formData.sourceAccounts.length} account(s)</p>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
         {/* Arrow */}
         <div className="flex flex-col items-center px-4">
           <ArrowRight className="w-6 h-6 text-primary-500 dark:text-primary-200" />
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Sweep</p>
+          <p className="caption mt-1">Sweep</p>
         </div>
 
         {/* Target Account */}
@@ -80,8 +80,8 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="success" icon={Building2} size="sm" rounded="lg" />
             <div>
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{formData.targetEntityCode || 'Target'}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{formData.targetAccountNumber}</p>
+              <p className="body-strong">{formData.targetEntityCode || 'Target'}</p>
+              <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{formData.targetAccountNumber}</p>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
     {/* Source Accounts List */}
     {formData.sourceAccounts.length > 0 && (
       <div>
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 mb-3">Source Accounts</p>
+        <p className="body-strong mb-3">Source Accounts</p>
         <Card padding="none" className="divide-y divide-neutral-100 dark:divide-primary-800/60 max-h-32 overflow-y-auto">
           {formData.sourceAccounts.map((acc) => (
             <div key={acc.accountId} className="px-4 py-3 flex items-center justify-between">
@@ -99,9 +99,9 @@ export const Step4Review: React.FC<Step4ReviewProps> = ({
                 <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-primary-800 flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 </div>
-                <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{acc.entityName}</span>
+                <span className="body-strong">{acc.entityName}</span>
               </div>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{acc.accountNumber}</span>
+              <span className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{acc.accountNumber}</span>
             </div>
           ))}
         </Card>

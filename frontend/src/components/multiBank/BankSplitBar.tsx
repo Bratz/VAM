@@ -86,7 +86,7 @@ export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total })
       </div>
       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
         {segments.map((s) => (
-          <span key={s.bankBic} className="inline-flex items-center gap-1.5 text-xs">
+          <span key={s.bankBic} className="inline-flex items-center gap-1.5 text-caption">
             <span className={cn('w-2 h-2 rounded-sm', s.colour)} />
             <span className={cn(
               s.homeBank

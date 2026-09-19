@@ -82,7 +82,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
       <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
-        <p className="text-sm text-error-600 dark:text-error-300">{message}</p>
+        <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
       </div>
       <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button>
     </div>
@@ -231,7 +231,7 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
               onChange={(e) => setFormData({ ...formData, autoPopulate: e.target.checked })}
               className="rounded text-primary-600 dark:text-primary-200"
             />
-            <label htmlFor="autoPopulate" className="text-sm text-neutral-700 dark:text-neutral-200">
+            <label htmlFor="autoPopulate" className="text-body-sm text-neutral-700 dark:text-neutral-200">
               Auto-populate with eligible intercompany payables, receivables, and recharges
             </label>
           </div>
@@ -244,7 +244,7 @@ const CreateCycleModal: React.FC<CreateCycleModalProps> = ({ isOpen, onClose, on
                 onChange={(e) => setFormData({ ...formData, includePending: e.target.checked })}
                 className="rounded text-warning-600 dark:text-warning-300"
               />
-              <label htmlFor="includePending" className="text-sm text-neutral-600 dark:text-neutral-300">
+              <label htmlFor="includePending" className="body-sm">
                 Include pending (unapproved) POBO recharges
               </label>
             </div>
@@ -384,7 +384,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={cn(
-              'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-all duration-200',
+              'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
               activeTab === tab.id
                 ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
                 : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
@@ -394,7 +394,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             {tab.label}
             {tab.count !== undefined && (
               <span className={cn(
-                'px-1.5 py-0.5 text-xs rounded-full font-medium',
+                'px-1.5 py-0.5 text-caption rounded-full font-medium',
                 activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
               )}>{tab.count}</span>
             )}
@@ -416,7 +416,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
               <GitMerge className="w-6 h-6 text-primary-600 dark:text-primary-200" />
               <div>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{cycle.cycleReference}</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                <p className="body-sm">
                   {cycle.periodStart?.slice(0, 10)} - {cycle.periodEnd?.slice(0, 10)}
                 </p>
               </div>
@@ -459,16 +459,16 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 <h4 className="label mb-3">Cycle Details</h4>
                 <dl className="space-y-2">
                   <div className="flex justify-between">
-                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">Entries</dt>
-                    <dd className="text-sm font-medium">{cycle.entryCount || 0}</dd>
+                    <dt className="body-sm">Entries</dt>
+                    <dd className="text-body-sm font-medium">{cycle.entryCount || 0}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">Participants</dt>
-                    <dd className="text-sm font-medium">{cycle.participantCount || 0}</dd>
+                    <dt className="body-sm">Participants</dt>
+                    <dd className="text-body-sm font-medium">{cycle.participantCount || 0}</dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-sm text-neutral-500 dark:text-neutral-400">Base Currency</dt>
-                    <dd className="text-sm font-medium">{cycle.baseCurrency}</dd>
+                    <dt className="body-sm">Base Currency</dt>
+                    <dd className="text-body-sm font-medium">{cycle.baseCurrency}</dd>
                   </div>
                 </dl>
               </div>
@@ -479,20 +479,20 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 <h4 className="label mb-3">Netting Impact</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Without Netting</span>
-                    <span className="text-sm font-medium text-error-600 dark:text-error-300">
+                    <span className="body-sm">Without Netting</span>
+                    <span className="text-body-sm font-medium text-error-600 dark:text-error-300">
                       {positions.length} payments
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">With Netting</span>
-                    <span className="text-sm font-medium text-success-600 dark:text-success-300">
+                    <span className="body-sm">With Netting</span>
+                    <span className="text-body-sm font-medium text-success-600 dark:text-success-300">
                       {settlements.length} payments
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-sm font-medium">Reduction</span>
-                    <span className="text-sm font-bold text-success-600 dark:text-success-300">
+                    <span className="text-body-sm font-medium">Reduction</span>
+                    <span className="text-body-sm font-bold text-success-600 dark:text-success-300">
                       {positions.length > 0 ? Math.round((1 - settlements.length / positions.length) * 100) : 0}%
                     </span>
                   </div>
@@ -507,7 +507,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
       {activeTab === 'entries' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">{entries.length} entries in this cycle</p>
+            <p className="body-sm">{entries.length} entries in this cycle</p>
             {(cycle.status === 'DRAFT' || cycle.status === 'OPEN') && onPopulate && (
               <Button
                 size="sm"
@@ -525,7 +525,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
             <div className="text-center py-12 bg-neutral-50 rounded-xl dark:bg-primary-950">
               <StatusIconBadge tone="neutral" icon={Layers} size="lg" className="mx-auto mb-4 dark:bg-primary-800" />
               <h4 className="body-lg mb-1">No entries yet</h4>
-              <p className="text-xs text-neutral-500 mb-4 dark:text-neutral-400">
+              <p className="caption mb-4">
                 {(cycle.status === 'DRAFT' || cycle.status === 'OPEN')
                   ? 'Click "Populate Entries" to load eligible payables, receivables, and recharges.'
                   : 'This cycle has no entries.'}
@@ -558,18 +558,18 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                 <tbody>
                   {entries.map(entry => (
                     <tr key={entry.id} className="data-table-row">
-                      <td className="data-table-cell text-sm font-medium text-primary-900 dark:text-neutral-50">{entry.entryReference}</td>
+                      <td className="data-table-cell body-strong">{entry.entryReference}</td>
                       <td className="data-table-cell">
                         <Badge variant={entry.flowDirection === 'PAYABLE' ? 'error' : 'success'} size="sm">
                           {entry.flowDirection}
                         </Badge>
                       </td>
-                      <td className="data-table-cell text-sm text-neutral-600 dark:text-neutral-300">{entry.payerEntityCode}</td>
-                      <td className="data-table-cell text-sm text-neutral-600 dark:text-neutral-300">{entry.payeeEntityCode}</td>
-                      <td className="data-table-cell text-sm font-semibold text-right text-primary-900 dark:text-neutral-50">
+                      <td className="data-table-cell body-sm">{entry.payerEntityCode}</td>
+                      <td className="data-table-cell body-sm">{entry.payeeEntityCode}</td>
+                      <td className="data-table-cell body-strong font-semibold text-right">
                         {formatCurrency(entry.grossAmount, entry.currencyCode)}
                       </td>
-                      <td className="data-table-cell text-sm text-neutral-500 dark:text-neutral-400">
+                      <td className="data-table-cell body-sm">
                         {entry.sourceType.replace('_', ' ')}
                       </td>
                       <td className="data-table-cell">
@@ -589,7 +589,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
       {/* Positions Tab */}
       {activeTab === 'positions' && (
         <div className="space-y-4">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">Net positions for {positions.length} participating entities</p>
+          <p className="body-sm">Net positions for {positions.length} participating entities</p>
 
           <div className="space-y-3">
             {positions.map(pos => (
@@ -600,7 +600,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                       <StatusIconBadge tone="primary" icon={Building2} className="dark:bg-primary-700" />
                       <div>
                         <p className="font-medium text-primary-900 dark:text-neutral-50">{pos.entityName}</p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">{pos.entityCode} • {pos.entryCount} entries</p>
+                        <p className="body-sm">{pos.entityCode} • {pos.entryCount} entries</p>
                       </div>
                     </div>
                     <Badge
@@ -613,13 +613,13 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center p-3 bg-error-50 rounded-xl border border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
                       <p className="label">Payables</p>
-                      <p className="text-lg font-semibold text-error-700 mt-1 dark:text-error-300">
+                      <p className="text-body-lg font-semibold text-error-700 mt-1 dark:text-error-300">
                         <TileAmount value={pos.grossPayables} currency={pos.currency} />
                       </p>
                     </div>
                     <div className="text-center p-3 bg-success-50 rounded-xl border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
                       <p className="label">Receivables</p>
-                      <p className="text-lg font-semibold text-success-700 mt-1 dark:text-success-300">
+                      <p className="text-body-lg font-semibold text-success-700 mt-1 dark:text-success-300">
                         <TileAmount value={pos.grossReceivables} currency={pos.currency} />
                       </p>
                     </div>
@@ -629,7 +629,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                     )}>
                       <p className="label">Net Position</p>
                       <p className={cn(
-                        'text-lg font-bold mt-1',
+                        'text-body-lg font-bold mt-1',
                         pos.netDirection === 'RECEIVE' ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'
                       )}>
                         {pos.netDirection === 'PAY' ? '-' : '+'}
@@ -650,7 +650,7 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
           <div className="p-4 bg-gradient-to-r from-info-50/50 via-white to-accent-50/50 dark:from-primary-900 dark:via-primary-900 dark:to-primary-900 rounded-xl border border-info-200/60">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
-              <p className="text-sm text-info-800 dark:text-info-300">
+              <p className="text-body-sm text-info-800 dark:text-info-300">
                 <strong>{settlements.length}</strong> settlement payments required to clear all positions.
                 This represents a <strong className="text-success-700 dark:text-success-300">{positions.length > 0 ? Math.round((1 - settlements.length / positions.length) * 100) : 0}%</strong> reduction
                 from individual bilateral settlements.
@@ -666,16 +666,16 @@ const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cy
                     <div className="flex items-center gap-3">
                       <StatusIconBadge tone="error" icon={Building2} className="dark:bg-error-500/20" />
                       <div>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{instruction.fromEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{instruction.fromEntityName}</p>
+                        <p className="body-strong">{instruction.fromEntityCode}</p>
+                        <p className="caption">{instruction.fromEntityName}</p>
                       </div>
                     </div>
                     <ArrowRight className="w-5 h-5 text-primary-400" />
                     <div className="flex items-center gap-3">
                       <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
                       <div>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{instruction.toEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{instruction.toEntityName}</p>
+                        <p className="body-strong">{instruction.toEntityCode}</p>
+                        <p className="caption">{instruction.toEntityName}</p>
                       </div>
                     </div>
                   </div>
@@ -741,13 +741,13 @@ const CycleCard: React.FC<CycleCardProps> = ({
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">{cycle.cycleName}</h3>
               <span className={cn(
-                'px-2 py-0.5 text-xs font-medium rounded-full',
+                'px-2 py-0.5 text-caption font-medium rounded-full',
                 statusColors[cycle.status] || statusColors.DRAFT
               )}>
                 {cycle.status?.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{cycle.cycleReference}</p>
+            <p className="body-sm">{cycle.cycleReference}</p>
           </div>
           <button
             onClick={onViewDetails}
@@ -760,14 +760,14 @@ const CycleCard: React.FC<CycleCardProps> = ({
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-neutral-50 rounded-xl p-3 dark:bg-primary-950">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Gross</p>
-            <p className="text-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">
+            <p className="label">Gross</p>
+            <p className="text-body-lg font-bold text-primary-900 mt-1 dark:text-neutral-50">
               <TileAmount value={cycle.totalGross || 0} currency={cycle.baseCurrency} />
             </p>
           </div>
           <div className="bg-success-50 rounded-xl p-3 dark:bg-success-500/10">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Net</p>
-            <p className="text-lg font-bold text-success-700 mt-1 dark:text-success-300">
+            <p className="label">Net</p>
+            <p className="text-body-lg font-bold text-success-700 mt-1 dark:text-success-300">
               <TileAmount value={cycle.totalNet || 0} currency={cycle.baseCurrency} />
             </p>
           </div>
@@ -784,24 +784,24 @@ const CycleCard: React.FC<CycleCardProps> = ({
             </div>
             <span className="font-bold text-accent-700 dark:text-accent-300">
               <TileAmount value={cycle.savingsAmount} currency={cycle.baseCurrency} />
-              <span className="text-xs ml-1 text-accent-600 dark:text-accent-300">({cycle.savingsPercent?.toFixed(1)}%)</span>
+              <span className="text-caption ml-1 text-accent-600 dark:text-accent-300">({cycle.savingsPercent?.toFixed(1)}%)</span>
             </span>
           </div>
         )}
 
         {/* Details Grid */}
-        <div className="grid grid-cols-3 gap-2 text-sm mb-4">
+        <div className="grid grid-cols-3 gap-2 text-body-sm mb-4">
           <div className="p-2 bg-neutral-50/50 rounded-lg">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Entries</p>
+            <p className="label">Entries</p>
             <p className="font-semibold text-primary-900 mt-0.5 dark:text-neutral-50">{cycle.entryCount || 0}</p>
           </div>
           <div className="p-2 bg-neutral-50/50 rounded-lg">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Entities</p>
+            <p className="label">Entities</p>
             <p className="font-semibold text-primary-900 mt-0.5 dark:text-neutral-50">{cycle.participantCount || 0}</p>
           </div>
           <div className="p-2 bg-neutral-50/50 rounded-lg">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Period</p>
-            <p className="font-semibold text-primary-900 mt-0.5 text-xs dark:text-neutral-50">{cycle.periodStart?.slice(0, 10)}</p>
+            <p className="label">Period</p>
+            <p className="font-semibold text-primary-900 mt-0.5 text-caption dark:text-neutral-50">{cycle.periodStart?.slice(0, 10)}</p>
           </div>
         </div>
 
@@ -1035,7 +1035,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="text-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800"
+          className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800"
         >
           <option value="all">All Cycles</option>
           <option value="DRAFT">Draft</option>
@@ -1044,7 +1044,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
           <option value="APPROVED">Approved</option>
           <option value="SETTLED">Settled</option>
         </select>
-        <span className="text-sm text-neutral-500 ml-2 dark:text-neutral-400">
+        <span className="body-sm ml-2">
           {filteredCycles.length} cycle{filteredCycles.length !== 1 ? 's' : ''}
         </span>
       </div>

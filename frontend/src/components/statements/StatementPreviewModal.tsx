@@ -258,7 +258,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, label, className }) => {
     <button
       onClick={handleCopy}
       className={cn(
-        'inline-flex items-center gap-1.5 text-xs font-mono text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:text-primary-200 transition-colors group',
+        'inline-flex items-center gap-1.5 text-caption font-mono text-neutral-600 dark:text-neutral-300 hover:text-primary-600 dark:text-primary-200 transition-colors group',
         className
       )}
       title={`Copy ${label || 'value'}`}
@@ -290,14 +290,14 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon, classNa
 
   return (
     <div className={cn('flex items-start justify-between py-1.5', className)}>
-      <span className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5">
+      <span className="caption flex items-center gap-1.5">
         {icon}
         {label}
       </span>
       {copyable && typeof value === 'string' ? (
         <CopyButton value={value} label={label} />
       ) : (
-        <span className="text-xs font-medium text-primary-900 dark:text-neutral-50 text-right max-w-[200px] truncate">
+        <span className="text-caption font-medium text-primary-900 dark:text-neutral-50 text-right max-w-[200px] truncate">
           {value}
         </span>
       )}
@@ -343,7 +343,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
           <div className="w-7 h-7 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
             {icon}
           </div>
-          <h4 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{title}</h4>
+          <h4 className="body-strong font-semibold">{title}</h4>
           {badge}
         </div>
         {collapsible && (
@@ -397,16 +397,16 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ type, amount, currency, date,
   return (
     <div className={cn('rounded-lg border p-3', typeColors[type])}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{typeLabels[type]}</span>
+        <span className="label-cased">{typeLabels[type]}</span>
         <Badge variant="neutral" size="xs">{type}</Badge>
       </div>
       <p className={cn(
-        'text-lg font-bold tabular-nums',
+        'text-body-lg font-bold tabular-nums',
         isDebit ? 'text-error-600 dark:text-error-300' : 'text-primary-900 dark:text-neutral-50'
       )}>
         {isDebit && '-'}{formatCurrency(amount, currency)}
       </p>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-1">{formatDate(date)}</p>
+      <p className="caption mt-1">{formatDate(date)}</p>
     </div>
   );
 };
@@ -432,21 +432,21 @@ const TransactionSummaryCard: React.FC<TransactionSummaryProps> = ({ summary, to
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="text-center p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
           <p className="stat-value-sm">{totalEntries}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Total Entries</p>
+          <p className="caption">Total Entries</p>
         </div>
         <div className="text-center p-3 bg-success-50 rounded-lg dark:bg-success-500/10">
-          <p className="text-lg font-bold text-success-600 dark:text-success-300">+{formatCurrency(summary.totalCredits, summary.currency)}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{summary.creditCount} Credits</p>
+          <p className="text-body-lg font-bold text-success-600 dark:text-success-300">+{formatCurrency(summary.totalCredits, summary.currency)}</p>
+          <p className="caption">{summary.creditCount} Credits</p>
         </div>
         <div className="text-center p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
-          <p className="text-lg font-bold text-error-600 dark:text-error-300">-{formatCurrency(summary.totalDebits, summary.currency)}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{summary.debitCount} Debits</p>
+          <p className="text-body-lg font-bold text-error-600 dark:text-error-300">-{formatCurrency(summary.totalDebits, summary.currency)}</p>
+          <p className="caption">{summary.debitCount} Debits</p>
         </div>
         <div className={cn('text-center p-3 rounded-lg', isNetPositive ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10')}>
-          <p className={cn('text-lg font-bold', isNetPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+          <p className={cn('text-body-lg font-bold', isNetPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
             {isNetPositive ? '+' : ''}{formatCurrency(netAmount, summary.currency)}
           </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Net Amount</p>
+          <p className="caption">Net Amount</p>
         </div>
       </div>
     </SectionCard>
@@ -547,23 +547,23 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         {/* Entry Reference */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">
+            <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">
               {entry.entryReference || entry.reference}
             </p>
             {entry.reversalIndicator && (
               <Badge variant="warning" size="xs">Reversal</Badge>
             )}
           </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 truncate">
             {entry.description || entry.remittanceInfo || '-'}
           </p>
         </div>
 
         {/* Booking Date */}
         <div className="hidden sm:block text-right shrink-0">
-          <p className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(entry.bookingDate)}</p>
+          <p className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(entry.bookingDate)}</p>
           {entry.valueDate !== entry.bookingDate && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Val: {formatDate(entry.valueDate)}</p>
+            <p className="caption">Val: {formatDate(entry.valueDate)}</p>
           )}
         </div>
 
@@ -575,13 +575,13 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         {/* Amount */}
         <div className="text-right shrink-0 min-w-[100px]">
           <p className={cn(
-            'text-sm font-bold tabular-nums',
+            'text-body-sm font-bold tabular-nums',
             isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
           )}>
             {isCredit ? '+' : '-'}{formatCurrency(entry.amount, currency)}
           </p>
           {entry.balanceAfter !== undefined && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+            <p className="caption">
               Bal: {formatCurrency(entry.balanceAfter, currency)}
             </p>
           )}
@@ -594,7 +594,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Transaction References */}
             <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-              <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+              <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                 <Hash className="w-3.5 h-3.5" />
                 Transaction References
               </h5>
@@ -616,7 +616,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Bank Transaction Code */}
             {(entry.bankTransactionCode || details?.bankTransactionCode) && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <CreditCard className="w-3.5 h-3.5" />
                   Bank Transaction Code
                 </h5>
@@ -638,7 +638,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Related Parties - Debtor */}
             {details?.debtor && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5" />
                   Debtor
                 </h5>
@@ -654,7 +654,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Related Parties - Creditor */}
             {details?.creditor && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <User className="w-3.5 h-3.5" />
                   Creditor
                 </h5>
@@ -670,13 +670,13 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Remittance Information */}
             {details?.remittanceInfo && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5" />
                   Remittance Info
                 </h5>
                 <div className="space-y-1">
                   {details.remittanceInfo.unstructured?.map((info, idx) => (
-                    <p key={idx} className="text-xs text-neutral-600 dark:text-neutral-300">{info}</p>
+                    <p key={idx} className="caption">{info}</p>
                   ))}
                   {details.remittanceInfo.structured && (
                     <>
@@ -692,16 +692,16 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Additional Info / Return Info */}
             {(details?.additionalInfo || details?.returnInfo || entry.additionalEntryInfo) && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5" />
                   Additional Info
                 </h5>
                 <div className="space-y-1">
                   {entry.additionalEntryInfo && (
-                    <p className="text-xs text-neutral-600 dark:text-neutral-300">{entry.additionalEntryInfo}</p>
+                    <p className="caption">{entry.additionalEntryInfo}</p>
                   )}
                   {details?.additionalInfo && (
-                    <p className="text-xs text-neutral-600 dark:text-neutral-300">{details.additionalInfo}</p>
+                    <p className="caption">{details.additionalInfo}</p>
                   )}
                   {details?.returnInfo && (
                     <>
@@ -716,13 +716,13 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Charges */}
             {details?.charges && details.charges.length > 0 && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <Banknote className="w-3.5 h-3.5" />
                   Charges
                 </h5>
                 <div className="space-y-1">
                   {details.charges.map((charge, idx) => (
-                    <div key={idx} className="flex justify-between text-xs">
+                    <div key={idx} className="flex justify-between text-caption">
                       <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{charge.bearer || `Charge ${idx + 1}`}</span>
                       <span className="font-medium text-error-600 dark:text-error-300">
                         -{formatCurrency(charge.amount, charge.currency)}
@@ -736,7 +736,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
             {/* Exchange Rate */}
             {details?.exchangeRate && (
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Exchange Rate
                 </h5>
@@ -803,22 +803,22 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">
+                <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">
                   {entry.description || entry.reference}
                 </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-0.5">
+                <p className="caption mt-0.5">
                   {formatDate(entry.bookingDate)}
                 </p>
               </div>
               <div className="text-right shrink-0">
                 <p className={cn(
-                  'text-sm font-bold tabular-nums',
+                  'text-body-sm font-bold tabular-nums',
                   isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
                 )}>
                   {isCredit ? '+' : '-'}{formatCurrency(entry.amount, currency)}
                 </p>
                 {entry.balanceAfter !== undefined && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-0.5">
+                  <p className="caption mt-0.5">
                     Bal: {formatCurrency(entry.balanceAfter, currency)}
                   </p>
                 )}
@@ -830,7 +830,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               {entry.reversalIndicator && (
                 <Badge variant="warning" size="xs">Reversal</Badge>
               )}
-              <span className="text-xs text-neutral-400 dark:text-neutral-500 font-mono truncate">
+              <span className="text-caption text-neutral-400 dark:text-neutral-500 font-mono truncate">
                 {entry.entryReference || entry.reference}
               </span>
               <ChevronDown className={cn(
@@ -849,7 +849,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
             <>
               {/* Transaction References */}
               <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2">References</h5>
+                <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">References</h5>
                 <div className="space-y-1">
                   <InfoRow label="Entry Ref" value={entry.entryReference} copyable />
                   <InfoRow label="End-to-End ID" value={entry.entryDetails.endToEndId} copyable />
@@ -860,7 +860,7 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               {/* Counterparty */}
               {(entry.entryDetails.debtor || entry.entryDetails.creditor) && (
                 <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                  <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2">
+                  <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">
                     {isCredit ? 'Debtor' : 'Creditor'}
                   </h5>
                   <div className="space-y-1">
@@ -882,9 +882,9 @@ const EntryMobileCard: React.FC<EntryMobileCardProps> = ({ entry, currency, inde
               {/* Remittance Info */}
               {entry.entryDetails.remittanceInfo?.unstructured && (
                 <div className="bg-white dark:bg-primary-900 rounded-lg border border-neutral-200 dark:border-primary-800 p-3">
-                  <h5 className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 mb-2">Remittance Info</h5>
+                  <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2">Remittance Info</h5>
                   {entry.entryDetails.remittanceInfo.unstructured.map((info, idx) => (
-                    <p key={idx} className="text-xs text-neutral-600 dark:text-neutral-300">{info}</p>
+                    <p key={idx} className="caption">{info}</p>
                   ))}
                 </div>
               )}
@@ -1051,7 +1051,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
               </h2>
               <Badge variant="info" size="sm">ISO20022</Badge>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+            <p className="body-sm">
               {vaNumber} - {formatDate(fromDate)} to {formatDate(toDate)}
             </p>
           </div>
@@ -1215,7 +1215,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                       key={type}
                       onClick={() => setFilterType(type)}
                       className={cn(
-                        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                        'px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors',
                         filterType === type
                           ? 'bg-white dark:bg-primary-900 shadow-sm text-primary-900 dark:text-neutral-50'
                           : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-900 dark:text-neutral-50 dark:hover:text-neutral-50'
@@ -1233,7 +1233,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                       key={status}
                       onClick={() => setFilterStatus(status)}
                       className={cn(
-                        'px-2 py-1.5 text-xs font-medium rounded-md transition-colors',
+                        'px-2 py-1.5 text-caption font-medium rounded-md transition-colors',
                         filterStatus === status
                           ? 'bg-white dark:bg-primary-900 shadow-sm text-primary-900 dark:text-neutral-50'
                           : 'text-neutral-600 dark:text-neutral-300 hover:text-primary-900 dark:text-neutral-50 dark:hover:text-neutral-50'
@@ -1257,11 +1257,11 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
 
             {/* Entry List Header */}
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50 flex items-center gap-2">
+              <h3 className="body-strong font-semibold flex items-center gap-2">
                 Entry List
                 <Badge variant="neutral" size="sm">{filteredEntries.length} entries</Badge>
               </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+              <p className="caption">
                 Click on any entry to expand details
               </p>
             </div>
@@ -1271,7 +1271,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
               <div className="max-h-[500px] overflow-y-auto">
                 {/* Table Header */}
                 <div className="bg-neutral-50 dark:bg-primary-950 px-4 py-3 border-b border-neutral-200 dark:border-primary-800 sticky top-0 z-10">
-                  <div className="flex items-center gap-4 text-xs font-medium text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 uppercase">
+                  <div className="flex items-center gap-4 text-caption font-medium text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 uppercase">
                     <div className="w-8"></div>
                     <div className="w-9"></div>
                     <div className="flex-1">Entry Reference / Description</div>
@@ -1295,7 +1295,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                   <div className="text-center py-12 text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
                     <FileText className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
                     <p className="font-medium">No entries found</p>
-                    <p className="text-sm">Try adjusting your search or filters</p>
+                    <p className="text-body-sm">Try adjusting your search or filters</p>
                   </div>
                 )}
               </div>
@@ -1325,7 +1325,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+                <p className="body-sm">
                   Showing {currentPage * pageSize + 1} to{' '}
                   {Math.min((currentPage + 1) * pageSize, statement.totalEntries)} of {statement.totalEntries} entries
                 </p>
@@ -1338,7 +1338,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="px-3 text-sm text-neutral-600 dark:text-neutral-300">
+                  <span className="px-3 body-sm">
                     {currentPage + 1} / {totalPages}
                   </span>
                   <Button

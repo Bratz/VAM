@@ -38,10 +38,10 @@ export const EventTimeline: React.FC<EventTimelineProps> = ({ entries, loading =
             {idx < entries.length - 1 && <div className="w-px h-full bg-neutral-200 dark:bg-primary-800 mt-1" />}
           </div>
           <div className="pb-4">
-            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entry.action}</p>
-            {entry.actor && <p className="text-xs text-neutral-500 dark:text-neutral-400">by {entry.actor}</p>}
-            {entry.details && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">{entry.details}</p>}
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
+            <p className="body-strong">{entry.action}</p>
+            {entry.actor && <p className="caption">by {entry.actor}</p>}
+            {entry.details && <p className="caption mt-1">{entry.details}</p>}
+            <p className="caption mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
           </div>
         </div>
       ))}

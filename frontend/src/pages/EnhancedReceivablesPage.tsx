@@ -338,10 +338,10 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
       <div className="space-y-6">
         {/* Selected Receivables Summary */}
         <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-          <h4 className="text-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Selected Receivables ({receivables.length})</h4>
+          <h4 className="text-body-sm font-semibold text-neutral-700 mb-3 dark:text-neutral-200">Selected Receivables ({receivables.length})</h4>
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {receivables.map(r => (
-              <div key={r.id} className="flex justify-between items-center text-sm">
+              <div key={r.id} className="flex justify-between items-center text-body-sm">
                 <div>
                   <span className="font-mono font-medium">{r.invoiceNumber}</span>
                   <span className="text-neutral-500 ml-2 dark:text-neutral-400">{r.customerName}</span>
@@ -352,7 +352,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
           </div>
           <div className="border-t border-neutral-200 mt-3 pt-3 flex justify-between items-center dark:border-primary-800">
             <span className="font-semibold text-neutral-700 dark:text-neutral-200">Total Amount</span>
-            <span className="text-lg font-bold text-cat-1">{formatCurrency(totalAmount, currency)}</span>
+            <span className="text-body-lg font-bold text-cat-1">{formatCurrency(totalAmount, currency)}</span>
           </div>
         </div>
 
@@ -382,7 +382,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
               ))
             )}
           </select>
-          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+          <p className="caption mt-1">
             Treasury will collect on behalf of {receivables[0]?.owningEntityCode || 'subsidiary'}
           </p>
         </div>
@@ -395,7 +395,7 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
             onChange={(e) => setGenerateViban(e.target.checked)}
             className="w-4 h-4 rounded border-neutral-300 text-cat-1 focus:ring-cat-1 dark:border-primary-700"
           />
-          <span className="text-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
+          <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
         </label>
 
         {/* Preview Card */}
@@ -406,19 +406,19 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
           </div>
         ) : preview && (
           <Card className="p-4 bg-gradient-to-br from-cat-1-soft to-info-50 border-cat-1/20 dark:border-cat-1/30 dark:from-cat-1/15 dark:to-info-500/15">
-            <h4 className="text-sm font-semibold text-cat-1 mb-3 flex items-center gap-2">
+            <h4 className="text-body-sm font-semibold text-cat-1 mb-3 flex items-center gap-2">
               <Calculator className="w-4 h-4" />
               COBO Preview
             </h4>
             
             <div className="space-y-3">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-600 dark:text-neutral-300">Collection Amount</span>
                 <span className="font-semibold">{formatCurrency(preview.collectionAmount, preview.currencyCode)}</span>
               </div>
               
               {preview.charges.map((charge, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
+                <div key={idx} className="flex justify-between text-body-sm">
                   <span className="text-neutral-600 dark:text-neutral-300">{charge.name}</span>
                   <span className="text-rose-600 dark:text-rose-300">-{formatCurrency(charge.amount, preview.currencyCode)}</span>
                 </div>
@@ -426,16 +426,16 @@ const CoboRequestModal: React.FC<CoboModalProps> = ({
               
               <div className="border-t border-cat-1/20 pt-2 flex justify-between dark:border-cat-1/30">
                 <span className="font-semibold text-neutral-700 dark:text-neutral-200">Net to Subsidiary</span>
-                <span className="text-lg font-bold text-cat-5">{formatCurrency(preview.netAmount, preview.currencyCode)}</span>
+                <span className="text-body-lg font-bold text-cat-5">{formatCurrency(preview.netAmount, preview.currencyCode)}</span>
               </div>
               
               {preview.ihbDepositPreview && (
                 <div className="mt-3 p-3 bg-white/50 rounded-lg dark:bg-primary-900/50">
-                  <p className="text-xs text-neutral-600 dark:text-neutral-300">
+                  <p className="caption">
                     <strong>IHB Deposit:</strong> {formatCurrency(preview.ihbDepositPreview.depositAmount, preview.currencyCode)} 
                     @ {preview.ihbDepositPreview.interestRate}% p.a.
                   </p>
-                  <p className="text-xs text-cat-5 mt-1">
+                  <p className="text-caption text-cat-5 mt-1">
                     Est. Monthly Interest: {formatCurrency(preview.ihbDepositPreview.estimatedMonthlyInterest, preview.currencyCode)}
                   </p>
                 </div>
@@ -505,10 +505,10 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={titles[action]} size="md">
       <div className="space-y-4">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">{descriptions[action]}</p>
+        <p className="body-sm">{descriptions[action]}</p>
         
         <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice</p>
               <p className="font-mono font-medium">{invoice.invoiceNumber}</p>
@@ -1188,7 +1188,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           <div className="h-1 bg-gradient-to-r from-error-100 via-error-200 to-error-100 rounded-t-xl" />
           <div className="p-4 flex items-center gap-3">
             <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
-            <span className="flex-1 text-sm text-error-700 dark:text-error-300">{error}</span>
+            <span className="flex-1 text-body-sm text-error-700 dark:text-error-300">{error}</span>
             <Button variant="ghost" size="sm" onClick={() => setError(null)} className="text-error-600 hover:bg-error-100 dark:text-error-300 dark:hover:bg-error-500/20">
               <X className="w-4 h-4" />
             </Button>
@@ -1207,7 +1207,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'px-4 py-3 text-sm font-medium border-b-2 transition-all duration-200',
+                  'px-4 py-3 text-body-sm font-medium border-b-2 transition-all duration-200',
                   activeTab === tab.id
                     ? 'border-primary-600 text-primary-600 dark:text-primary-200'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:border-primary-700'
@@ -1215,7 +1215,7 @@ const EnhancedReceivablesPage: React.FC = () => {
               >
                 {tab.label}
                 <span className={cn(
-                  'ml-2 px-2 py-0.5 text-xs rounded-full transition-colors',
+                  'ml-2 px-2 py-0.5 text-caption rounded-full transition-colors',
                   activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                 )}>
                   {tab.count}
@@ -1264,8 +1264,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Invoice',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</span>
+                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="caption">{formatDate(invoice.invoiceDate)}</span>
                         </div>
                       ),
                     },
@@ -1274,10 +1274,10 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Customer',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
-                          <span className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{invoice.customerVaNumber || '-'}</span>
+                          <span className="body-strong">{invoice.customerName}</span>
+                          <span className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{invoice.customerVaNumber || '-'}</span>
                           {invoice.owningEntityCode && (
-                            <span className="text-xs text-primary-600 dark:text-primary-200">Entity: {invoice.owningEntityCode}</span>
+                            <span className="text-caption text-primary-600 dark:text-primary-200">Entity: {invoice.owningEntityCode}</span>
                           )}
                         </div>
                       ),
@@ -1288,15 +1288,15 @@ const EnhancedReceivablesPage: React.FC = () => {
                       align: 'right',
                       render: (_, invoice) => (
                         <div className="flex flex-col items-end">
-                          <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+                          <span className="body-strong font-semibold">
                             {formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}
                           </span>
                           {invoice.paidAmount > 0 && (
-                            <span className="text-xs text-success-600 dark:text-success-300">
+                            <span className="caption-success">
                               Paid: {formatCurrency(invoice.paidAmount, invoice.currencyCode)}
                             </span>
                           )}
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <span className="caption">
                             Due: {formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}
                           </span>
                         </div>
@@ -1310,9 +1310,9 @@ const EnhancedReceivablesPage: React.FC = () => {
                         const daysOverdue = isOverdue ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
                         return (
                           <div className="flex flex-col gap-1">
-                            <span className="text-sm">{formatDate(invoice.dueDate)}</span>
+                            <span className="text-body-sm">{formatDate(invoice.dueDate)}</span>
                             {isOverdue && (
-                              <span className="text-xs text-error-600 font-medium dark:text-error-300">{daysOverdue} days overdue</span>
+                              <span className="text-caption text-error-600 font-medium dark:text-error-300">{daysOverdue} days overdue</span>
                             )}
                           </div>
                         );
@@ -1326,13 +1326,13 @@ const EnhancedReceivablesPage: React.FC = () => {
                           {getStatusBadge(invoice.status)}
                           <div className="flex flex-wrap gap-1 mt-1">
                             {invoice.isIntercompany && (
-                              <Badge variant="info" size="sm" className="text-xs">
+                              <Badge variant="info" size="sm" className="text-caption">
                                 <Building2 className="w-3 h-3 mr-1" />
                                 IC: {invoice.intercompanyEntityCode}
                               </Badge>
                             )}
                             {invoice.nettingEligible && invoice.nettingStatus !== 'NOT_INCLUDED' && (
-                              <Badge variant="info" size="sm" className="text-xs">
+                              <Badge variant="info" size="sm" className="text-caption">
                                 <GitMerge className="w-3 h-3 mr-1" />
                                 {invoice.nettingStatus}
                               </Badge>
@@ -1348,13 +1348,13 @@ const EnhancedReceivablesPage: React.FC = () => {
                         <div className="flex flex-col gap-1">
                           {invoice.assignedViban ? (
                             <div className="flex items-center gap-1">
-                              <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">{invoice.assignedViban.slice(0, 10)}...</span>
+                              <span className="text-caption font-mono text-neutral-600 dark:text-neutral-300">{invoice.assignedViban.slice(0, 10)}...</span>
                               <button onClick={() => navigator.clipboard.writeText(invoice.assignedViban!)} className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300">
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
                           ) : (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500">No VIBAN</span>
+                            <span className="caption">No VIBAN</span>
                           )}
                         </div>
                       ),
@@ -1424,8 +1424,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Invoice',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(invoice.invoiceDate)}</span>
+                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="caption">{formatDate(invoice.invoiceDate)}</span>
                         </div>
                       ),
                     },
@@ -1435,7 +1435,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       render: (_, invoice) => (
                         <div className="flex flex-col">
                           <Badge variant="info" size="sm">{invoice.owningEntityCode || 'Unknown'}</Badge>
-                          <span className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.owningEntityName || ''}</span>
+                          <span className="caption mt-1">{invoice.owningEntityName || ''}</span>
                         </div>
                       ),
                     },
@@ -1448,7 +1448,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                             <Building2 className="w-3 h-3 mr-1" />
                             {invoice.intercompanyEntityCode || 'Unknown'}
                           </Badge>
-                          <span className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{invoice.intercompanyEntityName || ''}</span>
+                          <span className="caption mt-1">{invoice.intercompanyEntityName || ''}</span>
                         </div>
                       ),
                     },
@@ -1457,7 +1457,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Amount',
                       align: 'right',
                       render: (_, invoice) => (
-                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
+                        <span className="body-strong font-semibold">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
                       ),
                     },
                     {
@@ -1504,14 +1504,14 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'invoiceNumber',
                       header: 'Invoice',
                       render: (_, invoice) => (
-                        <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                        <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
                       ),
                     },
                     {
                       key: 'customerName',
                       header: 'Customer',
                       render: (_, invoice) => (
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
+                        <span className="body-strong">{invoice.customerName}</span>
                       ),
                     },
                     {
@@ -1519,7 +1519,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Amount',
                       align: 'right',
                       render: (_, invoice) => (
-                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
+                        <span className="body-strong font-semibold">{formatCurrency(invoice.outstandingAmount, invoice.currencyCode)}</span>
                       ),
                     },
                     {
@@ -1532,7 +1532,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'nettingCycleRef',
                       header: 'Cycle',
                       render: (_, invoice) => (
-                        <span className="text-sm font-mono">{invoice.nettingCycleRef || '-'}</span>
+                        <span className="text-body-sm font-mono">{invoice.nettingCycleRef || '-'}</span>
                       ),
                     },
                     {
@@ -1571,7 +1571,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'VIBAN',
                       render: (_, viban) => (
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
+                          <span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{viban.virtualIban}</span>
                           <button
                             onClick={() => navigator.clipboard.writeText(viban.virtualIban)}
                             className="text-neutral-400 hover:text-neutral-600 transition-colors dark:text-neutral-500 dark:hover:text-neutral-300"
@@ -1584,27 +1584,27 @@ const EnhancedReceivablesPage: React.FC = () => {
                     {
                       key: 'reference',
                       header: 'Reference',
-                      render: (_, viban) => <span className="text-sm font-mono">{viban.reference}</span>,
+                      render: (_, viban) => <span className="text-body-sm font-mono">{viban.reference}</span>,
                     },
                     {
                       key: 'customerName',
                       header: 'Customer',
                       render: (_, viban) => (
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{viban.customerName || '—'}</span>
+                        <span className="body-strong">{viban.customerName || '—'}</span>
                       ),
                     },
                     {
                       key: 'expectedAmount',
                       header: 'Expected',
                       align: 'right',
-                      render: (_, viban) => <span className="text-sm">{formatCurrency(viban.expectedAmount, viban.currency)}</span>,
+                      render: (_, viban) => <span className="text-body-sm">{formatCurrency(viban.expectedAmount, viban.currency)}</span>,
                     },
                     {
                       key: 'receivedAmount',
                       header: 'Received',
                       align: 'right',
                       render: (_, viban) => (
-                        <span className="text-sm font-semibold text-success-600 dark:text-success-300">
+                        <span className="text-body-sm font-semibold text-success-600 dark:text-success-300">
                           {formatCurrency(viban.receivedAmount, viban.currency)}
                         </span>
                       ),
@@ -1626,7 +1626,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'expiresAt',
                       header: 'Expires',
                       render: (_, viban) => (
-                        <span className="text-sm">
+                        <span className="text-body-sm">
                           {viban.expiresAt ? formatDate(viban.expiresAt) : <span className="text-neutral-400 dark:text-neutral-500">No expiry</span>}
                         </span>
                       ),
@@ -1648,8 +1648,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Invoice',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboTransactionRef || '-'}</span>
+                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">{invoice.invoiceNumber}</span>
+                          <span className="caption">{invoice.coboTransactionRef || '-'}</span>
                         </div>
                       ),
                     },
@@ -1657,7 +1657,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'customerName',
                       header: 'Customer',
                       render: (_, invoice) => (
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{invoice.customerName}</span>
+                        <span className="body-strong">{invoice.customerName}</span>
                       ),
                     },
                     {
@@ -1665,7 +1665,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Amount',
                       align: 'right',
                       render: (_, invoice) => (
-                        <span className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}</span>
+                        <span className="body-strong font-semibold">{formatCurrency(invoice.invoiceAmount, invoice.currencyCode)}</span>
                       ),
                     },
                     {
@@ -1673,8 +1673,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Collector',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm">{invoice.coboCollectorEntityCode || '-'}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboCollectorEntityName || ''}</span>
+                          <span className="text-body-sm">{invoice.coboCollectorEntityCode || '-'}</span>
+                          <span className="caption">{invoice.coboCollectorEntityName || ''}</span>
                         </div>
                       ),
                     },
@@ -1683,8 +1683,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'On Behalf',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm">{invoice.owningEntityCode || '-'}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.owningEntityName || ''}</span>
+                          <span className="text-body-sm">{invoice.owningEntityCode || '-'}</span>
+                          <span className="caption">{invoice.owningEntityName || ''}</span>
                         </div>
                       ),
                     },
@@ -1699,8 +1699,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: 'Requested',
                       render: (_, invoice) => (
                         <div className="flex flex-col">
-                          <span className="text-sm">{invoice.coboRequestedAt ? formatDate(invoice.coboRequestedAt) : '-'}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">{invoice.coboRequestedBy || ''}</span>
+                          <span className="text-body-sm">{invoice.coboRequestedAt ? formatDate(invoice.coboRequestedAt) : '-'}</span>
+                          <span className="caption">{invoice.coboRequestedBy || ''}</span>
                         </div>
                       ),
                     },
@@ -1797,7 +1797,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       <Modal isOpen={!!viewInvoice} onClose={() => setViewInvoice(null)} title={viewInvoice?.invoiceNumber || 'Invoice'} size="md">
         {viewInvoice && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Customer</p>
                 <p className="font-medium">{viewInvoice.customerName}</p>
@@ -1851,8 +1851,8 @@ const EnhancedReceivablesPage: React.FC = () => {
             </div>
             {viewInvoice.description && (
               <div>
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">Description</p>
-                <p className="text-sm">{viewInvoice.description}</p>
+                <p className="body-sm">Description</p>
+                <p className="text-body-sm">{viewInvoice.description}</p>
               </div>
             )}
           </div>

@@ -324,12 +324,12 @@ const ConnectorCard: React.FC<{
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-neutral-900 tracking-tight dark:text-neutral-50">{connector.connectorName}</h3>
+                <h3 className="body-strong tracking-tight">{connector.connectorName}</h3>
                 {connector.isBeta && (
-                  <span className="px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">Beta</span>
+                  <span className="px-1.5 py-0.5 label bg-neutral-100 dark:bg-primary-800">Beta</span>
                 )}
               </div>
-              <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{categoryConfig[connector.category].label} · {connector.region || 'Global'}</p>
+              <p className="caption mt-0.5">{categoryConfig[connector.category].label} · {connector.region || 'Global'}</p>
             </div>
           </div>
           {connector.isConnected && (
@@ -338,17 +338,17 @@ const ConnectorCard: React.FC<{
         </div>
 
         {/* Description */}
-        <p className="text-xs text-neutral-600 leading-relaxed mb-4 line-clamp-2 dark:text-neutral-300">{connector.description}</p>
+        <p className="text-caption text-neutral-600 leading-relaxed mb-4 line-clamp-2 dark:text-neutral-300">{connector.description}</p>
 
         {/* Features */}
         <div className="flex flex-wrap gap-1 mb-4">
           {connector.supportedFeatures.slice(0, 3).map((feature, idx) => (
-            <span key={idx} className="px-2 py-0.5 text-xs font-medium bg-neutral-50 text-neutral-600 border border-neutral-100 dark:bg-primary-950 dark:text-neutral-300 dark:border-primary-800/60">
+            <span key={idx} className="px-2 py-0.5 label-cased bg-neutral-50 border border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
               {feature}
             </span>
           ))}
           {connector.supportedFeatures.length > 3 && (
-            <span className="px-2 py-0.5 text-xs font-medium text-neutral-400 dark:text-neutral-500">
+            <span className="px-2 py-0.5 label-cased">
               +{connector.supportedFeatures.length - 3}
             </span>
           )}
@@ -358,7 +358,7 @@ const ConnectorCard: React.FC<{
         {connector.complianceStandards && connector.complianceStandards.length > 0 && (
           <div className="flex gap-1 mb-4">
             {connector.complianceStandards.slice(0, 3).map((std, idx) => (
-              <span key={idx} className="text-xs text-neutral-400 dark:text-neutral-500">{std}</span>
+              <span key={idx} className="caption">{std}</span>
             ))}
           </div>
         )}
@@ -367,7 +367,7 @@ const ConnectorCard: React.FC<{
       {/* Footer */}
       <div className="px-6 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50/50 dark:border-primary-800/60">
         {connector.documentationUrl && (
-          <button className="text-xs text-neutral-500 hover:text-neutral-700 flex items-center gap-1 transition-colors dark:text-neutral-400 dark:hover:text-neutral-200">
+          <button className="caption hover:text-neutral-700 flex items-center gap-1 transition-colors dark:hover:text-neutral-200">
             Documentation <ExternalLink className="w-3 h-3" />
           </button>
         )}
@@ -375,7 +375,7 @@ const ConnectorCard: React.FC<{
           onClick={onSetup}
           disabled={connector.status === 'COMING_SOON'}
           className={cn(
-            "px-4 py-1.5 text-xs font-medium transition-all",
+            "px-4 py-1.5 text-caption font-medium transition-all",
             connector.status === 'COMING_SOON'
               ? "text-neutral-400 cursor-not-allowed dark:text-neutral-500"
               : "text-neutral-900 hover:bg-neutral-900 hover:text-white border border-neutral-900 dark:text-neutral-50"
@@ -419,18 +419,18 @@ const ConnectionCard: React.FC<{
               <IconComponent size={20} className="text-neutral-700 dark:text-neutral-200" />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{connection.connectionName}</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{connection.connectorName}</p>
+              <h3 className="body-strong">{connection.connectionName}</h3>
+              <p className="caption">{connection.connectorName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className={cn(
-              "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
+              "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
               connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
             )}>
               {connection.environment === 'PRODUCTION' ? 'Prod' : 'Sandbox'}
             </span>
-            <span className={cn("px-2 py-0.5 text-xs font-medium uppercase tracking-wide", status.bg, status.text)}>
+            <span className={cn("px-2 py-0.5 text-caption font-medium uppercase tracking-wide", status.bg, status.text)}>
               {status.label}
             </span>
           </div>
@@ -440,23 +440,23 @@ const ConnectionCard: React.FC<{
       {/* Error Message */}
       {connection.errorMessage && (
         <div className="px-5 py-3 bg-error-50 border-b border-error-100 dark:bg-error-500/10 dark:border-error-500/30">
-          <p className="text-xs text-error-700 dark:text-error-300">{connection.errorMessage}</p>
+          <p className="text-caption text-error-700 dark:text-error-300">{connection.errorMessage}</p>
         </div>
       )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-3 divide-x divide-neutral-100 border-b border-neutral-100 dark:divide-primary-800/60 dark:border-primary-800/60">
         <div className="p-4 text-center">
-          <p className="text-lg font-light text-neutral-900 dark:text-neutral-50">{connection.dataFlowCount}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Flows</p>
+          <p className="text-body-lg font-light text-neutral-900 dark:text-neutral-50">{connection.dataFlowCount}</p>
+          <p className="caption">Flows</p>
         </div>
         <div className="p-4 text-center">
-          <p className="text-xs font-medium text-neutral-900 capitalize dark:text-neutral-50">{connection.syncFrequency.toLowerCase().replace('_', ' ')}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Frequency</p>
+          <p className="text-caption font-medium text-neutral-900 capitalize dark:text-neutral-50">{connection.syncFrequency.toLowerCase().replace('_', ' ')}</p>
+          <p className="caption">Frequency</p>
         </div>
         <div className="p-4 text-center">
-          <p className="text-xs font-medium text-neutral-900 dark:text-neutral-50">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Last Sync</p>
+          <p className="text-caption font-medium text-neutral-900 dark:text-neutral-50">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
+          <p className="caption">Last Sync</p>
         </div>
       </div>
 
@@ -480,7 +480,7 @@ const ConnectionCard: React.FC<{
           </button>
           <button
             onClick={onView}
-            className="px-3 py-1.5 text-xs font-medium border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all dark:border-primary-700"
+            className="px-3 py-1.5 text-caption font-medium border border-neutral-300 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white transition-all dark:border-primary-700"
           >
             Manage
           </button>
@@ -542,20 +542,20 @@ const SetupWizardModal: React.FC<{
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Client ID</label>
+            <label className="block label mb-2">Client ID</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
               placeholder="Enter OAuth Client ID"
               value={config.clientId}
               onChange={e => setConfig({ ...config, clientId: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Client Secret</label>
+            <label className="block label mb-2">Client Secret</label>
             <input
               type="password"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
               placeholder="Enter OAuth Client Secret"
               value={config.clientSecret}
               onChange={e => setConfig({ ...config, clientSecret: e.target.value })}
@@ -563,10 +563,10 @@ const SetupWizardModal: React.FC<{
           </div>
           {(connector.connectorCode === 'MS_DYNAMICS_365') && (
             <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Tenant ID</label>
+              <label className="block label mb-2">Tenant ID</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
                 placeholder="Azure AD Tenant ID"
                 value={config.tenantId}
                 onChange={e => setConfig({ ...config, tenantId: e.target.value })}
@@ -581,20 +581,20 @@ const SetupWizardModal: React.FC<{
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">API Key</label>
+            <label className="block label mb-2">API Key</label>
             <input
               type="password"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
               placeholder="Enter API Key"
               value={config.apiKey}
               onChange={e => setConfig({ ...config, apiKey: e.target.value })}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Endpoint URL</label>
+            <label className="block label mb-2">Endpoint URL</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
               placeholder="https://api.example.com"
               value={config.host}
               onChange={e => setConfig({ ...config, host: e.target.value })}
@@ -608,10 +608,10 @@ const SetupWizardModal: React.FC<{
       return (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Host</label>
+            <label className="block label mb-2">Host</label>
             <input
               type="text"
-              className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+              className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
               placeholder="sftp.example.com"
               value={config.host}
               onChange={e => setConfig({ ...config, host: e.target.value })}
@@ -619,20 +619,20 @@ const SetupWizardModal: React.FC<{
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Port</label>
+              <label className="block label mb-2">Port</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
                 placeholder="22"
                 value={config.port}
                 onChange={e => setConfig({ ...config, port: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Username</label>
+              <label className="block label mb-2">Username</label>
               <input
                 type="text"
-                className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
                 placeholder="sftp_user"
                 value={config.username}
                 onChange={e => setConfig({ ...config, username: e.target.value })}
@@ -640,9 +640,9 @@ const SetupWizardModal: React.FC<{
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Private Key</label>
+            <label className="block label mb-2">Private Key</label>
             <textarea
-              className="w-full h-24 px-3 py-2.5 border border-neutral-300 text-sm font-mono focus:border-neutral-900 focus:outline-none transition-colors resize-none dark:border-primary-700"
+              className="w-full h-24 px-3 py-2.5 border border-neutral-300 text-body-sm font-mono focus:border-neutral-900 focus:outline-none transition-colors resize-none dark:border-primary-700"
               placeholder="-----BEGIN RSA PRIVATE KEY-----"
               value={config.privateKey}
               onChange={e => setConfig({ ...config, privateKey: e.target.value })}
@@ -660,18 +660,18 @@ const SetupWizardModal: React.FC<{
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-neutral-600 mt-0.5 dark:text-neutral-300" />
               <div>
-                <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Bank Authorization Required</p>
-                <p className="text-xs text-neutral-600 mt-1 dark:text-neutral-300">
+                <p className="body-strong">Bank Authorization Required</p>
+                <p className="caption mt-1">
                   You will be redirected to your bank to authorize access. This uses {connector.authType.replace('_', ' ')} authentication.
                 </p>
               </div>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">TPP Certificate</label>
+            <label className="block label mb-2">TPP Certificate</label>
             <div className="border border-dashed border-neutral-300 p-6 text-center dark:border-primary-700">
               <Upload className="w-6 h-6 text-neutral-400 mx-auto mb-2 dark:text-neutral-500" />
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">Drop certificate file or click to upload</p>
+              <p className="caption">Drop certificate file or click to upload</p>
             </div>
           </div>
         </div>
@@ -682,20 +682,20 @@ const SetupWizardModal: React.FC<{
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Username</label>
+          <label className="block label mb-2">Username</label>
           <input
             type="text"
-            className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+            className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
             placeholder="Enter username"
             value={config.username}
             onChange={e => setConfig({ ...config, username: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Password</label>
+          <label className="block label mb-2">Password</label>
           <input
             type="password"
-            className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+            className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
             placeholder="Enter password"
             value={config.clientSecret}
             onChange={e => setConfig({ ...config, clientSecret: e.target.value })}
@@ -715,8 +715,8 @@ const SetupWizardModal: React.FC<{
               <IconComponent size={24} className="text-neutral-700 dark:text-neutral-200" />
             </div>
             <div>
-              <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-50">Connect {connector.connectorName}</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">{categoryConfig[connector.category].label} Integration</p>
+              <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">Connect {connector.connectorName}</h2>
+              <p className="body-sm">{categoryConfig[connector.category].label} Integration</p>
             </div>
           </div>
         </div>
@@ -726,7 +726,7 @@ const SetupWizardModal: React.FC<{
           {['Details', 'Credentials', 'Settings', 'Verify'].map((label, idx) => (
             <React.Fragment key={idx}>
               <div className={cn(
-                "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
                 step > idx + 1 && "bg-neutral-100 text-neutral-900 dark:bg-primary-800 dark:text-neutral-50",
                 step < idx + 1 && "text-neutral-400 dark:text-neutral-500"
@@ -744,17 +744,17 @@ const SetupWizardModal: React.FC<{
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-2 uppercase tracking-wide dark:text-neutral-300">Connection Name</label>
+                <label className="block label mb-2">Connection Name</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                  className="w-full px-3 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
                   placeholder={`My ${connector.shortName} Connection`}
                   value={config.name}
                   onChange={e => setConfig({ ...config, name: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-3 uppercase tracking-wide dark:text-neutral-300">Environment</label>
+                <label className="block label mb-3">Environment</label>
                 <div className="grid grid-cols-2 gap-3">
                   {['SANDBOX', 'PRODUCTION'].map(env => (
                     <button
@@ -767,8 +767,8 @@ const SetupWizardModal: React.FC<{
                           : "border-neutral-200 hover:border-neutral-400 dark:border-primary-800"
                       )}
                     >
-                      <p className="text-sm font-medium">{env === 'SANDBOX' ? 'Sandbox' : 'Production'}</p>
-                      <p className={cn("text-xs mt-1", config.environment === env ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>
+                      <p className="text-body-sm font-medium">{env === 'SANDBOX' ? 'Sandbox' : 'Production'}</p>
+                      <p className={cn("text-caption mt-1", config.environment === env ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>
                         {env === 'SANDBOX' ? 'For testing and development' : 'Live production data'}
                       </p>
                     </button>
@@ -781,7 +781,7 @@ const SetupWizardModal: React.FC<{
           {step === 2 && (
             <div className="space-y-6">
               <div className="p-4 bg-neutral-50 border border-neutral-200 mb-6 dark:bg-primary-950 dark:border-primary-800">
-                <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-300">
+                <div className="flex items-center gap-2 caption">
                   <Shield className="w-4 h-4" />
                   <span>Credentials are encrypted using AES-256 and stored securely</span>
                 </div>
@@ -793,7 +793,7 @@ const SetupWizardModal: React.FC<{
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-medium text-neutral-600 mb-3 uppercase tracking-wide dark:text-neutral-300">Sync Frequency</label>
+                <label className="block label mb-3">Sync Frequency</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { value: 'REAL_TIME', label: 'Real-Time', desc: 'Instant sync' },
@@ -811,19 +811,19 @@ const SetupWizardModal: React.FC<{
                           : "border-neutral-200 hover:border-neutral-400 dark:border-primary-800"
                       )}
                     >
-                      <p className="text-sm font-medium">{freq.label}</p>
-                      <p className={cn("text-xs", config.syncFrequency === freq.value ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>{freq.desc}</p>
+                      <p className="text-body-sm font-medium">{freq.label}</p>
+                      <p className={cn("text-caption", config.syncFrequency === freq.value ? "text-neutral-300 dark:text-neutral-600" : "text-neutral-500 dark:text-neutral-400")}>{freq.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
               <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-                <p className="text-xs font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Default Data Flows</p>
+                <p className="text-caption font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Default Data Flows</p>
                 <div className="space-y-2">
                   {connector.supportedFeatures.slice(0, 4).map((feature, idx) => (
                     <div key={idx} className="flex items-center justify-between py-1.5">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-300">{feature}</span>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500">Enabled</span>
+                      <span className="body-sm">{feature}</span>
+                      <span className="caption">Enabled</span>
                     </div>
                   ))}
                 </div>
@@ -834,21 +834,21 @@ const SetupWizardModal: React.FC<{
           {step === 4 && (
             <div className="space-y-6">
               <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-body-sm">
                   <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Name</p>
+                    <p className="label">Name</p>
                     <p className="font-medium text-neutral-900 mt-1 dark:text-neutral-50">{config.name || `My ${connector.shortName}`}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Environment</p>
+                    <p className="label">Environment</p>
                     <p className="font-medium text-neutral-900 mt-1 dark:text-neutral-50">{config.environment}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Auth Type</p>
+                    <p className="label">Auth Type</p>
                     <p className="font-medium text-neutral-900 mt-1 dark:text-neutral-50">{connector.authType.replace('_', ' ')}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Sync</p>
+                    <p className="label">Sync</p>
                     <p className="font-medium text-neutral-900 mt-1 dark:text-neutral-50">{config.syncFrequency.replace('_', ' ')}</p>
                   </div>
                 </div>
@@ -858,7 +858,7 @@ const SetupWizardModal: React.FC<{
                 {!testing && !testResult && (
                   <button
                     onClick={testConnection}
-                    className="px-6 py-2.5 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors"
+                    className="px-6 py-2.5 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors"
                   >
                     Test Connection
                   </button>
@@ -866,7 +866,7 @@ const SetupWizardModal: React.FC<{
                 {testing && (
                   <div>
                     <Loader2 className="w-8 h-8 text-neutral-400 animate-spin mx-auto mb-3 dark:text-neutral-500" />
-                    <p className="text-sm text-neutral-600 dark:text-neutral-300">Testing connection...</p>
+                    <p className="body-sm">Testing connection...</p>
                   </div>
                 )}
                 {testResult === 'success' && (
@@ -874,8 +874,8 @@ const SetupWizardModal: React.FC<{
                     <div className="w-12 h-12 bg-neutral-900 flex items-center justify-center mx-auto mb-3">
                       <Check className="w-6 h-6 text-white" />
                     </div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Connection Successful</p>
-                    <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Ready to sync data</p>
+                    <p className="body-strong">Connection Successful</p>
+                    <p className="caption mt-1">Ready to sync data</p>
                   </div>
                 )}
                 {testResult === 'error' && (
@@ -883,9 +883,9 @@ const SetupWizardModal: React.FC<{
                     <div className="w-12 h-12 bg-error-600 flex items-center justify-center mx-auto mb-3">
                       <X className="w-6 h-6 text-white" />
                     </div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Connection Failed</p>
-                    <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Please check credentials and try again</p>
-                    <button onClick={testConnection} className="mt-4 text-xs text-neutral-600 hover:text-neutral-900 underline dark:text-neutral-300 dark:hover:text-neutral-50">
+                    <p className="body-strong">Connection Failed</p>
+                    <p className="caption mt-1">Please check credentials and try again</p>
+                    <button onClick={testConnection} className="mt-4 caption hover:text-neutral-900 underline dark:hover:text-neutral-50">
                       Retry
                     </button>
                   </div>
@@ -899,14 +899,14 @@ const SetupWizardModal: React.FC<{
         <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
           <button
             onClick={step === 1 ? onClose : () => setStep(step - 1)}
-            className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors dark:text-neutral-300 dark:hover:text-neutral-50"
+            className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50"
           >
             {step === 1 ? 'Cancel' : 'Back'}
           </button>
           {step < 4 ? (
             <button
               onClick={() => setStep(step + 1)}
-              className="px-6 py-2 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors"
+              className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors"
             >
               Continue
             </button>
@@ -914,7 +914,7 @@ const SetupWizardModal: React.FC<{
             <button
               onClick={handleComplete}
               disabled={testResult !== 'success'}
-              className="px-6 py-2 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Complete Setup
             </button>
@@ -950,16 +950,16 @@ const ConnectionDetailModal: React.FC<{
             <IconComponent size={24} className="text-neutral-700 dark:text-neutral-200" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-50">{connection.connectionName}</h2>
+            <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">{connection.connectionName}</h2>
             <div className="flex items-center gap-2 mt-1">
               <span className={cn(
-                "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
+                "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
                 connection.environment === 'PRODUCTION' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
               )}>
                 {connection.environment}
               </span>
               <span className={cn(
-                "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
+                "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
                 connection.status === 'CONNECTED' ? 'bg-neutral-900 text-white' : 'bg-error-600 text-white'
               )}>
                 {connection.status}
@@ -968,8 +968,8 @@ const ConnectionDetailModal: React.FC<{
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Last Sync</p>
-          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
+          <p className="caption">Last Sync</p>
+          <p className="body-strong">{connection.lastSyncAt ? formatRelativeTime(connection.lastSyncAt) : '—'}</p>
         </div>
       </div>
 
@@ -984,7 +984,7 @@ const ConnectionDetailModal: React.FC<{
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={cn(
-              "pb-3 text-sm font-medium transition-colors border-b-2 -mb-px",
+              "pb-3 text-body-sm font-medium transition-colors border-b-2 -mb-px",
               activeTab === tab.id
                 ? "border-neutral-900 text-neutral-900 dark:text-neutral-50"
                 : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -992,7 +992,7 @@ const ConnectionDetailModal: React.FC<{
           >
             {tab.label}
             {tab.count !== undefined && (
-              <span className="ml-2 px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">{tab.count}</span>
+              <span className="ml-2 px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">{tab.count}</span>
             )}
           </button>
         ))}
@@ -1010,8 +1010,8 @@ const ConnectionDetailModal: React.FC<{
                 { label: 'Created By', value: connection.createdBy },
               ].map((item, idx) => (
                 <div key={idx} className="p-4 bg-neutral-50 border border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.label}</p>
-                  <p className="text-sm font-medium text-neutral-900 mt-1 capitalize dark:text-neutral-50">{item.value}</p>
+                  <p className="caption">{item.label}</p>
+                  <p className="body-strong mt-1 capitalize">{item.value}</p>
                 </div>
               ))}
             </div>
@@ -1021,9 +1021,9 @@ const ConnectionDetailModal: React.FC<{
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
                   <div>
-                    <p className="text-sm font-medium text-error-800 dark:text-error-300">Connection Error</p>
-                    <p className="text-sm text-error-700 mt-1 dark:text-error-300">{connection.errorMessage}</p>
-                    <button className="mt-3 px-3 py-1.5 text-xs font-medium border border-error-300 text-error-700 hover:bg-error-100 transition-colors dark:text-error-300 dark:hover:bg-error-500/20">
+                    <p className="text-body-sm font-medium text-error-800 dark:text-error-300">Connection Error</p>
+                    <p className="text-body-sm text-error-700 mt-1 dark:text-error-300">{connection.errorMessage}</p>
+                    <button className="mt-3 px-3 py-1.5 text-caption font-medium border border-error-300 text-error-700 hover:bg-error-100 transition-colors dark:text-error-300 dark:hover:bg-error-500/20">
                       Re-authenticate
                     </button>
                   </div>
@@ -1033,22 +1033,22 @@ const ConnectionDetailModal: React.FC<{
 
             {connection.consentInfo && (
               <div className="p-4 bg-neutral-50 border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-                <p className="text-xs font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Open Banking Consent</p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <p className="text-caption font-medium text-neutral-700 uppercase tracking-wide mb-3 dark:text-neutral-200">Open Banking Consent</p>
+                <div className="grid grid-cols-2 gap-4 text-body-sm">
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Bank</p>
+                    <p className="caption">Bank</p>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{connection.consentInfo.aspspName}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Status</p>
+                    <p className="caption">Status</p>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{connection.consentInfo.consentStatus}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Expires</p>
+                    <p className="caption">Expires</p>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatRelativeTime(connection.consentInfo.consentExpiresAt)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Permissions</p>
+                    <p className="caption">Permissions</p>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{connection.consentInfo.permissions.join(', ')}</p>
                   </div>
                 </div>
@@ -1056,13 +1056,13 @@ const ConnectionDetailModal: React.FC<{
             )}
 
             <div className="flex gap-2">
-              <button className="px-4 py-2 text-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
                 <RefreshCw className="w-4 h-4" /> Sync Now
               </button>
-              <button className="px-4 py-2 text-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
                 <Settings className="w-4 h-4" /> Settings
               </button>
-              <button className="px-4 py-2 text-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+              <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
                 <Key className="w-4 h-4" /> Credentials
               </button>
             </div>
@@ -1084,17 +1084,17 @@ const ConnectionDetailModal: React.FC<{
                        <ArrowLeftRight className="w-4 h-4" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{flow.flowName}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{flow.sourceEntity} → {flow.targetEntity}</p>
+                      <p className="body-strong">{flow.flowName}</p>
+                      <p className="caption">{flow.sourceEntity} → {flow.targetEntity}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{flow.recordsProcessed?.toLocaleString() || 0}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Records</p>
+                      <p className="body-strong">{flow.recordsProcessed?.toLocaleString() || 0}</p>
+                      <p className="caption">Records</p>
                     </div>
                     <span className={cn(
-                      "px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
+                      "px-2 py-0.5 text-caption font-medium uppercase tracking-wide",
                       flow.status === 'ACTIVE' ? 'bg-neutral-900 text-white' : flow.status === 'PAUSED' ? 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-error-600 text-white'
                     )}>
                       {flow.status}
@@ -1111,7 +1111,7 @@ const ConnectionDetailModal: React.FC<{
                 </div>
               </div>
             ))}
-            <button className="w-full p-4 border border-dashed border-neutral-300 text-sm text-neutral-500 hover:border-neutral-900 hover:text-neutral-900 transition-colors flex items-center justify-center gap-2 dark:border-primary-700 dark:text-neutral-400 dark:hover:text-neutral-50">
+            <button className="w-full p-4 border border-dashed border-neutral-300 body-sm hover:border-neutral-900 hover:text-neutral-900 transition-colors flex items-center justify-center gap-2 dark:border-primary-700 dark:hover:text-neutral-50">
               <Plus className="w-4 h-4" /> Add Data Flow
             </button>
           </div>
@@ -1132,23 +1132,23 @@ const ConnectionDetailModal: React.FC<{
               <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
                 {connectionLogs.map(log => (
                   <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                    <td className="py-3 text-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</td>
+                    <td className="py-3 text-body-sm text-neutral-900 dark:text-neutral-50">{log.flowName}</td>
                     <td className="py-3">
                       <span className={cn(
-                        "px-2 py-0.5 text-xs font-medium uppercase",
+                        "px-2 py-0.5 text-caption font-medium uppercase",
                         log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction}
                       </span>
                     </td>
-                    <td className="py-3 text-sm text-neutral-600 dark:text-neutral-300">{formatRelativeTime(log.startTime)}</td>
+                    <td className="py-3 body-sm">{formatRelativeTime(log.startTime)}</td>
                     <td className="py-3 text-right">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{log.recordsProcessed.toLocaleString()}</p>
-                      {log.recordsFailed > 0 && <p className="text-xs text-error-600 dark:text-error-300">{log.recordsFailed} failed</p>}
+                      <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
+                      {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
                     </td>
                     <td className="py-3 text-center">
                       <span className={cn(
-                        "px-2 py-0.5 text-xs font-medium uppercase",
+                        "px-2 py-0.5 text-caption font-medium uppercase",
                         log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
                         log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
                         log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
@@ -1166,7 +1166,7 @@ const ConnectionDetailModal: React.FC<{
 
       {/* Footer */}
       <div className="flex justify-end pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
-        <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors dark:text-neutral-300 dark:hover:text-neutral-50">
+        <button onClick={onClose} className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
           Close
         </button>
       </div>
@@ -1198,12 +1198,12 @@ const FieldMappingModal: React.FC<{
     <Modal isOpen={!!flow} onClose={onClose} title="" size="xl">
       {/* Header */}
       <div className="pb-6 border-b border-neutral-200 mb-6 dark:border-primary-800">
-        <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-50">Field Mapping</h2>
-        <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">{flow.flowName}</p>
+        <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">Field Mapping</h2>
+        <p className="body-sm mt-1">{flow.flowName}</p>
         <div className="flex items-center gap-2 mt-3">
-          <span className="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200">{flow.sourceEntity}</span>
+          <span className="px-2 py-1 text-caption bg-neutral-100 text-neutral-700 dark:bg-primary-800 dark:text-neutral-200">{flow.sourceEntity}</span>
           <ArrowRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-          <span className="px-2 py-1 text-xs bg-neutral-900 text-white">{flow.targetEntity}</span>
+          <span className="px-2 py-1 text-caption bg-neutral-900 text-white">{flow.targetEntity}</span>
         </div>
       </div>
 
@@ -1212,11 +1212,11 @@ const FieldMappingModal: React.FC<{
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-50 border-b border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 w-1/4 dark:text-neutral-300">Source</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-600 w-12 dark:text-neutral-300"></th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 w-1/4 dark:text-neutral-300">Target</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-600 dark:text-neutral-300">Transform</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-600 w-20 dark:text-neutral-300">Required</th>
+              <th className="px-4 py-3 text-left label-cased w-1/4">Source</th>
+              <th className="px-4 py-3 text-center label-cased w-12"></th>
+              <th className="px-4 py-3 text-left label-cased w-1/4">Target</th>
+              <th className="px-4 py-3 text-left label-cased">Transform</th>
+              <th className="px-4 py-3 text-center label-cased w-20">Required</th>
               <th className="px-4 py-3 text-center w-12"></th>
             </tr>
           </thead>
@@ -1228,7 +1228,7 @@ const FieldMappingModal: React.FC<{
                     type="text"
                     value={mapping.sourceField}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, sourceField: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
+                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
                     placeholder="Source field"
                   />
                 </td>
@@ -1240,7 +1240,7 @@ const FieldMappingModal: React.FC<{
                     type="text"
                     value={mapping.targetField}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, targetField: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
+                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm font-mono focus:border-neutral-900 focus:outline-none dark:border-primary-800"
                     placeholder="Target field"
                   />
                 </td>
@@ -1248,7 +1248,7 @@ const FieldMappingModal: React.FC<{
                   <select
                     value={mapping.transformation || 'direct'}
                     onChange={e => setMappings(mappings.map(m => m.id === mapping.id ? { ...m, transformation: e.target.value } : m))}
-                    className="w-full px-2 py-1.5 border border-neutral-200 text-sm focus:border-neutral-900 focus:outline-none bg-white dark:border-primary-800 dark:bg-primary-900"
+                    className="w-full px-2 py-1.5 border border-neutral-200 text-body-sm focus:border-neutral-900 focus:outline-none bg-white dark:border-primary-800 dark:bg-primary-900"
                   >
                     <option value="direct">Direct</option>
                     <option value="trim">Trim</option>
@@ -1278,20 +1278,20 @@ const FieldMappingModal: React.FC<{
         </table>
       </div>
 
-      <button onClick={addMapping} className="text-sm text-neutral-600 hover:text-neutral-900 flex items-center gap-1 transition-colors dark:text-neutral-300 dark:hover:text-neutral-50">
+      <button onClick={addMapping} className="body-sm hover:text-neutral-900 flex items-center gap-1 transition-colors dark:hover:text-neutral-50">
         <Plus className="w-4 h-4" /> Add Mapping
       </button>
 
       {/* Footer */}
       <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
-        <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors dark:text-neutral-300 dark:hover:text-neutral-50">
+        <button onClick={onClose} className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors dark:hover:text-neutral-50">
           Cancel
         </button>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors dark:border-primary-700">
+          <button className="px-4 py-2 text-body-sm font-medium border border-neutral-300 hover:border-neutral-900 transition-colors dark:border-primary-700">
             Test Mapping
           </button>
-          <button onClick={onClose} className="px-6 py-2 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors">
+          <button onClick={onClose} className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors">
             Save
           </button>
         </div>
@@ -1368,12 +1368,12 @@ const IntegrationsPage: React.FC = () => {
             description="Connect ERP, treasury, and banking systems"
             actions={
               <>
-                <button className="px-4 py-2 text-sm border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
+                <button className="px-4 py-2 text-body-sm border border-neutral-300 hover:border-neutral-900 transition-colors flex items-center gap-2 dark:border-primary-700">
                   <FileText className="w-4 h-4" /> API Docs
                 </button>
                 <button
                   onClick={() => setActiveTab('connectors')}
-                  className="px-4 py-2 text-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-body-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Add Connection
                 </button>
@@ -1391,8 +1391,8 @@ const IntegrationsPage: React.FC = () => {
               { label: 'Connectors', value: mockStats.availableConnectors, sub: 'available' },
             ].map((stat, idx) => (
               <div key={idx} className="text-center">
-                <p className={cn("text-3xl font-light", stat.alert ? 'text-error-600 dark:text-error-300' : 'text-neutral-900 dark:text-neutral-50')}>{stat.value}</p>
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{stat.label}</p>
+                <p className={cn("text-heading-lg font-light", stat.alert ? 'text-error-600 dark:text-error-300' : 'text-neutral-900 dark:text-neutral-50')}>{stat.value}</p>
+                <p className="caption mt-1">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -1412,14 +1412,14 @@ const IntegrationsPage: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={cn(
-                  "py-4 text-sm font-medium border-b-2 -mb-px transition-colors",
+                  "py-4 text-body-sm font-medium border-b-2 -mb-px transition-colors",
                   activeTab === tab.id
                     ? "border-neutral-900 text-neutral-900 dark:text-neutral-50"
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
                 )}
               >
                 {tab.label}
-                <span className="ml-2 text-xs text-neutral-400 dark:text-neutral-500">{tab.count}</span>
+                <span className="ml-2 caption">{tab.count}</span>
               </button>
             ))}
           </div>
@@ -1443,10 +1443,10 @@ const IntegrationsPage: React.FC = () => {
             {connections.length === 0 && (
               <div className="col-span-2 text-center py-16 border border-dashed border-neutral-300 dark:border-primary-700">
                 <Link2 className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">No connections configured</p>
+                <p className="body-sm">No connections configured</p>
                 <button
                   onClick={() => setActiveTab('connectors')}
-                  className="mt-4 px-4 py-2 text-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+                  className="mt-4 px-4 py-2 text-body-sm bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
                 >
                   Browse Connectors
                 </button>
@@ -1466,7 +1466,7 @@ const IntegrationsPage: React.FC = () => {
                     key={cat}
                     onClick={() => setFilterCategory(cat)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-medium transition-all",
+                      "px-3 py-1.5 text-caption font-medium transition-all",
                       filterCategory === cat
                         ? "bg-neutral-900 text-white"
                         : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50"
@@ -1483,7 +1483,7 @@ const IntegrationsPage: React.FC = () => {
                   placeholder="Search connectors..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 py-2 w-64 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
+                  className="pl-9 pr-4 py-2 w-64 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none transition-colors dark:border-primary-700"
                 />
               </div>
             </div>
@@ -1500,7 +1500,7 @@ const IntegrationsPage: React.FC = () => {
 
             {filteredConnectors.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">No connectors match your filters</p>
+                <p className="body-sm">No connectors match your filters</p>
               </div>
             )}
           </>
@@ -1524,25 +1524,25 @@ const IntegrationsPage: React.FC = () => {
               <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
                 {mockSyncLogs.map(log => (
                   <tr key={log.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-                    <td className="px-6 py-4 text-sm font-medium text-neutral-900 dark:text-neutral-50">{log.connectionName}</td>
-                    <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">{log.flowName}</td>
+                    <td className="px-6 py-4 body-strong">{log.connectionName}</td>
+                    <td className="px-6 py-4 body-sm">{log.flowName}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium uppercase",
+                        "inline-flex items-center gap-1 px-2 py-0.5 text-caption font-medium uppercase",
                         log.direction === 'INBOUND' ? 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300' : 'bg-neutral-900 text-white'
                       )}>
                         {log.direction === 'INBOUND' ? <Download className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
                         {log.direction}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-300">{formatRelativeTime(log.startTime)}</td>
+                    <td className="px-6 py-4 body-sm">{formatRelativeTime(log.startTime)}</td>
                     <td className="px-6 py-4 text-right">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{log.recordsProcessed.toLocaleString()}</p>
-                      {log.recordsFailed > 0 && <p className="text-xs text-error-600 dark:text-error-300">{log.recordsFailed} failed</p>}
+                      <p className="body-strong">{log.recordsProcessed.toLocaleString()}</p>
+                      {log.recordsFailed > 0 && <p className="caption-error">{log.recordsFailed} failed</p>}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={cn(
-                        "px-2 py-0.5 text-xs font-medium uppercase",
+                        "px-2 py-0.5 text-caption font-medium uppercase",
                         log.status === 'SUCCESS' ? 'bg-neutral-900 text-white' :
                         log.status === 'PARTIAL' ? 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-300' :
                         log.status === 'RUNNING' ? 'bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300' : 'bg-error-600 text-white'
@@ -1552,7 +1552,7 @@ const IntegrationsPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       {log.errorMessage && (
-                        <p className="text-xs text-error-600 truncate max-w-48 dark:text-error-300" title={log.errorMessage}>{log.errorMessage}</p>
+                        <p className="text-caption text-error-600 truncate max-w-48 dark:text-error-300" title={log.errorMessage}>{log.errorMessage}</p>
                       )}
                     </td>
                   </tr>

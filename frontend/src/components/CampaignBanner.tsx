@@ -63,11 +63,11 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
       >
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <Badge variant="accent" size="xs">{campaign.tag}</Badge>
-          <span className="text-xs text-primary-900 dark:text-neutral-100">{campaign.headline}</span>
+          <span className="text-caption text-primary-900 dark:text-neutral-100">{campaign.headline}</span>
           <button
             type="button"
             onClick={onCtaClick}
-            className="text-xs font-semibold text-accent-700 hover:underline dark:text-accent-400 shrink-0"
+            className="text-caption font-semibold text-accent-700 hover:underline dark:text-accent-400 shrink-0"
           >
             {campaign.ctaLabel}
           </button>
@@ -97,10 +97,10 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
       <div className="flex items-start gap-3 min-w-0">
         <Badge variant="accent" size="sm" className="mt-0.5 shrink-0">{campaign.tag}</Badge>
         <div className="min-w-0">
-          <p className="text-sm font-semibold leading-snug">{campaign.headline}</p>
+          <p className="text-body-sm font-semibold leading-snug">{campaign.headline}</p>
           {/* text-neutral-200, not text-white/70 — see the dismissButton
               comment above for the contrast reasoning. */}
-          <p className="text-[13px] text-neutral-200 leading-snug mt-0.5">{campaign.body}</p>
+          <p className="text-body-sm text-neutral-200 leading-snug mt-0.5">{campaign.body}</p>
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
@@ -110,7 +110,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
         <button
           type="button"
           onClick={onDismiss}
-          className="text-sm text-neutral-200 hover:text-white transition-colors shrink-0 whitespace-nowrap"
+          className="text-body-sm text-neutral-200 hover:text-white transition-colors shrink-0 whitespace-nowrap"
         >
           Not now
         </button>

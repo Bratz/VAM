@@ -127,7 +127,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
 
       {/* Selected Count */}
       {selectedAccounts.length > 0 && (
-        <div className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-200 bg-primary-50 dark:bg-primary-800/40 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-body-sm text-primary-600 dark:text-primary-200 bg-primary-50 dark:bg-primary-800/40 rounded-lg px-3 py-2">
           <Check className="w-4 h-4" />
           <span>{selectedAccounts.length} account(s) selected</span>
         </div>
@@ -136,7 +136,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
       {/* Account List */}
       <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
         {filteredAccounts.length === 0 ? (
-          <div className="text-center py-6 text-neutral-500 dark:text-neutral-400 text-sm">
+          <div className="text-center py-6 body-sm">
             <Building2 className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
             No {currency} accounts available
           </div>
@@ -168,13 +168,13 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{displayName}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{displayNumber}</p>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{displayNumber}</p>
                   {entityInfo && entityInfo !== displayName && (
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">{entityInfo}</p>
+                    <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{entityInfo}</p>
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                  <p className="body-strong">
                     {formatCompactCurrency(account.availableBalance || 0, currency)}
                   </p>
                   <Badge variant={account.status === 'ACTIVE' ? 'success' : 'warning'} size="sm">

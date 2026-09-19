@@ -132,7 +132,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
         {/* LEFT PANEL: Template List */}
         {/* ─────────────────────────────────────────────────────────────────── */}
         <div className="w-1/2 overflow-y-auto pr-4 border-r border-neutral-200 dark:border-primary-800">
-          <p className="text-sm text-neutral-600 mb-4 dark:text-neutral-300">
+          <p className="body-sm mb-4">
             Select a hierarchy template for{' '}
             <strong>{program.programName}</strong> ({program.programType})
           </p>
@@ -140,7 +140,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
           {/* Recommended Templates */}
           {relevantTemplates.length > 0 && (
             <>
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">
+              <h3 className="label mb-2">
                 Recommended for {program.programType}
               </h3>
               <div className="space-y-2 mb-6">
@@ -179,10 +179,10 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                          <p className="caption mt-1">
                             {template.description}
                           </p>
-                          <p className="text-xs text-neutral-400 mt-1">
+                          <p className="caption mt-1">
                             {template.levels.length} hierarchy levels
                           </p>
                         </div>
@@ -197,7 +197,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
           {/* Other Templates */}
           {otherTemplates.length > 0 && (
             <>
-              <h3 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">
+              <h3 className="label mb-2">
                 Other Templates
               </h3>
               <div className="space-y-2">
@@ -226,10 +226,10 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                           <Icon className={cn('w-4 h-4', template.color)} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                          <span className="body-strong">
                             {template.name}
                           </span>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <p className="caption">
                             {template.levels.length} levels •{' '}
                             {template.forProgramTypes.join(', ')}
                           </p>
@@ -265,7 +265,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                   <h3 className="font-semibold text-primary-900 dark:text-neutral-50">
                     {previewTemplate.name}
                   </h3>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <p className="body-sm">
                     {previewTemplate.levels.length} hierarchy levels
                   </p>
                 </div>
@@ -273,7 +273,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
 
               {/* Hierarchy Structure */}
               <div className="bg-neutral-50 rounded-lg p-4 mb-4 dark:bg-primary-950">
-                <h4 className="text-sm font-medium text-primary-900 mb-3 dark:text-neutral-50">
+                <h4 className="body-strong mb-3">
                   Hierarchy Structure
                 </h4>
                 <div className="space-y-1">
@@ -283,7 +283,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                       <div className="flex flex-col items-center">
                         <div
                           className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium shrink-0',
+                            'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium shrink-0',
                             index === 0
                               ? 'bg-primary-600 text-white'
                               : index === previewTemplate.levels.length - 1
@@ -314,7 +314,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                           )}
                         </div>
                         {level.description && (
-                          <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                          <p className="caption mt-0.5">
                             {level.description}
                           </p>
                         )}
@@ -323,13 +323,13 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                             {level.allowedValues.slice(0, 4).map((v) => (
                               <span
                                 key={v}
-                                className="text-xs px-1.5 py-0.5 bg-neutral-200 rounded"
+                                className="text-caption px-1.5 py-0.5 bg-neutral-200 rounded"
                               >
                                 {v}
                               </span>
                             ))}
                             {level.allowedValues.length > 4 && (
-                              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <span className="caption">
                                 +{level.allowedValues.length - 4} more
                               </span>
                             )}
@@ -345,7 +345,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
               <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
                 <div className="flex items-start gap-2">
                   <Info className="w-4 h-4 text-info-600 mt-0.5 shrink-0 dark:text-info-300" />
-                  <div className="text-sm text-info-800 dark:text-info-300">
+                  <div className="text-body-sm text-info-800 dark:text-info-300">
                     <p className="font-medium">What will be created:</p>
                     <ul className="mt-1 space-y-1 text-info-700 dark:text-info-300">
                       <li>• Root hierarchy node for the program</li>
@@ -378,7 +378,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
       {/* FOOTER */}
       {/* ─────────────────────────────────────────────────────────────────── */}
       <div className="flex justify-between items-center pt-4 border-t mt-4">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="caption">
           You can add Settlement VAs at any level after initialization
         </p>
         <div className="flex gap-2">

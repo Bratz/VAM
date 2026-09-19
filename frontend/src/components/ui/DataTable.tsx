@@ -235,7 +235,7 @@ export function DataTable<T>({
                 <th
                   key={String(col.key)}
                   className={cn(
-                    'px-4 text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400',
+                    'px-4 text-caption font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400',
                     compact ? 'py-2.5' : 'py-3.5',
                     col.align === 'center' && 'text-center',
                     col.align === 'right' && 'text-right',
@@ -337,7 +337,7 @@ export function DataTable<T>({
                         <td
                           key={String(col.key)}
                           className={cn(
-                            'px-4 text-sm text-primary-900 dark:text-neutral-50',
+                            'px-4 text-body-sm text-primary-900 dark:text-neutral-50',
                             compact ? 'py-2.5' : 'py-4',
                             col.align === 'center' && 'text-center',
                             col.align === 'right' && 'text-right'
@@ -419,7 +419,7 @@ export function DataTable<T>({
                       return (
                         <div key={String(col.key)}>
                           {col.render ? col.render(value, row, index) : (
-                            <span className="font-semibold text-primary-900 text-base dark:text-neutral-50">
+                            <span className="font-semibold text-primary-900 text-body dark:text-neutral-50">
                               {String(value ?? '-')}
                             </span>
                           )}
@@ -464,7 +464,7 @@ export function DataTable<T>({
                   {detailColumns.slice(0, 4).map((col) => {
                     const value = (row as Record<string, unknown>)[col.key as string];
                     return (
-                      <div key={String(col.key)} className="flex justify-between items-center text-sm">
+                      <div key={String(col.key)} className="flex justify-between items-center text-body-sm">
                         <span className="text-neutral-500 dark:text-neutral-400">{col.header}</span>
                         <span className="text-primary-900 font-medium dark:text-neutral-50">
                           {col.render ? col.render(value, row, index) : String(value ?? '-')}
@@ -502,7 +502,7 @@ export function DataTable<T>({
 
     return (
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="body-sm">
           Showing <span className="font-medium text-primary-900 dark:text-neutral-50">{startIndex}</span> to{' '}
           <span className="font-medium text-primary-900 dark:text-neutral-50">{endIndex}</span> of{' '}
           <span className="font-medium text-primary-900 dark:text-neutral-50">{total}</span> results
@@ -538,7 +538,7 @@ export function DataTable<T>({
                   key={page}
                   onClick={() => onPageChange?.(page)}
                   className={cn(
-                    'w-9 h-9 rounded-xl text-sm font-medium transition-all duration-200',
+                    'w-9 h-9 rounded-xl text-body-sm font-medium transition-all duration-200',
                     currentPage === page
                       ? 'bg-primary-600 text-white shadow-md'
                       : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300'
@@ -588,7 +588,7 @@ export function DataTable<T>({
                   placeholder={searchPlaceholder}
                   className={cn(
                     'w-full h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
-                    'bg-white text-sm placeholder:text-neutral-400 dark:bg-primary-900',
+                    'bg-white text-body-sm placeholder:text-neutral-400 dark:bg-primary-900',
                     'focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10',
                     'transition-all duration-200'
                   )}

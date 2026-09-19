@@ -321,8 +321,8 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
             {payablesList.map(p => (
               <div key={p.id} className="flex justify-between items-center px-3 py-2 border-b border-neutral-100 dark:border-primary-800/60 last:border-0">
                 <div>
-                  <p className="font-medium text-sm">{p.invoiceNumber}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{p.vendorName}</p>
+                  <p className="font-medium text-body-sm">{p.invoiceNumber}</p>
+                  <p className="caption">{p.vendorName}</p>
                 </div>
                 <p className="font-semibold">{formatCurrency(p.netAmount, p.currencyCode)}</p>
               </div>
@@ -359,26 +359,26 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
           <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4 space-y-4">
             <h4 className="font-medium text-neutral-900 dark:text-neutral-50">Payment Preview</h4>
             
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Paying Entity</p>
                 <p className="font-medium">{preview.payingEntityCode} - {preview.payingEntityName}</p>
                 {preview.payingVaNumber && (
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500">VA: {preview.payingVaNumber}</p>
+                  <p className="caption">VA: {preview.payingVaNumber}</p>
                 )}
               </div>
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">On Behalf Of</p>
                 <p className="font-medium">{preview.behalfEntityCode} - {preview.behalfEntityName}</p>
                 {preview.behalfVaNumber && (
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500">VA: {preview.behalfVaNumber}</p>
+                  <p className="caption">VA: {preview.behalfVaNumber}</p>
                 )}
               </div>
             </div>
 
             {/* Balance & Credit Limit Info */}
             {(preview.payingVaBalance !== undefined || preview.behalfVaBalance !== undefined) && (
-              <div className="grid grid-cols-2 gap-4 text-xs bg-neutral-100 dark:bg-primary-800 rounded-lg p-3 mt-2">
+              <div className="grid grid-cols-2 gap-4 text-caption bg-neutral-100 dark:bg-primary-800 rounded-lg p-3 mt-2">
                 {/* Paying Entity Balance */}
                 <div className="space-y-1">
                   <p className="font-medium text-neutral-700 dark:text-neutral-200">Treasury Balance</p>
@@ -423,17 +423,17 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
             )}
 
             <div className="border-t border-neutral-200 dark:border-primary-800 pt-4 space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span>Total Payment Amount</span>
                 <span className="font-medium">{formatCurrency(preview.totalPaymentAmount, preview.currencyCode)}</span>
               </div>
               {preview.charges?.map((charge, idx) => (
-                <div key={idx} className="flex justify-between text-sm text-neutral-600 dark:text-neutral-300">
+                <div key={idx} className="flex justify-between body-sm">
                   <span>{charge.chargeName}</span>
                   <span>{charge.waived ? <span className="text-success-600 dark:text-success-300">Waived</span> : formatCurrency(charge.calculatedAmount, preview.currencyCode)}</span>
                 </div>
               ))}
-              <div className="flex justify-between text-sm font-semibold border-t border-neutral-200 dark:border-primary-800 pt-2">
+              <div className="flex justify-between text-body-sm font-semibold border-t border-neutral-200 dark:border-primary-800 pt-2">
                 <span>Net Payment Amount</span>
                 <span>{formatCurrency(preview.netPaymentAmount, preview.currencyCode)}</span>
               </div>
@@ -441,8 +441,8 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
 
             {preview.ihbLoanPreview && (
               <div className="bg-info-50 dark:bg-info-500/10 rounded-lg p-3 mt-4">
-                <h5 className="text-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Details</h5>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <h5 className="text-body-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Details</h5>
+                <div className="grid grid-cols-2 gap-2 text-caption">
                   <div><span className="text-info-600 dark:text-info-300">Principal:</span> {formatCurrency(preview.ihbLoanPreview.principalAmount, preview.currencyCode)}</div>
                   <div><span className="text-info-600 dark:text-info-300">Rate:</span> {preview.ihbLoanPreview.interestRate}%</div>
                   <div><span className="text-info-600 dark:text-info-300">Tenor:</span> {preview.ihbLoanPreview.tenor}</div>
@@ -452,7 +452,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
             )}
 
             {error && (
-              <p className="text-xs text-warning-600 dark:text-warning-300 flex items-center gap-1">
+              <p className="caption-warning flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" /> {error}
               </p>
             )}
@@ -532,7 +532,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
       <div className="space-y-6">
         {/* Payable Details */}
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
               <p className="font-medium">{payable.invoiceNumber || payable.payableNumber}</p>
@@ -587,7 +587,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
         {action === 'reject' && (
           <div className="flex items-start gap-3 p-3 bg-error-50 border border-error-200 rounded-lg dark:bg-error-500/10 dark:border-error-500/30">
             <AlertTriangle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
-            <div className="text-sm">
+            <div className="text-body-sm">
               <p className="font-medium text-error-800 dark:text-error-300">This action cannot be undone</p>
               <p className="text-error-600 dark:text-error-300">The payable will be marked as rejected and the vendor will need to resubmit.</p>
             </div>
@@ -636,7 +636,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
       <div className="space-y-6">
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Invoice Number</p>
               <p className="font-medium">{payable.invoiceNumber || payable.payableNumber}</p>
@@ -658,7 +658,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
           </div>
         </div>
 
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="body-sm">
           This will execute the payment immediately. This action cannot be undone.
         </p>
 
@@ -1232,7 +1232,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setCurrentPage(0); }}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium border-b-2 transition-all duration-200",
+                  "px-4 py-2 text-body-sm font-medium border-b-2 transition-all duration-200",
                   activeTab === tab.key
                     ? "border-primary-600 text-primary-600 dark:text-primary-200"
                     : "border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-200 hover:border-neutral-300 dark:hover:border-primary-700 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -1240,7 +1240,7 @@ const EnhancedPayablesPage: React.FC = () => {
               >
                 {tab.label}
                 <span className={cn(
-                  "ml-2 px-2 py-0.5 text-xs rounded-full transition-colors",
+                  "ml-2 px-2 py-0.5 text-caption rounded-full transition-colors",
                   activeTab === tab.key ? "bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200" : "bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300"
                 )}>{tab.count}</span>
               </button>
@@ -1255,7 +1255,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg text-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all w-64"
+                className="pl-9 pr-4 py-2 border border-neutral-200 dark:border-primary-800 rounded-lg text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all w-64"
               />
             </div>
             {selectedIds.size > 0 && (
@@ -1290,7 +1290,7 @@ const EnhancedPayablesPage: React.FC = () => {
               render: (_, payable) => (
                 <div>
                   <p className="font-medium text-primary-900 dark:text-neutral-50">{payable.invoiceNumber || payable.payableNumber}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.payableNumber}</p>
+                  <p className="caption">{payable.payableNumber}</p>
                 </div>
               ),
             },
@@ -1299,8 +1299,8 @@ const EnhancedPayablesPage: React.FC = () => {
               header: 'Vendor / Entity',
               render: (_, payable) => (
                 <div>
-                  <p className="font-medium text-sm text-primary-900 dark:text-neutral-50">{payable.vendorName}</p>
-                  {payable.owningEntityCode && <p className="text-xs text-neutral-500 dark:text-neutral-400">{payable.owningEntityCode}</p>}
+                  <p className="body-strong">{payable.vendorName}</p>
+                  {payable.owningEntityCode && <p className="caption">{payable.owningEntityCode}</p>}
                 </div>
               ),
             },
@@ -1312,7 +1312,7 @@ const EnhancedPayablesPage: React.FC = () => {
                 <>
                   <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(payable.netAmount, payable.currencyCode)}</p>
                   {payable.outstandingAmount !== payable.netAmount && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Due: {formatCurrency(payable.outstandingAmount, payable.currencyCode)}</p>
+                    <p className="caption">Due: {formatCurrency(payable.outstandingAmount, payable.currencyCode)}</p>
                   )}
                 </>
               ),
@@ -1322,7 +1322,7 @@ const EnhancedPayablesPage: React.FC = () => {
               header: 'Due Date',
               render: (_, payable) => (
                 <div className="flex flex-col gap-1">
-                  <span className={cn("text-sm", payable.isOverdue ? "text-error-600 dark:text-error-300 font-medium" : "text-neutral-600 dark:text-neutral-300")}>
+                  <span className={cn("text-body-sm", payable.isOverdue ? "text-error-600 dark:text-error-300 font-medium" : "text-neutral-600 dark:text-neutral-300")}>
                     {formatDate(payable.dueDate)}
                   </span>
                   {payable.isOverdue && <Badge variant="error" size="sm">Overdue</Badge>}
@@ -1414,7 +1414,7 @@ const EnhancedPayablesPage: React.FC = () => {
               {getStatusBadge(viewPayable.status)}
               {getPaymentRouteBadge(viewPayable.paymentRoute, viewPayable.isIntercompany, viewPayable.nettingStatus)}
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Vendor</p>
                 <p className="font-medium">{viewPayable.vendorName}</p>

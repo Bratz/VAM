@@ -125,7 +125,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
                 <Layers className="w-6 h-6 text-neutral-400 dark:text-neutral-500" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No active rules to execute</p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Activate some rules first</p>
+              <p className="caption mt-1">Activate some rules first</p>
             </Card>
           ) : (
             <Card padding="none" className="divide-y divide-neutral-100 dark:divide-primary-800/60 max-h-64 overflow-y-auto mb-6">
@@ -150,8 +150,8 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
                     </div>
                     <StatusIconBadge tone="primary" icon={Layers} className="flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-primary-900 dark:text-neutral-50">{rule.ruleName}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{rule.ruleReference}</p>
+                      <p className="body-strong">{rule.ruleName}</p>
+                      <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{rule.ruleReference}</p>
                     </div>
                     <Badge variant="success" size="sm" dot>Active</Badge>
                   </label>
@@ -196,7 +196,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
+              <p className="body-sm mt-2">
                 {runStatus.sourcesProcessed} / {runStatus.sourcesTotal} source accounts processed
               </p>
             </div>
@@ -218,21 +218,21 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
           <div className="grid grid-cols-3 gap-4">
             <Card padding="sm" className="bg-primary-50/50 dark:bg-primary-800/40 border-primary-200/60 dark:border-primary-700 text-center">
               <p className="stat-value-sm">{results.totalRules || 0}</p>
-              <p className="text-xs text-primary-600 dark:text-primary-200 uppercase tracking-wider mt-1">Executed</p>
+              <p className="text-caption text-primary-600 dark:text-primary-200 uppercase tracking-wider mt-1">Executed</p>
             </Card>
             <Card padding="sm" className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30 text-center">
               <p className="stat-value-success">{results.successCount || 0}</p>
-              <p className="text-xs text-success-600 dark:text-success-300 uppercase tracking-wider mt-1">Successful</p>
+              <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mt-1">Successful</p>
             </Card>
             <Card padding="sm" className="bg-error-50/50 dark:bg-error-500/10 border-error-200/60 dark:border-error-500/30 text-center">
               <p className="stat-value-error">{results.failedCount || 0}</p>
-              <p className="text-xs text-error-600 dark:text-error-300 uppercase tracking-wider mt-1">Failed</p>
+              <p className="text-caption text-error-600 dark:text-error-300 uppercase tracking-wider mt-1">Failed</p>
             </Card>
           </div>
 
           {results.totalSwept && (
             <Card className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30 text-center">
-              <p className="text-xs text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Total Amount Swept</p>
+              <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Total Amount Swept</p>
               <p className="stat-value-sm text-success-700 dark:text-success-300">
                 {formatCompactCurrency(results.totalSwept, 'AED')}
               </p>
@@ -259,15 +259,15 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
             <div className="grid grid-cols-3 gap-4">
               <Card padding="sm" className="bg-primary-50/50 dark:bg-primary-800/40 border-primary-200/60 dark:border-primary-700 text-center">
                 <p className="stat-value-sm">{results.totalRules || 0}</p>
-                <p className="text-xs text-primary-600 dark:text-primary-200 uppercase tracking-wider mt-1">Executed</p>
+                <p className="text-caption text-primary-600 dark:text-primary-200 uppercase tracking-wider mt-1">Executed</p>
               </Card>
               <Card padding="sm" className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30 text-center">
                 <p className="stat-value-success">{results.successCount || 0}</p>
-                <p className="text-xs text-success-600 dark:text-success-300 uppercase tracking-wider mt-1">Successful</p>
+                <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mt-1">Successful</p>
               </Card>
               <Card padding="sm" className="bg-error-50/50 dark:bg-error-500/10 border-error-200/60 dark:border-error-500/30 text-center">
                 <p className="stat-value-error">{results.failedCount || 0}</p>
-                <p className="text-xs text-error-600 dark:text-error-300 uppercase tracking-wider mt-1">Failed</p>
+                <p className="text-caption text-error-600 dark:text-error-300 uppercase tracking-wider mt-1">Failed</p>
               </Card>
             </div>
           )}

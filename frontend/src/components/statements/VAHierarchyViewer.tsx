@@ -168,7 +168,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn(
-              'text-sm font-medium truncate',
+              'text-body-sm font-medium truncate',
               isSelected ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-900 dark:text-neutral-50'
             )}>
               {node.accountName}
@@ -181,9 +181,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono">{node.vaNumber}</span>
+            <span className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 font-mono">{node.vaNumber}</span>
             {node.viban && (
-              <span className="text-xs text-neutral-400 dark:text-neutral-500">({node.viban})</span>
+              <span className="caption">({node.viban})</span>
             )}
           </div>
         </div>
@@ -191,13 +191,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         {/* Balance */}
         <div className="text-right shrink-0 mr-2">
           <p className={cn(
-            'text-sm font-semibold tabular-nums',
+            'text-body-sm font-semibold tabular-nums',
             displayBalance >= 0 ? 'text-primary-900 dark:text-neutral-50' : 'text-error-600 dark:text-error-300'
           )}>
             {formatCurrency(displayBalance, node.currency)}
           </p>
           {hasAggregatedBalance && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+            <p className="caption">
               Own: {formatCurrency(node.currentBalance, node.currency)}
             </p>
           )}
@@ -424,7 +424,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Account Hierarchy</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+              <p className="caption">
                 {totals?.accountCount} accounts
                 {totals && ` | Total: ${formatCurrency(totals.totalBalance, hierarchy.currency)}`}
               </p>
@@ -459,7 +459,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
 
       {/* Legend */}
       <div className="p-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
-        <div className="flex flex-wrap items-center gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-caption">
           <span className="font-medium text-neutral-600 dark:text-neutral-300">Types:</span>
           {Object.entries(accountCategoryConfig).slice(0, 4).map(([key, config]) => {
             const Icon = config.icon;

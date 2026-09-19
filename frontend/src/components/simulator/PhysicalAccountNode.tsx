@@ -105,7 +105,7 @@ export const PhysicalAccountNode: React.FC<PhysicalAccountNodeProps> = ({
               </span>
               <span
                 className={cn(
-                  'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+                  'inline-flex items-center px-2 py-0.5 rounded-full text-caption font-medium',
                   rel.pill,
                 )}
               >
@@ -138,7 +138,7 @@ export const PhysicalAccountNode: React.FC<PhysicalAccountNodeProps> = ({
                   <span
                     key={ds}
                     className={cn(
-                      'inline-flex items-center px-1.5 py-0.5 rounded-full text-xs',
+                      'inline-flex items-center px-1.5 py-0.5 rounded-full text-caption',
                       cd != null && cd < 30
                         ? consentTone
                         : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-300',

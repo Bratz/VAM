@@ -311,7 +311,7 @@ const LineItemRow: React.FC<{
           value={item.description}
           onChange={(e) => onChange(index, 'description', e.target.value)}
           placeholder="Description"
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -320,7 +320,7 @@ const LineItemRow: React.FC<{
           value={item.itemCode}
           onChange={(e) => onChange(index, 'itemCode', e.target.value)}
           placeholder="Code"
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -328,14 +328,14 @@ const LineItemRow: React.FC<{
           type="number"
           value={item.quantity}
           onChange={(e) => onChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.unit}
           onChange={(e) => onChange(index, 'unit', e.target.value)}
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         >
           {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
         </select>
@@ -346,7 +346,7 @@ const LineItemRow: React.FC<{
           value={item.unitPrice}
           onChange={(e) => onChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
           placeholder="Price"
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
@@ -355,20 +355,20 @@ const LineItemRow: React.FC<{
           value={item.discountPercent}
           onChange={(e) => onChange(index, 'discountPercent', parseFloat(e.target.value) || 0)}
           placeholder="%"
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         />
       </div>
       <div className="col-span-1">
         <select
           value={item.taxCode}
           onChange={(e) => onChange(index, 'taxCode', e.target.value)}
-          className="w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
+          className="w-full px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded focus:border-primary-500 focus:outline-none"
         >
           {taxConfigs.map(t => <option key={t.code} value={t.code}>{t.name}</option>)}
         </select>
       </div>
       <div className="col-span-2 flex items-center justify-between">
-        <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+        <span className="body-strong font-semibold">
           {formatCurrency(lineTotal, currency)}
         </span>
         <button
@@ -421,7 +421,7 @@ const SectionHeader: React.FC<{
       </div>
       <div>
         <h2 className="section-title">{title}</h2>
-        {subtitle && <p className="text-sm text-neutral-500 dark:text-neutral-400">{subtitle}</p>}
+        {subtitle && <p className="body-sm">{subtitle}</p>}
       </div>
     </div>
     {action}
@@ -497,8 +497,8 @@ const LineItemsTab: React.FC<{
             onChange={(enabled) => setFormData(prev => ({ ...prev, useLineItems: enabled }))}
           />
           <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Use Line Items</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Break down invoice into individual items</p>
+            <p className="body-strong">Use Line Items</p>
+            <p className="caption">Break down invoice into individual items</p>
           </div>
         </div>
       </div>
@@ -506,7 +506,7 @@ const LineItemsTab: React.FC<{
       {formData.useLineItems && (
         <>
           {/* Header */}
-          <div className="grid grid-cols-12 gap-2 px-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+          <div className="grid grid-cols-12 gap-2 px-3 text-caption font-medium text-neutral-500 dark:text-neutral-400 uppercase">
             <div className="col-span-3">Description</div>
             <div className="col-span-1">Code</div>
             <div className="col-span-1">Qty</div>
@@ -535,7 +535,7 @@ const LineItemsTab: React.FC<{
           {/* Add Button */}
           <button
             onClick={addLineItem}
-            className="w-full py-2 border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg text-sm text-neutral-600 dark:text-neutral-300 hover:border-primary-400 hover:text-primary-600 dark:text-primary-200 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2 border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-lg body-sm hover:border-primary-400 hover:text-primary-600 transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Line Item
@@ -544,21 +544,21 @@ const LineItemsTab: React.FC<{
           {/* Totals */}
           {formData.lineItems.length > 0 && (
             <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500 dark:text-neutral-400">Subtotal</span>
                 <span className="font-medium">{formatCurrency(totals.subtotal, currency)}</span>
               </div>
               {totals.discount > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-body-sm">
                   <span className="text-neutral-500 dark:text-neutral-400">Discount</span>
                   <span className="font-medium text-error-600 dark:text-error-300">-{formatCurrency(totals.discount, currency)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500 dark:text-neutral-400">Tax</span>
                 <span className="font-medium">{formatCurrency(totals.tax, currency)}</span>
               </div>
-              <div className="flex justify-between text-base font-semibold border-t pt-2">
+              <div className="flex justify-between text-body font-semibold border-t pt-2">
                 <span>Total</span>
                 <span className="text-primary-600 dark:text-primary-200">{formatCurrency(totals.total, currency)}</span>
               </div>
@@ -607,12 +607,12 @@ const TaxChargesTab: React.FC<{
     <div className="space-y-6">
       {/* VAT Configuration */}
       <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg space-y-4">
-        <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-50">VAT Configuration</h4>
+        <h4 className="body-strong">VAT Configuration</h4>
         
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">Apply VAT</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Standard VAT rate for invoice</p>
+            <p className="text-body-sm text-neutral-700 dark:text-neutral-200">Apply VAT</p>
+            <p className="caption">Standard VAT rate for invoice</p>
           </div>
           <div className="flex items-center gap-3">
             <select
@@ -621,7 +621,7 @@ const TaxChargesTab: React.FC<{
                 ...prev,
                 taxConfig: { ...prev.taxConfig, vatRate: parseFloat(e.target.value), vatEnabled: true }
               }))}
-              className="px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
               disabled={formData.taxConfig.taxExempt}
             >
               <option value="0">0%</option>
@@ -641,8 +641,8 @@ const TaxChargesTab: React.FC<{
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">Reverse Charge</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Customer accounts for VAT</p>
+            <p className="text-body-sm text-neutral-700 dark:text-neutral-200">Reverse Charge</p>
+            <p className="caption">Customer accounts for VAT</p>
           </div>
           <Toggle
             enabled={formData.taxConfig.reverseCharge}
@@ -656,8 +656,8 @@ const TaxChargesTab: React.FC<{
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">Tax Exempt</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Invoice is exempt from tax</p>
+            <p className="text-body-sm text-neutral-700 dark:text-neutral-200">Tax Exempt</p>
+            <p className="caption">Invoice is exempt from tax</p>
           </div>
           <Toggle
             enabled={formData.taxConfig.taxExempt}
@@ -678,7 +678,7 @@ const TaxChargesTab: React.FC<{
               taxConfig: { ...prev.taxConfig, exemptionReason: e.target.value }
             }))}
             placeholder="Exemption reason..."
-            className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+            className="w-full px-3 py-2 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
           />
         )}
       </div>
@@ -686,10 +686,10 @@ const TaxChargesTab: React.FC<{
       {/* Additional Charges */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Additional Charges</h4>
+          <h4 className="body-strong">Additional Charges</h4>
           <button
             onClick={addCharge}
-            className="text-sm text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 flex items-center gap-1 dark:hover:text-neutral-200"
+            className="text-body-sm text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 flex items-center gap-1 dark:hover:text-neutral-200"
           >
             <Plus className="w-4 h-4" />
             Add Charge
@@ -701,7 +701,7 @@ const TaxChargesTab: React.FC<{
             <select
               value={charge.type}
               onChange={(e) => updateCharge(index, 'type', e.target.value)}
-              className="px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
             >
               {CHARGE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
@@ -710,18 +710,18 @@ const TaxChargesTab: React.FC<{
               value={charge.description}
               onChange={(e) => updateCharge(index, 'description', e.target.value)}
               placeholder="Description"
-              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="flex-1 px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
             />
             <input
               type="number"
               value={charge.amount}
               onChange={(e) => updateCharge(index, 'amount', parseFloat(e.target.value) || 0)}
-              className="w-24 px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="w-24 px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
             />
             <select
               value={charge.isPercentage ? 'percent' : 'fixed'}
               onChange={(e) => updateCharge(index, 'isPercentage', e.target.value === 'percent')}
-              className="px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+              className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
             >
               <option value="fixed">{currency}</option>
               <option value="percent">%</option>
@@ -737,8 +737,8 @@ const TaxChargesTab: React.FC<{
       <div className="p-4 bg-success-50 rounded-lg space-y-3 dark:bg-success-500/10">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Early Payment Discount</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Offer discount for early payment</p>
+            <p className="body-strong">Early Payment Discount</p>
+            <p className="caption">Offer discount for early payment</p>
           </div>
           <Toggle
             enabled={formData.earlyPaymentDiscount.enabled}
@@ -759,9 +759,9 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, percent: parseFloat(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded"
+                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
               />
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">% off if paid within</span>
+              <span className="body-sm">% off if paid within</span>
               <input
                 type="number"
                 value={formData.earlyPaymentDiscount.days}
@@ -769,9 +769,9 @@ const TaxChargesTab: React.FC<{
                   ...prev,
                   earlyPaymentDiscount: { ...prev.earlyPaymentDiscount, days: parseInt(e.target.value) || 0 }
                 }))}
-                className="w-16 px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded"
+                className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
               />
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">days</span>
+              <span className="body-sm">days</span>
             </div>
           </div>
         )}
@@ -781,8 +781,8 @@ const TaxChargesTab: React.FC<{
       <div className="p-4 bg-error-50 rounded-lg space-y-3 dark:bg-error-500/10">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Late Payment Fee</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Charge fee for overdue payments</p>
+            <p className="body-strong">Late Payment Fee</p>
+            <p className="caption">Charge fee for overdue payments</p>
           </div>
           <Toggle
             enabled={formData.latePaymentFee.enabled}
@@ -802,9 +802,9 @@ const TaxChargesTab: React.FC<{
                 ...prev,
                 latePaymentFee: { ...prev.latePaymentFee, percent: parseFloat(e.target.value) || 0 }
               }))}
-              className="w-16 px-2 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded"
+              className="w-16 px-2 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded"
             />
-            <span className="text-sm text-neutral-600 dark:text-neutral-300">% per month after due date</span>
+            <span className="body-sm">% per month after due date</span>
           </div>
         )}
       </div>
@@ -823,8 +823,8 @@ const PaymentLinkTab: React.FC = () => (
       <Link2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
     </div>
     <div>
-      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Payment Link & QR Code</p>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">A real payment link and QR code are shown after you save.</p>
+      <p className="body-strong">Payment Link & QR Code</p>
+      <p className="caption">A real payment link and QR code are shown after you save.</p>
     </div>
   </div>
 );
@@ -846,8 +846,8 @@ const CoboTab: React.FC<{
             <ArrowDownLeft className={cn('w-5 h-5', formData.coboEnabled ? 'text-success-600 dark:text-success-300' : 'text-neutral-500 dark:text-neutral-400')} />
           </div>
           <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Collect On Behalf Of (COBO)</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Treasury collects for subsidiary, creates IHB deposit</p>
+            <p className="body-strong">Collect On Behalf Of (COBO)</p>
+            <p className="caption">Treasury collects for subsidiary, creates IHB deposit</p>
           </div>
         </div>
         <Toggle
@@ -867,7 +867,7 @@ const CoboTab: React.FC<{
             <select
               value={formData.collectingEntityId}
               onChange={(e) => setFormData(prev => ({ ...prev, collectingEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
             >
               <option value="">Select treasury entity...</option>
               {entities.filter(e => e.type === 'HEADQUARTERS').map(e => (
@@ -885,7 +885,7 @@ const CoboTab: React.FC<{
             <select
               value={formData.behalfEntityId}
               onChange={(e) => setFormData(prev => ({ ...prev, behalfEntityId: e.target.value }))}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
               disabled={!formData.collectingEntityId}
             >
               <option value="">Select subsidiary...</option>
@@ -904,7 +904,7 @@ const CoboTab: React.FC<{
               type="number"
               value={formData.coboRechargeMarkup}
               onChange={(e) => setFormData(prev => ({ ...prev, coboRechargeMarkup: parseFloat(e.target.value) || 0 }))}
-              className="w-24 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+              className="w-24 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
               step="0.1"
             />
           </div>
@@ -912,8 +912,8 @@ const CoboTab: React.FC<{
           {/* Preview */}
           {collectingEntity && behalfEntity && (
             <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-200 dark:border-success-500/30">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">COBO Flow</p>
-              <div className="flex items-center justify-between text-sm">
+              <p className="caption mb-2">COBO Flow</p>
+              <div className="flex items-center justify-between text-body-sm">
                 <span className="font-medium">Customer pays →</span>
                 <span className="text-primary-600 dark:text-primary-200">{collectingEntity.code}</span>
                 <span>→</span>
@@ -925,7 +925,7 @@ const CoboTab: React.FC<{
           {/* Info Note */}
           <div className="flex items-start gap-2 p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-200 dark:border-success-500/30">
             <Info className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
-            <p className="text-xs text-neutral-600 dark:text-neutral-300">
+            <p className="caption">
               When payment is received, treasury will create an IHB deposit for the subsidiary. Interest accrues until settlement.
             </p>
           </div>
@@ -943,7 +943,7 @@ const HierarchyTab: React.FC<{
 }> = ({ formData, setFormData, hierarchyNodes }) => {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-neutral-600 dark:text-neutral-300">
+      <p className="body-sm">
         Assign this receivable to a hierarchy node for reporting and allocation.
       </p>
 
@@ -963,10 +963,10 @@ const HierarchyTab: React.FC<{
             )}
           >
             <div>
-              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{node.name}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{node.path}</p>
+              <p className="body-strong">{node.name}</p>
+              <p className="caption">{node.path}</p>
             </div>
-            <span className="text-xs px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-600 dark:text-neutral-300 rounded">
+            <span className="caption px-2 py-1 bg-neutral-100 dark:bg-primary-800 rounded">
               {node.level}
             </span>
           </button>
@@ -981,7 +981,7 @@ const HierarchyTab: React.FC<{
           value={formData.revenueCenter}
           onChange={(e) => setFormData(prev => ({ ...prev, revenueCenter: e.target.value }))}
           placeholder="e.g., RC-001, Sales-Dubai"
-          className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
         />
       </div>
     </div>
@@ -1043,8 +1043,8 @@ const DocumentsTab: React.FC<{
           />
           <label htmlFor="file-upload" className="cursor-pointer">
             <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-2" />
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Click to upload or drag and drop</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, DOC, XLS up to 10MB</p>
+            <p className="body-sm">Click to upload or drag and drop</p>
+            <p className="caption mt-1">PDF, DOC, XLS up to 10MB</p>
           </label>
         </div>
 
@@ -1054,8 +1054,8 @@ const DocumentsTab: React.FC<{
               <div key={index} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                  <span className="text-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
-                  <span className="text-xs text-neutral-400 dark:text-neutral-500">({(file.size / 1024).toFixed(1)} KB)</span>
+                  <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
+                  <span className="caption">({(file.size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 rounded">
                   <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1070,7 +1070,7 @@ const DocumentsTab: React.FC<{
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="field-label">External References</p>
-          <button onClick={handleAddRef} className="text-sm text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 flex items-center gap-1 dark:hover:text-neutral-200">
+          <button onClick={handleAddRef} className="text-body-sm text-primary-600 dark:text-primary-200 hover:text-primary-700 dark:text-neutral-200 flex items-center gap-1 dark:hover:text-neutral-200">
             <Plus className="w-4 h-4" />
             Add Reference
           </button>
@@ -1082,7 +1082,7 @@ const DocumentsTab: React.FC<{
                 <select
                   value={ref.type}
                   onChange={(e) => handleUpdateRef(index, 'type', e.target.value)}
-                  className="px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+                  className="px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
                 >
                   {REFERENCE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -1091,7 +1091,7 @@ const DocumentsTab: React.FC<{
                   value={ref.value}
                   onChange={(e) => handleUpdateRef(index, 'value', e.target.value)}
                   placeholder="Reference number..."
-                  className="flex-1 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+                  className="flex-1 px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
                 />
                 <button onClick={() => handleRemoveRef(index)} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg">
                   <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1100,7 +1100,7 @@ const DocumentsTab: React.FC<{
             ))}
           </div>
         ) : (
-          <p className="text-sm text-neutral-400 dark:text-neutral-500 italic">No external references added</p>
+          <p className="text-body-sm text-neutral-400 dark:text-neutral-500 italic">No external references added</p>
         )}
       </div>
 
@@ -1113,7 +1113,7 @@ const DocumentsTab: React.FC<{
             onChange={(e) => setFormData(prev => ({ ...prev, customerNotes: e.target.value }))}
             rows={3}
             placeholder="Printed on invoice..."
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm resize-none"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none"
           />
         </div>
         <div>
@@ -1123,7 +1123,7 @@ const DocumentsTab: React.FC<{
             onChange={(e) => setFormData(prev => ({ ...prev, internalNotes: e.target.value }))}
             rows={3}
             placeholder="Not visible to customer..."
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm resize-none"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none"
           />
         </div>
       </div>
@@ -1159,8 +1159,8 @@ const RemindersTab: React.FC<{
         <div className="flex items-center gap-3">
           <Mail className="w-5 h-5 text-info-600 dark:text-info-300" />
           <div>
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Send Invoice on Create</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Email invoice to customer when created</p>
+            <p className="body-strong">Send Invoice on Create</p>
+            <p className="caption">Email invoice to customer when created</p>
           </div>
         </div>
         <Toggle
@@ -1172,15 +1172,15 @@ const RemindersTab: React.FC<{
 
       {/* Payment Reminders */}
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Payment Reminder Schedule</h4>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">Select days relative to due date (negative = before, positive = after)</p>
+        <h4 className="body-strong">Payment Reminder Schedule</h4>
+        <p className="caption">Select days relative to due date (negative = before, positive = after)</p>
         <div className="flex flex-wrap gap-2">
           {REMINDER_DAYS.map((day) => (
             <button
               key={day}
               onClick={() => toggleReminderDay(day)}
               className={cn(
-                'px-3 py-2 text-sm rounded-lg border transition-colors',
+                'px-3 py-2 text-body-sm rounded-lg border transition-colors',
                 formData.reminderDays.includes(day)
                   ? 'bg-primary-100 dark:bg-primary-700 border-primary-500 text-primary-700 dark:text-neutral-200'
                   : 'bg-white dark:bg-primary-900 border-neutral-300 dark:border-primary-700 text-neutral-600 dark:text-neutral-300 hover:border-primary-300'
@@ -1191,7 +1191,7 @@ const RemindersTab: React.FC<{
           ))}
         </div>
         {formData.reminderDays.length > 0 && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="caption">
             Reminders will be sent: {formData.reminderDays.map(d => d > 0 ? `${d} days after` : d === 0 ? 'on due date' : `${Math.abs(d)} days before`).join(', ')}
           </p>
         )}
@@ -1201,8 +1201,8 @@ const RemindersTab: React.FC<{
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Dunning Process</h4>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Automated escalation for overdue invoices</p>
+            <h4 className="body-strong">Dunning Process</h4>
+            <p className="caption">Automated escalation for overdue invoices</p>
           </div>
           <Toggle
             enabled={formData.enableDunning}
@@ -1225,14 +1225,14 @@ const RemindersTab: React.FC<{
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
+                    'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-bold',
                     level.level <= formData.dunningMaxLevel ? 'bg-warning-200 text-warning-700 dark:text-warning-300' : 'bg-neutral-200 text-neutral-500 dark:text-neutral-400 dark:bg-primary-800'
                   )}>
                     {level.level}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{level.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{level.description}</p>
+                    <p className="body-strong">{level.name}</p>
+                    <p className="caption">{level.description}</p>
                   </div>
                 </div>
                 {level.level <= formData.dunningMaxLevel && (
@@ -1241,11 +1241,11 @@ const RemindersTab: React.FC<{
               </div>
             ))}
             <div className="flex items-center gap-2 mt-3">
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">Enable up to level:</span>
+              <span className="body-sm">Enable up to level:</span>
               <select
                 value={formData.dunningMaxLevel}
                 onChange={(e) => setFormData(prev => ({ ...prev, dunningMaxLevel: parseInt(e.target.value) }))}
-                className="px-3 py-1.5 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
+                className="px-3 py-1.5 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg"
               >
                 {[1, 2, 3, 4].map(l => <option key={l} value={l}>{l}</option>)}
               </select>
@@ -1653,7 +1653,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 onClick={() => handleSubmit(false)}
                 disabled={loading || !canSubmit}
                 className={cn(
-                  'px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
+                  'px-4 py-2 text-body-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
                   canSubmit ? 'bg-primary-600 hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'
                 )}
               >
@@ -1675,8 +1675,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <Building className="w-5 h-5 text-info-600 dark:text-info-300" />
               </div>
               <div>
-                <p className="text-xs font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Corporate</p>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                <p className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Corporate</p>
+                <p className="body-strong font-semibold">
                   {dataLoading ? 'Loading...' : corporateName}
                 </p>
               </div>
@@ -1687,8 +1687,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <Landmark className="w-5 h-5 text-cat-1" />
               </div>
               <div>
-                <p className="text-xs font-medium text-cat-1 uppercase tracking-wide">Legal Entity</p>
-                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                <p className="text-caption font-medium text-cat-1 uppercase tracking-wide">Legal Entity</p>
+                <p className="body-strong font-semibold">
                   {dataLoading ? 'Loading...' : (
                     selectedLegalEntity
                       ? `${selectedLegalEntity.name} (${selectedLegalEntity.code})`
@@ -1704,7 +1704,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 <div className="hidden sm:block w-px h-10 bg-warning-200" />
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 border border-warning-300 rounded-lg dark:bg-warning-500/20">
                   <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                  <span className="text-xs font-medium text-warning-700 dark:text-warning-300">Using default corporate</span>
+                  <span className="text-caption font-medium text-warning-700 dark:text-warning-300">Using default corporate</span>
                 </div>
               </>
             )}
@@ -1740,13 +1740,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     onFocus={() => setShowCustomerDropdown(true)}
                     placeholder="Search customer by name or code..."
                     className={cn(
-                      'w-full pl-10 pr-4 py-3 border rounded-lg text-sm transition-colors',
+                      'w-full pl-10 pr-4 py-3 border rounded-lg text-body-sm transition-colors',
                       errors.customer ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700',
                       'focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-500'
                     )}
                   />
                 </div>
-                {errors.customer && <p className="mt-1 text-sm text-error-600 dark:text-error-300">{errors.customer}</p>}
+                {errors.customer && <p className="mt-1 text-body-sm text-error-600 dark:text-error-300">{errors.customer}</p>}
 
                 {showCustomerDropdown && customerSearch && (
                   <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-64 overflow-y-auto">
@@ -1757,21 +1757,21 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                         className="w-full flex items-center justify-between p-3 hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0"
                       >
                         <div className="text-left">
-                          <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{customer.name}</p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{customer.code}</p>
+                          <p className="body-strong">{customer.name}</p>
+                          <p className="caption">{customer.code}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Credit Available</p>
-                          <p className="text-sm font-semibold text-success-600 dark:text-success-300">
+                          <p className="caption">Credit Available</p>
+                          <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
                             {formatCurrency(customer.creditAvailable, customer.currency)}
                           </p>
                           {customer.overdueAmount && customer.overdueAmount > 0 && (
-                            <p className="text-xs text-error-500">Overdue: {formatCurrency(customer.overdueAmount, customer.currency)}</p>
+                            <p className="text-caption text-error-500">Overdue: {formatCurrency(customer.overdueAmount, customer.currency)}</p>
                           )}
                         </div>
                       </button>
                     )) : (
-                      <div className="p-4 text-center text-neutral-500 dark:text-neutral-400 text-sm">No customers found</div>
+                      <div className="p-4 text-center body-sm">No customers found</div>
                     )}
                   </div>
                 )}
@@ -1782,8 +1782,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-neutral-50">{selectedCustomer.name}</p>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">{selectedCustomer.code}</p>
-                      {selectedCustomer.email && <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{selectedCustomer.email}</p>}
+                      <p className="body-sm">{selectedCustomer.code}</p>
+                      {selectedCustomer.email && <p className="body-sm mt-1">{selectedCustomer.email}</p>}
                     </div>
                     <button onClick={() => { setSelectedCustomer(null); setCustomerSearch(''); setFormData(prev => ({ ...prev, customerId: '' })); }} className="p-1 hover:bg-info-100 rounded dark:hover:bg-info-500/20">
                       <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -1791,23 +1791,23 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Credit Limit</p>
-                      <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(selectedCustomer.creditLimit, selectedCustomer.currency)}</p>
+                      <p className="caption">Credit Limit</p>
+                      <p className="body-strong font-semibold">{formatCurrency(selectedCustomer.creditLimit, selectedCustomer.currency)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Used</p>
-                      <p className="text-sm font-semibold text-warning-600 dark:text-warning-300">{formatCurrency(selectedCustomer.creditUsed, selectedCustomer.currency)}</p>
+                      <p className="caption">Used</p>
+                      <p className="text-body-sm font-semibold text-warning-600 dark:text-warning-300">{formatCurrency(selectedCustomer.creditUsed, selectedCustomer.currency)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-                      <p className="text-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(selectedCustomer.creditAvailable, selectedCustomer.currency)}</p>
+                      <p className="caption">Available</p>
+                      <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(selectedCustomer.creditAvailable, selectedCustomer.currency)}</p>
                     </div>
                   </div>
                   {selectedCustomer.assignedViban && (
                     <div className="mt-3 pt-3 border-t border-info-200 dark:border-info-500/30">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Assigned VIBAN</p>
+                      <p className="caption">Assigned VIBAN</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <code className="text-sm font-mono text-info-700 dark:text-info-300">{selectedCustomer.assignedViban}</code>
+                        <code className="text-body-sm font-mono text-info-700 dark:text-info-300">{selectedCustomer.assignedViban}</code>
                         <button onClick={() => copyToClipboard(selectedCustomer.assignedViban!)} className="p-1 hover:bg-info-100 rounded dark:hover:bg-info-500/20">
                           <Copy className="w-3 h-3 text-info-600 dark:text-info-300" />
                         </button>
@@ -1833,12 +1833,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     type="text"
                     value={formData.invoiceNumber}
                     onChange={(e) => setFormData(prev => ({ ...prev, invoiceNumber: e.target.value }))}
-                    className={cn('w-full px-3 py-2 border rounded-lg text-sm font-mono', errors.invoiceNumber ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
+                    className={cn('w-full px-3 py-2 border rounded-lg text-body-sm font-mono', errors.invoiceNumber ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
                   />
                 </div>
                 <div>
                   <label className="field-label block mb-1">Invoice Date</label>
-                  <input type="date" value={formData.invoiceDate} onChange={(e) => setFormData(prev => ({ ...prev, invoiceDate: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-200" />
+                  <input type="date" value={formData.invoiceDate} onChange={(e) => setFormData(prev => ({ ...prev, invoiceDate: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-200" />
                 </div>
                 <div>
                   <label className="field-label block mb-1">Amount *</label>
@@ -1848,19 +1848,19 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       value={formData.amount}
                       onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                       placeholder="0.00"
-                      className={cn('flex-1 px-3 py-2 border rounded-l-lg text-sm', errors.amount ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
+                      className={cn('flex-1 px-3 py-2 border rounded-l-lg text-body-sm', errors.amount ? 'border-error-300' : 'border-neutral-300 dark:border-primary-700', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
                       disabled={formData.useLineItems}
                     />
-                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="px-3 py-2 border border-l-0 border-neutral-300 dark:border-primary-700 rounded-r-lg text-sm bg-neutral-50 dark:bg-primary-950">
+                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="px-3 py-2 border border-l-0 border-neutral-300 dark:border-primary-700 rounded-r-lg text-body-sm bg-neutral-50 dark:bg-primary-950">
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
-                  {formData.useLineItems && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Amount calculated from line items</p>}
-                  {errors.amount && <p className="mt-1 text-sm text-error-600 dark:text-error-300">{errors.amount}</p>}
+                  {formData.useLineItems && <p className="caption mt-1">Amount calculated from line items</p>}
+                  {errors.amount && <p className="mt-1 text-body-sm text-error-600 dark:text-error-300">{errors.amount}</p>}
                 </div>
                 <div>
                   <label className="field-label block mb-1">Payment Terms</label>
-                  <select value={formData.paymentTerms} onChange={(e) => setFormData(prev => ({ ...prev, paymentTerms: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm">
+                  <select value={formData.paymentTerms} onChange={(e) => setFormData(prev => ({ ...prev, paymentTerms: e.target.value }))} className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm">
                     {PAYMENT_TERMS.map(term => <option key={term.value} value={term.value}>{term.label}</option>)}
                   </select>
                 </div>
@@ -1868,16 +1868,16 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <label className="field-label block mb-1">Due Date</label>
                   <div className="flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
                     <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-                    <span className="text-sm text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</span>
+                    <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</span>
                   </div>
                 </div>
                 <div>
                   <label className="field-label block mb-1">Reference (PO/Contract)</label>
-                  <input type="text" value={formData.reference} onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))} placeholder="e.g., PO-2024-001" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" />
+                  <input type="text" value={formData.reference} onChange={(e) => setFormData(prev => ({ ...prev, reference: e.target.value }))} placeholder="e.g., PO-2024-001" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" />
                 </div>
                 <div className="col-span-2">
                   <label className="field-label block mb-1">Description</label>
-                  <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder="Invoice description..." className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm resize-none" />
+                  <textarea value={formData.description} onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))} rows={2} placeholder="Invoice description..." className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm resize-none" />
                 </div>
               </div>
             </div>
@@ -1905,15 +1905,15 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                         <CreditCard className={cn('w-5 h-5', selectedAccount?.id === account.id ? 'text-success-600 dark:text-success-300' : 'text-neutral-500 dark:text-neutral-400')} />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{account.accountName}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{account.bankName} • {account.accountType}</p>
+                        <p className="body-strong">{account.accountName}</p>
+                        <p className="caption">{account.bankName} • {account.accountType}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{account.iban}</p>
+                      <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{account.iban}</p>
                       <div className="flex items-center gap-2 mt-1 justify-end">
-                        <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{account.currency}</span>
-                        {account.isDefault && <span className="px-2 py-0.5 bg-info-100 text-info-700 text-xs font-medium rounded dark:bg-info-500/20 dark:text-info-300">Default</span>}
+                        <span className="label-cased">{account.currency}</span>
+                        {account.isDefault && <span className="px-2 py-0.5 bg-info-100 text-info-700 text-caption font-medium rounded dark:bg-info-500/20 dark:text-info-300">Default</span>}
                       </div>
                     </div>
                   </button>
@@ -1926,22 +1926,22 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-cat-1-soft rounded-lg dark:bg-cat-1/15"><QrCode className="w-5 h-5 text-cat-1" /></div>
                     <div>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Generate VIBAN</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Create unique virtual IBAN for auto-reconciliation</p>
+                      <p className="body-strong">Generate VIBAN</p>
+                      <p className="caption">Create unique virtual IBAN for auto-reconciliation</p>
                     </div>
                   </div>
                   {!formData.generateViban ? (
-                    <button onClick={handleGenerateViban} disabled={!selectedCustomer || !formData.collectionAccountId} className={cn('px-4 py-2 text-sm font-medium rounded-lg transition-colors', selectedCustomer && formData.collectionAccountId ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 dark:text-neutral-500 cursor-not-allowed dark:bg-primary-800')}>
+                    <button onClick={handleGenerateViban} disabled={!selectedCustomer || !formData.collectionAccountId} className={cn('px-4 py-2 text-body-sm font-medium rounded-lg transition-colors', selectedCustomer && formData.collectionAccountId ? 'bg-cat-1 text-white hover:bg-cat-1/90' : 'bg-neutral-200 text-neutral-400 dark:text-neutral-500 cursor-not-allowed dark:bg-primary-800')}>
                       Generate
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-success-600 text-sm font-medium dark:text-success-300"><Check className="w-4 h-4" />Will generate on save</span>
+                    <span className="flex items-center gap-1 text-success-600 text-body-sm font-medium dark:text-success-300"><Check className="w-4 h-4" />Will generate on save</span>
                   )}
                 </div>
                 {formData.generateViban && (
                   <div className="mt-4 p-4 bg-cat-1-soft rounded-lg border border-cat-1/10 dark:bg-cat-1/15 dark:border-cat-1/30">
-                    <p className="text-xs text-cat-1 font-medium">Virtual IBAN</p>
-                    <p className="text-sm text-cat-1">A real VIBAN will be created and shown on the receivable once you save.</p>
+                    <p className="text-caption text-cat-1 font-medium">Virtual IBAN</p>
+                    <p className="text-body-sm text-cat-1">A real VIBAN will be created and shown on the receivable once you save.</p>
                   </div>
                 )}
               </div>
@@ -1957,7 +1957,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       key={tab.id}
                       onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
                       className={cn(
-                        'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px',
+                        'flex items-center gap-2 px-4 py-3 text-body-sm font-medium transition-colors border-b-2 -mb-px',
                         activeTab === tab.id
                           ? 'text-primary-600 dark:text-primary-200 border-primary-600 bg-white dark:bg-primary-900'
                           : 'text-neutral-600 dark:text-neutral-300 border-transparent hover:text-neutral-900 dark:text-neutral-50 hover:bg-white dark:bg-primary-900 dark:hover:text-neutral-50'
@@ -1967,7 +1967,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       {tab.label}
                       {tab.badge > 0 && (
                         <span className={cn(
-                          'px-1.5 py-0.5 text-xs rounded-full',
+                          'px-1.5 py-0.5 text-caption rounded-full',
                           activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700 text-primary-700 dark:text-neutral-200' : 'bg-neutral-200 text-neutral-600 dark:text-neutral-300 dark:bg-primary-800'
                         )}>
                           {tab.badge}
@@ -1988,8 +1988,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 {activeTab === 'reminders' && <RemindersTab formData={formData} setFormData={setFormData} />}
                 {!activeTab && (
                   <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                    <p className="text-sm">Click a tab above to configure optional settings</p>
-                    <p className="text-xs mt-1">Line items, tax configuration, payment links, COBO, and more</p>
+                    <p className="text-body-sm">Click a tab above to configure optional settings</p>
+                    <p className="text-caption mt-1">Line items, tax configuration, payment links, COBO, and more</p>
                   </div>
                 )}
               </div>
@@ -2000,52 +2000,52 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           <div className="col-span-1">
             <div className="sticky top-24 space-y-4">
               <div className="bg-white dark:bg-primary-900 rounded-xl border border-neutral-200 dark:border-primary-800 p-6">
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-4">Summary</h3>
+                <h3 className="body-strong font-semibold mb-4">Summary</h3>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Customer</p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{selectedCustomer?.name || '-'}</p>
+                    <p className="caption">Customer</p>
+                    <p className="body-strong">{selectedCustomer?.name || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Invoice</p>
-                    <p className="text-sm font-mono text-neutral-900 dark:text-neutral-50">{formData.invoiceNumber}</p>
+                    <p className="caption">Invoice</p>
+                    <p className="text-body-sm font-mono text-neutral-900 dark:text-neutral-50">{formData.invoiceNumber}</p>
                   </div>
                   <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Amount</p>
+                    <p className="caption">Amount</p>
                     <p className="stat-value-sm">
                       {formData.useLineItems && formData.lineItems.length > 0
                         ? formatCurrency(calculatedTotal, formData.currency)
                         : formData.amount ? formatCurrency(parseFloat(formData.amount), formData.currency) : '-'
                       }
                     </p>
-                    {formData.useLineItems && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{formData.lineItems.length} line item(s)</p>}
+                    {formData.useLineItems && <p className="caption mt-1">{formData.lineItems.length} line item(s)</p>}
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Due Date</p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</p>
+                    <p className="caption">Due Date</p>
+                    <p className="body-strong">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</p>
                   </div>
                   <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Collection Account</p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{selectedAccount?.accountName || '-'}</p>
+                    <p className="caption">Collection Account</p>
+                    <p className="body-strong">{selectedAccount?.accountName || '-'}</p>
                   </div>
                   {formData.generateViban && (
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">VIBAN</p>
-                      <p className="text-xs text-cat-1">Will generate on save</p>
+                      <p className="caption">VIBAN</p>
+                      <p className="text-caption text-cat-1">Will generate on save</p>
                     </div>
                   )}
 
                   {/* Features Summary */}
                   {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.hierarchyNodeId || formData.attachments.length > 0 || formData.enableDunning) && (
                     <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Includes</p>
+                      <p className="caption mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
-                        {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-xs rounded dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
-                        {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-xs rounded dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
-                        {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-xs rounded dark:bg-success-500/10 dark:text-success-300">COBO</span>}
-                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 text-xs rounded dark:bg-cat-2/15">Hierarchy</span>}
-                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-xs rounded">{formData.attachments.length} files</span>}
-                        {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-xs rounded dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
+                        {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
+                        {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
+                        {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded dark:bg-success-500/10 dark:text-success-300">COBO</span>}
+                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 text-caption rounded dark:bg-cat-2/15">Hierarchy</span>}
+                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-neutral-100 dark:bg-primary-800 text-neutral-700 dark:text-neutral-200 text-caption rounded">{formData.attachments.length} files</span>}
+                        {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
                       </div>
                     </div>
                   )}
@@ -2057,8 +2057,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
                     <div>
-                      <p className="text-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
-                      <ul className="text-xs text-warning-700 mt-1 space-y-1 dark:text-warning-300">
+                      <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
+                      <ul className="text-caption text-warning-700 mt-1 space-y-1 dark:text-warning-300">
                         {!formData.customerId && <li>• Select a customer</li>}
                         {(!formData.amount || parseFloat(formData.amount) <= 0) && !formData.useLineItems && <li>• Enter an amount</li>}
                         {formData.useLineItems && formData.lineItems.length === 0 && <li>• Add at least one line item</li>}
@@ -2074,8 +2074,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   <div className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-success-600 flex-shrink-0 mt-0.5 dark:text-success-300" />
                     <div>
-                      <p className="text-sm font-medium text-success-800 dark:text-success-300">Ready to create</p>
-                      <p className="text-xs text-success-700 mt-1 dark:text-success-300">
+                      <p className="text-body-sm font-medium text-success-800 dark:text-success-300">Ready to create</p>
+                      <p className="text-caption text-success-700 mt-1 dark:text-success-300">
                         {formData.sendInvoiceEmail ? 'Invoice will be emailed to customer' : 'Invoice will be created as draft'}
                       </p>
                     </div>
@@ -2093,7 +2093,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
                 onClick={goBack}
-                className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50"
+                className="px-4 py-2 text-body-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50"
               >
                 Cancel
               </button>
@@ -2109,7 +2109,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   onClick={() => handleSubmit(false)}
                   disabled={loading || !canSubmit}
                   className={cn(
-                    'px-6 py-2.5 text-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
+                    'px-6 py-2.5 text-body-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
                     canSubmit ? 'bg-primary-600 hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'
                   )}
                 >
@@ -2131,7 +2131,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         footer={
           <button
             onClick={() => { setCreatedInvoice(null); navigation.navigate('receivables'); }}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
+            className="w-full px-4 py-2 text-body-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg"
           >
             Done
           </button>
@@ -2140,9 +2140,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         {createdInvoice && (
           <div className="space-y-4">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Payment link</p>
+              <p className="caption mb-1">Payment link</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded border border-neutral-200 dark:border-primary-800 font-mono truncate">
+                <code className="flex-1 text-body-sm bg-neutral-50 dark:bg-primary-950 px-3 py-2 rounded border border-neutral-200 dark:border-primary-800 font-mono truncate">
                   {createdInvoice.paymentLink}
                 </code>
                 <button
@@ -2158,7 +2158,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
               <div className="bg-white p-2 rounded-lg">
                 <QRCode value={createdInvoice.paymentLink} size={128} />
               </div>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500">Share this link or QR with the customer</p>
+              <p className="caption">Share this link or QR with the customer</p>
             </div>
           </div>
         )}

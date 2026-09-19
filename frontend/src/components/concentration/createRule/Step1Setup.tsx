@@ -64,7 +64,7 @@ export const Step1Setup: React.FC<Step1SetupProps> = ({
     />
 
     <div>
-      <label className="block text-sm font-medium text-primary-900 dark:text-neutral-50 mb-3">Sweep Type</label>
+      <label className="block body-strong mb-3">Sweep Type</label>
       <div className="grid grid-cols-2 gap-3">
         {(Object.keys(SWEEP_TYPES) as Array<keyof typeof SWEEP_TYPES>).map((type) => (
           <div
@@ -78,7 +78,7 @@ export const Step1Setup: React.FC<Step1SetupProps> = ({
             )}
           >
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{SWEEP_TYPES[type].label}</p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{SWEEP_TYPES[type].desc}</p>
+            <p className="body-sm mt-1">{SWEEP_TYPES[type].desc}</p>
           </div>
         ))}
       </div>

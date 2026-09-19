@@ -459,7 +459,7 @@ const StatCard: React.FC<{
   <Card padding="sm" className="animate-fade-in" style={delay ? { animationDelay: delay } : undefined}>
     <div className="flex items-center justify-between">
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{label}</p>
+        <p className="label">{label}</p>
         {loading ? (
           <Skeleton className="h-8 w-24 mt-1" />
         ) : (
@@ -468,10 +468,10 @@ const StatCard: React.FC<{
         {loading ? (
           <Skeleton className="h-3 w-20 mt-1" />
         ) : subValue ? (
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">{subValue}</p>
+          <p className="caption mt-0.5">{subValue}</p>
         ) : null}
         {trend && !loading && (
-          <div className={cn("flex items-center gap-1 text-xs mt-1", trend.value >= 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>
+          <div className={cn("flex items-center gap-1 text-caption mt-1", trend.value >= 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>
             {trend.value >= 0 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             <span>{Math.abs(trend.value)}% {trend.label}</span>
           </div>
@@ -577,7 +577,7 @@ const PartyPicker: React.FC<{
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{value.legalName}</p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+            <p className="text-body-sm text-neutral-500 dark:text-neutral-400 truncate">
               {value.contactPhone}
               {value.kycStatus === 'VERIFIED' && <span className="ml-2 text-success-600 dark:text-success-300">• KYC Verified</span>}
             </p>
@@ -615,7 +615,7 @@ const PartyPicker: React.FC<{
                   const Icon = config.icon;
                   return (
                     <button key={type} type="button" onClick={() => setCreateForm({ ...createForm, partyType: type })}
-                      className={cn('flex items-center gap-2 p-2 rounded-lg border text-sm',
+                      className={cn('flex items-center gap-2 p-2 rounded-lg border text-body-sm',
                         createForm.partyType === type ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700')}>
                       <Icon className={cn('w-4 h-4', config.color)} /><span>{config.label}</span>
                     </button>
@@ -624,22 +624,22 @@ const PartyPicker: React.FC<{
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" placeholder="Full Name *"
+                  <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Full Name *"
                     value={createForm.legalName || ''} onChange={(e) => setCreateForm({ ...createForm, legalName: e.target.value })} />
                 </div>
-                <input type="tel" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" placeholder="Mobile *"
+                <input type="tel" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Mobile *"
                   value={createForm.contactPhone || ''} onChange={(e) => setCreateForm({ ...createForm, contactPhone: e.target.value })} />
-                <input type="email" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" placeholder="Email"
+                <input type="email" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Email"
                   value={createForm.contactEmail || ''} onChange={(e) => setCreateForm({ ...createForm, contactEmail: e.target.value })} />
-                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" placeholder="Emirates ID"
+                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="Emirates ID"
                   value={createForm.emiratesId || ''} onChange={(e) => setCreateForm({ ...createForm, emiratesId: e.target.value })} />
-                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm" placeholder="City"
+                <input type="text" className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm" placeholder="City"
                   value={createForm.city || ''} onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })} />
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t">
-                <button type="button" onClick={() => setShowCreateForm(false)} className="px-3 py-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg text-sm">Cancel</button>
+                <button type="button" onClick={() => setShowCreateForm(false)} className="px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg body-sm">Cancel</button>
                 <button type="button" onClick={handleCreateParty} disabled={createLoading || !createForm.legalName || !createForm.contactPhone}
-                  className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-1">
+                  className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-body-sm hover:bg-primary-700 disabled:opacity-50 flex items-center gap-1">
                   {createLoading && <Loader2 className="w-3 h-3 animate-spin" />}Create
                 </button>
               </div>
@@ -660,7 +660,7 @@ const PartyPicker: React.FC<{
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{party.legalName}</p>
-                            <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                            <div className="flex items-center gap-2 body-sm">
                               {party.contactPhone && <span>{party.contactPhone}</span>}
                               {party.city && <span>• {party.city}</span>}
                             </div>
@@ -673,12 +673,12 @@ const PartyPicker: React.FC<{
                 ) : searchQuery.length >= 2 ? (
                   <div className="p-4 text-center text-neutral-500 dark:text-neutral-400">
                     <User className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
-                    <p className="text-sm">No customers found</p>
+                    <p className="text-body-sm">No customers found</p>
                   </div>
                 ) : (
                   <div className="p-4 text-center text-neutral-500 dark:text-neutral-400">
                     <Search className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
-                    <p className="text-sm">Type at least 2 characters</p>
+                    <p className="text-body-sm">Type at least 2 characters</p>
                   </div>
                 )}
               </div>
@@ -717,7 +717,7 @@ const ProgramCard: React.FC<{
           </div>
           <div>
             <h3 className="section-title">{program.programName}</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">{program.programCode}</p>
+            <p className="body-sm">{program.programCode}</p>
           </div>
         </div>
         <Badge variant={statusConfig.color as any}>{statusConfig.label}</Badge>
@@ -725,28 +725,28 @@ const ProgramCard: React.FC<{
 
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Active Wallets</p>
+          <p className="caption">Active Wallets</p>
           <p className="section-title">{program.activeWallets.toLocaleString()}</p>
         </div>
         <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Balance</p>
+          <p className="caption">Total Balance</p>
           <p className="section-title">{formatCurrency(program.totalBalance)}</p>
         </div>
         <div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Daily Limit</p>
-          {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-xl font-semibold`;
+          <p className="caption">Daily Limit</p>
+          {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-semibold`;
               muted ink kept for the secondary figure. */}
           <p className="stat-value-xs text-neutral-700 dark:text-neutral-200">{formatCurrency(program.dailySpendLimit)}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-neutral-200 dark:border-primary-800">
-        <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-2 body-sm">
           <Building2 className="w-4 h-4" />
           <span>{program.operatorName}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400 dark:text-neutral-500">
+          <span className="caption">
             {program.currency} • Since {new Date(program.launchDate).toLocaleDateString()}
           </span>
           <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
@@ -781,32 +781,32 @@ const WalletRow: React.FC<{
           <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{wallet.holderName}</p>
-              {wallet.partyId && <span className="text-xs px-1.5 py-0.5 bg-info-100 text-info-700 rounded dark:bg-info-500/20 dark:text-info-300">Linked</span>}
+              <p className="body-strong">{wallet.holderName}</p>
+              {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded dark:bg-info-500/20 dark:text-info-300">Linked</span>}
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{wallet.holderMobile}</p>
+            <p className="caption">{wallet.holderMobile}</p>
           </div>
         </div>
       </td>
       <td className="data-table-cell">
         <div className="flex items-center gap-1">
-          <p className="text-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
+          <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{wallet.walletReference}</p>
           <button onClick={() => copyToClipboard(wallet.walletReference)} className="p-1 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" /></button>
         </div>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{wallet.programCode || wallet.programName}</p>
+        <p className="caption">{wallet.programCode || wallet.programName}</p>
       </td>
       <td className="data-table-cell">
-        <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.currentBalance)}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">Avail: {formatCurrency(wallet.availableBalance)}</p>
+        <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
+        <p className="caption">Avail: {formatCurrency(wallet.availableBalance)}</p>
       </td>
       <td className="data-table-cell">
         <div className="space-y-1.5 w-28">
           <div>
-            <div className="flex justify-between text-xs mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
+            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Daily</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.dailySpent)}</span></div>
             <ProgressBar value={dailyUsage} size="sm" variant={dailyUsage > 80 ? 'warning' : 'default'} />
           </div>
           <div>
-            <div className="flex justify-between text-xs mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
+            <div className="flex justify-between text-caption mb-0.5"><span className="text-neutral-400 dark:text-neutral-500">Monthly</span><span className="text-neutral-600 dark:text-neutral-300">{formatCurrency(wallet.monthlySpent)}</span></div>
             <ProgressBar value={monthlyUsage} size="sm" variant={monthlyUsage > 80 ? 'warning' : 'default'} />
           </div>
         </div>
@@ -818,8 +818,8 @@ const WalletRow: React.FC<{
         </div>
       </td>
       <td className="data-table-cell">
-        <p className="text-sm text-neutral-700 dark:text-neutral-200">{wallet.transactionCount} txns</p>
-        <p className="text-xs text-neutral-400 dark:text-neutral-500">{wallet.lastTransaction ? formatDate(wallet.lastTransaction) : 'No activity'}</p>
+        <p className="text-body-sm text-neutral-700 dark:text-neutral-200">{wallet.transactionCount} txns</p>
+        <p className="caption">{wallet.lastTransaction ? formatDate(wallet.lastTransaction) : 'No activity'}</p>
       </td>
       <td className="data-table-cell">
         <div className="relative">
@@ -828,21 +828,21 @@ const WalletRow: React.FC<{
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowActions(false)} />
               <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-primary-900 rounded-xl shadow-lg border border-neutral-200 dark:border-primary-800 py-1 z-20">
-                <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
-                <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Edit className="w-4 h-4" /> Edit Limits</button>
+                <button onClick={() => { onView(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Eye className="w-4 h-4" /> View Details</button>
+                <button onClick={() => { onEdit(); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Edit className="w-4 h-4" /> Edit Limits</button>
                 <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
-                <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
-                <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
-                <button onClick={() => { onAction('transfer'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Send className="w-4 h-4" /> Transfer</button>
+                <button onClick={() => { onAction('load'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> Load Funds</button>
+                <button onClick={() => { onAction('withdraw'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" /> Withdraw</button>
+                <button onClick={() => { onAction('transfer'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50"><Send className="w-4 h-4" /> Transfer</button>
                 <hr className="my-1 border-neutral-100 dark:border-primary-800/60" />
-                {!wallet.kycVerified && <button onClick={() => { onAction('verify-kyc'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><UserCheck className="w-4 h-4" /> Verify KYC</button>}
+                {!wallet.kycVerified && <button onClick={() => { onAction('verify-kyc'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><UserCheck className="w-4 h-4" /> Verify KYC</button>}
                 {wallet.status === 'ACTIVE' ? (
                   <>
-                    <button onClick={() => { onAction('suspend'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-warning-600 dark:text-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 dark:hover:bg-warning-500/10"><Lock className="w-4 h-4" /> Suspend</button>
-                    <button onClick={() => { onAction('block'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 dark:hover:bg-error-500/10"><Ban className="w-4 h-4" /> Block</button>
+                    <button onClick={() => { onAction('suspend'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-warning-600 dark:text-warning-300 hover:bg-warning-50 dark:bg-warning-500/10 dark:hover:bg-warning-500/10"><Lock className="w-4 h-4" /> Suspend</button>
+                    <button onClick={() => { onAction('block'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-error-600 dark:text-error-300 hover:bg-error-50 dark:bg-error-500/10 dark:hover:bg-error-500/10"><Ban className="w-4 h-4" /> Block</button>
                   </>
                 ) : wallet.status === 'SUSPENDED' && (
-                  <button onClick={() => { onAction('reactivate'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><Unlock className="w-4 h-4" /> Reactivate</button>
+                  <button onClick={() => { onAction('reactivate'); setShowActions(false); }} className="w-full flex items-center gap-2 px-4 py-2 text-body-sm text-success-600 dark:text-success-300 hover:bg-success-50 dark:bg-success-500/10 dark:hover:bg-success-500/10"><Unlock className="w-4 h-4" /> Reactivate</button>
                 )}
               </div>
             </>
@@ -870,7 +870,7 @@ const WalletMobileCard: React.FC<{
           <Avatar name={wallet.holderName} size="md" status={wallet.kycVerified ? 'online' : 'away'} />
           <div>
             <p className="font-medium text-primary-900 dark:text-neutral-50">{wallet.holderName}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{wallet.walletReference}</p>
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{wallet.walletReference}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -881,17 +881,17 @@ const WalletMobileCard: React.FC<{
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Balance</p>
-          <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(wallet.currentBalance)}</p>
+          <p className="caption">Balance</p>
+          <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
         </div>
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-          <p className="text-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(wallet.availableBalance)}</p>
+          <p className="caption">Available</p>
+          <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(wallet.availableBalance)}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{wallet.transactionCount} transactions</p>
+        <p className="caption">{wallet.transactionCount} transactions</p>
         <div className="flex items-center gap-1">
           <button onClick={(e) => { e.stopPropagation(); onAction('load'); }} className="p-1.5 hover:bg-success-50 dark:bg-success-500/10 rounded-lg dark:hover:bg-success-500/10" title="Load">
             <ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" />
@@ -1219,7 +1219,7 @@ const WalletPage: React.FC = () => {
     <Page>
       {/* Alerts */}
       {actionSuccess && <Alert variant="success" className="flex items-center gap-2"><CheckCircle className="w-4 h-4" />{actionSuccess}</Alert>}
-      {error && <Alert variant="error" className="flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={() => setError(null)} className="ml-auto underline text-sm">Dismiss</button></Alert>}
+      {error && <Alert variant="error" className="flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={() => setError(null)} className="ml-auto underline text-body-sm">Dismiss</button></Alert>}
 
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
@@ -1244,11 +1244,11 @@ const WalletPage: React.FC = () => {
             <StatusIconBadge tone="primary" icon={Building2} size="sm" rounded="lg" />
             <span className="font-medium text-primary-800 dark:text-neutral-100">Partner View</span>
           </div>
-          <select className="flex-1 max-w-xs border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 bg-white dark:bg-primary-900 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={selectedPartnerId} onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}>
+          <select className="flex-1 max-w-xs border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 bg-white dark:bg-primary-900 text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={selectedPartnerId} onChange={(e) => { setSelectedPartnerId(e.target.value); setCurrentPage(0); }}>
             <option value="">All Partners</option>
             {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-body-sm">
             <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{programs.length}</span> Programs</span>
             <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{stats.activeWallets?.toLocaleString()}</span> Wallets</span>
             <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(stats.totalBalance)}</span> Float</span>
@@ -1271,7 +1271,7 @@ const WalletPage: React.FC = () => {
             <StatCard label="KYC Rate" value={`${Math.round((stats.kycVerifiedCount / (stats.kycVerifiedCount + stats.kycPendingCount || 1)) * 100)}%`} subValue={`${stats.kycPendingCount} pending verification`} icon={<Shield className="w-5 h-5 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-50 dark:bg-warning-500/10" loading={loading} delay="0.35s" />
           </div>
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
+            <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-neutral-200 dark:border-primary-800 hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
                 <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="group-hover:bg-primary-200 transition-colors" />
@@ -1318,13 +1318,13 @@ const WalletPage: React.FC = () => {
                 <Input placeholder="Search by name, mobile or wallet ref..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} leftIcon={<Search className="w-4 h-4" />} />
               </div>
               <div className="flex flex-wrap gap-2">
-                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                   <option value="">All Status</option>
                   <option value="ACTIVE">Active</option>
                   <option value="SUSPENDED">Suspended</option>
                   <option value="BLOCKED">Blocked</option>
                 </select>
-                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
+                <select className="border border-neutral-200 dark:border-primary-800 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" value={kycFilter} onChange={(e) => setKycFilter(e.target.value)}>
                   <option value="">All KYC</option>
                   <option value="verified">Verified</option>
                   <option value="pending">Pending</option>
@@ -1394,7 +1394,7 @@ const WalletPage: React.FC = () => {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="p-4 border-t border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Page {currentPage + 1} of {totalPages} <span className="hidden sm:inline">({totalWallets} total wallets)</span></p>
+              <p className="body-sm">Page {currentPage + 1} of {totalPages} <span className="hidden sm:inline">({totalWallets} total wallets)</span></p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={currentPage === 0} onClick={() => setCurrentPage(p => p - 1)} leftIcon={<ChevronLeft className="w-4 h-4" />}>
                   <span className="hidden sm:inline">Previous</span>
@@ -1417,7 +1417,7 @@ const WalletPage: React.FC = () => {
           {/* Step 1: Program */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
-              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-sm font-medium">1</div>
+              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">1</div>
               <span className="font-medium">Select Program</span>
             </div>
             <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2.5" value={issueForm.programId} onChange={(e) => setIssueForm({ ...issueForm, programId: e.target.value })}>
@@ -1425,7 +1425,7 @@ const WalletPage: React.FC = () => {
               {programs.filter(p => p.status === 'ACTIVE').map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
             </select>
             {selectedProgramForIssue && (
-              <div className="flex gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="flex gap-4 caption">
                 <span>Daily: {formatCurrency(selectedProgramForIssue.dailySpendLimit)}</span>
                 <span>Monthly: {formatCurrency(selectedProgramForIssue.monthlySpendLimit)}</span>
                 {selectedProgramForIssue.kycRequired && <span className="text-warning-600 dark:text-warning-300">KYC Required</span>}
@@ -1436,7 +1436,7 @@ const WalletPage: React.FC = () => {
           {/* Step 2: Customer */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
-              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-sm font-medium">2</div>
+              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">2</div>
               <span className="font-medium">Customer</span>
             </div>
             <PartyPicker
@@ -1456,21 +1456,21 @@ const WalletPage: React.FC = () => {
               placeholder="Search or create customer..."
             />
             {!selectedParty && (
-              <Alert variant="info" className="text-sm"><User className="w-4 h-4 inline mr-2" />Search existing or create new. Linking to Party enables KYC tracking.</Alert>
+              <Alert variant="info" className="text-body-sm"><User className="w-4 h-4 inline mr-2" />Search existing or create new. Linking to Party enables KYC tracking.</Alert>
             )}
           </div>
 
           {/* Step 3: Hierarchy */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
-              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-sm font-medium">3</div>
+              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">3</div>
               <span className="font-medium">Hierarchy</span>
-              <span className="text-xs text-neutral-400 dark:text-neutral-500">(Optional)</span>
+              <span className="caption">(Optional)</span>
             </div>
             {issueForm.programId ? (
               <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 mb-2"><GitBranch className="w-4 h-4" />Place in hierarchy for reporting</div>
-                <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm" value={issueForm.hierarchyNodeId || ''} onChange={(e) => setIssueForm({ ...issueForm, hierarchyNodeId: e.target.value })}>
+                <div className="flex items-center gap-2 body-sm mb-2"><GitBranch className="w-4 h-4" />Place in hierarchy for reporting</div>
+                <select className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm" value={issueForm.hierarchyNodeId || ''} onChange={(e) => setIssueForm({ ...issueForm, hierarchyNodeId: e.target.value })}>
                   <option value="">No hierarchy (flat)</option>
                   <option value="node-uae">UAE Region</option>
                   <option value="node-dubai">├── Dubai</option>
@@ -1479,14 +1479,14 @@ const WalletPage: React.FC = () => {
                 </select>
               </div>
             ) : (
-              <p className="text-sm text-neutral-400 dark:text-neutral-500">Select program first</p>
+              <p className="text-body-sm text-neutral-400 dark:text-neutral-500">Select program first</p>
             )}
           </div>
 
           {/* Step 4: Settings */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-primary-700 dark:text-neutral-200">
-              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-sm font-medium">4</div>
+              <div className="w-6 h-6 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center text-body-sm font-medium">4</div>
               <span className="font-medium">Wallet Settings</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1513,7 +1513,7 @@ const WalletPage: React.FC = () => {
             </div>
             <label className="flex items-center gap-2 p-3 border border-neutral-200 dark:border-primary-800 rounded-lg cursor-pointer hover:bg-neutral-50 dark:hover:bg-primary-800/50">
               <input type="checkbox" checked={issueForm.autoTriggerKyc || false} onChange={(e) => setIssueForm({ ...issueForm, autoTriggerKyc: e.target.checked })} className="rounded" />
-              <div><span className="text-sm font-medium">Auto-trigger KYC</span><p className="text-xs text-neutral-500 dark:text-neutral-400">Start KYC if customer has ID</p></div>
+              <div><span className="text-body-sm font-medium">Auto-trigger KYC</span><p className="caption">Start KYC if customer has ID</p></div>
             </label>
           </div>
         </div>
@@ -1543,7 +1543,7 @@ const WalletPage: React.FC = () => {
               <option value="BANK_TRANSFER">Bank Transfer</option><option value="CASH">Cash</option>
             </select>
           </div>
-          {selectedWallet && <p className="text-sm text-neutral-500 dark:text-neutral-400">Available: {formatCurrency(selectedWallet.availableBalance)}</p>}
+          {selectedWallet && <p className="body-sm">Available: {formatCurrency(selectedWallet.availableBalance)}</p>}
         </div>
       </Modal>
 
@@ -1554,7 +1554,7 @@ const WalletPage: React.FC = () => {
           <Input label="To Wallet *" placeholder="WAL-XXXX-XXXXXXXX" value={transferForm.toWalletReference || ''} onChange={(e) => setTransferForm({ ...transferForm, toWalletReference: e.target.value })} />
           <Input label="Amount *" type="number" placeholder="0.00" value={transferForm.amount || ''} onChange={(e) => setTransferForm({ ...transferForm, amount: e.target.value })} />
           <Input label="Description" value={transferForm.description || ''} onChange={(e) => setTransferForm({ ...transferForm, description: e.target.value })} />
-          {selectedWallet && <p className="text-sm text-neutral-500 dark:text-neutral-400">Available: {formatCurrency(selectedWallet.availableBalance)}</p>}
+          {selectedWallet && <p className="body-sm">Available: {formatCurrency(selectedWallet.availableBalance)}</p>}
         </div>
       </Modal>
 
@@ -1568,7 +1568,7 @@ const WalletPage: React.FC = () => {
             </select>
           </div>
           <div><label className="field-label block mb-1">Data (CSV) *</label>
-            <textarea className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-32 font-mono text-sm" placeholder="walletRef,amount" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
+            <textarea className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 h-32 font-mono text-body-sm" placeholder="walletRef,amount" value={bulkLoadForm.csvData} onChange={(e) => setBulkLoadForm({ ...bulkLoadForm, csvData: e.target.value })} />
           </div>
         </div>
       </Modal>
@@ -1598,7 +1598,7 @@ const WalletPage: React.FC = () => {
         <div className="space-y-4">
           <Alert variant="warning">Blocking prevents all transactions.</Alert>
           <Input label="Reason *" value={blockForm.reason || ''} onChange={(e) => setBlockForm({ ...blockForm, reason: e.target.value })} />
-          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} /><span className="text-sm text-error-600 dark:text-error-300">Permanent</span></label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={blockForm.permanent} onChange={(e) => setBlockForm({ ...blockForm, permanent: e.target.checked })} /><span className="text-body-sm text-error-600 dark:text-error-300">Permanent</span></label>
         </div>
       </Modal>
 
@@ -1623,9 +1623,9 @@ const WalletPage: React.FC = () => {
               <Avatar name={walletDetail.holderName} size="lg" status={walletDetail.kycVerified ? 'online' : 'away'} />
               <div className="flex-1">
                 <h3 className="section-title">{walletDetail.holderName}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{walletDetail.holderMobile}</p>
-                {walletDetail.partyId && <span className="text-xs text-primary-500">Linked to Party</span>}
-                {walletDetail.hierarchyPath && <p className="text-xs text-neutral-400 dark:text-neutral-500 font-mono mt-1">{walletDetail.hierarchyPath}</p>}
+                <p className="body-sm">{walletDetail.holderMobile}</p>
+                {walletDetail.partyId && <span className="text-caption text-primary-500">Linked to Party</span>}
+                {walletDetail.hierarchyPath && <p className="text-caption text-neutral-400 dark:text-neutral-500 font-mono mt-1">{walletDetail.hierarchyPath}</p>}
               </div>
               <div className="flex flex-col gap-2">
                 <Badge variant={walletStatusConfig[walletDetail.status]?.color as any}>{walletDetail.status}</Badge>
@@ -1633,16 +1633,16 @@ const WalletPage: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              {/* Phase 12 Task E: .stat-value-xs / .stat-value-* replace the raw `text-xl font-semibold` hand-rolls. */}
-              <Card padding="sm" className="bg-primary-50 dark:bg-primary-800/40"><p className="text-xs text-neutral-500 dark:text-neutral-400">Balance</p><p className="stat-value-xs">{formatCurrency(walletDetail.currentBalance)}</p></Card>
-              <Card padding="sm" className="bg-success-50 dark:bg-success-500/10"><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p><p className="stat-value-xs text-success-600 dark:text-success-300">{formatCurrency(walletDetail.availableBalance)}</p></Card>
-              <Card padding="sm"><p className="text-xs text-neutral-500 dark:text-neutral-400">Monthly Spent</p><p className="stat-value-xs">{formatCurrency(walletDetail.monthlySpent || 0)}</p></Card>
+              {/* Phase 12 Task E: .stat-value-xs / .stat-value-* replace the raw `text-heading-sm font-semibold` hand-rolls. */}
+              <Card padding="sm" className="bg-primary-50 dark:bg-primary-800/40"><p className="caption">Balance</p><p className="stat-value-xs">{formatCurrency(walletDetail.currentBalance)}</p></Card>
+              <Card padding="sm" className="bg-success-50 dark:bg-success-500/10"><p className="caption">Available</p><p className="stat-value-xs text-success-600 dark:text-success-300">{formatCurrency(walletDetail.availableBalance)}</p></Card>
+              <Card padding="sm"><p className="caption">Monthly Spent</p><p className="stat-value-xs">{formatCurrency(walletDetail.monthlySpent || 0)}</p></Card>
             </div>
             <div>
               <h4 className="font-medium mb-3">Limits</h4>
               <div className="space-y-3">
-                <div><div className="flex justify-between text-sm mb-1"><span>Daily</span><span>{formatCurrency(walletDetail.dailySpent)} / {formatCurrency(walletDetail.dailyLimit)}</span></div><ProgressBar value={(walletDetail.dailySpent / walletDetail.dailyLimit) * 100} size="sm" /></div>
-                <div><div className="flex justify-between text-sm mb-1"><span>Monthly</span><span>{formatCurrency(walletDetail.monthlySpent || 0)} / {formatCurrency(walletDetail.monthlyLimit)}</span></div><ProgressBar value={((walletDetail.monthlySpent || 0) / walletDetail.monthlyLimit) * 100} size="sm" /></div>
+                <div><div className="flex justify-between text-body-sm mb-1"><span>Daily</span><span>{formatCurrency(walletDetail.dailySpent)} / {formatCurrency(walletDetail.dailyLimit)}</span></div><ProgressBar value={(walletDetail.dailySpent / walletDetail.dailyLimit) * 100} size="sm" /></div>
+                <div><div className="flex justify-between text-body-sm mb-1"><span>Monthly</span><span>{formatCurrency(walletDetail.monthlySpent || 0)} / {formatCurrency(walletDetail.monthlyLimit)}</span></div><ProgressBar value={((walletDetail.monthlySpent || 0) / walletDetail.monthlyLimit) * 100} size="sm" /></div>
               </div>
             </div>
             {walletDetail.recentTransactions?.length > 0 && (
@@ -1653,7 +1653,7 @@ const WalletPage: React.FC = () => {
                     <div key={txn.id} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded">
                       <div className="flex items-center gap-2">
                         {txn.type.includes('CREDIT') || txn.type.includes('TOPUP') ? <ArrowDownRight className="w-4 h-4 text-success-600 dark:text-success-300" /> : <ArrowUpRight className="w-4 h-4 text-error-600 dark:text-error-300" />}
-                        <div><p className="text-sm">{txn.description || txn.type}</p><p className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(txn.transactionDate).toLocaleString()}</p></div>
+                        <div><p className="text-body-sm">{txn.description || txn.type}</p><p className="caption">{new Date(txn.transactionDate).toLocaleString()}</p></div>
                       </div>
                       <span className={cn('font-medium', txn.type.includes('CREDIT') || txn.type.includes('TOPUP') ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
                         {txn.type.includes('CREDIT') || txn.type.includes('TOPUP') ? '+' : '-'}{formatCurrency(txn.amount)}

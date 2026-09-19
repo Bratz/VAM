@@ -24,7 +24,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
       <Card className="text-center py-8">
         <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
         <p className="text-neutral-500 dark:text-neutral-400">No execution history yet</p>
-        <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Execute sweep rules to see history here</p>
+        <p className="caption mt-1">Execute sweep rules to see history here</p>
       </Card>
     );
   }
@@ -48,17 +48,17 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
             {executions.map((exec) => (
               <tr key={exec.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors">
                 {/* Reference */}
-                <td className="p-4 text-sm font-mono text-neutral-600 dark:text-neutral-300">
+                <td className="p-4 text-body-sm font-mono text-neutral-600 dark:text-neutral-300">
                   {(exec as any).executionReference || exec.id?.slice(0, 8) || 'N/A'}
                 </td>
 
                 {/* Rule Name */}
-                <td className="p-4 text-sm font-medium text-neutral-900 dark:text-neutral-50">
+                <td className="p-4 body-strong">
                   {(exec as any).ruleName || 'N/A'}
                 </td>
 
                 {/* Flow: Source → Target */}
-                <td className="p-4 text-xs">
+                <td className="p-4 text-caption">
                   <div className="flex items-center gap-1">
                     <span className="font-medium">{(exec as any).sourceEntityCode || ''}</span>
                     <ArrowRight className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
@@ -81,7 +81,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
                   />
                   {/* Balance change indicator */}
                   {(exec as any).balanceBefore !== undefined && (exec as any).balanceAfter !== undefined && (
-                    <div className="text-xs text-neutral-400 dark:text-neutral-500 font-normal">
+                    <div className="text-caption text-neutral-400 dark:text-neutral-500 font-normal">
                       {formatCurrency((exec as any).balanceBefore, (exec as any).currencyCode || 'AED')} → {formatCurrency((exec as any).balanceAfter, (exec as any).currencyCode || 'AED')}
                     </div>
                   )}
@@ -102,7 +102,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
                   </Badge>
                   {/* Error message if failed */}
                   {(exec as any).errorMessage && (
-                    <p className="text-xs text-error-500 dark:text-error-300 mt-1 max-w-[150px] truncate"
+                    <p className="text-caption text-error-500 dark:text-error-300 mt-1 max-w-[150px] truncate"
                        title={(exec as any).errorMessage}>
                       {(exec as any).errorMessage}
                     </p>
@@ -110,7 +110,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
                 </td>
 
                 {/* Time */}
-                <td className="p-4 text-sm text-neutral-600 dark:text-neutral-300">
+                <td className="p-4 body-sm">
                   {(exec as any).executionTime
                     ? formatRelativeTime((exec as any).executionTime)
                     : (exec as any).executedAt

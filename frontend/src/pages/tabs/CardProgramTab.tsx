@@ -133,9 +133,9 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
             >
               <div className="flex items-center gap-2 mb-2">
                 <type.icon className="w-5 h-5 text-primary-600" />
-                <span className="font-medium text-sm">{type.label}</span>
+                <span className="font-medium text-body-sm">{type.label}</span>
               </div>
-              <p className="text-xs text-neutral-500">{type.description}</p>
+              <p className="caption">{type.description}</p>
               {type.mccs.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {type.mccs.slice(0, 3).map(mcc => (
@@ -157,7 +157,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
             <div>
               <strong>{selectedType.label}:</strong> {selectedType.description}
               {selectedType.mccs.length > 0 && (
-                <p className="text-sm mt-1">
+                <p className="text-body-sm mt-1">
                   Typical MCCs: {selectedType.mccs.join(', ')}
                 </p>
               )}
@@ -192,12 +192,12 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
               {formData.linkedCardId ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-success-500" />
-                  <span className="text-sm text-neutral-600">Card linked</span>
+                  <span className="body-sm">Card linked</span>
                 </>
               ) : (
                 <>
                   <span className="w-2 h-2 rounded-full bg-neutral-300" />
-                  <span className="text-sm text-neutral-500">No card linked</span>
+                  <span className="body-sm">No card linked</span>
                 </>
               )}
             </div>
@@ -325,7 +325,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
           <CreditCard className="w-4 h-4" />
           <div>
             <strong>Card Program Configuration:</strong>
-            <ul className="text-sm mt-1 list-disc list-inside">
+            <ul className="text-body-sm mt-1 list-disc list-inside">
               {formData.cardProgramType && (
                 <li>Type: {CARD_PROGRAM_TYPES.find(t => t.value === formData.cardProgramType)?.label}</li>
               )}
@@ -368,7 +368,7 @@ const QuickAssignButton: React.FC<QuickAssignButtonProps> = ({
     type="button"
     onClick={onClick}
     className={cn(
-      'px-4 py-2 rounded-lg border text-sm font-medium transition-colors',
+      'px-4 py-2 rounded-lg border text-body-sm font-medium transition-colors',
       selected
         ? 'border-primary-500 bg-primary-100 text-primary-700'
         : 'border-neutral-200 hover:border-primary-300 text-neutral-600 hover:bg-neutral-50'

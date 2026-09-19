@@ -156,7 +156,7 @@ interface CorporateStepProps {
 
 const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, onSelect, error }) => (
   <div className="space-y-4">
-    <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 mb-4">
+    <div className="flex items-center gap-2 body-sm mb-4">
       <Building2 className="w-4 h-4" />
       <span>Select the corporate entity that will own this virtual account</span>
     </div>
@@ -185,7 +185,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
           <div className="flex-1">
             <p className="font-medium text-neutral-900 dark:text-neutral-50">{corp.name}</p>
             {corp.legalName && corp.legalName !== corp.name && (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{corp.legalName}</p>
+              <p className="body-sm">{corp.legalName}</p>
             )}
             {corp.baseCurrency && (
               <Badge variant="neutral" size="sm" className="mt-1">
@@ -201,7 +201,7 @@ const CorporateStep: React.FC<CorporateStepProps> = ({ corporates, selectedId, o
     </div>
 
     {error && (
-      <p className="text-sm text-error-600 dark:text-error-300 flex items-center gap-1">
+      <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
         <AlertCircle className="w-4 h-4" />
         {error}
       </p>
@@ -234,7 +234,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
   if (programs.length === 0) {
     return (
       <Alert variant="warning" title="No Programs Found">
-        <p className="text-sm">
+        <p className="text-body-sm">
           Please create a program for this corporate before creating virtual accounts.
         </p>
       </Alert>
@@ -243,13 +243,13 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+      <div className="flex items-center gap-2 body-sm mb-2">
         <Layers className="w-4 h-4" />
         <span>Select the program for this virtual account</span>
       </div>
 
       <Alert variant="info" title="Program determines hierarchy structure">
-        <p className="text-sm">
+        <p className="text-body-sm">
           Each program has configured hierarchy levels. The VA will be placed according to the dimension values you provide.
         </p>
       </Alert>
@@ -282,7 +282,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="info" size="sm">{program.programType}</Badge>
-                <span className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{program.currencyCode}</span>
+                <span className="body-sm">{program.currencyCode}</span>
                 {program.hierarchyEnabled && (
                   <Badge variant="success" size="sm">Hierarchy</Badge>
                 )}
@@ -296,7 +296,7 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
       </div>
 
       {error && (
-        <p className="text-sm text-error-600 dark:text-error-300 flex items-center gap-1">
+        <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
           <AlertCircle className="w-4 h-4" />
           {error}
         </p>
@@ -350,13 +350,13 @@ const PlacementStep: React.FC<PlacementStepProps> = ({
   if (aggLevels.length === 0) {
     return (
       <Alert variant="warning" title="No Hierarchy Levels Configured">
-        <p className="text-sm">This program doesn't have hierarchy levels configured. Please configure hierarchy levels first.</p>
+        <p className="text-body-sm">This program doesn't have hierarchy levels configured. Please configure hierarchy levels first.</p>
       </Alert>
     );
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+      <div className="flex items-center gap-2 body-sm">
         <GitBranch className="w-4 h-4" />
         <span>Pick where the new VA lives — or grow a new branch in place</span>
       </div>
@@ -370,7 +370,7 @@ const PlacementStep: React.FC<PlacementStepProps> = ({
 
       {selection && (
         <div className="p-3 bg-cat-1-soft dark:bg-cat-1/15 rounded-lg border border-cat-1/20 dark:border-cat-1/30">
-          <div className="flex items-center gap-1 flex-wrap text-sm">
+          <div className="flex items-center gap-1 flex-wrap text-body-sm">
             {selection.pathLabels.map((label, i) => (
               <React.Fragment key={`${label}-${i}`}>
                 {i > 0 && <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
@@ -384,7 +384,7 @@ const PlacementStep: React.FC<PlacementStepProps> = ({
       )}
 
       {error && (
-        <p className="text-sm text-error-600 dark:text-error-300 flex items-center gap-1">
+        <p className="text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1">
           <AlertCircle className="w-4 h-4" />
           {error}
         </p>
@@ -436,7 +436,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
       {/* Placement card — the wizard's counterpart to the tree modal's
           "Parent:" card: the final confirmation of WHERE this VA lands. */}
       <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
-        <div className="flex items-center gap-2 text-sm mb-1">
+        <div className="flex items-center gap-2 text-body-sm mb-1">
           <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
           <span className="text-neutral-600 dark:text-neutral-300">Will be created under:</span>
         </div>
@@ -466,7 +466,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
           <select
             value={owningEntityId}
             onChange={(e) => onOwningEntityChange(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm"
           >
             <option value="">Inherit from parent</option>
             {entities.filter(e => !e.status || e.status === 'ACTIVE').map(entity => (
@@ -488,7 +488,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
           maxLength={100}
         />
         {errors.vaName && (
-          <p className="text-sm text-error-500 mt-1">{errors.vaName}</p>
+          <p className="text-body-sm text-error-500 mt-1">{errors.vaName}</p>
         )}
       </div>
 
@@ -511,7 +511,7 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
           placeholder="e.g., ERP-12345 or SAP-ACC-001"
           maxLength={100}
         />
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-1">
+        <p className="caption mt-1">
           Reference ID from your ERP or accounting system
         </p>
       </div>
@@ -778,7 +778,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                 onClick={() => currentStep > step.id && setCurrentStep(step.id)}
               >
                 <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                  "w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium",
                   currentStep === step.id ? "bg-primary-600 text-white" :
                   currentStep > step.id ? "bg-primary-100 text-primary-600 dark:text-primary-200 dark:bg-primary-700" :
                   "bg-neutral-100 text-neutral-400 dark:text-neutral-500 dark:bg-primary-800"
@@ -790,7 +790,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                   )}
                 </div>
                 <span className={cn(
-                  "text-sm font-medium hidden sm:inline",
+                  "text-body-sm font-medium hidden sm:inline",
                   currentStep >= step.id ? "text-primary-900 dark:text-neutral-50" : "text-neutral-400 dark:text-neutral-500"
                 )}>
                   {step.title}
@@ -808,7 +808,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
 
         {/* Selection Summary */}
         {currentStep > 1 && (
-          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg text-sm">
+          <div className="flex flex-wrap items-center gap-2 mb-4 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg text-body-sm">
             {selectedCorporateId && (
               <Badge variant="neutral" size="sm">
                 <Building2 className="w-3 h-3 mr-1" />
@@ -880,13 +880,13 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
         {errors.submit && (
           <div className="mt-4 p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300 flex-shrink-0" />
-            <p className="text-sm text-error-700 dark:text-error-300">{errors.submit}</p>
+            <p className="text-body-sm text-error-700 dark:text-error-300">{errors.submit}</p>
           </div>
         )}
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 mt-4 border-t border-neutral-200 dark:border-primary-800">
-          <div className="text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">
+          <div className="body-sm">
             Step {currentStep} of {steps.length}
           </div>
           <div className="flex gap-2">

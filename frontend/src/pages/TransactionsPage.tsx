@@ -207,7 +207,7 @@ const StatusIcon: React.FC<{ status: string }> = ({ status }) => {
 };
 
 // Phase 12 Task E: local StatCard clone (tinted-gradient card + raw
-// `text-xl font-bold` value) replaced by the shared <StatTile layout="row">
+// `text-heading-sm font-bold` value) replaced by the shared <StatTile layout="row">
 // (components/ui/StatTile) — see the stats strip in the page body.
 
 
@@ -336,7 +336,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
             </div>
             <div>
               <p className="section-title">{transaction.referenceNumber}</p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">{transaction.movementType.replace(/_/g, ' ')}</p>
+              <p className="body-sm">{transaction.movementType.replace(/_/g, ' ')}</p>
             </div>
           </div>
           <Badge variant={getStatusVariant(transaction.status)} size="md">{transaction.status}</Badge>
@@ -344,7 +344,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
         {/* Amount */}
         <div className="bg-gradient-to-br from-neutral-50 to-white rounded-2xl p-6 text-center border border-neutral-100 dark:border-primary-800/60 dark:from-primary-950 dark:to-primary-900">
-          <p className="text-sm text-neutral-500 mb-2 dark:text-neutral-400">Amount</p>
+          <p className="body-sm mb-2">Amount</p>
           {/* Phase 9.1 Task B: hero amount uses .stat-value (Fraunces 36px/600).
               The conditional tone class wins by cascade order — it sits in
               the @layer utilities while .stat-value's text-primary-900 sits
@@ -360,7 +360,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
             <button
               onClick={() => setActiveTab('details')}
               className={cn(
-                'flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all',
+                'flex-1 px-4 py-2 rounded-md text-body-sm font-medium transition-all',
                 activeTab === 'details'
                   ? 'bg-white text-neutral-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50'
                   : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
@@ -372,7 +372,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
             <button
               onClick={() => setActiveTab('accounting')}
               className={cn(
-                'flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all',
+                'flex-1 px-4 py-2 rounded-md text-body-sm font-medium transition-all',
                 activeTab === 'accounting'
                   ? 'bg-white text-neutral-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50'
                   : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
@@ -381,7 +381,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               <Layers className="w-4 h-4 inline mr-2" />
               Fund Movements
               {groupedData?.entryCount && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-neutral-200 rounded-full dark:bg-primary-800">
+                <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-200 rounded-full dark:bg-primary-800">
                   {groupedData.entryCount}
                 </span>
               )}
@@ -393,51 +393,51 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         {activeTab === 'details' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Virtual Account</p>
+              <p className="caption mb-1.5">Virtual Account</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.vaName}</p>
-              <p className="text-sm text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{transaction.vaNumber}</p>
+              <p className="text-body-sm text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{transaction.vaNumber}</p>
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Counterparty</p>
+              <p className="caption mb-1.5">Counterparty</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.counterpartyName || '-'}</p>
               {transaction.counterpartyAccount && (
-                <p className="text-sm text-neutral-500 font-mono mt-0.5 truncate dark:text-neutral-400">{transaction.counterpartyAccount}</p>
+                <p className="text-body-sm text-neutral-500 font-mono mt-0.5 truncate dark:text-neutral-400">{transaction.counterpartyAccount}</p>
               )}
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Transaction Date</p>
+              <p className="caption mb-1.5">Transaction Date</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(transaction.transactionDate)}</p>
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Value Date</p>
+              <p className="caption mb-1.5">Value Date</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.valueDate ? formatDate(transaction.valueDate) : '-'}</p>
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Balance Before</p>
+              <p className="caption mb-1.5">Balance Before</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(transaction.balanceBefore, transaction.currencyCode)}</p>
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Balance After</p>
+              <p className="caption mb-1.5">Balance After</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(transaction.balanceAfter, transaction.currencyCode)}</p>
             </div>
             <div className="sm:col-span-2 bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Description</p>
+              <p className="caption mb-1.5">Description</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.description || '-'}</p>
             </div>
             <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Channel</p>
+              <p className="caption mb-1.5">Channel</p>
               <Badge variant="neutral">{transaction.channel || 'N/A'}</Badge>
             </div>
             {transaction.externalReference && (
               <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-                <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">External Reference</p>
-                <p className="font-medium text-neutral-900 font-mono text-sm dark:text-neutral-50">{transaction.externalReference}</p>
+                <p className="caption mb-1.5">External Reference</p>
+                <p className="font-medium text-neutral-900 font-mono text-body-sm dark:text-neutral-50">{transaction.externalReference}</p>
               </div>
             )}
             {transaction.correlationId && (
               <div className="bg-neutral-50 rounded-xl p-4 dark:bg-primary-950">
-                <p className="text-xs text-neutral-500 mb-1.5 dark:text-neutral-400">Correlation ID</p>
-                <p className="font-medium text-neutral-900 font-mono text-xs truncate dark:text-neutral-50">{transaction.correlationId}</p>
+                <p className="caption mb-1.5">Correlation ID</p>
+                <p className="font-medium text-neutral-900 font-mono text-caption truncate dark:text-neutral-50">{transaction.correlationId}</p>
               </div>
             )}
           </div>
@@ -450,7 +450,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 Shadow VA / Settlement VA legs are noise for day-to-day use,
                 but reconciliation/audit needs the full picture on demand. */}
             <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">Show internal settlement accounts</span>
+              <span className="body-sm">Show internal settlement accounts</span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -481,7 +481,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 {!!groupedData?.feeAmount && groupedData.feeAmount > 0 && (
                   <div className="bg-warning-50 rounded-xl p-4 border border-warning-100 dark:bg-warning-500/10 dark:border-warning-500/30">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-warning-800 dark:text-warning-300">Fee Applied</span>
+                      <span className="text-body-sm text-warning-800 dark:text-warning-300">Fee Applied</span>
                       <span className="font-bold text-warning-900">
                         {formatCurrency(groupedData.feeAmount, groupedData.currencyCode)}
                       </span>
@@ -496,7 +496,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
-                      <span className="text-sm font-medium text-info-900">
+                      <span className="text-body-sm font-medium text-info-900">
                         Fund Movement • {groupedData.operationType.replace(/_/g, ' ')}
                       </span>
                     </div>
@@ -504,7 +504,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                       {groupedData.direction}
                     </Badge>
                   </div>
-                  <p className="text-xs text-info-700 dark:text-info-300">
+                  <p className="text-caption text-info-700 dark:text-info-300">
                     This transaction involved {groupedData.entryCount} fund {groupedData.entryCount === 1 ? 'movement' : 'movements'} across your account structure.
                   </p>
                 </div>
@@ -529,7 +529,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                           {/* Left: Leg info */}
                           <div className="flex items-start gap-3">
                             <div className={cn(
-                              'w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold',
+                              'w-8 h-8 rounded-lg flex items-center justify-center text-body-sm font-bold',
                               entryIsCredit ? 'bg-cat-5/10 text-cat-5 dark:bg-cat-5/15' : 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300'
                             )}>
                               {entry.legNumber}
@@ -538,21 +538,21 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-medium text-neutral-900 dark:text-neutral-50">{entry.vaName}</span>
                                 {entry.transactionId === transaction.id && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-info-200 text-info-800 rounded dark:text-info-300">
+                                  <span className="text-caption px-1.5 py-0.5 bg-info-200 text-info-800 rounded dark:text-info-300">
                                     Current
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-neutral-500 font-mono dark:text-neutral-400">{entry.vaNumber}</p>
+                              <p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{entry.vaNumber}</p>
                               <div className="flex items-center gap-2 mt-2">
                                 <span className={cn(
-                                  'text-xs px-2 py-0.5 rounded-full font-medium',
+                                  'text-caption px-2 py-0.5 rounded-full font-medium',
                                   getAccountTypeBadgeClass(entry.accountType)
                                 )}>
                                   {entry.accountType.replace(/_/g, ' ')}
                                 </span>
                                 <span className={cn(
-                                  'text-xs px-2 py-0.5 rounded-full font-medium',
+                                  'text-caption px-2 py-0.5 rounded-full font-medium',
                                   getMovementTypeBadgeClass(entry.movementType)
                                 )}>
                                   {entry.movementType.replace(/_/g, ' ')}
@@ -564,12 +564,12 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                           {/* Right: Amount and balance */}
                           <div className="text-right">
                             <p className={cn(
-                              'text-lg font-bold',
+                              'text-body-lg font-bold',
                               entryIsCredit ? 'text-cat-5' : 'text-rose-600 dark:text-rose-300'
                             )}>
                               {entryIsCredit ? '+' : '-'}{formatCurrency(entry.amount, entry.currencyCode)}
                             </p>
-                            <div className="text-xs text-neutral-500 mt-1 space-y-0.5 dark:text-neutral-400">
+                            <div className="caption mt-1 space-y-0.5">
                               <div className="flex items-center justify-end gap-1">
                                 <span>Before:</span>
                                 <span className="amount">{formatCurrency(entry.balanceBefore, entry.currencyCode)}</span>
@@ -584,7 +584,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
                         {/* Description if available */}
                         {entry.description && (
-                          <p className="text-xs text-neutral-500 mt-3 pt-3 border-t border-neutral-200 dark:text-neutral-400 dark:border-primary-800">
+                          <p className="caption mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
                             {entry.description}
                           </p>
                         )}
@@ -599,7 +599,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 {!!groupedData?.feeAmount && groupedData.feeAmount > 0 ? (
                   <>
                     <p className="font-medium">No movements on your accounts</p>
-                    <p className="text-sm mt-1">
+                    <p className="text-body-sm mt-1">
                       {showInternalAccounts
                         ? 'This fee was processed entirely through internal settlement accounts.'
                         : 'This fee was processed through internal settlement accounts — switch on "Show internal settlement accounts" above to see them.'}
@@ -608,7 +608,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
                 ) : (
                   <>
                     <p className="font-medium">No fund movements to show</p>
-                    <p className="text-sm mt-1">
+                    <p className="text-body-sm mt-1">
                       {showInternalAccounts
                         ? "This transaction didn't involve any other fund movements."
                         : 'This transaction only moved funds through internal settlement accounts — switch on "Show internal settlement accounts" above to see them.'}
@@ -700,7 +700,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
                 key={t}
                 type="button"
                 className={cn(
-                  'px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                  'px-4 py-3 rounded-xl text-body-sm font-medium transition-all duration-200',
                   type === t
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 shadow-sm dark:bg-primary-700 dark:text-neutral-50'
                     : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
@@ -1034,7 +1034,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             <StatusIconBadge tone="info" icon={FileCode} className="dark:bg-info-500/20" />
             <div>
               <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">ISO 20022 Message Simulation</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Simulate incoming payment messages as if received from SWIFT/Clearing</p>
+              <p className="caption">Simulate incoming payment messages as if received from SWIFT/Clearing</p>
             </div>
           </div>
 
@@ -1051,9 +1051,9 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             >
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={messageType === 'pacs008' ? 'info' : 'neutral'} size="sm">pacs.008</Badge>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">FIToFI Customer Credit Transfer</span>
+                <span className="caption">FIToFI Customer Credit Transfer</span>
               </div>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">
+              <p className="caption">
                 Standard SWIFT payment message for incoming cross-border or domestic payments
               </p>
             </button>
@@ -1069,9 +1069,9 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
             >
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant={messageType === 'camt054' ? 'info' : 'neutral'} size="sm">camt.054</Badge>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Bank to Customer Debit/Credit Notification</span>
+                <span className="caption">Bank to Customer Debit/Credit Notification</span>
               </div>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">
+              <p className="caption">
                 Bank statement notification message for collection/credit advice
               </p>
             </button>
@@ -1256,7 +1256,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 type="button"
                 onClick={() => setCreditorMode('viban')}
                 className={cn(
-                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
+                  'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'viban'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
                     : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
@@ -1269,7 +1269,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 type="button"
                 onClick={() => setCreditorMode('select')}
                 className={cn(
-                  'flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
+                  'flex-1 px-4 py-2.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center justify-center gap-2',
                   creditorMode === 'select'
                     ? 'bg-primary-100 text-primary-900 border-2 border-primary-500 dark:bg-primary-700 dark:text-neutral-50'
                     : 'bg-neutral-100 text-neutral-600 border-2 border-transparent hover:bg-neutral-200 dark:bg-primary-800 dark:text-neutral-300'
@@ -1312,7 +1312,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                       <span className="ml-2">Lookup</span>
                     </Button>
                   </div>
-                  <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                  <p className="caption mt-1">
                     Enter the VIBAN as it appears on the incoming payment message
                   </p>
                 </div>
@@ -1321,7 +1321,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
                 {vibanLookupError && (
                   <div className="flex items-start gap-2 p-3 bg-error-50 border border-error-100 rounded-lg dark:bg-error-500/10 dark:border-error-500/30">
                     <XCircle className="w-4 h-4 text-error-600 mt-0.5 dark:text-error-300" />
-                    <div className="text-sm text-error-700 dark:text-error-300">{vibanLookupError}</div>
+                    <div className="text-body-sm text-error-700 dark:text-error-300">{vibanLookupError}</div>
                   </div>
                 )}
               </div>
@@ -1361,11 +1361,11 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
               <div className="mt-4 p-3 bg-success-50 border border-success-100 rounded-xl dark:bg-success-500/10 dark:border-success-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
-                  <span className="text-sm font-medium text-success-800 dark:text-success-300">
+                  <span className="text-body-sm font-medium text-success-800 dark:text-success-300">
                     {creditorMode === 'viban' ? 'VIBAN Resolved to Account' : 'Selected Account'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-caption">
                   <div>
                     <span className="text-neutral-500 dark:text-neutral-400">VA Number:</span>
                     <span className="ml-1 font-mono text-neutral-900 dark:text-neutral-50">{selectedVA.vaNumber}</span>
@@ -1423,9 +1423,9 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         {/* Info Banner */}
         <div className="flex items-start gap-3 p-4 bg-warning-50 border border-warning-100 rounded-xl dark:bg-warning-500/10 dark:border-warning-500/30">
           <Info className="w-5 h-5 text-warning-600 shrink-0 mt-0.5 dark:text-warning-300" />
-          <div className="text-sm text-warning-800 dark:text-warning-300">
+          <div className="text-body-sm text-warning-800 dark:text-warning-300">
             <p className="font-medium mb-1">Simulation Mode</p>
-            <p className="text-xs text-warning-700 dark:text-warning-300">
+            <p className="text-caption text-warning-700 dark:text-warning-300">
               This will create a credit transaction on the selected virtual account, simulating an incoming
               {messageType === 'pacs008' ? ' pacs.008 SWIFT payment' : ' camt.054 bank notification'}.
               In production, these messages would be received automatically from SWIFT or the clearing system.
@@ -1706,8 +1706,8 @@ const TransactionsPage: React.FC = () => {
             <MovementIcon type={t.movementType} />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.referenceNumber}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{t.movementType.replace(/_/g, ' ')}</p>
+            <p className="text-body-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.referenceNumber}</p>
+            <p className="caption">{t.movementType.replace(/_/g, ' ')}</p>
           </div>
         </div>
       ),
@@ -1716,8 +1716,8 @@ const TransactionsPage: React.FC = () => {
       key: 'vaName', header: 'Account', mobileHidden: true, minWidth: 190, dropOrder: 1,
       render: (_, t) => (
         <div className="min-w-0">
-          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.vaName}</p>
-          <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{t.vaNumber}</p>
+          <p className="text-body-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.vaName}</p>
+          <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{t.vaNumber}</p>
         </div>
       ),
     },
@@ -1725,9 +1725,9 @@ const TransactionsPage: React.FC = () => {
       key: 'counterpartyName', header: 'Counterparty', minWidth: 320, dropOrder: 2,
       render: (_, t) => (
         <div className="min-w-0">
-          <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
+          <p className="text-body-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
           {t.counterpartyAccount && (
-            <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
+            <p className="text-caption text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
           )}
         </div>
       ),
@@ -1735,7 +1735,7 @@ const TransactionsPage: React.FC = () => {
     {
       key: 'amount', header: 'Amount', align: 'right', mobileValue: true, minWidth: 160,
       render: (_, t) => (
-        <p className={cn('text-sm font-semibold', getAmountColorClass(t.movementType))}>
+        <p className={cn('text-body-sm font-semibold', getAmountColorClass(t.movementType))}>
           {isCredit(t.movementType) ? '+' : '-'}{formatCurrency(t.amount, t.currencyCode)}
         </p>
       ),
@@ -1753,8 +1753,8 @@ const TransactionsPage: React.FC = () => {
       key: 'transactionDate', header: 'Date', mobileHidden: true, minWidth: 150, dropOrder: 3,
       render: (_, t) => (
         <div>
-          <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
+          <p className="text-body-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
+          <p className="caption">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
         </div>
       ),
     },
@@ -1802,10 +1802,10 @@ const TransactionsPage: React.FC = () => {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.primaryReferenceNumber}</p>
+              <p className="text-body-sm font-mono text-neutral-900 truncate dark:text-neutral-50">{t.primaryReferenceNumber}</p>
               <OperationTypeBadge type={t.operationType} />
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="caption">
               {t.entryCount} fund {t.entryCount === 1 ? 'movement' : 'movements'}
             </p>
           </div>
@@ -1816,8 +1816,8 @@ const TransactionsPage: React.FC = () => {
       key: 'userVaName', header: 'Account', mobileHidden: true, minWidth: 220, dropOrder: 1,
       render: (_, t) => (
         <div className="min-w-0">
-          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.userVaName || '-'}</p>
-          <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{t.userVaNumber}</p>
+          <p className="text-body-sm font-medium text-neutral-900 truncate dark:text-neutral-50">{t.userVaName || '-'}</p>
+          <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{t.userVaNumber}</p>
         </div>
       ),
     },
@@ -1825,9 +1825,9 @@ const TransactionsPage: React.FC = () => {
       key: 'counterpartyName', header: 'Counterparty', minWidth: 320, dropOrder: 2,
       render: (_, t) => (
         <div className="min-w-0">
-          <p className="text-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
+          <p className="text-body-sm text-neutral-900 truncate dark:text-neutral-50">{t.counterpartyName || '-'}</p>
           {t.counterpartyAccount && (
-            <p className="text-xs text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
+            <p className="text-caption text-neutral-500 font-mono truncate max-w-48 dark:text-neutral-400">{t.counterpartyAccount}</p>
           )}
         </div>
       ),
@@ -1836,11 +1836,11 @@ const TransactionsPage: React.FC = () => {
       key: 'netAmount', header: 'Net Amount', align: 'right', mobileValue: true, minWidth: 130,
       render: (_, t) => (
         <div>
-          <p className={cn('text-sm font-semibold', t.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+          <p className={cn('text-body-sm font-semibold', t.isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
             {t.isCredit ? '+' : '-'}{formatCurrency(t.netAmount, t.currencyCode)}
           </p>
           {t.feeAmount > 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="caption">
               Gross: {formatCurrency(t.grossAmount, t.currencyCode)} | Fee: {formatCurrency(t.feeAmount, t.currencyCode)}
             </p>
           )}
@@ -1860,8 +1860,8 @@ const TransactionsPage: React.FC = () => {
       key: 'transactionDate', header: 'Date', mobileHidden: true, minWidth: 150, dropOrder: 3,
       render: (_, t) => (
         <div>
-          <p className="text-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
+          <p className="text-body-sm text-neutral-900 dark:text-neutral-50">{formatRelativeTime(t.transactionDate)}</p>
+          <p className="caption">Value: {t.valueDate ? formatDate(t.valueDate) : '-'}</p>
         </div>
       ),
     },
@@ -1977,7 +1977,7 @@ const TransactionsPage: React.FC = () => {
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setCurrentPage(0); }}
                 className={cn(
-                  'px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
+                  'px-4 py-2.5 rounded-xl text-body-sm font-medium transition-all duration-200 whitespace-nowrap',
                   activeTab === tab.id
                     ? 'bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-neutral-50'
                     : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
@@ -1985,7 +1985,7 @@ const TransactionsPage: React.FC = () => {
               >
                 {tab.label}
                 <span className={cn(
-                  'ml-2 px-2 py-0.5 rounded-full text-xs font-semibold',
+                  'ml-2 px-2 py-0.5 rounded-full text-caption font-semibold',
                   activeTab === tab.id ? 'bg-primary-200 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                 )}>
                   {tab.count}
@@ -2011,7 +2011,7 @@ const TransactionsPage: React.FC = () => {
               <div className="flex items-center bg-neutral-100 rounded-xl p-1 dark:bg-primary-800">
                 <button
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5',
+                    'px-3 py-1.5 rounded-lg text-caption font-medium transition-all duration-200 flex items-center gap-1.5',
                     viewMode === 'grouped'
                       ? 'bg-white text-primary-700 shadow-sm dark:bg-primary-900 dark:text-neutral-200'
                       : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
@@ -2024,7 +2024,7 @@ const TransactionsPage: React.FC = () => {
                 </button>
                 <button
                   className={cn(
-                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5',
+                    'px-3 py-1.5 rounded-lg text-caption font-medium transition-all duration-200 flex items-center gap-1.5',
                     viewMode === 'individual'
                       ? 'bg-white text-primary-700 shadow-sm dark:bg-primary-900 dark:text-neutral-200'
                       : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-50'
@@ -2053,7 +2053,7 @@ const TransactionsPage: React.FC = () => {
         {viewMode === 'grouped' && (
           <div className="mx-4 mt-4 flex items-start gap-2 p-3 bg-info-50 border border-info-100 rounded-xl dark:bg-info-500/10 dark:border-info-500/30">
             <Info className="w-4 h-4 text-info-600 shrink-0 mt-0.5 dark:text-info-300" />
-            <div className="text-xs text-info-800 dark:text-info-300">
+            <div className="text-caption text-info-800 dark:text-info-300">
               <span className="font-medium">Business View:</span> Related fund movements are grouped into a single business transaction.
               Click a row to see the full breakdown.
             </div>
@@ -2118,7 +2118,7 @@ const TransactionsPage: React.FC = () => {
         size="sm"
       >
         <div className="space-y-6">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          <p className="body-sm">
             Are you sure you want to reverse this transaction? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-3 pt-4 border-t border-neutral-200 dark:border-primary-800">

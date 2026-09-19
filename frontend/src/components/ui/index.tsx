@@ -15,7 +15,7 @@ export type { DrawerProps } from './Drawer';
 
 // Phase 12 Task E: canonical small stat / metric tile (promoted from
 // components/multiBank/MetricCard). Pages must use this (or the
-// .stat-value-* utilities) instead of hand-rolled `text-xl font-bold` cards.
+// .stat-value-* utilities) instead of hand-rolled `text-heading-sm font-bold` cards.
 export { StatTile } from './StatTile';
 export type { StatTileProps } from './StatTile';
 
@@ -119,11 +119,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes: Record<string, string> = {
-      xs: 'h-7 px-2.5 text-xs gap-1',
-      sm: 'h-9 px-3.5 text-sm gap-1.5',
-      md: 'h-11 px-5 text-sm gap-2',
-      lg: 'h-12 px-6 text-base gap-2.5',
-      xl: 'h-14 px-8 text-base gap-3',
+      xs: 'h-7 px-2.5 text-caption gap-1',
+      sm: 'h-9 px-3.5 text-body-sm gap-1.5',
+      md: 'h-11 px-5 text-body-sm gap-2',
+      lg: 'h-12 px-6 text-body gap-2.5',
+      xl: 'h-14 px-8 text-body gap-3',
     };
 
     // Icon-only button sizes
@@ -227,9 +227,9 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const sizes: Record<string, string> = {
-    xs: 'px-1.5 py-0 leading-4 text-xs gap-1',
-    sm: 'px-2 py-0.5 text-xs gap-1',
-    md: 'px-2.5 py-1 text-sm gap-1.5',
+    xs: 'px-1.5 py-0 leading-4 text-caption gap-1',
+    sm: 'px-2 py-0.5 text-caption gap-1',
+    md: 'px-2.5 py-1 text-body-sm gap-1.5',
   };
 
   return (
@@ -351,9 +351,9 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
         </div>
       )}
       <div>
-        <h3 className="text-lg font-semibold text-primary-900 tracking-tight dark:text-neutral-50">{title}</h3>
+        <h3 className="text-body-lg font-semibold text-primary-900 tracking-tight dark:text-neutral-50">{title}</h3>
         {subtitle && (
-          <p className="text-sm text-neutral-500 mt-0.5 dark:text-neutral-400">{subtitle}</p>
+          <p className="body-sm mt-0.5">{subtitle}</p>
         )}
       </div>
     </div>
@@ -387,9 +387,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ...props
   }, ref) => {
     const sizeStyles: Record<string, string> = {
-      sm: 'h-9 px-3 text-sm',
-      md: 'h-11 px-4 text-base',
-      lg: 'h-13 px-5 text-base',
+      sm: 'h-9 px-3 text-body-sm',
+      md: 'h-11 px-4 text-body',
+      lg: 'h-13 px-5 text-body',
     };
 
     const iconSizes: Record<string, string> = {
@@ -401,7 +401,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-primary-900 mb-2 dark:text-neutral-50">
+          <label className="block body-strong mb-2">
             {label}
           </label>
         )}
@@ -466,13 +466,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && (
-          <p className="mt-2 text-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
+          <p className="mt-2 text-body-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             {error}
           </p>
         )}
         {hint && !error && (
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{hint}</p>
+          <p className="mt-2 body-sm">{hint}</p>
         )}
       </div>
     );
@@ -505,15 +505,15 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
     ...props
   }, ref) => {
     const sizeStyles: Record<string, string> = {
-      sm: 'px-3 py-2 text-sm',
-      md: 'px-4 py-2.5 text-base',
-      lg: 'px-5 py-3 text-base',
+      sm: 'px-3 py-2 text-body-sm',
+      md: 'px-4 py-2.5 text-body',
+      lg: 'px-5 py-3 text-body',
     };
 
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-primary-900 mb-2 dark:text-neutral-50">
+          <label className="block body-strong mb-2">
             {label}
           </label>
         )}
@@ -538,13 +538,13 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           {...props}
         />
         {error && (
-          <p className="mt-2 text-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
+          <p className="mt-2 text-body-sm text-error-600 flex items-center gap-1.5 dark:text-error-300">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             {error}
           </p>
         )}
         {hint && !error && (
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{hint}</p>
+          <p className="mt-2 body-sm">{hint}</p>
         )}
       </div>
     );
@@ -585,15 +585,15 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ...props
   }, ref) => {
     const sizeStyles: Record<string, string> = {
-      sm: 'h-9 px-3 pr-9 text-sm',
-      md: 'h-11 px-4 pr-10 text-base',
-      lg: 'h-13 px-5 pr-12 text-base',
+      sm: 'h-9 px-3 pr-9 text-body-sm',
+      md: 'h-11 px-4 pr-10 text-body',
+      lg: 'h-13 px-5 pr-12 text-body',
     };
 
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-primary-900 dark:text-neutral-50 mb-2">
+          <label className="block body-strong mb-2">
             {label}
           </label>
         )}
@@ -653,13 +653,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           </div>
         </div>
         {error && (
-          <p className="mt-2 text-sm text-error-600 dark:text-error-300 flex items-center gap-1.5">
+          <p className="mt-2 text-body-sm text-error-600 dark:text-error-300 flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             {error}
           </p>
         )}
         {hint && !error && (
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{hint}</p>
+          <p className="mt-2 body-sm">{hint}</p>
         )}
       </div>
     );
@@ -755,14 +755,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     )}
     <h3 className={cn(
       'font-semibold text-primary-900 dark:text-neutral-50',
-      compact ? 'text-base mb-1' : 'text-lg mb-2'
+      compact ? 'text-body mb-1' : 'text-body-lg mb-2'
     )}>
       {title}
     </h3>
     {description && (
       <p className={cn(
         'text-neutral-500 max-w-sm dark:text-neutral-400',
-        compact ? 'text-sm mb-4' : 'text-base mb-6'
+        compact ? 'text-body-sm mb-4' : 'text-body mb-6'
       )}>
         {description}
       </p>
@@ -858,11 +858,11 @@ export const Avatar: React.FC<AvatarProps> = ({
   className,
 }) => {
   const sizes: Record<string, string> = {
-    xs: 'w-6 h-6 text-xs',
-    sm: 'w-8 h-8 text-xs',
-    md: 'w-10 h-10 text-sm',
-    lg: 'w-12 h-12 text-base',
-    xl: 'w-16 h-16 text-lg',
+    xs: 'w-6 h-6 text-caption',
+    sm: 'w-8 h-8 text-caption',
+    md: 'w-10 h-10 text-body-sm',
+    lg: 'w-12 h-12 text-body',
+    xl: 'w-16 h-16 text-body-lg',
   };
 
   const getInitials = (name?: string) => {
@@ -941,8 +941,8 @@ export const Progress: React.FC<ProgressProps> = ({
     <div className={cn('w-full', className)}>
       {showLabel && (
         <div className="flex justify-between mb-1.5">
-          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">Progress</span>
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">{Math.round(percentage)}%</span>
+          <span className="body-strong">Progress</span>
+          <span className="body-sm">{Math.round(percentage)}%</span>
         </div>
       )}
       <div className={cn(

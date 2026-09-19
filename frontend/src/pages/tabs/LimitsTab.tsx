@@ -100,7 +100,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Settings className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Spending Limits</h4>
+          <h4 className="body-strong">Spending Limits</h4>
         </div>
         {program && formData.inheritProgramDefaults && (
           <Badge variant="info" size="sm">Using program defaults</Badge>
@@ -123,7 +123,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             error={!!errors.perTransactionLimit}
           />
           {programDefaults.perTransaction && !formData.perTransactionLimit && (
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="caption mt-1">
               Default: {formatCurrency(programDefaults.perTransaction, currency)}
             </p>
           )}
@@ -143,7 +143,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             error={!!errors.dailyLimit}
           />
           {programDefaults.daily && !formData.dailyLimit && (
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="caption mt-1">
               Default: {formatCurrency(programDefaults.daily, currency)}
             </p>
           )}
@@ -174,7 +174,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             prefix={currency}
           />
           {programDefaults.monthly && !formData.monthlyLimit && (
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="caption mt-1">
               Default: {formatCurrency(programDefaults.monthly, currency)}
             </p>
           )}
@@ -207,7 +207,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
             error={!!errors.maxBalance}
           />
           {programDefaults.maxBalance && !formData.maxBalance && (
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="caption mt-1">
               Default: {formatCurrency(programDefaults.maxBalance, currency)}
             </p>
           )}
@@ -220,7 +220,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
           <AlertCircle className="w-4 h-4" />
           <div>
             <strong>Limit configuration warnings:</strong>
-            <ul className="list-disc list-inside mt-1 text-sm">
+            <ul className="list-disc list-inside mt-1 text-body-sm">
               {warnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
@@ -233,7 +233,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-5 h-5 text-success-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Topup Limits</h4>
+          <h4 className="body-strong">Topup Limits</h4>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,14 +271,14 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
           <Info className="w-4 h-4" />
           <div>
             <strong>KYC-Based Limits Reference</strong>
-            <p className="text-sm mt-1">
+            <p className="text-body-sm mt-1">
               Higher KYC levels automatically enable higher limits. Current selection: Level {kycLevel}
             </p>
           </div>
         </Alert>
         
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200">
                 <th className="text-left py-2 px-3 font-medium text-neutral-600">KYC Level</th>
@@ -322,7 +322,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
 
       {/* Limit Presets (Quick Apply) */}
       <div className="border-t border-neutral-200 pt-6">
-        <h4 className="text-sm font-medium text-neutral-900 mb-3">Quick Apply Presets</h4>
+        <h4 className="body-strong mb-3">Quick Apply Presets</h4>
         <div className="flex flex-wrap gap-2">
           <PresetButton
             label="Basic"
@@ -388,8 +388,8 @@ const PresetButton: React.FC<PresetButtonProps> = ({ label, description, onClick
     onClick={onClick}
     className="px-4 py-2 border border-neutral-300 rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-colors text-left"
   >
-    <div className="font-medium text-sm text-neutral-900">{label}</div>
-    <div className="text-xs text-neutral-500">{description}</div>
+    <div className="body-strong">{label}</div>
+    <div className="caption">{description}</div>
   </button>
 );
 

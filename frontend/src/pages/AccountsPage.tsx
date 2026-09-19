@@ -415,15 +415,15 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
                 <Icon className={cn("w-5 h-5", colors.iconColor)} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-neutral-500 truncate dark:text-neutral-400">{card.label}</p>
+                <p className="text-caption font-medium text-neutral-500 truncate dark:text-neutral-400">{card.label}</p>
                 <p className={cn(
                   "font-bold text-primary-900 truncate dark:text-neutral-50",
-                  card.isBalance ? "text-base sm:text-lg" : "text-xl sm:text-2xl"
+                  card.isBalance ? "text-body sm:text-body-lg" : "text-heading-sm sm:text-heading-md"
                 )}>
                   {card.value}
                 </p>
                 {card.trend && (
-                  <span className="text-xs text-success-600 font-medium dark:text-success-300">{card.trend}</span>
+                  <span className="text-caption text-success-600 font-medium dark:text-success-300">{card.trend}</span>
                 )}
               </div>
             </div>
@@ -468,10 +468,10 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
             <CategoryIcon className={cn("w-5 h-5", categoryConfig.color)} />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
+            <p className="text-body-sm font-semibold text-primary-900 truncate group-hover:text-primary-600 transition-colors dark:text-neutral-50">
               {account.vaName}
             </p>
-            <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+            <div className="flex items-center gap-2 caption mt-0.5">
               <span className="font-mono">{account.vaNumber}</span>
               {account.owningEntityCode && (
                 <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 border-cat-2/10 dark:bg-cat-2/15 dark:border-cat-2/30">
@@ -491,16 +491,16 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
               <Briefcase className="w-3.5 h-3.5 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
+              <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
                 {account.programName}
               </p>
               {account.programType && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{account.programType}</p>
+                <p className="caption">{account.programType}</p>
               )}
             </div>
           </div>
         ) : (
-          <span className="text-xs text-neutral-400 italic dark:text-neutral-500">No program</span>
+          <span className="text-caption text-neutral-400 italic dark:text-neutral-500">No program</span>
         )}
       </td>
 
@@ -515,7 +515,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
           catches overdrawn / mirror-deficit accounts at a glance. */}
       <td className="data-table-cell text-right">
         <p className={cn(
-          "text-sm font-bold tabular-nums",
+          "text-body-sm font-bold tabular-nums",
           getEffectiveBalance(account) < 0
             ? "text-error-600 dark:text-error-300"
             : "text-primary-900 dark:text-neutral-50"
@@ -523,7 +523,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
           {formatCurrency(getEffectiveBalance(account), account.currencyCode)}
         </p>
         <p className={cn(
-          "text-xs mt-0.5",
+          "text-caption mt-0.5",
           account.availableBalance < 0
             ? "text-error-500 dark:text-error-300"
             : "text-neutral-500 dark:text-neutral-400"
@@ -555,13 +555,13 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
               <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
                 <button
                   onClick={() => { onView(account); setShowActions(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
                 >
                   <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
                 </button>
                 <button
                   onClick={() => { onEdit(account); setShowActions(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
                 >
                   <Edit className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
                 </button>
@@ -570,13 +570,13 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
                   <>
                     <button
                       onClick={() => { onStatusChange(account.id, 'SUSPENDED'); setShowActions(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-warning-600 hover:bg-warning-50 transition-colors dark:text-warning-300 dark:hover:bg-warning-500/10"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-warning-600 hover:bg-warning-50 transition-colors dark:text-warning-300 dark:hover:bg-warning-500/10"
                     >
                       <PauseCircle className="w-4 h-4" /> Suspend Account
                     </button>
                     <button
                       onClick={() => { onStatusChange(account.id, 'BLOCKED'); setShowActions(false); }}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300 dark:hover:bg-error-500/10"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-error-600 hover:bg-error-50 transition-colors dark:text-error-300 dark:hover:bg-error-500/10"
                     >
                       <Ban className="w-4 h-4" /> Block Account
                     </button>
@@ -585,7 +585,7 @@ const AccountRow: React.FC<AccountRowProps> = ({ account, onView, onEdit, onStat
                 {(account.status === 'SUSPENDED' || account.status === 'BLOCKED') && (
                   <button
                     onClick={() => { onStatusChange(account.id, 'ACTIVE'); setShowActions(false); }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-success-600 hover:bg-success-50 transition-colors dark:text-success-300 dark:hover:bg-success-500/10"
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-success-600 hover:bg-success-50 transition-colors dark:text-success-300 dark:hover:bg-success-500/10"
                   >
                     <Play className="w-4 h-4" /> Reactivate Account
                   </button>
@@ -636,7 +636,7 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="font-semibold text-primary-900 truncate dark:text-neutral-50">{account.vaName}</h3>
-              <p className="text-xs text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{account.vaNumber}</p>
+              <p className="text-caption text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{account.vaNumber}</p>
             </div>
             <Badge variant={statusCfg?.variant as any} size="sm">
               <StatusIcon className="w-3 h-3 mr-1" />
@@ -646,9 +646,9 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
 
           <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Balance</p>
+              <p className="caption">Balance</p>
               <p className={cn(
-                "text-sm font-bold tabular-nums",
+                "text-body-sm font-bold tabular-nums",
                 getEffectiveBalance(account) < 0
                   ? "text-error-600 dark:text-error-300"
                   : "text-primary-900 dark:text-neutral-50"
@@ -657,9 +657,9 @@ const AccountMobileCard: React.FC<AccountMobileCardProps> = ({ account, onView, 
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+              <p className="caption">Available</p>
               <p className={cn(
-                "text-sm font-semibold tabular-nums",
+                "text-body-sm font-semibold tabular-nums",
                 account.availableBalance < 0
                   ? "text-error-600 dark:text-error-300"
                   : "text-success-600 dark:text-success-300"
@@ -737,7 +737,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{account.vaName}</span>
+            <span className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{account.vaName}</span>
             <Badge variant={statusConfig[account.status]?.variant as any} size="sm">
               {statusConfig[account.status]?.label}
             </Badge>
@@ -747,12 +747,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({ account, level, expanded, onToggle,
               </Badge>
             )}
           </div>
-          <span className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{account.vaNumber}</span>
+          <span className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{account.vaNumber}</span>
         </div>
 
         {/* Balance */}
         <div className="text-right shrink-0">
-          <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+          <p className="body-strong font-semibold">
             {formatCurrency(getEffectiveBalance(account), account.currencyCode)}
           </p>
         </div>
@@ -952,7 +952,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         </span>
       )}
       subtitle={(
-        <span className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <span className="flex items-center gap-2 body-sm">
           <span className="font-mono">{account.vaNumber}</span>
           <button onClick={copyVaNumber} className="hover:text-primary-600">
             <Copy className="w-3.5 h-3.5" />
@@ -973,7 +973,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
+              "flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors",
               activeTab === tab.id
                 ? "border-primary-600 text-primary-600 dark:text-primary-200"
                 : "border-transparent text-neutral-500 hover:text-primary-600 dark:text-neutral-400"
@@ -993,18 +993,18 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             {/* Status & Balance */}
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-neutral-50 dark:bg-primary-950">
-                <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Status</p>
+                <p className="caption mb-1">Status</p>
                 <Badge variant={statusCfg?.variant as any} size="md">
                   {statusCfg?.label}
                 </Badge>
                 {(account.suspensionReason || account.blockReason) && (
-                  <p className="text-xs text-neutral-500 mt-2 dark:text-neutral-400">
+                  <p className="caption mt-2">
                     Reason: {account.suspensionReason || account.blockReason}
                   </p>
                 )}
               </Card>
               <Card className="bg-neutral-50 dark:bg-primary-950">
-                <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Category</p>
+                <p className="caption mb-1">Category</p>
                 <div className="flex items-center gap-2">
                   <CategoryIcon className={cn("w-4 h-4", categoryConfig.color)} />
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{categoryConfig.label}</span>
@@ -1014,10 +1014,10 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
 
             {/* Balances */}
             <Card>
-              <h3 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Balances</h3>
+              <h3 className="body-strong font-semibold mb-3">Balances</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="caption">
                     {account.accountCategory === 'ROOT' || account.accountCategory === 'AGGREGATION'
                       ? 'Aggregated'
                       : account.accountCategory === 'CURRENCY_MIRROR'
@@ -1025,7 +1025,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                       : 'Current'}
                   </p>
                   <p className={cn(
-                    "text-lg font-bold",
+                    "text-body-lg font-bold",
                     getEffectiveBalance(account) < 0
                       ? "text-error-600 dark:text-error-300"
                       : "text-primary-900 dark:text-neutral-50"
@@ -1034,9 +1034,9 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+                  <p className="caption">Available</p>
                   <p className={cn(
-                    "text-lg font-bold",
+                    "text-body-lg font-bold",
                     account.availableBalance < 0
                       ? "text-error-600 dark:text-error-300"
                       : "text-success-600 dark:text-success-300"
@@ -1045,8 +1045,8 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Held</p>
-                  <p className="text-lg font-bold text-warning-600 dark:text-warning-300">
+                  <p className="caption">Held</p>
+                  <p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">
                     {formatCurrency(account.heldBalance || 0, account.currencyCode)}
                   </p>
                 </div>
@@ -1055,8 +1055,8 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               {(account.accountCategory === 'ROOT' || account.accountCategory === 'AGGREGATION') &&
                account.aggregatedBalanceBase !== undefined && account.baseCurrency && (
                 <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Aggregated (Base Currency)</p>
-                  <p className="text-sm font-semibold text-cat-2">
+                  <p className="caption">Aggregated (Base Currency)</p>
+                  <p className="text-body-sm font-semibold text-cat-2">
                     {formatCurrency(account.aggregatedBalanceBase, account.baseCurrency)}
                   </p>
                 </div>
@@ -1064,8 +1064,8 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               {account.accountCategory === 'CURRENCY_MIRROR' &&
                account.balanceInBase !== undefined && account.baseCurrency && (
                 <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Balance in Base Currency</p>
-                  <p className="text-sm font-semibold text-cat-5">
+                  <p className="caption">Balance in Base Currency</p>
+                  <p className="text-body-sm font-semibold text-cat-5">
                     {formatCurrency(account.balanceInBase, account.baseCurrency)}
                   </p>
                 </div>
@@ -1074,26 +1074,26 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
 
             {/* Account Details */}
             <Card>
-              <h3 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Account Details</h3>
+              <h3 className="body-strong font-semibold mb-3">Account Details</h3>
               <div className="space-y-3">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-body-sm">
                   <span className="text-neutral-500 dark:text-neutral-400">Currency</span>
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{account.currencyCode}</span>
                 </div>
                 {account.viban && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">VIBAN</span>
                     <span className="font-mono text-primary-900 dark:text-neutral-50">{account.viban}</span>
                   </div>
                 )}
                 {account.programName && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">Program</span>
                     <span className="font-medium text-primary-900 dark:text-neutral-50">{account.programName}</span>
                   </div>
                 )}
                 {account.owningEntityCode && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">Owning Entity</span>
                     <Badge variant="neutral" size="sm" className="bg-cat-2-soft text-cat-2 dark:bg-cat-2/15">
                       {account.owningEntityCode}
@@ -1101,25 +1101,25 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                   </div>
                 )}
                 {account.hierarchyPathVa && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">Hierarchy</span>
-                    <span className="font-mono text-xs text-neutral-700 truncate max-w-[200px] dark:text-neutral-200">
+                    <span className="font-mono text-caption text-neutral-700 truncate max-w-[200px] dark:text-neutral-200">
                       {account.hierarchyPathVa}
                     </span>
                   </div>
                 )}
                 {account.externalReference && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">External Ref</span>
                     <span className="font-mono text-primary-900 dark:text-neutral-50">{account.externalReference}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-body-sm">
                   <span className="text-neutral-500 dark:text-neutral-400">Created</span>
                   <span className="text-primary-900 dark:text-neutral-50">{formatDate(account.createdAt)}</span>
                 </div>
                 {account.kycVerified !== undefined && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">KYC</span>
                     <Badge variant={account.kycVerified ? 'success' : 'warning'} size="sm">
                       {account.kycVerified ? `Verified (L${account.kycLevel || 1})` : 'Pending'}
@@ -1132,22 +1132,22 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             {/* Limits (if any) */}
             {(account.dailyLimit || account.monthlyLimit) && (
               <Card>
-                <h3 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Limits</h3>
+                <h3 className="body-strong font-semibold mb-3">Limits</h3>
                 <div className="space-y-2">
                   {account.perTransactionLimit && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-body-sm">
                       <span className="text-neutral-500 dark:text-neutral-400">Per Transaction</span>
                       <span className="font-medium">{formatCurrency(account.perTransactionLimit, account.currencyCode)}</span>
                     </div>
                   )}
                   {account.dailyLimit && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-body-sm">
                       <span className="text-neutral-500 dark:text-neutral-400">Daily</span>
                       <span className="font-medium">{formatCurrency(account.dailyLimit, account.currencyCode)}</span>
                     </div>
                   )}
                   {account.monthlyLimit && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-body-sm">
                       <span className="text-neutral-500 dark:text-neutral-400">Monthly</span>
                       <span className="font-medium">{formatCurrency(account.monthlyLimit, account.currencyCode)}</span>
                     </div>
@@ -1165,7 +1165,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             <Card className="bg-neutral-50 dark:bg-primary-950">
               <div className="flex flex-wrap items-end gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">From</label>
+                  <label className="block label-cased mb-1">From</label>
                   <Input
                     type="date"
                     value={fromDate}
@@ -1174,7 +1174,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">To</label>
+                  <label className="block label-cased mb-1">To</label>
                   <Input
                     type="date"
                     value={toDate}
@@ -1201,19 +1201,19 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
               <>
                 <div className="grid grid-cols-4 gap-3">
                   <Card className="bg-neutral-50 p-3 dark:bg-primary-950">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Opening</p>
+                    <p className="caption">Opening</p>
                     <p className="font-bold text-primary-900 dark:text-neutral-50">{formatCurrency(statement.openingBalance, statement.currencyCode)}</p>
                   </Card>
                   <Card className="bg-success-50 p-3 dark:bg-success-500/10">
-                    <p className="text-xs text-success-600 dark:text-success-300">Credits</p>
+                    <p className="caption-success">Credits</p>
                     <p className="font-bold text-success-700 dark:text-success-300">+{formatCurrency(statement.totalCredits, statement.currencyCode)}</p>
                   </Card>
                   <Card className="bg-error-50 p-3 dark:bg-error-500/10">
-                    <p className="text-xs text-error-600 dark:text-error-300">Debits</p>
+                    <p className="caption-error">Debits</p>
                     <p className="font-bold text-error-700 dark:text-error-300">-{formatCurrency(statement.totalDebits, statement.currencyCode)}</p>
                   </Card>
                   <Card className="bg-primary-50 p-3 dark:bg-primary-800/40">
-                    <p className="text-xs text-primary-600 dark:text-primary-200">Closing</p>
+                    <p className="text-caption text-primary-600 dark:text-primary-200">Closing</p>
                     <p className="font-bold text-primary-900 dark:text-neutral-50">{formatCurrency(statement.closingBalance, statement.currencyCode)}</p>
                   </Card>
                 </div>
@@ -1221,7 +1221,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 {/* Transactions */}
                 <Card padding="none">
                   <div className="overflow-x-auto max-h-64">
-                    <table className="w-full text-sm">
+                    <table className="w-full text-body-sm">
                       <thead className="bg-neutral-50 sticky top-0 dark:bg-primary-950">
                         <tr>
                           <th className="text-left p-2 font-medium text-neutral-600 dark:text-neutral-300">Date</th>
@@ -1273,19 +1273,19 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
         {activeTab === 'activity' && (
           <div className="space-y-4">
             <Card>
-              <h3 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Status History</h3>
+              <h3 className="body-strong font-semibold mb-3">Status History</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-body-sm">
                   <div className="w-8 h-8 rounded-full bg-success-100 flex items-center justify-center dark:bg-success-500/20">
                     <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
                   </div>
                   <div>
                     <p className="font-medium text-primary-900 dark:text-neutral-50">Account Created</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(account.createdAt)}</p>
+                    <p className="caption">{formatDate(account.createdAt)}</p>
                   </div>
                 </div>
                 {account.status !== 'ACTIVE' && (
-                  <div className="flex items-center gap-3 text-sm">
+                  <div className="flex items-center gap-3 text-body-sm">
                     <div className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center",
                       account.status === 'SUSPENDED' ? "bg-warning-100 dark:bg-warning-500/20" : "bg-error-100 dark:bg-error-500/20"
@@ -1300,7 +1300,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                         Account {account.status === 'SUSPENDED' ? 'Suspended' : 'Blocked'}
                       </p>
                       {(account.suspensionReason || account.blockReason) && (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <p className="caption">
                           {account.suspensionReason || account.blockReason}
                         </p>
                       )}
@@ -1311,8 +1311,8 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
             </Card>
 
             <Card>
-              <h3 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Recent Activity</h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <h3 className="body-strong font-semibold mb-3">Recent Activity</h3>
+              <p className="body-sm">
                 View the Statements tab for transaction history.
               </p>
             </Card>
@@ -1332,14 +1332,14 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
           size="sm"
         >
           <div className="p-4 space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            <p className="body-sm">
               Please provide a reason for {statusReasonModal.action === 'SUSPENDED' ? 'suspending' : 'blocking'} this account.
             </p>
             <textarea
               value={statusReason}
               onChange={(e) => setStatusReason(e.target.value)}
               placeholder="Enter reason..."
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm resize-none h-24 dark:border-primary-700"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm resize-none h-24 dark:border-primary-700"
             />
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setStatusReasonModal(null)}>Cancel</Button>
@@ -1376,14 +1376,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
   return (
     <div className="border-b border-neutral-200 p-4 bg-neutral-50 dark:border-primary-800 dark:bg-primary-950">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Filters</h3>
+        <h3 className="body-strong font-semibold">Filters</h3>
         <button onClick={onClose}><X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" /></button>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="field-label block mb-1.5">Status</label>
           <select 
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
             value={filters.status} 
             onChange={(e) => onFilterChange({ ...filters, status: e.target.value })}
           >
@@ -1396,7 +1396,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
         <div>
           <label className="field-label block mb-1.5">Account Type</label>
           <select 
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700" 
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700" 
             value={filters.accountCategory} 
             onChange={(e) => onFilterChange({ ...filters, accountCategory: e.target.value })}
           >
@@ -1420,7 +1420,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, filters, onFilterChan
         <div>
           <label className="field-label block mb-1.5">Currency</label>
           <CurrencyPicker
-            className="text-sm"
+            className="text-body-sm"
             value={filters.currency}
             onChange={(c) => onFilterChange({ ...filters, currency: c })}
             allowEmpty
@@ -1694,7 +1694,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
               <button
                 onClick={() => setViewMode('table')}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
                   viewMode === 'table' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:text-neutral-300"
                 )}
               >
@@ -1703,7 +1703,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
               <button
                 onClick={() => setViewMode('tree')}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-medium rounded-md transition-colors",
                   viewMode === 'tree' ? "bg-white text-primary-600 shadow-sm dark:bg-primary-900 dark:text-primary-200" : "text-neutral-600 hover:text-primary-600 dark:text-neutral-300"
                 )}
               >
@@ -1796,7 +1796,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
 
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-neutral-200 dark:border-primary-800">
-                  <p className="text-sm text-neutral-500 order-2 sm:order-1 dark:text-neutral-400">
+                  <p className="body-sm order-2 sm:order-1">
                     Showing{' '}
                     <span className="font-medium text-primary-900 dark:text-neutral-50">
                       {Math.min(currentPage * pageSize + 1, totalElements)}
@@ -1834,7 +1834,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                         );
                       })}
                     </div>
-                    <span className="sm:hidden text-sm text-neutral-600 px-2 dark:text-neutral-300">
+                    <span className="sm:hidden body-sm px-2">
                       {currentPage + 1} / {totalPages}
                     </span>
                     <Button
@@ -1887,7 +1887,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
 
       {/* Legend */}
       <Card className="bg-neutral-50 dark:bg-primary-950">
-        <div className="flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-4 text-caption">
           <span className="font-medium text-neutral-600 dark:text-neutral-300">Account Types:</span>
           {(['TRANSACTION', 'COLLECTION', 'DISBURSEMENT', 'CURRENCY_MIRROR', 'INTERCOMPANY'] as AccountCategory[]).map(cat => {
             const config = accountCategoryConfig[cat];

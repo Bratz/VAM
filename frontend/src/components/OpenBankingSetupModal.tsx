@@ -157,8 +157,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-medium text-neutral-900 dark:text-neutral-50">Connect via {connectorName}</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Securely link your bank account</p>
+              <h2 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50">Connect via {connectorName}</h2>
+              <p className="body-sm">Securely link your bank account</p>
             </div>
           </div>
         </div>
@@ -168,7 +168,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
           {['Select Country', 'Choose Bank', 'Permissions', 'Authorize'].map((label, idx) => (
             <React.Fragment key={idx}>
               <div className={cn(
-                "flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-colors",
+                "flex items-center gap-2 px-3 py-1.5 text-caption font-medium transition-colors",
                 step === idx + 1 && "bg-neutral-900 text-white",
                 step > idx + 1 && "bg-neutral-100 text-neutral-900 dark:bg-primary-800 dark:text-neutral-50",
                 step < idx + 1 && "text-neutral-400"
@@ -185,7 +185,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         {error && (
           <div className="mb-4 p-3 bg-error-50 border border-error-200 flex items-center gap-2 dark:bg-error-500/10 dark:border-error-500/30">
             <AlertCircle className="w-4 h-4 text-error-600 dark:text-error-300" />
-            <span className="text-sm text-error-700 dark:text-error-300">{error}</span>
+            <span className="text-body-sm text-error-700 dark:text-error-300">{error}</span>
           </div>
         )}
 
@@ -194,7 +194,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
           {/* Step 1: Country Selection */}
           {step === 1 && (
             <div className="space-y-4">
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">Select the country where your bank is located:</p>
+              <p className="body-sm">Select the country where your bank is located:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {countries.map(country => (
                   <button
@@ -210,8 +210,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                         : "border-neutral-200 dark:border-primary-800"
                     )}
                   >
-                    <span className="text-lg">{country.flag}</span>
-                    <p className="text-xs mt-1 font-medium">{country.name}</p>
+                    <span className="text-body-lg">{country.flag}</span>
+                    <p className="text-caption mt-1 font-medium">{country.name}</p>
                   </button>
                 ))}
               </div>
@@ -228,19 +228,19 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                   placeholder="Search for your bank..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 text-sm focus:border-neutral-900 focus:outline-none dark:border-primary-700"
+                  className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 text-body-sm focus:border-neutral-900 focus:outline-none dark:border-primary-700"
                 />
               </div>
 
               {loading ? (
                 <div className="py-12 text-center">
                   <Loader2 className="w-6 h-6 text-neutral-400 animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading banks...</p>
+                  <p className="body-sm">Loading banks...</p>
                 </div>
               ) : (
                 <div className="max-h-64 overflow-y-auto border border-neutral-200 dark:border-primary-800">
                   {filteredAspsps.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                    <div className="p-6 text-center body-sm">
                       No banks found
                     </div>
                   ) : (
@@ -265,13 +265,13 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                             )}
                           </div>
                           <div className="text-left">
-                            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{aspsp.name}</p>
-                            {aspsp.bic && <p className="text-xs text-neutral-500 dark:text-neutral-400">{aspsp.bic}</p>}
+                            <p className="body-strong">{aspsp.name}</p>
+                            {aspsp.bic && <p className="caption">{aspsp.bic}</p>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">AIS</span>}
-                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">PIS</span>}
+                          {aspsp.supportsAis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">AIS</span>}
+                          {aspsp.supportsPis && <span className="px-1.5 py-0.5 caption bg-neutral-100 dark:bg-primary-800">PIS</span>}
                           <ChevronRight className="w-4 h-4 text-neutral-400" />
                         </div>
                       </button>
@@ -291,14 +291,14 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                     <Building2 className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{selectedAspsp.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{selectedAspsp.bic || selectedAspsp.country}</p>
+                    <p className="body-strong">{selectedAspsp.name}</p>
+                    <p className="caption">{selectedAspsp.bic || selectedAspsp.country}</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-3 dark:text-neutral-300">Select Permissions</p>
+                <p className="label mb-3">Select Permissions</p>
                 <div className="space-y-2">
                   {permissionOptions.map(perm => {
                     const isSupported = 
@@ -321,16 +321,16 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                         )}
                       >
                         <div>
-                          <p className={cn("text-sm font-medium", isSelected && isSupported ? "text-white" : "text-neutral-900 dark:text-neutral-50")}>
+                          <p className={cn("text-body-sm font-medium", isSelected && isSupported ? "text-white" : "text-neutral-900 dark:text-neutral-50")}>
                             {perm.label}
-                            {isRequired && <span className="ml-1 text-xs opacity-60">(Required)</span>}
+                            {isRequired && <span className="ml-1 text-caption opacity-60">(Required)</span>}
                           </p>
-                          <p className={cn("text-xs mt-0.5", isSelected && isSupported ? "text-neutral-300" : "text-neutral-500 dark:text-neutral-400")}>
+                          <p className={cn("text-caption mt-0.5", isSelected && isSupported ? "text-neutral-300" : "text-neutral-500 dark:text-neutral-400")}>
                             {perm.desc}
                           </p>
                         </div>
                         {isSelected && isSupported && <Check className="w-5 h-5" />}
-                        {!isSupported && <span className="text-xs text-neutral-400">Not supported</span>}
+                        {!isSupported && <span className="caption">Not supported</span>}
                       </button>
                     );
                   })}
@@ -341,8 +341,8 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
                 <div className="flex items-start gap-2">
                   <Shield className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
                   <div>
-                    <p className="text-xs font-medium text-info-800 dark:text-info-300">Secure Authorization</p>
-                    <p className="text-xs text-info-700 mt-0.5 dark:text-info-300">
+                    <p className="text-caption font-medium text-info-800 dark:text-info-300">Secure Authorization</p>
+                    <p className="text-caption text-info-700 mt-0.5 dark:text-info-300">
                       You will be redirected to {selectedAspsp.name} to securely authorize access. 
                       We never see your login credentials.
                     </p>
@@ -358,23 +358,23 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
               {authorizing ? (
                 <div>
                   <Loader2 className="w-12 h-12 text-neutral-400 animate-spin mx-auto mb-4" />
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Preparing Authorization</p>
-                  <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Redirecting to {selectedAspsp.name}...</p>
+                  <p className="body-strong">Preparing Authorization</p>
+                  <p className="caption mt-1">Redirecting to {selectedAspsp.name}...</p>
                 </div>
               ) : (
                 <div>
                   <div className="w-16 h-16 bg-neutral-100 flex items-center justify-center mx-auto mb-4 dark:bg-primary-800">
                     <Shield className="w-8 h-8 text-neutral-600 dark:text-neutral-300" />
                   </div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">Ready to Authorize</p>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto dark:text-neutral-400">
+                  <p className="body-strong">Ready to Authorize</p>
+                  <p className="caption mt-1 max-w-sm mx-auto">
                     Click below to connect to {selectedAspsp.name}. You'll be redirected to your bank to complete authorization.
                   </p>
                   <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200 text-left max-w-sm mx-auto dark:bg-primary-950 dark:border-primary-800">
-                    <p className="text-xs text-neutral-500 mb-2 dark:text-neutral-400">Selected Permissions</p>
+                    <p className="caption mb-2">Selected Permissions</p>
                     <div className="flex flex-wrap gap-1">
                       {selectedPermissions.map(p => (
-                        <span key={p} className="px-2 py-0.5 text-xs bg-neutral-900 text-white">{p}</span>
+                        <span key={p} className="px-2 py-0.5 text-caption bg-neutral-900 text-white">{p}</span>
                       ))}
                     </div>
                   </div>
@@ -388,7 +388,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
         <div className="flex justify-between pt-6 mt-6 border-t border-neutral-200 dark:border-primary-800">
           <button
             onClick={step === 1 ? resetAndClose : () => setStep(step - 1)}
-            className="px-4 py-2 text-sm text-neutral-600 hover:text-neutral-900 transition-colors dark:text-neutral-300"
+            className="px-4 py-2 body-sm hover:text-neutral-900 transition-colors"
             disabled={authorizing}
           >
             {step === 1 ? 'Cancel' : 'Back'}
@@ -396,7 +396,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
           {step === 3 && (
             <button
               onClick={() => setStep(4)}
-              className="px-6 py-2 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors"
+              className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors"
             >
               Continue
             </button>
@@ -405,7 +405,7 @@ export const OpenBankingSetupModal: React.FC<OpenBankingSetupProps> = ({
             <button
               onClick={handleInitiateAuth}
               disabled={authorizing}
-              className="px-6 py-2 bg-neutral-900 text-white text-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50"
             >
               {authorizing ? 'Redirecting...' : 'Authorize with Bank'}
             </button>

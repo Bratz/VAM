@@ -64,7 +64,7 @@ const UtilizationBar: React.FC<{ outstanding: number; limit: number; currency: s
       <div className="relative h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
         <div className={cn("absolute left-0 top-0 h-full transition-all rounded-full", getColor())} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
-      <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
+      <div className="flex justify-between caption">
         <span>{formatCurrency(outstanding, currency)} outstanding</span>
         <span>{pct.toFixed(1)}%</span>
       </div>
@@ -104,13 +104,13 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
           </div>
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{facility.facilityName}</h3>
-            <p className="text-sm text-neutral-500 line-clamp-1 dark:text-neutral-400">{facility.agreementName || 'Standalone Facility'}</p>
+            <p className="body-sm line-clamp-1">{facility.agreementName || 'Standalone Facility'}</p>
           </div>
         </div>
-        <Badge className={cn("text-xs", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
+        <Badge className={cn("text-caption", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
       </div>
 
-      <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+      <div className="mt-2 flex items-center gap-2 caption">
         {facility.externalReference && (
           <span className="flex items-center gap-1"><Link2 className="w-3 h-3" /> {facility.externalReference}</span>
         )}
@@ -127,7 +127,7 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
         <UtilizationBar outstanding={facility.currentOutstanding} limit={facility.facilityLimit} currency={facility.facilityCurrency} />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-caption">
         <div>
           <span className="text-neutral-500 dark:text-neutral-400">Available:</span>
           <span className={cn("ml-1 font-medium", facility.availableLimit > 0 ? "text-success-600 dark:text-success-300" : "text-error-600 dark:text-error-300")}>
@@ -387,7 +387,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Total Limit</p>
-                <p className="text-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit)}</p>
+                <p className="text-body-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit)}</p>
               </div>
               <StatusIconBadge tone="accent" icon={Shield} className="dark:bg-accent-500/20" />
             </div>
@@ -398,7 +398,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Outstanding</p>
-                <p className="text-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding)}</p>
+                <p className="text-body-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding)}</p>
               </div>
               <StatusIconBadge tone="warning" icon={TrendingUp} className="dark:bg-warning-500/20" />
             </div>
@@ -431,7 +431,7 @@ const CreditFacilitiesPage: React.FC = () => {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-sm font-medium dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"
         >
           <option value="">All Types</option>
           {Object.entries(FACILITY_TYPE_CONFIG).map(([key, val]) => (
@@ -441,7 +441,7 @@ const CreditFacilitiesPage: React.FC = () => {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-sm font-medium dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-neutral-300 rounded-lg bg-white text-body-sm font-medium dark:border-primary-700 dark:bg-primary-900"
         >
           <option value="">All Status</option>
           {Object.entries(STATUS_CONFIG).map(([key, val]) => (
@@ -590,7 +590,7 @@ const CreditFacilitiesPage: React.FC = () => {
       <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Facility Details" size="lg">
         {selectedFacility && (
           <div className="p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="ml-2 font-medium">{selectedFacility.facilityName}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <span className="ml-2 font-medium">{FACILITY_TYPE_CONFIG[selectedFacility.facilityType]?.label}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Status:</span> <span className="ml-2 font-medium">{selectedFacility.status}</span></div>
@@ -626,8 +626,8 @@ const CreditFacilitiesPage: React.FC = () => {
       <Modal isOpen={showDrawDownModal} onClose={() => setShowDrawDownModal(false)} title="Draw Down" size="md">
         {selectedFacility && (
           <div className="p-4 space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Draw from: <strong>{selectedFacility.facilityName}</strong></p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Available: {formatCurrency(selectedFacility.availableLimit, selectedFacility.facilityCurrency)}</p>
+            <p className="body-sm">Draw from: <strong>{selectedFacility.facilityName}</strong></p>
+            <p className="body-sm">Available: {formatCurrency(selectedFacility.availableLimit, selectedFacility.facilityCurrency)}</p>
             <div>
               <label className="field-label block mb-1">Amount to Draw</label>
               <Input
@@ -652,8 +652,8 @@ const CreditFacilitiesPage: React.FC = () => {
       <Modal isOpen={showRepayModal} onClose={() => setShowRepayModal(false)} title="Repay Facility" size="md">
         {selectedFacility && (
           <div className="p-4 space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Repay to: <strong>{selectedFacility.facilityName}</strong></p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Outstanding: {formatCurrency(selectedFacility.currentOutstanding, selectedFacility.facilityCurrency)}</p>
+            <p className="body-sm">Repay to: <strong>{selectedFacility.facilityName}</strong></p>
+            <p className="body-sm">Outstanding: {formatCurrency(selectedFacility.currentOutstanding, selectedFacility.facilityCurrency)}</p>
             <div>
               <label className="field-label block mb-1">Amount to Repay</label>
               <Input

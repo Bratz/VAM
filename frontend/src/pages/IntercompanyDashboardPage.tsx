@@ -288,7 +288,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
       <StatusIconBadge tone="error" icon={AlertCircle} className="dark:bg-error-500/20" />
       <div className="flex-1">
         <p className="font-medium text-error-800 dark:text-error-300">Failed to load data</p>
-        <p className="text-sm text-error-600 dark:text-error-300">{message}</p>
+        <p className="text-body-sm text-error-600 dark:text-error-300">{message}</p>
       </div>
       <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button>
     </div>
@@ -417,7 +417,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
         {['form', 'preview', 'result'].map((s, i) => (
           <React.Fragment key={s}>
             <div className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
+              'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium',
               step === s ? 'bg-primary-600 text-white' : 
               ['form', 'preview', 'result'].indexOf(step) > i ? 'bg-success-100 text-success-700 dark:bg-success-500/20 dark:text-success-300' : 
               'bg-neutral-100 text-neutral-400 dark:bg-primary-800 dark:text-neutral-500'
@@ -435,14 +435,14 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
       {error && (
         <div className="mb-4 p-3 bg-error-50 border border-error-200 rounded-lg flex items-start gap-2 dark:bg-error-500/10 dark:border-error-500/30">
           <AlertCircle className="w-5 h-5 text-error-600 mt-0.5 dark:text-error-300" />
-          <span className="text-sm text-error-700 dark:text-error-300">{error}</span>
+          <span className="text-body-sm text-error-700 dark:text-error-300">{error}</span>
         </div>
       )}
 
       {/* Form Step */}
       {step === 'form' && (
         <div className="space-y-4">
-          <div className="p-3 rounded-lg bg-info-50 text-sm text-info-800 dark:bg-info-500/10 dark:text-info-300">
+          <div className="p-3 rounded-lg bg-info-50 text-body-sm text-info-800 dark:bg-info-500/10 dark:text-info-300">
             {isPOBO 
               ? 'Treasury will pay the vendor on behalf of a subsidiary. The subsidiary will owe treasury for reimbursement.'
               : 'Treasury will collect payment from a customer on behalf of a subsidiary. Treasury will owe the subsidiary.'}
@@ -519,7 +519,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
                   onChange={(e) => setFormData({ ...formData, generateViban: e.target.checked })}
                   className="rounded text-primary-600 dark:text-primary-200"
                 />
-                <span className="text-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
+                <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Generate VIBAN for collection</span>
               </label>
             )}
           </div>
@@ -532,33 +532,33 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
             <div className="flex items-center justify-between mb-4">
               <div className="text-center">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{isPOBO ? 'Payer' : 'Collector'}</p>
+                <p className="body-sm">{isPOBO ? 'Payer' : 'Collector'}</p>
                 <p className="font-medium">{preview.payingEntityCode}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{preview.payingEntityName}</p>
+                <p className="caption">{preview.payingEntityName}</p>
               </div>
               <div className="flex items-center gap-2">
                 {isPOBO ? <ArrowRight className="w-6 h-6 text-primary-400" /> : <ArrowLeft className="w-6 h-6 text-primary-400" />}
                 <div className="text-center">
-                  <p className="text-lg font-bold text-primary-600 dark:text-primary-200">
+                  <p className="text-body-lg font-bold text-primary-600 dark:text-primary-200">
                     {formatCurrency(preview.amount, formData.currencyCode)}
                   </p>
                 </div>
                 {isPOBO ? <ArrowRight className="w-6 h-6 text-primary-400" /> : <ArrowLeft className="w-6 h-6 text-primary-400" />}
               </div>
               <div className="text-center">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">On Behalf Of</p>
+                <p className="body-sm">On Behalf Of</p>
                 <p className="font-medium">{preview.behalfEntityCode}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{preview.behalfEntityName}</p>
+                <p className="caption">{preview.behalfEntityName}</p>
               </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Principal Amount</span>
               <span>{formatCurrency(preview.amount, formData.currencyCode)}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Service Charges</span>
               <span>{formatCurrency(preview.charges, formData.currencyCode)}</span>
             </div>
@@ -570,7 +570,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
 
           {!preview.withinCreditLimit && (
             <div className="p-3 bg-error-50 rounded-lg dark:bg-error-500/10">
-              <p className="text-sm text-error-700 dark:text-error-300">
+              <p className="text-body-sm text-error-700 dark:text-error-300">
                 ⚠️ Amount exceeds available credit limit ({formatCurrency(preview.availableLimit, formData.currencyCode)})
               </p>
             </div>
@@ -579,7 +579,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           {preview.warnings?.length > 0 && (
             <div className="p-3 bg-warning-50 rounded-lg dark:bg-warning-500/10">
               {preview.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-warning-800 dark:text-warning-300">{w}</p>
+                <p key={i} className="text-body-sm text-warning-800 dark:text-warning-300">{w}</p>
               ))}
             </div>
           )}
@@ -593,15 +593,15 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
           <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-success-500/20">
             <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-300" />
           </div>
-          <h3 className="text-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Transaction Successful</h3>
+          <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Transaction Successful</h3>
           <p className="text-neutral-600 mb-4 dark:text-neutral-300">{mode} transaction executed successfully</p>
           <div className="p-3 bg-neutral-50 rounded-lg inline-block dark:bg-primary-950">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Reference</p>
+            <p className="body-sm">Reference</p>
             <p className="font-mono font-medium text-primary-600 dark:text-primary-200">{result.transactionRef}</p>
           </div>
           {result.viban && (
             <div className="mt-3 p-3 bg-success-50 rounded-lg inline-block dark:bg-success-500/10">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">VIBAN Generated</p>
+              <p className="body-sm">VIBAN Generated</p>
               <p className="font-mono font-medium text-success-600 dark:text-success-300">{result.viban}</p>
             </div>
           )}
@@ -667,7 +667,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
               </div>
               <div>
                 <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{pair.entity1Name}</p>
+                <p className="caption">{pair.entity1Name}</p>
               </div>
             </div>
             <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
@@ -677,7 +677,7 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
               </div>
               <div>
                 <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{pair.entity2Name}</p>
+                <p className="caption">{pair.entity2Name}</p>
               </div>
             </div>
           </div>
@@ -688,13 +688,13 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
 
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center p-3 bg-error-50 rounded-xl dark:bg-error-500/10">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">{pair.entity1Code} owes</p>
+            <p className="label">{pair.entity1Code} owes</p>
             <p className="font-semibold text-error-700 mt-1 dark:text-error-300">
               {formatCompactCurrency(pair.entity1OwesEntity2, 'AED')}
             </p>
           </div>
           <div className="text-center p-3 bg-success-50 rounded-xl dark:bg-success-500/10">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">{pair.entity2Code} owes</p>
+            <p className="label">{pair.entity2Code} owes</p>
             <p className="font-semibold text-success-700 mt-1 dark:text-success-300">
               {formatCompactCurrency(pair.entity2OwesEntity1, 'AED')}
             </p>
@@ -703,14 +703,14 @@ const EntityPairCard: React.FC<EntityPairCardProps> = ({ pair, onViewDetails, on
             'text-center p-3 rounded-xl',
             pair.netPosition > 0 ? 'bg-primary-50 dark:bg-primary-800/40' : 'bg-info-50 dark:bg-info-500/10'
           )}>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Net Position</p>
+            <p className="label">Net Position</p>
             <p className="font-bold text-primary-700 mt-1 dark:text-neutral-200">
               {formatCompactCurrency(Math.abs(pair.netPosition), 'AED')}
             </p>
           </div>
         </div>
 
-        <div className="text-sm text-center text-neutral-600 mb-4 p-2 bg-neutral-50 rounded-lg dark:text-neutral-300 dark:bg-primary-950">
+        <div className="body-sm text-center mb-4 p-2 bg-neutral-50 rounded-lg dark:bg-primary-950">
           <span className="font-medium text-success-600 dark:text-success-300">{netCreditor}</span>
           {' receives '}
           <span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCompactCurrency(Math.abs(pair.netPosition), 'AED')}</span>
@@ -758,33 +758,33 @@ const TransactionRow: React.FC<{ transaction: IntercompanyTransaction; onView: (
   return (
     <tr className="data-table-row group">
       <td className="data-table-cell">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.transactionRef}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(transaction.createdAt)}</p>
+        <p className="body-strong">{transaction.transactionRef}</p>
+        <p className="caption">{formatDate(transaction.createdAt)}</p>
       </td>
       <td className="data-table-cell">
-        <span className={cn('px-2 py-1 text-xs font-medium rounded-full', typeColors[transaction.transactionType] || 'bg-neutral-100 dark:bg-primary-800')}>
+        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', typeColors[transaction.transactionType] || 'bg-neutral-100 dark:bg-primary-800')}>
           {transaction.transactionType.replace('_', ' ')}
         </span>
       </td>
       <td className="data-table-cell">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.payingEntityCode}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{transaction.payingEntityName}</p>
+        <p className="body-strong">{transaction.payingEntityCode}</p>
+        <p className="caption">{transaction.payingEntityName}</p>
       </td>
       <td className="data-table-cell text-center">
         <ArrowRight className="w-4 h-4 text-neutral-400 inline dark:text-neutral-500" />
       </td>
       <td className="data-table-cell">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.behalfEntityCode}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{transaction.behalfEntityName}</p>
+        <p className="body-strong">{transaction.behalfEntityCode}</p>
+        <p className="caption">{transaction.behalfEntityName}</p>
       </td>
       <td className="data-table-cell text-right">
-        <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(transaction.amount, transaction.currencyCode)}</p>
+        <p className="body-strong font-semibold">{formatCurrency(transaction.amount, transaction.currencyCode)}</p>
         {transaction.charges > 0 && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">+{formatCurrency(transaction.charges, transaction.currencyCode)} fees</p>
+          <p className="caption">+{formatCurrency(transaction.charges, transaction.currencyCode)} fees</p>
         )}
       </td>
       <td className="data-table-cell">
-        <span className={cn('px-2 py-1 text-xs font-medium rounded-full', statusColors[transaction.status] || 'bg-neutral-100 dark:bg-primary-800')}>
+        <span className={cn('px-2 py-1 text-caption font-medium rounded-full', statusColors[transaction.status] || 'bg-neutral-100 dark:bg-primary-800')}>
           {transaction.status}
         </span>
       </td>
@@ -1036,7 +1036,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
         />
         <Card className="text-center py-12">
           <Building2 className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-          <h3 className="text-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Select a Corporate</h3>
+          <h3 className="text-body-lg font-medium text-neutral-900 mb-2 dark:text-neutral-50">Select a Corporate</h3>
           <p className="text-neutral-500 dark:text-neutral-400">Please select a corporate to view intercompany data</p>
         </Card>
       </div>
@@ -1143,7 +1143,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
             className={cn(
-              'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-all duration-200',
+              'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-all duration-200',
               activeTab === tab.id
                 ? 'border-primary-500 text-primary-700 bg-primary-50/50 dark:text-neutral-200'
                 : 'border-transparent text-neutral-500 hover:text-primary-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-primary-800/50'
@@ -1153,7 +1153,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
             {tab.label}
             {tab.count !== undefined && (
               <span className={cn(
-                'px-1.5 py-0.5 text-xs rounded-full font-medium',
+                'px-1.5 py-0.5 text-caption rounded-full font-medium',
                 activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
               )}>{tab.count}</span>
             )}
@@ -1204,7 +1204,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           <div className="space-y-4">
             <Card hover>
               <div className="p-4">
-                <h4 className="text-sm font-semibold text-primary-900 mb-4 dark:text-neutral-50">Quick Actions</h4>
+                <h4 className="body-strong font-semibold mb-4">Quick Actions</h4>
                 <div className="space-y-2">
                   <Button className="w-full justify-start" variant="outline" leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowPoboModal(true)}>
                     New POBO Payment
@@ -1224,8 +1224,8 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
             <Card hover>
               <div className="p-4">
-                <h4 className="text-sm font-semibold text-primary-900 mb-3 dark:text-neutral-50">Settlement Options</h4>
-                <div className="space-y-2 text-sm">
+                <h4 className="body-strong font-semibold mb-3">Settlement Options</h4>
+                <div className="space-y-2 text-body-sm">
                   <div className="flex items-center gap-2 p-2.5 bg-warning-50 rounded-xl dark:bg-warning-500/10">
                     <Zap className="w-4 h-4 text-warning-600 dark:text-warning-300" />
                     <span className="font-medium text-neutral-700 dark:text-neutral-200">Direct Payment</span>
@@ -1270,18 +1270,18 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <StatusIconBadge tone="primary" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-primary-700" />
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">POBO Transactions</h4>
                 {isTreasuryView && (
-                  <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-success-100 text-success-700 rounded-full dark:bg-success-500/20 dark:text-success-300">
+                  <span className="ml-2 px-2 py-0.5 text-caption font-medium bg-success-100 text-success-700 rounded-full dark:bg-success-500/20 dark:text-success-300">
                     Treasury View (Receivables)
                   </span>
                 )}
                 {isSubsidiaryView && (
-                  <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-warning-100 text-warning-700 rounded-full dark:bg-warning-500/20 dark:text-warning-300">
+                  <span className="ml-2 px-2 py-0.5 text-caption font-medium bg-warning-100 text-warning-700 rounded-full dark:bg-warning-500/20 dark:text-warning-300">
                     Subsidiary View (Payables)
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-sm border rounded-lg px-3 py-1.5">
+                <select className="text-body-sm border rounded-lg px-3 py-1.5">
                   <option value="">All Status</option>
                   <option value="PENDING">Pending Recharge</option>
                   <option value="PROCESSED">Processed</option>
@@ -1318,22 +1318,22 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   ) : transactions.filter(poboTransactionFilter).map(tx => (
                     <tr key={tx.id} className="data-table-row group">
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.transactionRef}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(tx.createdAt)}</p>
+                        <p className="body-strong">{tx.transactionRef}</p>
+                        <p className="caption">{formatDate(tx.createdAt)}</p>
                       </td>
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.payingEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{tx.payingEntityName}</p>
+                        <p className="body-strong">{tx.payingEntityCode}</p>
+                        <p className="caption">{tx.payingEntityName}</p>
                       </td>
                       <td className="data-table-cell text-center">
                         <ArrowRight className="w-4 h-4 text-primary-400 inline" />
                       </td>
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.behalfEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{tx.behalfEntityName}</p>
+                        <p className="body-strong">{tx.behalfEntityCode}</p>
+                        <p className="caption">{tx.behalfEntityName}</p>
                       </td>
                       <td className="data-table-cell text-right">
-                        <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(tx.amount, tx.currencyCode)}</p>
+                        <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
                       </td>
                       <td className="data-table-cell">
                         <Badge variant={tx.status === 'SETTLED' ? 'success' : tx.status === 'PENDING' ? 'warning' : 'primary'} size="sm">
@@ -1377,7 +1377,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <h4 className="font-semibold text-primary-900 dark:text-neutral-50">COBO Collections</h4>
               </div>
               <div className="flex items-center gap-2">
-                <select className="text-sm border rounded-lg px-3 py-1.5">
+                <select className="text-body-sm border rounded-lg px-3 py-1.5">
                   <option value="">All Status</option>
                   <option value="ACTIVE">Active VIBAN</option>
                   <option value="COLLECTED">Collected</option>
@@ -1415,26 +1415,26 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   ) : transactions.filter(coboTransactionFilter).map(tx => (
                     <tr key={tx.id} className="data-table-row group">
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.transactionRef}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{formatDate(tx.createdAt)}</p>
+                        <p className="body-strong">{tx.transactionRef}</p>
+                        <p className="caption">{formatDate(tx.createdAt)}</p>
                       </td>
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.payingEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{tx.payingEntityName}</p>
+                        <p className="body-strong">{tx.payingEntityCode}</p>
+                        <p className="caption">{tx.payingEntityName}</p>
                       </td>
                       <td className="data-table-cell text-center">
                         <ArrowLeft className="w-4 h-4 text-info-400 inline" />
                       </td>
                       <td className="data-table-cell">
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{tx.behalfEntityCode}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{tx.behalfEntityName}</p>
+                        <p className="body-strong">{tx.behalfEntityCode}</p>
+                        <p className="caption">{tx.behalfEntityName}</p>
                       </td>
                       <td className="data-table-cell text-right">
-                        <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(tx.amount, tx.currencyCode)}</p>
+                        <p className="body-strong font-semibold">{formatCurrency(tx.amount, tx.currencyCode)}</p>
                       </td>
                       <td className="data-table-cell">
                         {tx.viban ? (
-                          <code className="text-xs bg-info-50 text-info-700 px-2 py-1 rounded-lg font-medium dark:bg-info-500/10 dark:text-info-300">{tx.viban}</code>
+                          <code className="text-caption bg-info-50 text-info-700 px-2 py-1 rounded-lg font-medium dark:bg-info-500/10 dark:text-info-300">{tx.viban}</code>
                         ) : (
                           <span className="text-neutral-400 dark:text-neutral-500">—</span>
                         )}
@@ -1484,7 +1484,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                 <StatusIconBadge tone="success" icon={Scale} size="sm" rounded="lg" className="dark:bg-success-500/20" />
                 <div>
                   <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Entity Pairs - Ready for Settlement</h4>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Select pairs to settle bilaterally or add to netting cycle</p>
+                  <p className="body-sm">Select pairs to settle bilaterally or add to netting cycle</p>
                 </div>
               </div>
             </div>
@@ -1506,7 +1506,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         </div>
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity1Code}</p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{pair.entity1Name}</p>
+                          <p className="caption">{pair.entity1Name}</p>
                         </div>
                       </div>
                       <ArrowLeftRight className="w-5 h-5 text-neutral-300 dark:text-neutral-600" />
@@ -1516,7 +1516,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         </div>
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{pair.entity2Code}</p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{pair.entity2Name}</p>
+                          <p className="caption">{pair.entity2Name}</p>
                         </div>
                       </div>
                     </div>
@@ -1553,7 +1553,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatusIconBadge tone="info" icon={Wallet} size="sm" rounded="lg" className="dark:bg-info-500/20" />
                   <div>
                     <h4 className="font-semibold text-primary-900 dark:text-neutral-50">Intercompany Virtual Accounts</h4>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Virtual accounts for intercompany positions</p>
+                    <p className="body-sm">Virtual accounts for intercompany positions</p>
                   </div>
                 </div>
                 <Badge variant="info">{intercompanyVas.length} Accounts</Badge>
@@ -1566,7 +1566,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <Wallet className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
                   </div>
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">No intercompany virtual accounts configured</p>
-                  <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Intercompany VAs will appear here when created</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Intercompany VAs will appear here when created</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -1576,8 +1576,8 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         <div className="flex items-center gap-2">
                           <StatusIconBadge tone="info" icon={CreditCard} size="sm" rounded="lg" className="dark:bg-info-500/20" />
                           <div>
-                            <p className="font-medium text-primary-900 text-sm dark:text-neutral-50">{va.vaNumber}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{va.vaName || 'Intercompany VA'}</p>
+                            <p className="body-strong">{va.vaNumber}</p>
+                            <p className="caption">{va.vaName || 'Intercompany VA'}</p>
                           </div>
                         </div>
                         <Badge variant={va.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
@@ -1585,7 +1585,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         </Badge>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between text-body-sm">
                           <span className="text-neutral-500 dark:text-neutral-400">Balance</span>
                           <span className={cn(
                             "font-semibold",
@@ -1595,13 +1595,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                           </span>
                         </div>
                         {va.entityCode && (
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-body-sm">
                             <span className="text-neutral-500 dark:text-neutral-400">Entity</span>
                             <span className="text-primary-700 font-medium dark:text-neutral-200">{va.entityCode}</span>
                           </div>
                         )}
                         {va.counterpartyEntityCode && (
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-body-sm">
                             <span className="text-neutral-500 dark:text-neutral-400">Counterparty</span>
                             <span className="text-info-600 font-medium dark:text-info-300">{va.counterpartyEntityCode}</span>
                           </div>
@@ -1623,12 +1623,12 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
               <table className="min-w-full divide-y divide-neutral-200 dark:divide-primary-800">
                 <thead className="bg-neutral-50 dark:bg-primary-950">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Reference</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Entities</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Net Amount</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase dark:text-neutral-400">Settled At</th>
+                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Reference</th>
+                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Type</th>
+                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Entities</th>
+                    <th className="px-4 py-3 text-right text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Net Amount</th>
+                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Status</th>
+                    <th className="px-4 py-3 text-left text-caption font-medium text-neutral-500 uppercase dark:text-neutral-400">Settled At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-primary-800">
@@ -1641,22 +1641,22 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   ) : transactions.filter(tx => tx.transactionType === 'SETTLEMENT' || tx.status === 'SETTLED').slice(0, 10).map(tx => (
                     <tr key={tx.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium">{tx.settlementRef || tx.transactionRef}</p>
+                        <p className="text-body-sm font-medium">{tx.settlementRef || tx.transactionRef}</p>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="success" size="sm">Bilateral</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-sm">{tx.payingEntityCode} ↔ {tx.behalfEntityCode}</p>
+                        <p className="text-body-sm">{tx.payingEntityCode} ↔ {tx.behalfEntityCode}</p>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <p className="text-sm font-medium">{formatCurrency(tx.netAmount || tx.amount, tx.currencyCode)}</p>
+                        <p className="text-body-sm font-medium">{formatCurrency(tx.netAmount || tx.amount, tx.currencyCode)}</p>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="success" size="sm">Settled</Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                        <p className="body-sm">
                           {formatDate(tx.settledAt)}
                         </p>
                       </td>
@@ -1719,13 +1719,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                         <td className="data-table-cell">
                           <div>
                             <p className="font-medium">{recharge.payerEntityCode}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{recharge.payerEntityName}</p>
+                            <p className="caption">{recharge.payerEntityName}</p>
                           </div>
                         </td>
                         <td className="data-table-cell">
                           <div>
                             <p className="font-medium">{recharge.behalfEntityCode}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{recharge.behalfEntityName}</p>
+                            <p className="caption">{recharge.behalfEntityName}</p>
                           </div>
                         </td>
                         <td className="data-table-cell text-right amount">
@@ -1743,7 +1743,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                             {recharge.status}
                           </Badge>
                         </td>
-                        <td className="data-table-cell text-neutral-500 text-sm dark:text-neutral-400">
+                        <td className="data-table-cell body-sm">
                           {formatDate(recharge.createdAt)}
                         </td>
                         <td className="data-table-cell">
@@ -1776,7 +1776,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                             </TreasuryOnly>
                           )}
                           {recharge.status === 'APPROVED' && (
-                            <span className="text-xs text-success-600 dark:text-success-300">
+                            <span className="caption-success">
                               Approved by {recharge.approvedBy}
                             </span>
                           )}
@@ -1799,13 +1799,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
           <div className="p-4 border-b border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
             <h3 className="section-title">Recent Transactions</h3>
             <div className="flex items-center gap-2">
-              <select className="text-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
+              <select className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
                 <option value="">All Types</option>
                 <option value="POBO">POBO</option>
                 <option value="COBO">COBO</option>
                 <option value="SETTLEMENT">Settlement</option>
               </select>
-              <select className="text-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
+              <select className="text-body-sm border border-neutral-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-300 dark:border-primary-800">
                 <option value="">All Status</option>
                 <option value="PENDING">Pending</option>
                 <option value="PROCESSED">Processed</option>
@@ -1871,7 +1871,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-primary-900 dark:text-neutral-50">{entity.entityName}</p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{entity.entityCode}</p>
+                    <p className="body-sm">{entity.entityCode}</p>
                   </div>
                   <Badge variant={entity.status === 'ACTIVE' ? 'success' : 'warning'}>
                     {entity.status}
@@ -1880,7 +1880,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
                 <div className="space-y-3">
                   <div>
-                    <div className="flex justify-between text-sm mb-1">
+                    <div className="flex justify-between text-body-sm mb-1">
                       <span className="text-neutral-500 dark:text-neutral-400">Credit Utilization</span>
                       <span className="font-medium text-primary-900 dark:text-neutral-50">
                         {entity.creditLimit ? ((entity.currentExposure / entity.creditLimit) * 100).toFixed(0) : 0}%
@@ -1898,13 +1898,13 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2 text-body-sm">
                     <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Limit</p>
+                      <p className="label">Limit</p>
                       <p className="font-semibold text-primary-900 mt-1 dark:text-neutral-50"><TileAmount value={entity.creditLimit || 0} currency="AED" /></p>
                     </div>
                     <div className="p-3 bg-success-50 rounded-xl dark:bg-success-500/10">
-                      <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Available</p>
+                      <p className="label">Available</p>
                       <p className="font-semibold text-success-600 mt-1 dark:text-success-300"><TileAmount value={entity.availableLimit || 0} currency="AED" /></p>
                     </div>
                   </div>

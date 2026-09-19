@@ -315,8 +315,8 @@ const EntityCard: React.FC<{
               )}
             </div>
             <div>
-              <p className="text-sm font-semibold text-primary-900 tracking-tight dark:text-neutral-50">{entity.entityName}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{entity.entityCode} • {entity.entityType}</p>
+              <p className="body-strong font-semibold tracking-tight">{entity.entityName}</p>
+              <p className="caption">{entity.entityCode} • {entity.entityType}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -343,28 +343,28 @@ const EntityCard: React.FC<{
             <>
               {/* Lending Portfolio Summary */}
               <div className="bg-warning-50 rounded-lg p-3 border border-warning-100 dark:bg-warning-500/10 dark:border-warning-500/30">
-                <p className="text-xs font-semibold text-warning-700 uppercase tracking-wide mb-2 dark:text-warning-300">Lending Portfolio</p>
+                <p className="text-caption font-semibold text-warning-700 uppercase tracking-wide mb-2 dark:text-warning-300">Lending Portfolio</p>
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs text-warning-600 dark:text-warning-300">Total Lent Out</span>
-                  <span className="text-lg font-bold text-warning-900">{formatCurrency(totalLentOut, currency)}</span>
+                  <span className="caption-warning">Total Lent Out</span>
+                  <span className="text-body-lg font-bold text-warning-900">{formatCurrency(totalLentOut, currency)}</span>
                 </div>
                 <div className="flex justify-between items-baseline mt-1">
-                  <span className="text-xs text-warning-600 dark:text-warning-300">Deposits Received</span>
-                  <span className="text-sm font-semibold text-warning-800 dark:text-warning-300">{formatCurrency(totalDeposited, currency)}</span>
+                  <span className="caption-warning">Deposits Received</span>
+                  <span className="text-body-sm font-semibold text-warning-800 dark:text-warning-300">{formatCurrency(totalDeposited, currency)}</span>
                 </div>
               </div>
 
               {/* Net Position */}
               <div className="flex justify-between items-baseline">
                 <span className="label">Net IHB Position</span>
-                <span className={cn('text-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+                <span className={cn('text-body-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
                   {formatCurrency(netPosition, currency)}
                 </span>
               </div>
 
               {/* Lending Rate */}
               <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-body-sm">
                   <span className="text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</span>
                   <span className="font-medium text-success-600 dark:text-success-300">+{lendingSpread.toFixed(2)}%</span>
                 </div>
@@ -375,12 +375,12 @@ const EntityCard: React.FC<{
               {/* Participant View - Focus on Borrowing Capacity */}
               <div className="flex justify-between items-baseline">
                 <span className="label">Net Position</span>
-                <span className={cn('text-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+                <span className={cn('text-body-lg font-bold tracking-tight', isPositive ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
                   {formatCurrency(netPosition, currency)}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-body-sm">
                 {entity.canLend && (
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">Lent Out</span>
@@ -399,15 +399,15 @@ const EntityCard: React.FC<{
 
               {/* Credit Limit & Utilization */}
               <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
-                <div className="flex justify-between text-sm mb-2">
+                <div className="flex justify-between text-body-sm mb-2">
                   <span className="text-neutral-500 dark:text-neutral-400">Credit Limit</span>
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(creditLimit, currency)}</span>
                 </div>
-                <div className="flex justify-between text-sm mb-2">
+                <div className="flex justify-between text-body-sm mb-2">
                   <span className="text-neutral-500 dark:text-neutral-400">Available</span>
                   <span className="font-medium text-success-600 dark:text-success-300">{formatCurrency(availableLimit, currency)}</span>
                 </div>
-                <div className="flex justify-between text-sm mb-2">
+                <div className="flex justify-between text-body-sm mb-2">
                   <span className="text-neutral-500 dark:text-neutral-400">Utilized</span>
                   <span className={cn(
                     'font-medium',
@@ -431,7 +431,7 @@ const EntityCard: React.FC<{
 
               {/* Rate Spreads */}
               <div className="pt-3 border-t border-neutral-200 dark:border-primary-800">
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-2 gap-2 text-body-sm">
                   {entity.canLend && (
                     <div className="flex justify-between">
                       <span className="text-neutral-500 dark:text-neutral-400">Lending</span>
@@ -741,7 +741,7 @@ const InHouseBankPage: React.FC = () => {
         <Card padding="sm" className="bg-error-50 border-error-200 animate-fade-in dark:bg-error-500/10 dark:border-error-500/30">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
-            <p className="text-sm text-error-700 flex-1 dark:text-error-300">{error}</p>
+            <p className="text-body-sm text-error-700 flex-1 dark:text-error-300">{error}</p>
             <button onClick={() => setError(null)} className="text-error-600 hover:text-error-800 dark:text-error-300">
               <X className="w-4 h-4" />
             </button>
@@ -757,7 +757,7 @@ const InHouseBankPage: React.FC = () => {
               <Building2 className="w-8 h-8 text-warning-600 dark:text-warning-300" />
             </div>
             <p className="section-title">Select a Corporate</p>
-            <p className="text-sm text-neutral-500 mt-1 max-w-md dark:text-neutral-400">
+            <p className="body-sm mt-1 max-w-md">
               Choose a corporate from the selector above to view and manage its In-House Bank entities and current accounts.
             </p>
           </div>
@@ -776,15 +776,15 @@ const InHouseBankPage: React.FC = () => {
                     <TrendingUp className="w-5 h-5 text-warning-600 dark:text-warning-300" />
                   </div>
                   <div>
-                    <p className="text-xs font-medium text-warning-700 uppercase tracking-wide dark:text-warning-300">Treasury Indicative Rates</p>
-                    <p className="text-sm text-neutral-700 mt-0.5 dark:text-neutral-200">
+                    <p className="text-caption font-medium text-warning-700 uppercase tracking-wide dark:text-warning-300">Treasury Indicative Rates</p>
+                    <p className="text-body-sm text-neutral-700 mt-0.5 dark:text-neutral-200">
                       <span className="font-semibold text-warning-800 dark:text-warning-300">Lending: {treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</span>
                       <span className="mx-3 text-neutral-300 dark:text-neutral-600">|</span>
                       <span className="font-semibold text-success-700 dark:text-success-300">Deposit: {treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</span>
                     </p>
                   </div>
                 </div>
-                <div className="text-right text-xs text-neutral-500 dark:text-neutral-400">
+                <div className="text-right caption">
                   <p>Base: {treasuryRates.lendingBaseRateType} {treasuryRates.lendingBaseRate}%</p>
                 </div>
               </div>
@@ -824,7 +824,7 @@ const InHouseBankPage: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
+                  'px-4 py-2 rounded-lg text-body-sm font-medium transition-all whitespace-nowrap',
                   activeTab === tab.id
                     ? 'bg-primary-100 text-primary-900 dark:bg-primary-700 dark:text-neutral-50'
                     : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
@@ -833,7 +833,7 @@ const InHouseBankPage: React.FC = () => {
                 {tab.label}
                 {tab.count !== undefined && (
                   <span className={cn(
-                    'ml-2 px-2 py-0.5 rounded-full text-xs',
+                    'ml-2 px-2 py-0.5 rounded-full text-caption',
                     activeTab === tab.id ? 'bg-primary-200 text-primary-800 dark:text-neutral-100' : 'bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300'
                   )}>
                     {tab.count}
@@ -871,7 +871,7 @@ const InHouseBankPage: React.FC = () => {
                 <div className="col-span-full text-center py-12">
                   <Building2 className="w-12 h-12 mx-auto mb-4 text-neutral-300 dark:text-neutral-600" />
                   <p className="text-neutral-500 dark:text-neutral-400">No IHB-enabled entities</p>
-                  <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Enable IHB on Legal Entities to start intercompany operations</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Enable IHB on Legal Entities to start intercompany operations</p>
                 </div>
               )}
             </div>
@@ -881,7 +881,7 @@ const InHouseBankPage: React.FC = () => {
           {activeTab === 'current-accounts' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{currentAccounts.length} IHB Current Accounts</p>
+                <p className="body-sm">{currentAccounts.length} IHB Current Accounts</p>
                 <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCurrentAccountModal(true)}>
                   New Current Account
                 </Button>
@@ -906,8 +906,8 @@ const InHouseBankPage: React.FC = () => {
                               )} />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{account.participantEntityName || account.accountName}</p>
-                              <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{account.accountNumber}</p>
+                              <p className="body-strong font-semibold">{account.participantEntityName || account.accountName}</p>
+                              <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{account.accountNumber}</p>
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
@@ -919,7 +919,7 @@ const InHouseBankPage: React.FC = () => {
                             </Badge>
                             {/* IHB Participant Badge */}
                             {account.ihbParticipant && (
-                              <Badge variant="info" size="sm" className="text-xs">
+                              <Badge variant="info" size="sm" className="text-caption">
                                 IHB Participant
                               </Badge>
                             )}
@@ -928,11 +928,11 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Account Category & Type */}
                         <div className="flex gap-2 mb-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
                             {account.accountCategory || 'TRANSACTION'}
                           </span>
                           {account.ihbSweepEnabled && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium bg-info-100 text-info-700 dark:bg-info-500/20 dark:text-info-300">
                               <RefreshCw className="w-3 h-3 mr-1" />
                               Sweep: {account.ihbSweepFrequency || 'DAILY'}
                             </span>
@@ -942,21 +942,21 @@ const InHouseBankPage: React.FC = () => {
                         {/* Balance Section */}
                         <div className="space-y-2">
                           <div className="flex justify-between items-baseline">
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">Current Balance</span>
+                            <span className="caption">Current Balance</span>
                             <span className={cn(
-                              'text-lg font-bold',
+                              'text-body-lg font-bold',
                               account.currentBalance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
                             )}>
                               {formatCurrency(account.currentBalance, account.currencyCode)}
                             </span>
                           </div>
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-body-sm">
                             <span className="text-neutral-500 dark:text-neutral-400">Available</span>
                             <span className="font-medium text-primary-900 dark:text-neutral-50">
                               {formatCurrency(account.availableBalance, account.currencyCode)}
                             </span>
                           </div>
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between text-body-sm">
                             <span className="text-neutral-500 dark:text-neutral-400">Credit Limit</span>
                             <span className="font-medium text-neutral-700 dark:text-neutral-200">
                               {formatCurrency(account.creditLimit, account.currencyCode)}
@@ -968,7 +968,7 @@ const InHouseBankPage: React.FC = () => {
                         {(account.accruedCreditInterest > 0 || account.accruedDebitInterest > 0) && (
                           <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
                             <p className="label mb-2 dark:text-neutral-400">Accrued Interest</p>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-2 gap-2 text-body-sm">
                               <div className="flex justify-between">
                                 <span className="text-success-600 dark:text-success-300">Credit</span>
                                 <span className="font-medium text-success-700 dark:text-success-300">
@@ -982,7 +982,7 @@ const InHouseBankPage: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <div className="flex justify-between text-sm mt-1">
+                            <div className="flex justify-between text-body-sm mt-1">
                               <span className="text-neutral-500 dark:text-neutral-400">Net</span>
                               <span className={cn(
                                 'font-semibold',
@@ -996,7 +996,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Interest Rates */}
                         <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
-                          <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="grid grid-cols-2 gap-2 text-caption">
                             <div className="flex justify-between">
                               <span className="text-neutral-500 dark:text-neutral-400">Credit Rate</span>
                               <span className="font-medium text-success-600 dark:text-success-300">{account.creditRate?.toFixed(2) || '0.00'}%</span>
@@ -1012,7 +1012,7 @@ const InHouseBankPage: React.FC = () => {
                         {(account.ihbSweepEnabled || account.targetCashBalance) && (
                           <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-primary-800">
                             <p className="label mb-2 dark:text-neutral-400">IHB Config</p>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="grid grid-cols-2 gap-2 text-caption">
                               {account.targetCashBalance !== undefined && account.targetCashBalance !== null && (
                                 <div className="flex justify-between">
                                   <span className="text-neutral-500 dark:text-neutral-400">Target Balance</span>
@@ -1035,7 +1035,7 @@ const InHouseBankPage: React.FC = () => {
 
                         {/* Internal Interest Config Reference */}
                         {account.internalInterestConfigId && (
-                          <div className="mt-2 text-xs text-neutral-400 truncate dark:text-neutral-500">
+                          <div className="mt-2 text-caption text-neutral-400 truncate dark:text-neutral-500">
                             Config: {account.internalInterestConfigId.substring(0, 8)}...
                           </div>
                         )}
@@ -1089,8 +1089,8 @@ const InHouseBankPage: React.FC = () => {
                   )} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">{selectedEntity.entityName}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{selectedEntity.entityCode} • {selectedEntity.entityType}</p>
+                  <p className="body-strong font-semibold">{selectedEntity.entityName}</p>
+                  <p className="caption">{selectedEntity.entityCode} • {selectedEntity.entityType}</p>
                 </div>
                 <div className="ml-auto flex gap-2">
                   {selectedEntity.canLend && <Badge variant="success" size="sm">Lender</Badge>}
@@ -1126,23 +1126,23 @@ const InHouseBankPage: React.FC = () => {
             {/* Credit Limit Section (for borrowers) */}
             {selectedEntity.canBorrow && (
               <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-                <p className="text-sm font-semibold text-neutral-900 mb-3 dark:text-neutral-50">Credit Limit Status</p>
+                <p className="body-strong font-semibold mb-3">Credit Limit Status</p>
                 <div className="grid grid-cols-3 gap-4 mb-3">
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Credit Limit</p>
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">
+                    <p className="caption">Credit Limit</p>
+                    <p className="body-strong font-semibold">
                       {formatCurrency(selectedEntity.ihbCreditLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Used</p>
-                    <p className="text-sm font-semibold text-error-600 dark:text-error-300">
+                    <p className="caption">Used</p>
+                    <p className="text-body-sm font-semibold text-error-600 dark:text-error-300">
                       {formatCurrency(selectedEntity.ihbCurrentExposure ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
-                    <p className="text-sm font-semibold text-success-600 dark:text-success-300">
+                    <p className="caption">Available</p>
+                    <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
                       {formatCurrency(selectedEntity.ihbAvailableLimit ?? 0, selectedEntity.ihbCurrency || 'AED')}
                     </p>
                   </div>
@@ -1158,9 +1158,9 @@ const InHouseBankPage: React.FC = () => {
                   />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Utilization</p>
+                  <p className="caption">Utilization</p>
                   <p className={cn(
-                    "text-xs font-medium",
+                    "text-caption font-medium",
                     selectedEntity.limitBreached ? "text-error-600 dark:text-error-300" :
                     selectedEntity.limitWarning ? "text-warning-600 dark:text-warning-300" : "text-neutral-600 dark:text-neutral-300"
                   )}>
@@ -1172,18 +1172,18 @@ const InHouseBankPage: React.FC = () => {
 
             {/* Rate Spreads */}
             <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 dark:bg-primary-950 dark:border-primary-800">
-              <p className="text-sm font-semibold text-neutral-900 mb-3 dark:text-neutral-50">Rate Spreads</p>
+              <p className="body-strong font-semibold mb-3">Rate Spreads</p>
               <div className="grid grid-cols-2 gap-4">
                 {selectedEntity.canLend && (
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Lending Spread (Earns)</p>
-                    <p className="text-sm font-semibold text-success-600 dark:text-success-300">+{(selectedEntity.lendingRateSpread ?? 0).toFixed(2)}%</p>
+                    <p className="caption">Lending Spread (Earns)</p>
+                    <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">+{(selectedEntity.lendingRateSpread ?? 0).toFixed(2)}%</p>
                   </div>
                 )}
                 {selectedEntity.canBorrow && (
                   <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Borrowing Spread (Pays)</p>
-                    <p className="text-sm font-semibold text-error-600 dark:text-error-300">+{(selectedEntity.borrowingRateSpread ?? 0).toFixed(2)}%</p>
+                    <p className="caption">Borrowing Spread (Pays)</p>
+                    <p className="text-body-sm font-semibold text-error-600 dark:text-error-300">+{(selectedEntity.borrowingRateSpread ?? 0).toFixed(2)}%</p>
                   </div>
                 )}
               </div>
@@ -1214,8 +1214,8 @@ const InHouseBankPage: React.FC = () => {
                 <Wallet className="w-5 h-5 text-cat-2" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-cat-2">IHB Current Account</p>
-                <p className="text-xs text-cat-2 mt-1">
+                <p className="text-body-sm font-semibold text-cat-2">IHB Current Account</p>
+                <p className="text-caption text-cat-2 mt-1">
                   Creates a TRANSACTION VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
                   This account supports running balance with credit interest (positive balance) and
                   debit interest (overdraft). The IHB flag allows any operational VA to participate
@@ -1233,16 +1233,16 @@ const InHouseBankPage: React.FC = () => {
                   <p className="label">Treasury Rates</p>
                   <div className="flex gap-6 mt-2">
                     <div>
-                      <p className="text-xs text-success-600 dark:text-success-300">Credit Rate (Earn)</p>
+                      <p className="caption-success">Credit Rate (Earn)</p>
                       <p className="stat-value-sm text-success-700 dark:text-success-300">{treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</p>
                     </div>
                     <div>
-                      <p className="text-xs text-error-600 dark:text-error-300">Debit Rate (Pay)</p>
+                      <p className="caption-error">Debit Rate (Pay)</p>
                       <p className="stat-value-sm text-error-700 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</p>
                     </div>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={fillCurrentAccountRatesFromTreasury} className="text-xs text-cat-2">
+                <Button variant="ghost" size="sm" onClick={fillCurrentAccountRatesFromTreasury} className="text-caption text-cat-2">
                   <TrendingUp className="w-3 h-3 mr-1" /> Use Treasury Rates
                 </Button>
               </div>
@@ -1251,7 +1251,7 @@ const InHouseBankPage: React.FC = () => {
 
           {/* Participant Selection */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 dark:text-neutral-400">Participant</p>
+            <p className="label mb-3">Participant</p>
             <div>
               <label className="field-label block mb-1">Entity *</label>
               <Select
@@ -1273,13 +1273,13 @@ const InHouseBankPage: React.FC = () => {
                   </option>
                 ))}
               </Select>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Only entities with canBorrow=true can have IHB current accounts</p>
+              <p className="caption mt-1">Only entities with canBorrow=true can have IHB current accounts</p>
             </div>
           </div>
 
           {/* Account Details */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 dark:text-neutral-400">Account Details</p>
+            <p className="label mb-3">Account Details</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="field-label block mb-1">Currency</label>
@@ -1304,7 +1304,7 @@ const InHouseBankPage: React.FC = () => {
           {/* Interest Rates (Optional Override) */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Interest Rates (Optional Override)</p>
+              <p className="label">Interest Rates (Optional Override)</p>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -1316,7 +1316,7 @@ const InHouseBankPage: React.FC = () => {
                   onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, creditRate: e.target.value })}
                   placeholder="Treasury default"
                 />
-                <p className="text-xs text-success-600 mt-1 dark:text-success-300">Earned on positive balance</p>
+                <p className="caption-success mt-1">Earned on positive balance</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Debit Rate (%)</label>
@@ -1327,7 +1327,7 @@ const InHouseBankPage: React.FC = () => {
                   onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, debitRate: e.target.value })}
                   placeholder="Treasury default"
                 />
-                <p className="text-xs text-error-600 mt-1 dark:text-error-300">Charged on overdraft</p>
+                <p className="caption-error mt-1">Charged on overdraft</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Penalty Rate (%)</label>
@@ -1338,17 +1338,17 @@ const InHouseBankPage: React.FC = () => {
                   onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, penaltyRate: e.target.value })}
                   placeholder="Optional"
                 />
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">On limit breach</p>
+                <p className="caption mt-1">On limit breach</p>
               </div>
             </div>
-            <p className="text-xs text-neutral-500 mt-2 dark:text-neutral-400">
+            <p className="caption mt-2">
               Leave rates empty to use treasury configuration. Override rates take precedence over entity spreads.
             </p>
           </div>
 
           {/* IHB Sweep Configuration */}
           <div>
-            <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3 dark:text-neutral-400">
+            <p className="label mb-3">
               IHB Sweep Configuration (Optional)
             </p>
             <div className="grid grid-cols-3 gap-4">
@@ -1362,7 +1362,7 @@ const InHouseBankPage: React.FC = () => {
                   />
                   Enable Auto-Sweep
                 </label>
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Auto-sweep surplus to treasury pool</p>
+                <p className="caption mt-1">Auto-sweep surplus to treasury pool</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Target Balance</label>
@@ -1373,7 +1373,7 @@ const InHouseBankPage: React.FC = () => {
                   placeholder="0 = sweep all"
                   disabled={!currentAccountForm.ihbSweepEnabled}
                 />
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">0 = sweep all surplus</p>
+                <p className="caption mt-1">0 = sweep all surplus</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Sweep Frequency</label>
@@ -1400,7 +1400,7 @@ const InHouseBankPage: React.FC = () => {
               onChange={(e) => setCurrentAccountForm({ ...currentAccountForm, vaName: e.target.value })}
               placeholder="IHB Current - {Entity Name}"
             />
-            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+            <p className="caption mt-1">
               Leave empty to auto-generate: IHB Current - [Entity Name]
             </p>
           </div>

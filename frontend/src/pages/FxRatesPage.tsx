@@ -88,27 +88,27 @@ const extractData = <T,>(response: ApiResponse<T>): T => {
 const FreshnessBadge: React.FC<{ ageMs: number; isActive: boolean }> = ({ ageMs, isActive }) => {
   if (!isActive) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-neutral-100 text-neutral-600 dark:bg-primary-800/60 dark:text-neutral-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full caption bg-neutral-100 dark:bg-primary-800/60">
         <MinusCircle className="w-3 h-3" /> Inactive
       </span>
     );
   }
   if (ageMs < FRESH_THRESHOLD_MS) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption bg-success-100 text-success-700 dark:bg-success-500/15 dark:text-success-300">
         <CheckCircle2 className="w-3 h-3" /> Fresh
       </span>
     );
   }
   if (ageMs < ONE_DAY_MS) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-warning-100 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption bg-warning-100 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300">
         <AlertTriangle className="w-3 h-3" /> Stale
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption bg-error-100 text-error-700 dark:bg-error-500/15 dark:text-error-300">
       <XCircle className="w-3 h-3" /> Outdated
     </span>
   );
@@ -139,9 +139,9 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           header: 'Pair',
           render: (_, rate) => (
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{rate.fromCurrency}</span>
+              <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{rate.fromCurrency}</span>
               <ArrowRightLeft className="w-3 h-3 text-neutral-400" />
-              <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{rate.toCurrency}</span>
+              <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{rate.toCurrency}</span>
             </div>
           ),
         },
@@ -151,7 +151,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           header: 'Inverse',
           align: 'right',
           render: (_, rate) => (
-            <span className="font-mono text-sm text-neutral-500 dark:text-neutral-400">
+            <span className="font-mono text-body-sm text-neutral-500 dark:text-neutral-400">
               {formatFxRate(rate.inverseRate ?? 1 / rate.rate, rate.toCurrency, rate.fromCurrency)}
             </span>
           ),
@@ -161,7 +161,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           header: 'Bid',
           align: 'right',
           render: (_, rate) => (
-            <span className="font-mono text-sm">
+            <span className="font-mono text-body-sm">
               {rate.bidRate
                 ? <span className="text-success-700 dark:text-success-300">{formatFxRate(rate.bidRate, rate.fromCurrency, rate.toCurrency)}</span>
                 : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
@@ -173,7 +173,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           header: 'Ask',
           align: 'right',
           render: (_, rate) => (
-            <span className="font-mono text-sm">
+            <span className="font-mono text-body-sm">
               {rate.askRate
                 ? <span className="text-error-700 dark:text-error-300">{formatFxRate(rate.askRate, rate.fromCurrency, rate.toCurrency)}</span>
                 : <span className="text-neutral-400 dark:text-neutral-500">—</span>}
@@ -186,7 +186,7 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
           render: (_, rate) => {
             const typeConfig = RATE_TYPE_CONFIG[rate.rateType] ?? RATE_TYPE_CONFIG.SPOT;
             return (
-              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium', typeConfig.bgColor, typeConfig.color)}>
+              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-full text-caption font-medium', typeConfig.bgColor, typeConfig.color)}>
                 {typeConfig.label}
               </span>
             );
@@ -199,14 +199,14 @@ const RatesTable: React.FC<RatesTableProps> = ({ rates, onRowClick, onRefreshRow
             const sourceConfig = SOURCE_CONFIG[rate.rateSource] ?? SOURCE_CONFIG.MANUAL;
             const SourceIcon = sourceConfig.icon;
             return (
-              <div className="flex items-center gap-1.5 text-sm text-neutral-700 dark:text-neutral-200">
+              <div className="flex items-center gap-1.5 text-body-sm text-neutral-700 dark:text-neutral-200">
                 <SourceIcon className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                 {sourceConfig.label}
               </div>
             );
           },
         },
-        { key: '_ageMs', header: 'Updated', render: (_, rate) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{relativeTime(rate._ageMs)}</span> },
+        { key: '_ageMs', header: 'Updated', render: (_, rate) => <span className="body-sm">{relativeTime(rate._ageMs)}</span> },
         { key: 'isActive', header: 'Status', render: (_, rate) => <FreshnessBadge ageMs={rate._ageMs} isActive={rate.isActive} /> },
         {
           key: 'actions',
@@ -280,7 +280,7 @@ const ConverterBody: React.FC = () => {
         <select
           value={fromCurrency}
           onChange={(e) => setFromCurrency(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-sm field-label dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
         >
           {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -310,7 +310,7 @@ const ConverterBody: React.FC = () => {
         <select
           value={toCurrency}
           onChange={(e) => setToCurrency(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-sm field-label dark:border-primary-700 dark:bg-primary-900"
+          className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
         >
           {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -575,7 +575,7 @@ const FxRatesPage: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-sm field-label dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
           >
             <option value="">All types</option>
             {Object.entries(RATE_TYPE_CONFIG).map(([key, val]) => (
@@ -585,7 +585,7 @@ const FxRatesPage: React.FC = () => {
           <select
             value={filterSource}
             onChange={(e) => setFilterSource(e.target.value)}
-            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-sm field-label dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-neutral-300 rounded-md bg-white text-body-sm field-label dark:border-primary-700 dark:bg-primary-900"
           >
             <option value="">All sources</option>
             {Object.entries(SOURCE_CONFIG).map(([key, val]) => (
@@ -604,7 +604,7 @@ const FxRatesPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
-            className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 rounded"
+            className="inline-flex items-center gap-1 text-caption text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 rounded"
           >
             <X className="w-3 h-3" /> Clear filter
           </button>

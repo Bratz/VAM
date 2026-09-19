@@ -75,10 +75,10 @@ export const CopilotDrawer: React.FC = () => {
                     <Sparkles className="w-4 h-4 text-accent-300" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Dialog.Title className="font-display text-base font-semibold tracking-tight">
+                    <Dialog.Title className="font-display text-body font-semibold tracking-tight">
                       Treasury Copilot
                     </Dialog.Title>
-                    <p className="text-xs text-accent-300/80">
+                    <p className="text-caption text-accent-300/80">
                       Stub prototype · {humaniseIntent(lastIntent)}
                     </p>
                   </div>

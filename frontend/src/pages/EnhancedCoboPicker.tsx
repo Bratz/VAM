@@ -90,7 +90,7 @@ const VibanDisplay: React.FC<{
     <Card className="bg-info-50 dark:bg-info-500/10 border-info-200 dark:border-info-500/30">
       <div className="flex items-center gap-2 mb-3">
         <Hash className="w-5 h-5 text-info-600 dark:text-info-300" />
-        <h4 className="text-sm font-semibold text-info-900 dark:text-info-300">Dedicated VIBAN Generated</h4>
+        <h4 className="text-body-sm font-semibold text-info-900 dark:text-info-300">Dedicated VIBAN Generated</h4>
       </div>
 
       <div className="space-y-3">
@@ -98,7 +98,7 @@ const VibanDisplay: React.FC<{
         <div className="bg-white dark:bg-primary-900 rounded-lg p-4 border border-info-200 dark:border-info-500/30">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mb-1">Virtual IBAN for Collection</p>
+              <p className="caption mb-1">Virtual IBAN for Collection</p>
               <p className="code-display">{viban}</p>
             </div>
             <div className="flex gap-2">
@@ -127,19 +127,19 @@ const VibanDisplay: React.FC<{
         {/* Payment Details */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white dark:bg-primary-900 rounded-lg p-3">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Expected Amount</p>
-            <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
+            <p className="caption">Expected Amount</p>
+            <p className="body-strong font-semibold">{formatCurrency(amount, currencyCode)}</p>
           </div>
           {customerName && (
             <div className="bg-white dark:bg-primary-900 rounded-lg p-3">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Customer Reference</p>
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{customerName}</p>
+              <p className="caption">Customer Reference</p>
+              <p className="body-strong">{customerName}</p>
             </div>
           )}
         </div>
 
         {validUntil && (
-          <div className="flex items-center gap-2 text-xs text-info-700 dark:text-info-300 bg-white dark:bg-primary-900 rounded p-2">
+          <div className="flex items-center gap-2 text-caption text-info-700 dark:text-info-300 bg-white dark:bg-primary-900 rounded p-2">
             <Clock className="w-4 h-4" />
             <span>VIBAN valid until: {formatDate(validUntil)}</span>
           </div>
@@ -160,7 +160,7 @@ const VibanDisplay: React.FC<{
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-info-600 dark:text-info-300">
+        <div className="flex items-center gap-2 caption-info">
           <Info className="w-4 h-4" />
           <span>Payments to this VIBAN will be automatically matched to the invoice</span>
         </div>
@@ -176,8 +176,8 @@ const VibanDisplay: React.FC<{
                 <QrCode className="w-24 h-24 text-neutral-400 dark:text-neutral-500" />
               </div>
             </div>
-            <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-4">Scan to pay {formatCurrency(amount, currencyCode)}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-1 font-mono">{viban}</p>
+            <p className="body-sm mt-4">Scan to pay {formatCurrency(amount, currencyCode)}</p>
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-1 font-mono">{viban}</p>
           </div>
         </Modal>
       )}
@@ -205,7 +205,7 @@ const IhbDepositPreview: React.FC<{
     <Card className="bg-success-50 dark:bg-success-500/10 border-success-200 dark:border-success-500/30">
       <div className="flex items-center gap-2 mb-3">
         <CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />
-        <h4 className="text-sm font-semibold text-success-900 dark:text-success-300">IHB Intercompany Deposit</h4>
+        <h4 className="text-body-sm font-semibold text-success-900 dark:text-success-300">IHB Intercompany Deposit</h4>
       </div>
 
       <div className="space-y-3">
@@ -213,16 +213,16 @@ const IhbDepositPreview: React.FC<{
         <div className="flex items-center justify-between bg-white dark:bg-primary-900 rounded-lg p-3">
           <div className="text-center">
             <Landmark className="w-6 h-6 text-success-600 dark:text-success-300 mx-auto mb-1" />
-            <p className="text-xs font-medium text-primary-900 dark:text-neutral-50">{collectingEntity.entityCode}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Collector</p>
+            <p className="text-caption font-medium text-primary-900 dark:text-neutral-50">{collectingEntity.entityCode}</p>
+            <p className="caption">Collector</p>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-0.5 bg-success-300" />
               <ArrowRight className="w-4 h-4 text-success-500 dark:text-success-300" />
               <div className="flex flex-col items-center px-3 py-1 bg-success-100 rounded dark:bg-success-500/20">
-                <p className="text-sm font-bold text-success-700 dark:text-success-300">{formatCurrency(amount, currencyCode)}</p>
-                <p className="text-xs text-success-600 dark:text-success-300">@ {interestRate}% p.a.</p>
+                <p className="text-body-sm font-bold text-success-700 dark:text-success-300">{formatCurrency(amount, currencyCode)}</p>
+                <p className="caption-success">@ {interestRate}% p.a.</p>
               </div>
               <ArrowRight className="w-4 h-4 text-success-500 dark:text-success-300" />
               <div className="w-8 h-0.5 bg-success-300" />
@@ -230,13 +230,13 @@ const IhbDepositPreview: React.FC<{
           </div>
           <div className="text-center">
             <Building2 className="w-6 h-6 text-accent-600 dark:text-accent-300 mx-auto mb-1" />
-            <p className="text-xs font-medium text-primary-900 dark:text-neutral-50">{behalfEntity.entityCode}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Beneficiary</p>
+            <p className="text-caption font-medium text-primary-900 dark:text-neutral-50">{behalfEntity.entityCode}</p>
+            <p className="caption">Beneficiary</p>
           </div>
         </div>
 
         {/* Interest Breakdown */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
+        <div className="grid grid-cols-3 gap-2 text-caption">
           <div className="bg-white dark:bg-primary-900 rounded p-2">
             <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Amount</p>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(amount, currencyCode)}</p>
@@ -251,7 +251,7 @@ const IhbDepositPreview: React.FC<{
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-success-700 dark:text-success-300 bg-white dark:bg-primary-900 rounded p-2">
+        <div className="flex items-center gap-2 text-caption text-success-700 dark:text-success-300 bg-white dark:bg-primary-900 rounded p-2">
           <Info className="w-4 h-4" />
           <span>Funds will be deposited to {behalfEntity.entityName} during settlement</span>
         </div>
@@ -277,14 +277,14 @@ const EntityCard: React.FC<{
           ) : (
             <Building2 className="w-4 h-4 text-accent-600 dark:text-accent-300" />
           )}
-          <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entity.entityName}</span>
+          <span className="body-strong">{entity.entityName}</span>
         </div>
         <Badge variant={entity.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">
           {entity.entityCode}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-2 gap-2 text-caption">
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Current Balance</p>
           <p className="font-medium text-primary-900 dark:text-neutral-50">
@@ -398,8 +398,8 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
             <ArrowDownLeft className={cn('w-5 h-5', enabled ? 'text-info-600 dark:text-info-300' : 'text-neutral-500 dark:text-neutral-400 dark:text-neutral-500')} />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Collect On Behalf Of (COBO)</h4>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Central treasury collects payment on behalf of subsidiary</p>
+            <h4 className="body-strong font-semibold">Collect On Behalf Of (COBO)</h4>
+            <p className="caption">Central treasury collects payment on behalf of subsidiary</p>
           </div>
         </div>
         <button
@@ -415,13 +415,13 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-info-500 dark:text-info-300" />
-              <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Loading entities...</span>
+              <span className="ml-2 body-sm">Loading entities...</span>
             </div>
           ) : (
             <>
               {/* Collecting Entity Selector */}
               <div className="relative">
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                <label className="block label-cased mb-1">
                   Collecting Entity (Treasury) *
                 </label>
                 <button
@@ -432,12 +432,12 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                     <div className="flex items-center gap-2">
                       <Landmark className="w-4 h-4 text-success-600 dark:text-success-300" />
                       <div className="text-left">
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{collectingEntity.entityName}</span>
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 ml-2">({collectingEntity.entityCode})</span>
+                        <span className="body-strong">{collectingEntity.entityName}</span>
+                        <span className="caption ml-2">({collectingEntity.entityCode})</span>
                       </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-neutral-400 dark:text-neutral-500">Select collecting entity...</span>
+                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select collecting entity...</span>
                   )}
                   <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                 </button>
@@ -463,8 +463,8 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                             <div className="flex items-center gap-2">
                               <Landmark className="w-4 h-4 text-success-600 dark:text-success-300" />
                               <div>
-                                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entity.entityName}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{entity.entityCode} • {entity.entityType}</p>
+                                <p className="body-strong">{entity.entityName}</p>
+                                <p className="caption">{entity.entityCode} • {entity.entityType}</p>
                               </div>
                             </div>
                             <Badge variant="neutral" size="sm">{entity.currencyCode}</Badge>
@@ -479,7 +479,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
 
               {/* Behalf Entity Selector */}
               <div className="relative">
-                <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+                <label className="block label-cased mb-1">
                   On Behalf Of (Subsidiary) *
                 </label>
                 <button
@@ -490,12 +490,12 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-accent-600 dark:text-accent-300" />
                       <div className="text-left">
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{behalfEntity.entityName}</span>
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 ml-2">({behalfEntity.entityCode})</span>
+                        <span className="body-strong">{behalfEntity.entityName}</span>
+                        <span className="caption ml-2">({behalfEntity.entityCode})</span>
                       </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-neutral-400 dark:text-neutral-500">Select subsidiary...</span>
+                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Select subsidiary...</span>
                   )}
                   <ChevronDown className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                 </button>
@@ -521,8 +521,8 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                             <div className="flex items-center gap-2">
                               <Building2 className="w-4 h-4 text-accent-600 dark:text-accent-300" />
                               <div>
-                                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entity.entityName}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">{entity.entityCode} • {entity.entityType}</p>
+                                <p className="body-strong">{entity.entityName}</p>
+                                <p className="caption">{entity.entityCode} • {entity.entityType}</p>
                               </div>
                             </div>
                             <Badge variant="neutral" size="sm">{entity.currencyCode}</Badge>
@@ -551,7 +551,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                     <Hash className="w-4 h-4 text-info-600 dark:text-info-300" />
                     <span className="body-sm">Generate Dedicated VIBAN</span>
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500 mt-0.5">Create a unique VIBAN for automatic payment reconciliation</p>
+                  <p className="caption mt-0.5">Create a unique VIBAN for automatic payment reconciliation</p>
                 </div>
               </label>
 
@@ -559,7 +559,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
               {vibanGenerating ? (
                 <div className="flex items-center justify-center py-4 bg-info-50 rounded-lg dark:bg-info-500/10">
                   <Loader2 className="w-5 h-5 animate-spin text-info-500 dark:text-info-300" />
-                  <span className="ml-2 text-sm text-info-600 dark:text-info-300">Generating VIBAN...</span>
+                  <span className="ml-2 text-body-sm text-info-600 dark:text-info-300">Generating VIBAN...</span>
                 </div>
               ) : generatedViban && (
                 <VibanDisplay
@@ -589,7 +589,7 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
               {validationWarnings.length > 0 && (
                 <div className="bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg p-3 space-y-1">
                   {validationWarnings.map((warning, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-warning-700 dark:text-warning-300">
+                    <div key={idx} className="flex items-center gap-2 text-body-sm text-warning-700 dark:text-warning-300">
                       <AlertTriangle className="w-4 h-4" />
                       <span>{warning}</span>
                     </div>
@@ -602,11 +602,11 @@ export const EnhancedCoboPicker: React.FC<CoboComponentProps> = ({
                 <div className="bg-white dark:bg-primary-900 rounded-lg p-3 border border-info-200 dark:border-info-500/30">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-info-600 dark:text-info-300" />
-                    <span className="text-sm font-medium text-info-900 dark:text-info-300">
+                    <span className="text-body-sm font-medium text-info-900 dark:text-info-300">
                       <strong>{collectingEntity.entityName}</strong> will collect <strong>{formatCurrency(amount, currencyCode)}</strong> on behalf of <strong>{behalfEntity.entityName}</strong>
                     </span>
                   </div>
-                  <div className="mt-2 text-xs text-neutral-600 dark:text-neutral-300 space-y-1">
+                  <div className="mt-2 caption space-y-1">
                     <p>• Payment will be received into {collectingEntity.entityName}'s collection account</p>
                     <p>• An intercompany payable will be created for {collectingEntity.entityName}</p>
                     <p>• Funds will be transferred to {behalfEntity.entityName} during settlement</p>

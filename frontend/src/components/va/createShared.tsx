@@ -32,7 +32,7 @@ export const PurposeSelect: React.FC<{
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className={className || 'w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm'}
+    className={className || 'w-full px-3 py-2 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm'}
   >
     {PURPOSE_OPTIONS.map((o) => (
       <option key={o.value} value={o.value}>{o.label}</option>
@@ -46,7 +46,7 @@ export const PurposeSelect: React.FC<{
  * created.
  */
 export const CreationSideEffectsNote: React.FC = () => (
-  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+  <p className="caption">
     Creating this account also ensures a settlement VA at its hierarchy level,
     and a foreign-currency account gets a currency mirror automatically.
   </p>
@@ -68,7 +68,7 @@ export const CurrencyFieldWithMirrorHint: React.FC<{
     <div>
       <CurrencyPicker value={value} onChange={onChange} extra={extra} />
       {isForeign && (
-        <p className="text-xs text-info-600 dark:text-info-300 mt-1">
+        <p className="caption-info mt-1">
           Differs from base currency ({baseCurrency}) — a currency mirror will roll it up.
         </p>
       )}

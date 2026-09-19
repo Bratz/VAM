@@ -197,7 +197,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
             </div>
             <div>
               <h3 className="section-title">{breakdown.currency}</h3>
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Currency Mirror</p>
+              <p className="label">Currency Mirror</p>
             </div>
           </div>
           <Badge variant="info" size="sm">{breakdown.percentOfTotal?.toFixed(1)}%</Badge>
@@ -207,7 +207,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
       {/* Balances */}
       <div className="p-4 space-y-4">
         <div>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Original Balance</p>
+          <p className="label mb-1">Original Balance</p>
           <p className="stat-value-sm">
             <TileAmount value={breakdown.originalBalance} currency={breakdown.currency} />
           </p>
@@ -215,7 +215,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
 
         <div className="flex items-center gap-2 py-2 border-y border-dashed border-neutral-200 dark:border-primary-800">
           <ArrowRightLeft className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">
+          <span className="body-sm">
             1 {breakdown.currency} = {breakdown.fxRate?.toFixed(4) || 'N/A'} {baseCurrency}
           </span>
           {isStale && (
@@ -227,9 +227,9 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
         </div>
 
         <div>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Converted to {baseCurrency}</p>
+          <p className="label mb-1">Converted to {baseCurrency}</p>
           {/* Phase 12 Task E: .stat-value-success replaces the raw
-              `text-xl font-bold` hand-roll (matches the sibling figure's
+              `text-heading-sm font-bold` hand-roll (matches the sibling figure's
               .stat-value-sm display tier). */}
           <p className="stat-value-success">
             <TileAmount value={breakdown.convertedBalance} currency={baseCurrency} />
@@ -239,7 +239,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50/50 dark:bg-primary-950/50 rounded-b-xl">
-        <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+        <div className="flex items-center justify-between caption mb-3">
           <span className="font-mono">{breakdown.mirrorVaNumber}</span>
           {rateAge !== null && (
             <span className="flex items-center gap-1">
@@ -290,13 +290,13 @@ const FxRateRow: React.FC<FxRateRowProps> = ({ rate, onEdit }) => {
         </div>
         <div>
           <p className="font-medium text-primary-900 dark:text-neutral-50">{rate.fromCurrency}/{rate.toCurrency}</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{rate.rateSource}</p>
+          <p className="caption">{rate.rateSource}</p>
         </div>
       </div>
 
       <div className="text-right">
         <p className="font-mono font-medium text-primary-900 dark:text-neutral-50">{rate.rate?.toFixed(4)}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(rate.rateDate).toLocaleDateString()}</p>
+        <p className="caption">{new Date(rate.rateDate).toLocaleDateString()}</p>
       </div>
 
       <Badge variant={rate.isActive ? 'success' : 'neutral'} size="sm">
@@ -671,11 +671,11 @@ const CurrencyMirrorPage: React.FC = () => {
           ScopeSelector contract. */}
       <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg">
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
+          <span className="body-sm">Base:</span>
           <CurrencyPicker
             value={baseCurrency}
             onChange={(c) => setBaseCurrency(c)}
-            className="bg-transparent text-sm font-medium text-primary-900 dark:text-neutral-50 outline-none cursor-pointer"
+            className="bg-transparent body-strong outline-none cursor-pointer"
           />
         </div>
       </div>
@@ -748,8 +748,8 @@ const CurrencyMirrorPage: React.FC = () => {
         <div className="flex items-start gap-3 p-4">
           <StatusIconBadge tone="info" icon={Globe} className="flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-info-800 dark:text-info-300">Currency Mirror Architecture</p>
-            <p className="text-sm text-info-700 dark:text-info-300 mt-1">
+            <p className="text-body-sm font-semibold text-info-800 dark:text-info-300">Currency Mirror Architecture</p>
+            <p className="text-body-sm text-info-700 dark:text-info-300 mt-1">
               Currency mirrors (<strong>CURRENCY_MIRROR</strong> VAs) aggregate all VAs of the same currency
               and convert to base currency using live FX rates. They enable multi-currency liquidity visibility
               without physical FX conversion.
@@ -777,7 +777,7 @@ const CurrencyMirrorPage: React.FC = () => {
         <Card className="p-12 text-center animate-fade-in" style={{ animationDelay: '0.25s' }}>
           <Globe className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
           <p className="text-neutral-500 dark:text-neutral-400">No currency mirrors found</p>
-          <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
+          <p className="text-body-sm text-neutral-400 dark:text-neutral-500 mt-2">Currency mirrors will appear when multi-currency accounts are created.</p>
         </Card>
       )}
 
@@ -806,13 +806,13 @@ const CurrencyMirrorPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-xl">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Original Balance</p>
+                <p className="body-sm">Original Balance</p>
                 <p className="stat-value-sm">
                   {formatCurrency(selectedMirror.originalBalance, selectedMirror.currency)}
                 </p>
               </div>
               <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-xl">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Converted ({baseCurrency})</p>
+                <p className="body-sm">Converted ({baseCurrency})</p>
                 <p className="stat-value-sm text-success-600 dark:text-success-300">
                   {formatCurrency(selectedMirror.convertedBalance, baseCurrency)}
                 </p>
@@ -859,7 +859,7 @@ const CurrencyMirrorPage: React.FC = () => {
       >
         <div className="p-4 space-y-4">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Manage exchange rates used for currency conversion</p>
+            <p className="body-sm">Manage exchange rates used for currency conversion</p>
             <Button size="sm" onClick={handleRefreshRates}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh All
@@ -876,7 +876,7 @@ const CurrencyMirrorPage: React.FC = () => {
                 />
               ))
             ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-8">No FX rates available</p>
+              <p className="body-sm text-center py-8">No FX rates available</p>
             )}
           </div>
 
@@ -940,7 +940,7 @@ const CurrencyMirrorPage: React.FC = () => {
 
           {convertedResult !== null && (
             <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-xl text-center">
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              <p className="body-sm">
                 {formatCurrency(converterAmount, converterFrom)} =
               </p>
               <p className="stat-value-sm text-success-600 dark:text-success-300 mt-1">

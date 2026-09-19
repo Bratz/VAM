@@ -103,7 +103,7 @@ const MerchantOnboardingPage: React.FC = () => {
               <StatusIconBadge tone="primary" icon={Users} className="dark:bg-primary-700" />
             </div>
             <p className="stat-value-sm mt-3">{merchants.length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Merchants</p>
+            <p className="label">Total Merchants</p>
           </div>
         </Card>
         <Card hover>
@@ -112,7 +112,7 @@ const MerchantOnboardingPage: React.FC = () => {
               <StatusIconBadge tone="success" icon={TrendingUp} className="dark:bg-success-500/20" />
             </div>
             <p className="stat-value-success mt-3">{merchants.filter(m => m.status === 'ACTIVE').length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Active</p>
+            <p className="label">Active</p>
           </div>
         </Card>
         <Card hover>
@@ -121,7 +121,7 @@ const MerchantOnboardingPage: React.FC = () => {
               <StatusIconBadge tone="warning" icon={AlertCircle} className="dark:bg-warning-500/20" />
             </div>
             <p className="stat-value-warning mt-3">{merchants.filter(m => m.status === 'PENDING').length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Pending Approval</p>
+            <p className="label">Pending Approval</p>
           </div>
         </Card>
         <Card hover>
@@ -130,7 +130,7 @@ const MerchantOnboardingPage: React.FC = () => {
               <StatusIconBadge tone="error" icon={Ban} className="dark:bg-error-500/20" />
             </div>
             <p className="stat-value-error mt-3">{merchants.filter(m => m.status === 'SUSPENDED').length}</p>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Suspended</p>
+            <p className="label">Suspended</p>
           </div>
         </Card>
       </div>
@@ -168,16 +168,16 @@ const MerchantOnboardingPage: React.FC = () => {
                   <StatusIconBadge tone="primary" icon={Store} className="dark:bg-primary-700" />
                   <div>
                     <p className="font-medium text-neutral-900 dark:text-neutral-50">{m.merchantName}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{m.merchantId}</p>
+                    <p className="caption">{m.merchantId}</p>
                   </div>
                 </div>
               ),
             },
             { key: 'category', header: 'Category', render: (_, m) => <Badge variant="neutral">{m.category}</Badge> },
-            { key: 'commissionRate', header: 'Commission', render: (_, m) => <span className="text-sm font-medium">{m.commissionRate}%</span> },
+            { key: 'commissionRate', header: 'Commission', render: (_, m) => <span className="text-body-sm font-medium">{m.commissionRate}%</span> },
             { key: 'monthlyVolume', header: 'Monthly Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.monthlyVolume)}</span> },
             { key: 'status', header: 'Status', render: (_, m) => getStatusBadge(m.status) },
-            { key: 'onboardedAt', header: 'Onboarded', render: (_, m) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(m.onboardedAt).toLocaleDateString()}</span> },
+            { key: 'onboardedAt', header: 'Onboarded', render: (_, m) => <span className="body-sm">{new Date(m.onboardedAt).toLocaleDateString()}</span> },
             {
               key: 'actions',
               header: 'Actions',
@@ -266,57 +266,57 @@ const MerchantDetail: React.FC<{ merchant: any }> = ({ merchant }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-2 gap-6">
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Merchant ID</p>
+        <p className="label mb-1">Merchant ID</p>
         <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{merchant.merchantId}</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Merchant Name</p>
+        <p className="label mb-1">Merchant Name</p>
         <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.merchantName}</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Legal Name</p>
+        <p className="label mb-1">Legal Name</p>
         <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.legalName || '-'}</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Category</p>
+        <p className="label mb-1">Category</p>
         <Badge variant="neutral">{merchant.category}</Badge>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">MCC</p>
+        <p className="label mb-1">MCC</p>
         <p className="font-mono text-neutral-900 dark:text-neutral-50">{merchant.mcc}</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Commission Rate</p>
+        <p className="label mb-1">Commission Rate</p>
         <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.commissionRate}%</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Settlement Account</p>
+        <p className="label mb-1">Settlement Account</p>
         <p className="font-mono text-neutral-900 dark:text-neutral-50">{merchant.settlementAccount}</p>
       </div>
       <div>
-        <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Status</p>
+        <p className="label mb-1">Status</p>
         <Badge variant={merchant.status === 'ACTIVE' ? 'success' : 'warning'}>{merchant.status}</Badge>
       </div>
     </div>
     {merchant.monthlyStats && (
       <>
         <hr className="border-neutral-200 dark:border-primary-800" />
-        <h4 className="text-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Monthly Statistics</h4>
+        <h4 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Monthly Statistics</h4>
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Volume</p>
+            <p className="label mb-1">Volume</p>
             <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.volume)}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Transactions</p>
+            <p className="label mb-1">Transactions</p>
             <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{merchant.monthlyStats.transactions}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Avg Ticket</p>
+            <p className="label mb-1">Avg Ticket</p>
             <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.avgTicket)}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Chargebacks</p>
+            <p className="label mb-1">Chargebacks</p>
             <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{merchant.monthlyStats.chargebacks}</p>
           </div>
         </div>

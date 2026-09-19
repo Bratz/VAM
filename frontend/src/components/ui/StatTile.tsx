@@ -108,17 +108,17 @@ export const StatTile: React.FC<StatTileProps> = ({
       <div className="flex items-center gap-3">
         {medallion}
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
+          <p className="body-sm">{label}</p>
           {valueEl}
-          {sub && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate" title={sub}>{sub}</p>}
+          {sub && <p className="caption mt-0.5 truncate" title={sub}>{sub}</p>}
         </div>
       </div>
     ) : (
       <>
         {medallion}
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
+        <p className="body-sm">{label}</p>
         {valueEl}
-        {sub && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{sub}</p>}
+        {sub && <p className="caption mt-1">{sub}</p>}
       </>
     );
 

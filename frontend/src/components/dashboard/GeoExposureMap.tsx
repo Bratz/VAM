@@ -144,7 +144,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
             <button
               type="button"
               onClick={() => setZoomToFit(false)}
-              className={`px-2 py-1 text-[11px] transition-colors ${
+              className={`px-2 py-1 text-caption transition-colors ${
                 !zoomToFit
                   ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
                   : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
@@ -155,7 +155,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
             <button
               type="button"
               onClick={() => setZoomToFit(true)}
-              className={`px-2 py-1 text-[11px] transition-colors ${
+              className={`px-2 py-1 text-caption transition-colors ${
                 zoomToFit
                   ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'
                   : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-primary-800'
@@ -168,7 +168,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
 
         {hover && (
           <div
-            className="fixed z-10 pointer-events-none rounded-xl px-3.5 py-2.5 text-sm"
+            className="fixed z-10 pointer-events-none rounded-xl px-3.5 py-2.5 text-body-sm"
             style={{ left: hover.x + 12, top: hover.y + 12, backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
           >
             <p className="font-semibold">{hover.name}</p>
@@ -195,7 +195,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
           {showUnmapped && (
             <div
               onMouseLeave={() => setShowUnmapped(false)}
-              className="absolute z-10 left-0 top-full mt-1 min-w-[220px] rounded-xl px-3.5 py-2.5 text-sm"
+              className="absolute z-10 left-0 top-full mt-1 min-w-[220px] rounded-xl px-3.5 py-2.5 text-body-sm"
               style={{ backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
             >
               <p className="font-semibold mb-1">Not shown on map</p>

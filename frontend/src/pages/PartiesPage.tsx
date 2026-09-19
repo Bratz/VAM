@@ -122,7 +122,7 @@ const icSettlementConfig: Record<IcSettlementMethod, { label: string; icon: Reac
 const PoboBadge: React.FC<{ eligible?: boolean; defaultPayerCode?: string }> = ({ eligible, defaultPayerCode }) => {
   if (!eligible) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-info-50 to-cat-1-soft text-cat-1 border border-cat-1/20 dark:border-cat-1/30 dark:from-info-500/15 dark:to-cat-1/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-info-50 to-cat-1-soft text-cat-1 border border-cat-1/20 dark:border-cat-1/30 dark:from-info-500/15 dark:to-cat-1/15">
       <Wallet className="w-3 h-3" />
       POBO
       {defaultPayerCode && <span className="text-cat-1 font-normal">→ {defaultPayerCode}</span>}
@@ -135,7 +135,7 @@ const IntercompanyBadge: React.FC<{ isIntercompany?: boolean; linkedEntityCode?:
   if (!isIntercompany) return null;
   const SettlementIcon = settlementMethod ? icSettlementConfig[settlementMethod]?.icon : Link2;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-cat-2-soft to-cat-4-soft text-cat-2 border border-cat-2/20 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-4/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-2-soft to-cat-4-soft text-cat-2 border border-cat-2/20 dark:border-cat-2/30 dark:from-cat-2/15 dark:to-cat-4/15">
       <Link2 className="w-3 h-3" />
       IC
       {linkedEntityCode && <span className="text-cat-2 font-normal">↔ {linkedEntityCode}</span>}
@@ -147,7 +147,7 @@ const IntercompanyBadge: React.FC<{ isIntercompany?: boolean; linkedEntityCode?:
 const NettingBadge: React.FC<{ eligible?: boolean }> = ({ eligible }) => {
   if (!eligible) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-cat-5-soft to-cat-3-soft text-cat-3 border border-cat-3/20 dark:border-cat-3/30 dark:from-cat-5/15 dark:to-cat-3/15">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium bg-gradient-to-r from-cat-5-soft to-cat-3-soft text-cat-3 border border-cat-3/20 dark:border-cat-3/30 dark:from-cat-5/15 dark:to-cat-3/15">
       <Repeat className="w-3 h-3" />
       Netting
     </span>
@@ -164,7 +164,7 @@ const IcCreditBadge: React.FC<{ limit?: number; exposure?: number }> = ({ limit,
     error: 'bg-error-50 text-error-700 border-error-200 dark:bg-error-500/10 dark:text-error-300 dark:border-error-500/30',
   };
   return (
-    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border', colors[variant])}>
+    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption font-medium border', colors[variant])}>
       <TrendingUp className="w-3 h-3" />
       {utilization.toFixed(0)}% used
     </span>
@@ -174,7 +174,7 @@ const IcCreditBadge: React.FC<{ limit?: number; exposure?: number }> = ({ limit,
 const OwningEntityBadge: React.FC<{ entityCode?: string }> = ({ entityCode }) => {
   if (!entityCode) return null;
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded label-cased bg-neutral-100 dark:bg-primary-800">
       <Building className="w-3 h-3" />
       {entityCode}
     </span>
@@ -193,7 +193,7 @@ const EntitySelector: React.FC<{
   <select
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
   >
     <option value="">All Entities</option>
     {entities.map((entity) => (
@@ -216,7 +216,7 @@ const CorporateSelector: React.FC<{
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     disabled={loading}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
+    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
   >
     {loading ? (
       <option value="">Loading corporates...</option>
@@ -592,7 +592,7 @@ const PartyFormModal: React.FC<{
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                  'flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors',
                   activeTab === tab.id
                     ? 'border-primary-600 text-primary-600 bg-white dark:text-primary-200 dark:bg-primary-900'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:border-primary-700'
@@ -601,7 +601,7 @@ const PartyFormModal: React.FC<{
                 <Icon className="w-4 h-4" />
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-neutral-200 text-neutral-600 dark:bg-primary-800 dark:text-neutral-300">
+                  <span className="ml-1 px-1.5 py-0.5 caption rounded-full bg-neutral-200 dark:bg-primary-800">
                     {tab.count}
                   </span>
                 )}
@@ -617,7 +617,7 @@ const PartyFormModal: React.FC<{
             <div className="space-y-6">
               {/* Basic Information */}
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Basic Information</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Basic Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="field-label block mb-1">Party Code</label>
@@ -626,7 +626,7 @@ const PartyFormModal: React.FC<{
                       value={formData.partyCode}
                       onChange={(e) => setFormData(prev => ({ ...prev, partyCode: e.target.value }))}
                       placeholder="Auto-generated if empty"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -634,7 +634,7 @@ const PartyFormModal: React.FC<{
                     <select
                       value={formData.partyType}
                       onChange={(e) => setFormData(prev => ({ ...prev, partyType: e.target.value as PartyType }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     >
                       {Object.entries(typeConfig).map(([key, config]) => (
                         <option key={key} value={key}>{config.label}</option>
@@ -648,11 +648,11 @@ const PartyFormModal: React.FC<{
                       value={formData.legalName}
                       onChange={(e) => setFormData(prev => ({ ...prev, legalName: e.target.value }))}
                       className={cn(
-                        "w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                        "w-full px-3 py-2 border rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
                         errors.legalName ? 'border-error-500' : 'border-neutral-300 dark:border-primary-700'
                       )}
                     />
-                    {errors.legalName && <p className="text-xs text-error-600 mt-1 dark:text-error-300">{errors.legalName}</p>}
+                    {errors.legalName && <p className="caption-error mt-1">{errors.legalName}</p>}
                   </div>
                   <div>
                     <label className="field-label block mb-1">Display Name</label>
@@ -660,7 +660,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.displayName}
                       onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -669,7 +669,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.tradeName}
                       onChange={(e) => setFormData(prev => ({ ...prev, tradeName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                 </div>
@@ -701,12 +701,12 @@ const PartyFormModal: React.FC<{
                     );
                   })}
                 </div>
-                {errors.roles && <p className="text-xs text-error-600 mt-1 dark:text-error-300">{errors.roles}</p>}
+                {errors.roles && <p className="caption-error mt-1">{errors.roles}</p>}
               </div>
 
               {/* Registration */}
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Registration</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Registration</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="field-label block mb-1">Tax ID / TRN</label>
@@ -714,7 +714,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.taxId}
                       onChange={(e) => setFormData(prev => ({ ...prev, taxId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -723,7 +723,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.registrationNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, registrationNumber: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -732,7 +732,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.registrationCountry}
                       onChange={(e) => setFormData(prev => ({ ...prev, registrationCountry: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                 </div>
@@ -740,7 +740,7 @@ const PartyFormModal: React.FC<{
 
               {/* Contact */}
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Contact Information</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Contact Information</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="field-label block mb-1">Contact Name</label>
@@ -748,7 +748,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.contactName}
                       onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -758,11 +758,11 @@ const PartyFormModal: React.FC<{
                       value={formData.contactEmail}
                       onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
                       className={cn(
-                        "w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                        "w-full px-3 py-2 border rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent",
                         errors.contactEmail ? 'border-error-500' : 'border-neutral-300 dark:border-primary-700'
                       )}
                     />
-                    {errors.contactEmail && <p className="text-xs text-error-600 mt-1 dark:text-error-300">{errors.contactEmail}</p>}
+                    {errors.contactEmail && <p className="caption-error mt-1">{errors.contactEmail}</p>}
                   </div>
                   <div>
                     <label className="field-label block mb-1">Phone</label>
@@ -770,7 +770,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.contactPhone}
                       onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                 </div>
@@ -778,7 +778,7 @@ const PartyFormModal: React.FC<{
 
               {/* Address */}
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Address</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Address</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="field-label block mb-1">Address Line 1</label>
@@ -786,7 +786,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.addressLine1}
                       onChange={(e) => setFormData(prev => ({ ...prev, addressLine1: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div className="col-span-2">
@@ -795,7 +795,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.addressLine2}
                       onChange={(e) => setFormData(prev => ({ ...prev, addressLine2: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -804,7 +804,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -813,7 +813,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.state}
                       onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -822,7 +822,7 @@ const PartyFormModal: React.FC<{
                       type="text"
                       value={formData.postalCode}
                       onChange={(e) => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                   <div>
@@ -832,7 +832,7 @@ const PartyFormModal: React.FC<{
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                       placeholder="AE"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     />
                   </div>
                 </div>
@@ -841,7 +841,7 @@ const PartyFormModal: React.FC<{
               {/* E-commerce - Show for VENDOR role */}
               {formData.roles.includes('VENDOR') && (
                 <div>
-                  <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">E-commerce</h3>
+                  <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">E-commerce</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3">
                       <label className="flex items-center gap-2">
@@ -851,7 +851,7 @@ const PartyFormModal: React.FC<{
                           onChange={(e) => setFormData(prev => ({ ...prev, ecommerceEnabled: e.target.checked }))}
                           className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                         />
-                        <span className="text-sm text-neutral-700 dark:text-neutral-200">E-commerce Enabled</span>
+                        <span className="text-body-sm text-neutral-700 dark:text-neutral-200">E-commerce Enabled</span>
                       </label>
                     </div>
                     {formData.ecommerceEnabled && (
@@ -862,9 +862,9 @@ const PartyFormModal: React.FC<{
                           value={formData.ecommercePlatforms}
                           onChange={(e) => setFormData(prev => ({ ...prev, ecommercePlatforms: e.target.value }))}
                           placeholder="AMAZON, NOON, SHOPIFY"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
-                        <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Comma-separated list</p>
+                        <p className="caption mt-1">Comma-separated list</p>
                       </div>
                     )}
                   </div>
@@ -874,7 +874,7 @@ const PartyFormModal: React.FC<{
               {/* Employee Details - Show for EMPLOYEE role */}
               {formData.roles.includes('EMPLOYEE') && (
                 <div>
-                  <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Employee Details</h3>
+                  <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Employee Details</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="field-label block mb-1">Employee ID</label>
@@ -882,7 +882,7 @@ const PartyFormModal: React.FC<{
                         type="text"
                         value={formData.employeeId}
                         onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                       />
                     </div>
                     <div>
@@ -891,7 +891,7 @@ const PartyFormModal: React.FC<{
                         type="text"
                         value={formData.department}
                         onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                       />
                     </div>
                   </div>
@@ -905,9 +905,9 @@ const PartyFormModal: React.FC<{
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-base font-semibold text-primary-900 dark:text-neutral-50">Bank Accounts</h3>
+                  <h3 className="text-body font-semibold text-primary-900 dark:text-neutral-50">Bank Accounts</h3>
                   {!isEditMode && bankAccounts.length > 0 && (
-                    <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                    <p className="caption mt-0.5">
                       {bankAccounts.length} account(s) will be added after creating the party
                     </p>
                   )}
@@ -924,85 +924,85 @@ const PartyFormModal: React.FC<{
               {/* Bank Account Form */}
               {showBankAccountForm && (
                 <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200 space-y-4 dark:bg-primary-950 dark:border-primary-800">
-                  <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">New Bank Account</h4>
+                  <h4 className="text-body-sm font-semibold text-neutral-800 dark:text-neutral-100">New Bank Account</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Label *</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Label *</label>
                       <input
                         type="text"
                         value={bankAccountForm.label}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, label: e.target.value }))}
                         placeholder="e.g., Primary Account"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Account Holder *</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Account Holder *</label>
                       <input
                         type="text"
                         value={bankAccountForm.holderName}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, holderName: e.target.value }))}
                         placeholder="Account holder name"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Bank Name *</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Bank Name *</label>
                       <input
                         type="text"
                         value={bankAccountForm.bankName}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankName: e.target.value }))}
                         placeholder="e.g., Emirates NBD"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Bank Code / SWIFT</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Bank Code / SWIFT</label>
                       <input
                         type="text"
                         value={bankAccountForm.bankCode}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankCode: e.target.value }))}
                         placeholder="e.g., EABOROMCXXX"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">IBAN</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">IBAN</label>
                       <input
                         type="text"
                         value={bankAccountForm.iban}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, iban: e.target.value }))}
                         placeholder="e.g., AE07 0331 2345 6789 0123 456"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Account Number</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Account Number</label>
                       <input
                         type="text"
                         value={bankAccountForm.accountNumber}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, accountNumber: e.target.value }))}
                         placeholder="Account number"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Routing Number</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Routing Number</label>
                       <input
                         type="text"
                         value={bankAccountForm.routingNumber}
                         onChange={(e) => setBankAccountForm(prev => ({ ...prev, routingNumber: e.target.value }))}
                         placeholder="For US banks"
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-neutral-700 mb-1 dark:text-neutral-200">Currency *</label>
+                      <label className="block text-caption font-medium text-neutral-700 mb-1 dark:text-neutral-200">Currency *</label>
                       <CurrencyPicker
                         value={bankAccountForm.currency}
                         onChange={(c) => setBankAccountForm(prev => ({ ...prev, currency: c }))}
                         withName
-                        className="text-sm"
+                        className="text-body-sm"
                         extra={['SAR', 'INR', 'SGD']}
                       />
                     </div>
@@ -1051,7 +1051,7 @@ const PartyFormModal: React.FC<{
                 <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
                   <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No bank accounts added yet</p>
-                  <p className="text-sm mt-1">Add a bank account to enable payments to this party</p>
+                  <p className="text-body-sm mt-1">Add a bank account to enable payments to this party</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1079,8 +1079,8 @@ const PartyFormModal: React.FC<{
                                 <Badge variant="warning" size="sm">Unverified</Badge>
                               )}
                             </div>
-                            <p className="text-sm text-neutral-600 mt-1 dark:text-neutral-300">{account.bankName}</p>
-                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                            <p className="body-sm mt-1">{account.bankName}</p>
+                            <div className="flex flex-wrap gap-3 mt-2 caption">
                               {account.iban && <span className="font-mono">IBAN: {account.iban}</span>}
                               {account.accountNumber && <span className="font-mono">Acc: {account.accountNumber}</span>}
                               <span className="font-semibold">{account.currency}</span>
@@ -1121,8 +1121,8 @@ const PartyFormModal: React.FC<{
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-base font-semibold text-primary-900 dark:text-neutral-50">Documents</h3>
-                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                  <h3 className="text-body font-semibold text-primary-900 dark:text-neutral-50">Documents</h3>
+                  <p className="caption mt-0.5">
                     {isEditMode ? 'Upload compliance and verification documents' : 'Documents can be uploaded after creating the party'}
                   </p>
                 </div>
@@ -1135,7 +1135,7 @@ const PartyFormModal: React.FC<{
                 <div className="text-center py-12 text-neutral-500 bg-neutral-50 rounded-lg border border-dashed border-neutral-300 dark:text-neutral-400 dark:bg-primary-950 dark:border-primary-700">
                   <Shield className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
                   <p className="font-medium text-neutral-600 dark:text-neutral-300">No documents uploaded yet</p>
-                  <p className="text-sm mt-1">
+                  <p className="text-body-sm mt-1">
                     {isEditMode
                       ? 'Upload compliance documents for KYC verification'
                       : 'You can upload documents after the party is created'}
@@ -1156,9 +1156,9 @@ const PartyFormModal: React.FC<{
                               {doc.verificationStatus || 'Pending'}
                             </Badge>
                           </div>
-                          <p className="text-sm text-neutral-600 mt-1 dark:text-neutral-300">{doc.documentType}</p>
+                          <p className="body-sm mt-1">{doc.documentType}</p>
                           {doc.expiryDate && (
-                            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                            <p className="caption mt-1">
                               Expires: {new Date(doc.expiryDate).toLocaleDateString()}
                             </p>
                           )}
@@ -1176,10 +1176,10 @@ const PartyFormModal: React.FC<{
           {activeTab === 'compliance' && isEditMode && party && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-4 dark:text-neutral-50">KYC Status</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">KYC Status</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Current Status</label>
+                    <label className="block label-cased mb-1">Current Status</label>
                     <div className="flex items-center gap-2">
                       {party.kycStatus && kycStatusConfig[party.kycStatus] && (
                         <>
@@ -1191,13 +1191,13 @@ const PartyFormModal: React.FC<{
                       )}
                     </div>
                     {party.kycExpiresAt && (
-                      <p className="text-xs text-neutral-500 mt-2 dark:text-neutral-400">
+                      <p className="caption mt-2">
                         Expires: {new Date(party.kycExpiresAt).toLocaleDateString()}
                       </p>
                     )}
                   </div>
                   <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Risk Rating</label>
+                    <label className="block label-cased mb-1">Risk Rating</label>
                     <div className="flex items-center gap-2">
                       {party.riskRating && riskConfig[party.riskRating] && (
                         <Badge variant={riskConfig[party.riskRating].variant as any}>
@@ -1205,7 +1205,7 @@ const PartyFormModal: React.FC<{
                         </Badge>
                       )}
                       {party.riskScore && (
-                        <span className="text-sm text-neutral-600 dark:text-neutral-300">Score: {party.riskScore}</span>
+                        <span className="body-sm">Score: {party.riskScore}</span>
                       )}
                     </div>
                   </div>
@@ -1213,22 +1213,22 @@ const PartyFormModal: React.FC<{
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-4 dark:text-neutral-50">Screening Status</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-4 dark:text-neutral-50">Screening Status</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Sanctions</label>
+                    <label className="block label-cased mb-1">Sanctions</label>
                     <Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'}>
                       {party.sanctionsStatus || 'Not Checked'}
                     </Badge>
                   </div>
                   <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">PEP Status</label>
+                    <label className="block label-cased mb-1">PEP Status</label>
                     <Badge variant={party.pepStatus ? 'warning' : 'success'}>
                       {party.pepStatus ? 'PEP Identified' : 'Clear'}
                     </Badge>
                   </div>
                   <div className="p-4 bg-neutral-50 rounded-lg dark:bg-primary-950">
-                    <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Adverse Media</label>
+                    <label className="block label-cased mb-1">Adverse Media</label>
                     <Badge variant={party.adverseMediaStatus ? 'warning' : 'success'}>
                       {party.adverseMediaStatus ? 'Found' : 'Clear'}
                     </Badge>
@@ -1237,7 +1237,7 @@ const PartyFormModal: React.FC<{
               </div>
 
               <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="caption">
                   KYC and compliance settings can be managed from the View Details modal after saving the party.
                 </p>
               </div>
@@ -1248,21 +1248,21 @@ const PartyFormModal: React.FC<{
           {activeTab === 'entity' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Entity Assignment</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Entity Assignment</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="field-label block mb-1">Owning Entity</label>
                     <select
                       value={formData.owningEntityId}
                       onChange={(e) => setFormData(prev => ({ ...prev, owningEntityId: e.target.value }))}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                     >
                       <option value="">{entities.length === 0 ? 'No entities available' : 'Select Entity (optional)'}</option>
                       {entities.map(entity => (
                         <option key={entity.id} value={entity.id}>{entity.entityCode} - {entity.entityName}</option>
                       ))}
                     </select>
-                    <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                    <p className="caption mt-1">
                       The legal entity that owns this party relationship
                     </p>
                   </div>
@@ -1270,7 +1270,7 @@ const PartyFormModal: React.FC<{
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-primary-900 mb-3 dark:text-neutral-50">Payment Factory Settings</h3>
+                <h3 className="text-body font-semibold text-primary-900 mb-3 dark:text-neutral-50">Payment Factory Settings</h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4 p-4 bg-info-50 rounded-lg border border-info-200 dark:bg-info-500/10 dark:border-info-500/30">
                     <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
@@ -1280,7 +1280,7 @@ const PartyFormModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-info-900">POBO Eligible</h4>
-                          <p className="text-sm text-info-700 dark:text-info-300">Allow treasury to pay this vendor on behalf of subsidiaries</p>
+                          <p className="text-body-sm text-info-700 dark:text-info-300">Allow treasury to pay this vendor on behalf of subsidiaries</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1303,7 +1303,7 @@ const PartyFormModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-cat-2">Intercompany Party</h4>
-                          <p className="text-sm text-cat-2">This party represents another legal entity within the group</p>
+                          <p className="text-body-sm text-cat-2">This party represents another legal entity within the group</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1326,7 +1326,7 @@ const PartyFormModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium text-cat-3">Netting Eligible</h4>
-                          <p className="text-sm text-cat-3">Include transactions in netting cycles for settlement optimization</p>
+                          <p className="text-body-sm text-cat-3">Include transactions in netting cycles for settlement optimization</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -1345,7 +1345,7 @@ const PartyFormModal: React.FC<{
 
               {isEditMode && (
                 <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="caption">
                     Additional POBO and Intercompany configuration (linked entities, credit limits) can be managed from the View Details modal.
                   </p>
                 </div>
@@ -1620,12 +1620,12 @@ const PartyDetailModal: React.FC<{
                 <h2 className="section-title">{party.legalName}</h2>
                 {party.status !== 'ACTIVE' && <Badge variant="error" size="sm">{party.status}</Badge>}
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">{party.partyCode} • {typeConfig[party.partyType]?.label}</p>
+              <p className="body-sm">{party.partyCode} • {typeConfig[party.partyType]?.label}</p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {rolesArray.map((role) => {
                   const config = roleConfig[role];
                   return config ? (
-                    <span key={role} className={cn('px-2 py-0.5 rounded text-xs font-medium', config.bgColor, config.color)}>{config.label}</span>
+                    <span key={role} className={cn('px-2 py-0.5 rounded text-caption font-medium', config.bgColor, config.color)}>{config.label}</span>
                   ) : null;
                 })}
               </div>
@@ -1648,11 +1648,11 @@ const PartyDetailModal: React.FC<{
         <div className="flex gap-1 p-1 bg-neutral-100 rounded-lg overflow-x-auto dark:bg-primary-800">
           {tabs.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={cn('flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap',
+              className={cn('flex items-center gap-2 px-4 py-2 text-body-sm font-medium rounded-md transition-colors whitespace-nowrap',
                 activeTab === tab.id ? 'bg-white text-primary-900 shadow-sm dark:bg-primary-900 dark:text-neutral-50' : 'text-neutral-600 hover:text-primary-900 dark:text-neutral-300 dark:hover:text-neutral-50')}>
               {tab.label}
               {tab.count !== undefined && (
-                <span className={cn('px-1.5 py-0.5 rounded text-xs', activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-200 dark:bg-primary-800')}>{tab.count}</span>
+                <span className={cn('px-1.5 py-0.5 rounded text-caption', activeTab === tab.id ? 'bg-primary-100 dark:bg-primary-700' : 'bg-neutral-200 dark:bg-primary-800')}>{tab.count}</span>
               )}
             </button>
           ))}
@@ -1666,31 +1666,31 @@ const PartyDetailModal: React.FC<{
           {!loading && activeTab === 'overview' && (
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Basic Information</h3>
+                <h3 className="body-strong font-semibold">Basic Information</h3>
                 <Card padding="sm" className="space-y-3">
-                  {party.displayName && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Display Name</p><p className="text-sm text-primary-900 dark:text-neutral-50">{party.displayName}</p></div>}
-                  {party.taxId && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Tax ID / TRN</p><p className="text-sm text-primary-900 font-mono dark:text-neutral-50">{party.taxId}</p></div>}
-                  {party.owningEntityCode && <div><p className="text-xs text-neutral-500 dark:text-neutral-400">Owning Entity</p><p className="text-sm text-primary-900 dark:text-neutral-50">{party.owningEntityCode}</p></div>}
+                  {party.displayName && <div><p className="caption">Display Name</p><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.displayName}</p></div>}
+                  {party.taxId && <div><p className="caption">Tax ID / TRN</p><p className="text-body-sm text-primary-900 font-mono dark:text-neutral-50">{party.taxId}</p></div>}
+                  {party.owningEntityCode && <div><p className="caption">Owning Entity</p><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.owningEntityCode}</p></div>}
                 </Card>
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Contact</h3>
+                <h3 className="body-strong font-semibold">Contact</h3>
                 <Card padding="sm" className="space-y-3">
-                  {party.contactName && <div className="flex items-center gap-2"><User className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-sm text-primary-900 dark:text-neutral-50">{party.contactName}</p></div>}
-                  {party.contactEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><a href={`mailto:${party.contactEmail}`} className="text-sm text-info-600 hover:underline dark:text-info-300">{party.contactEmail}</a></div>}
-                  {party.city && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-sm text-primary-900 dark:text-neutral-50">{party.city}, {party.country}</p></div>}
+                  {party.contactName && <div className="flex items-center gap-2"><User className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.contactName}</p></div>}
+                  {party.contactEmail && <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><a href={`mailto:${party.contactEmail}`} className="text-body-sm text-info-600 hover:underline dark:text-info-300">{party.contactEmail}</a></div>}
+                  {party.city && <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-neutral-400 dark:text-neutral-500" /><p className="text-body-sm text-primary-900 dark:text-neutral-50">{party.city}, {party.country}</p></div>}
                 </Card>
               </div>
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Compliance Status</h3>
+                <h3 className="body-strong font-semibold">Compliance Status</h3>
                 <Card padding="sm" className="space-y-3">
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">KYC Status</span><Badge variant={kycConf.variant as any} size="sm"><KycIcon className="w-3 h-3 mr-1" />{kycConf.label}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Risk Rating</span><Badge variant={riskConfig[party.riskRating]?.variant as any} size="sm">{riskConfig[party.riskRating]?.label}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Sanctions</span><Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">{party.sanctionsStatus === 'CLEAR' ? 'Clear' : 'Alert'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">KYC Status</span><Badge variant={kycConf.variant as any} size="sm"><KycIcon className="w-3 h-3 mr-1" />{kycConf.label}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">Risk Rating</span><Badge variant={riskConfig[party.riskRating]?.variant as any} size="sm">{riskConfig[party.riskRating]?.label}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">Sanctions</span><Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">{party.sanctionsStatus === 'CLEAR' ? 'Clear' : 'Alert'}</Badge></div>
                 </Card>
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Payment Factory</h3>
+                <h3 className="body-strong font-semibold">Payment Factory</h3>
                 <Card padding="sm" className="space-y-3">
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">POBO Eligible</span><Badge variant={party.canReceivePoboPayment ? 'success' : 'neutral'} size="sm">{party.canReceivePoboPayment ? 'Yes' : 'No'}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Intercompany</span><Badge variant={party.isIntercompany ? 'info' : 'neutral'} size="sm">{party.isIntercompany ? party.linkedLegalEntityCode : 'No'}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Netting Eligible</span><Badge variant={party.canParticipateInNetting ? 'success' : 'neutral'} size="sm">{party.canParticipateInNetting ? 'Yes' : 'No'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">POBO Eligible</span><Badge variant={party.canReceivePoboPayment ? 'success' : 'neutral'} size="sm">{party.canReceivePoboPayment ? 'Yes' : 'No'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">Intercompany</span><Badge variant={party.isIntercompany ? 'info' : 'neutral'} size="sm">{party.isIntercompany ? party.linkedLegalEntityCode : 'No'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">Netting Eligible</span><Badge variant={party.canParticipateInNetting ? 'success' : 'neutral'} size="sm">{party.canParticipateInNetting ? 'Yes' : 'No'}</Badge></div>
                 </Card>
               </div>
             </div>
@@ -1700,7 +1700,7 @@ const PartyDetailModal: React.FC<{
           {!loading && activeTab === 'accounts' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{bankAccounts.length} bank account{bankAccounts.length !== 1 ? 's' : ''}</p>
+                <p className="body-sm">{bankAccounts.length} bank account{bankAccounts.length !== 1 ? 's' : ''}</p>
                 <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowBankAccountForm(true)}>Add Account</Button>
               </div>
 
@@ -1709,59 +1709,59 @@ const PartyDetailModal: React.FC<{
                 <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">New Bank Account</h4>
+                      <h4 className="body-strong font-semibold">New Bank Account</h4>
                       <Button variant="ghost" size="sm" onClick={() => { setShowBankAccountForm(false); setBankAccountForm(defaultBankAccountForm); }}>
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Label *</label>
+                        <label className="block label-cased mb-1">Label *</label>
                         <input
                           type="text"
                           value={bankAccountForm.label}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, label: e.target.value }))}
                           placeholder="e.g., Primary Account"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Currency</label>
+                        <label className="block label-cased mb-1">Currency</label>
                         <CurrencyPicker
                           value={bankAccountForm.currency}
                           onChange={(c) => setBankAccountForm(prev => ({ ...prev, currency: c }))}
-                          className="text-sm"
+                          className="text-body-sm"
                           extra={['SAR']}
                         />
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Bank Name *</label>
+                        <label className="block label-cased mb-1">Bank Name *</label>
                         <input
                           type="text"
                           value={bankAccountForm.bankName}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankName: e.target.value }))}
                           placeholder="e.g., Emirates NBD"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">IBAN *</label>
+                        <label className="block label-cased mb-1">IBAN *</label>
                         <input
                           type="text"
                           value={bankAccountForm.iban}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, iban: e.target.value.toUpperCase() }))}
                           placeholder="AE07 0331 2345 6789 0123 456"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">BIC / SWIFT Code</label>
+                        <label className="block label-cased mb-1">BIC / SWIFT Code</label>
                         <input
                           type="text"
                           value={bankAccountForm.bankCode}
                           onChange={(e) => setBankAccountForm(prev => ({ ...prev, bankCode: e.target.value.toUpperCase() }))}
                           placeholder="EABORAEAXXX"
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-mono focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div className="col-span-2 flex items-center gap-4">
@@ -1772,7 +1772,7 @@ const PartyDetailModal: React.FC<{
                             onChange={(e) => setBankAccountForm(prev => ({ ...prev, isPrimary: e.target.checked }))}
                             className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 dark:border-primary-700 dark:text-primary-200"
                           />
-                          <span className="text-sm text-neutral-700 dark:text-neutral-200">Set as primary account</span>
+                          <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Set as primary account</span>
                         </label>
                       </div>
                     </div>
@@ -1798,16 +1798,16 @@ const PartyDetailModal: React.FC<{
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{account.label}</p>
+                              <p className="body-strong">{account.label}</p>
                               {account.isPrimary && <Badge variant="info" size="sm">Primary</Badge>}
                               {account.isVerified && <Badge variant="success" size="sm"><CheckCircle className="w-3 h-3 mr-1" />Verified</Badge>}
                             </div>
-                            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{account.bankName}</p>
-                            <p className="text-xs font-mono text-primary-900 mt-1 dark:text-neutral-50">{account.iban || account.accountNumber}</p>
+                            <p className="caption mt-1">{account.bankName}</p>
+                            <p className="text-caption font-mono text-primary-900 mt-1 dark:text-neutral-50">{account.iban || account.accountNumber}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">{account.currency}</span>
+                          <span className="label-cased">{account.currency}</span>
                           {!account.isVerified && (
                             <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleVerifyBankAccount(account.id)}>
                               <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
@@ -1821,7 +1821,7 @@ const PartyDetailModal: React.FC<{
               ) : !showBankAccountForm && (
                 <div className="text-center py-12">
                   <CreditCard className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">No bank accounts configured</p>
+                  <p className="body-sm">No bank accounts configured</p>
                   <Button variant="outline" size="sm" className="mt-4" onClick={() => setShowBankAccountForm(true)}>
                     <Plus className="w-4 h-4 mr-1" /> Add Bank Account
                   </Button>
@@ -1834,7 +1834,7 @@ const PartyDetailModal: React.FC<{
           {!loading && activeTab === 'documents' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
+                <p className="body-sm">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
                 <Button size="sm" leftIcon={<Plus className="w-4 h-4" />}>Upload Document</Button>
               </div>
 
@@ -1853,19 +1853,19 @@ const PartyDetailModal: React.FC<{
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{doc.name}</p>
+                              <p className="body-strong">{doc.name}</p>
                               <Badge variant={
                                 doc.verificationStatus === 'VERIFIED' ? 'success' :
                                 doc.verificationStatus === 'REJECTED' ? 'error' : 'warning'
                               } size="sm">{doc.verificationStatus}</Badge>
                             </div>
-                            <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{doc.documentType} • {doc.category}</p>
+                            <p className="caption mt-1">{doc.documentType} • {doc.category}</p>
                             {doc.expiryDate && (
-                              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Expires: {new Date(doc.expiryDate).toLocaleDateString()}</p>
+                              <p className="caption mt-1">Expires: {new Date(doc.expiryDate).toLocaleDateString()}</p>
                             )}
                           </div>
                         </div>
-                        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{doc.fileType}</span>
+                        <span className="label-cased">{doc.fileType}</span>
                       </div>
                     </Card>
                   ))}
@@ -1873,7 +1873,7 @@ const PartyDetailModal: React.FC<{
               ) : (
                 <div className="text-center py-12">
                   <Shield className="w-12 h-12 text-neutral-300 mx-auto mb-4 dark:text-neutral-600" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">No documents uploaded</p>
+                  <p className="body-sm">No documents uploaded</p>
                   <Button variant="outline" size="sm" className="mt-4">
                     <Plus className="w-4 h-4 mr-1" /> Upload Document
                   </Button>
@@ -1888,26 +1888,26 @@ const PartyDetailModal: React.FC<{
               <div className="space-y-4">
                 {/* KYC Section */}
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">KYC Status</h3>
+                  <h3 className="body-strong font-semibold">KYC Status</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowKycForm(!showKycForm)}>
                     <Edit className="w-4 h-4" />
                   </Button>
                 </div>
                 <Card padding="sm" className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Current Status</span>
+                    <span className="body-sm">Current Status</span>
                     <Badge variant={kycConf.variant as any} size="sm"><KycIcon className="w-3 h-3 mr-1" />{kycConf.label}</Badge>
                   </div>
                   {party.kycExpiresAt && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Expires</span>
-                      <span className="text-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycExpiresAt).toLocaleDateString()}</span>
+                      <span className="body-sm">Expires</span>
+                      <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycExpiresAt).toLocaleDateString()}</span>
                     </div>
                   )}
                   {party.kycVerifiedAt && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Verified</span>
-                      <span className="text-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycVerifiedAt).toLocaleDateString()}</span>
+                      <span className="body-sm">Verified</span>
+                      <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycVerifiedAt).toLocaleDateString()}</span>
                     </div>
                   )}
                 </Card>
@@ -1915,13 +1915,13 @@ const PartyDetailModal: React.FC<{
                 {showKycForm && (
                   <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-primary-900 dark:text-neutral-50">Update KYC Status</h4>
+                      <h4 className="body-strong">Update KYC Status</h4>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Status</label>
+                        <label className="block label-cased mb-1">Status</label>
                         <select
                           value={kycFormData.kycStatus}
                           onChange={(e) => setKycFormData(prev => ({ ...prev, kycStatus: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         >
                           <option value="PENDING">Pending</option>
                           <option value="IN_PROGRESS">In Progress</option>
@@ -1932,12 +1932,12 @@ const PartyDetailModal: React.FC<{
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Expiry Date</label>
+                        <label className="block label-cased mb-1">Expiry Date</label>
                         <input
                           type="date"
                           value={kycFormData.kycExpiresAt}
                           onChange={(e) => setKycFormData(prev => ({ ...prev, kycExpiresAt: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -1953,20 +1953,20 @@ const PartyDetailModal: React.FC<{
 
                 {/* Risk Section */}
                 <div className="flex items-center justify-between mt-6">
-                  <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Risk Rating</h3>
+                  <h3 className="body-strong font-semibold">Risk Rating</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowRiskForm(!showRiskForm)}>
                     <Edit className="w-4 h-4" />
                   </Button>
                 </div>
                 <Card padding="sm" className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Rating</span>
+                    <span className="body-sm">Rating</span>
                     <Badge variant={riskConfig[party.riskRating]?.variant as any} size="sm">{riskConfig[party.riskRating]?.label}</Badge>
                   </div>
                   {party.riskScore !== undefined && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Score</span>
-                      <span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{party.riskScore}</span>
+                      <span className="body-sm">Score</span>
+                      <span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{party.riskScore}</span>
                     </div>
                   )}
                 </Card>
@@ -1974,13 +1974,13 @@ const PartyDetailModal: React.FC<{
                 {showRiskForm && (
                   <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-primary-900 dark:text-neutral-50">Update Risk Rating</h4>
+                      <h4 className="body-strong">Update Risk Rating</h4>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Rating</label>
+                        <label className="block label-cased mb-1">Rating</label>
                         <select
                           value={riskFormData.riskRating}
                           onChange={(e) => setRiskFormData(prev => ({ ...prev, riskRating: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         >
                           <option value="LOW">Low</option>
                           <option value="MEDIUM">Medium</option>
@@ -1989,14 +1989,14 @@ const PartyDetailModal: React.FC<{
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Score (0-100)</label>
+                        <label className="block label-cased mb-1">Score (0-100)</label>
                         <input
                           type="number"
                           min="0"
                           max="100"
                           value={riskFormData.riskScore}
                           onChange={(e) => setRiskFormData(prev => ({ ...prev, riskScore: e.target.value }))}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -2013,22 +2013,22 @@ const PartyDetailModal: React.FC<{
 
               <div className="space-y-4">
                 {/* Screening Section */}
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Screening</h3>
+                <h3 className="body-strong font-semibold">Screening</h3>
                 <Card padding="sm" className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Sanctions</span>
+                    <span className="body-sm">Sanctions</span>
                     <Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">
                       {party.sanctionsStatus === 'CLEAR' ? 'Clear' : party.sanctionsStatus}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">PEP Status</span>
+                    <span className="body-sm">PEP Status</span>
                     <Badge variant={party.pepStatus ? 'warning' : 'success'} size="sm">
                       {party.pepStatus ? 'Match' : 'Clear'}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Adverse Media</span>
+                    <span className="body-sm">Adverse Media</span>
                     <Badge variant={party.adverseMediaStatus ? 'warning' : 'success'} size="sm">
                       {party.adverseMediaStatus ? 'Match' : 'Clear'}
                     </Badge>
@@ -2049,23 +2049,23 @@ const PartyDetailModal: React.FC<{
                 </Button>
 
                 {/* Activity Summary */}
-                <h3 className="text-sm font-semibold text-primary-900 mt-6 dark:text-neutral-50">Activity</h3>
+                <h3 className="body-strong font-semibold mt-6">Activity</h3>
                 <Card padding="sm" className="space-y-3">
                   {party.onboardedAt && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Onboarded</span>
-                      <span className="text-sm text-primary-900 dark:text-neutral-50">{new Date(party.onboardedAt).toLocaleDateString()}</span>
+                      <span className="body-sm">Onboarded</span>
+                      <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.onboardedAt).toLocaleDateString()}</span>
                     </div>
                   )}
                   {party.lastTransactionAt && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Last Transaction</span>
-                      <span className="text-sm text-primary-900 dark:text-neutral-50">{new Date(party.lastTransactionAt).toLocaleDateString()}</span>
+                      <span className="body-sm">Last Transaction</span>
+                      <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.lastTransactionAt).toLocaleDateString()}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">Created</span>
-                    <span className="text-sm text-primary-900 dark:text-neutral-50">{new Date(party.createdAt).toLocaleDateString()}</span>
+                    <span className="body-sm">Created</span>
+                    <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.createdAt).toLocaleDateString()}</span>
                   </div>
                 </Card>
               </div>
@@ -2076,28 +2076,28 @@ const PartyDetailModal: React.FC<{
           {!loading && activeTab === 'pobo' && (
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">POBO Configuration</h3>
+                <h3 className="body-strong font-semibold">POBO Configuration</h3>
                 <Card padding="md" className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-cat-1-soft rounded-lg dark:bg-cat-1/15">
                     <div className="flex items-center gap-3">
                       <Wallet className="w-6 h-6 text-cat-1" />
-                      <div><p className="text-sm font-medium text-cat-1">POBO Enabled</p><p className="text-xs text-cat-1">Treasury can pay on behalf of subsidiaries</p></div>
+                      <div><p className="text-body-sm font-medium text-cat-1">POBO Enabled</p><p className="text-caption text-cat-1">Treasury can pay on behalf of subsidiaries</p></div>
                     </div>
                     <Badge variant="success" size="sm">Active</Badge>
                   </div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{party.owningEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Default Payer Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.poboDefaultPayerEntityCode || 'Not Set'}</span></div></div>
+                  <div><p className="caption mb-1">Owning Entity (Subsidiary)</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Globe className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.owningEntityCode || 'Not Set'}</span></div></div>
                 </Card>
               </div>
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">POBO Payment Flow</h3>
+                <h3 className="body-strong font-semibold">POBO Payment Flow</h3>
                 <Card padding="md">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center text-sm font-semibold text-info-700 dark:bg-info-500/20 dark:text-info-300">1</div><div><p className="text-sm font-medium">Subsidiary creates payable</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.owningEntityCode}</p></div></div>
+                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-info-100 flex items-center justify-center text-body-sm font-semibold text-info-700 dark:bg-info-500/20 dark:text-info-300">1</div><div><p className="text-body-sm font-medium">Subsidiary creates payable</p><p className="caption">{party.owningEntityCode}</p></div></div>
                     <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-sm font-semibold text-cat-1 dark:bg-cat-1/15">2</div><div><p className="text-sm font-medium">Treasury pays vendor</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
+                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-1/10 flex items-center justify-center text-body-sm font-semibold text-cat-1 dark:bg-cat-1/15">2</div><div><p className="text-body-sm font-medium">Treasury pays vendor</p><p className="caption">{party.poboDefaultPayerEntityCode} → {party.displayName}</p></div></div>
                     <div className="ml-4 border-l-2 border-dashed border-neutral-200 h-6 dark:border-primary-800"></div>
-                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-sm font-semibold text-cat-2 dark:bg-cat-2/15">3</div><div><p className="text-sm font-medium">IC Recharge created</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
+                    <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-cat-2/10 flex items-center justify-center text-body-sm font-semibold text-cat-2 dark:bg-cat-2/15">3</div><div><p className="text-body-sm font-medium">IC Recharge created</p><p className="caption">{party.owningEntityCode} owes {party.poboDefaultPayerEntityCode}</p></div></div>
                   </div>
                 </Card>
               </div>
@@ -2108,23 +2108,23 @@ const PartyDetailModal: React.FC<{
           {!loading && activeTab === 'intercompany' && (
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Intercompany Details</h3>
+                <h3 className="body-strong font-semibold">Intercompany Details</h3>
                 <Card padding="md" className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-cat-2-soft rounded-lg dark:bg-cat-2/15">
                     <div className="flex items-center gap-3">
                       <Link2 className="w-6 h-6 text-cat-2" />
-                      <div><p className="text-sm font-medium text-cat-2">Intercompany Party</p><p className="text-xs text-cat-2">Represents a group entity</p></div>
+                      <div><p className="text-body-sm font-medium text-cat-2">Intercompany Party</p><p className="text-caption text-cat-2">Represents a group entity</p></div>
                     </div>
                     <Badge variant="info" size="sm">IC</Badge>
                   </div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{party.linkedLegalEntityCode}</span></div></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
-                  <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="text-xs text-neutral-500 dark:text-neutral-400">Auto-enabled for IC parties</span></div>
+                  <div><p className="caption mb-1">Linked Legal Entity</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950"><Building className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="body-strong">{party.linkedLegalEntityCode}</span></div></div>
+                  <div><p className="caption mb-1">Settlement Method</p><div className="flex items-center gap-2 p-2 bg-neutral-50 rounded dark:bg-primary-950">{party.icSettlementMethod && <>{React.createElement(icSettlementConfig[party.icSettlementMethod]?.icon || Settings, { className: 'w-4 h-4 text-neutral-500 dark:text-neutral-400' })}<span className="body-strong">{icSettlementConfig[party.icSettlementMethod]?.label}</span></>}</div></div>
+                  <div className="flex items-center gap-2"><NettingBadge eligible={true} /><span className="caption">Auto-enabled for IC parties</span></div>
                 </Card>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">IC Credit Position</h3>
+                  <h3 className="body-strong font-semibold">IC Credit Position</h3>
                   <Button variant="ghost" size="sm" onClick={() => setShowIcCreditForm(!showIcCreditForm)}>
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -2132,15 +2132,15 @@ const PartyDetailModal: React.FC<{
                 <Card padding="md" className="space-y-4">
                   {party.icCreditLimit ? (
                     <>
-                      <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Credit Limit</span><span className="section-title">{formatCurrency(party.icCreditLimit, party.icCurrency || 'AED')}</span></div>
-                      <div className="flex items-center justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Current Exposure</span><span className="section-title">{formatCurrency(party.icCurrentExposure || 0, party.icCurrency || 'AED')}</span></div>
-                      <div><div className="flex items-center justify-between mb-1"><span className="text-xs text-neutral-500 dark:text-neutral-400">Credit Utilization</span><span className="text-xs font-medium">{party.icCreditUtilizationPercent?.toFixed(1)}%</span></div><ProgressBar value={party.icCreditUtilizationPercent || 0} max={100} size="sm" variant={(party.icCreditUtilizationPercent || 0) >= 80 ? 'warning' : 'success'} /></div>
-                      <div className="flex items-center justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="field-label">Available Credit</span><span className="text-lg font-bold text-success-600 dark:text-success-300">{formatCurrency(party.icAvailableCredit || 0, party.icCurrency || 'AED')}</span></div>
+                      <div className="flex items-center justify-between"><span className="body-sm">Credit Limit</span><span className="section-title">{formatCurrency(party.icCreditLimit, party.icCurrency || 'AED')}</span></div>
+                      <div className="flex items-center justify-between"><span className="body-sm">Current Exposure</span><span className="section-title">{formatCurrency(party.icCurrentExposure || 0, party.icCurrency || 'AED')}</span></div>
+                      <div><div className="flex items-center justify-between mb-1"><span className="caption">Credit Utilization</span><span className="text-caption font-medium">{party.icCreditUtilizationPercent?.toFixed(1)}%</span></div><ProgressBar value={party.icCreditUtilizationPercent || 0} max={100} size="sm" variant={(party.icCreditUtilizationPercent || 0) >= 80 ? 'warning' : 'success'} /></div>
+                      <div className="flex items-center justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="field-label">Available Credit</span><span className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatCurrency(party.icAvailableCredit || 0, party.icCurrency || 'AED')}</span></div>
                     </>
                   ) : (
                     <div className="text-center py-6">
                       <DollarSign className="w-10 h-10 text-neutral-300 mx-auto mb-2 dark:text-neutral-600" />
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">No credit limit configured</p>
+                      <p className="body-sm">No credit limit configured</p>
                       <Button variant="outline" size="sm" className="mt-3" onClick={() => setShowIcCreditForm(true)}>Set Credit Limit</Button>
                     </div>
                   )}
@@ -2150,12 +2150,12 @@ const PartyDetailModal: React.FC<{
                 {showIcCreditForm && (
                   <Card className="border-primary-200 bg-primary-50/30 animate-fade-in dark:border-primary-700">
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                      <h4 className="body-strong">
                         {party.icCreditLimit ? 'Update Credit Limit' : 'Set Credit Limit'}
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Amount</label>
+                          <label className="block label-cased mb-1">Amount</label>
                           <input
                             type="number"
                             min="0"
@@ -2163,26 +2163,26 @@ const PartyDetailModal: React.FC<{
                             value={icCreditForm.creditLimit}
                             onChange={(e) => setIcCreditForm(prev => ({ ...prev, creditLimit: e.target.value }))}
                             placeholder="1,000,000"
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Currency</label>
+                          <label className="block label-cased mb-1">Currency</label>
                           <CurrencyPicker
                             value={icCreditForm.currency}
                             onChange={(c) => setIcCreditForm(prev => ({ ...prev, currency: c }))}
-                            className="text-sm"
+                            className="text-body-sm"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Approval Notes</label>
+                        <label className="block label-cased mb-1">Approval Notes</label>
                         <input
                           type="text"
                           value={icCreditForm.approvalNotes}
                           onChange={(e) => setIcCreditForm(prev => ({ ...prev, approvalNotes: e.target.value }))}
                           placeholder="Reason for limit change..."
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:border-primary-700"
                         />
                       </div>
                       <div className="flex justify-end gap-2">
@@ -2418,7 +2418,7 @@ const PartiesPage: React.FC = () => {
               <Landmark className="w-4 h-4 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Corporate</span>
+              <span className="caption">Corporate</span>
               <CorporateSelector
                 value={selectedCorporateId}
                 onChange={setSelectedCorporateId}
@@ -2434,7 +2434,7 @@ const PartiesPage: React.FC = () => {
                 <Building className="w-4 h-4 text-accent-600 dark:text-accent-300" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Entity</span>
+                <span className="caption">Entity</span>
                 <EntitySelector value={selectedEntityId} onChange={setSelectedEntityId} entities={entities} />
               </div>
             </div>
@@ -2447,7 +2447,7 @@ const PartiesPage: React.FC = () => {
         <Card className="bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />
-            <p className="text-sm text-warning-800 dark:text-warning-300">Please select a corporate to view parties.</p>
+            <p className="text-body-sm text-warning-800 dark:text-warning-300">Please select a corporate to view parties.</p>
           </div>
         </Card>
       )}
@@ -2479,9 +2479,9 @@ const PartiesPage: React.FC = () => {
                     )}
                     style={{ animationDelay: `${0.15 + idx * 0.03}s` }}
                   >
-                    <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="text-xs text-neutral-500 dark:text-neutral-400">{tab.label}</span></div>
+                    <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption">{tab.label}</span></div>
                     {/* Phase 12 Task E: .stat-value-xs replaces the raw
-                        `text-xl font-semibold` display-tier hand-roll. */}
+                        `text-heading-sm font-semibold` display-tier hand-roll. */}
                     <p className="stat-value-xs mt-1">{tab.count}</p>
                   </Card>
                 </div>
@@ -2497,7 +2497,7 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.24s' }}
               >
-                <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-cat-1" /><span className="text-xs text-cat-1">POBO Ready</span></div>
+                <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-cat-1" /><span className="text-caption text-cat-1">POBO Ready</span></div>
                 <p className="stat-value-xs text-cat-1 mt-1">{displayStats.poboEligibleVendors}</p>
               </Card>
             </div>
@@ -2511,7 +2511,7 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.27s' }}
               >
-                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-cat-2" /><span className="text-xs text-cat-2">Intercompany</span></div>
+                <div className="flex items-center gap-2"><Link2 className="w-4 h-4 text-cat-2" /><span className="text-caption text-cat-2">Intercompany</span></div>
                 <p className="stat-value-xs text-cat-2 mt-1">{displayStats.intercompanyParties}</p>
               </Card>
             </div>
@@ -2525,7 +2525,7 @@ const PartiesPage: React.FC = () => {
                 )}
                 style={{ animationDelay: '0.3s' }}
               >
-                <div className="flex items-center gap-2"><Repeat className="w-4 h-4 text-cat-3" /><span className="text-xs text-cat-3">Netting</span></div>
+                <div className="flex items-center gap-2"><Repeat className="w-4 h-4 text-cat-3" /><span className="text-caption text-cat-3">Netting</span></div>
                 <p className="stat-value-xs text-cat-3 mt-1">{displayStats.nettingEligibleParties}</p>
               </Card>
             </div>
@@ -2534,12 +2534,12 @@ const PartiesPage: React.FC = () => {
           {/* Active Filters */}
           {(poboFilter || icFilter || nettingFilter || selectedEntityId) && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Active Filters:</span>
+              <span className="body-sm">Active Filters:</span>
               {selectedEntityId && <span className="cursor-pointer" onClick={() => setSelectedEntityId(undefined)}><Badge variant="info" size="sm">{entities.find(e => e.id === selectedEntityId)?.entityCode} ×</Badge></span>}
               {poboFilter && <span className="cursor-pointer" onClick={() => setPoboFilter(false)}><Badge variant="info" size="sm">POBO Eligible ×</Badge></span>}
               {icFilter && <span className="cursor-pointer" onClick={() => setIcFilter(false)}><Badge variant="info" size="sm">Intercompany ×</Badge></span>}
               {nettingFilter && <span className="cursor-pointer" onClick={() => setNettingFilter(false)}><Badge variant="info" size="sm">Netting Eligible ×</Badge></span>}
-              <button onClick={() => { setSelectedEntityId(undefined); setPoboFilter(false); setIcFilter(false); setNettingFilter(false); }} className="text-xs text-error-600 hover:underline dark:text-error-300">Clear All</button>
+              <button onClick={() => { setSelectedEntityId(undefined); setPoboFilter(false); setIcFilter(false); setNettingFilter(false); }} className="caption-error hover:underline">Clear All</button>
             </div>
           )}
 
@@ -2581,7 +2581,7 @@ const PartiesPage: React.FC = () => {
                         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', party.isIntercompany ? 'bg-cat-2/10 dark:bg-cat-2/15' : party.status === 'ACTIVE' ? 'bg-primary-100 dark:bg-primary-700' : 'bg-error-100 dark:bg-error-500/20')}>
                           <TypeIcon className={cn('w-5 h-5', party.isIntercompany ? 'text-cat-2' : party.status === 'ACTIVE' ? 'text-primary-700 dark:text-neutral-200' : 'text-error-600 dark:text-error-300')} />
                         </div>
-                        <div><p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{party.displayName || party.legalName}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{party.partyCode}</p></div>
+                        <div><p className="body-strong font-semibold">{party.displayName || party.legalName}</p><p className="caption">{party.partyCode}</p></div>
                       </div>
                     );
                   },
@@ -2594,7 +2594,7 @@ const PartiesPage: React.FC = () => {
                     <div className="flex flex-wrap gap-1">
                       {party.roles.slice(0, 2).map((role) => {
                         const config = roleConfig[role];
-                        return config ? <span key={role} className={cn('px-2 py-0.5 rounded text-xs font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
+                        return config ? <span key={role} className={cn('px-2 py-0.5 rounded text-caption font-medium', config.bgColor, config.color)}>{config.label}</span> : null;
                       })}
                     </div>
                   ),

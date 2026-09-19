@@ -18,7 +18,7 @@ import { cn } from '../../utils';
 export const IllustrativeBadge: React.FC<{ className?: string }> = ({ className }) => (
   <span
     className={cn(
-      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-medium',
       'bg-warning-100 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300',
       'uppercase tracking-[0.08em]',
       className,
@@ -74,7 +74,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   >
     <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-neutral-100 dark:border-primary-800/60">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 leading-snug">
+        <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 leading-snug">
           {question}
         </p>
         {sub && <p className="label mt-1">{sub}</p>}
@@ -85,7 +85,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
     <div className={cn('flex-1 p-4', bodyClassName)}>{children}</div>
 
     {(footLeft || footRight) && (
-      <div className="flex items-center justify-between gap-2 px-4 py-2 border-t border-neutral-100 dark:border-primary-800/60 text-xs text-neutral-500 dark:text-neutral-400">
+      <div className="flex items-center justify-between gap-2 px-4 py-2 border-t border-neutral-100 dark:border-primary-800/60 caption">
         <span className="min-w-0 truncate">{footLeft}</span>
         {footRight && (
           <span className="shrink-0 text-primary-600 dark:text-accent-400">{footRight}</span>

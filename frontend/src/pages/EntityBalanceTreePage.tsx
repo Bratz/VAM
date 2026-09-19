@@ -330,10 +330,10 @@ const StatCard: React.FC<StatCardProps> = ({
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-neutral-500 tracking-wide dark:text-neutral-400">{title}</p>
+          <p className="text-body-sm font-medium text-neutral-500 tracking-wide dark:text-neutral-400">{title}</p>
           <p className="stat-value-sm mt-1.5">{value}</p>
           {subtitle && (
-            <p className="text-sm text-neutral-500 mt-2 dark:text-neutral-400">{subtitle}</p>
+            <p className="body-sm mt-2">{subtitle}</p>
           )}
         </div>
         <div className={cn(
@@ -410,22 +410,22 @@ const EntityCard: React.FC<EntityCardProps> = ({
           </div>
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2">
-              <span className={cn('text-sm font-semibold', config.color)}>
+              <span className={cn('text-body-sm font-semibold', config.color)}>
                 {config.label}
               </span>
               <Badge variant="neutral" size="sm" className="font-bold">
                 {accounts.length}
               </Badge>
               {!config.isLeaf && (
-                <Badge variant="neutral" size="sm" className="text-neutral-400 text-xs dark:text-neutral-500">
+                <Badge variant="neutral" size="sm" className="caption">
                   Rolled-up
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{config.description}</p>
+            <p className="caption mt-0.5">{config.description}</p>
           </div>
           <div className="text-right">
-            <p className={cn('text-sm font-bold', config.color)}>
+            <p className={cn('text-body-sm font-bold', config.color)}>
               {formatCurrency(totalBalance, entity.functionalCurrency)}
             </p>
           </div>
@@ -486,7 +486,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
 
         <div className="flex-1 text-left">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-50">
+            <h3 className="text-body-lg font-bold text-neutral-900 dark:text-neutral-50">
               {entity.entityName}
             </h3>
             <Badge variant="neutral" size="sm" className="font-mono">
@@ -505,7 +505,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
               <Badge variant="success" size="sm">Borrower</Badge>
             )}
           </div>
-          <div className="flex items-center gap-4 text-sm text-neutral-500 mt-1.5 dark:text-neutral-400">
+          <div className="flex items-center gap-4 body-sm mt-1.5">
             <span className="flex items-center gap-1">
               <Globe className="w-3.5 h-3.5" />
               {entity.countryCode || 'N/A'}
@@ -529,7 +529,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
               <TrendingDown className="w-5 h-5 text-error-500" />
             )}
             {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the
-                raw `text-xl font-bold` hand-roll (same 20px scale; this is an
+                raw `text-heading-sm font-bold` hand-roll (same 20px scale; this is an
                 in-row balance figure, not a stat tile). */}
             <p className={cn(
               'stat-value-xs',
@@ -539,7 +539,7 @@ const EntityCard: React.FC<EntityCardProps> = ({
             </p>
           </div>
           {entity.functionalCurrency !== reportingCurrency && (
-            <p className="text-sm text-neutral-400 mt-0.5 dark:text-neutral-500">
+            <p className="text-body-sm text-neutral-400 mt-0.5 dark:text-neutral-500">
               ≈ {formatCurrency(entity.totalBalanceInBase, reportingCurrency)}
             </p>
           )}
@@ -620,7 +620,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-neutral-900 truncate dark:text-neutral-50">
+          <p className="text-body-sm font-medium text-neutral-900 truncate dark:text-neutral-50">
             {account.name}
           </p>
           {getMirrorTypeBadge()}
@@ -631,7 +631,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+        <div className="flex items-center gap-2 caption mt-0.5">
           {account.accountNumber && (
             <span className="font-mono">{account.accountNumber}</span>
           )}
@@ -649,11 +649,11 @@ const AccountRow: React.FC<AccountRowProps> = ({
       </Badge>
 
       <div className="text-right min-w-[120px]">
-        <p className={cn('text-sm font-semibold', balance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+        <p className={cn('text-body-sm font-semibold', balance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
           {formatCurrency(balance, account.currencyCode)}
         </p>
         {account.currencyCode !== reportingCurrency && account.balanceInBase !== undefined && (
-          <p className="text-xs text-neutral-400 dark:text-neutral-500">
+          <p className="caption">
             ≈ {formatCurrency(account.balanceInBase, reportingCurrency)}
           </p>
         )}
@@ -706,7 +706,7 @@ const PyramidView: React.FC<PyramidViewProps> = ({
         <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
           <Globe className="w-7 h-7 text-white" />
         </div>
-        <p className="text-white/70 text-sm font-medium">Corporate Total</p>
+        <p className="text-white/70 text-body-sm font-medium">Corporate Total</p>
         <p className="stat-value text-white mt-1">
           {formatCurrency(totalBalance, reportingCurrency)}
         </p>
@@ -723,9 +723,9 @@ const PyramidView: React.FC<PyramidViewProps> = ({
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <Crown className="w-6 h-6 text-white" />
-            <p className="text-white font-bold text-lg">{treasuryCenter.entityName}</p>
+            <p className="text-white font-bold text-body-lg">{treasuryCenter.entityName}</p>
           </div>
-          <p className="text-white/80 text-sm">Treasury Center</p>
+          <p className="text-white/80 text-body-sm">Treasury Center</p>
           <p className="stat-value-sm text-white mt-1">
             {formatCurrency(treasuryCenter.totalBalance, treasuryCenter.functionalCurrency)}
           </p>
@@ -749,8 +749,8 @@ const PyramidView: React.FC<PyramidViewProps> = ({
               onClick={() => onEntityClick(entity.entityId)}
             >
               <p className="text-white font-semibold truncate">{entity.entityName}</p>
-              <p className="text-white/70 text-xs font-mono">{entity.entityCode}</p>
-              <p className="text-white font-bold text-lg mt-1">
+              <p className="text-white/70 text-caption font-mono">{entity.entityCode}</p>
+              <p className="text-white font-bold text-body-lg mt-1">
                 {formatCurrency(entity.totalBalance, entity.functionalCurrency)}
               </p>
             </div>
@@ -867,21 +867,21 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
           </div>
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2">
-              <span className={cn('text-xs font-semibold', config.color)}>
+              <span className={cn('text-caption font-semibold', config.color)}>
                 {config.label}
               </span>
-              <Badge variant="neutral" size="sm" className="font-bold text-xs">
+              <Badge variant="neutral" size="sm" className="font-bold text-caption">
                 {accounts.length}
               </Badge>
               {!config.isLeaf && (
-                <Badge variant="neutral" size="sm" className="text-neutral-400 text-xs dark:text-neutral-500">
+                <Badge variant="neutral" size="sm" className="caption">
                   Rolled-up
                 </Badge>
               )}
             </div>
           </div>
           <div className="text-right">
-            <p className={cn('text-xs font-bold', config.color)}>
+            <p className={cn('text-caption font-bold', config.color)}>
               {formatCurrency(totalBalance, entity.functionalCurrency)}
             </p>
           </div>
@@ -942,11 +942,11 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className={cn(
                 'font-semibold text-neutral-900 truncate dark:text-neutral-50',
-                depth === 0 ? 'text-base' : 'text-sm'
+                depth === 0 ? 'text-body' : 'text-body-sm'
               )}>
                 {entity.entityName}
               </h3>
-              <Badge variant="neutral" size="sm" className="font-mono text-xs">
+              <Badge variant="neutral" size="sm" className="font-mono text-caption">
                 {entity.entityCode}
               </Badge>
               {entity.isTreasuryCenter && (
@@ -956,12 +956,12 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
                 </Badge>
               )}
               {entity.entityType && (
-                <Badge variant={typeStyle.badge} size="sm" className="text-xs">
+                <Badge variant={typeStyle.badge} size="sm" className="text-caption">
                   {entity.entityType}
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+            <div className="flex items-center gap-3 caption mt-1">
               {entity.countryCode && (
                 <span className="flex items-center gap-1">
                   <Globe className="w-3 h-3" />
@@ -995,19 +995,19 @@ const EntityHierarchyNode: React.FC<EntityHierarchyNodeProps> = ({
               )}
               <p className={cn(
                 'font-bold',
-                depth === 0 ? 'text-lg' : 'text-sm',
+                depth === 0 ? 'text-body-lg' : 'text-body-sm',
                 entity.rolledUpBalance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
               )}>
                 {formatCurrency(entity.rolledUpBalance, entity.functionalCurrency)}
               </p>
             </div>
             {hasChildren && entity.ownBalance !== entity.rolledUpBalance && (
-              <p className="text-xs text-neutral-400 mt-0.5 dark:text-neutral-500">
+              <p className="caption mt-0.5">
                 Own: {formatCurrency(entity.ownBalance, entity.functionalCurrency)}
               </p>
             )}
             {entity.functionalCurrency !== reportingCurrency && (
-              <p className="text-xs text-neutral-400 dark:text-neutral-500">
+              <p className="caption">
                 ≈ {formatCurrency(entity.rolledUpBalanceInBase, reportingCurrency)}
               </p>
             )}
@@ -1564,7 +1564,7 @@ const EntityBalanceTreePage: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
                 'w-64 h-10 pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-primary-800',
-                'bg-white text-sm placeholder:text-neutral-400 dark:bg-primary-900',
+                'bg-white text-body-sm placeholder:text-neutral-400 dark:bg-primary-900',
                 'focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-500/10',
                 'transition-all duration-200'
               )}
@@ -1587,7 +1587,7 @@ const EntityBalanceTreePage: React.FC = () => {
               onClick={() => setViewMode('hierarchy')}
               title="Hierarchy View"
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
+                'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'hierarchy'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
@@ -1599,7 +1599,7 @@ const EntityBalanceTreePage: React.FC = () => {
               onClick={() => setViewMode('flat')}
               title="Flat View"
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
+                'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'flat'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
@@ -1611,7 +1611,7 @@ const EntityBalanceTreePage: React.FC = () => {
               onClick={() => setViewMode('pyramid')}
               title="Pyramid View"
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
+                'px-3 py-1.5 rounded-lg text-body-sm font-medium transition-all duration-200 flex items-center gap-1',
                 viewMode === 'pyramid'
                   ? 'bg-white shadow-sm text-primary-700 dark:bg-primary-900 dark:text-neutral-200'
                   : 'text-neutral-600 hover:text-primary-600 dark:text-neutral-300'
@@ -1710,7 +1710,7 @@ const EntityBalanceTreePage: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">Legal Entity Hierarchy</h3>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="caption">
                       Showing balances organized by parent-child entity relationships
                     </p>
                   </div>
@@ -1739,7 +1739,7 @@ const EntityBalanceTreePage: React.FC = () => {
                     <TreeDeciduous className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
-                  <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
                 </div>
               )}
             </Card>
@@ -1766,7 +1766,7 @@ const EntityBalanceTreePage: React.FC = () => {
                     <Wallet className="w-8 h-8 text-neutral-400 dark:text-neutral-500" />
                   </div>
                   <p className="text-neutral-600 font-medium dark:text-neutral-300">No entities found</p>
-                  <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
+                  <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Try adjusting your search or filters</p>
                 </div>
               )}
             </div>
@@ -1785,25 +1785,25 @@ const EntityBalanceTreePage: React.FC = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                  <p className="text-xs text-neutral-500 font-medium dark:text-neutral-400">Account Name</p>
+                  <p className="label-cased">Account Name</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.name}</p>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                  <p className="text-xs text-neutral-500 font-medium dark:text-neutral-400">Account Number</p>
+                  <p className="label-cased">Account Number</p>
                   <p className="font-mono text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.accountNumber || 'N/A'}</p>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                  <p className="text-xs text-neutral-500 font-medium dark:text-neutral-400">Currency</p>
+                  <p className="label-cased">Currency</p>
                   <p className="font-semibold text-neutral-900 mt-1 dark:text-neutral-50">{selectedAccount.currencyCode}</p>
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                  <p className="text-xs text-neutral-500 font-medium dark:text-neutral-400">Category</p>
+                  <p className="label-cased">Category</p>
                   <Badge className="mt-1">{selectedAccount.accountCategory || selectedAccount.type}</Badge>
                 </div>
               </div>
 
               <div className="p-4 bg-success-50 rounded-xl border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
-                <p className="text-sm text-neutral-500 font-medium dark:text-neutral-400">Current Balance</p>
+                <p className="text-body-sm text-neutral-500 font-medium dark:text-neutral-400">Current Balance</p>
                 <p className={cn(
                   'stat-value mt-1',
                   (selectedAccount.localBalance || 0) >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
@@ -1814,7 +1814,7 @@ const EntityBalanceTreePage: React.FC = () => {
 
               {selectedAccount.mirrorAccountType && selectedAccount.mirrorAccountType !== 'NONE' && (
                 <div className="pt-4 border-t border-neutral-100 dark:border-primary-800/60">
-                  <p className="text-sm text-neutral-500 font-medium mb-2 dark:text-neutral-400">Mirror Account Type</p>
+                  <p className="text-body-sm text-neutral-500 font-medium mb-2 dark:text-neutral-400">Mirror Account Type</p>
                   <Badge variant="info" size="md">{selectedAccount.mirrorAccountType}</Badge>
                 </div>
               )}

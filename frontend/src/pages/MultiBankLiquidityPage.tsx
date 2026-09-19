@@ -256,7 +256,7 @@ const MultiBankLiquidityPage: React.FC = () => {
           // primary-action / selected-state navy. No dark variant — the
           // navy reads the same in both themes. Spin icon-only during run;
           // the label stays put.
-          className="px-3 py-1.5 text-sm bg-primary-900 hover:bg-primary-800 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 text-body-sm bg-primary-900 hover:bg-primary-800 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           title={hasStaleWork ? 'Refetch all stale / failed / never-refreshed shadow balances' : 'Nothing to refresh'}
         >
           <RefreshCw className={cn('w-4 h-4', bulkRefreshing && 'animate-spin')} />
@@ -265,7 +265,7 @@ const MultiBankLiquidityPage: React.FC = () => {
         <button
           onClick={load}
           disabled={loading}
-          className="px-3 py-1.5 text-sm bg-transparent border border-neutral-300 dark:border-primary-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          className="px-3 py-1.5 text-body-sm bg-transparent border border-neutral-300 dark:border-primary-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
           Reload view

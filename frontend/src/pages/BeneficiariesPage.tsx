@@ -93,7 +93,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
           <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-dropdown border border-neutral-200 py-1 z-20 animate-fade-in dark:bg-primary-900 dark:border-primary-800">
             <button
               onClick={() => { onView(beneficiary); setShowActions(false); }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50"
             >
               <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> View Details
             </button>
@@ -101,7 +101,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
               <button
                 onClick={() => { onVerify(beneficiary.id); setShowActions(false); }}
                 disabled={processing}
-                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-success-600 hover:bg-success-50 transition-colors disabled:opacity-50 dark:text-success-300"
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-success-600 hover:bg-success-50 transition-colors disabled:opacity-50 dark:text-success-300"
               >
                 <CheckCircle className="w-4 h-4" /> Verify Beneficiary
               </button>
@@ -110,7 +110,7 @@ const BeneficiaryActionsCell: React.FC<BeneficiaryActionsCellProps> = ({
             <button
               onClick={() => { onDelete(beneficiary.id); setShowActions(false); }}
               disabled={processing}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-error-600 hover:bg-error-50 transition-colors disabled:opacity-50 dark:text-error-300"
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-error-600 hover:bg-error-50 transition-colors disabled:opacity-50 dark:text-error-300"
             >
               <Trash2 className="w-4 h-4" /> Delete
             </button>
@@ -160,7 +160,7 @@ const BeneficiaryMobileCard: React.FC<BeneficiaryMobileCardProps> = ({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="font-semibold text-primary-900 truncate dark:text-neutral-50">{beneficiary.beneficiaryName}</h3>
-              <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{beneficiary.bankName || 'No bank info'}</p>
+              <p className="caption mt-0.5">{beneficiary.bankName || 'No bank info'}</p>
             </div>
             <Badge
               variant={beneficiary.validationStatus === 'VERIFIED' ? 'success' : 'warning'}
@@ -172,14 +172,14 @@ const BeneficiaryMobileCard: React.FC<BeneficiaryMobileCardProps> = ({
 
           <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Account</p>
-              <p className="text-sm font-mono text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
+              <p className="caption">Account</p>
+              <p className="text-body-sm font-mono text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
                 {beneficiary.iban || beneficiary.accountNumber || '-'}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Currency</p>
-              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+              <p className="caption">Currency</p>
+              <p className="body-strong font-semibold">
                 {beneficiary.currencyCode || 'AED'}
               </p>
             </div>
@@ -237,7 +237,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
     <div className="space-y-6">
       {/* Basic Info Section */}
       <div className="space-y-4">
-        <h4 className="text-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
+        <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
           Basic Information
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -262,7 +262,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
 
       {/* Bank Details Section */}
       <div className="space-y-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
-        <h4 className="text-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
+        <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
           Bank Details
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -577,10 +577,10 @@ const BeneficiariesPage: React.FC = () => {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-primary-900 truncate dark:text-neutral-50">
+                    <p className="text-body-sm font-semibold text-primary-900 truncate dark:text-neutral-50">
                       {beneficiary.beneficiaryName}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">
+                    <div className="flex items-center gap-2 caption mt-0.5">
                       <Globe className="w-3 h-3" />
                       <span>{beneficiary.countryCode || 'N/A'}</span>
                     </div>
@@ -610,8 +610,8 @@ const BeneficiariesPage: React.FC = () => {
               header: 'Bank',
               render: (_, beneficiary) => (
                 <>
-                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{beneficiary.bankName || '-'}</p>
-                  <p className="text-xs text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{beneficiary.swiftCode || '-'}</p>
+                  <p className="body-strong">{beneficiary.bankName || '-'}</p>
+                  <p className="text-caption text-neutral-500 font-mono mt-0.5 dark:text-neutral-400">{beneficiary.swiftCode || '-'}</p>
                 </>
               ),
             },
@@ -620,10 +620,10 @@ const BeneficiariesPage: React.FC = () => {
               header: 'Account/IBAN',
               render: (_, beneficiary) => (
                 <>
-                  <p className="text-sm font-mono text-primary-900 truncate max-w-[200px] dark:text-neutral-50">
+                  <p className="text-body-sm font-mono text-primary-900 truncate max-w-[200px] dark:text-neutral-50">
                     {beneficiary.iban || beneficiary.accountNumber || '-'}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{beneficiary.currencyCode || 'AED'}</p>
+                  <p className="caption mt-0.5">{beneficiary.currencyCode || 'AED'}</p>
                 </>
               ),
             },
@@ -712,38 +712,38 @@ const BeneficiariesPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Bank Name</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">Bank Name</p>
+                <p className="body-strong mt-1">
                   {selectedBeneficiary.bankName || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">SWIFT Code</p>
-                <p className="text-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">SWIFT Code</p>
+                <p className="text-body-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
                   {selectedBeneficiary.swiftCode || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Account Number</p>
-                <p className="text-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">Account Number</p>
+                <p className="text-body-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
                   {selectedBeneficiary.accountNumber || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">IBAN</p>
-                <p className="text-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">IBAN</p>
+                <p className="text-body-sm font-medium font-mono text-primary-900 mt-1 dark:text-neutral-50">
                   {selectedBeneficiary.iban || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Currency</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">Currency</p>
+                <p className="body-strong mt-1">
                   {selectedBeneficiary.currencyCode || 'AED'}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Country</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">Country</p>
+                <p className="body-strong mt-1">
                   {selectedBeneficiary.countryCode || '-'}
                 </p>
               </div>

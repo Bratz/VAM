@@ -69,7 +69,7 @@ const Badge: React.FC<{
     purple: 'bg-cat-2/10 text-cat-2 dark:bg-cat-2/15',
   };
   return (
-    <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', variants[variant])}>
+    <span className={cn('px-2 py-0.5 text-caption font-medium rounded-full', variants[variant])}>
       {children}
     </span>
   );
@@ -85,7 +85,7 @@ const StepIndicator: React.FC<{
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold',
+              'w-7 h-7 rounded-full flex items-center justify-center text-caption font-semibold',
               i + 1 < currentStep
                 ? 'bg-success-500 text-white'
                 : i + 1 === currentStep
@@ -97,7 +97,7 @@ const StepIndicator: React.FC<{
           </div>
           <span
             className={cn(
-              'text-sm font-medium hidden sm:block',
+              'text-body-sm font-medium hidden sm:block',
               i + 1 === currentStep ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
             )}
           >
@@ -167,12 +167,12 @@ const CorporateCard: React.FC<CorporateCardProps> = ({
               <Badge variant="warning">No Hierarchy</Badge>
             )}
           </div>
-          <div className="flex items-center gap-4 mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center gap-4 mt-2 body-sm">
             <span>{corporate.vaCount} VAs</span>
             <span>{corporate.totalBalance?.toLocaleString() || '0'} {corporate.baseCurrency}</span>
           </div>
           {!isInitialized && (
-            <p className="mt-2 text-xs text-error-500">
+            <p className="mt-2 text-caption text-error-500">
               Only corporates with initialized hierarchy can be merged
             </p>
           )}
@@ -194,8 +194,8 @@ interface MergerPreviewProps {
 
 const MergerPreview: React.FC<MergerPreviewProps> = ({ corporateA, corporateB, newCorporateName }) => (
   <div className="p-4 bg-cat-2-soft dark:bg-cat-2/15 rounded-lg border border-cat-2/20 dark:border-cat-2/30">
-    <p className="text-sm font-medium text-cat-2 mb-3">Post-Merger Structure:</p>
-    <div className="font-mono text-sm space-y-1">
+    <p className="text-body-sm font-medium text-cat-2 mb-3">Post-Merger Structure:</p>
+    <div className="font-mono text-body-sm space-y-1">
       <div className="flex items-center gap-2">
         <Globe className="w-4 h-4 text-cat-2" />
         <span className="text-cat-2 font-medium">{newCorporateName || '[New Corporate Name]'} (ROOT)</span>
@@ -401,8 +401,8 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <div className="flex items-start gap-3">
                         <Info className="w-5 h-5 text-cat-2 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-cat-2">About Mergers</p>
-                          <p className="text-sm text-cat-2 mt-1">
+                          <p className="text-body-sm font-medium text-cat-2">About Mergers</p>
+                          <p className="text-body-sm text-cat-2 mt-1">
                             Both source corporates will become aggregations under a newly created
                             corporate. All VAs and limits will be consolidated.
                           </p>
@@ -417,7 +417,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search corporates..."
-                        className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -476,12 +476,12 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <div className="text-center p-3 bg-info-50 dark:bg-info-500/10 rounded-lg">
                         <Building2 className="w-6 h-6 text-info-600 dark:text-info-300 mx-auto mb-1" />
                         <p className="font-medium text-info-900 dark:text-info-300">{corporateA?.name}</p>
-                        <p className="text-sm text-info-600 dark:text-info-300">{corporateA?.vaCount} VAs</p>
+                        <p className="text-body-sm text-info-600 dark:text-info-300">{corporateA?.vaCount} VAs</p>
                       </div>
                       <div className="text-center p-3 bg-success-50 dark:bg-success-500/10 rounded-lg">
                         <Building2 className="w-6 h-6 text-success-600 dark:text-success-300 mx-auto mb-1" />
                         <p className="font-medium text-success-900 dark:text-success-300">{corporateB?.name}</p>
-                        <p className="text-sm text-success-600 dark:text-success-300">{corporateB?.vaCount} VAs</p>
+                        <p className="text-body-sm text-success-600 dark:text-success-300">{corporateB?.vaCount} VAs</p>
                       </div>
                     </div>
 
@@ -494,7 +494,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={newCorporateName}
                         onChange={(e) => setNewCorporateName(e.target.value)}
                         placeholder="e.g., United Holdings Group"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -507,7 +507,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         value={newCorporateCode}
                         onChange={(e) => setNewCorporateCode(e.target.value.toUpperCase())}
                         placeholder="e.g., UHG-2024"
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-cat-2"
                       />
                     </div>
 
@@ -518,7 +518,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <select
                         value={baseCurrency}
                         onChange={(e) => setBaseCurrency(e.target.value)}
-                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
+                        className="w-full px-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-cat-2"
                       >
                         {CURRENCY_OPTIONS.map((curr) => (
                           <option key={curr} value={curr}>
@@ -577,7 +577,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                                     <Badge variant="warning">Requires Approval</Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{policy.description}</p>
+                                <p className="body-sm mt-1">{policy.description}</p>
                               </div>
                             </div>
                           </button>
@@ -589,7 +589,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                     {corporateA && corporateB && (
                       <div className="p-4 bg-cat-2-soft dark:bg-cat-2/15 rounded-lg border border-cat-2/20 dark:border-cat-2/30">
                         <h4 className="font-medium text-cat-2 mb-3">Combined Limits Preview</h4>
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-2 text-body-sm">
                           <div className="flex justify-between">
                             <span className="text-cat-2">{corporateA.name}:</span>
                             <span className="font-medium">
@@ -619,7 +619,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                   <div className="space-y-6">
                     <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
                       <h4 className="font-semibold text-primary-900 dark:text-neutral-50 mb-4">Merger Summary</h4>
-                      <dl className="space-y-3 text-sm">
+                      <dl className="space-y-3 text-body-sm">
                         <div className="flex justify-between">
                           <dt className="text-neutral-500 dark:text-neutral-400">Corporate A:</dt>
                           <dd className="font-medium">{corporateA?.name}</dd>
@@ -653,7 +653,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
 
                     <div className="p-4 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
                       <h4 className="font-medium text-success-800 dark:text-success-300 mb-2">Changes to be made:</h4>
-                      <ul className="space-y-1 text-sm text-success-700 dark:text-success-300">
+                      <ul className="space-y-1 text-body-sm text-success-700 dark:text-success-300">
                         <li className="flex items-center gap-2">
                           <Check className="w-4 h-4" />
                           New corporate entity created
@@ -677,8 +677,8 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <div className="flex items-start gap-3">
                         <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
-                          <ul className="text-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
+                          <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">This operation will:</p>
+                          <ul className="text-body-sm text-warning-700 dark:text-warning-300 mt-1 space-y-1">
                             <li>• Create a new corporate entity</li>
                             <li>• Convert both source ROOTs to AGGREGATION</li>
                             <li>• Update all VA corporate_ids</li>
@@ -695,7 +695,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                         onChange={(e) => setConfirmBoardApproval(e.target.checked)}
                         className="mt-1 w-4 h-4 text-cat-2 rounded border-neutral-300 dark:border-primary-700 focus:ring-cat-2"
                       />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-200">
+                      <span className="text-body-sm text-neutral-700 dark:text-neutral-200">
                         I confirm this merger has been approved by the boards of both corporates and
                         all necessary due diligence and regulatory approvals have been obtained.
                       </span>
@@ -705,7 +705,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       <div className="p-4 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg">
                         <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
                           <AlertTriangle className="w-5 h-5" />
-                          <span className="text-sm font-medium">{error}</span>
+                          <span className="text-body-sm font-medium">{error}</span>
                         </div>
                       </div>
                     )}
@@ -730,7 +730,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed()}
                   className={cn(
-                    'px-5 py-2 text-sm font-medium rounded-lg',
+                    'px-5 py-2 text-body-sm font-medium rounded-lg',
                     canProceed()
                       ? 'bg-cat-2 text-white hover:bg-cat-2/90'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
@@ -743,7 +743,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                   onClick={handleSubmit}
                   disabled={!canProceed() || submitting}
                   className={cn(
-                    'px-6 py-2 text-sm font-medium rounded-lg flex items-center gap-2',
+                    'px-6 py-2 text-body-sm font-medium rounded-lg flex items-center gap-2',
                     canProceed() && !submitting
                       ? 'bg-cat-2 text-white hover:bg-cat-2/90'
                       : 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'

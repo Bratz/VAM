@@ -91,7 +91,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
       <div
         style={style}
         className={cn(
-          'flex items-center gap-3 px-3 border-b border-neutral-100 dark:border-primary-800/60 text-sm',
+          'flex items-center gap-3 px-3 border-b border-neutral-100 dark:border-primary-800/60 text-body-sm',
           selectable && 'cursor-pointer',
           isSelected ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-900/60'
         )}
@@ -110,9 +110,9 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
             {isSelected && <Check className="w-3 h-3 text-white" />}
           </button>
         )}
-        <span className="font-mono text-xs w-32 shrink-0 truncate text-neutral-700 dark:text-neutral-200">{item.vaNumber}</span>
+        <span className="font-mono text-caption w-32 shrink-0 truncate text-neutral-700 dark:text-neutral-200">{item.vaNumber}</span>
         <span className="flex-1 min-w-0 truncate text-primary-900 dark:text-neutral-50">{item.vaName}</span>
-        <span className="w-14 shrink-0 text-xs text-neutral-500 dark:text-neutral-400">{item.currencyCode}</span>
+        <span className="w-14 shrink-0 caption">{item.currencyCode}</span>
         <span className="w-28 shrink-0 text-right text-neutral-700 dark:text-neutral-200 tabular-nums">
           {formatBalance(item.balance, item.currencyCode)}
         </span>
@@ -138,7 +138,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
               {allFilteredSelected && <Check className="w-3 h-3 text-white" />}
             </button>
           )}
-          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
+          <span className="label-cased whitespace-nowrap">
             {selectable ? `${selectedIds.size} of ${items.length} selected` : `${filtered.length} account${filtered.length === 1 ? '' : 's'}`}
           </span>
         </div>
@@ -150,7 +150,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search VA number or name…"
-              className="w-full h-8 pl-8 pr-3 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-xs placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-300"
+              className="w-full h-8 pl-8 pr-3 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-caption placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-300"
             />
           </div>
         )}
@@ -159,7 +159,7 @@ export const VirtualizedAccountList: React.FC<VirtualizedAccountListProps> = ({
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 text-neutral-400 dark:text-neutral-500" style={{ height }}>
           <Inbox className="w-8 h-8" />
-          <p className="text-sm">No accounts to display</p>
+          <p className="text-body-sm">No accounts to display</p>
         </div>
       ) : (
         <FixedSizeList

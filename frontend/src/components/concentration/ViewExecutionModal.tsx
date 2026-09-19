@@ -47,7 +47,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               </div>
               <div>
                 <h3 className="section-title">{exec.ruleName || 'Sweep Execution'}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{exec.executionReference || exec.id}</p>
+                <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{exec.executionReference || exec.id}</p>
               </div>
             </div>
             <Badge variant={statusVariant} size="md" dot>{exec.status}</Badge>
@@ -56,7 +56,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
 
         {/* Execution Flow */}
         <Card>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Transfer Flow</p>
+          <p className="label mb-4">Transfer Flow</p>
           <div className="flex items-center justify-between">
             {/* Source Account */}
             <div className="flex-1">
@@ -64,7 +64,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
                 <StatusIconBadge tone="warning" icon={Building2} size="lg" />
                 <div>
                   <p className="font-semibold text-primary-900 dark:text-neutral-50">{exec.sourceEntityCode || 'Source'}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{exec.sourceAccountNumber || 'N/A'}</p>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{exec.sourceAccountNumber || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -78,7 +78,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
                 </div>
                 <div className="h-0.5 w-8 bg-success-300 rounded-full"></div>
               </div>
-              <p className="text-sm font-semibold text-primary-700 dark:text-neutral-200 text-center mt-2">
+              <p className="text-body-sm font-semibold text-primary-700 dark:text-neutral-200 text-center mt-2">
                 {formatCompactCurrency(exec.sweepAmount || exec.amountSwept || 0, exec.currencyCode || 'AED')}
               </p>
             </div>
@@ -88,7 +88,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               <div className="flex items-center gap-3 justify-end">
                 <div>
                   <p className="font-semibold text-primary-900 dark:text-neutral-50">{exec.targetEntityCode || 'Target'}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{exec.targetAccountNumber || 'N/A'}</p>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{exec.targetAccountNumber || 'N/A'}</p>
                 </div>
                 <StatusIconBadge tone="success" icon={Building2} size="lg" />
               </div>
@@ -99,13 +99,13 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {/* Details Grid */}
         <div className="grid grid-cols-2 gap-4">
           <Card padding="sm" className="bg-primary-50/50 dark:bg-primary-800/40 border-primary-200/60 dark:border-primary-700">
-            <p className="text-xs text-primary-600 dark:text-primary-200 uppercase tracking-wider mb-1">Amount Swept</p>
+            <p className="text-caption text-primary-600 dark:text-primary-200 uppercase tracking-wider mb-1">Amount Swept</p>
             <p className="stat-value-xs">
               {formatCompactCurrency(exec.sweepAmount || exec.amountSwept || 0, exec.currencyCode || 'AED')}
             </p>
           </Card>
           <Card padding="sm" className="bg-neutral-50/50 dark:bg-primary-950/50">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Currency</p>
+            <p className="label mb-1">Currency</p>
             <p className="stat-value-xs">{exec.currencyCode || 'AED'}</p>
           </Card>
         </div>
@@ -114,13 +114,13 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
         {(exec.balanceBefore !== undefined || exec.balanceAfter !== undefined) && (
           <div className="grid grid-cols-2 gap-4">
             <Card padding="sm" className="bg-warning-50/50 dark:bg-warning-500/10 border-warning-200/60 dark:border-warning-500/30">
-              <p className="text-xs text-warning-600 dark:text-warning-300 uppercase tracking-wider mb-1">Balance Before</p>
+              <p className="text-caption text-warning-600 dark:text-warning-300 uppercase tracking-wider mb-1">Balance Before</p>
               <p className="stat-value-sm text-warning-800 dark:text-warning-300">
                 {formatCompactCurrency(exec.balanceBefore || 0, exec.currencyCode || 'AED')}
               </p>
             </Card>
             <Card padding="sm" className="bg-success-50/50 dark:bg-success-500/10 border-success-200/60 dark:border-success-500/30">
-              <p className="text-xs text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Balance After</p>
+              <p className="text-caption text-success-600 dark:text-success-300 uppercase tracking-wider mb-1">Balance After</p>
               <p className="stat-value-sm text-success-800 dark:text-success-300">
                 {formatCompactCurrency(exec.balanceAfter || 0, exec.currencyCode || 'AED')}
               </p>
@@ -135,7 +135,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               <Clock className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
             </div>
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-0.5">Execution Time</p>
+              <p className="label mb-0.5">Execution Time</p>
               <p className="font-semibold text-primary-900 dark:text-neutral-50">
                 {exec.executionTime
                   ? new Date(exec.executionTime).toLocaleString()
@@ -145,7 +145,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
                       ? new Date(exec.completedAt).toLocaleString()
                       : 'N/A'}
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 {exec.executionTime
                   ? formatRelativeTime(exec.executionTime)
                   : exec.executedAt
@@ -163,7 +163,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               <StatusIconBadge tone="error" icon={AlertCircle} className="flex-shrink-0" />
               <div>
                 <p className="font-semibold text-error-800 dark:text-error-300">Execution Failed</p>
-                <p className="text-sm text-error-700 dark:text-error-300 mt-1">{exec.errorMessage}</p>
+                <p className="text-body-sm text-error-700 dark:text-error-300 mt-1">{exec.errorMessage}</p>
               </div>
             </div>
           </Card>
@@ -176,7 +176,7 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
               <StatusIconBadge tone="warning" icon={AlertCircle} className="flex-shrink-0" />
               <div>
                 <p className="font-semibold text-warning-800 dark:text-warning-300">Execution Skipped</p>
-                <p className="text-sm text-warning-700 dark:text-warning-300 mt-1">{exec.skipReason}</p>
+                <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1">{exec.skipReason}</p>
               </div>
             </div>
           </Card>
@@ -184,20 +184,20 @@ export const ViewExecutionModal: React.FC<ViewExecutionModalProps> = ({ isOpen, 
 
         {/* Additional Details */}
         <Card padding="sm" className="bg-neutral-50/50 dark:bg-primary-950/50">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Additional Details</p>
+          <p className="label mb-3">Additional Details</p>
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Rule Reference</span>
               <span className="font-mono text-primary-900 dark:text-neutral-50">{exec.ruleReference || 'N/A'}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Sweep Type</span>
               <Badge variant="neutral" size="xs">{exec.sweepType || 'N/A'}</Badge>
             </div>
             {exec.ruleId && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500 dark:text-neutral-400">Rule ID</span>
-                <span className="font-mono text-neutral-600 dark:text-neutral-300 text-xs">{exec.ruleId}</span>
+                <span className="font-mono text-neutral-600 dark:text-neutral-300 text-caption">{exec.ruleId}</span>
               </div>
             )}
           </div>

@@ -67,8 +67,8 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
     <div className="flex items-center gap-3">
       <AlertCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
       <div className="flex-1">
-        <p className="font-medium text-error-800 dark:text-error-300 text-sm">Failed to load data</p>
-        <p className="text-xs text-error-600 dark:text-error-300">{message}</p>
+        <p className="font-medium text-error-800 dark:text-error-300 text-body-sm">Failed to load data</p>
+        <p className="caption-error">{message}</p>
       </div>
       <Button variant="outline" size="sm" onClick={onRetry}>Retry</Button>
     </div>
@@ -90,7 +90,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry: () => void }> = ({ mess
 const EmptyState: React.FC<{ onCreatePool: () => void }> = ({ onCreatePool }) => (
   <Card className="text-center py-12">
     <Layers className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
-    <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-50 mb-2">No Notional Pools</h3>
+    <h3 className="text-body-lg font-medium text-neutral-900 dark:text-neutral-50 mb-2">No Notional Pools</h3>
     <p className="text-neutral-500 dark:text-neutral-400 mb-6 max-w-md mx-auto">
       Create your first notional pool to virtually combine account balances and optimize interest earnings.
     </p>

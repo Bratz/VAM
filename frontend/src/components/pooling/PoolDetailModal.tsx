@@ -92,7 +92,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
               <Layers className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{pool.poolReference}</p>
+              <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{pool.poolReference}</p>
               <Badge variant={pool.status === 'ACTIVE' ? 'success' : 'warning'}>
                 {pool.status}
               </Badge>
@@ -110,23 +110,23 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
 
         <div className="grid grid-cols-4 gap-4">
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Pool Balance</p>
+            <p className="caption">Pool Balance</p>
             <p className="section-title">
               {formatCurrency(pool.totalBalance || 0, pool.poolCurrency)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Interest Rate</p>
+            <p className="caption">Interest Rate</p>
             <p className="section-title">{pool.interestRate}%</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">YTD Savings</p>
-            <p className="text-lg font-semibold text-success-600 dark:text-success-300">
+            <p className="caption">YTD Savings</p>
+            <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">
               {formatCurrency(pool.interestSavingsYtd || 0, pool.poolCurrency)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Members</p>
+            <p className="caption">Members</p>
             <p className="section-title">{pool.members?.length || 0}</p>
           </div>
         </div>
@@ -138,23 +138,23 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           <div className="flex items-center gap-2 mb-3">
             <Calculator className="w-5 h-5 text-success-600 dark:text-success-300" />
             <h4 className="font-medium text-success-800 dark:text-success-300">Interest Calculation Result</h4>
-            <span className="text-xs text-success-600 dark:text-success-300">{interestResult.calculationDate}</span>
+            <span className="caption-success">{interestResult.calculationDate}</span>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <p className="text-xs text-success-600 dark:text-success-300">Pool Balance</p>
+              <p className="caption-success">Pool Balance</p>
               <p className="font-semibold text-success-800 dark:text-success-300">
                 {formatCurrency(interestResult.poolBalance, pool.poolCurrency)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-success-600 dark:text-success-300">Gross Interest</p>
+              <p className="caption-success">Gross Interest</p>
               <p className="font-semibold text-success-800 dark:text-success-300">
                 {formatCurrency(interestResult.grossInterest, pool.poolCurrency)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-success-600 dark:text-success-300">Net Interest</p>
+              <p className="caption-success">Net Interest</p>
               <p className="font-semibold text-success-800 dark:text-success-300">
                 {formatCurrency(interestResult.netInterest, pool.poolCurrency)}
               </p>
@@ -162,9 +162,9 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           </div>
           {interestResult.memberAllocations && interestResult.memberAllocations.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-medium text-success-700 dark:text-success-300 mb-2">Member Allocations:</p>
+              <p className="text-caption font-medium text-success-700 dark:text-success-300 mb-2">Member Allocations:</p>
               {interestResult.memberAllocations.map((alloc) => (
-                <div key={alloc.memberId} className="flex justify-between text-sm bg-white/50 dark:bg-primary-900/50 rounded-lg px-3 py-2">
+                <div key={alloc.memberId} className="flex justify-between text-body-sm bg-white/50 dark:bg-primary-900/50 rounded-lg px-3 py-2">
                   <span className="text-success-800 dark:text-success-300">{alloc.entityCode}</span>
                   <span className="text-success-700 dark:text-success-300">{alloc.contributionPercent.toFixed(2)}%</span>
                   <span className="font-medium text-success-800 dark:text-success-300">
@@ -195,7 +195,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
           <select
             value={removeTargetId}
             onChange={(e) => setRemoveTargetId(e.target.value)}
-            className="flex-1 h-9 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-sm px-2 text-neutral-700 dark:text-neutral-200"
+            className="flex-1 h-9 rounded-lg border border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 text-body-sm px-2 text-neutral-700 dark:text-neutral-200"
           >
             <option value="">Select a member to remove…</option>
             {pool.members.map((member) => (
@@ -221,7 +221,7 @@ export const PoolDetailModal: React.FC<PoolDetailModalProps> = ({
       )}
 
       {/* Pool Info Footer */}
-      <div className="mt-6 pt-4 border-t grid grid-cols-3 gap-4 text-sm">
+      <div className="mt-6 pt-4 border-t grid grid-cols-3 gap-4 text-body-sm">
         <div>
           <p className="text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" /> Effective From

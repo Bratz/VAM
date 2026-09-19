@@ -807,7 +807,7 @@ const VibanManagementPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
-        <span className="ml-3 text-lg">Loading VIBAN Management...</span>
+        <span className="ml-3 text-body-lg">Loading VIBAN Management...</span>
       </div>
     );
   }
@@ -885,14 +885,14 @@ const VibanManagementPage: React.FC = () => {
           { id: 'vibans', label: 'VIBANs', icon: Hash, count: vibans.length }
         ].map(tab => (
           <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setStatusFilter('ALL'); setSearchQuery(''); }}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.id ? 'border-primary-600 text-primary-600 dark:border-accent-400 dark:text-primary-200' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
             }`}>
             <tab.icon className="w-4 h-4" />{tab.label}
             {tab.count !== undefined && (
               // Count pill — explicit text color in both modes so dark mode
               // doesn't dim the number to invisible against the dark surface.
-              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+              <span className={`text-caption font-semibold px-1.5 py-0.5 rounded-full ${
                 activeTab === tab.id
                   ? 'bg-primary-100 text-primary-700 dark:bg-accent-500/20 dark:text-accent-300'
                   : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/80 dark:text-neutral-200'
@@ -1048,7 +1048,7 @@ const OverviewTab: React.FC<{
             </div>
             <div>
               <p className="stat-value-sm">{formatNumber(stats.totalPaymentsRouted)}</p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Payments Routed</p>
+              <p className="body-sm">Payments Routed</p>
             </div>
           </div>
         </Card>
@@ -1059,7 +1059,7 @@ const OverviewTab: React.FC<{
             </div>
             <div>
               <p className="stat-value-sm">{formatCurrency(stats.totalAmountRouted)}</p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Amount Routed</p>
+              <p className="body-sm">Amount Routed</p>
             </div>
           </div>
         </Card>
@@ -1072,12 +1072,12 @@ const OverviewTab: React.FC<{
             <StatusIconBadge tone="warning" icon={AlertTriangle} className="dark:bg-warning-500/20" />
             <h3 className="font-medium text-warning-800 dark:text-warning-300">Low Availability Alert</h3>
           </div>
-          <p className="text-sm text-warning-700 mb-3 dark:text-warning-300">{lowThresholdPools.length} pool(s) running low:</p>
+          <p className="text-body-sm text-warning-700 mb-3 dark:text-warning-300">{lowThresholdPools.length} pool(s) running low:</p>
           <div className="space-y-2">
             {lowThresholdPools.map(pool => (
               <div key={pool.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 hover:bg-warning-50 transition-colors dark:bg-primary-900 dark:hover:bg-warning-500/10">
                 <div className="flex items-center gap-2"><Database className="w-4 h-4 text-warning-600 dark:text-warning-300" /><span className="font-medium">{pool.poolName}</span></div>
-                <span className="text-sm"><span className="text-warning-600 font-medium dark:text-warning-300">{pool.availableCount}</span> / {pool.poolSize}</span>
+                <span className="text-body-sm"><span className="text-warning-600 font-medium dark:text-warning-300">{pool.availableCount}</span> / {pool.poolSize}</span>
               </div>
             ))}
           </div>
@@ -1101,12 +1101,12 @@ const OverviewTab: React.FC<{
                   <div className={`p-2 rounded-lg ${pool.status === 'EXHAUSTED' ? 'bg-error-100 dark:bg-error-500/20' : 'bg-primary-100 dark:bg-primary-700'}`}>
                     <Database className={`w-5 h-5 ${pool.status === 'EXHAUSTED' ? 'text-error-600 dark:text-error-300' : 'text-primary-600 dark:text-primary-200'}`} />
                   </div>
-                  <div><p className="font-medium">{pool.poolName}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">{pool.poolCode}</p></div>
+                  <div><p className="font-medium">{pool.poolName}</p><p className="body-sm">{pool.poolCode}</p></div>
                 </div>
                 <div className="flex items-center gap-8">
-                  <div className="text-right"><p className="text-sm font-medium">{formatNumber(pool.availableCount)} available</p><p className="text-xs text-neutral-500 dark:text-neutral-400">of {formatNumber(pool.poolSize)}</p></div>
+                  <div className="text-right"><p className="text-body-sm font-medium">{formatNumber(pool.availableCount)} available</p><p className="caption">of {formatNumber(pool.poolSize)}</p></div>
                   <div className="w-32">
-                    <div className="flex justify-between text-xs mb-1"><span>Utilization</span><span>{util.toFixed(1)}%</span></div>
+                    <div className="flex justify-between text-caption mb-1"><span>Utilization</span><span>{util.toFixed(1)}%</span></div>
                     <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
                       <div className={`h-full ${util > 90 ? 'bg-error-500' : util > 70 ? 'bg-warning-500' : 'bg-success-500'}`} style={{ width: `${util}%` }} />
                     </div>
@@ -1145,11 +1145,11 @@ const PoolsTab: React.FC<{
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
           <Input className="pl-9" placeholder="Search pools..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
         </div>
-        <select value={selectedProgram || ''} onChange={e => setSelectedProgram(e.target.value || null)} className="px-3 py-2 border rounded-lg text-sm min-w-[180px]">
+        <select value={selectedProgram || ''} onChange={e => setSelectedProgram(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
           <option value="">All Programs</option>
           {programs.map(p => <option key={p.id} value={p.id}>{p.programName}</option>)}
         </select>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm">
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-body-sm">
           <option value="ALL">All Status</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
@@ -1170,29 +1170,29 @@ const PoolsTab: React.FC<{
                     <div className={`p-2 rounded-lg ${pool.status === 'EXHAUSTED' ? 'bg-error-100 dark:bg-error-500/20' : isLow ? 'bg-warning-100 dark:bg-warning-500/20' : 'bg-primary-100 dark:bg-primary-700'}`}>
                       <Database className={`w-5 h-5 ${pool.status === 'EXHAUSTED' ? 'text-error-600 dark:text-error-300' : isLow ? 'text-warning-600 dark:text-warning-300' : 'text-primary-600 dark:text-primary-200'}`} />
                     </div>
-                    <div><h3 className="font-semibold">{pool.poolName}</h3><p className="text-sm text-neutral-500 dark:text-neutral-400">{pool.poolCode}</p></div>
+                    <div><h3 className="font-semibold">{pool.poolName}</h3><p className="body-sm">{pool.poolCode}</p></div>
                   </div>
                   {getStatusBadge(pool.status)}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-neutral-600 mb-4 dark:text-neutral-300"><Building2 className="w-4 h-4" /><span>{pool.programName || 'Unknown'}</span></div>
+                <div className="flex items-center gap-2 body-sm mb-4"><Building2 className="w-4 h-4" /><span>{pool.programName || 'Unknown'}</span></div>
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p></div>
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Assigned</p></div>
-                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Reserved</p></div>
+                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available</p></div>
+                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="caption">Assigned</p></div>
+                  <div className="bg-neutral-50 rounded-lg p-2 text-center dark:bg-primary-950"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
                 </div>
                 <div className="mb-4">
-                  <div className="flex justify-between text-xs mb-1"><span className="text-neutral-500 dark:text-neutral-400">Utilization</span><span>{((pool.assignedCount + pool.reservedCount) / pool.poolSize * 100).toFixed(1)}%</span></div>
+                  <div className="flex justify-between text-caption mb-1"><span className="text-neutral-500 dark:text-neutral-400">Utilization</span><span>{((pool.assignedCount + pool.reservedCount) / pool.poolSize * 100).toFixed(1)}%</span></div>
                   <div className="h-2 bg-neutral-200 rounded-full overflow-hidden flex dark:bg-primary-800">
                     <div className="h-full bg-success-500" style={{ width: `${(pool.assignedCount / pool.poolSize) * 100}%` }} />
                     <div className="h-full bg-warning-500" style={{ width: `${(pool.reservedCount / pool.poolSize) * 100}%` }} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                <div className="grid grid-cols-2 gap-2 text-body-sm mb-4">
                   <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300"><Clock className="w-3 h-3" /><span>TTL: {formatTtl(pool.assignmentTtlMinutes)}</span></div>
                   <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-300"><Hash className="w-3 h-3" /><span>Prefix: {pool.prefix}</span></div>
                 </div>
                 {isLow && pool.status === 'ACTIVE' && (
-                  <div className="flex items-center gap-2 text-xs text-warning-600 bg-warning-50 rounded-lg px-3 py-2 mb-4 dark:text-warning-300 dark:bg-warning-500/10">
+                  <div className="flex items-center gap-2 caption-warning bg-warning-50 rounded-lg px-3 py-2 mb-4 dark:bg-warning-500/10">
                     <AlertTriangle className="w-3 h-3" /><span>Below {pool.lowThresholdPercent}% threshold</span>
                   </div>
                 )}
@@ -1259,10 +1259,10 @@ const VibansTab: React.FC<{
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <Input className="pl-9" placeholder="Search VIBANs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <select value={selectedPool || ''} onChange={e => setSelectedPool(e.target.value || null)} className="px-3 py-2 border rounded-lg text-sm min-w-[180px]">
+          <select value={selectedPool || ''} onChange={e => setSelectedPool(e.target.value || null)} className="px-3 py-2 border rounded-lg text-body-sm min-w-[180px]">
             <option value="">All Pools</option>{pools.map(p => <option key={p.id} value={p.id}>{p.poolName}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-sm">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2 border rounded-lg text-body-sm">
             <option value="ALL">All Status</option>
             <option value="ACTIVE">Active (Assigned)</option>
             <option value="RETURNED">Available (In Pool)</option>
@@ -1295,22 +1295,22 @@ const VibansTab: React.FC<{
                       <button onClick={() => copyToClipboard(v.viban, v.id)} className="p-1 hover:bg-neutral-100 rounded dark:hover:bg-primary-800">
                         {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />}
                       </button>
-                      <span className="font-mono text-sm">{v.viban}</span>
+                      <span className="font-mono text-body-sm">{v.viban}</span>
                     </div>
                   </td>
-                  <td className="data-table-cell text-sm text-neutral-600 dark:text-neutral-300">{v.poolCode || '-'}</td>
+                  <td className="data-table-cell body-sm">{v.poolCode || '-'}</td>
                   <td className="data-table-cell">
                     {v.vaNumber ? (
                       <div className="bg-success-50 rounded-lg px-2 py-1 border border-success-100 dark:bg-success-500/10 dark:border-success-500/30">
                         <div className="flex items-center gap-1.5">
                           <Building2 className="w-3 h-3 text-success-600 dark:text-success-300" />
-                          <p className="font-mono text-sm text-success-700 dark:text-success-300">{v.vaNumber}</p>
+                          <p className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</p>
                         </div>
-                        {v.vaName && <p className="text-xs text-success-600 mt-0.5 dark:text-success-300">{v.vaName}</p>}
-                        {v.customerName && <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">Customer: {v.customerName}</p>}
+                        {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
+                        {v.customerName && <p className="caption mt-0.5">Customer: {v.customerName}</p>}
                       </div>
                     ) : (
-                      <span className="text-neutral-400 text-sm italic dark:text-neutral-500">Not assigned</span>
+                      <span className="text-neutral-400 text-body-sm italic dark:text-neutral-500">Not assigned</span>
                     )}
                   </td>
                   <td className="data-table-cell">
@@ -1319,13 +1319,13 @@ const VibansTab: React.FC<{
                         {v.referenceType === 'ORDER' && <ShoppingCart className="w-3 h-3 text-primary-500" />}
                         {v.referenceType === 'INVOICE' && <FileText className="w-3 h-3 text-info-500" />}
                         {v.referenceType === 'TERMINAL' && <CreditCard className="w-3 h-3 text-success-500" />}
-                        <span className="text-sm">{v.referenceId}</span>
+                        <span className="text-body-sm">{v.referenceId}</span>
                       </div>
                     ) : <span className="text-neutral-400 dark:text-neutral-500">-</span>}
                   </td>
                   <td className="data-table-cell">{getStatusBadge(v.status)}</td>
-                  <td className="data-table-cell text-right text-sm">{v.timesUsed || 0}</td>
-                  <td className="data-table-cell text-right text-sm font-medium">{(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}</td>
+                  <td className="data-table-cell text-right text-body-sm">{v.timesUsed || 0}</td>
+                  <td className="data-table-cell text-right text-body-sm font-medium">{(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}</td>
                   <td className="data-table-cell text-right">
                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {(v.status === 'AVAILABLE' || v.status === 'RETURNED') && <Button size="sm" variant="outline" onClick={() => onAssign(v)}><Link className="w-4 h-4 mr-1" />Assign</Button>}
@@ -1370,7 +1370,7 @@ const PoolForm: React.FC<{
         <h4 className="font-medium text-neutral-700 flex items-center gap-2 dark:text-neutral-200"><Database className="w-4 h-4" />Pool Configuration</h4>
         <div className="grid grid-cols-2 gap-4">
           <div><label className="field-label block mb-1">Program *</label>
-            <select value={formData.programId} onChange={e => setFormData(p => ({ ...p, programId: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" required disabled={!!pool}>
+            <select value={formData.programId} onChange={e => setFormData(p => ({ ...p, programId: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-body-sm" required disabled={!!pool}>
               <option value="">Select Program</option>{vibanEnabledPrograms.map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
             </select></div>
           <div><label className="field-label block mb-1">Pool Code *</label>
@@ -1379,7 +1379,7 @@ const PoolForm: React.FC<{
         <div><label className="field-label block mb-1">Pool Name *</label>
           <Input value={formData.poolName} onChange={e => setFormData(p => ({ ...p, poolName: e.target.value }))} placeholder="E-commerce Order VIBANs" required /></div>
         <div><label className="field-label block mb-1">Description</label>
-          <textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Purpose..." className="w-full px-3 py-2 border rounded-lg text-sm resize-none" rows={2} /></div>
+          <textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Purpose..." className="w-full px-3 py-2 border rounded-lg text-body-sm resize-none" rows={2} /></div>
       </div>
 
       <div className="space-y-4 pt-4 border-t">
@@ -1390,17 +1390,17 @@ const PoolForm: React.FC<{
           <div><label className="field-label block mb-1">Prefix *</label><Input value={formData.prefix} onChange={e => setFormData(p => ({ ...p, prefix: e.target.value.toUpperCase() }))} placeholder="ORD" required disabled={!!pool} /></div>
           <div><label className="field-label block mb-1">Suffix Length</label><Input type="number" value={formData.suffixLength} onChange={e => setFormData(p => ({ ...p, suffixLength: parseInt(e.target.value) }))} min={6} max={12} disabled={!!pool} /></div>
         </div>
-        <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="text-sm text-neutral-600 dark:text-neutral-300"><strong>Sample:</strong> <span className="font-mono">{formData.countryCode}00{formData.bankCode}{formData.prefix}{'0'.repeat(formData.suffixLength)}</span></p></div>
+        <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="body-sm"><strong>Sample:</strong> <span className="font-mono">{formData.countryCode}00{formData.bankCode}{formData.prefix}{'0'.repeat(formData.suffixLength)}</span></p></div>
       </div>
 
       <div className="space-y-4 pt-4 border-t">
         <h4 className="font-medium text-neutral-700 flex items-center gap-2 dark:text-neutral-200"><Settings className="w-4 h-4" />Pool Settings</h4>
         <div className="grid grid-cols-3 gap-4">
-          <div><label className="field-label block mb-1">Pool Size *</label><Input type="number" value={formData.poolSize} onChange={e => setFormData(p => ({ ...p, poolSize: parseInt(e.target.value) }))} min={1} max={100000} required disabled={!!pool} /><p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">VIBANs to pre-generate</p></div>
-          <div><label className="field-label block mb-1">TTL (minutes)</label><Input type="number" value={formData.assignmentTtlMinutes} onChange={e => setFormData(p => ({ ...p, assignmentTtlMinutes: parseInt(e.target.value) }))} min={0} /><p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">0 = Permanent</p></div>
+          <div><label className="field-label block mb-1">Pool Size *</label><Input type="number" value={formData.poolSize} onChange={e => setFormData(p => ({ ...p, poolSize: parseInt(e.target.value) }))} min={1} max={100000} required disabled={!!pool} /><p className="caption mt-1">VIBANs to pre-generate</p></div>
+          <div><label className="field-label block mb-1">TTL (minutes)</label><Input type="number" value={formData.assignmentTtlMinutes} onChange={e => setFormData(p => ({ ...p, assignmentTtlMinutes: parseInt(e.target.value) }))} min={0} /><p className="caption mt-1">0 = Permanent</p></div>
           <div><label className="field-label block mb-1">Low Threshold (%)</label><Input type="number" value={formData.lowThresholdPercent} onChange={e => setFormData(p => ({ ...p, lowThresholdPercent: parseInt(e.target.value) }))} min={5} max={50} /></div>
         </div>
-        <div className="flex items-center gap-2"><input type="checkbox" id="autoReturn" checked={formData.autoReturnExpired} onChange={e => setFormData(p => ({ ...p, autoReturnExpired: e.target.checked }))} className="rounded" /><label htmlFor="autoReturn" className="text-sm">Auto-return expired VIBANs</label></div>
+        <div className="flex items-center gap-2"><input type="checkbox" id="autoReturn" checked={formData.autoReturnExpired} onChange={e => setFormData(p => ({ ...p, autoReturnExpired: e.target.checked }))} className="rounded" /><label htmlFor="autoReturn" className="text-body-sm">Auto-return expired VIBANs</label></div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
@@ -1420,15 +1420,15 @@ const GenerateForm: React.FC<{ pool?: VibanPool; onSubmit: (count: number) => vo
   return (
     <div className="space-y-4">
       {pool && <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-        <div className="flex items-center gap-3 mb-2"><Database className="w-5 h-5 text-primary-600 dark:text-primary-200" /><div><p className="font-medium">{pool.poolName}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">{pool.poolCode}</p></div></div>
+        <div className="flex items-center gap-3 mb-2"><Database className="w-5 h-5 text-primary-600 dark:text-primary-200" /><div><p className="font-medium">{pool.poolName}</p><p className="body-sm">{pool.poolCode}</p></div></div>
         <div className="grid grid-cols-3 gap-3 mt-3">
-          <div className="text-center"><p className="text-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p></div>
-          <div className="text-center"><p className="text-lg font-bold">{pool.poolSize}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Pool Size</p></div>
-          <div className="text-center"><p className="text-lg font-bold text-success-600 dark:text-success-300">{((pool.availableCount / pool.poolSize) * 100).toFixed(0)}%</p><p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p></div>
+          <div className="text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p><p className="caption">Available</p></div>
+          <div className="text-center"><p className="text-body-lg font-bold">{pool.poolSize}</p><p className="caption">Pool Size</p></div>
+          <div className="text-center"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{((pool.availableCount / pool.poolSize) * 100).toFixed(0)}%</p><p className="caption">Available</p></div>
         </div>
       </div>}
-      <div><label className="field-label block mb-1">VIBANs to Generate *</label><Input type="number" value={count} onChange={e => setCount(e.target.value)} min={1} max={10000} /><p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Max 10,000 per batch</p></div>
-      {pool && <div className="bg-info-50 rounded-lg p-3 dark:bg-info-500/10"><p className="text-sm text-info-700 dark:text-info-300">New pool size: <strong>{pool.poolSize + parseInt(count || '0')}</strong></p></div>}
+      <div><label className="field-label block mb-1">VIBANs to Generate *</label><Input type="number" value={count} onChange={e => setCount(e.target.value)} min={1} max={10000} /><p className="caption mt-1">Max 10,000 per batch</p></div>
+      {pool && <div className="bg-info-50 rounded-lg p-3 dark:bg-info-500/10"><p className="text-body-sm text-info-700 dark:text-info-300">New pool size: <strong>{pool.poolSize + parseInt(count || '0')}</strong></p></div>}
       <div className="flex justify-end gap-2 pt-4 border-t">
         <Button variant="ghost" onClick={onCancel}>Cancel</Button>
         <Button onClick={() => onSubmit(parseInt(count))} disabled={loading || !count || parseInt(count) < 1}>{loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Generate</Button>
@@ -1495,9 +1495,9 @@ const AssignForm: React.FC<{
     <div className="space-y-4">
       {viban ? (
         <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">VIBAN</p>
+          <p className="body-sm">VIBAN</p>
           <p className="font-mono font-medium">{viban.viban}</p>
-          {viban.poolCode && <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">Pool: {viban.poolCode}</p>}
+          {viban.poolCode && <p className="body-sm mt-1">Pool: {viban.poolCode}</p>}
         </div>
       ) : poolsArray.length === 1 ? (
         // Pre-selected pool (from "Assign to VA" button on pool card)
@@ -1506,33 +1506,33 @@ const AssignForm: React.FC<{
             <StatusIconBadge tone="primary" icon={Database} rounded="lg" className="dark:bg-primary-700" />
             <div>
               <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedPool?.poolName}</p>
-              <p className="text-sm text-primary-600 dark:text-primary-200">{selectedPool?.poolCode}</p>
+              <p className="text-body-sm text-primary-600 dark:text-primary-200">{selectedPool?.poolCode}</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-              <p className="text-lg font-bold text-info-600 dark:text-info-300">{selectedPool?.availableCount}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+              <p className="text-body-lg font-bold text-info-600 dark:text-info-300">{selectedPool?.availableCount}</p>
+              <p className="caption">Available</p>
             </div>
             <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-              <p className="text-lg font-bold text-success-600 dark:text-success-300">{selectedPool?.assignedCount}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Assigned</p>
+              <p className="text-body-lg font-bold text-success-600 dark:text-success-300">{selectedPool?.assignedCount}</p>
+              <p className="caption">Assigned</p>
             </div>
             <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-              <p className="text-lg font-bold text-warning-600 dark:text-warning-300">{selectedPool?.reservedCount}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Reserved</p>
+              <p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{selectedPool?.reservedCount}</p>
+              <p className="caption">Reserved</p>
             </div>
           </div>
         </div>
       ) : (
         <div>
           <label className="field-label block mb-1">Select Pool *</label>
-          <select value={poolId} onChange={e => setPoolId(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm" required>
+          <select value={poolId} onChange={e => setPoolId(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm" required>
             <option value="">Select a pool...</option>
             {activePools.map(p => <option key={p.id} value={p.id}>{p.poolName} ({p.availableCount} available)</option>)}
           </select>
           {selectedPool && (
-            <div className="mt-2 p-2 bg-primary-50 rounded-lg text-xs dark:bg-primary-800/40">
+            <div className="mt-2 p-2 bg-primary-50 rounded-lg text-caption dark:bg-primary-800/40">
               <div className="flex justify-between">
                 <span className="text-primary-700 dark:text-neutral-200">Available: {selectedPool.availableCount}</span>
                 <span className="text-success-700 dark:text-success-300">Assigned: {selectedPool.assignedCount}</span>
@@ -1548,7 +1548,7 @@ const AssignForm: React.FC<{
         <select
           value={vaId}
           onChange={e => setVaId(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg text-sm"
+          className="w-full px-3 py-2 border rounded-lg text-body-sm"
           required
         >
           <option value="">Select a virtual account...</option>
@@ -1559,13 +1559,13 @@ const AssignForm: React.FC<{
           ))}
         </select>
         {selectedVA && (
-          <div className="mt-2 p-2 bg-info-50 rounded-lg text-sm dark:bg-info-500/10">
+          <div className="mt-2 p-2 bg-info-50 rounded-lg text-body-sm dark:bg-info-500/10">
             <div className="flex items-center justify-between">
               <span className="text-info-700 dark:text-info-300">{selectedVA.vaName}</span>
-              <span className="font-mono text-xs">{selectedVA.vaNumber}</span>
+              <span className="font-mono text-caption">{selectedVA.vaNumber}</span>
             </div>
             {selectedVA.corporateName && (
-              <p className="text-xs text-info-600 mt-1 dark:text-info-300">{selectedVA.corporateName}</p>
+              <p className="caption-info mt-1">{selectedVA.corporateName}</p>
             )}
           </div>
         )}
@@ -1576,7 +1576,7 @@ const AssignForm: React.FC<{
         <label className="field-label block mb-1">
           Customer/Party
           {selectedVA?.corporateName && (
-            <span className="text-xs text-neutral-500 font-normal ml-2 dark:text-neutral-400">
+            <span className="text-caption text-neutral-500 font-normal ml-2 dark:text-neutral-400">
               ({selectedVA.corporateName} parties only)
             </span>
           )}
@@ -1584,7 +1584,7 @@ const AssignForm: React.FC<{
         <select
           value={partyId}
           onChange={e => setPartyId(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg text-sm"
+          className="w-full px-3 py-2 border rounded-lg text-body-sm"
           disabled={!vaId}
         >
           <option value="">{vaId ? 'Select a party (optional)...' : 'Select VA first...'}</option>
@@ -1595,19 +1595,19 @@ const AssignForm: React.FC<{
           ))}
         </select>
         {!vaId && (
-          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Select a Virtual Account to see available parties</p>
+          <p className="caption mt-1">Select a Virtual Account to see available parties</p>
         )}
         {vaId && activeParties.length === 0 && (
-          <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">No parties found for this corporate</p>
+          <p className="caption-warning mt-1">No parties found for this corporate</p>
         )}
         {selectedParty && (
-          <div className="mt-2 p-2 bg-accent-50 rounded-lg text-sm dark:bg-accent-500/10">
+          <div className="mt-2 p-2 bg-accent-50 rounded-lg text-body-sm dark:bg-accent-500/10">
             <div className="flex items-center justify-between">
               <span className="text-accent-700 font-medium dark:text-accent-300">{selectedParty.displayName || selectedParty.legalName}</span>
               <Badge size="sm" variant="info">{selectedParty.partyType}</Badge>
             </div>
             {selectedParty.roles && (
-              <p className="text-xs text-accent-600 mt-1 dark:text-accent-300">
+              <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">
                 Roles: {Array.isArray(selectedParty.roles) ? selectedParty.roles.join(', ') : selectedParty.roles}
               </p>
             )}
@@ -1626,7 +1626,7 @@ const AssignForm: React.FC<{
           />
           <div>
             <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBAN</span>
-            <p className="text-xs text-primary-600 dark:text-primary-200">
+            <p className="text-caption text-primary-600 dark:text-primary-200">
               {isPrimary
                 ? 'Permanent assignment - no expiry (for main collection VA)'
                 : 'Temporary assignment - will expire based on pool TTL'}
@@ -1638,7 +1638,7 @@ const AssignForm: React.FC<{
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="field-label block mb-1">Reference Type</label>
-          <select value={referenceType} onChange={e => setReferenceType(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+          <select value={referenceType} onChange={e => setReferenceType(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-body-sm">
             <option value="">None</option>
             <option value="ORDER">Order</option>
             <option value="INVOICE">Invoice</option>
@@ -1655,7 +1655,7 @@ const AssignForm: React.FC<{
       <div>
         <label className="field-label block mb-1">Expected Amount</label>
         <Input type="number" value={expectedAmount} onChange={e => setExpectedAmount(e.target.value)} placeholder="0.00" step="0.01" />
-        <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">For auto-reconciliation</p>
+        <p className="caption mt-1">For auto-reconciliation</p>
       </div>
 
       <div className="flex justify-end gap-2 pt-4 border-t">
@@ -1799,21 +1799,21 @@ const BulkAssignForm: React.FC<{
           <StatusIconBadge tone="primary" icon={Database} rounded="lg" className="dark:bg-primary-700" />
           <div>
             <p className="font-semibold text-primary-900 dark:text-neutral-50">{pool.poolName}</p>
-            <p className="text-sm text-primary-600 dark:text-primary-200">{pool.poolCode}</p>
+            <p className="text-body-sm text-primary-600 dark:text-primary-200">{pool.poolCode}</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-            <p className="text-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+            <p className="text-body-lg font-bold text-info-600 dark:text-info-300">{pool.availableCount}</p>
+            <p className="caption">Available</p>
           </div>
           <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-            <p className="text-lg font-bold text-success-600 dark:text-success-300">{pool.assignedCount}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Assigned</p>
+            <p className="text-body-lg font-bold text-success-600 dark:text-success-300">{pool.assignedCount}</p>
+            <p className="caption">Assigned</p>
           </div>
           <div className="bg-white rounded-lg p-2 dark:bg-primary-900">
-            <p className="text-lg font-bold text-warning-600 dark:text-warning-300">{vibanCount}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">To Assign</p>
+            <p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{vibanCount}</p>
+            <p className="caption">To Assign</p>
           </div>
         </div>
       </div>
@@ -1824,7 +1824,7 @@ const BulkAssignForm: React.FC<{
         <select
           value={selectedVA}
           onChange={e => setSelectedVA(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg text-sm"
+          className="w-full px-3 py-2 border rounded-lg text-body-sm"
           required
         >
           <option value="">Select a virtual account...</option>
@@ -1835,13 +1835,13 @@ const BulkAssignForm: React.FC<{
           ))}
         </select>
         {selectedVADetails && (
-          <div className="mt-2 p-2 bg-info-50 rounded-lg text-sm dark:bg-info-500/10">
+          <div className="mt-2 p-2 bg-info-50 rounded-lg text-body-sm dark:bg-info-500/10">
             <div className="flex items-center justify-between">
               <span className="text-info-700 font-medium dark:text-info-300">{selectedVADetails.vaName}</span>
-              <span className="font-mono text-xs">{selectedVADetails.vaNumber}</span>
+              <span className="font-mono text-caption">{selectedVADetails.vaNumber}</span>
             </div>
             {selectedVADetails.corporateName && (
-              <p className="text-xs text-info-600 mt-1 dark:text-info-300">{selectedVADetails.corporateName}</p>
+              <p className="caption-info mt-1">{selectedVADetails.corporateName}</p>
             )}
           </div>
         )}
@@ -1857,7 +1857,7 @@ const BulkAssignForm: React.FC<{
             max={maxAvailable}
             value={vibanCount}
             onChange={e => handleCountChange(parseInt(e.target.value) || 1)}
-            className="w-24 px-3 py-2 border rounded-lg text-sm"
+            className="w-24 px-3 py-2 border rounded-lg text-body-sm"
           />
           <input
             type="range"
@@ -1867,7 +1867,7 @@ const BulkAssignForm: React.FC<{
             onChange={e => handleCountChange(parseInt(e.target.value))}
             className="flex-1"
           />
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">Max: {maxAvailable}</span>
+          <span className="body-sm">Max: {maxAvailable}</span>
         </div>
       </div>
 
@@ -1884,8 +1884,8 @@ const BulkAssignForm: React.FC<{
               className="w-4 h-4 text-primary-600 dark:text-primary-200"
             />
             <div>
-              <span className="text-sm font-medium">Simple</span>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Assign {vibanCount} VIBANs without specific parties</p>
+              <span className="text-body-sm font-medium">Simple</span>
+              <p className="caption">Assign {vibanCount} VIBANs without specific parties</p>
             </div>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -1897,8 +1897,8 @@ const BulkAssignForm: React.FC<{
               className="w-4 h-4 text-primary-600 dark:text-primary-200"
             />
             <div>
-              <span className="text-sm font-medium">With Parties</span>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Assign each VIBAN to a specific customer/party</p>
+              <span className="text-body-sm font-medium">With Parties</span>
+              <p className="caption">Assign each VIBAN to a specific customer/party</p>
             </div>
           </label>
         </div>
@@ -1907,30 +1907,30 @@ const BulkAssignForm: React.FC<{
       {/* Party Assignments (when with-parties mode) */}
       {assignmentMode === 'with-parties' && (
         <div className="border rounded-lg max-h-48 overflow-y-auto">
-          <div className="bg-neutral-100 px-3 py-2 text-sm font-medium border-b sticky top-0 flex justify-between items-center dark:bg-primary-800">
+          <div className="bg-neutral-100 px-3 py-2 text-body-sm font-medium border-b sticky top-0 flex justify-between items-center dark:bg-primary-800">
             <span>Party Assignment for Each VIBAN</span>
             {selectedVADetails?.corporateName && (
-              <span className="text-xs text-neutral-500 font-normal dark:text-neutral-400">
+              <span className="text-caption text-neutral-500 font-normal dark:text-neutral-400">
                 {selectedVADetails.corporateName} parties only
               </span>
             )}
           </div>
           {!selectedVA ? (
-            <div className="p-4 text-center text-neutral-500 text-sm dark:text-neutral-400">
+            <div className="p-4 text-center body-sm">
               Select a Virtual Account first to see available parties
             </div>
           ) : activeParties.length === 0 ? (
-            <div className="p-4 text-center text-warning-600 text-sm dark:text-warning-300">
+            <div className="p-4 text-center text-warning-600 text-body-sm dark:text-warning-300">
               No parties found for this corporate
             </div>
           ) : (
             partyAssignments.map((pa, idx) => (
               <div key={idx} className="flex items-center gap-2 p-2 border-b last:border-b-0">
-                <span className="text-xs text-neutral-500 w-8 dark:text-neutral-400">#{idx + 1}</span>
+                <span className="caption w-8">#{idx + 1}</span>
                 <select
                   value={pa.partyId}
                   onChange={e => handlePartyChange(idx, e.target.value, pa.referenceId)}
-                  className="flex-1 px-2 py-1 border rounded text-sm"
+                  className="flex-1 px-2 py-1 border rounded text-body-sm"
                 >
                   <option value="">No party</option>
                   {activeParties.map(p => (
@@ -1944,7 +1944,7 @@ const BulkAssignForm: React.FC<{
                   placeholder="Reference ID"
                   value={pa.referenceId || ''}
                   onChange={e => handlePartyChange(idx, pa.partyId, e.target.value)}
-                  className="w-32 px-2 py-1 border rounded text-sm"
+                  className="w-32 px-2 py-1 border rounded text-body-sm"
                 />
               </div>
             ))
@@ -1963,7 +1963,7 @@ const BulkAssignForm: React.FC<{
           />
           <div>
             <span className="font-medium text-primary-900 dark:text-neutral-50">Primary VIBANs</span>
-            <p className="text-xs text-primary-600 dark:text-primary-200">
+            <p className="text-caption text-primary-600 dark:text-primary-200">
               {isPrimary
                 ? 'Permanent assignment - no expiry (for main collection VA)'
                 : 'Temporary assignment - will expire based on pool TTL'}
@@ -1974,7 +1974,7 @@ const BulkAssignForm: React.FC<{
 
       {/* Actions */}
       <div className="flex justify-between items-center pt-4 border-t">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="body-sm">
           {selectedVA && vibanCount > 0
             ? `Will assign ${vibanCount} VIBAN${vibanCount > 1 ? 's' : ''} to ${selectedVADetails?.vaNumber || 'selected VA'}`
             : 'Select a Virtual Account and specify count'}
@@ -2018,29 +2018,29 @@ const PoolDetailView: React.FC<{
       {pool.description && <p className="text-neutral-600 dark:text-neutral-300">{pool.description}</p>}
 
       <div className="grid grid-cols-4 gap-4">
-        <Card><div className="p-4 text-center"><p className="stat-value-sm">{formatNumber(pool.poolSize)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Pool Size</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-info">{formatNumber(pool.availableCount)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Available</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-success">{formatNumber(pool.assignedCount)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Assigned</p></div></Card>
-        <Card><div className="p-4 text-center"><p className="stat-value-warning">{formatNumber(pool.reservedCount)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Reserved</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="stat-value-sm">{formatNumber(pool.poolSize)}</p><p className="body-sm">Pool Size</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="stat-value-info">{formatNumber(pool.availableCount)}</p><p className="body-sm">Available</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="stat-value-success">{formatNumber(pool.assignedCount)}</p><p className="body-sm">Assigned</p></div></Card>
+        <Card><div className="p-4 text-center"><p className="stat-value-warning">{formatNumber(pool.reservedCount)}</p><p className="body-sm">Reserved</p></div></Card>
       </div>
 
       <Card>
         <div className="p-4 border-b"><h4 className="font-medium">Configuration</h4></div>
         <div className="p-4 grid grid-cols-3 gap-4">
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">VIBAN Format</p><p className="font-mono">{pool.countryCode}00{pool.bankCode}{pool.prefix}{'X'.repeat(pool.suffixLength)}</p></div>
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">Assignment TTL</p><p className="font-medium">{formatTtl(pool.assignmentTtlMinutes)}</p></div>
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">Auto Return</p><p className="font-medium">{pool.autoReturnExpired ? 'Yes' : 'No'}</p></div>
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">Low Threshold</p><p className="font-medium">{pool.lowThresholdPercent}%</p></div>
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">Created</p><p className="font-medium">{new Date(pool.createdAt).toLocaleDateString()}</p></div>
-          <div><p className="text-sm text-neutral-500 dark:text-neutral-400">Updated</p><p className="font-medium">{pool.updatedAt ? new Date(pool.updatedAt).toLocaleDateString() : '-'}</p></div>
+          <div><p className="body-sm">VIBAN Format</p><p className="font-mono">{pool.countryCode}00{pool.bankCode}{pool.prefix}{'X'.repeat(pool.suffixLength)}</p></div>
+          <div><p className="body-sm">Assignment TTL</p><p className="font-medium">{formatTtl(pool.assignmentTtlMinutes)}</p></div>
+          <div><p className="body-sm">Auto Return</p><p className="font-medium">{pool.autoReturnExpired ? 'Yes' : 'No'}</p></div>
+          <div><p className="body-sm">Low Threshold</p><p className="font-medium">{pool.lowThresholdPercent}%</p></div>
+          <div><p className="body-sm">Created</p><p className="font-medium">{new Date(pool.createdAt).toLocaleDateString()}</p></div>
+          <div><p className="body-sm">Updated</p><p className="font-medium">{pool.updatedAt ? new Date(pool.updatedAt).toLocaleDateString() : '-'}</p></div>
         </div>
       </Card>
 
       <Card>
         <div className="p-4 border-b"><h4 className="font-medium">Payment Statistics</h4></div>
         <div className="p-4 grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3"><div className="p-3 bg-primary-100 rounded-lg dark:bg-primary-700"><Activity className="w-5 h-5 text-primary-600 dark:text-primary-200" /></div><div><p className="stat-value-sm">{formatNumber(totalPayments)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Total Payments</p></div></div>
-          <div className="flex items-center gap-3"><div className="p-3 bg-success-100 rounded-lg dark:bg-success-500/20"><CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" /></div><div><p className="stat-value-sm">{formatCurrency(totalAmount)}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">Total Amount</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-3 bg-primary-100 rounded-lg dark:bg-primary-700"><Activity className="w-5 h-5 text-primary-600 dark:text-primary-200" /></div><div><p className="stat-value-sm">{formatNumber(totalPayments)}</p><p className="body-sm">Total Payments</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-3 bg-success-100 rounded-lg dark:bg-success-500/20"><CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" /></div><div><p className="stat-value-sm">{formatCurrency(totalAmount)}</p><p className="body-sm">Total Amount</p></div></div>
         </div>
       </Card>
 
@@ -2054,31 +2054,31 @@ const PoolDetailView: React.FC<{
         </div>
         <div className="max-h-80 overflow-auto"><table className="w-full">
           <thead className="bg-neutral-50 sticky top-0 dark:bg-primary-950"><tr>
-            <th className="text-left p-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">VIBAN</th>
-            <th className="text-left p-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">Assigned Virtual Account</th>
-            <th className="text-left p-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">Reference</th>
-            <th className="text-right p-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">Payments</th>
-            <th className="text-right p-3 text-sm font-medium text-neutral-600 dark:text-neutral-300">Amount</th>
+            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">VIBAN</th>
+            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Assigned Virtual Account</th>
+            <th className="text-left p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Reference</th>
+            <th className="text-right p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Payments</th>
+            <th className="text-right p-3 text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Amount</th>
           </tr></thead>
           <tbody className="divide-y">{activeVibans.slice(0, 20).map(v => (
             <tr key={v.id} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
-              <td className="p-3 font-mono text-sm">{v.viban}</td>
+              <td className="p-3 font-mono text-body-sm">{v.viban}</td>
               <td className="p-3">
                 {v.vaNumber ? (
                   <div className="bg-success-50 rounded-lg px-2 py-1.5 border border-success-100 inline-block dark:bg-success-500/10 dark:border-success-500/30">
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-success-600 dark:text-success-300" />
-                      <span className="font-mono text-sm text-success-700 dark:text-success-300">{v.vaNumber}</span>
+                      <span className="font-mono text-body-sm text-success-700 dark:text-success-300">{v.vaNumber}</span>
                     </div>
-                    {v.vaName && <p className="text-xs text-success-600 mt-0.5 dark:text-success-300">{v.vaName}</p>}
+                    {v.vaName && <p className="caption-success mt-0.5">{v.vaName}</p>}
                     {v.customerName && (
-                      <p className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1 dark:text-neutral-400">
+                      <p className="caption mt-0.5 flex items-center gap-1">
                         <span className="text-neutral-400 dark:text-neutral-500">Customer:</span> {v.customerName}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <span className="text-neutral-400 text-sm italic dark:text-neutral-500">Not assigned</span>
+                  <span className="text-neutral-400 text-body-sm italic dark:text-neutral-500">Not assigned</span>
                 )}
               </td>
               <td className="p-3">
@@ -2088,21 +2088,21 @@ const PoolDetailView: React.FC<{
                     {v.referenceType === 'INVOICE' && <FileText className="w-3.5 h-3.5 text-info-500" />}
                     {v.referenceType === 'TERMINAL' && <CreditCard className="w-3.5 h-3.5 text-success-500" />}
                     <div>
-                      <p className="text-sm font-medium">{v.referenceId}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{v.referenceType}</p>
+                      <p className="text-body-sm font-medium">{v.referenceId}</p>
+                      <p className="caption">{v.referenceType}</p>
                     </div>
                   </div>
-                ) : <span className="text-neutral-400 text-sm dark:text-neutral-500">-</span>}
+                ) : <span className="text-neutral-400 text-body-sm dark:text-neutral-500">-</span>}
               </td>
-              <td className="p-3 text-sm text-right font-medium">{v.timesUsed || 0}</td>
-              <td className="p-3 text-sm text-right font-medium">
+              <td className="p-3 text-body-sm text-right font-medium">{v.timesUsed || 0}</td>
+              <td className="p-3 text-body-sm text-right font-medium">
                 {(v.totalAmountReceived || 0) > 0 ? formatCurrency(v.totalAmountReceived!) : '-'}
               </td>
             </tr>
           ))}</tbody>
         </table></div>
         {activeVibans.length > 20 && (
-          <div className="p-3 text-center text-sm text-neutral-500 border-t bg-neutral-50 dark:text-neutral-400 dark:bg-primary-950">
+          <div className="p-3 text-center body-sm border-t bg-neutral-50 dark:bg-primary-950">
             Showing 20 of {activeVibans.length} active VIBANs
           </div>
         )}

@@ -47,7 +47,7 @@ export const ViewSwitcher: React.FC<ViewSwitcherProps> = ({ value, onChange }) =
           aria-selected={active}
           onClick={() => onChange(key)}
           className={cn(
-            'px-3 py-1.5 text-sm font-medium transition-colors',
+            'px-3 py-1.5 text-body-sm font-medium transition-colors',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400',
             active
               ? 'bg-primary-900 text-white dark:bg-accent-500 dark:text-primary-950'

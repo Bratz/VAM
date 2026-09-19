@@ -153,13 +153,13 @@ const HierarchyNodeItem: React.FC<HierarchyNodeItemProps> = ({
         {/* Node Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-sm truncate">{node.nodeName}</span>
+            <span className="font-medium text-body-sm truncate">{node.nodeName}</span>
             <Badge variant="neutral" size="sm">L{node.levelNumber}</Badge>
             {node.nodeType === 'VIRTUAL_ACCOUNT' && (
               <Badge variant="success" size="sm">VA</Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <div className="flex items-center gap-2 caption">
             <span>{node.nodeCode}</span>
             <span>•</span>
             <span className="truncate">{node.materializedPath}</span>
@@ -289,7 +289,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
         <Info className="w-4 h-4" />
         <div>
           <strong>Hierarchy not enabled</strong>
-          <p className="text-sm mt-1">
+          <p className="text-body-sm mt-1">
             Hierarchy is not enabled for this program. Select a program with hierarchy support 
             to assign this account to a hierarchy node.
           </p>
@@ -304,7 +304,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-4">
           <GitBranch className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-medium text-neutral-900">Collection Channel</h4>
+          <h4 className="body-strong">Collection Channel</h4>
         </div>
         
         <FormField 
@@ -321,7 +321,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
             placeholder="Select channel..."
           />
           {formData.collectionChannel && (
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="caption mt-1">
               {COLLECTION_CHANNELS.find(c => c.value === formData.collectionChannel)?.description}
             </p>
           )}
@@ -335,7 +335,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
               type="button"
               onClick={() => updateField('collectionChannel', channel.value)}
               className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all',
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-sm transition-all',
                 formData.collectionChannel === channel.value
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
                   : 'border-neutral-200 hover:border-primary-300 text-neutral-600'
@@ -352,7 +352,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Layers className="w-5 h-5 text-primary-600" />
-            <h4 className="text-sm font-medium text-neutral-900">Hierarchy Position</h4>
+            <h4 className="body-strong">Hierarchy Position</h4>
           </div>
           
           <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium text-primary-900">{selectedNode.nodeName}</div>
-                <div className="text-sm text-primary-700">
+                <div className="text-body-sm text-primary-700">
                   {selectedNode.nodeCode} • Level {selectedNode.levelNumber} • {selectedNode.materializedPath}
                 </div>
               </div>
@@ -430,7 +430,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
           <div className="text-center py-12 border border-dashed border-neutral-300 rounded-lg">
             <GitBranch className="w-10 h-10 mx-auto mb-3 text-neutral-400" />
             <p className="text-neutral-600 mb-2">No hierarchy nodes available</p>
-            <p className="text-sm text-neutral-500 mb-4">
+            <p className="body-sm mb-4">
               Load the hierarchy to assign this account to a node
             </p>
             {onLoadHierarchy && program && (
@@ -460,7 +460,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
         <Info className="w-4 h-4" />
         <div>
           <strong>About Hierarchy Assignment</strong>
-          <p className="text-sm mt-1">
+          <p className="text-body-sm mt-1">
             Assigning this account to a hierarchy node enables balance aggregation, 
             consolidated reporting, and hierarchical fund sweeping. Choose a node 
             that represents the organizational position of this account.

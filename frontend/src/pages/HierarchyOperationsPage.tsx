@@ -120,7 +120,7 @@ const Badge: React.FC<{
   };
 
   return (
-    <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', variants[variant], className)}>
+    <span className={cn('px-2 py-0.5 text-caption font-medium rounded-full', variants[variant], className)}>
       {children}
     </span>
   );
@@ -155,7 +155,7 @@ const Button: React.FC<{
     ghost: 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300',
     outline: 'border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:border-primary-700 dark:text-neutral-200',
   };
-  const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-6 py-3 text-base' };
+  const sizes = { sm: 'px-3 py-1.5 text-caption', md: 'px-4 py-2 text-body-sm', lg: 'px-6 py-3 text-body' };
   return (
     <button
       onClick={onClick}
@@ -197,7 +197,7 @@ const QuickActionCard: React.FC<{ action: QuickAction }> = ({ action }) => {
       </div>
       <div className="text-center">
         <p className="font-semibold text-primary-900 group-hover:text-primary-700 dark:text-neutral-50">{action.title}</p>
-        <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{action.description}</p>
+        <p className="caption mt-1">{action.description}</p>
       </div>
     </button>
   );
@@ -257,7 +257,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
         ) : <span className="w-5" />}
 
         <div className={cn('p-1.5 rounded-lg', getNodeStyle())}>{getNodeIcon()}</div>
-        <span className="flex-1 text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</span>
+        <span className="flex-1 text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</span>
         <Badge variant="info">{node.currencyCode}</Badge>
 
         {canMove && (
@@ -272,10 +272,10 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, expandedIds, onToggle, onActi
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
                 <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-20 dark:bg-primary-900 dark:border-primary-800">
-                  <button onClick={() => { onAction(node, 'move'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
+                  <button onClick={() => { onAction(node, 'move'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
                     <ArrowUpDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />Move
                   </button>
-                  <button onClick={() => { onAction(node, 'view'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
+                  <button onClick={() => { onAction(node, 'view'); setShowMenu(false); }} className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/50">
                     <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />View Details
                   </button>
                 </div>
@@ -329,8 +329,8 @@ const OperationHistoryItem: React.FC<{ operation: OperationHistoryEntry; onViewD
           <span className="font-medium text-primary-900 dark:text-neutral-50">{operation.operationType.replace(/_/g, ' ')}</span>
           {getStatusBadge()}
         </div>
-        <p className="text-sm text-neutral-600 mt-1 dark:text-neutral-300">{operation.summary}</p>
-        <div className="flex items-center gap-4 mt-2 text-xs text-neutral-400 dark:text-neutral-500">
+        <p className="body-sm mt-1">{operation.summary}</p>
+        <div className="flex items-center gap-4 mt-2 caption">
           <span>{new Date(operation.createdAt).toLocaleTimeString()}</span>
           <span>by {operation.performedBy}</span>
         </div>
@@ -352,7 +352,7 @@ const PendingApprovalCard: React.FC<{ operation: OperationHistoryEntry; onApprov
       <Clock className="w-5 h-5 text-warning-600 mt-0.5 flex-shrink-0 dark:text-warning-300" />
       <div className="flex-1">
         <p className="font-medium text-warning-900">{operation.operationType.replace(/_/g, ' ')}: {operation.summary}</p>
-        <p className="text-sm text-warning-700 mt-1 dark:text-warning-300">Requested by: {operation.performedBy}</p>
+        <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">Requested by: {operation.performedBy}</p>
         <div className="flex items-center gap-2 mt-3">
           <Button variant="ghost" size="sm" onClick={() => onReject(operation.id)}><X className="w-3 h-3" />Reject</Button>
           <Button variant="primary" size="sm" onClick={() => onApprove(operation.id)}><Check className="w-3 h-3" />Approve</Button>
@@ -379,7 +379,7 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
         <div className="border-b border-neutral-200 dark:border-primary-800">
             <div className="flex gap-1 px-6">
               {[{ id: 'transaction', label: 'Transaction VAs' }, { id: 'aggregation', label: 'Aggregations' }, { id: 'mna', label: 'M&A Operations' }, { id: 'notmovable', label: 'Not Movable' }].map((tab) => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={cn('px-4 py-3 text-sm font-medium border-b-2 transition-colors', activeTab === tab.id ? 'border-primary-600 text-primary-600 dark:text-primary-200' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
+                <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={cn('px-4 py-3 text-body-sm font-medium border-b-2 transition-colors', activeTab === tab.id ? 'border-primary-600 text-primary-600 dark:text-primary-200' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
                   {tab.label}
                 </button>
               ))}
@@ -391,7 +391,7 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
                 <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Transaction VA Rules</h3>
                 <ul className="space-y-3">
                   {rules.transactionVaRules.map((rule, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
+                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
                   ))}
                 </ul>
               </div>
@@ -401,22 +401,22 @@ const RulesModal: React.FC<{ isOpen: boolean; onClose: () => void; rules: Operat
                 <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Aggregation Rules</h3>
                 <ul className="space-y-3">
                   {rules.aggregationRules.map((rule, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
+                    <li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>
                   ))}
                 </ul>
               </div>
             )}
             {activeTab === 'mna' && rules && (
               <div className="space-y-6">
-                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Acquisition Rules</h3><ul className="space-y-2">{rules.acquisitionRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
-                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Divestiture Rules</h3><ul className="space-y-2">{rules.divestureRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
+                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Acquisition Rules</h3><ul className="space-y-2">{rules.acquisitionRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
+                <div><h3 className="font-semibold text-primary-900 mb-3 dark:text-neutral-50">Divestiture Rules</h3><ul className="space-y-2">{rules.divestureRules.map((rule, i) => (<li key={i} className="flex items-start gap-3 text-body-sm"><Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" /><span className="text-neutral-700 dark:text-neutral-200">{rule}</span></li>))}</ul></div>
               </div>
             )}
             {activeTab === 'notmovable' && rules && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Types That Cannot Be Moved</h3>
                 <div className="flex flex-wrap gap-2">{rules.notMovableTypes.map((type) => (<Badge key={type} variant="error"><X className="w-3 h-3 mr-1 inline" />{type}</Badge>))}</div>
-                <div className="p-4 bg-warning-50 rounded-lg dark:bg-warning-500/10"><p className="text-sm text-warning-700 dark:text-warning-300">These account types are system-managed and cannot be moved manually. Use the appropriate operations for corporate-level restructuring.</p></div>
+                <div className="p-4 bg-warning-50 rounded-lg dark:bg-warning-500/10"><p className="text-body-sm text-warning-700 dark:text-warning-300">These account types are system-managed and cannot be moved manually. Use the appropriate operations for corporate-level restructuring.</p></div>
               </div>
             )}
           </div>
@@ -863,7 +863,7 @@ const HierarchyOperationsPage: React.FC = () => {
                 </div>
                 {hierarchy && (
                   <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50 dark:border-primary-800/60 dark:bg-primary-950">
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+                    <div className="flex flex-wrap items-center gap-4 caption">
                       <span className="font-medium">Legend:</span>
                       <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-primary-900" />ROOT</span>
                       <span className="flex items-center gap-1"><div className="w-3 h-3 rounded bg-info-100 dark:bg-info-500/20" />AGGREGATION</span>
@@ -902,7 +902,7 @@ const HierarchyOperationsPage: React.FC = () => {
                   {history.length === 0 ? (
                     <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
                       <History className="w-8 h-8 mx-auto mb-2 text-neutral-300 dark:text-neutral-600" />
-                      <p className="text-sm">No operations yet</p>
+                      <p className="text-body-sm">No operations yet</p>
                     </div>
                   ) : (
                     history.slice(0, 5).map((op) => (

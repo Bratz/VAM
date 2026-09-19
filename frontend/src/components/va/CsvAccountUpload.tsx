@@ -96,14 +96,14 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
         />
         <label htmlFor="csv-account-upload" className="cursor-pointer">
           <Upload className="w-8 h-8 text-neutral-400 dark:text-neutral-500 mx-auto mb-2" />
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">Click to upload a CSV or TXT file</p>
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">One account number per line, or comma-separated</p>
+          <p className="body-sm">Click to upload a CSV or TXT file</p>
+          <p className="caption mt-1">One account number per line, or comma-separated</p>
         </label>
       </div>
 
       {fileName && (
         <div className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 min-w-0">
+          <div className="flex items-center gap-2 body-sm min-w-0">
             <FileText className="w-4 h-4 shrink-0" />
             <span className="truncate">{fileName}</span>
           </div>
@@ -114,13 +114,13 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
       )}
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-2 body-sm">
           <Loader2 className="w-4 h-4 animate-spin" /> Resolving {parsedCount} account number(s)…
         </div>
       )}
 
       {error && (
-        <p className="text-xs text-error-600 dark:text-error-400 flex items-center gap-1.5">
+        <p className="caption-error flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" /> {error}
         </p>
       )}
@@ -138,12 +138,12 @@ export const CsvAccountUpload: React.FC<CsvAccountUploadProps> = ({ onResolved }
               see data-entry errors. */}
           {unmatched.length > 0 && (
             <div className="p-2 border border-warning-200 dark:border-warning-500/30 bg-warning-50/50 dark:bg-warning-500/10 rounded-lg">
-              <p className="text-xs font-medium text-warning-700 dark:text-warning-300 mb-1">
+              <p className="text-caption font-medium text-warning-700 dark:text-warning-300 mb-1">
                 Not found — check for typos:
               </p>
               <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
                 {unmatched.map(u => (
-                  <span key={u} className="text-xs font-mono px-1.5 py-0.5 rounded bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
+                  <span key={u} className="text-caption font-mono px-1.5 py-0.5 rounded bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 text-neutral-700 dark:text-neutral-200">
                     {u}
                   </span>
                 ))}

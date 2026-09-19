@@ -200,9 +200,9 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, varia
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">{title}</p>
+          <p className="label mb-1">{title}</p>
           <p className="stat-value-sm">{value}</p>
-          {subtitle && <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{subtitle}</p>}
+          {subtitle && <p className="caption mt-1">{subtitle}</p>}
         </div>
         <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', iconBg[variant])}>
           <div className={iconColor[variant]}>{icon}</div>
@@ -244,7 +244,7 @@ const TransferTypeCard: React.FC<TransferTypeCardProps> = ({
       <div className={selected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400'}>{icon}</div>
     </div>
     <p className="font-semibold text-primary-900 dark:text-neutral-50">{label}</p>
-    <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">{description}</p>
+    <p className="body-sm mt-1">{description}</p>
     {selected && (
       <div className="mt-3">
         <Badge variant="primary" size="sm" dot>Selected</Badge>
@@ -309,10 +309,10 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">{selectedAccount.vaName}</p>
-              <p className="text-sm text-neutral-500 font-mono dark:text-neutral-400">{selectedAccount.vaNumber}</p>
+              <p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{selectedAccount.vaNumber}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Balance</p>
+              <p className="caption">Balance</p>
               <p className="stat-value-xs">
                 {formatCurrency(selectedAccount.currentBalance, selectedAccount.currencyCode)}
               </p>
@@ -447,7 +447,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           </div>
           <div>
             <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{typeInfo.label}</h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{typeInfo.description}</p>
+            <p className="caption">{typeInfo.description}</p>
           </div>
         </div>
       </div>
@@ -456,7 +456,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
       <div className="p-4 space-y-4">
         {/* Progress Indicator */}
         <div className="space-y-2">
-          <div className="flex justify-between text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="flex justify-between caption">
             <span>Completion</span>
             <span>{completionPct}%</span>
           </div>
@@ -473,7 +473,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
         {/* From Section */}
         <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide mb-2 dark:text-neutral-400">
+          <p className="label mb-2">
             {transferType === 'inward' ? 'Payer (Remitter)' : 'From'}
           </p>
           {transferType === 'inward' ? (
@@ -483,29 +483,29 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{formData.debtorName}</p>
                   {formData.debtorAccount && (
-                    <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{formData.debtorAccount}</p>
+                    <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{formData.debtorAccount}</p>
                   )}
                   {formData.debtorBic && (
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500">BIC: {formData.debtorBic}</p>
+                    <p className="caption">BIC: {formData.debtorBic}</p>
                   )}
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-neutral-400 italic dark:text-neutral-500">Select payer...</p>
+              <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">Select payer...</p>
             )
           ) : sourceAccount ? (
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="primary" icon={Wallet} rounded="lg" className="dark:bg-primary-700" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{sourceAccount.vaName}</p>
-                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{sourceAccount.vaNumber}</p>
-                <p className="text-xs text-success-600 font-medium dark:text-success-300">
+                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{sourceAccount.vaNumber}</p>
+                <p className="text-caption text-success-600 font-medium dark:text-success-300">
                   Balance: {formatCurrency(sourceAccount.currentBalance, sourceAccount.currencyCode)}
                 </p>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-neutral-400 italic dark:text-neutral-500">Select source account...</p>
+            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">Select source account...</p>
           )}
         </div>
 
@@ -525,7 +525,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
         {/* To Section */}
         <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
-          <p className="text-xs text-neutral-500 uppercase tracking-wide mb-2 dark:text-neutral-400">
+          <p className="label mb-2">
             {transferType === 'inward' ? 'Credit To (VIBAN/VA)' : 'To'}
           </p>
           {transferType === 'internal' && targetAccount ? (
@@ -533,7 +533,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
               <StatusIconBadge tone="success" icon={Wallet} rounded="lg" className="dark:bg-success-500/20" />
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{targetAccount.vaName}</p>
-                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{targetAccount.vaNumber}</p>
+                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{targetAccount.vaNumber}</p>
               </div>
             </div>
           ) : transferType === 'outward' && formData.creditorName ? (
@@ -542,11 +542,11 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 <StatusIconBadge tone="primary" icon={Globe} rounded="lg" className="dark:bg-primary-700" />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">{formData.creditorName}</p>
-                  <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{formData.creditorAccount}</p>
+                  <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{formData.creditorAccount}</p>
                 </div>
               </div>
               {/* Enhanced beneficiary details */}
-              <div className="bg-primary-50/50 rounded-lg p-2 space-y-1 text-xs">
+              <div className="bg-primary-50/50 rounded-lg p-2 space-y-1 text-caption">
                 {formData.creditorBankName && (
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">Bank</span>
@@ -574,7 +574,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 <p className="font-semibold text-neutral-900 truncate dark:text-neutral-50">
                   {formData.toVaId ? accounts.find(a => a.id === formData.toVaId)?.vaName : 'VIBAN Routing'}
                 </p>
-                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{formData.targetVibanOrVa}</p>
+                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{formData.targetVibanOrVa}</p>
                 <Badge variant={formData.toVaId ? 'info' : 'success'} size="sm" className="mt-1">
                   {formData.toVaId ? 'Direct VA' : 'VIBAN Auto-Route'}
                 </Badge>
@@ -586,11 +586,11 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 <StatusIconBadge tone="warning" icon={Users} rounded="lg" className="dark:bg-warning-500/20" />
                 <div>
                   <p className="font-semibold text-neutral-900 dark:text-neutral-50">{bulkItems.length} Recipients</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Multiple accounts</p>
+                  <p className="caption">Multiple accounts</p>
                 </div>
               </div>
               {bulkItems.slice(0, 3).map((item, idx) => (
-                <div key={item.id} className="flex justify-between text-xs bg-neutral-50 rounded-lg p-2 dark:bg-primary-950">
+                <div key={item.id} className="flex justify-between text-caption bg-neutral-50 rounded-lg p-2 dark:bg-primary-950">
                   <span className="text-neutral-600 truncate dark:text-neutral-300">
                     {accounts.find(a => a.id === item.destinationVaId)?.vaName || 'Account ' + (idx + 1)}
                   </span>
@@ -600,11 +600,11 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 </div>
               ))}
               {bulkItems.length > 3 && (
-                <p className="text-xs text-neutral-500 text-center dark:text-neutral-400">+{bulkItems.length - 3} more...</p>
+                <p className="caption text-center">+{bulkItems.length - 3} more...</p>
               )}
             </div>
           ) : (
-            <p className="text-sm text-neutral-400 italic dark:text-neutral-500">
+            <p className="text-body-sm text-neutral-400 italic dark:text-neutral-500">
               {transferType === 'inward' ? 'Enter VIBAN or select VA...' : 'Select destination...'}
             </p>
           )}
@@ -613,8 +613,8 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         {/* Amount Section */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-neutral-600 dark:text-neutral-300">Amount</span>
-            {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-xl
+            <span className="body-sm">Amount</span>
+            {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm
                 font-bold` (same 20px scale, display-tier numerics); the
                 empty-state grey overrides its default ink. */}
             <span className={cn(
@@ -626,16 +626,16 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           </div>
 
           {formData.valueDate && (
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-body-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Value Date</span>
               <span className="text-neutral-900 dark:text-neutral-50">{formData.valueDate}</span>
             </div>
           )}
 
           {(formData.description || formData.remittanceInfo) && (
-            <div className="text-sm">
+            <div className="text-body-sm">
               <span className="text-neutral-500 block mb-1 dark:text-neutral-400">Reference</span>
-              <p className="text-neutral-700 bg-neutral-50 rounded-lg p-2 text-xs dark:text-neutral-200 dark:bg-primary-950">
+              <p className="text-neutral-700 bg-neutral-50 rounded-lg p-2 text-caption dark:text-neutral-200 dark:bg-primary-950">
                 {formData.description || formData.remittanceInfo}
               </p>
             </div>
@@ -645,7 +645,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
         {/* Fee Information */}
         {hasAmount && transferType !== 'inward' && (
           <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3 space-y-2 dark:bg-primary-950 dark:border-primary-800">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-body-sm">
               <span className="text-neutral-600 font-medium dark:text-neutral-300">Fees & Total</span>
               {loadingFees && <Loader2 className="w-3 h-3 animate-spin text-neutral-400 dark:text-neutral-500" />}
             </div>
@@ -656,7 +656,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 {'feeBreakdown' in feePreview && feePreview.feeBreakdown && (
                   <>
                     {feePreview.feeBreakdown.lineItems?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-xs">
+                      <div key={idx} className="flex justify-between text-caption">
                         <span className={item.waived ? 'text-neutral-400 line-through' : 'text-neutral-600 dark:text-neutral-300'}>
                           {item.chargeName}
                           {item.waived && <span className="ml-1 text-success-600 no-underline dark:text-success-300">(Waived)</span>}
@@ -666,7 +666,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                         </span>
                       </div>
                     ))}
-                    <div className="flex justify-between text-sm pt-1 border-t border-neutral-200 dark:border-primary-800">
+                    <div className="flex justify-between text-body-sm pt-1 border-t border-neutral-200 dark:border-primary-800">
                       <span className="text-neutral-700 font-medium dark:text-neutral-200">Total Fee</span>
                       <span className="text-warning-700 font-semibold dark:text-warning-300">
                         {formatCurrency(feePreview.feeBreakdown.totalFee, feePreview.currency)}
@@ -677,7 +677,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
                 {/* Fee for outward payments */}
                 {'paymentFee' in feePreview && (
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-600 dark:text-neutral-300">Payment Fee</span>
                     <span className="text-warning-700 font-semibold dark:text-warning-300">
                       {formatCurrency(feePreview.paymentFee, feePreview.currency)}
@@ -686,7 +686,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 )}
 
                 {/* Total Debit */}
-                <div className="flex justify-between text-sm pt-2 border-t border-neutral-300 mt-2 dark:border-primary-700">
+                <div className="flex justify-between text-body-sm pt-2 border-t border-neutral-300 mt-2 dark:border-primary-700">
                   <span className="text-primary-700 font-semibold dark:text-neutral-200">Total Debit</span>
                   <span className="text-primary-700 font-bold dark:text-neutral-200">
                     {formatCurrency(feePreview.totalDebit, feePreview.currency)}
@@ -695,18 +695,18 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
                 {/* Balance & Credit Limit Info */}
                 <div className="pt-2 border-t border-neutral-200 mt-2 space-y-1 dark:border-primary-800">
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-caption">
                     <span className="text-neutral-500 dark:text-neutral-400">Current Balance</span>
                     <span className="text-neutral-700 dark:text-neutral-200">{formatCurrency(feePreview.fromBalance, feePreview.currency)}</span>
                   </div>
                   {feePreview.creditLimitAvailable !== undefined && feePreview.creditLimitAvailable > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-caption">
                       <span className="text-neutral-500 dark:text-neutral-400">Credit Limit Available</span>
                       <span className="text-success-600 dark:text-success-300">+{formatCurrency(feePreview.creditLimitAvailable, feePreview.currency)}</span>
                     </div>
                   )}
                   {feePreview.effectiveAvailableBalance !== undefined && (
-                    <div className="flex justify-between text-xs font-medium">
+                    <div className="flex justify-between text-caption font-medium">
                       <span className="text-neutral-600 dark:text-neutral-300">Effective Available</span>
                       <span className="text-primary-700 dark:text-neutral-200">{formatCurrency(feePreview.effectiveAvailableBalance, feePreview.currency)}</span>
                     </div>
@@ -715,14 +715,14 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
                 {/* Validation status */}
                 {!feePreview.fundsAvailable && (
-                  <div className="text-xs text-error-600 flex items-center gap-1 mt-1 dark:text-error-300">
+                  <div className="caption-error flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3 h-3" />
                     {feePreview.validationMessage || 'Insufficient funds'}
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="caption">
                 {hasDestination ? 'Calculating fees...' : 'Select destination to see fees'}
               </p>
             )}
@@ -734,10 +734,10 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 dark:bg-warning-500/10 dark:border-warning-500/30">
             <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
               <Building2 className="w-4 h-4" />
-              <span className="font-medium text-sm">POBO Enabled</span>
+              <span className="font-medium text-body-sm">POBO Enabled</span>
             </div>
             {formData.behalfOfEntity && (
-              <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">
+              <p className="caption-warning mt-1">
                 On behalf of: {formData.behalfOfEntity}
               </p>
             )}
@@ -756,9 +756,9 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             <div className="bg-error-50 border border-error-200 rounded-lg p-3 dark:bg-error-500/10 dark:border-error-500/30">
               <div className="flex items-center gap-2 text-error-700 dark:text-error-300">
                 <AlertCircle className="w-4 h-4" />
-                <span className="font-medium text-sm">Insufficient Funds</span>
+                <span className="font-medium text-body-sm">Insufficient Funds</span>
               </div>
-              <div className="text-xs text-error-600 mt-1 space-y-0.5 dark:text-error-300">
+              <div className="caption-error mt-1 space-y-0.5">
                 <p>Balance: {formatCurrency(sourceAccount.currentBalance, sourceAccount.currencyCode)}</p>
                 {hasCreditLimit && (
                   <p>Credit Available: +{formatCurrency(feePreview?.creditLimitAvailable ?? sourceAccount.creditLimitAvailable ?? 0, sourceAccount.currencyCode)}</p>
@@ -775,7 +775,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             'w-2 h-2 rounded-full',
             canSubmit ? 'bg-success-500' : 'bg-warning-400'
           )} />
-          <span className="text-sm text-neutral-600 dark:text-neutral-300">
+          <span className="body-sm">
             {canSubmit ? 'Ready to submit' : 'Complete all fields'}
           </span>
         </div>
@@ -796,7 +796,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
 
         {/* Validation Hints */}
         {!canSubmit && (
-          <div className="text-xs text-neutral-500 space-y-1 dark:text-neutral-400">
+          <div className="caption space-y-1">
             {!hasSource && <p>• {transferType === 'inward' ? 'Select payer' : 'Select source account'}</p>}
             {!hasDestination && <p>• {transferType === 'inward' ? 'Enter VIBAN or select VA' : 'Select destination'}</p>}
             {!hasAmount && <p>• Enter transfer amount</p>}
@@ -849,7 +849,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
             {isSuccess ? 'Transfer Successful' : 'Transfer Failed'}
           </h3>
           {(result.referenceNumber || result.transactionReference) && (
-            <p className="text-sm text-neutral-500 font-mono mt-2 dark:text-neutral-400">{result.referenceNumber || result.transactionReference}</p>
+            <p className="text-body-sm text-neutral-500 font-mono mt-2 dark:text-neutral-400">{result.referenceNumber || result.transactionReference}</p>
           )}
         </Card>
 
@@ -883,7 +883,7 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
                   {formatCurrency(result.feeAmount || result.totalFee, result.currencyCode || 'AED')}
                 </span>
               </div>
-              <p className="text-xs text-warning-600 dark:text-warning-300">
+              <p className="caption-warning">
                 Paid by: {result.vaName || 'Source Account'}
               </p>
             </div>
@@ -894,12 +894,12 @@ const ResultModal: React.FC<ResultModalProps> = ({ isOpen, onClose, result, onVi
             <div className="p-4 bg-primary-50 rounded-xl border border-primary-200 space-y-2 dark:bg-primary-800/40 dark:border-primary-700">
               <div className="flex items-center gap-2 text-primary-700 mb-2 dark:text-neutral-200">
                 <Globe className="w-4 h-4" />
-                <span className="font-medium text-sm">Beneficiary</span>
+                <span className="font-medium text-body-sm">Beneficiary</span>
               </div>
-              <div className="text-sm space-y-1">
+              <div className="text-body-sm space-y-1">
                 <p className="font-semibold text-primary-900 dark:text-neutral-50">{result.beneficiaryName || result.creditorName}</p>
                 {(result.beneficiaryAccount || result.creditorAccount) && (
-                  <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{result.beneficiaryAccount || result.creditorAccount}</p>
+                  <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{result.beneficiaryAccount || result.creditorAccount}</p>
                 )}
               </div>
             </div>
@@ -958,7 +958,7 @@ const XmlViewerModal: React.FC<XmlViewerModalProps> = ({ isOpen, onClose, xml })
               <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
               <div>
                 <p className="font-semibold text-primary-900 dark:text-neutral-50">pain.001 Message</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Customer Credit Transfer Initiation</p>
+                <p className="caption">Customer Credit Transfer Initiation</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -972,7 +972,7 @@ const XmlViewerModal: React.FC<XmlViewerModalProps> = ({ isOpen, onClose, xml })
           </div>
         </Card>
 
-        <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-xs overflow-auto max-h-[400px] font-mono">
+        <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-caption overflow-auto max-h-[400px] font-mono">
           {xml}
         </pre>
       </div>
@@ -1114,7 +1114,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   <h3 className="code-display">{transaction.referenceNumber}</h3>
                   <Badge variant={transferTypeInfo.variant} size="sm">{transferTypeInfo.label}</Badge>
                 </div>
-                <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">{formatRelativeTime(transaction.transactionDate)}</p>
+                <p className="body-sm mt-1">{formatRelativeTime(transaction.transactionDate)}</p>
               </div>
             </div>
             <div className="text-right">
@@ -1144,7 +1144,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
               onClick={() => !tab.disabled && setActiveTab(tab.id)}
               disabled={tab.disabled}
               className={cn(
-                'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 -mb-px',
+                'flex items-center gap-2 px-4 py-3 text-body-sm font-medium transition-all border-b-2 -mb-px',
                 activeTab === tab.id
                   ? 'border-primary-500 text-primary-600 dark:text-primary-200'
                   : tab.disabled
@@ -1173,9 +1173,9 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     <div className="flex items-center gap-3">
                       <StatusIconBadge tone="primary" icon={ArrowUpRight} className="dark:bg-primary-700" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-primary-600 uppercase tracking-wider dark:text-primary-200">From</p>
+                        <p className="text-caption text-primary-600 uppercase tracking-wider dark:text-primary-200">From</p>
                         <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">{transaction.vaName || 'N/A'}</p>
-                        <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{transaction.vaNumber}</p>
+                        <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{transaction.vaNumber}</p>
                       </div>
                     </div>
                   </Card>
@@ -1183,11 +1183,11 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     <div className="flex items-center gap-3">
                       <StatusIconBadge tone="success" icon={ArrowDownLeft} className="dark:bg-success-500/20" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-success-600 uppercase tracking-wider dark:text-success-300">To</p>
+                        <p className="text-caption text-success-600 uppercase tracking-wider dark:text-success-300">To</p>
                         <p className="font-semibold text-primary-900 truncate dark:text-neutral-50">
                           {transaction.counterpartyName || transactionDetail?.counterpartyName || transactionDetail?.beneficiaryName || 'N/A'}
                         </p>
-                        <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">
+                        <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">
                           {transaction.counterpartyAccount || transactionDetail?.counterpartyAccount || transactionDetail?.beneficiaryAccount || 'N/A'}
                         </p>
                       </div>
@@ -1197,20 +1197,20 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
 
                 {/* Details Grid */}
                 <Card>
-                  <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
+                  <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">Transaction Information</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <Hash className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                       <div>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Reference Number</p>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.referenceNumber}</p>
+                        <p className="caption">Reference Number</p>
+                        <p className="body-strong">{transaction.referenceNumber}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                       <div>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Transaction Date</p>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                        <p className="caption">Transaction Date</p>
+                        <p className="body-strong">
                           {new Date(transaction.transactionDate).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
@@ -1224,8 +1224,8 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <DollarSign className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                       <div>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Amount</p>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+                        <p className="caption">Amount</p>
+                        <p className="body-strong">
                           {formatCurrency(transaction.amount, transaction.currencyCode)}
                         </p>
                       </div>
@@ -1233,16 +1233,16 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                     <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <ArrowRightLeft className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                       <div>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Movement Type</p>
-                        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.movementType}</p>
+                        <p className="caption">Movement Type</p>
+                        <p className="body-strong">{transaction.movementType}</p>
                       </div>
                     </div>
                     {transaction.valueDate && (
                       <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                         <Calendar className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                         <div>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">Value Date</p>
-                          <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.valueDate}</p>
+                          <p className="caption">Value Date</p>
+                          <p className="body-strong">{transaction.valueDate}</p>
                         </div>
                       </div>
                     )}
@@ -1250,8 +1250,8 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                         <FileText className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
                         <div>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">External Reference</p>
-                          <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.externalReference}</p>
+                          <p className="caption">External Reference</p>
+                          <p className="body-strong">{transaction.externalReference}</p>
                         </div>
                       </div>
                     )}
@@ -1260,8 +1260,8 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   {/* Description/Narration */}
                   {transaction.description && (
                     <div className="mt-4 p-4 bg-neutral-50 rounded-xl dark:bg-primary-950">
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Description / Remittance Info</p>
-                      <p className="text-sm text-primary-900 dark:text-neutral-50">{transaction.description}</p>
+                      <p className="caption mb-1">Description / Remittance Info</p>
+                      <p className="text-body-sm text-primary-900 dark:text-neutral-50">{transaction.description}</p>
                     </div>
                   )}
 
@@ -1272,7 +1272,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         <StatusIconBadge tone="warning" icon={Building2} className="dark:bg-warning-500/20" />
                         <div>
                           <p className="font-semibold text-warning-800 dark:text-warning-300">POBO Payment</p>
-                          <p className="text-sm text-warning-700 mt-1 dark:text-warning-300">
+                          <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">
                             Payment made on behalf of a subsidiary entity. Treasury entity is the payer,
                             and intercompany entries are automatically generated.
                           </p>
@@ -1284,7 +1284,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   {/* Related Transactions */}
                   {transactionDetail?.relatedTransactions && transactionDetail.relatedTransactions.length > 0 && (
                     <div className="mt-6">
-                      <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-3 dark:text-neutral-300">Related Transactions</h4>
+                      <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-3 dark:text-neutral-300">Related Transactions</h4>
                       <div className="space-y-2">
                         {transactionDetail.relatedTransactions.map((related) => (
                           <div key={related.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
@@ -1293,8 +1293,8 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                 {related.movementType}
                               </Badge>
                               <div>
-                                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{related.vaName}</p>
-                                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{related.referenceNumber}</p>
+                                <p className="body-strong">{related.vaName}</p>
+                                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{related.referenceNumber}</p>
                               </div>
                             </div>
                             <p className="font-semibold text-primary-900 dark:text-neutral-50">
@@ -1320,7 +1320,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                           <StatusIconBadge tone="primary" icon={FileCode} className="dark:bg-primary-700" />
                           <div>
                             <p className="font-semibold text-primary-900 dark:text-neutral-50">{isoMessage.messageType}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">Message ID: {isoMessage.messageId}</p>
+                            <p className="caption">Message ID: {isoMessage.messageId}</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -1334,7 +1334,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       </div>
                     </Card>
 
-                    <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-xs overflow-auto max-h-[400px] font-mono">
+                    <pre className="bg-neutral-900 text-success-400 p-6 rounded-xl text-caption overflow-auto max-h-[400px] font-mono">
                       {isoMessage.xml}
                     </pre>
                   </>
@@ -1344,7 +1344,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                       <FileCode className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No ISO 20022 message available</p>
-                    <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">
+                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">
                       ISO messages are generated for outward and POBO payments
                     </p>
                   </div>
@@ -1374,10 +1374,10 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                   if (isExternalTransaction || isOutwardPayment || isInwardCollection) {
                     return (
                       <Card>
-                        <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">
+                        <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">
                           Transaction Summary (CFO View)
                         </h4>
-                        <p className="text-xs text-neutral-500 mb-4 dark:text-neutral-400">
+                        <p className="caption mb-4">
                           Shows the business impact on your accounts. Internal clearing entries (Settlement VA, Shadow VA) are excluded.
                         </p>
 
@@ -1386,17 +1386,17 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                           <table className="w-full">
                             <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
                               <tr>
-                                <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
-                                <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Type</th>
-                                <th className="text-right p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Amount</th>
-                                <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Counterparty</th>
+                                <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
+                                <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Type</th>
+                                <th className="text-right p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Amount</th>
+                                <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Counterparty</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
                               <tr className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                                 <td className="p-3">
-                                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{transaction.vaName || 'Your Account'}</p>
-                                  <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{transaction.vaNumber}</p>
+                                  <p className="body-strong">{transaction.vaName || 'Your Account'}</p>
+                                  <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{transaction.vaNumber}</p>
                                 </td>
                                 <td className="p-3">
                                   <Badge
@@ -1411,7 +1411,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                     {isInwardCollection ? '+' : '-'}{formatCurrency(transaction.amount, transaction.currencyCode)}
                                   </p>
                                   {transaction.feeAmount && transaction.feeAmount > 0 && (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                    <p className="caption">
                                       Fee: {formatCurrency(transaction.feeAmount, transaction.currencyCode)}
                                     </p>
                                   )}
@@ -1423,7 +1423,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                       : (transactionDetail?.beneficiaryName || transaction.counterpartyName || 'External Beneficiary')
                                     }
                                   </p>
-                                  <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">
+                                  <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">
                                     {isInwardCollection
                                       ? (transactionDetail?.remitterAccount || transaction.counterpartyAccount || 'External Account')
                                       : (transactionDetail?.beneficiaryAccount || transaction.counterpartyAccount || 'External Account')
@@ -1443,17 +1443,17 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                               <p className="font-semibold text-primary-800 dark:text-neutral-100">
                                 {isInwardCollection ? 'Inward Collection' : 'Outward Payment'}
                               </p>
-                              <p className="text-sm text-primary-700 mt-1 dark:text-neutral-200">
+                              <p className="text-body-sm text-primary-700 mt-1 dark:text-neutral-200">
                                 {isInwardCollection
                                   ? 'Funds received from external party via bank (CBS). The offsetting entry exists in the external banking system, not in VAM.'
                                   : 'Payment sent to external beneficiary via bank (CBS). The offsetting entry exists in the external banking system, not in VAM.'
                                 }
                               </p>
                               <div className="mt-3 p-3 bg-white/60 rounded-lg dark:bg-primary-900/60">
-                                <p className="text-xs font-medium text-primary-800 mb-2 dark:text-neutral-100">
+                                <p className="text-caption font-medium text-primary-800 mb-2 dark:text-neutral-100">
                                   {isInwardCollection ? 'Collection Flow:' : 'Payment Flow:'}
                                 </p>
-                                <div className="flex items-center gap-2 text-xs text-primary-700 flex-wrap dark:text-neutral-200">
+                                <div className="flex items-center gap-2 text-caption text-primary-700 flex-wrap dark:text-neutral-200">
                                   {isInwardCollection ? (
                                     <>
                                       <span className="font-mono bg-primary-100 px-2 py-1 rounded dark:bg-primary-700">External Sender</span>
@@ -1530,22 +1530,22 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
 
                   return entries.length > 0 ? (
                     <Card>
-                      <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">
+                      <h4 className="text-body-sm font-semibold text-neutral-600 uppercase tracking-wider mb-4 dark:text-neutral-300">
                         Double-Entry Transaction Records
                       </h4>
-                      <p className="text-xs text-neutral-500 mb-4 dark:text-neutral-400">
+                      <p className="caption mb-4">
                         Shows all transactions generated by this transfer (debits and credits across operating accounts)
                       </p>
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead className="bg-neutral-50 border-b border-neutral-100 dark:bg-primary-950 dark:border-primary-800/60">
                             <tr>
-                              <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Entry Type</th>
-                              <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
-                              <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Movement</th>
-                              <th className="text-right p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Debit</th>
-                              <th className="text-right p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Credit</th>
-                              <th className="text-left p-3 text-xs font-semibold text-neutral-600 uppercase dark:text-neutral-300">Status</th>
+                              <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Entry Type</th>
+                              <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Account</th>
+                              <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Movement</th>
+                              <th className="text-right p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Debit</th>
+                              <th className="text-right p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Credit</th>
+                              <th className="text-left p-3 text-caption font-semibold text-neutral-600 uppercase dark:text-neutral-300">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-neutral-100 dark:divide-primary-800/60">
@@ -1560,8 +1560,8 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                                   </Badge>
                                 </td>
                                 <td className="p-3">
-                                  <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{entry.accountName}</p>
-                                  <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{entry.accountNumber}</p>
+                                  <p className="body-strong">{entry.accountName}</p>
+                                  <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{entry.accountNumber}</p>
                                 </td>
                                 <td className="p-3">
                                   <Badge variant="neutral" size="sm">{entry.movementType}</Badge>
@@ -1594,7 +1594,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                           </tbody>
                           <tfoot className="bg-neutral-100 border-t border-neutral-200 dark:bg-primary-800 dark:border-primary-800">
                             <tr>
-                              <td colSpan={3} className="p-3 text-sm font-semibold text-neutral-700 dark:text-neutral-200">Total</td>
+                              <td colSpan={3} className="p-3 text-body-sm font-semibold text-neutral-700 dark:text-neutral-200">Total</td>
                               <td className="p-3 text-right font-bold text-error-700 dark:text-error-300">
                                 {formatCurrency(totalDebits, transaction.currencyCode)}
                               </td>
@@ -1622,7 +1622,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                             <p className={cn('font-semibold', isBalanced ? 'text-success-800 dark:text-success-300' : 'text-warning-800 dark:text-warning-300')}>
                               {isBalanced ? 'Entries Balanced' : 'CFO View (Operating Accounts Only)'}
                             </p>
-                            <p className={cn('text-sm', isBalanced ? 'text-success-700 dark:text-success-300' : 'text-warning-700 dark:text-warning-300')}>
+                            <p className={cn('text-body-sm', isBalanced ? 'text-success-700 dark:text-success-300' : 'text-warning-700 dark:text-warning-300')}>
                               {isBalanced
                                 ? 'Total debits equal total credits (double-entry accounting)'
                                 : 'Internal clearing accounts (Settlement VA) are excluded. Full audit trail available via API.'
@@ -1639,19 +1639,19 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                             <StatusIconBadge tone="warning" icon={Building2} className="flex-shrink-0 dark:bg-warning-500/20" />
                             <div>
                               <p className="font-semibold text-warning-800 dark:text-warning-300">POBO Intercompany Entries</p>
-                              <p className="text-sm text-warning-700 mt-1 dark:text-warning-300">
+                              <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">
                                 For POBO payments, the Treasury entity pays on behalf of the subsidiary.
                                 This creates an intercompany receivable from Treasury to the Subsidiary,
                                 which will be settled during the next netting cycle or via direct transfer.
                               </p>
                               <div className="mt-3 p-3 bg-white/60 rounded-lg dark:bg-primary-900/60">
-                                <p className="text-xs font-medium text-warning-800 mb-2 dark:text-warning-300">Intercompany Flow:</p>
-                                <div className="flex items-center gap-2 text-xs text-warning-700 dark:text-warning-300">
+                                <p className="text-caption font-medium text-warning-800 mb-2 dark:text-warning-300">Intercompany Flow:</p>
+                                <div className="flex items-center gap-2 text-caption text-warning-700 dark:text-warning-300">
                                   <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">Treasury VA</span>
                                   <ArrowRight className="w-3 h-3" />
                                   <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">External Beneficiary</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-warning-700 mt-2 dark:text-warning-300">
+                                <div className="flex items-center gap-2 text-caption text-warning-700 mt-2 dark:text-warning-300">
                                   <span className="font-mono bg-warning-100 px-2 py-1 rounded dark:bg-warning-500/20">Subsidiary</span>
                                   <ArrowRight className="w-3 h-3" />
                                   <span>Owes Treasury (IC Receivable)</span>
@@ -1668,7 +1668,7 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
                         <BookOpen className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                       </div>
                       <p className="text-neutral-500 dark:text-neutral-400">No accounting entries found</p>
-                      <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">
+                      <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">
                         Transaction entries will appear after processing
                       </p>
                     </div>
@@ -2406,7 +2406,7 @@ export default function TransfersPage() {
               <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Corporate</span>
+              <span className="caption">Corporate</span>
               <Select
                 value={selectedCorporateId}
                 onChange={(e) => {
@@ -2434,7 +2434,7 @@ export default function TransfersPage() {
               <Users className="w-4 h-4 text-success-600 dark:text-success-300" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Legal Entity</span>
+              <span className="caption">Legal Entity</span>
               <Select
                 value={selectedLegalEntityId}
                 onChange={(e) => setSelectedLegalEntityId(e.target.value)}
@@ -2458,7 +2458,7 @@ export default function TransfersPage() {
               <Briefcase className="w-4 h-4 text-accent-600 dark:text-accent-300" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Program</span>
+              <span className="caption">Program</span>
               <Select
                 value={selectedProgramId}
                 onChange={(e) => setSelectedProgramId(e.target.value)}
@@ -2680,7 +2680,7 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="success" icon={UserCheck} className="dark:bg-success-500/20" />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Payer</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Choose from registered customers ({payers.length} available)</p>
+                        <p className="caption">Choose from registered customers ({payers.length} available)</p>
                       </div>
                     </div>
 
@@ -2705,7 +2705,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-success-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-success-500/30"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-success-200 rounded-xl text-body-sm font-medium focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-success-500/30"
                         >
                           <option value="">-- Select a payer --</option>
                           {filteredPayers.map((p) => (
@@ -2724,9 +2724,9 @@ export default function TransfersPage() {
                             <StatusIconBadge tone="success" icon={Building2} rounded="lg" className="dark:bg-success-500/20" />
                             <div className="flex-1">
                               <p className="font-semibold text-success-900">{formData.debtorName}</p>
-                              <p className="text-xs text-success-600 font-mono dark:text-success-300">{formData.debtorAccount}</p>
+                              <p className="text-caption text-success-600 font-mono dark:text-success-300">{formData.debtorAccount}</p>
                               {formData.debtorBic && (
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">BIC: {formData.debtorBic}</p>
+                                <p className="caption">BIC: {formData.debtorBic}</p>
                               )}
                             </div>
                             <Badge variant="success" size="sm">Selected</Badge>
@@ -2738,7 +2738,7 @@ export default function TransfersPage() {
 
                   {/* Manual Entry Option */}
                   <div className="border-t border-neutral-200 pt-4 dark:border-primary-800">
-                    <p className="text-sm text-neutral-500 mb-3 dark:text-neutral-400">Or enter payer details manually:</p>
+                    <p className="body-sm mb-3">Or enter payer details manually:</p>
                     <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Payer Name"
@@ -2795,7 +2795,7 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="success" icon={ArrowDownLeft} className="dark:bg-success-500/20" />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Credit Destination</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Enter VIBAN for auto-routing or select a VA directly</p>
+                        <p className="caption">Enter VIBAN for auto-routing or select a VA directly</p>
                       </div>
                     </div>
 
@@ -2811,7 +2811,7 @@ export default function TransfersPage() {
 
                       {/* Or select from accounts */}
                       <div className="border-t border-neutral-200 pt-4 dark:border-primary-800">
-                        <p className="text-sm text-neutral-500 mb-3 dark:text-neutral-400">Or select destination account directly:</p>
+                        <p className="body-sm mb-3">Or select destination account directly:</p>
                         <Select
                           label="Destination VA"
                           value={formData.toVaId}
@@ -2842,7 +2842,7 @@ export default function TransfersPage() {
                                   ? accounts.find(a => a.id === formData.toVaId)?.vaName || 'Selected Account'
                                   : 'VIBAN Routing'}
                               </p>
-                              <p className="text-xs text-success-600 font-mono dark:text-success-300">{formData.targetVibanOrVa}</p>
+                              <p className="text-caption text-success-600 font-mono dark:text-success-300">{formData.targetVibanOrVa}</p>
                             </div>
                             <Badge variant="success" size="sm">
                               {formData.toVaId ? 'Direct' : 'VIBAN'}
@@ -2866,7 +2866,7 @@ export default function TransfersPage() {
                       <StatusIconBadge tone="primary" icon={UserCheck} className="dark:bg-primary-700" />
                       <div>
                         <p className="font-semibold text-primary-900 dark:text-neutral-50">Select Beneficiary</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Choose from registered parties ({beneficiaries.length} available)</p>
+                        <p className="caption">Choose from registered parties ({beneficiaries.length} available)</p>
                       </div>
                     </div>
 
@@ -2891,7 +2891,7 @@ export default function TransfersPage() {
                               }));
                             }
                           }}
-                          className="w-full pl-10 pr-4 py-3 bg-white border border-primary-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-primary-700"
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-primary-200 rounded-xl text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all appearance-none cursor-pointer dark:bg-primary-900 dark:border-primary-700"
                         >
                           <option value="">-- Select a beneficiary --</option>
                           {filteredBeneficiaries.map((b) => (
@@ -2909,7 +2909,7 @@ export default function TransfersPage() {
                           value={beneficiarySearch}
                           onChange={(e) => setBeneficiarySearch(e.target.value)}
                           placeholder="Filter beneficiaries..."
-                          className="text-sm"
+                          className="text-body-sm"
                         />
                       )}
                     </div>
@@ -2925,7 +2925,7 @@ export default function TransfersPage() {
                               <StatusIconBadge tone="success" icon={Building2} className="dark:bg-success-500/20" />
                               <div>
                                 <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedBeneficiary.party.legalName}</p>
-                                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{selectedBeneficiary.party.partyCode}</p>
+                                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{selectedBeneficiary.party.partyCode}</p>
                               </div>
                             </div>
                             <Badge variant="success" size="sm" dot>Selected</Badge>
@@ -2934,7 +2934,7 @@ export default function TransfersPage() {
                           {/* Bank Account Selection */}
                           {selectedBeneficiary.bankAccounts.length > 0 && (
                             <div className="pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-                              <p className="text-xs font-medium text-neutral-600 uppercase tracking-wider mb-2 dark:text-neutral-300">
+                              <p className="label mb-2">
                                 Bank Account {selectedBeneficiary.bankAccounts.length > 1 ? '(Select One)' : ''}
                               </p>
                               <div className="space-y-2">
@@ -2961,16 +2961,16 @@ export default function TransfersPage() {
                                             <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-primary-900" />
                                           )}
                                         </div>
-                                        <span className="font-medium text-sm text-primary-900 dark:text-neutral-50">{ba.bankName}</span>
+                                        <span className="body-strong">{ba.bankName}</span>
                                         {ba.isPrimary && <Badge variant="info" size="sm">Primary</Badge>}
                                       </div>
-                                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">{ba.currency}</span>
+                                      <span className="label-cased">{ba.currency}</span>
                                     </div>
-                                    <p className="text-xs text-neutral-600 font-mono mt-1 ml-6 dark:text-neutral-300">
+                                    <p className="text-caption text-neutral-600 font-mono mt-1 ml-6 dark:text-neutral-300">
                                       {ba.iban || ba.accountNumber}
                                     </p>
                                     {ba.bankCode && (
-                                      <p className="text-xs text-neutral-500 mt-0.5 ml-6 dark:text-neutral-400">
+                                      <p className="caption mt-0.5 ml-6">
                                         BIC: {ba.bankCode}
                                       </p>
                                     )}
@@ -2982,7 +2982,7 @@ export default function TransfersPage() {
 
                           {selectedBeneficiary.bankAccounts.length === 0 && (
                             <div className="mt-3 p-3 bg-warning-50 rounded-lg border border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30">
-                              <p className="text-xs text-warning-700 dark:text-warning-300">
+                              <p className="text-caption text-warning-700 dark:text-warning-300">
                                 This party has no bank accounts registered. Please add bank account details below.
                               </p>
                             </div>
@@ -3058,7 +3058,7 @@ export default function TransfersPage() {
                         </div>
                         <div className="flex-1" onClick={() => setFormData({ ...formData, isPobo: !formData.isPobo })}>
                           <p className="font-semibold text-primary-900 dark:text-neutral-50">Pay On Behalf Of (POBO)</p>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">Make payment on behalf of a subsidiary entity through Treasury Center</p>
+                          <p className="body-sm">Make payment on behalf of a subsidiary entity through Treasury Center</p>
                         </div>
                       </label>
                       {formData.isPobo && (
@@ -3092,7 +3092,7 @@ export default function TransfersPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="section-title">Transfer Recipients</h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">Add multiple recipients for bulk transfer</p>
+                    <p className="body-sm">Add multiple recipients for bulk transfer</p>
                   </div>
                   <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={addBulkItem}>
                     Add Recipient
@@ -3105,7 +3105,7 @@ export default function TransfersPage() {
                       <Users className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400">No recipients added yet</p>
-                    <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Click "Add Recipient" to start</p>
+                    <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Click "Add Recipient" to start</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -3156,8 +3156,8 @@ export default function TransfersPage() {
                     <Card className="bg-gradient-to-br from-primary-50 to-white border-primary-200 dark:border-primary-700 dark:from-primary-500/10 dark:to-primary-900 dark:from-primary-800/40">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-primary-600 dark:text-primary-200">Total Amount</p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{bulkItems.length} recipient(s)</p>
+                          <p className="text-body-sm text-primary-600 dark:text-primary-200">Total Amount</p>
+                          <p className="caption">{bulkItems.length} recipient(s)</p>
                         </div>
                         <p className="stat-value-sm">
                           {formatCurrency(bulkTotal, formData.currency)}
@@ -3232,7 +3232,7 @@ export default function TransfersPage() {
                 </Button>
               )}
               {step === maxSteps && (
-                <p className="text-sm text-neutral-500 flex items-center gap-2 dark:text-neutral-400">
+                <p className="body-sm flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-success-500" />
                   Review details in the sidebar and click Submit
                 </p>
@@ -3268,7 +3268,7 @@ export default function TransfersPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="section-title">Recent Transfers</h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Your transfer history</p>
+              <p className="body-sm">Your transfer history</p>
             </div>
             <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
               Export
@@ -3281,7 +3281,7 @@ export default function TransfersPage() {
                 <Clock className="w-8 h-8 text-neutral-300 dark:text-neutral-600" />
               </div>
               <p className="text-neutral-500 dark:text-neutral-400">No transfer history found</p>
-              <p className="text-sm text-neutral-400 mt-1 dark:text-neutral-500">Your transfers will appear here</p>
+              <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-500">Your transfers will appear here</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -3332,7 +3332,7 @@ export default function TransfersPage() {
                         }}
                       >
                         <td className="p-4">
-                          <p className="font-mono text-sm text-neutral-600 dark:text-neutral-300">{txn.referenceNumber}</p>
+                          <p className="font-mono text-body-sm text-neutral-600 dark:text-neutral-300">{txn.referenceNumber}</p>
                         </td>
                         <td className="p-4">
                           <Badge variant={transferType.variant} size="sm">
@@ -3343,10 +3343,10 @@ export default function TransfersPage() {
                           </Badge>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{txn.vaName || txn.vaNumber}</p>
+                          <p className="body-strong">{txn.vaName || txn.vaNumber}</p>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm text-neutral-600 dark:text-neutral-300">{txn.counterpartyName || txn.counterpartyAccount || '-'}</p>
+                          <p className="body-sm">{txn.counterpartyName || txn.counterpartyAccount || '-'}</p>
                         </td>
                         <td className="p-4 text-right">
                           <p className="font-semibold text-primary-900 dark:text-neutral-50">
@@ -3367,7 +3367,7 @@ export default function TransfersPage() {
                           </Badge>
                         </td>
                         <td className="p-4">
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">{formatRelativeTime(txn.transactionDate)}</p>
+                          <p className="body-sm">{formatRelativeTime(txn.transactionDate)}</p>
                         </td>
                         <td className="p-4">
                           <Button

@@ -137,27 +137,27 @@ const TreeNode: React.FC<TreeNodeProps> = ({ node, level, baseCurrency, onSelect
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-primary-900 truncate dark:text-neutral-50">{node.nodeName}</span>
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">{node.nodeCode}</span>
+            <span className="caption">{node.nodeCode}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-4 text-body-sm">
           <div className="text-right">
             <div className="font-medium text-primary-900 dark:text-neutral-50">
               {formatCurrency(node.aggregatedBalanceBase || node.aggregatedBalance, baseCurrency)}
             </div>
             {node.currency !== baseCurrency && node.ownBalance > 0 && (
-              <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="caption">
                 {formatCurrency(node.ownBalance, node.currency)}
               </div>
             )}
           </div>
           {node.fxRate && node.fxRate !== 1 && (
-            <div className="text-xs text-neutral-400 w-16 text-right dark:text-neutral-500">
+            <div className="caption w-16 text-right">
               @{node.fxRate.toFixed(4)}
             </div>
           )}
-          <Badge className={cn("text-xs", config.bgColor, config.color)}>
+          <Badge className={cn("text-caption", config.bgColor, config.color)}>
             {node.childCount || 0}
           </Badge>
         </div>
@@ -195,7 +195,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
             <StatusIconBadge tone="info" icon={PieChart} className="dark:bg-info-500/20" />
             <h3 className="section-title">Currency Breakdown</h3>
           </div>
-          <p className="text-sm text-neutral-500 text-center py-8 dark:text-neutral-400">No currency data available</p>
+          <p className="body-sm text-center py-8">No currency data available</p>
         </div>
       </Card>
     );
@@ -232,7 +232,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
           {position.positions.map((p, i) => {
             const pct = total > 0 ? (p.convertedBalance / total) * 100 : 0;
             return (
-              <div key={p.currency} className="flex items-center justify-between text-sm">
+              <div key={p.currency} className="flex items-center justify-between text-body-sm">
                 <div className="flex items-center gap-2">
                   <div className={cn("w-3 h-3 rounded", colors[i % colors.length])} />
                   <span className="font-medium text-primary-900 dark:text-neutral-50">{p.currency}</span>
@@ -249,7 +249,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
         {/* FX Rates */}
         <div className="mt-4 pt-4 border-t">
           <h4 className="label mb-2">Applied FX Rates</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-2 text-caption">
             {position.positions.filter(p => p.fxRate !== 1).map(p => (
               <div key={p.currency} className="flex justify-between">
                 <span className="text-neutral-500 dark:text-neutral-400">{p.currency}/{position.baseCurrency}</span>
@@ -512,11 +512,11 @@ const BalanceAggregationPage: React.FC = () => {
         actions={
           <>
             <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 rounded-lg dark:bg-primary-800">
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">Base:</span>
+              <span className="body-sm">Base:</span>
               <select
                 value={baseCurrency}
                 onChange={(e) => setBaseCurrency(e.target.value)}
-                className="bg-transparent text-sm font-medium text-primary-900 outline-none cursor-pointer dark:text-neutral-50"
+                className="bg-transparent body-strong outline-none cursor-pointer"
               >
                 {CURRENCIES.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -541,11 +541,11 @@ const BalanceAggregationPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="primary" icon={Building} className="dark:bg-primary-700" />
             <div className="min-w-[220px]">
-              <label className="text-xs font-medium text-primary-700 uppercase tracking-wider dark:text-neutral-200">Corporate</label>
+              <label className="text-caption font-medium text-primary-700 uppercase tracking-wider dark:text-neutral-200">Corporate</label>
               <select
                 value={selectedCorporateId}
                 onChange={(e) => handleCorporateChange(e.target.value)}
-                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-primary-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-primary-900 dark:border-primary-700"
+                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-primary-900 dark:border-primary-700"
                 disabled={loadingCorporates}
               >
                 <option value="">Select Corporate...</option>
@@ -562,11 +562,11 @@ const BalanceAggregationPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="info" icon={Layers} className="dark:bg-info-500/20" />
             <div className="min-w-[220px]">
-              <label className="text-xs font-medium text-info-700 uppercase tracking-wider dark:text-info-300">Program</label>
+              <label className="text-caption font-medium text-info-700 uppercase tracking-wider dark:text-info-300">Program</label>
               <select
                 value={selectedProgramId}
                 onChange={(e) => handleProgramChange(e.target.value)}
-                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-info-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-info-500 dark:bg-primary-900 dark:border-info-500/30"
+                className="w-full mt-0.5 px-2 py-1.5 bg-white border border-info-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-info-500 dark:bg-primary-900 dark:border-info-500/30"
                 disabled={loadingPrograms || activePrograms.length === 0}
               >
                 <option value="">Select Program...</option>
@@ -645,7 +645,7 @@ const BalanceAggregationPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Last Updated</p>
-                <p className="text-lg font-bold mt-1 text-primary-900 tracking-tight dark:text-neutral-50">{formatDate(stats.lastUpdated)}</p>
+                <p className="text-body-lg font-bold mt-1 text-primary-900 tracking-tight dark:text-neutral-50">{formatDate(stats.lastUpdated)}</p>
               </div>
               <StatusIconBadge tone="warning" icon={Clock} className="dark:bg-warning-500/20" />
             </div>
@@ -745,38 +745,38 @@ const BalanceAggregationPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="section-title">{selectedNode.nodeName}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">{selectedNode.nodeCode} • {NODE_TYPE_CONFIG[selectedNode.nodeType]?.label}</p>
+                <p className="body-sm">{selectedNode.nodeCode} • {NODE_TYPE_CONFIG[selectedNode.nodeType]?.label}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Own Balance</p>
-                <p className="text-lg font-semibold">{formatCurrency(selectedNode.ownBalance, selectedNode.currency)}</p>
+                <p className="body-sm">Own Balance</p>
+                <p className="text-body-lg font-semibold">{formatCurrency(selectedNode.ownBalance, selectedNode.currency)}</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Aggregated Balance</p>
-                <p className="text-lg font-semibold">{formatCurrency(selectedNode.aggregatedBalance, selectedNode.currency)}</p>
+                <p className="body-sm">Aggregated Balance</p>
+                <p className="text-body-lg font-semibold">{formatCurrency(selectedNode.aggregatedBalance, selectedNode.currency)}</p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">In Base Currency ({baseCurrency})</p>
-                <p className="text-lg font-semibold text-success-600 dark:text-success-300">
+                <p className="body-sm">In Base Currency ({baseCurrency})</p>
+                <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">
                   {formatCurrency(selectedNode.aggregatedBalanceBase, baseCurrency)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Child Nodes</p>
-                <p className="text-lg font-semibold">{selectedNode.childCount}</p>
+                <p className="body-sm">Child Nodes</p>
+                <p className="text-body-lg font-semibold">{selectedNode.childCount}</p>
               </div>
               {selectedNode.fxRate && selectedNode.fxRate !== 1 && (
                 <div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">FX Rate Applied</p>
-                  <p className="text-lg font-semibold">{selectedNode.fxRate.toFixed(4)}</p>
+                  <p className="body-sm">FX Rate Applied</p>
+                  <p className="text-body-lg font-semibold">{selectedNode.fxRate.toFixed(4)}</p>
                 </div>
               )}
               <div>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">Level</p>
-                <p className="text-lg font-semibold">{selectedNode.level}</p>
+                <p className="body-sm">Level</p>
+                <p className="text-body-lg font-semibold">{selectedNode.level}</p>
               </div>
             </div>
 

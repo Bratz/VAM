@@ -133,7 +133,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
             </div>
           </div>
 
-          <div className="mt-2 grid grid-cols-4 gap-2 text-sm">
+          <div className="mt-2 grid grid-cols-4 gap-2 text-body-sm">
             <div>
               <p className="text-neutral-500 dark:text-neutral-400">Requested</p>
               <p className="font-semibold">{formatCurrency(result.requestedAmountInVaCurrency, result.vaCurrency)}</p>
@@ -157,7 +157,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
           </div>
 
           {!result.approved && result.rejectionReason && (
-            <div className="mt-2 p-2 bg-error-100 rounded text-sm text-error-700 dark:bg-error-500/20 dark:text-error-300">
+            <div className="mt-2 p-2 bg-error-100 rounded text-body-sm text-error-700 dark:bg-error-500/20 dark:text-error-300">
               <strong>Rejection:</strong> {result.rejectionReason}
               {result.shortfall && (
                 <span className="ml-2">
@@ -169,7 +169,7 @@ const LevelCheckRow: React.FC<LevelCheckRowProps> = ({ result, isLast, isRejecti
 
           {/* Expanded Details */}
           {expanded && (
-            <div className="mt-3 pt-3 border-t border-neutral-200 grid grid-cols-2 gap-3 text-sm dark:border-primary-800">
+            <div className="mt-3 pt-3 border-t border-neutral-200 grid grid-cols-2 gap-3 text-body-sm dark:border-primary-800">
               <div className="p-2 bg-white rounded dark:bg-primary-900">
                 <p className="text-neutral-500 dark:text-neutral-400">External Limit</p>
                 <p className="font-medium">{formatCurrency(result.externalLimitAvailable, result.vaCurrency)}</p>
@@ -224,13 +224,13 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
           </div>
           <div className="flex-1">
             <h3 className={cn(
-              "text-xl font-bold",
+              "text-heading-sm font-bold",
               result.approved ? "text-success-800 dark:text-success-300" : "text-error-800 dark:text-error-300"
             )}>
               {result.approved ? 'Funds Available' : 'Insufficient Funds'}
             </h3>
             <p className={cn(
-              "text-sm mt-1",
+              "text-body-sm mt-1",
               result.approved ? "text-success-700 dark:text-success-300" : "text-error-700 dark:text-error-300"
             )}>
               {result.approved 
@@ -240,7 +240,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Requested Amount</p>
+            <p className="body-sm">Requested Amount</p>
             <p className="stat-value-sm">
               {formatCurrency(result.requestedAmount, result.requestedCurrency)}
             </p>
@@ -250,7 +250,7 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
 
       {/* Level-by-Level Results */}
       <div className="bg-white rounded-xl border p-4 dark:bg-primary-900">
-        <h4 className="text-sm font-semibold text-primary-900 mb-4 flex items-center gap-2 dark:text-neutral-50">
+        <h4 className="body-strong font-semibold mb-4 flex items-center gap-2">
           <Layers className="w-4 h-4" />
           Hierarchy Check ({result.levelsChecked} levels)
         </h4>
@@ -270,19 +270,19 @@ const FundsCheckDisplay: React.FC<FundsCheckDisplayProps> = ({ result, onClose }
       {/* Rejection Details */}
       {!result.approved && (
         <div className="bg-error-50 border border-error-200 rounded-xl p-4 dark:bg-error-500/10 dark:border-error-500/30">
-          <h4 className="text-sm font-semibold text-error-800 flex items-center gap-2 dark:text-error-300">
+          <h4 className="text-body-sm font-semibold text-error-800 flex items-center gap-2 dark:text-error-300">
             <AlertCircle className="w-4 h-4" />
             Transaction Cannot Proceed
           </h4>
-          <p className="text-sm text-error-700 mt-2 dark:text-error-300">
+          <p className="text-body-sm text-error-700 mt-2 dark:text-error-300">
             The debit of <strong>{formatCurrency(result.requestedAmount, result.requestedCurrency)}</strong> was 
             rejected at <strong>{result.rejectionVaNumber}</strong> (Level {result.rejectionLevel}).
           </p>
-          <p className="text-sm text-error-600 mt-1 dark:text-error-300">
+          <p className="text-body-sm text-error-600 mt-1 dark:text-error-300">
             Reason: {result.rejectionReason}
           </p>
           <div className="mt-3 pt-3 border-t border-error-200 dark:border-error-500/30">
-            <p className="text-xs text-error-600 dark:text-error-300">
+            <p className="caption-error">
               <Info className="w-3 h-3 inline mr-1" />
               Consider increasing credit limits or ensuring sufficient balance at the rejection level.
             </p>
@@ -490,13 +490,13 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
               <CurrencyPicker
                 value={currency}
                 onChange={(c) => setCurrency(c)}
-                className="bg-white text-sm font-medium dark:bg-primary-900"
+                className="bg-white text-body-sm font-medium dark:bg-primary-900"
               />
             </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="body-sm">
               <Info className="w-4 h-4 inline mr-1" />
               Checks balance and credit limits at every hierarchy level
             </p>
@@ -646,8 +646,8 @@ const FundsAvailabilityPage: React.FC = () => {
         <div className="flex items-start gap-3 p-4">
           <StatusIconBadge tone="info" icon={Shield} className="flex-shrink-0 dark:bg-info-500/20" />
           <div>
-            <p className="text-sm font-semibold text-info-800 dark:text-info-300">Hierarchical Funds Check</p>
-            <p className="text-sm text-info-700 mt-1 dark:text-info-300">
+            <p className="text-body-sm font-semibold text-info-800 dark:text-info-300">Hierarchical Funds Check</p>
+            <p className="text-body-sm text-info-700 mt-1 dark:text-info-300">
               Every debit transaction must pass funds availability checks at <strong>every level</strong> of the
               hierarchy - from the source VA up to ROOT. This ensures both balance adequacy and credit limit
               compliance across the entire corporate structure.
@@ -668,7 +668,7 @@ const FundsAvailabilityPage: React.FC = () => {
             <StatusIconBadge tone="accent" icon={Layers} className="dark:bg-accent-500/20" />
             <h3 className="section-title">Check Process</h3>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-4 text-body-sm">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-success-100 flex items-center justify-center dark:bg-success-500/20">
                 <Wallet className="w-4 h-4 text-success-600 dark:text-success-300" />
@@ -697,7 +697,7 @@ const FundsAvailabilityPage: React.FC = () => {
               <span className="font-medium text-primary-900 dark:text-neutral-50">ROOT</span>
             </div>
           </div>
-          <p className="text-xs text-neutral-500 mt-3 uppercase tracking-wider dark:text-neutral-400">
+          <p className="label mt-3">
             At each level: Balance + External Limit + Internal Limit ≥ Requested Amount
           </p>
         </div>

@@ -137,22 +137,22 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
                   monospace. The mono is now scoped to the identifier itself
                   via .code, so the H3 is sans-serif (heading) and the ref
                   inside reads as data. */}
-              <h3 className="font-semibold text-primary-900 text-sm truncate dark:text-neutral-50">
+              <h3 className="font-semibold text-primary-900 text-body-sm truncate dark:text-neutral-50">
                 <span className="code">{kyc.applicationRef}</span>
               </h3>
-              <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{kyc.entityName}</p>
+              <p className="caption mt-0.5">{kyc.entityName}</p>
             </div>
             {getRiskBadge(kyc.riskLevel)}
           </div>
           <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between dark:border-primary-800/60">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Documents</p>
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+              <p className="caption">Documents</p>
+              <p className="body-strong">
                 {kyc.documentsVerified}/{kyc.documentsSubmitted}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Submitted</p>
+              <p className="caption">Submitted</p>
               <p className="field-label">
                 {new Date(kyc.submittedAt).toLocaleDateString()}
               </p>
@@ -183,7 +183,7 @@ const RejectForm: React.FC<RejectFormProps> = ({ onSubmit, loading, onCancel }) 
       <div>
         <label className="form-label">Rejection Reason *</label>
         <textarea
-          className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
+          className="w-full px-4 py-3 border border-neutral-300 rounded-xl text-body-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Enter reason for rejection..."
@@ -404,7 +404,7 @@ const KyccPage: React.FC = () => {
             <StatusIconBadge tone="warning" icon={AlertTriangle} className="shrink-0 dark:bg-warning-500/20" />
             <div>
               <p className="font-semibold text-warning-800 dark:text-warning-300">KYC Expiring Soon</p>
-              <p className="text-sm text-warning-700 dark:text-warning-300">{expiring.length} entities have KYC expiring within 30 days</p>
+              <p className="text-body-sm text-warning-700 dark:text-warning-300">{expiring.length} entities have KYC expiring within 30 days</p>
             </div>
           </div>
         </Card>
@@ -439,19 +439,19 @@ const KyccPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="primary" icon={Shield} className="shrink-0 dark:bg-primary-700" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.applicationRef}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{new Date(kyc.submittedAt).toLocaleDateString()}</p>
+                    <p className="text-body-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.applicationRef}</p>
+                    <p className="caption mt-0.5">{new Date(kyc.submittedAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               ),
             },
-            { key: 'entityName', header: 'Entity', render: (_, kyc) => <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{kyc.entityName}</p> },
+            { key: 'entityName', header: 'Entity', render: (_, kyc) => <p className="body-strong">{kyc.entityName}</p> },
             { key: 'entityType', header: 'Type', render: (_, kyc) => <Badge variant="neutral" size="sm">{kyc.entityType}</Badge> },
             { key: 'riskLevel', header: 'Risk Level', render: (_, kyc) => getKycRiskBadge(kyc.riskLevel) },
             {
               key: 'documentsVerified',
               header: 'Documents',
-              render: (_, kyc) => <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{kyc.documentsVerified}/{kyc.documentsSubmitted}</span>,
+              render: (_, kyc) => <span className="body-strong">{kyc.documentsVerified}/{kyc.documentsSubmitted}</span>,
             },
             {
               key: 'actions',
@@ -502,20 +502,20 @@ const KyccPage: React.FC = () => {
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-200 dark:border-primary-800">
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Entity Name</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">{selectedKyc.entityName}</p>
+                <p className="label">Entity Name</p>
+                <p className="body-strong mt-1">{selectedKyc.entityName}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Entity Type</p>
+                <p className="label">Entity Type</p>
                 <Badge variant="neutral" className="mt-1">{selectedKyc.entityType}</Badge>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Risk Score</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">{selectedKyc.riskScore}/100</p>
+                <p className="label">Risk Score</p>
+                <p className="body-strong mt-1">{selectedKyc.riskScore}/100</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wide dark:text-neutral-400">Submitted</p>
-                <p className="text-sm font-medium text-primary-900 mt-1 dark:text-neutral-50">
+                <p className="label">Submitted</p>
+                <p className="body-strong mt-1">
                   {new Date(selectedKyc.submittedAt).toLocaleDateString()}
                 </p>
               </div>
@@ -524,13 +524,13 @@ const KyccPage: React.FC = () => {
             {/* Documents */}
             {selectedKyc.documents && (
               <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
-                <h4 className="text-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Documents</h4>
+                <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Documents</h4>
                 <div className="space-y-2">
                   {selectedKyc.documents.map((doc: any, idx: number) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl dark:bg-primary-950">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                        <span className="text-sm text-primary-900 dark:text-neutral-50">{doc.type} - {doc.fileName}</span>
+                        <span className="text-body-sm text-primary-900 dark:text-neutral-50">{doc.type} - {doc.fileName}</span>
                       </div>
                       <Badge variant={doc.status === 'VERIFIED' ? 'success' : 'warning'} size="sm">
                         {doc.status}
@@ -544,22 +544,22 @@ const KyccPage: React.FC = () => {
             {/* Screening Results */}
             {selectedKyc.screeningResults && (
               <div className="pt-4 border-t border-neutral-200 dark:border-primary-800">
-                <h4 className="text-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Screening Results</h4>
+                <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Screening Results</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
-                    <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Sanctions</p>
+                    <p className="caption mb-1">Sanctions</p>
                     <Badge variant={selectedKyc.screeningResults.sanctionsHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.sanctionsHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
                   <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
-                    <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">PEP</p>
+                    <p className="caption mb-1">PEP</p>
                     <Badge variant={selectedKyc.screeningResults.pepHit ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.pepHit ? 'HIT' : 'CLEAR'}
                     </Badge>
                   </div>
                   <div className="p-3 bg-neutral-50 rounded-xl text-center dark:bg-primary-950">
-                    <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Adverse Media</p>
+                    <p className="caption mb-1">Adverse Media</p>
                     <Badge variant={selectedKyc.screeningResults.adverseMedia ? 'error' : 'success'}>
                       {selectedKyc.screeningResults.adverseMedia ? 'HIT' : 'CLEAR'}
                     </Badge>

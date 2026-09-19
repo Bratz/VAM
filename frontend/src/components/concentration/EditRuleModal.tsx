@@ -87,8 +87,8 @@ export const EditRuleModal: React.FC<EditRuleModalProps> = ({ isOpen, onClose, r
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="primary" icon={Layers} />
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Editing Rule</p>
-              <p className="font-mono text-sm text-neutral-600 dark:text-neutral-300">{rule.ruleReference}</p>
+              <p className="label">Editing Rule</p>
+              <p className="font-mono text-body-sm text-neutral-600 dark:text-neutral-300">{rule.ruleReference}</p>
             </div>
           </div>
         </Card>

@@ -146,7 +146,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Balance by Level</h3>
+          <h3 className="body-strong font-semibold">Balance by Level</h3>
         </div>
       </div>
       
@@ -167,7 +167,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
                 if (payload && payload.length > 0) {
                   const item = payload[0].payload;
                   return (
-                    <div className="bg-white dark:bg-primary-900 p-2 rounded shadow-lg border border-neutral-200 dark:border-primary-800 text-xs">
+                    <div className="bg-white dark:bg-primary-900 p-2 rounded shadow-lg border border-neutral-200 dark:border-primary-800 text-caption">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{item.name}</p>
                       <p className="text-neutral-600 dark:text-neutral-300">{item.size} nodes</p>
                       <p className="text-primary-600 dark:text-primary-200 font-medium">
@@ -183,7 +183,7 @@ export const BalanceByLevelWidget: React.FC<BalanceByLevelWidgetProps> = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs">
+      <div className="mt-3 flex items-center justify-between text-caption">
         <span className="text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">7 levels • 543 nodes</span>
         <span className="text-primary-600 dark:text-primary-200 font-medium">
           {formatCompactCurrency(125000000, 'AED')}
@@ -250,7 +250,7 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Top Entities</h3>
+          <h3 className="body-strong font-semibold">Top Entities</h3>
         </div>
       </div>
 
@@ -261,7 +261,7 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
             className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:bg-primary-950 cursor-pointer transition-colors"
           >
             <div className={cn(
-              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
+              'w-6 h-6 rounded-full flex items-center justify-center text-caption font-bold',
               index === 0 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
               index === 1 ? 'bg-neutral-200 text-neutral-600 dark:text-neutral-300 dark:bg-primary-800' :
               index === 2 ? 'bg-warning-100 dark:bg-warning-500/20 text-warning-700 dark:text-warning-300' :
@@ -270,11 +270,11 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
               {index + 1}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.name}</p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">{entity.path}</p>
+              <p className="text-caption font-medium text-primary-900 dark:text-neutral-50 truncate">{entity.name}</p>
+              <p className="text-caption text-neutral-400 dark:text-neutral-500 truncate">{entity.path}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-semibold text-primary-900 dark:text-neutral-50">
+              <p className="text-caption font-semibold text-primary-900 dark:text-neutral-50">
                 {formatCompactCurrency(entity.balance, entity.currencyCode)}
               </p>
               <div className="flex items-center justify-end">
@@ -284,7 +284,7 @@ export const TopEntitiesWidget: React.FC<TopEntitiesWidgetProps> = ({
                   <ArrowDownRight className="w-3 h-3 text-error-500" />
                 )}
                 <span className={cn(
-                  'text-xs',
+                  'text-caption',
                   entity.change >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'
                 )}>
                   {Math.abs(entity.change)}%
@@ -356,30 +356,30 @@ export const VibanCollectionsWidget: React.FC<VibanCollectionsWidgetProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <CreditCard className="w-4 h-4 text-success-600 dark:text-success-300" />
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">VIBAN Collections</h3>
+          <h3 className="body-strong font-semibold">VIBAN Collections</h3>
         </div>
         <Badge variant="success" size="sm">Today</Badge>
       </div>
 
       <div className="bg-success-50 rounded-lg p-3 mb-3 dark:bg-success-500/10">
-        <p className="text-xs text-success-600 mb-1 dark:text-success-300">Collections Today</p>
+        <p className="caption-success mb-1">Collections Today</p>
         {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the raw
-            `text-xl font-bold` hand-roll (same 20px scale). */}
+            `text-heading-sm font-bold` hand-roll (same 20px scale). */}
         <p className="stat-value-xs text-success-700 dark:text-success-300">
           {formatCurrency(stats.todayAmount, stats.currencyCode)}
         </p>
-        <p className="text-xs text-success-600 dark:text-success-300">{stats.todayCount} transactions</p>
+        <p className="caption-success">{stats.todayCount} transactions</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Active VIBANs</p>
-          <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{stats.activeVibans.toLocaleString()}</p>
+          <p className="caption">Active VIBANs</p>
+          <p className="body-strong font-semibold">{stats.activeVibans.toLocaleString()}</p>
         </div>
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Pending Match</p>
+          <p className="caption">Pending Match</p>
           <p className={cn(
-            'text-sm font-semibold',
+            'text-body-sm font-semibold',
             stats.pendingMatching > 0 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'
           )}>
             {stats.pendingMatching}
@@ -448,34 +448,34 @@ export const PoboActivityWidget: React.FC<PoboActivityWidgetProps> = ({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Send className="w-4 h-4 text-info-600 dark:text-info-300" />
-          <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">POBO Activity</h3>
+          <h3 className="body-strong font-semibold">POBO Activity</h3>
         </div>
         <Badge variant="info" size="sm">Today</Badge>
       </div>
 
       <div className="bg-info-50 rounded-lg p-3 mb-3 dark:bg-info-500/10">
-        <p className="text-xs text-info-600 mb-1 dark:text-info-300">POBO Payments Today</p>
+        <p className="caption-info mb-1">POBO Payments Today</p>
         {/* Phase 12 Task E: .stat-value-xs + semantic colour replaces the raw
-            `text-xl font-bold` hand-roll (same 20px scale). */}
+            `text-heading-sm font-bold` hand-roll (same 20px scale). */}
         <p className="stat-value-xs text-info-700 dark:text-info-300">
           {formatCurrency(stats.todayPoboAmount, stats.currencyCode)}
         </p>
-        <p className="text-xs text-info-600 dark:text-info-300">{stats.todayPoboCount} payments</p>
+        <p className="caption-info">{stats.todayPoboCount} payments</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Pending Recharge</p>
+          <p className="caption">Pending Recharge</p>
           <p className={cn(
-            'text-sm font-semibold',
+            'text-body-sm font-semibold',
             stats.pendingRecharge > 0 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'
           )}>
             {stats.pendingRecharge}
           </p>
         </div>
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-2">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 dark:text-neutral-500">Authorizations</p>
-          <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{stats.activeAuthorizations}</p>
+          <p className="caption">Authorizations</p>
+          <p className="body-strong font-semibold">{stats.activeAuthorizations}</p>
         </div>
       </div>
     </Card>

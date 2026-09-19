@@ -519,7 +519,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               {hasHierarchy && <Badge variant="info" size="sm"><GitBranch className="w-3 h-3 mr-1" />Hierarchy</Badge>}
               {program.realtimeBalancePropagation && <Badge variant="success" size="sm"><Zap className="w-3 h-3 mr-1" />Real-time</Badge>}
             </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-4 mt-1 body-sm">
               <span className="font-mono">{program.programCode}</span>
               <span>•</span>
               <span>{programTypeConfig[program.programType]?.label}</span>
@@ -527,7 +527,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               <span>{program.currencyCode}</span>
             </div>
             {program.corporateName && (
-              <p className="mt-1 text-sm text-neutral-600 flex items-center gap-1 dark:text-neutral-300">
+              <p className="mt-1 body-sm flex items-center gap-1">
                 <Building2 className="w-3 h-3" /> {program.corporateName}
               </p>
             )}
@@ -542,19 +542,19 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         <div className="grid grid-cols-4 gap-4 py-4 border-b border-neutral-200 dark:border-primary-800">
           <div className="text-center">
             <p className="stat-value-sm">{program.virtualAccountCount}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Virtual Accounts</p>
+            <p className="caption">Virtual Accounts</p>
           </div>
           <div className="text-center">
             <p className="stat-value-success">{program.activeVirtualAccountCount}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Active VAs</p>
+            <p className="caption">Active VAs</p>
           </div>
           <div className="text-center">
             <p className="stat-value-sm">{formatCurrency(program.totalBalance, program.currencyCode)}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Total Balance</p>
+            <p className="caption">Total Balance</p>
           </div>
           <div className="text-center">
             <p className="stat-value-sm">{program.maxVirtualAccounts || '∞'}</p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Max VAs</p>
+            <p className="caption">Max VAs</p>
           </div>
         </div>
 
@@ -562,12 +562,12 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
         <div className="flex gap-4 border-b border-neutral-200 dark:border-primary-800">
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={cn('py-3 px-1 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5',
+              className={cn('py-3 px-1 text-body-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5',
                 activeTab === tab.id ? 'border-primary-500 text-primary-900 dark:text-neutral-50' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200')}>
               {tab.id === 'hierarchy' && <GitBranch className="w-3.5 h-3.5" />}
               {tab.id === 'viban' && <Hash className="w-3.5 h-3.5" />}
               {tab.label}
-              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-neutral-100 rounded dark:bg-primary-800">{tab.count}</span>}
+              {tab.count !== undefined && <span className="ml-1.5 px-1.5 py-0.5 text-caption bg-neutral-100 rounded dark:bg-primary-800">{tab.count}</span>}
               {tab.badge && <Badge variant="warning" size="sm">{tab.badge}</Badge>}
             </button>
           ))}
@@ -581,42 +581,42 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
           {!loading && activeTab === 'overview' && (
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Program Details</h3>
+                <h3 className="body-strong font-semibold">Program Details</h3>
                 <Card padding="sm" className="space-y-3">
-                  <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Program Code</span><span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{program.programCode}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Type</span><Badge variant="neutral">{programTypeConfig[program.programType]?.label}</Badge></div>
-                  <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Currency</span><span className="text-sm text-primary-900 dark:text-neutral-50">{program.currencyCode}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">VA Prefix</span><span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{program.vaPrefix || '-'}</span></div>
-                  <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Created</span><span className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
+                  <div className="flex justify-between"><span className="body-sm">Program Code</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.programCode}</span></div>
+                  <div className="flex justify-between"><span className="body-sm">Type</span><Badge variant="neutral">{programTypeConfig[program.programType]?.label}</Badge></div>
+                  <div className="flex justify-between"><span className="body-sm">Currency</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{program.currencyCode}</span></div>
+                  <div className="flex justify-between"><span className="body-sm">VA Prefix</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.vaPrefix || '-'}</span></div>
+                  <div className="flex justify-between"><span className="body-sm">Created</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
                   {program.effectiveFrom && (
-                    <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Effective From</span><span className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveFrom)}</span></div>
+                    <div className="flex justify-between"><span className="body-sm">Effective From</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveFrom)}</span></div>
                   )}
                   {program.effectiveTo && (
-                    <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Effective To</span><span className="text-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveTo)}</span></div>
+                    <div className="flex justify-between"><span className="body-sm">Effective To</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.effectiveTo)}</span></div>
                   )}
                 </Card>
                 {/* Description */}
                 {program.description && (
                   <>
-                    <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Description</h3>
+                    <h3 className="body-strong font-semibold">Description</h3>
                     <Card padding="sm">
-                      <p className="text-sm text-neutral-700 dark:text-neutral-200">{program.description}</p>
+                      <p className="text-body-sm text-neutral-700 dark:text-neutral-200">{program.description}</p>
                     </Card>
                   </>
                 )}
                 {detail?.physicalAccount && (
                   <>
-                    <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Physical Account</h3>
+                    <h3 className="body-strong font-semibold">Physical Account</h3>
                     <Card padding="sm" className="space-y-3">
-                      <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Account</span><span className="text-sm font-mono text-primary-900 dark:text-neutral-50">{detail.physicalAccount.accountNumber}</span></div>
-                      <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Bank</span><span className="text-sm text-primary-900 dark:text-neutral-50">{detail.physicalAccount.bankName}</span></div>
-                      <div className="flex justify-between"><span className="text-sm text-neutral-500 dark:text-neutral-400">Balance</span><span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(detail.physicalAccount.currentBalance, detail.physicalAccount.currencyCode)}</span></div>
+                      <div className="flex justify-between"><span className="body-sm">Account</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{detail.physicalAccount.accountNumber}</span></div>
+                      <div className="flex justify-between"><span className="body-sm">Bank</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{detail.physicalAccount.bankName}</span></div>
+                      <div className="flex justify-between"><span className="body-sm">Balance</span><span className="body-strong">{formatCurrency(detail.physicalAccount.currentBalance, detail.physicalAccount.currencyCode)}</span></div>
                     </Card>
                   </>
                 )}
               </div>
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Core Features</h3>
+                <h3 className="body-strong font-semibold">Core Features</h3>
                 <Card padding="sm" className="space-y-3">
                   {[
                     { label: 'Auto Reconciliation', value: program.autoReconciliation },
@@ -627,7 +627,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     { label: 'IHB Enabled', value: program.ihbEnabled },
                   ].map(f => (
                     <div key={f.label} className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">{f.label}</span>
+                      <span className="body-sm">{f.label}</span>
                       {f.value ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
                     </div>
                   ))}
@@ -635,7 +635,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                 {/* Extended Program Types */}
                 {(program.loyaltyEnabled || program.giftCardEnabled || program.corporateCardEnabled || program.mobileMoneyEnabled) && (
                   <>
-                    <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Extended Features</h3>
+                    <h3 className="body-strong font-semibold">Extended Features</h3>
                     <Card padding="sm" className="space-y-3">
                       {[
                         { label: 'Loyalty Program', value: program.loyaltyEnabled },
@@ -644,14 +644,14 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         { label: 'Mobile Money', value: program.mobileMoneyEnabled },
                       ].filter(f => f.value).map(f => (
                         <div key={f.label} className="flex items-center justify-between">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">{f.label}</span>
+                          <span className="body-sm">{f.label}</span>
                           <CheckCircle className="w-4 h-4 text-success-500" />
                         </div>
                       ))}
                     </Card>
                   </>
                 )}
-                <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Actions</h3>
+                <h3 className="body-strong font-semibold">Actions</h3>
                 <div className="flex flex-wrap gap-2">
                   {program.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'SUSPENDED')} leftIcon={<PauseCircle className="w-4 h-4" />}>Suspend</Button>}
                   {program.status === 'SUSPENDED' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<PlayCircle className="w-4 h-4" />}>Activate</Button>}
@@ -690,60 +690,60 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                 <div className="grid grid-cols-2 gap-6">
                   {/* Left Column: Configuration & Exception VAs */}
                   <div className="space-y-4">
-                    <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Hierarchy Configuration</h3>
+                    <h3 className="body-strong font-semibold">Hierarchy Configuration</h3>
                     <Card padding="sm" className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">Template</span>
-                        <span className="text-sm font-medium">{program.defaultHierarchyTemplate || 'Custom'}</span>
+                        <span className="body-sm">Template</span>
+                        <span className="text-body-sm font-medium">{program.defaultHierarchyTemplate || 'Custom'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">Depth</span>
-                        <span className="text-sm">{program.hierarchyDepth || 7} levels</span>
+                        <span className="body-sm">Depth</span>
+                        <span className="text-body-sm">{program.hierarchyDepth || 7} levels</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">Root Node</span>
-                        <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">{program.rootHierarchyNodeId?.slice(0, 8)}...</span>
+                        <span className="body-sm">Root Node</span>
+                        <span className="text-caption font-mono text-neutral-600 dark:text-neutral-300">{program.rootHierarchyNodeId?.slice(0, 8)}...</span>
                       </div>
                     </Card>
 
-                    <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                    <h3 className="body-strong font-semibold flex items-center gap-2">
                       <Zap className="w-4 h-4" />Balance Aggregation
                     </h3>
                     <Card padding="sm" className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">Real-time Propagation</span>
+                        <span className="body-sm">Real-time Propagation</span>
                         {program.realtimeBalancePropagation 
                           ? <Badge variant="success" size="sm"><Zap className="w-3 h-3 mr-1" />Enabled</Badge>
                           : <Badge variant="neutral" size="sm">Disabled</Badge>}
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">Aggregation Interval</span>
-                        <span className="text-sm">{program.balanceAggregationIntervalMinutes || 5} minutes</span>
+                        <span className="body-sm">Aggregation Interval</span>
+                        <span className="text-body-sm">{program.balanceAggregationIntervalMinutes || 5} minutes</span>
                       </div>
                     </Card>
 
-                    <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                    <h3 className="body-strong font-semibold flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-error-500" />Exception VAs
                     </h3>
                     {hierarchyLoading ? (
-                      <div className="flex items-center gap-2 p-4"><Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</span></div>
+                      <div className="flex items-center gap-2 p-4"><Loader2 className="w-4 h-4 animate-spin" /><span className="body-sm">Loading...</span></div>
                     ) : exceptionVas.length > 0 ? (
                       <div className="space-y-2">
                         {exceptionVas.map((va) => (
                           <Card key={va.id} padding="sm" className="flex justify-between items-center hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                             <div>
-                              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{va.vaName}</p>
-                              <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
+                              <p className="body-strong">{va.vaName}</p>
+                              <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
                             </div>
                             <div className="text-right">
                               <Badge variant="error" size="sm">Exception</Badge>
-                              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{formatCurrency(va.currentBalance, va.currency)}</p>
+                              <p className="caption mt-1">{formatCurrency(va.currentBalance, va.currency)}</p>
                             </div>
                           </Card>
                         ))}
                       </div>
                     ) : (
-                      <Card padding="sm" className="text-center text-neutral-500 text-sm py-4 dark:text-neutral-400">
+                      <Card padding="sm" className="text-center body-sm py-4">
                         <p>No Exception VAs created yet</p>
                       </Card>
                     )}
@@ -752,10 +752,10 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   {/* Right Column: Settlement VAs */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                      <h3 className="body-strong font-semibold flex items-center gap-2">
                         <FolderTree className="w-4 h-4" />Settlement VAs
                       </h3>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">{settlementVas.length} total</span>
+                      <span className="caption">{settlementVas.length} total</span>
                     </div>
                     {hierarchyLoading ? (
                       <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
@@ -765,18 +765,18 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                           <Card key={va.id} padding="sm" className="flex justify-between items-center hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
-                                <span className="text-xs font-medium text-accent-700 dark:text-accent-300">L{va.hierarchyLevel || '?'}</span>
+                                <span className="text-caption font-medium text-accent-700 dark:text-accent-300">L{va.hierarchyLevel || '?'}</span>
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{va.vaName}</p>
-                                <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
+                                <p className="body-strong">{va.vaName}</p>
+                                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
                                 {va.hierarchyPath && (
-                                  <p className="text-xs text-neutral-400 mt-0.5 dark:text-neutral-500">{va.hierarchyPath}</p>
+                                  <p className="caption mt-0.5">{va.hierarchyPath}</p>
                                 )}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(va.currentBalance, va.currency)}</p>
+                              <p className="body-strong">{formatCurrency(va.currentBalance, va.currency)}</p>
                               <Badge variant={va.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{va.status}</Badge>
                             </div>
                           </Card>
@@ -786,7 +786,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       <Card padding="sm" className="text-center py-12">
                         <FolderTree className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
                         <p className="text-neutral-500 mb-2 dark:text-neutral-400">No Settlement VAs created yet</p>
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500">Settlement VAs are created when hierarchy nodes are added</p>
+                        <p className="caption">Settlement VAs are created when hierarchy nodes are added</p>
                       </Card>
                     )}
 
@@ -794,9 +794,9 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     <div className="bg-info-50 border border-info-200 rounded-lg p-3 mt-4 dark:bg-info-500/10 dark:border-info-500/30">
                       <div className="flex items-start gap-2">
                         <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                        <div className="text-sm text-info-800 dark:text-info-300">
+                        <div className="text-body-sm text-info-800 dark:text-info-300">
                           <p className="font-medium">About Settlement VAs</p>
-                          <ul className="mt-1 space-y-1 text-info-700 text-xs dark:text-info-300">
+                          <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
                             <li>• Each hierarchy level can have Settlement VAs</li>
                             <li>• Balances aggregate up the hierarchy tree</li>
                             <li>• Exception VA catches unmatched transactions</li>
@@ -821,7 +821,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                 <>
                   {/* VIBAN Generation Strategy */}
                   <div>
-                    <h3 className="text-sm font-semibold text-primary-900 mb-3 flex items-center gap-2 dark:text-neutral-50">
+                    <h3 className="body-strong font-semibold mb-3 flex items-center gap-2">
                       <Settings className="w-4 h-4" />Generation Strategy
                     </h3>
                     <div className="grid grid-cols-3 gap-3">
@@ -853,7 +853,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                                   </span>
                                   {isActive && <Badge variant="success" size="sm">Active</Badge>}
                                 </div>
-                                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">{config.description}</p>
+                                <p className="caption mt-1">{config.description}</p>
                               </div>
                             </div>
                           </Card>
@@ -865,31 +865,31 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   {/* VIBAN Configuration */}
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                      <h3 className="body-strong font-semibold flex items-center gap-2">
                         <Hash className="w-4 h-4" />VIBAN Settings
                       </h3>
                       <Card padding="sm" className="space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">VIBAN Prefix</span>
-                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">
+                          <span className="body-sm">VIBAN Prefix</span>
+                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">
                             {program.vibanPrefix || 'Not set'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">Bank Code</span>
-                          <span className="text-sm font-mono font-medium text-primary-900 dark:text-neutral-50">
+                          <span className="body-sm">Bank Code</span>
+                          <span className="text-body-sm font-mono font-medium text-primary-900 dark:text-neutral-50">
                             {program.vibanBankCode || 'Not set'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400">Generation Strategy</span>
+                          <span className="body-sm">Generation Strategy</span>
                           <Badge variant="neutral">
                             {vibanStrategyConfig[program.vibanGenerationStrategy || 'SEQUENTIAL']?.label}
                           </Badge>
                         </div>
                         {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' && (
                           <div className="pt-2 border-t">
-                            <div className="flex items-start gap-2 text-xs text-info-700 bg-info-50 p-2 rounded dark:text-info-300 dark:bg-info-500/10">
+                            <div className="flex items-start gap-2 text-caption text-info-700 bg-info-50 p-2 rounded dark:text-info-300 dark:bg-info-500/10">
                               <Info className="w-3 h-3 mt-0.5" />
                               <span>VIBANs encode hierarchy path for automatic routing</span>
                             </div>
@@ -898,16 +898,16 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       </Card>
 
                       {/* Sample VIBAN Preview */}
-                      <h3 className="text-sm font-semibold text-primary-900 dark:text-neutral-50">Sample VIBAN Format</h3>
+                      <h3 className="body-strong font-semibold">Sample VIBAN Format</h3>
                       <Card padding="sm" className="bg-neutral-50 dark:bg-primary-950">
-                        <div className="font-mono text-lg text-center text-primary-900 tracking-wider dark:text-neutral-50">
+                        <div className="font-mono text-body-lg text-center text-primary-900 tracking-wider dark:text-neutral-50">
                           {program.vibanPrefix || 'AE'}{program.vibanBankCode || '00'}-
                           {program.vibanGenerationStrategy === 'SEQUENTIAL' && '0000-0001'}
                           {program.vibanGenerationStrategy === 'RANDOM' && 'X7K2-9M4P'}
                           {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' && 'L1L2-0001'}
                           {!program.vibanGenerationStrategy && '0000-0001'}
                         </div>
-                        <p className="text-xs text-neutral-500 text-center mt-2 dark:text-neutral-400">
+                        <p className="caption text-center mt-2">
                           {program.vibanGenerationStrategy === 'HIERARCHY_ENCODED' 
                             ? 'Includes encoded hierarchy levels'
                             : 'Standard VIBAN format'}
@@ -916,25 +916,25 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     </div>
 
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                      <h3 className="body-strong font-semibold flex items-center gap-2">
                         <Layers className="w-4 h-4" />VIBAN Pool
                       </h3>
                       {vibanPool ? (
                         <Card padding="sm" className="space-y-3">
                           <div className="flex justify-between">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">Pool Name</span>
-                            <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{vibanPool.poolName}</span>
+                            <span className="body-sm">Pool Name</span>
+                            <span className="body-strong">{vibanPool.poolName}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">Pool Code</span>
-                            <span className="text-sm font-mono">{vibanPool.poolCode}</span>
+                            <span className="body-sm">Pool Code</span>
+                            <span className="text-body-sm font-mono">{vibanPool.poolCode}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">Bank Code</span>
-                            <span className="text-sm font-mono">{vibanPool.bankCode}</span>
+                            <span className="body-sm">Bank Code</span>
+                            <span className="text-body-sm font-mono">{vibanPool.bankCode}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">Status</span>
+                            <span className="body-sm">Status</span>
                             <Badge variant={vibanPool.status === 'ACTIVE' ? 'success' : 'neutral'}>
                               {vibanPool.status}
                             </Badge>
@@ -943,20 +943,20 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             <div className="grid grid-cols-3 gap-2 text-center">
                               <div>
                                 <p className="section-title">{vibanPool.totalVibans}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">Total</p>
+                                <p className="caption">Total</p>
                               </div>
                               <div>
-                                <p className="text-lg font-semibold text-success-600 dark:text-success-300">{vibanPool.availableVibans}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+                                <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{vibanPool.availableVibans}</p>
+                                <p className="caption">Available</p>
                               </div>
                               <div>
-                                <p className="text-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.usedVibans}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">Used</p>
+                                <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.usedVibans}</p>
+                                <p className="caption">Used</p>
                               </div>
                             </div>
                             {/* Usage Progress Bar */}
                             <div className="mt-3">
-                              <div className="flex justify-between text-xs text-neutral-500 mb-1 dark:text-neutral-400">
+                              <div className="flex justify-between caption mb-1">
                                 <span>Pool Usage</span>
                                 <span>{Math.round((vibanPool.usedVibans / vibanPool.totalVibans) * 100)}%</span>
                               </div>
@@ -973,7 +973,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <Card padding="sm" className="text-center py-8">
                           <Hash className="w-10 h-10 text-neutral-300 mx-auto mb-3 dark:text-neutral-600" />
                           <p className="text-neutral-500 mb-2 dark:text-neutral-400">No VIBAN Pool Assigned</p>
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500">Assign a VIBAN pool to enable VIBAN generation</p>
+                          <p className="caption">Assign a VIBAN pool to enable VIBAN generation</p>
                         </Card>
                       )}
 
@@ -982,9 +982,9 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <div className="bg-accent-50 border border-accent-200 rounded-lg p-3 dark:bg-accent-500/10 dark:border-accent-500/30">
                           <div className="flex items-start gap-2">
                             <Info className="w-4 h-4 text-accent-600 mt-0.5 dark:text-accent-300" />
-                            <div className="text-sm text-accent-800 dark:text-accent-300">
+                            <div className="text-body-sm text-accent-800 dark:text-accent-300">
                               <p className="font-medium">Pool Capacity</p>
-                              <p className="text-accent-700 text-xs mt-1 dark:text-accent-300">
+                              <p className="text-accent-700 text-caption mt-1 dark:text-accent-300">
                                 {vibanPool.availableVibans} VIBANs available for new virtual accounts
                               </p>
                             </div>
@@ -1000,7 +1000,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       <Info className="w-5 h-5 text-info-600 mt-0.5 dark:text-info-300" />
                       <div>
                         <p className="font-medium text-info-900">About VIBAN Generation</p>
-                        <ul className="mt-2 space-y-1 text-sm text-info-700 dark:text-info-300">
+                        <ul className="mt-2 space-y-1 text-body-sm text-info-700 dark:text-info-300">
                           <li>• <strong>Sequential:</strong> Best for predictable, ordered VIBAN allocation</li>
                           <li>• <strong>Random:</strong> Enhanced security with unpredictable identifiers</li>
                           <li>• <strong>Hierarchy Encoded:</strong> Enables automatic routing based on hierarchy structure</li>
@@ -1024,11 +1024,11 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                      <h3 className="body-strong font-semibold flex items-center gap-2">
                         <Wallet className="w-4 h-4" />
                         Wallet Fee Configuration
                       </h3>
-                      <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+                      <p className="caption mt-1">
                         Fees managed via ChargeConfiguration system
                       </p>
                     </div>
@@ -1037,7 +1037,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
 
                   {/* Transaction Fees */}
                   <div>
-                    <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3 dark:text-neutral-400">Transaction Fees</h4>
+                    <h4 className="label mb-3">Transaction Fees</h4>
                     <div className="space-y-2">
                       {/* Topup Fee */}
                       <div className={cn(
@@ -1048,8 +1048,8 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="success" icon={Plus} rounded="lg" className="dark:bg-success-500/20" />
                           <div>
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{walletCharges.topup.chargeName}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{walletCharges.topup.chargeCode}</p>
+                            <p className="body-strong">{walletCharges.topup.chargeName}</p>
+                            <p className="caption">{walletCharges.topup.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -1057,10 +1057,10 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             <Badge variant="warning">Waived</Badge>
                           ) : (
                             <>
-                              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+                              <p className="body-strong font-semibold">
                                 {walletCharges.topup.percentage}% + {program.currencyCode} {walletCharges.topup.fixed}
                               </p>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <p className="caption">
                                 Min: {program.currencyCode} {walletCharges.topup.minimum || 0} | Max: {program.currencyCode} {walletCharges.topup.maximum || '∞'}
                               </p>
                               {walletCharges.topup.hasOverride && <Badge variant="info" size="sm" className="mt-1">Override</Badge>}
@@ -1078,8 +1078,8 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="error" icon={Banknote} rounded="lg" className="dark:bg-error-500/20" />
                           <div>
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{walletCharges.withdrawal.chargeName}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{walletCharges.withdrawal.chargeCode}</p>
+                            <p className="body-strong">{walletCharges.withdrawal.chargeName}</p>
+                            <p className="caption">{walletCharges.withdrawal.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -1087,10 +1087,10 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             <Badge variant="warning">Waived</Badge>
                           ) : (
                             <>
-                              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+                              <p className="body-strong font-semibold">
                                 {walletCharges.withdrawal.percentage}% + {program.currencyCode} {walletCharges.withdrawal.fixed}
                               </p>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <p className="caption">
                                 Min: {program.currencyCode} {walletCharges.withdrawal.minimum || 0} | Max: {program.currencyCode} {walletCharges.withdrawal.maximum || '∞'}
                               </p>
                               {walletCharges.withdrawal.hasOverride && <Badge variant="info" size="sm" className="mt-1">Override</Badge>}
@@ -1108,8 +1108,8 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <div className="flex items-center gap-3">
                           <StatusIconBadge tone="info" icon={TrendingUp} rounded="lg" className="dark:bg-info-500/20" />
                           <div>
-                            <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{walletCharges.transfer.chargeName}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{walletCharges.transfer.chargeCode}</p>
+                            <p className="body-strong">{walletCharges.transfer.chargeName}</p>
+                            <p className="caption">{walletCharges.transfer.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -1117,10 +1117,10 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             <Badge variant="warning">Waived</Badge>
                           ) : (
                             <>
-                              <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">
+                              <p className="body-strong font-semibold">
                                 {walletCharges.transfer.percentage}% + {program.currencyCode} {walletCharges.transfer.fixed}
                               </p>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              <p className="caption">
                                 Min: {program.currencyCode} {walletCharges.transfer.minimum || 0} | Max: {program.currencyCode} {walletCharges.transfer.maximum || '∞'}
                               </p>
                               {walletCharges.transfer.hasOverride && <Badge variant="info" size="sm" className="mt-1">Override</Badge>}
@@ -1133,7 +1133,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
 
                   {/* Fixed Fees */}
                   <div>
-                    <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3 dark:text-neutral-400">Fixed Fees</h4>
+                    <h4 className="label mb-3">Fixed Fees</h4>
                     <div className="grid grid-cols-3 gap-3">
                       {/* Issuance Fee */}
                       <Card padding="sm" className={cn(
@@ -1142,7 +1142,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       )}>
                         <div className="flex items-center gap-2 mb-2">
                           <CreditCard className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">Issuance</span>
+                          <span className="caption">Issuance</span>
                         </div>
                         {walletCharges.issuance.isWaived ? (
                           <Badge variant="warning">Waived</Badge>
@@ -1154,7 +1154,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             {walletCharges.issuance.hasOverride && <Badge variant="info" size="sm">Override</Badge>}
                           </>
                         )}
-                        <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">One-time fee</p>
+                        <p className="caption mt-1">One-time fee</p>
                       </Card>
 
                       {/* Monthly Fee */}
@@ -1164,7 +1164,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       )}>
                         <div className="flex items-center gap-2 mb-2">
                           <Clock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">Monthly</span>
+                          <span className="caption">Monthly</span>
                         </div>
                         {walletCharges.monthly.isWaived ? (
                           <Badge variant="warning">Waived</Badge>
@@ -1176,7 +1176,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             {walletCharges.monthly.hasOverride && <Badge variant="info" size="sm">Override</Badge>}
                           </>
                         )}
-                        <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">Recurring monthly</p>
+                        <p className="caption mt-1">Recurring monthly</p>
                       </Card>
 
                       {/* Inactivity Fee */}
@@ -1186,7 +1186,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       )}>
                         <div className="flex items-center gap-2 mb-2">
                           <PauseCircle className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">Inactivity</span>
+                          <span className="caption">Inactivity</span>
                         </div>
                         {walletCharges.inactivity.isWaived ? (
                           <Badge variant="warning">Waived</Badge>
@@ -1198,35 +1198,35 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                             {walletCharges.inactivity.hasOverride && <Badge variant="info" size="sm">Override</Badge>}
                           </>
                         )}
-                        <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">After inactivity period</p>
+                        <p className="caption mt-1">After inactivity period</p>
                       </Card>
                     </div>
                   </div>
 
                   {/* Fee Summary */}
                   <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-                    <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3 dark:text-neutral-400">Fee Status Summary</h4>
+                    <h4 className="label mb-3">Fee Status Summary</h4>
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
                         <p className="stat-value-sm">
                           {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
                             .filter(c => !c.isWaived && !c.hasOverride).length}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Base Rates</p>
+                        <p className="caption">Base Rates</p>
                       </div>
                       <div>
                         <p className="stat-value-info">
                           {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
                             .filter(c => c.hasOverride && !c.isWaived).length}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Overrides</p>
+                        <p className="caption">Overrides</p>
                       </div>
                       <div>
                         <p className="stat-value-warning">
                           {[walletCharges.topup, walletCharges.withdrawal, walletCharges.transfer, walletCharges.issuance, walletCharges.monthly, walletCharges.inactivity]
                             .filter(c => c.isWaived).length}
                         </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">Waived</p>
+                        <p className="caption">Waived</p>
                       </div>
                     </div>
                   </div>
@@ -1235,9 +1235,9 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
                     <div className="flex items-start gap-2">
                       <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                      <div className="text-sm text-info-800 dark:text-info-300">
+                      <div className="text-body-sm text-info-800 dark:text-info-300">
                         <p className="font-medium">About Wallet Fees</p>
-                        <ul className="mt-1 space-y-1 text-info-700 text-xs dark:text-info-300">
+                        <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
                           <li>• <strong>Base:</strong> Default rates from ChargeConfiguration</li>
                           <li>• <strong>Override:</strong> Program-specific customized rates</li>
                           <li>• <strong>Waived:</strong> Fee is not charged for this program</li>
@@ -1271,7 +1271,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                         <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="dark:bg-primary-700" />
                         <div>
                           <p className="font-medium text-primary-900 dark:text-neutral-50">{va.vaName}</p>
-                          <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
+                          <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{va.vaNumber}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -1294,17 +1294,17 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
               <Card padding="md">
                 <h4 className="font-medium text-primary-900 mb-4 dark:text-neutral-50">VA Configuration</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Prefix</p><p className="font-mono">{program.vaPrefix || 'None'}</p></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Format</p><p className="font-mono">{program.vaFormat || 'Auto'}</p></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Max Accounts</p><p>{program.maxVirtualAccounts || 'Unlimited'}</p></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Min Balance Threshold</p><p>{program.minBalanceThreshold ? formatCurrency(program.minBalanceThreshold, program.currencyCode) : 'Not set'}</p></div>
+                  <div><p className="caption mb-1">Prefix</p><p className="font-mono">{program.vaPrefix || 'None'}</p></div>
+                  <div><p className="caption mb-1">Format</p><p className="font-mono">{program.vaFormat || 'Auto'}</p></div>
+                  <div><p className="caption mb-1">Max Accounts</p><p>{program.maxVirtualAccounts || 'Unlimited'}</p></div>
+                  <div><p className="caption mb-1">Min Balance Threshold</p><p>{program.minBalanceThreshold ? formatCurrency(program.minBalanceThreshold, program.currencyCode) : 'Not set'}</p></div>
                 </div>
               </Card>
               <Card padding="md">
                 <h4 className="font-medium text-primary-900 mb-4 dark:text-neutral-50">Settlement</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Frequency</p><p>{settlementFrequencyConfig[program.settlementFrequency || '']?.label || 'Not set'}</p></div>
-                  <div><p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Time</p><p>{program.settlementTime || 'Anytime'}</p></div>
+                  <div><p className="caption mb-1">Frequency</p><p>{settlementFrequencyConfig[program.settlementFrequency || '']?.label || 'Not set'}</p></div>
+                  <div><p className="caption mb-1">Time</p><p>{program.settlementTime || 'Anytime'}</p></div>
                 </div>
               </Card>
               {/* Wallet Limits - Only show if wallet is enabled */}
@@ -1315,19 +1315,19 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   </h4>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Per Transaction</p>
+                      <p className="caption mb-1">Per Transaction</p>
                       <p className="font-medium">{program.defaultPerTransactionLimit ? formatCurrency(program.defaultPerTransactionLimit, program.currencyCode) : 'Unlimited'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Daily Limit</p>
+                      <p className="caption mb-1">Daily Limit</p>
                       <p className="font-medium">{program.defaultDailyLimit ? formatCurrency(program.defaultDailyLimit, program.currencyCode) : 'Unlimited'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Monthly Limit</p>
+                      <p className="caption mb-1">Monthly Limit</p>
                       <p className="font-medium">{program.defaultMonthlyLimit ? formatCurrency(program.defaultMonthlyLimit, program.currencyCode) : 'Unlimited'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Max Balance</p>
+                      <p className="caption mb-1">Max Balance</p>
                       <p className="font-medium">{program.defaultMaxBalance ? formatCurrency(program.defaultMaxBalance, program.currencyCode) : 'Unlimited'}</p>
                     </div>
                   </div>
@@ -1341,11 +1341,11 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">KYC Required</span>
+                      <span className="body-sm">KYC Required</span>
                       {program.kycRequired ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Minimum KYC Level</p>
+                      <p className="caption mb-1">Minimum KYC Level</p>
                       <p className="font-medium">{program.minKycLevel !== undefined ? `Level ${program.minKycLevel}` : 'Not set'}</p>
                     </div>
                   </div>
@@ -1363,7 +1363,7 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                       { label: 'Allow Payment', value: program.allowPayment },
                     ].map(cap => (
                       <div key={cap.label} className="flex items-center justify-between">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">{cap.label}</span>
+                        <span className="body-sm">{cap.label}</span>
                         {cap.value ? <CheckCircle className="w-4 h-4 text-success-500" /> : <XCircle className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />}
                       </div>
                     ))}
@@ -1382,8 +1382,8 @@ const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClos
                     <CheckCircle className="w-4 h-4 text-success-600 dark:text-success-300" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{item.action}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">by {item.user} • {formatDate(item.timestamp)}</p>
+                    <p className="body-strong">{item.action}</p>
+                    <p className="caption">by {item.user} • {formatDate(item.timestamp)}</p>
                   </div>
                 </div>
               ))}
@@ -1423,13 +1423,13 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       hasOverride ? 'bg-primary-50 border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700' : 'bg-neutral-50 dark:bg-primary-950'
     )}>
       <div className="w-36">
-        <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{charge.chargeName}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{charge.chargeCode}</p>
+        <p className="body-strong">{charge.chargeName}</p>
+        <p className="caption">{charge.chargeCode}</p>
       </div>
       
       <div className="w-24 text-center">
-        <p className="text-xs text-neutral-400 dark:text-neutral-500">Base</p>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="caption">Base</p>
+        <p className="body-sm">
           {charge.percentage > 0 ? `${charge.percentage}%` : ''}
           {charge.percentage > 0 && charge.fixed > 0 ? ' + ' : ''}
           {charge.fixed > 0 || charge.percentage === 0 ? `${currencyCode} ${charge.fixed}` : ''}
@@ -1439,20 +1439,20 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
       
       <div className="flex-1 flex items-center gap-2">
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
-        <span className="text-xs text-neutral-500 dark:text-neutral-400">%</span>
-        <span className="text-xs text-neutral-400 dark:text-neutral-500">+</span>
-        <span className="text-xs text-neutral-400 dark:text-neutral-500">{currencyCode}</span>
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
+        <span className="caption">%</span>
+        <span className="caption">+</span>
+        <span className="caption">{currencyCode}</span>
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded', isWaived && 'bg-neutral-100 dark:bg-primary-800')}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
       
       <label className="flex items-center gap-1 cursor-pointer">
         <input type="checkbox" checked={isWaived} onChange={e => onWaiverChange(e.target.checked)} className="rounded" />
-        <span className="text-xs text-neutral-600 dark:text-neutral-300">Waive</span>
+        <span className="caption">Waive</span>
       </label>
       
       <div className="w-16">
@@ -2080,12 +2080,12 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 <React.Fragment key={label}>
                   <div className="flex flex-col items-center">
                     <div className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                      'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-medium transition-all',
                       isComplete ? 'bg-success-500 text-white' : isActive ? 'bg-primary-600 text-white' : 'bg-neutral-200 text-neutral-500 dark:bg-primary-800 dark:text-neutral-400'
                     )}>
                       {isComplete ? <CheckCircle className="w-4 h-4" /> : stepNum}
                     </div>
-                    <span className={cn('text-xs mt-1', isActive ? 'text-primary-600 font-medium dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')}>
+                    <span className={cn('text-caption mt-1', isActive ? 'text-primary-600 font-medium dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500')}>
                       {label}
                     </span>
                   </div>
@@ -2135,7 +2135,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     ))}
                   </select>
                 )}
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Programs are created under a specific corporate entity.</p>
+                <p className="caption mt-1">Programs are created under a specific corporate entity.</p>
               </div>
             )}
 
@@ -2168,7 +2168,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={cn('w-4 h-4', config.color)} />
-                        <span className="font-medium text-xs">{config.label}</span>
+                        <span className="font-medium text-caption">{config.label}</span>
                       </div>
                     </button>
                   );
@@ -2256,7 +2256,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     <option key={a.id} value={a.id}>{a.accountNumber} - {a.bankName} ({a.currencyCode})</option>
                   ))}
                 </select>
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Physical account provides liquidity backing. Not required for hierarchy-only programs.</p>
+                <p className="caption mt-1">Physical account provides liquidity backing. Not required for hierarchy-only programs.</p>
               </div>
             )}
           </div>
@@ -2274,7 +2274,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Program Type Summary */}
             <div className="p-3 bg-primary-50 rounded-lg border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-body-sm">
                 {(() => {
                   const config = programTypeConfig[formData.programType];
                   const Icon = config?.icon || Building2;
@@ -2310,7 +2310,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   return (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <Sparkles className="w-3.5 h-3.5 text-success-600 dark:text-success-300" />
-                      <span className="text-xs text-success-700 font-medium dark:text-success-300">Auto-enabled:</span>
+                      <span className="text-caption text-success-700 font-medium dark:text-success-300">Auto-enabled:</span>
                       {autoFeatureNames.map(name => (
                         <Badge key={name} variant="success" size="sm">{name}</Badge>
                       ))}
@@ -2319,14 +2319,14 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 }
                 return null;
               })()}
-              <p className="text-xs text-neutral-600 mt-2 dark:text-neutral-300">
+              <p className="caption mt-2">
                 Features marked <Badge variant="success" size="sm">Auto</Badge> are recommended for this program type. You can still toggle them on/off.
               </p>
             </div>
 
             {/* Core Features - These affect wizard flow */}
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Capabilities (affects configuration steps)</h4>
+              <h4 className="label">Capabilities (affects configuration steps)</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { key: 'hierarchyEnabled', label: 'Multi-Level Hierarchy', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2', step: 'Hierarchy Config' },
@@ -2359,11 +2359,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <Icon className={cn('w-4 h-4', f.color)} />
-                          <span className="font-medium text-sm text-primary-900 dark:text-neutral-50">{f.label}</span>
+                          <span className="body-strong">{f.label}</span>
                           {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
                           {f.step && isChecked && <Badge variant="info" size="sm">+Step</Badge>}
                         </div>
-                        <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{f.desc}</p>
+                        <p className="caption mt-0.5">{f.desc}</p>
                       </div>
                     </label>
                   );
@@ -2374,7 +2374,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             {/* Extended Program Features - Only show if relevant */}
             {['LOYALTY', 'GIFT_CARD', 'CORPORATE_CARD', 'MOBILE_MONEY'].includes(formData.programType) && (
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Extended Capabilities</h4>
+                <h4 className="label">Extended Capabilities</h4>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { key: 'loyaltyEnabled', label: 'Loyalty Program', icon: TrendingUp, desc: 'Points, tiers, rewards', color: 'text-cat-4', forType: 'LOYALTY' },
@@ -2405,10 +2405,10 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Icon className={cn('w-4 h-4', f.color)} />
-                            <span className="font-medium text-sm text-primary-900 dark:text-neutral-50">{f.label}</span>
+                            <span className="body-strong">{f.label}</span>
                             {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
                           </div>
-                          <p className="text-xs text-neutral-500 mt-0.5 dark:text-neutral-400">{f.desc}</p>
+                          <p className="caption mt-0.5">{f.desc}</p>
                         </div>
                       </label>
                     );
@@ -2421,7 +2421,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             {formData.vibanEnabled && (
               <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex items-start gap-2 dark:bg-info-500/10 dark:border-info-500/30">
                 <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                <p className="text-sm text-info-700 dark:text-info-300">
+                <p className="text-body-sm text-info-700 dark:text-info-300">
                   VIBAN is enabled. You'll configure the VIBAN pool settings in the next step.
                 </p>
               </div>
@@ -2430,7 +2430,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             {formData.hierarchyEnabled && (
               <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 flex items-start gap-2 dark:bg-cat-2/15 dark:border-cat-2/30">
                 <GitBranch className="w-4 h-4 text-cat-2 mt-0.5" />
-                <p className="text-sm text-cat-2">
+                <p className="text-body-sm text-cat-2">
                   Hierarchy is enabled. You'll configure the hierarchy template and depth in the next step.
                 </p>
               </div>
@@ -2448,7 +2448,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               Hierarchy Configuration
             </h3>
 
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Configure the hierarchy structure for this program. The hierarchy defines how virtual accounts are organized.</p>
+            <p className="body-sm">Configure the hierarchy structure for this program. The hierarchy defines how virtual accounts are organized.</p>
 
             {/* Hierarchy Template Selection - Dynamic based on Program Type */}
             {(() => {
@@ -2488,16 +2488,16 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                               )}
                             >
                               {isRecommended && (
-                                <span className="absolute -top-2 -right-2 bg-success-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                <span className="absolute -top-2 -right-2 bg-success-500 text-white text-caption px-2 py-0.5 rounded-full">
                                   Recommended
                                 </span>
                               )}
                               <div className="flex items-center gap-2 mb-2">
                                 <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2' : template.color)} />
-                                <span className="font-medium text-sm">{template.name}</span>
+                                <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
-                              <p className="text-xs text-neutral-600 mb-2 dark:text-neutral-300">{template.description}</p>
-                              <p className="text-xs text-neutral-400 truncate dark:text-neutral-500" title={levelPath}>{levelPath}</p>
+                              <p className="caption mb-2">{template.description}</p>
+                              <p className="text-caption text-neutral-400 truncate dark:text-neutral-500" title={levelPath}>{levelPath}</p>
                             </button>
                           );
                         })}
@@ -2508,7 +2508,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   {/* Other Available Templates */}
                   {otherTemplates.length > 0 && (
                     <div>
-                      <label className="block text-sm font-medium text-neutral-500 mb-2 dark:text-neutral-400">
+                      <label className="block text-body-sm font-medium text-neutral-500 mb-2 dark:text-neutral-400">
                         Other Templates ({otherTemplates.length} available)
                       </label>
                       <div className="grid grid-cols-3 gap-2">
@@ -2530,7 +2530,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                             >
                               <div className="flex items-center gap-2">
                                 <Icon className={cn('w-4 h-4', isSelected ? 'text-cat-2' : 'text-neutral-400 dark:text-neutral-500')} />
-                                <span className="text-xs font-medium truncate">{template.name}</span>
+                                <span className="text-caption font-medium truncate">{template.name}</span>
                               </div>
                             </button>
                           );
@@ -2563,9 +2563,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 <Icon className={cn('w-5 h-5', isSelected ? 'text-cat-2' : template.color)} />
-                                <span className="font-medium text-sm">{template.name}</span>
+                                <span className="font-medium text-body-sm">{template.name}</span>
                               </div>
-                              <p className="text-xs text-neutral-500 truncate dark:text-neutral-400" title={levelPath}>{levelPath}</p>
+                              <p className="caption truncate" title={levelPath}>{levelPath}</p>
                             </button>
                           );
                         })}
@@ -2588,9 +2588,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   onChange={e => setFormData({ ...formData, hierarchyDepth: parseInt(e.target.value) })}
                   className="flex-1"
                 />
-                <span className="text-lg font-semibold text-primary-900 w-8 text-center dark:text-neutral-50">{formData.hierarchyDepth}</span>
+                <span className="text-body-lg font-semibold text-primary-900 w-8 text-center dark:text-neutral-50">{formData.hierarchyDepth}</span>
               </div>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">
+              <p className="caption mt-1">
                 {formData.hierarchyDepth === 7 ? 'Full hierarchy (recommended)' :
                  formData.hierarchyDepth === 1 ? 'Flat structure (no hierarchy)' :
                  `${formData.hierarchyDepth} levels of organization`}
@@ -2608,7 +2608,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <button
                     type="button"
                     onClick={() => setShowLevelCustomization(!showLevelCustomization)}
-                    className="text-xs text-cat-2 flex items-center gap-1"
+                    className="text-caption text-cat-2 flex items-center gap-1"
                   >
                     {showLevelCustomization ? 'Collapse All' : 'Customize Levels'}
                     {showLevelCustomization ? <ChevronRight className="w-3 h-3 rotate-90" /> : <ChevronRight className="w-3 h-3" />}
@@ -2633,19 +2633,19 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                           className="w-full px-3 py-2 flex items-center gap-2 text-left"
                         >
                           <span className={cn(
-                            'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0',
+                            'w-6 h-6 rounded-full flex items-center justify-center text-caption font-medium flex-shrink-0',
                             isRoot ? 'bg-cat-2 text-white' :
                             isLeaf ? 'bg-success-500 text-white' :
                             'bg-neutral-300 text-neutral-700 dark:text-neutral-200'
                           )}>
                             {idx + 1}
                           </span>
-                          <span className="text-sm font-medium text-neutral-800 flex-1 dark:text-neutral-100">{level.levelName}</span>
-                          <span className="text-xs text-neutral-400 dark:text-neutral-500">({level.dimensionType})</span>
+                          <span className="text-body-sm font-medium text-neutral-800 flex-1 dark:text-neutral-100">{level.levelName}</span>
+                          <span className="caption">({level.dimensionType})</span>
                           {isRoot && <Badge variant="info" size="sm">Root</Badge>}
                           {isLeaf && <Badge variant="success" size="sm">Leaf</Badge>}
                           {level.allowedValues && level.allowedValues.length > 0 && (
-                            <span className="text-xs bg-cat-2/10 text-cat-2 px-2 py-0.5 rounded-full dark:bg-cat-2/15">
+                            <span className="text-caption bg-cat-2/10 text-cat-2 px-2 py-0.5 rounded-full dark:bg-cat-2/15">
                               {level.allowedValues.length} values
                             </span>
                           )}
@@ -2660,7 +2660,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                           <div className="px-3 pb-3 border-t border-neutral-200 pt-3 space-y-3 dark:border-primary-800">
                             {/* Level Name Edit */}
                             <div>
-                              <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Level Name</label>
+                              <label className="block label-cased mb-1">Level Name</label>
                               <input
                                 type="text"
                                 value={level.levelName}
@@ -2669,13 +2669,13 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], levelName: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-sm border border-neutral-300 rounded dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded dark:border-primary-700"
                               />
                             </div>
 
                             {/* Dimension Type */}
                             <div>
-                              <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Dimension Type</label>
+                              <label className="block label-cased mb-1">Dimension Type</label>
                               <select
                                 value={level.dimensionType}
                                 onChange={e => {
@@ -2683,7 +2683,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   updated[idx] = { ...updated[idx], dimensionType: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-sm border border-neutral-300 rounded dark:border-primary-700"
+                                className="w-full px-2 py-1 text-body-sm border border-neutral-300 rounded dark:border-primary-700"
                               >
                                 <option value="CURRENCY">💱 Currency</option>
                                 <option value="REGION">🌍 Region</option>
@@ -2709,7 +2709,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                             {/* Allowed Values */}
                             <div>
                               <div className="flex items-center justify-between mb-1">
-                                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-300">Allowed Values</label>
+                                <label className="label-cased">Allowed Values</label>
                                 {(() => {
                                   // Suggested values based on dimension type
                                   const suggestions: Record<string, string[]> = {
@@ -2730,7 +2730,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                           updated[idx] = { ...updated[idx], allowedValues: [...suggestedForType] };
                                           setHierarchyLevelConfigs(updated);
                                         }}
-                                        className="text-xs text-cat-2"
+                                        className="text-caption text-cat-2"
                                       >
                                         + Add suggested
                                       </button>
@@ -2746,7 +2746,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                   level.allowedValues.map((value, vIdx) => (
                                     <span
                                       key={vIdx}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-cat-2/10 text-cat-2 text-xs rounded-full dark:bg-cat-2/15"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-cat-2/10 text-cat-2 text-caption rounded-full dark:bg-cat-2/15"
                                     >
                                       {value}
                                       <button
@@ -2766,7 +2766,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-xs text-neutral-400 italic dark:text-neutral-500">No restrictions (any value allowed)</span>
+                                  <span className="text-caption text-neutral-400 italic dark:text-neutral-500">No restrictions (any value allowed)</span>
                                 )}
                               </div>
 
@@ -2775,7 +2775,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                 <input
                                   type="text"
                                   placeholder="Add value..."
-                                  className="flex-1 px-2 py-1 text-xs border border-neutral-300 rounded dark:border-primary-700"
+                                  className="flex-1 px-2 py-1 text-caption border border-neutral-300 rounded dark:border-primary-700"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -2808,7 +2808,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                                       input.value = '';
                                     }
                                   }}
-                                  className="px-2 py-1 text-xs bg-cat-2 text-white rounded hover:bg-cat-2/90"
+                                  className="px-2 py-1 text-caption bg-cat-2 text-white rounded hover:bg-cat-2/90"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
@@ -2816,7 +2816,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                             </div>
 
                             {/* Required Toggle */}
-                            <label className="flex items-center gap-2 text-xs">
+                            <label className="flex items-center gap-2 text-caption">
                               <input
                                 type="checkbox"
                                 checked={level.isRequired ?? false}
@@ -2837,7 +2837,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 </div>
 
                 {/* Summary */}
-                <div className="mt-3 pt-3 border-t border-neutral-200 flex items-center justify-between text-xs text-neutral-500 dark:border-primary-800 dark:text-neutral-400">
+                <div className="mt-3 pt-3 border-t border-neutral-200 flex items-center justify-between caption dark:border-primary-800">
                   <span>
                     {hierarchyLevelConfigs.slice(0, formData.hierarchyDepth).filter(l => l.allowedValues && l.allowedValues.length > 0).length} of {formData.hierarchyDepth} levels have restrictions
                   </span>
@@ -2852,9 +2852,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                <div className="text-sm text-info-800 dark:text-info-300">
+                <div className="text-body-sm text-info-800 dark:text-info-300">
                   <p className="font-medium">About Hierarchy</p>
-                  <ul className="mt-1 space-y-1 text-info-700 text-xs dark:text-info-300">
+                  <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
                     <li>• Balances aggregate up the hierarchy automatically</li>
                     <li>• Virtual accounts (VAs) are always at the leaf level</li>
                     <li>• You can customize level labels and allowed values after creation</li>
@@ -2876,7 +2876,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               Step 3: VIBAN Pool Configuration
             </h3>
 
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Configure how VIBANs will be generated for this program.</p>
+            <p className="body-sm">Configure how VIBANs will be generated for this program.</p>
 
             {/* Generation Strategy */}
             <div>
@@ -2897,9 +2897,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <StrategyIcon className={cn('w-5 h-5', isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400')} />
-                        <span className="font-medium text-sm">{config.label}</span>
+                        <span className="font-medium text-body-sm">{config.label}</span>
                       </div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{config.description}</p>
+                      <p className="caption">{config.description}</p>
                     </button>
                   );
                 })}
@@ -2927,15 +2927,15 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
                       <p className="section-title">{selectedPool.totalVibans}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Total</p>
+                      <p className="caption">Total</p>
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-success-600 dark:text-success-300">{selectedPool.availableVibans}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Available</p>
+                      <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{selectedPool.availableVibans}</p>
+                      <p className="caption">Available</p>
                     </div>
                     <div>
-                      <p className="text-lg font-semibold text-warning-600 dark:text-warning-300">{selectedPool.usedVibans}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Used</p>
+                      <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{selectedPool.usedVibans}</p>
+                      <p className="caption">Used</p>
                     </div>
                   </div>
                 </div>
@@ -2970,8 +2970,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Sample VIBAN Preview */}
             <div className="bg-neutral-100 rounded-lg p-4 dark:bg-primary-800">
-              <p className="text-xs text-neutral-500 mb-2 text-center dark:text-neutral-400">Sample VIBAN Format</p>
-              <p className="font-mono text-xl text-center text-primary-900 tracking-wider dark:text-neutral-50">
+              <p className="caption mb-2 text-center">Sample VIBAN Format</p>
+              <p className="font-mono text-heading-sm text-center text-primary-900 tracking-wider dark:text-neutral-50">
                 {formData.vibanPrefix || 'AE'}{formData.vibanBankCode || '00'}-
                 {formData.vibanGenerationStrategy === 'SEQUENTIAL' && '0000-0001'}
                 {formData.vibanGenerationStrategy === 'RANDOM' && 'X7K2-9M4P'}
@@ -2990,16 +2990,16 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               Wallet Limits Configuration
             </h3>
 
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Configure transaction limits, balance caps, and wallet feature settings for this program.</p>
+            <p className="body-sm">Configure transaction limits, balance caps, and wallet feature settings for this program.</p>
 
             {/* Transaction Limits */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Transaction Limits</h4>
+              <h4 className="text-body-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Transaction Limits</h4>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Per Transaction Limit</label>
+                  <label className="block label-cased mb-1">Per Transaction Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3010,9 +3010,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Daily Limit</label>
+                  <label className="block label-cased mb-1">Daily Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3023,9 +3023,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Monthly Limit</label>
+                  <label className="block label-cased mb-1">Monthly Limit</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3040,12 +3040,12 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Balance Limits */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Balance Limits</h4>
+              <h4 className="text-body-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Balance Limits</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Maximum Balance</label>
+                  <label className="block label-cased mb-1">Maximum Balance</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3054,12 +3054,12 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       onChange={e => setFormData({ ...formData, defaultMaxBalance: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
-                  <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">Cap on total wallet balance</p>
+                  <p className="caption mt-1">Cap on total wallet balance</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Minimum Balance</label>
+                  <label className="block label-cased mb-1">Minimum Balance</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm dark:text-neutral-500">{formData.currencyCode}</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-500">{formData.currencyCode}</span>
                     <input
                       type="number"
                       className="w-full pl-12 pr-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
@@ -3068,14 +3068,14 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       onChange={e => setFormData({ ...formData, minBalanceThreshold: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
-                  <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">Required minimum balance to maintain</p>
+                  <p className="caption mt-1">Required minimum balance to maintain</p>
                 </div>
               </div>
             </div>
 
             {/* KYC Configuration */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">KYC Configuration</h4>
+              <h4 className="text-body-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">KYC Configuration</h4>
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex items-center gap-3 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 dark:border-primary-800 dark:hover:bg-primary-800/50">
                   <input
@@ -3084,12 +3084,12 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     onChange={e => setFormData({ ...formData, kycRequired: e.target.checked })}
                   />
                   <div>
-                    <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">KYC Required</span>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Require KYC verification for wallet holders</p>
+                    <span className="body-strong">KYC Required</span>
+                    <p className="caption">Require KYC verification for wallet holders</p>
                   </div>
                 </label>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-600 mb-1 dark:text-neutral-300">Minimum KYC Level</label>
+                  <label className="block label-cased mb-1">Minimum KYC Level</label>
                   <select
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg dark:border-primary-700"
                     value={formData.minKycLevel ?? 1}
@@ -3107,7 +3107,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             {/* Wallet Features/Capabilities */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Wallet Capabilities</h4>
+              <h4 className="text-body-sm font-medium text-neutral-700 border-b pb-2 dark:text-neutral-200">Wallet Capabilities</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { key: 'allowTopup', label: 'Allow Topup', desc: 'Add funds to wallet', defaultVal: true },
@@ -3122,8 +3122,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                       onChange={e => setFormData({ ...formData, [cap.key]: e.target.checked })}
                     />
                     <div>
-                      <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{cap.label}</span>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{cap.desc}</p>
+                      <span className="body-strong">{cap.label}</span>
+                      <p className="caption">{cap.desc}</p>
                     </div>
                   </label>
                 ))}
@@ -3134,9 +3134,9 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div className="bg-info-50 border border-info-200 rounded-lg p-3 dark:bg-info-500/10 dark:border-info-500/30">
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-                <div className="text-sm text-info-800 dark:text-info-300">
+                <div className="text-body-sm text-info-800 dark:text-info-300">
                   <p className="font-medium">About Wallet Limits</p>
-                  <ul className="mt-1 space-y-1 text-info-700 text-xs dark:text-info-300">
+                  <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
                     <li>• Limits can be overridden at the individual wallet level</li>
                     <li>• KYC levels determine maximum allowed limits</li>
                     <li>• Leave blank to use system defaults</li>
@@ -3158,7 +3158,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               <Badge variant="info" size="sm">ChargeConfiguration</Badge>
             </h3>
 
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">Configure fee overrides for this program. Leave blank to use base rates.</p>
+            <p className="body-sm">Configure fee overrides for this program. Leave blank to use base rates.</p>
 
             {loadingCharges ? (
               <div className="flex items-center justify-center py-8">
@@ -3189,17 +3189,17 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{walletCharges.issuance.chargeName}</span>
-                    <label className="flex items-center gap-1 text-xs">
+                    <span className="text-body-sm font-medium">{walletCharges.issuance.chargeName}</span>
+                    <label className="flex items-center gap-1 text-caption">
                       <input type="checkbox" checked={chargeOverrides.issuance.waived}
                         onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: e.target.checked } })} />
                       Waive
                     </label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
+                    <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-sm border rounded', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.issuance.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
@@ -3207,17 +3207,17 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{walletCharges.monthly.chargeName}</span>
-                    <label className="flex items-center gap-1 text-xs">
+                    <span className="text-body-sm font-medium">{walletCharges.monthly.chargeName}</span>
+                    <label className="flex items-center gap-1 text-caption">
                       <input type="checkbox" checked={chargeOverrides.monthly.waived}
                         onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: e.target.checked } })} />
                       Waive
                     </label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
+                    <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-sm border rounded', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.monthly.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
@@ -3225,17 +3225,17 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 </div>
                 <div className="p-3 bg-neutral-50 rounded-lg dark:bg-primary-950">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{walletCharges.inactivity.chargeName}</span>
-                    <label className="flex items-center gap-1 text-xs">
+                    <span className="text-body-sm font-medium">{walletCharges.inactivity.chargeName}</span>
+                    <label className="flex items-center gap-1 text-caption">
                       <input type="checkbox" checked={chargeOverrides.inactivity.waived}
                         onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: e.target.checked } })} />
                       Waive
                     </label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
+                    <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-600" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-sm border rounded', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded', chargeOverrides.inactivity.waived && 'bg-neutral-100 dark:bg-primary-800')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />
@@ -3246,7 +3246,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex items-start gap-2 dark:bg-info-500/10 dark:border-info-500/30">
               <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
-              <p className="text-sm text-info-700 dark:text-info-300">
+              <p className="text-body-sm text-info-700 dark:text-info-300">
                 Fees are managed via ChargeConfiguration. Override values apply to this program only. Leave blank to use base rates.
               </p>
             </div>
@@ -3340,11 +3340,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                 onChange={e => setFormData({ ...formData, realtimeBalancePropagation: e.target.checked })} 
               />
               <div>
-                <span className="text-sm font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
+                <span className="body-strong flex items-center gap-2">
                   <Zap className="w-4 h-4 text-success-500" />
                   Real-time Balance Propagation
                 </span>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Instantly update parent balances when child accounts change</p>
+                <p className="caption">Instantly update parent balances when child accounts change</p>
               </div>
             </label>
           </div>
@@ -3363,8 +3363,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
             <div className="bg-neutral-50 rounded-lg p-4 space-y-4 dark:bg-primary-950">
               {/* Basic Info */}
               <div>
-                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">Basic Information</h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <h4 className="label mb-2">Basic Information</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                   <div><span className="text-neutral-500 dark:text-neutral-400">Code:</span> <span className="font-mono font-medium">{formData.programCode}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <Badge variant="neutral">{programTypeConfig[formData.programType]?.label}</Badge></div>
@@ -3374,7 +3374,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
               {/* Features */}
               <div className="border-t pt-4">
-                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">Features</h4>
+                <h4 className="label mb-2">Features</h4>
                 <div className="flex flex-wrap gap-2">
                   {formData.vibanEnabled && <Badge variant="info">VIBAN</Badge>}
                   {formData.walletEnabled && <Badge variant="warning">Wallet</Badge>}
@@ -3388,7 +3388,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                   {formData.autoReconciliation && <Badge variant="neutral">Auto-Recon</Badge>}
                   {formData.realtimeBalancePropagation && <Badge variant="success">Real-time</Badge>}
                   {!formData.vibanEnabled && !formData.walletEnabled && !formData.escrowEnabled && !formData.ihbEnabled && (
-                    <span className="text-sm text-neutral-400 dark:text-neutral-500">Standard features only</span>
+                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500">Standard features only</span>
                   )}
                 </div>
               </div>
@@ -3396,8 +3396,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               {/* Hierarchy Config */}
               {formData.hierarchyEnabled && (
                 <div className="border-t pt-4">
-                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">Hierarchy Configuration</h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <h4 className="label mb-2">Hierarchy Configuration</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                     <div><span className="text-neutral-500 dark:text-neutral-400">Template:</span> <span className="font-medium">{formData.defaultHierarchyTemplate || 'Custom'}</span></div>
                     <div><span className="text-neutral-500 dark:text-neutral-400">Depth:</span> <span className="font-medium">{formData.hierarchyDepth} levels</span></div>
                   </div>
@@ -3407,8 +3407,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               {/* Wallet Limits */}
               {needsWalletConfig && (
                 <div className="border-t pt-4">
-                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">Wallet Limits</h4>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <h4 className="label mb-2">Wallet Limits</h4>
+                  <div className="grid grid-cols-3 gap-2 text-caption">
                     {formData.defaultPerTransactionLimit && (
                       <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
                         <span className="text-neutral-500 dark:text-neutral-400">Per Txn:</span>
@@ -3447,8 +3447,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               {/* VIBAN Config */}
               {formData.vibanEnabled && (
                 <div className="border-t pt-4">
-                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">VIBAN Configuration</h4>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <h4 className="label mb-2">VIBAN Configuration</h4>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                     <div><span className="text-neutral-500 dark:text-neutral-400">Strategy:</span> <span className="font-medium">{vibanStrategyConfig[formData.vibanGenerationStrategy]?.label}</span></div>
                     <div><span className="text-neutral-500 dark:text-neutral-400">Prefix:</span> <span className="font-mono">{formData.vibanPrefix || 'Default'}</span></div>
                     {selectedPool && <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Pool:</span> <span className="font-medium">{selectedPool.poolName}</span></div>}
@@ -3459,11 +3459,11 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
               {/* Wallet Fees */}
               {needsWalletConfig && walletCharges && (
                 <div className="border-t pt-4">
-                  <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 flex items-center gap-2 dark:text-neutral-400">
+                  <h4 className="label mb-2 flex items-center gap-2">
                     Wallet Fees <Badge variant="info" size="sm">ChargeConfiguration</Badge>
                   </h4>
                   {/* Transaction Fees */}
-                  <div className="grid grid-cols-3 gap-2 text-xs mb-2">
+                  <div className="grid grid-cols-3 gap-2 text-caption mb-2">
                     <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Topup:</span>
                       <span className="font-medium ml-1">
@@ -3490,7 +3490,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
                     </div>
                   </div>
                   {/* Fixed Fees */}
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-3 gap-2 text-caption">
                     <div className="p-2 bg-neutral-100 rounded dark:bg-primary-800">
                       <span className="text-neutral-500 dark:text-neutral-400">Issuance:</span>
                       <span className="font-medium ml-1">
@@ -3518,8 +3518,8 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
               {/* Settlement */}
               <div className="border-t pt-4">
-                <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 dark:text-neutral-400">Settlement</h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <h4 className="label mb-2">Settlement</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                   <div><span className="text-neutral-500 dark:text-neutral-400">Frequency:</span> <span className="font-medium">{settlementFrequencyConfig[formData.settlementFrequency]?.label}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Time:</span> <span className="font-medium">{formData.settlementTime || 'Anytime'}</span></div>
                 </div>
@@ -3528,7 +3528,7 @@ const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, on
 
             <div className="bg-success-50 border border-success-200 rounded-lg p-3 flex items-start gap-2 dark:bg-success-500/10 dark:border-success-500/30">
               <CheckCircle className="w-4 h-4 text-success-600 mt-0.5 dark:text-success-300" />
-              <p className="text-sm text-success-700 dark:text-success-300">
+              <p className="text-body-sm text-success-700 dark:text-success-300">
                 Ready to create program. Click "Create Program" to proceed.
               </p>
             </div>
@@ -3589,7 +3589,7 @@ const CorporateSelector: React.FC<{
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     disabled={loading}
-    className="px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
+    className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px] dark:border-primary-700"
   >
     {loading ? (
       <option value="">Loading corporates...</option>
@@ -3855,8 +3855,8 @@ const ProgramsPage: React.FC = () => {
           return (
             <div key={tab.id} onClick={() => setTypeFilter(tab.id)} className="cursor-pointer">
               <Card padding="sm" className={cn('transition-all hover:shadow-medium', typeFilter === tab.id && 'ring-2 ring-primary-500')}>
-                <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="text-xs text-neutral-500 truncate dark:text-neutral-400">{tab.label}</span></div>
-                <p className="text-lg font-semibold text-primary-900 mt-1 dark:text-neutral-50">{tab.count}</p>
+                <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption truncate">{tab.label}</span></div>
+                <p className="text-body-lg font-semibold text-primary-900 mt-1 dark:text-neutral-50">{tab.count}</p>
               </Card>
             </div>
           );
@@ -3914,13 +3914,13 @@ const ProgramsPage: React.FC = () => {
                             {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500" /></span>}
                             {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500" /></span>}
                           </div>
-                          <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
+                          <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4"><Badge variant="neutral">{typeConfig?.label || program.programType}</Badge></td>
-                    <td className="p-4"><p className="text-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p></td>
-                    <td className="p-4 text-center"><p className="text-sm font-medium">{program.virtualAccountCount || 0}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{program.activeVirtualAccountCount || 0} active</p></td>
+                    <td className="p-4"><p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p></td>
+                    <td className="p-4 text-center"><p className="text-body-sm font-medium">{program.virtualAccountCount || 0}</p><p className="caption">{program.activeVirtualAccountCount || 0} active</p></td>
                     <td className="p-4 text-right"><p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p></td>
                     <td className="p-4">
                       <div className="flex gap-1 flex-wrap">
@@ -3931,7 +3931,7 @@ const ProgramsPage: React.FC = () => {
                         {hasHierarchy && <Badge variant="neutral" size="sm">Hierarchy</Badge>}
                         {program.loyaltyEnabled && <Badge variant="neutral" size="sm">Loyalty</Badge>}
                         {program.giftCardEnabled && <Badge variant="neutral" size="sm">Gift</Badge>}
-                        {!program.vibanEnabled && !program.walletEnabled && !program.escrowEnabled && !program.ihbEnabled && <span className="text-xs text-neutral-400 dark:text-neutral-500">Standard</span>}
+                        {!program.vibanEnabled && !program.walletEnabled && !program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
                       </div>
                     </td>
                     <td className="p-4"><Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge></td>
@@ -3958,7 +3958,7 @@ const ProgramsPage: React.FC = () => {
                                 {/* Status Actions */}
                                 {program.status === 'ACTIVE' && (
                                   <button
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
+                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
                                     onClick={() => { handleStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
                                   >
                                     <PauseCircle className="w-4 h-4" />
@@ -3967,7 +3967,7 @@ const ProgramsPage: React.FC = () => {
                                 )}
                                 {program.status === 'SUSPENDED' && (
                                   <button
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
+                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
                                     onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
                                   >
                                     <PlayCircle className="w-4 h-4" />
@@ -3976,7 +3976,7 @@ const ProgramsPage: React.FC = () => {
                                 )}
                                 {program.status === 'PENDING_APPROVAL' && (
                                   <button
-                                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
+                                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
                                     onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
                                   >
                                     <CheckCircle className="w-4 h-4" />
@@ -3985,7 +3985,7 @@ const ProgramsPage: React.FC = () => {
                                 )}
                                 {/* Clone Action */}
                                 <button
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
+                                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
                                   onClick={() => {
                                     // Clone by opening create modal with program data pre-filled
                                     setEditProgram({ ...program, id: '', programCode: program.programCode + '-COPY', programName: program.programName + ' (Copy)' } as Program);
@@ -3999,7 +3999,7 @@ const ProgramsPage: React.FC = () => {
                                 <div className="border-t border-neutral-100 my-1 dark:border-primary-800/60" />
                                 {/* Delete Action */}
                                 <button
-                                  className="w-full px-3 py-2 text-left text-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
+                                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
                                   onClick={() => {
                                     if (confirm(`Are you sure you want to delete "${program.programName}"? This action cannot be undone.`)) {
                                       programApi.delete(program.id).then(res => {
@@ -4031,8 +4031,8 @@ const ProgramsPage: React.FC = () => {
         {filteredPrograms.length === 0 && !loading && (
           <div className="text-center py-12">
             <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-600" />
-            <p className="text-lg font-medium text-primary-900 dark:text-neutral-50">No programs found</p>
-            <p className="text-sm text-neutral-500 mt-1 dark:text-neutral-400">
+            <p className="text-body-lg font-medium text-primary-900 dark:text-neutral-50">No programs found</p>
+            <p className="body-sm mt-1">
               {searchQuery || typeFilter !== 'ALL' || statusFilter !== 'ALL' 
                 ? 'Try adjusting your search or filters'
                 : selectedCorporateId 

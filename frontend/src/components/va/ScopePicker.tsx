@@ -134,7 +134,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
       <div key={nodeId(n)}>
         <div
           className={cn(
-            'flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition-colors',
+            'flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-body-sm transition-colors',
             isSelected
               ? 'bg-primary-50 ring-1 ring-primary-400 dark:bg-primary-800/40'
               : 'hover:bg-neutral-50 dark:hover:bg-primary-800/40'
@@ -168,12 +168,12 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
   };
 
   if (!contextId) {
-    return <p className="text-sm text-neutral-500 dark:text-neutral-400">Select a program or corporate first.</p>;
+    return <p className="body-sm">Select a program or corporate first.</p>;
   }
 
   if (fetchingTree) {
     return (
-      <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 py-4">
+      <div className="flex items-center gap-2 body-sm py-4">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading hierarchy…
       </div>
     );
@@ -183,12 +183,12 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
     <div className="space-y-2">
       <div className="border border-neutral-200 dark:border-primary-800 rounded-lg p-2 max-h-80 overflow-y-auto">
         {roots.length === 0 ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 p-2">No nodes found.</p>
+          <p className="body-sm p-2">No nodes found.</p>
         ) : (
           roots.map(r => renderNode(r, 0))
         )}
       </div>
-      {error && <p className="text-xs text-error-600 dark:text-error-400">{error}</p>}
+      {error && <p className="caption-error">{error}</p>}
     </div>
   );
 };

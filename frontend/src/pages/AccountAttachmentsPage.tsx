@@ -186,7 +186,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
       >
-        <span className={cn('text-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
+        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
           {getSelectedLabel()}
         </span>
         <ChevronDown className={cn('w-4 h-4 text-neutral-400 dark:text-neutral-500', isOpen && 'rotate-180')} />
@@ -202,7 +202,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded dark:border-primary-800"
+                className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded dark:border-primary-800"
                 autoFocus
               />
             </div>
@@ -212,14 +212,14 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
             <button
               type="button"
               onClick={() => setActiveTab('va')}
-              className={cn('flex-1 px-4 py-2 text-sm font-medium', activeTab === 'va' ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400')}
+              className={cn('flex-1 px-4 py-2 text-body-sm font-medium', activeTab === 'va' ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400')}
             >
               <Wallet className="w-4 h-4 inline mr-1" />Virtual Accounts
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('hierarchy')}
-              className={cn('flex-1 px-4 py-2 text-sm font-medium', activeTab === 'hierarchy' ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400')}
+              className={cn('flex-1 px-4 py-2 text-body-sm font-medium', activeTab === 'hierarchy' ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-200' : 'text-neutral-500 dark:text-neutral-400')}
             >
               <Layers className="w-4 h-4 inline mr-1" />Aggregation Levels
             </button>
@@ -232,7 +232,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
               </div>
             ) : activeTab === 'va' ? (
               filteredVAs.length === 0 ? (
-                <div className="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">No accounts found</div>
+                <div className="text-center py-4 body-sm">No accounts found</div>
               ) : (
                 filteredVAs.map(va => (
                   <button
@@ -243,8 +243,8 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                   >
                     <div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{va.vaNumber}</p>
-                      <p className="text-xs text-neutral-500 truncate dark:text-neutral-400">{va.vaName}</p>
+                      <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{va.vaNumber}</p>
+                      <p className="caption truncate">{va.vaName}</p>
                     </div>
                     <Badge variant="neutral" size="sm">{va.currencyCode}</Badge>
                   </button>
@@ -252,7 +252,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
               )
             ) : (
               filteredNodes.length === 0 ? (
-                <div className="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">No hierarchy nodes found</div>
+                <div className="text-center py-4 body-sm">No hierarchy nodes found</div>
               ) : (
                 filteredNodes.map(node => {
                   const Icon = getNodeIcon(node.type);
@@ -268,8 +268,8 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
                         <Icon className={cn('w-3 h-3', node.type === 'GROUP' ? 'text-white' : 'text-cat-1')} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{node.type} • Level {node.level}</p>
+                        <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.name}</p>
+                        <p className="caption">{node.type} • Level {node.level}</p>
                       </div>
                       <Badge variant="neutral" size="sm">{node.currencyCode}</Badge>
                     </button>
@@ -279,7 +279,7 @@ const AccountNodePicker: React.FC<AccountNodePickerProps> = ({ selectedId, onSel
             )}
           </div>
           <div className="p-2 border-t bg-neutral-50 dark:bg-primary-950">
-            <button type="button" onClick={() => setIsOpen(false)} className="w-full text-center text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">Close</button>
+            <button type="button" onClick={() => setIsOpen(false)} className="w-full text-center body-sm hover:text-neutral-700 dark:hover:text-neutral-200">Close</button>
           </div>
         </div>
       )}
@@ -314,7 +314,7 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-3 py-2 border border-neutral-300 rounded-lg bg-white hover:border-primary-400 dark:border-primary-700 dark:bg-primary-900"
       >
-        <span className={cn('text-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
+        <span className={cn('text-body-sm', selectedId ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-400 dark:text-neutral-500')}>
           {selectedEntity ? `${selectedEntity.entityName} (${selectedEntity.entityCode})` : 'Select Entity...'}
         </span>
         <ChevronDown className={cn('w-4 h-4 text-neutral-400 dark:text-neutral-500', isOpen && 'rotate-180')} />
@@ -325,21 +325,21 @@ const LegalEntityPicker: React.FC<LegalEntityPickerProps> = ({ selectedId, onSel
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-sm border border-neutral-200 rounded dark:border-primary-800" autoFocus />
+              <input type="text" placeholder="Search entities..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 pr-3 py-1.5 text-body-sm border border-neutral-200 rounded dark:border-primary-800" autoFocus />
             </div>
           </div>
           <div className="max-h-48 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary-600 dark:text-primary-200" /></div>
             ) : filteredEntities.length === 0 ? (
-              <div className="text-center py-4 text-sm text-neutral-500 dark:text-neutral-400">No entities found</div>
+              <div className="text-center py-4 body-sm">No entities found</div>
             ) : (
               filteredEntities.map(entity => (
                 <button key={entity.id} type="button" onClick={() => { onSelect(entity.id); setIsOpen(false); }} className={cn('w-full flex items-center gap-3 px-3 py-2 hover:bg-neutral-50 text-left dark:hover:bg-primary-800/50', selectedId === entity.id && 'bg-primary-50 dark:bg-primary-800/40')}>
                   <div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1" /></div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{entity.entityName}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{entity.entityCode} • {entity.entityType}</p>
+                    <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{entity.entityName}</p>
+                    <p className="caption">{entity.entityCode} • {entity.entityType}</p>
                   </div>
                   <Badge variant={entity.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm">{entity.status}</Badge>
                 </button>
@@ -612,11 +612,11 @@ const AccountAttachmentsPage: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
             <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value as RelationshipType | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
             <option value="">All Types</option>
             {Object.entries(RELATIONSHIP_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as AttachmentStatus | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as AttachmentStatus | '')} className="px-3 py-2 border border-neutral-200 rounded-lg bg-white text-body-sm focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900">
             <option value="">All Statuses</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
@@ -644,7 +644,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 return (
                   <div className="flex items-center gap-3">
                     <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", cfg?.bgColor)}><Icon className={cn("w-5 h-5", cfg?.color)} /></div>
-                    <div className="min-w-0"><p className="text-sm font-semibold text-primary-900 truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="text-xs text-neutral-500 truncate dark:text-neutral-400">{att.entityName || 'Unknown Entity'}</p></div>
+                    <div className="min-w-0"><p className="text-body-sm font-semibold text-primary-900 truncate dark:text-neutral-50">{att.vaNumber || att.virtualAccountId}</p><p className="caption truncate">{att.entityName || 'Unknown Entity'}</p></div>
                   </div>
                 );
               },
@@ -667,8 +667,8 @@ const AccountAttachmentsPage: React.FC = () => {
               key: 'effectiveFrom',
               header: 'Validity',
               render: (_, att) => (
-                <span className="text-sm text-neutral-600 dark:text-neutral-300">
-                  {formatDate(att.effectiveFrom)}{att.effectiveTo && <span className="text-xs text-neutral-400 dark:text-neutral-500"> to {formatDate(att.effectiveTo)}</span>}
+                <span className="body-sm">
+                  {formatDate(att.effectiveFrom)}{att.effectiveTo && <span className="caption"> to {formatDate(att.effectiveTo)}</span>}
                 </span>
               ),
             },
@@ -677,8 +677,8 @@ const AccountAttachmentsPage: React.FC = () => {
               header: 'Limits',
               render: (_, att) => (
                 <>
-                  {att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-xs">Max: {formatCurrency(att.maxTransactionAmount)}</span>}
-                  {att.relationshipType === 'COLLATERAL' && att.collateralPercent && <span className="text-xs flex items-center gap-1"><Percent className="w-3 h-3" />{att.collateralPercent}%</span>}
+                  {att.relationshipType === 'AUTHORIZED' && att.maxTransactionAmount && <span className="text-caption">Max: {formatCurrency(att.maxTransactionAmount)}</span>}
+                  {att.relationshipType === 'COLLATERAL' && att.collateralPercent && <span className="text-caption flex items-center gap-1"><Percent className="w-3 h-3" />{att.collateralPercent}%</span>}
                 </>
               ),
             },
@@ -707,29 +707,29 @@ const AccountAttachmentsPage: React.FC = () => {
                 <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.bgColor)}>
                   {React.createElement(RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.icon || Link2, { className: cn("w-6 h-6", RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.color) })}
                 </div>
-                <div><h3 className="text-lg font-semibold">{selectedAttachment.vaNumber}</h3><p className="text-sm text-neutral-500 dark:text-neutral-400">{selectedAttachment.entityName}</p></div>
+                <div><h3 className="text-body-lg font-semibold">{selectedAttachment.vaNumber}</h3><p className="body-sm">{selectedAttachment.entityName}</p></div>
               </div>
               <Badge variant={STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.variant}>{STATUS_CONFIG[selectedAttachment.status as AttachmentStatus]?.label}</Badge>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="text-xs text-neutral-500 dark:text-neutral-400">Relationship</p><p className="font-medium">{RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.label}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="text-xs text-neutral-500 dark:text-neutral-400">Primary</p><p className="font-medium">{selectedAttachment.isPrimary ? 'Yes' : 'No'}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="text-xs text-neutral-500 dark:text-neutral-400">Effective From</p><p className="font-medium">{formatDate(selectedAttachment.effectiveFrom)}</p></div>
-              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="text-xs text-neutral-500 dark:text-neutral-400">Effective To</p><p className="font-medium">{selectedAttachment.effectiveTo ? formatDate(selectedAttachment.effectiveTo) : 'Indefinite'}</p></div>
+              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Relationship</p><p className="font-medium">{RELATIONSHIP_CONFIG[selectedAttachment.relationshipType as RelationshipType]?.label}</p></div>
+              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Primary</p><p className="font-medium">{selectedAttachment.isPrimary ? 'Yes' : 'No'}</p></div>
+              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Effective From</p><p className="font-medium">{formatDate(selectedAttachment.effectiveFrom)}</p></div>
+              <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950"><p className="caption">Effective To</p><p className="font-medium">{selectedAttachment.effectiveTo ? formatDate(selectedAttachment.effectiveTo) : 'Indefinite'}</p></div>
             </div>
             {selectedAttachment.relationshipType === 'AUTHORIZED' && (
               <div className="bg-cat-2-soft rounded-lg p-4 dark:bg-cat-2/15">
-                <h4 className="text-sm font-medium text-cat-2 mb-3">Authorization Limits</h4>
+                <h4 className="text-body-sm font-medium text-cat-2 mb-3">Authorization Limits</h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><p className="text-xs text-cat-2">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount) : 'Unlimited'}</p></div>
-                  <div><p className="text-xs text-cat-2">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit) : 'Unlimited'}</p></div>
+                  <div><p className="text-caption text-cat-2">Max Transaction</p><p className="font-semibold">{selectedAttachment.maxTransactionAmount ? formatCurrency(selectedAttachment.maxTransactionAmount) : 'Unlimited'}</p></div>
+                  <div><p className="text-caption text-cat-2">Daily Limit</p><p className="font-semibold">{selectedAttachment.dailyLimit ? formatCurrency(selectedAttachment.dailyLimit) : 'Unlimited'}</p></div>
                 </div>
               </div>
             )}
             {selectedAttachment.relationshipType === 'COLLATERAL' && selectedAttachment.collateralPercent && (
               <div className="bg-error-50 rounded-lg p-4 dark:bg-error-500/10">
-                <h4 className="text-sm font-medium text-error-700 mb-3 dark:text-error-300">Collateral Details</h4>
-                <div className="flex justify-between"><span className="text-sm text-error-600 dark:text-error-300">Collateral %</span><span className="font-semibold text-error-700 dark:text-error-300">{selectedAttachment.collateralPercent}%</span></div>
+                <h4 className="text-body-sm font-medium text-error-700 mb-3 dark:text-error-300">Collateral Details</h4>
+                <div className="flex justify-between"><span className="text-body-sm text-error-600 dark:text-error-300">Collateral %</span><span className="font-semibold text-error-700 dark:text-error-300">{selectedAttachment.collateralPercent}%</span></div>
               </div>
             )}
             <div className="flex gap-3 pt-4 border-t">
@@ -761,7 +761,7 @@ const AccountAttachmentsPage: React.FC = () => {
                 const isSelected = createForm.relationshipType === key;
                 return (
                   <button key={key} type="button" onClick={() => setCreateForm(p => ({ ...p, relationshipType: key as RelationshipType }))} className={cn("flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all", isSelected ? `${config.bgColor} ${config.color} border-current` : 'bg-white border-neutral-200 hover:border-neutral-300 dark:bg-primary-900 dark:border-primary-800 dark:hover:border-primary-700')}>
-                    <Icon className="w-5 h-5" /><span className="text-xs font-medium">{config.label}</span>
+                    <Icon className="w-5 h-5" /><span className="text-caption font-medium">{config.label}</span>
                   </button>
                 );
               })}
@@ -770,7 +770,7 @@ const AccountAttachmentsPage: React.FC = () => {
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={createForm.isPrimary} onChange={(e) => setCreateForm(p => ({ ...p, isPrimary: e.target.checked }))} className="rounded text-primary-600 dark:text-primary-200" />
-            <span className="text-sm">Set as Primary</span>
+            <span className="text-body-sm">Set as Primary</span>
           </label>
 
           <div className="grid grid-cols-2 gap-4">
@@ -780,18 +780,18 @@ const AccountAttachmentsPage: React.FC = () => {
 
           {createForm.relationshipType === 'AUTHORIZED' && (
             <div className="p-4 bg-cat-2-soft rounded-lg space-y-4 dark:bg-cat-2/15">
-              <h4 className="text-sm font-medium text-cat-2 flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
+              <h4 className="text-body-sm font-medium text-cat-2 flex items-center gap-2"><UserCheck className="w-4 h-4" />Authorization Limits</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="field-label block mb-1">Max Transaction Amount</label><Input type="number" placeholder="e.g., 500000" value={createForm.maxTransactionAmount} onChange={(e) => setCreateForm(p => ({ ...p, maxTransactionAmount: e.target.value }))} /></div>
                 <div><label className="field-label block mb-1">Daily Limit</label><Input type="number" placeholder="e.g., 1000000" value={createForm.dailyLimit} onChange={(e) => setCreateForm(p => ({ ...p, dailyLimit: e.target.value }))} /></div>
               </div>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded text-cat-2" /><span className="text-sm">Require Dual Authorization</span></label>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={createForm.requiresDualAuth} onChange={(e) => setCreateForm(p => ({ ...p, requiresDualAuth: e.target.checked }))} className="rounded text-cat-2" /><span className="text-body-sm">Require Dual Authorization</span></label>
             </div>
           )}
 
           {createForm.relationshipType === 'COLLATERAL' && (
             <div className="p-4 bg-error-50 rounded-lg space-y-4 dark:bg-error-500/10">
-              <h4 className="text-sm font-medium text-error-700 flex items-center gap-2 dark:text-error-300"><Lock className="w-4 h-4" />Collateral Details</h4>
+              <h4 className="text-body-sm font-medium text-error-700 flex items-center gap-2 dark:text-error-300"><Lock className="w-4 h-4" />Collateral Details</h4>
               <div><label className="field-label block mb-1">Collateral Percentage (%)</label><Input type="number" placeholder="e.g., 100" min="0" max="100" value={createForm.collateralPercent} onChange={(e) => setCreateForm(p => ({ ...p, collateralPercent: e.target.value }))} /></div>
             </div>
           )}
@@ -810,7 +810,7 @@ const AccountAttachmentsPage: React.FC = () => {
       {/* Transfer Modal */}
       <Modal isOpen={showTransferModal} onClose={() => setShowTransferModal(false)} title="Transfer Ownership">
         <div className="p-4 space-y-4">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">Transfer ownership of <strong>{selectedAttachment?.vaNumber}</strong> to another entity.</p>
+          <p className="body-sm">Transfer ownership of <strong>{selectedAttachment?.vaNumber}</strong> to another entity.</p>
           <LegalEntityPicker selectedId={transferForm.newOwnerId} onSelect={(id) => setTransferForm(p => ({ ...p, newOwnerId: id }))} label="New Owner Entity *" entities={entities.filter(e => e.id !== selectedEntityId)} loading={entitiesLoading} />
           <div><label className="field-label block mb-1">Transfer Reason</label><Input placeholder="e.g., Corporate restructuring" value={transferForm.transferReason} onChange={(e) => setTransferForm(p => ({ ...p, transferReason: e.target.value }))} /></div>
           <div className="flex gap-3 pt-4 border-t">

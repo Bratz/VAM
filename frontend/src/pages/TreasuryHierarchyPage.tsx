@@ -204,7 +204,7 @@ interface AddNodeTypeSelectorProps {
 const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onClose }) => {
   return (
     <div className="p-4 space-y-4">
-      <p className="text-sm text-neutral-600 dark:text-neutral-300">
+      <p className="body-sm">
         Select the type of node to add to the hierarchy:
       </p>
 
@@ -219,14 +219,14 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-cat-1">Add AGGREGATION</h3>
+              <h3 className="text-body font-semibold text-cat-1">Add AGGREGATION</h3>
               <Badge variant="info" size="sm">Intermediate</Badge>
             </div>
-            <p className="text-sm text-cat-1 mt-1">
+            <p className="text-body-sm text-cat-1 mt-1">
               Creates a grouping node that can contain other AGGREGATIONs or Transaction VAs.
               Used for organizing hierarchy by region, entity, department, etc.
             </p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-cat-1">
+            <div className="flex items-center gap-4 mt-2 text-caption text-cat-1">
               <span className="flex items-center gap-1">
                 <Layers className="w-3 h-3" /> Can have children
               </span>
@@ -248,14 +248,14 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-success-900 dark:text-success-100">Add Transaction VA</h3>
+              <h3 className="text-body font-semibold text-success-900 dark:text-success-100">Add Transaction VA</h3>
               <Badge variant="success" size="sm">Leaf</Badge>
             </div>
-            <p className="text-sm text-success-700 dark:text-success-300 mt-1">
+            <p className="text-body-sm text-success-700 dark:text-success-300 mt-1">
               Creates a virtual account for actual transactions. Receives payments,
               processes collections, and holds balances.
             </p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-success-600 dark:text-success-300">
+            <div className="flex items-center gap-4 mt-2 caption-success">
               <span className="flex items-center gap-1">
                 <CreditCard className="w-3 h-3" /> Can have VIBANs
               </span>
@@ -277,14 +277,14 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-cat-2">Add IHB Current Account</h3>
+              <h3 className="text-body font-semibold text-cat-2">Add IHB Current Account</h3>
               <Badge variant="default" size="sm" className="bg-cat-2/10 dark:bg-cat-2/15 text-cat-2">IHB</Badge>
             </div>
-            <p className="text-sm text-cat-2 mt-1">
+            <p className="text-body-sm text-cat-2 mt-1">
               Creates a Transaction VA with IHB participation enabled. Supports credit/debit
               interest and participates in corporate treasury sweeps.
             </p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-cat-2">
+            <div className="flex items-center gap-4 mt-2 text-caption text-cat-2">
               <span className="flex items-center gap-1">
                 <Percent className="w-3 h-3" /> Earns/pays interest
               </span>
@@ -419,21 +419,21 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
+            <span className="text-body-sm">{error}</span>
           </div>
         )}
         
         <div className="flex items-start gap-3 p-3 bg-cat-1-soft dark:bg-cat-1/15 rounded-lg border border-cat-1/20 dark:border-cat-1/30">
           <Layers className="w-5 h-5 text-cat-1 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-cat-1">AGGREGATION Node</p>
-            <p className="text-xs text-cat-1 mt-0.5">Creates an intermediate grouping node for organizing the hierarchy.</p>
+            <p className="text-body-sm font-medium text-cat-1">AGGREGATION Node</p>
+            <p className="text-caption text-cat-1 mt-0.5">Creates an intermediate grouping node for organizing the hierarchy.</p>
           </div>
         </div>
         
         {parentNode && (
           <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{parentNode.name}</span>
@@ -459,7 +459,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
             className="font-mono" 
             onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))} 
           />
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Auto-generated from name. Must be unique.</p>
+          <p className="caption mt-1">Auto-generated from name. Must be unique.</p>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -494,11 +494,11 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
           <div className="pt-4 border-t space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-neutral-700 flex items-center gap-2 dark:text-neutral-200">
+                <h4 className="text-body-sm font-semibold text-neutral-700 flex items-center gap-2 dark:text-neutral-200">
                   <PiggyBank className="w-4 h-4 text-info-600 dark:text-info-300" />
                   In-House Banking
                 </h4>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Configure intercompany lending for this entity</p>
+                <p className="caption">Configure intercompany lending for this entity</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -525,7 +525,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                       }))}
                       className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
                     />
-                    <span className="text-sm">Can Lend</span>
+                    <span className="text-body-sm">Can Lend</span>
                     {formData.ihbConfig.canLend && (
                       <Badge variant="warning" size="sm" className="flex items-center gap-1">
                         <Crown className="w-3 h-3" />
@@ -543,7 +543,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                       }))}
                       className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
                     />
-                    <span className="text-sm">Can Borrow</span>
+                    <span className="text-body-sm">Can Borrow</span>
                   </label>
                 </div>
                 
@@ -574,7 +574,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ihbConfig: { ...prev.ihbConfig, targetCashBalance: Number(e.target.value) }
                       }))}
                     />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">0 = sweep all surplus</p>
+                    <p className="caption mt-1">0 = sweep all surplus</p>
                   </div>
                 </div>
                 
@@ -583,8 +583,8 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                   <div className="flex items-center gap-3">
                     <RefreshCw className="w-5 h-5 text-info-600 dark:text-info-300" />
                     <div>
-                      <p className="text-sm font-medium text-neutral-800 dark:text-neutral-100">EOD Auto-Sweep</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">Automatically balance positions</p>
+                      <p className="text-body-sm font-medium text-neutral-800 dark:text-neutral-100">EOD Auto-Sweep</p>
+                      <p className="caption">Automatically balance positions</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -594,7 +594,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                         ...prev,
                         ihbConfig: { ...prev.ihbConfig, sweepFrequency: e.target.value as 'DAILY' | 'REAL_TIME' }
                       }))}
-                      className="px-2 py-1 border border-neutral-300 rounded text-sm dark:border-primary-700"
+                      className="px-2 py-1 border border-neutral-300 rounded text-body-sm dark:border-primary-700"
                       disabled={!formData.ihbConfig.enableSweep}
                     >
                       <option value="DAILY">Daily @ 6PM</option>
@@ -619,7 +619,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 {treasuryCenter && !formData.ihbConfig.canLend && (
                   <div className="flex items-center gap-2 p-2 bg-warning-50 dark:bg-warning-500/10 rounded border border-warning-200 dark:border-warning-500/30">
                     <Crown className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                    <span className="text-sm text-warning-700 dark:text-warning-300">
+                    <span className="text-body-sm text-warning-700 dark:text-warning-300">
                       Treasury Center: <strong>{treasuryCenter.entityCode}</strong> - {treasuryCenter.entityName}
                     </span>
                   </div>
@@ -628,7 +628,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
                 {formData.ihbConfig.canLend && !treasuryCenter && (
                   <div className="flex items-center gap-2 p-2 bg-success-50 dark:bg-success-500/10 rounded border border-success-200 dark:border-success-500/30">
                     <Check className="w-4 h-4 text-success-600 dark:text-success-300" />
-                    <span className="text-sm text-success-700 dark:text-success-300">
+                    <span className="text-body-sm text-success-700 dark:text-success-300">
                       This entity will become the <strong>Treasury Center</strong>
                     </span>
                   </div>
@@ -740,36 +740,36 @@ const CreateTransactionVaModal: React.FC<CreateTransactionVaModalProps> = ({
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
+            <span className="text-body-sm">{error}</span>
           </div>
         )}
         
         <div className="flex items-start gap-3 p-3 bg-success-50 dark:bg-success-500/10 rounded-lg border border-success-200 dark:border-success-500/30">
           <Wallet className="w-5 h-5 text-success-600 dark:text-success-300 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-success-800 dark:text-success-300">Transaction Virtual Account</p>
-            <p className="text-xs text-success-600 dark:text-success-300 mt-0.5">Creates a leaf-level VA for actual transactions.</p>
+            <p className="text-body-sm font-medium text-success-800 dark:text-success-300">Transaction Virtual Account</p>
+            <p className="caption-success mt-0.5">Creates a leaf-level VA for actual transactions.</p>
             <CreationSideEffectsNote />
           </div>
         </div>
         
         {parentNode ? (
           <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{parentNode.name}</span>
               <Badge variant="neutral" size="sm">{parentNode.currencyCode}</Badge>
             </div>
             {parentNode.accountNumber && (
-              <p className="text-xs text-neutral-400 mt-1 font-mono dark:text-neutral-500">{parentNode.accountNumber}</p>
+              <p className="text-caption text-neutral-400 mt-1 font-mono dark:text-neutral-500">{parentNode.accountNumber}</p>
             )}
           </div>
         ) : (
           <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg">
             <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
               <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm">A parent AGGREGATION node is required</span>
+              <span className="text-body-sm">A parent AGGREGATION node is required</span>
             </div>
           </div>
         )}
@@ -1007,7 +1007,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         {error && (
           <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-lg flex items-start gap-2 text-error-700 dark:text-error-300">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{error}</span>
+            <span className="text-body-sm">{error}</span>
           </div>
         )}
 
@@ -1019,19 +1019,19 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-cat-2">IHB Current Account</p>
+                <p className="text-body-sm font-semibold text-cat-2">IHB Current Account</p>
                 {programName && (
                   <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:bg-cat-2/15">
                     {programName}
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-cat-2 mt-1">
+              <p className="text-caption text-cat-2 mt-1">
                 Creates a Transaction VA with <span className="font-mono bg-cat-2/10 px-1 rounded dark:bg-cat-2/15">ihbParticipant=true</span>.
                 Supports credit/debit interest and participates in treasury sweeps.
               </p>
               {programCurrency && (
-                <p className="text-xs text-cat-2 mt-1">
+                <p className="text-caption text-cat-2 mt-1">
                   Program currency: <span className="font-semibold">{programCurrency}</span>
                 </p>
               )}
@@ -1042,7 +1042,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         {/* Parent Node Info */}
         {parentNode && (
           <div className="p-3 bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-body-sm">
               <GitBranch className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
               <span className="text-neutral-600 dark:text-neutral-300">Parent:</span>
               <span className="font-medium text-primary-900 dark:text-neutral-50">{parentNode.name}</span>
@@ -1056,19 +1056,19 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
           <div className="bg-neutral-50 dark:bg-primary-950 border border-neutral-200 dark:border-primary-800 rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Treasury Rates</p>
+                <p className="label">Treasury Rates</p>
                 <div className="flex gap-6 mt-2">
                   <div>
-                    <p className="text-xs text-success-600 dark:text-success-300">Credit Rate (Earn)</p>
-                    <p className="text-base font-bold text-success-700 dark:text-success-300">{treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</p>
+                    <p className="caption-success">Credit Rate (Earn)</p>
+                    <p className="text-body font-bold text-success-700 dark:text-success-300">{treasuryRates.indicativeDepositRate?.toFixed(2) || 'N/A'}%</p>
                   </div>
                   <div>
-                    <p className="text-xs text-error-600 dark:text-error-300">Debit Rate (Pay)</p>
-                    <p className="text-base font-bold text-error-700 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</p>
+                    <p className="caption-error">Debit Rate (Pay)</p>
+                    <p className="text-body font-bold text-error-700 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2) || 'N/A'}%</p>
                   </div>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={fillFromTreasuryRates} className="text-xs text-cat-2">
+              <Button variant="ghost" size="sm" onClick={fillFromTreasuryRates} className="text-caption text-cat-2">
                 <TrendingUp className="w-3 h-3 mr-1" /> Use Treasury Rates
               </Button>
             </div>
@@ -1103,11 +1103,11 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
               </option>
             ))}
           </select>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="caption mt-1">
             Only IHB-enabled entities with canBorrow=true can have IHB current accounts
           </p>
           {ihbParticipantEntities.length === 0 && (
-            <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">
+            <p className="caption-warning mt-1">
               No IHB-enabled participant entities found. Enable IHB for entities first.
             </p>
           )}
@@ -1136,7 +1136,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
 
         {/* Interest Rates */}
         <div>
-          <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+          <p className="label mb-2">
             Interest Rates (Optional Override)
           </p>
           <div className="grid grid-cols-3 gap-4">
@@ -1149,7 +1149,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 value={formData.creditRate}
                 onChange={(e) => setFormData(prev => ({ ...prev, creditRate: e.target.value }))}
               />
-              <p className="text-xs text-success-600 mt-1 dark:text-success-300">Earned on positive balance</p>
+              <p className="caption-success mt-1">Earned on positive balance</p>
             </div>
             <div>
               <label className="field-label block mb-1">Debit Rate (%)</label>
@@ -1160,7 +1160,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 value={formData.debitRate}
                 onChange={(e) => setFormData(prev => ({ ...prev, debitRate: e.target.value }))}
               />
-              <p className="text-xs text-error-600 mt-1 dark:text-error-300">Paid on overdraft</p>
+              <p className="caption-error mt-1">Paid on overdraft</p>
             </div>
             <div>
               <label className="field-label block mb-1">Penalty Rate (%)</label>
@@ -1171,14 +1171,14 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 value={formData.penaltyRate}
                 onChange={(e) => setFormData(prev => ({ ...prev, penaltyRate: e.target.value }))}
               />
-              <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">Over limit penalty</p>
+              <p className="caption-warning mt-1">Over limit penalty</p>
             </div>
           </div>
         </div>
 
         {/* Sweep Configuration */}
         <div>
-          <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-2">
+          <p className="label mb-2">
             Sweep Configuration
           </p>
           <div className="space-y-3">
@@ -1189,7 +1189,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
                 onChange={(e) => setFormData(prev => ({ ...prev, ihbSweepEnabled: e.target.checked }))}
                 className="w-4 h-4 rounded border-neutral-300 text-cat-2 focus:ring-cat-2 dark:border-primary-700"
               />
-              <span className="text-sm text-neutral-700 dark:text-neutral-200">Enable Auto-Sweep to Treasury</span>
+              <span className="text-body-sm text-neutral-700 dark:text-neutral-200">Enable Auto-Sweep to Treasury</span>
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1378,10 +1378,10 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
       <div className="px-4 py-3 border-b border-neutral-100 dark:border-primary-800/60 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
-          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Currency Breakdown</span>
+          <span className="body-strong font-semibold">Currency Breakdown</span>
         </div>
         <button onClick={onClose} className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300">
-          <span className="text-lg">&times;</span>
+          <span className="text-body-lg">&times;</span>
         </button>
       </div>
 
@@ -1393,7 +1393,7 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
             <select
               value={selectedLevel}
               onChange={(e) => setSelectedLevel(Number(e.target.value))}
-              className="flex-1 text-xs bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded px-2 py-1 focus:ring-1 focus:ring-cyan-500"
+              className="flex-1 text-caption bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded px-2 py-1 focus:ring-1 focus:ring-cyan-500"
             >
               {levels.map((lvl) => (
                 <option key={lvl.level} value={lvl.level}>
@@ -1407,19 +1407,19 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
 
       <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
         {breakdown.length === 0 ? (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">No currency mirrors found at this level</p>
+          <p className="body-sm text-center py-4">No currency mirrors found at this level</p>
         ) : (
           breakdown.map((cb) => (
             <div key={cb.currency} className="flex items-center justify-between p-2 bg-neutral-50 dark:bg-primary-950 rounded-lg">
               <div className="flex items-center gap-2">
                 <Badge variant="neutral" size="sm">{cb.currency}</Badge>
-                <span className="text-sm font-medium">{formatCurrency(cb.originalBalance, cb.currency)}</span>
+                <span className="text-body-sm font-medium">{formatCurrency(cb.originalBalance, cb.currency)}</span>
               </div>
               <div className="text-right">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="caption">
                   {cb.currency === baseCurrency ? 'Base' : `@ ${cb.fxRate?.toFixed(4)}`}
                 </p>
-                <p className="text-sm font-medium text-cyan-600 dark:text-cyan-300">
+                <p className="text-body-sm font-medium text-cyan-600 dark:text-cyan-300">
                   {formatCurrency(cb.convertedBalance, baseCurrency)}
                 </p>
               </div>
@@ -1429,8 +1429,8 @@ const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
       </div>
       <div className="px-4 py-2 border-t border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950 rounded-b-lg">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">Total in {baseCurrency}</span>
-          <span className="text-sm font-bold text-cyan-700 dark:text-cyan-300">
+          <span className="caption">Total in {baseCurrency}</span>
+          <span className="text-body-sm font-bold text-cyan-700 dark:text-cyan-300">
             {formatCurrency(breakdown.reduce((sum, cb) => sum + (cb.convertedBalance || 0), 0), baseCurrency)}
           </span>
         </div>
@@ -1469,7 +1469,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
       </div>
       
       {/* Credit Limit */}
-      <div className="grid grid-cols-2 gap-2 text-sm">
+      <div className="grid grid-cols-2 gap-2 text-body-sm">
         <div>
           <p className="text-neutral-500 dark:text-neutral-400">{ihb.isTreasuryCenter ? 'Lending Capacity' : 'Borrowing Limit'}</p>
           <p className="font-semibold">{formatCurrency(ihb.creditLimit, currency)}</p>
@@ -1483,7 +1483,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
       {/* Utilization Bar */}
       {!ihb.isTreasuryCenter && (
         <div>
-          <div className="flex justify-between text-xs text-neutral-500 mb-1 dark:text-neutral-400">
+          <div className="flex justify-between caption mb-1">
             <span>Utilization</span>
             <span>{(ihb.utilizationPercent || 0).toFixed(1)}%</span>
           </div>
@@ -1503,8 +1503,8 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
       {/* Treasury Center: Show lending rates */}
       {ihb.isTreasuryCenter && (
         <div className="p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-100 dark:border-warning-500/30">
-          <p className="text-xs font-medium text-warning-800 mb-2 dark:text-warning-300">Offered Rates</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <p className="text-caption font-medium text-warning-800 mb-2 dark:text-warning-300">Offered Rates</p>
+          <div className="grid grid-cols-2 gap-2 text-caption">
             <div>
               <p className="text-warning-600 dark:text-warning-300">Lending</p>
               <p className="font-semibold text-warning-900">5.25%</p>
@@ -1522,11 +1522,11 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
         <div className="p-3 bg-info-50 dark:bg-info-500/10 rounded-lg border border-info-100 dark:border-info-500/30">
           <div className="flex items-center gap-2 mb-2">
             <Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" />
-            <p className="text-xs font-medium text-info-800 dark:text-info-300">
+            <p className="text-caption font-medium text-info-800 dark:text-info-300">
               Treasury: {treasuryRates.treasuryCenterCode}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-2 text-caption">
             <div>
               <p className="text-info-600 dark:text-info-300">Borrow at</p>
               <p className="font-semibold text-error-600 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2)}%</p>
@@ -1541,7 +1541,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
       
       {/* Target Balance */}
       {(ihb.targetCashBalance || 0) > 0 && (
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-body-sm">
           <Target className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
           <span className="text-neutral-500 dark:text-neutral-400">Target Balance:</span>
           <span className="font-medium">{formatCurrency(ihb.targetCashBalance, currency)}</span>
@@ -1553,7 +1553,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
         <div className="p-2 bg-info-50 dark:bg-info-500/10 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-info-600 dark:text-info-300" />
-            <span className="text-sm text-info-700 dark:text-info-300">EOD Sweep</span>
+            <span className="text-body-sm text-info-700 dark:text-info-300">EOD Sweep</span>
           </div>
           <Badge variant="info" size="sm">
             {ihb.sweepFrequency === 'REAL_TIME' ? 'Real-time' : 'Daily @ 6PM'}
@@ -1692,7 +1692,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           {/* overflow-hidden: with non-shrinking badges, excess pills clip
               instead of crushing the name — the name keeps ≥72px. */}
           <div className="flex items-center gap-2 overflow-hidden">
-            <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50 min-w-[72px]">{node.name}</p>
+            <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50 min-w-[72px]">{node.name}</p>
             {(() => {
               // Cap visible badges at 3 and roll the rest into a "+N" pill —
               // pixel-clipping a pill mid-word ("MNC-UK" → "M") reads as a
@@ -1764,11 +1764,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             })()}
           </div>
           <div className="flex items-center gap-2 overflow-hidden">
-            {node.accountNumber && <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono whitespace-nowrap truncate">{node.accountNumber}</p>}
+            {node.accountNumber && <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono whitespace-nowrap truncate">{node.accountNumber}</p>}
             {/* FX caption is data-driven: show the applied rate; a mirror in
                 the reporting currency (rate 1) needs no caption at all. */}
             {isCurrencyMirror && node.fxRate != null && Number(node.fxRate) !== 1 && (
-              <span className="text-xs text-cyan-600 flex items-center gap-1 dark:text-cyan-300 whitespace-nowrap shrink-0">
+              <span className="text-caption text-cyan-600 flex items-center gap-1 dark:text-cyan-300 whitespace-nowrap shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>@ {Number(node.fxRate).toFixed(4)}
               </span>
             )}
@@ -1778,11 +1778,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <Badge variant="neutral" size="sm">{node.currencyCode}</Badge>
 
         <div className="text-right min-w-[120px]">
-          <p className={cn('text-sm font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
+          <p className={cn('text-body-sm font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
             {formatCurrency(displayBalance, node.currencyCode)}
           </p>
           {node.currencyCode !== reportingCurrency && (
-            <p className="text-xs text-neutral-400 dark:text-neutral-500">≈ {formatCurrency(node.consolidatedBalance, reportingCurrency)}</p>
+            <p className="caption">≈ {formatCurrency(node.consolidatedBalance, reportingCurrency)}</p>
           )}
         </div>
 
@@ -1806,13 +1806,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             {hasIcActivity && (node.netPosition >= node.consolidatedBalance
               ? <ArrowUpRight className="w-4 h-4 text-success-500" />
               : <ArrowDownRight className="w-4 h-4 text-error-500" />)}
-            <p className={cn('text-sm font-bold',
+            <p className={cn('text-body-sm font-bold',
               !hasIcActivity ? 'text-primary-900 dark:text-neutral-50'
                 : node.netPosition >= node.consolidatedBalance ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
               {formatCurrency(node.netPosition, reportingCurrency)}
             </p>
           </div>
-          <p className="text-xs text-neutral-400 dark:text-neutral-500">Net Position</p>
+          <p className="caption">Net Position</p>
         </div>
           );
         })()}
@@ -1840,22 +1840,22 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <>
                   {/* Node types listed directly — no intermediate chooser modal. */}
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'aggregation'); setShowContextMenu(false); }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <FolderPlus className="w-4 h-4 text-cat-1" />Add Aggregation Node
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'transaction'); setShowContextMenu(false); }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-success-600" />Add Transaction VA
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'ihb-current-account'); setShowContextMenu(false); }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                    className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <PiggyBank className="w-4 h-4 text-info-500" />Add IHB Current Account
                   </button>
                 </>
               )}
               {canAddChildren && onCreateSettlementVa && (
                 <button onClick={(e) => { e.stopPropagation(); onCreateSettlementVa(node.id); setShowContextMenu(false); }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                   <Scale className="w-4 h-4 text-cat-2" />Create Settlement VA
                 </button>
               )}
@@ -1866,12 +1866,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   <div className="border-t border-neutral-100 dark:border-primary-800/60 my-1" />
                   {node.ihb?.enabled ? (
                     <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                      className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                       <Settings className="w-4 h-4 text-info-500" />IHB Settings
                     </button>
                   ) : (
                     <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                      className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                       <Power className="w-4 h-4 text-success-500" />Enable IHB
                     </button>
                   )}
@@ -1880,7 +1880,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               
               <div className="border-t border-neutral-100 dark:border-primary-800/60 my-1" />
               <button onClick={(e) => { e.stopPropagation(); onSelect(node); setShowContextMenu(false); }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
+                className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />View Details
               </button>
             </div>
@@ -2023,7 +2023,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="section-title">{displayData.name}</h3>
-          {displayData.accountNumber && <p className="text-sm text-neutral-500 font-mono dark:text-neutral-400">{displayData.accountNumber}</p>}
+          {displayData.accountNumber && <p className="text-body-sm text-neutral-500 font-mono dark:text-neutral-400">{displayData.accountNumber}</p>}
         </div>
         <div className="flex items-center gap-2">
           {specialType !== 'REGULAR' && (
@@ -2040,10 +2040,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         <div className="flex items-start gap-3 p-3 rounded-lg border bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30">
           <Coins className="w-5 h-5 text-cyan-600 mt-0.5 dark:text-cyan-300" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-cyan-800 dark:text-cyan-300">Currency Mirror (M-Node)</p>
-            <p className="text-xs text-cyan-600 mt-0.5 dark:text-cyan-300">Aggregates all {node.currencyCode} balances without FX conversion.</p>
+            <p className="text-body-sm font-medium text-cyan-800 dark:text-cyan-300">Currency Mirror (M-Node)</p>
+            <p className="text-caption text-cyan-600 mt-0.5 dark:text-cyan-300">Aggregates all {node.currencyCode} balances without FX conversion.</p>
             {node.fxRate && node.fxRate !== 1 && (
-              <div className="mt-2 flex items-center gap-4 text-xs">
+              <div className="mt-2 flex items-center gap-4 text-caption">
                 <span className="text-cyan-700 dark:text-cyan-300">FX Rate: <strong>{node.fxRate.toFixed(4)}</strong></span>
               </div>
             )}
@@ -2058,13 +2058,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className={cn('rounded-lg p-3', isCurrencyMirror ? 'bg-cyan-50 dark:bg-cyan-500/10' : 'bg-neutral-50 dark:bg-primary-950')}>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{isCurrencyMirror ? 'Mirror Balance' : 'Local Balance'}</p>
-          <p className={cn('text-lg font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
+          <p className="caption">{isCurrencyMirror ? 'Mirror Balance' : 'Local Balance'}</p>
+          <p className={cn('text-body-lg font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
             {formatCurrency(isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : displayData.localBalance, displayData.currencyCode)}
           </p>
         </div>
         <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{isCurrencyMirror ? 'In Base Currency' : 'Available'}</p>
+          <p className="caption">{isCurrencyMirror ? 'In Base Currency' : 'Available'}</p>
           <p className="section-title">
             {isCurrencyMirror
               ? formatCurrency(node.balanceInBase || node.consolidatedBalance, reportingCurrency)
@@ -2078,11 +2078,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {isAggregationNode && (
         <div className="space-y-2 pt-4 border-t">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
+            <h4 className="text-body-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
               <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
               Currency Breakdown
             </h4>
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">
+            <span className="caption">
               {node.accountCategory === 'ROOT' ? 'Total' : `Level ${node.level ?? 0}`}
             </span>
           </div>
@@ -2093,7 +2093,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </div>
           ) : currencyBreakdown.length === 0 ? (
             <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-              <p className="text-sm text-neutral-500 text-center dark:text-neutral-400">No currency mirrors at this level</p>
+              <p className="body-sm text-center">No currency mirrors at this level</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -2103,15 +2103,15 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                     <Badge variant="neutral" size="sm" className="bg-white dark:bg-primary-900 border border-cyan-200 dark:border-cyan-500/30 text-cyan-700 dark:text-cyan-300 font-mono">
                       {cb.currency}
                     </Badge>
-                    <span className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                    <span className="text-body-sm font-semibold text-neutral-800 dark:text-neutral-100">
                       {formatCurrency(cb.originalBalance, cb.currency)}
                     </span>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="caption">
                       {cb.currency === reportingCurrency ? 'Base' : `@ ${cb.fxRate?.toFixed(4) || '1.0000'}`}
                     </p>
-                    <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">
+                    <p className="text-body-sm font-medium text-cyan-700 dark:text-cyan-300">
                       {formatCurrency(cb.convertedBalance, reportingCurrency)}
                     </p>
                   </div>
@@ -2119,8 +2119,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               ))}
               {/* Total row */}
               <div className="flex items-center justify-between p-2.5 bg-cyan-100 rounded-lg border border-cyan-200 dark:bg-cyan-500/20 dark:border-cyan-500/30">
-                <span className="text-sm font-semibold text-cyan-800 dark:text-cyan-300">Total in {reportingCurrency}</span>
-                <span className="text-base font-bold text-cyan-900">
+                <span className="text-body-sm font-semibold text-cyan-800 dark:text-cyan-300">Total in {reportingCurrency}</span>
+                <span className="text-body font-bold text-cyan-900">
                   {formatCurrency(currencyBreakdown.reduce((sum, cb) => sum + (cb.convertedBalance || 0), 0), reportingCurrency)}
                 </span>
               </div>
@@ -2133,7 +2133,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {node.owningEntity && (
         <div className="space-y-2 pt-4 border-t">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
+            <h4 className="text-body-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
               <Building2 className="w-4 h-4" />
               Legal Entity
             </h4>
@@ -2143,7 +2143,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <div className="flex items-center gap-2">
               <span className="font-medium text-primary-900 dark:text-neutral-50">{node.owningEntity.entityName}</span>
             </div>
-            <div className="text-xs text-neutral-500 mt-1 flex items-center gap-2 dark:text-neutral-400">
+            <div className="caption mt-1 flex items-center gap-2">
               <span>{node.owningEntity.entityCode}</span>
               <span>•</span>
               <span>{node.owningEntity.entityType}</span>
@@ -2161,12 +2161,12 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {/* No Entity Assigned */}
       {!node.owningEntity && node.accountCategory !== 'ROOT' && (
         <div className="space-y-2 pt-4 border-t">
-          <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
+          <h4 className="text-body-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
             <Building2 className="w-4 h-4" />
             Legal Entity
           </h4>
           <div className="p-3 bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 rounded-lg">
-            <p className="text-sm text-warning-700 dark:text-warning-300">No entity assigned</p>
+            <p className="text-body-sm text-warning-700 dark:text-warning-300">No entity assigned</p>
             <Button variant="outline" size="sm" className="mt-2" onClick={() => onAssignEntity?.(node)}>
               <Building2 className="w-4 h-4 mr-1" />
               Assign Entity
@@ -2179,7 +2179,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       {node.owningEntity && (
         <div className="space-y-2 pt-4 border-t">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
+            <h4 className="text-body-sm font-semibold text-neutral-700 uppercase tracking-wide flex items-center gap-2 dark:text-neutral-200">
               <PiggyBank className="w-4 h-4" />
               In-House Banking
             </h4>
@@ -2200,8 +2200,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             <IhbDetailSection ihb={node.ihb} currency={node.currencyCode} treasuryRates={treasuryRates} />
           ) : (
             <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">IHB not enabled for this entity</p>
-              <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">Enable to participate in intercompany loans, deposits, and EOD sweeps</p>
+              <p className="body-sm">IHB not enabled for this entity</p>
+              <p className="caption mt-1">Enable to participate in intercompany loans, deposits, and EOD sweeps</p>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -2218,25 +2218,25 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       {((displayData.intercompanyReceivable || 0) > 0 || (displayData.intercompanyPayable || 0) > 0) && (
         <>
-          <h4 className="text-sm font-semibold text-primary-900 pt-2 dark:text-neutral-50">Intercompany Positions</h4>
+          <h4 className="body-strong font-semibold pt-2">Intercompany Positions</h4>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-success-50 dark:bg-success-500/10 rounded-lg p-3">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Receivable</p>
-              <p className="text-base font-semibold text-success-600 dark:text-success-300">+{formatCurrency(displayData.intercompanyReceivable || 0, reportingCurrency)}</p>
+              <p className="caption">Receivable</p>
+              <p className="text-body font-semibold text-success-600 dark:text-success-300">+{formatCurrency(displayData.intercompanyReceivable || 0, reportingCurrency)}</p>
             </div>
             <div className="bg-error-50 dark:bg-error-500/10 rounded-lg p-3">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Payable</p>
-              <p className="text-base font-semibold text-error-600 dark:text-error-300">-{formatCurrency(displayData.intercompanyPayable || 0, reportingCurrency)}</p>
+              <p className="caption">Payable</p>
+              <p className="text-body font-semibold text-error-600 dark:text-error-300">-{formatCurrency(displayData.intercompanyPayable || 0, reportingCurrency)}</p>
             </div>
             <div className={cn('rounded-lg p-3', icNet >= 0 ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10')}>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Net</p>
-              <p className={cn('text-base font-semibold', icNet >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>{icNet >= 0 ? '+' : ''}{formatCurrency(icNet, reportingCurrency)}</p>
+              <p className="caption">Net</p>
+              <p className={cn('text-body font-semibold', icNet >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>{icNet >= 0 ? '+' : ''}{formatCurrency(icNet, reportingCurrency)}</p>
             </div>
           </div>
         </>
       )}
 
-      <h4 className="text-sm font-semibold text-primary-900 pt-2 dark:text-neutral-50">Participation</h4>
+      <h4 className="body-strong font-semibold pt-2">Participation</h4>
       <div className="flex flex-wrap gap-2">
         <Badge variant={displayData.participatesInPooling ? 'success' : 'neutral'} size="sm">{displayData.participatesInPooling ? '✓' : '✗'} Notional Pooling</Badge>
         <Badge variant={displayData.participatesInNetting ? 'success' : 'neutral'} size="sm">{displayData.participatesInNetting ? '✓' : '✗'} Balance Netting</Badge>
@@ -2245,7 +2245,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       {node.type === 'VIRTUAL_ACCOUNT' && specialType === 'REGULAR' && !isCurrencyMirror && (
         <>
-          <h4 className="text-sm font-semibold text-primary-900 pt-2 flex items-center gap-2 dark:text-neutral-50">
+          <h4 className="body-strong font-semibold pt-2 flex items-center gap-2">
             <CreditCard className="w-4 h-4" />VIBANs
           </h4>
           <Button variant="outline" size="sm" className="w-full" onClick={onCreateViban}><Plus className="w-4 h-4 mr-1" />Add VIBAN</Button>
@@ -2308,9 +2308,9 @@ const AssignEntityModal: React.FC<AssignEntityModalProps> = ({
       <div className="p-4 space-y-4">
         {node && (
           <div className="p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">Account:</p>
+            <p className="body-sm">Account:</p>
             <p className="font-medium">{node.name}</p>
-            {node.accountNumber && <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{node.accountNumber}</p>}
+            {node.accountNumber && <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{node.accountNumber}</p>}
           </div>
         )}
         
@@ -2595,7 +2595,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         {/* Entity Info */}
         {entity && (
           <div className="p-3 bg-info-50 dark:bg-info-500/10 rounded-lg border border-info-200 dark:border-info-500/30">
-            <p className="text-sm text-info-600 dark:text-info-300">Entity:</p>
+            <p className="text-body-sm text-info-600 dark:text-info-300">Entity:</p>
             <p className="font-medium text-info-900">{entity.entityCode} - {entity.entityName}</p>
             {entity.ihbEnabled && (
               <Badge variant="success" size="sm" className="mt-1">
@@ -2627,19 +2627,19 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
             {!showCreateConfig && (
               <>
                 <div className="mb-3">
-                  <label className="block text-sm font-medium text-warning-800 mb-1 dark:text-warning-300">
+                  <label className="block text-body-sm font-medium text-warning-800 mb-1 dark:text-warning-300">
                     Interest Rate Configuration
                   </label>
                   {loadingConfigs ? (
                     <div className="flex items-center gap-2 p-2 bg-white dark:bg-primary-900 rounded border">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm text-neutral-500 dark:text-neutral-400">Loading configurations...</span>
+                      <span className="body-sm">Loading configurations...</span>
                     </div>
                   ) : (
                     <select
                       value={selectedConfigId}
                       onChange={(e) => setSelectedConfigId(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 rounded-lg text-sm"
+                      className="w-full px-3 py-2 bg-white dark:bg-primary-900 border border-warning-200 dark:border-warning-500/30 rounded-lg text-body-sm"
                     >
                       <option value="">-- Select Rate Configuration --</option>
                       {interestConfigs.map(cfg => (
@@ -2652,7 +2652,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     </select>
                   )}
                   {interestConfigs.length === 0 && !loadingConfigs && (
-                    <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">
+                    <p className="caption-warning mt-1">
                       No rate configurations found. Create one to define lending/deposit rates.
                     </p>
                   )}
@@ -2664,13 +2664,13 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingDown className="w-4 h-4 text-error-500" />
-                        <span className="text-sm font-medium text-error-700 dark:text-error-300">Lending Rate</span>
+                        <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Lending Rate</span>
                       </div>
                       <p className="stat-value-error">
                         {selectedConfig.effectiveDebitRate?.toFixed(2) || 
                           getEffectiveRate(selectedConfig.debitBaseRate || 5, selectedConfig.debitSpread || 0)}%
                       </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                      <p className="caption mt-1">
                         {selectedConfig.debitBaseRateType || 'EIBOR'} {selectedConfig.debitBaseRate || 5}% 
                         {selectedConfig.debitSpread && selectedConfig.debitSpread >= 0 ? ' + ' : ' '}
                         {selectedConfig.debitSpread || 0}%
@@ -2679,13 +2679,13 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
                       <div className="flex items-center gap-2 mb-2">
                         <TrendingUp className="w-4 h-4 text-success-500" />
-                        <span className="text-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
+                        <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
                       </div>
                       <p className="stat-value-success">
                         {selectedConfig.effectiveCreditRate?.toFixed(2) || 
                           getEffectiveRate(selectedConfig.creditBaseRate || 5, selectedConfig.creditSpread || 0)}%
                       </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                      <p className="caption mt-1">
                         {selectedConfig.creditBaseRateType || 'EIBOR'} {selectedConfig.creditBaseRate || 5}% 
                         {selectedConfig.creditSpread && selectedConfig.creditSpread >= 0 ? ' + ' : ' '}
                         {selectedConfig.creditSpread || 0}%
@@ -2699,7 +2699,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                   <div className="p-3 bg-warning-50 rounded border border-warning-200 mt-3 dark:bg-warning-500/10 dark:border-warning-500/30">
                     <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300">
                       <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm">No rate configuration selected. Default rates (5% EIBOR) will be used.</span>
+                      <span className="text-body-sm">No rate configuration selected. Default rates (5% EIBOR) will be used.</span>
                     </div>
                   </div>
                 )}
@@ -2722,23 +2722,23 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     type="text"
                     value={newConfigForm.configName}
                     onChange={(e) => setNewConfigForm(prev => ({ ...prev, configName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                     placeholder="e.g., IHB Treasury Rate - ACME-TC"
                   />
                 </div>
 
                 {/* Lending (Debit) Rate */}
                 <div className="p-3 bg-error-50 dark:bg-error-500/10 rounded-lg">
-                  <h5 className="text-sm font-medium text-error-700 mb-2 flex items-center gap-1 dark:text-error-300">
+                  <h5 className="text-body-sm font-medium text-error-700 mb-2 flex items-center gap-1 dark:text-error-300">
                     <TrendingDown className="w-4 h-4" /> Lending Rate (what borrowers pay)
                   </h5>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs mb-1">Base Rate Type</label>
+                      <label className="block text-caption mb-1">Base Rate Type</label>
                       <select
                         value={newConfigForm.debitBaseRateType}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitBaseRateType: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       >
                         <option value="EIBOR">EIBOR</option>
                         <option value="SOFR">SOFR</option>
@@ -2748,43 +2748,43 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs mb-1">Base Rate (%)</label>
+                      <label className="block text-caption mb-1">Base Rate (%)</label>
                       <input
                         type="number"
                         step="0.001"
                         value={newConfigForm.debitBaseRate}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitBaseRate: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs mb-1">Spread (%)</label>
+                      <label className="block text-caption mb-1">Spread (%)</label>
                       <input
                         type="number"
                         step="0.001"
                         value={newConfigForm.debitSpread}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, debitSpread: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-error-600 mt-2 dark:text-error-300">
+                  <p className="caption-error mt-2">
                     Effective Rate: {getEffectiveRate(parseFloat(newConfigForm.debitBaseRate), parseFloat(newConfigForm.debitSpread))}%
                   </p>
                 </div>
 
                 {/* Deposit (Credit) Rate */}
                 <div className="p-3 bg-success-50 dark:bg-success-500/10 rounded-lg">
-                  <h5 className="text-sm font-medium text-success-700 mb-2 flex items-center gap-1 dark:text-success-300">
+                  <h5 className="text-body-sm font-medium text-success-700 mb-2 flex items-center gap-1 dark:text-success-300">
                     <TrendingUp className="w-4 h-4" /> Deposit Rate (what depositors earn)
                   </h5>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs mb-1">Base Rate Type</label>
+                      <label className="block text-caption mb-1">Base Rate Type</label>
                       <select
                         value={newConfigForm.creditBaseRateType}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditBaseRateType: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       >
                         <option value="EIBOR">EIBOR</option>
                         <option value="SOFR">SOFR</option>
@@ -2794,27 +2794,27 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs mb-1">Base Rate (%)</label>
+                      <label className="block text-caption mb-1">Base Rate (%)</label>
                       <input
                         type="number"
                         step="0.001"
                         value={newConfigForm.creditBaseRate}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditBaseRate: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs mb-1">Spread (%)</label>
+                      <label className="block text-caption mb-1">Spread (%)</label>
                       <input
                         type="number"
                         step="0.001"
                         value={newConfigForm.creditSpread}
                         onChange={(e) => setNewConfigForm(prev => ({ ...prev, creditSpread: e.target.value }))}
-                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        className="w-full px-2 py-1.5 border rounded text-body-sm"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-success-600 mt-2 dark:text-success-300">
+                  <p className="caption-success mt-2">
                     Effective Rate: {getEffectiveRate(parseFloat(newConfigForm.creditBaseRate), parseFloat(newConfigForm.creditSpread))}%
                   </p>
                 </div>
@@ -2822,11 +2822,11 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                 {/* Calculation Parameters */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs mb-1">Day Count</label>
+                    <label className="block text-caption mb-1">Day Count</label>
                     <select
                       value={newConfigForm.dayCountConvention}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, dayCountConvention: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-sm"
+                      className="w-full px-2 py-1.5 border rounded text-body-sm"
                     >
                       <option value="ACT/360">ACT/360</option>
                       <option value="ACT/365">ACT/365</option>
@@ -2834,11 +2834,11 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs mb-1">Compounding</label>
+                    <label className="block text-caption mb-1">Compounding</label>
                     <select
                       value={newConfigForm.compoundingFrequency}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, compoundingFrequency: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-sm"
+                      className="w-full px-2 py-1.5 border rounded text-body-sm"
                     >
                       <option value="DAILY">Daily</option>
                       <option value="MONTHLY">Monthly</option>
@@ -2846,11 +2846,11 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs mb-1">Posting</label>
+                    <label className="block text-caption mb-1">Posting</label>
                     <select
                       value={newConfigForm.postingFrequency}
                       onChange={(e) => setNewConfigForm(prev => ({ ...prev, postingFrequency: e.target.value }))}
-                      className="w-full px-2 py-1.5 border rounded text-sm"
+                      className="w-full px-2 py-1.5 border rounded text-body-sm"
                     >
                       <option value="DAILY">Daily</option>
                       <option value="MONTHLY">Monthly</option>
@@ -2887,7 +2887,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-warning-700 mb-3 dark:text-warning-300">
+            <p className="text-caption text-warning-700 mb-3 dark:text-warning-300">
               {treasuryRates.treasuryCenterCode} - {treasuryRates.treasuryCenterName}
             </p>
             
@@ -2896,13 +2896,13 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-error-100 dark:border-error-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="w-4 h-4 text-error-500" />
-                  <span className="text-sm font-medium text-error-700 dark:text-error-300">Borrowing Rate</span>
+                  <span className="text-body-sm font-medium text-error-700 dark:text-error-300">Borrowing Rate</span>
                 </div>
                 <p className="stat-value-error">{treasuryRates.indicativeLendingRate?.toFixed(2)}%</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                <p className="caption mt-1">
                   {treasuryRates.lendingBaseRateType} {treasuryRates.lendingBaseRate}% + {treasuryRates.treasuryLendingSpread}% spread
                 </p>
-                <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">
+                <p className="caption mt-1">
                   Min: {formatCurrency(treasuryRates.minLoanAmount, treasuryRates.ihbCurrency)}
                 </p>
               </div>
@@ -2911,19 +2911,19 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               <div className="p-3 bg-white dark:bg-primary-900 rounded-lg border border-success-100 dark:border-success-500/30">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-success-500" />
-                  <span className="text-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
+                  <span className="text-body-sm font-medium text-success-700 dark:text-success-300">Deposit Rate</span>
                 </div>
                 <p className="stat-value-success">{treasuryRates.indicativeDepositRate?.toFixed(2)}%</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                <p className="caption mt-1">
                   {treasuryRates.depositBaseRateType} {treasuryRates.depositBaseRate}% {treasuryRates.treasuryDepositSpread}% spread
                 </p>
-                <p className="text-xs text-neutral-400 mt-1 dark:text-neutral-500">
+                <p className="caption mt-1">
                   Min: {formatCurrency(treasuryRates.minDepositAmount, treasuryRates.ihbCurrency)}
                 </p>
               </div>
             </div>
             
-            <div className="mt-3 pt-3 border-t border-warning-200 text-xs text-warning-700 dark:border-warning-500/30 dark:text-warning-300">
+            <div className="mt-3 pt-3 border-t border-warning-200 text-caption text-warning-700 dark:border-warning-500/30 dark:text-warning-300">
               <span className="font-medium">Terms:</span> {treasuryRates.dayCountConvention} • {treasuryRates.compoundingFrequency} compounding • {treasuryRates.settlementFrequency} settlement
             </div>
           </div>
@@ -2934,7 +2934,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg border animate-pulse">
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-neutral-400 dark:text-neutral-500" />
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">Loading Treasury rates...</span>
+              <span className="body-sm">Loading Treasury rates...</span>
             </div>
           </div>
         )}
@@ -2944,9 +2944,9 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           <div className="p-3 bg-warning-50 rounded-lg border border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30">
             <div className="flex items-center gap-2 text-warning-800 dark:text-warning-300">
               <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">No Treasury Center Found</span>
+              <span className="text-body-sm font-medium">No Treasury Center Found</span>
             </div>
-            <p className="text-xs text-warning-700 mt-1 dark:text-warning-300">
+            <p className="text-caption text-warning-700 mt-1 dark:text-warning-300">
               Enable "Can Lend" to make this entity the Treasury Center, or ensure another entity is set up as Treasury Center first.
             </p>
           </div>
@@ -2957,12 +2957,12 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           <div className="p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-200 dark:border-warning-500/30">
             <div className="flex items-center gap-2 text-warning-800 dark:text-warning-300">
               <Crown className="w-4 h-4" />
-              <span className="text-sm font-medium">Treasury Center</span>
+              <span className="text-body-sm font-medium">Treasury Center</span>
             </div>
-            <p className="text-sm text-warning-700 mt-1 dark:text-warning-300">
+            <p className="text-body-sm text-warning-700 mt-1 dark:text-warning-300">
               {treasuryCenter.entityCode} - {treasuryCenter.entityName}
             </p>
-            <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">
+            <p className="caption-warning mt-1">
               Sweeps are directed to/from this treasury center
             </p>
           </div>
@@ -2972,11 +2972,11 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         {!isEnabling && entity?.ihbEnabled && (
           <div className="grid grid-cols-2 gap-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Credit Limit</p>
+              <p className="caption">Credit Limit</p>
               <p className="font-medium">{formatCurrency(entity.ihbCreditLimit || 0, currency)}</p>
             </div>
             <div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Role</p>
+              <p className="caption">Role</p>
               <p className="font-medium">
                 {entity.canLend ? (
                   <span className="text-warning-600 flex items-center gap-1 dark:text-warning-300">
@@ -3000,7 +3000,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
               disabled={!isEnabling && entity?.canLend}
             />
-            <span className="text-sm">Can Lend</span>
+            <span className="text-body-sm">Can Lend</span>
             {config.canLend && (
               <Badge variant="warning" size="sm" className="flex items-center gap-1">
                 <Crown className="w-3 h-3" />
@@ -3015,7 +3015,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               onChange={(e) => setConfig(prev => ({ ...prev, canBorrow: e.target.checked }))}
               className="rounded border-neutral-300 text-info-600 dark:border-primary-700 dark:text-info-300"
             />
-            <span className="text-sm">Can Borrow</span>
+            <span className="text-body-sm">Can Borrow</span>
           </label>
         </div>
         
@@ -3026,7 +3026,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
             type="number"
             value={config.creditLimit}
             onChange={(e) => setConfig(prev => ({ ...prev, creditLimit: Number(e.target.value) }))}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
           />
         </div>
         
@@ -3038,9 +3038,9 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
               type="number"
               value={config.targetCashBalance}
               onChange={(e) => setConfig(prev => ({ ...prev, targetCashBalance: Number(e.target.value) }))}
-              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
             />
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">0 = sweep all surplus to/from Treasury Center</p>
+            <p className="caption mt-1">0 = sweep all surplus to/from Treasury Center</p>
           </div>
         )}
         
@@ -3049,7 +3049,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           <div className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-info-600 dark:text-info-300" />
-              <span className="text-sm">Enable EOD Auto-Sweep</span>
+              <span className="text-body-sm">Enable EOD Auto-Sweep</span>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -3721,7 +3721,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="space-y-6">
         <div>
           {/* Title removed — Aperture Layout header carries it via the page-id map */}
-          <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">Select a corporate to view hierarchy</p>
+          <p className="text-body text-neutral-500 mt-1 dark:text-neutral-400">Select a corporate to view hierarchy</p>
         </div>
         <CorporateProgramFilterBar
           corporates={corporates}
@@ -3753,7 +3753,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="space-y-6">
         <div>
           {/* Title removed — Aperture Layout header carries it via the page-id map */}
-          <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">Select a program to view hierarchy</p>
+          <p className="text-body text-neutral-500 mt-1 dark:text-neutral-400">Select a program to view hierarchy</p>
         </div>
         <CorporateProgramFilterBar
           corporates={corporates}
@@ -3775,7 +3775,7 @@ const TreasuryHierarchyPage: React.FC = () => {
             </p>
             {programs.filter(p => p.status === 'ACTIVE').length === 0 && (
               <div className="mt-4">
-                <p className="text-warning-600 text-sm mb-2 dark:text-warning-300">No active programs found for this corporate.</p>
+                <p className="text-warning-600 text-body-sm mb-2 dark:text-warning-300">No active programs found for this corporate.</p>
                 <Button variant="outline" onClick={() => window.location.href = '/programs'}>
                   <Plus className="w-4 h-4 mr-1" />Create Program
                 </Button>
@@ -3793,7 +3793,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="space-y-6">
         <div>
           {/* Title removed — Aperture Layout header carries it via the page-id map */}
-          <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
+          <p className="text-body text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
         </div>
         <CorporateProgramFilterBar
           corporates={corporates}
@@ -3821,7 +3821,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             {/* Title removed — Aperture Layout header carries it via the page-id map */}
-            <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
+            <p className="text-body text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
           </div>
         </div>
         <CorporateProgramFilterBar
@@ -3847,8 +3847,8 @@ const TreasuryHierarchyPage: React.FC = () => {
               <Globe className="w-4 h-4" />Initialize Hierarchy
             </Button>
             <div className="mt-8 p-4 bg-info-50 dark:bg-info-500/10 border border-info-200 dark:border-info-500/30 rounded-lg max-w-lg text-left">
-              <h3 className="text-sm font-semibold text-info-900 mb-2">What happens during initialization?</h3>
-              <ul className="text-sm text-info-700 space-y-1 dark:text-info-300">
+              <h3 className="text-body-sm font-semibold text-info-900 mb-2">What happens during initialization?</h3>
+              <ul className="text-body-sm text-info-700 space-y-1 dark:text-info-300">
                 <li>• A ROOT hierarchy node is created at Level 1</li>
                 <li>• A ROOT virtual account is created for balance consolidation</li>
                 <li>• Optional Currency Mirrors for multi-currency aggregation</li>
@@ -3879,7 +3879,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="space-y-6">
         <div>
           {/* Title removed — Aperture Layout header carries it via the page-id map */}
-          <p className="text-base text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
+          <p className="text-body text-neutral-500 mt-1 dark:text-neutral-400">{selectedProgram?.programName}</p>
         </div>
         <CorporateProgramFilterBar
           corporates={corporates}
@@ -4017,17 +4017,17 @@ const TreasuryHierarchyPage: React.FC = () => {
               <Banknote className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-xs font-medium text-primary-200 uppercase tracking-wider">Real Bank Account (Physical)</p>
-              <p className="text-lg font-semibold mt-1">{displayPhysical.accountName}</p>
-              <p className="text-sm text-primary-300 font-mono mt-0.5">{displayPhysical.accountNumber}</p>
+              <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">Real Bank Account (Physical)</p>
+              <p className="text-body-lg font-semibold mt-1">{displayPhysical.accountName}</p>
+              <p className="text-body-sm text-primary-300 font-mono mt-0.5">{displayPhysical.accountNumber}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium text-primary-200 uppercase tracking-wider">{displayPhysical.bankName}</p>
+            <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">{displayPhysical.bankName}</p>
             {/* Inverse variant — replaces the `stat-value-sm !text-white`
                 override. See .stat-value-inverse in index.css. */}
             <p className="stat-value-inverse mt-1">{formatCurrency(displayPhysical.balance, displayPhysical.currency)}</p>
-            <p className="text-xs text-primary-300 mt-0.5">Held at bank — outside VA consolidation; mirrored via shadow accounts</p>
+            <p className="text-caption text-primary-300 mt-0.5">Held at bank — outside VA consolidation; mirrored via shadow accounts</p>
           </div>
         </div>
       </div>
@@ -4041,12 +4041,12 @@ const TreasuryHierarchyPage: React.FC = () => {
                 <Layers className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-xs font-medium text-warning-200 uppercase tracking-wider">Shadow Accounts (PHYSICAL_MIRROR)</p>
-                <p className="text-sm text-warning-100 mt-0.5">{shadowAccounts.length} account{shadowAccounts.length > 1 ? 's' : ''} mirroring bank balances</p>
+                <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Shadow Accounts (PHYSICAL_MIRROR)</p>
+                <p className="text-body-sm text-warning-100 mt-0.5">{shadowAccounts.length} account{shadowAccounts.length > 1 ? 's' : ''} mirroring bank balances</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium text-warning-200 uppercase tracking-wider">Total Mirrored Balance</p>
+              <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Total Mirrored Balance</p>
               <p className="stat-value-sm mt-1">
                 {formatCurrency(
                   shadowAccounts.reduce((sum, sa) => sum + (sa.bankBalance || 0), 0),
@@ -4061,15 +4061,15 @@ const TreasuryHierarchyPage: React.FC = () => {
               <div key={shadow.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-warning-200 font-mono">{shadow.vaNumber}</p>
-                    <p className="text-sm font-medium text-white mt-0.5">{shadow.vaName}</p>
+                    <p className="text-caption text-warning-200 font-mono">{shadow.vaNumber}</p>
+                    <p className="text-body-sm font-medium text-white mt-0.5">{shadow.vaName}</p>
                     {shadow.physicalAccountNumber && (
-                      <p className="text-xs text-warning-300 mt-1">↔ {shadow.physicalAccountNumber}</p>
+                      <p className="text-caption text-warning-300 mt-1">↔ {shadow.physicalAccountNumber}</p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-white">{formatCurrency(shadow.bankBalance || 0, shadow.currencyCode)}</p>
-                    <p className="text-xs text-warning-200">{shadow.currencyCode}</p>
+                    <p className="text-body-lg font-bold text-white">{formatCurrency(shadow.bankBalance || 0, shadow.currencyCode)}</p>
+                    <p className="text-caption text-warning-200">{shadow.currencyCode}</p>
                   </div>
                 </div>
               </div>
@@ -4086,11 +4086,11 @@ const TreasuryHierarchyPage: React.FC = () => {
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-primary-800">
               <h2 className="section-title">Virtual Account Hierarchy</h2>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+                <label className="flex items-center gap-2 body-sm">
                   <input type="checkbox" checked={showSystemVas} onChange={(e) => setShowSystemVas(e.target.checked)} className="rounded text-primary-600 dark:text-primary-200" />
                   System VAs
                 </label>
-                <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+                <label className="flex items-center gap-2 body-sm">
                   <input type="checkbox" checked={showInterest} onChange={(e) => setShowInterest(e.target.checked)} className="rounded text-primary-600 dark:text-primary-200" />
                   Interest
                 </label>
@@ -4164,15 +4164,15 @@ const TreasuryHierarchyPage: React.FC = () => {
       {/* Legend */}
       <div className="bg-white dark:bg-primary-900 rounded-xl p-4 shadow-sm border border-neutral-100 dark:border-primary-800/60">
         <div className="flex flex-wrap items-center gap-6">
-          <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Group</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Entity</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Virtual Account</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Currency Mirror</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Settlement VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Exception VA</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">Treasury Center</span></div>
-          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="text-xs text-neutral-600 dark:text-neutral-300">IHB Enabled</span></div>
+          <p className="text-body-sm font-medium text-neutral-600 dark:text-neutral-300">Legend:</p>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-primary-900"><Globe className="w-3 h-3 text-white" /></div><span className="caption">Group</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-1/10 dark:bg-cat-1/15"><Building2 className="w-3 h-3 text-cat-1" /></div><span className="caption">Entity</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-success-50 dark:bg-success-500/10"><Wallet className="w-3 h-3 text-success-600 dark:text-success-300" /></div><span className="caption">Virtual Account</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cyan-50 dark:bg-cyan-500/10 border-2 border-dashed border-cyan-400 dark:border-cyan-500/30"><Coins className="w-3 h-3 text-cyan-600 dark:text-cyan-300" /></div><span className="caption">Currency Mirror</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-cat-2-soft dark:bg-cat-2/15 border-2 border-cat-2/30 dark:border-cat-2/30"><Scale className="w-3 h-3 text-cat-2" /></div><span className="caption">Settlement VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-50 dark:bg-warning-500/10 border-2 border-warning-300 dark:border-warning-500/30"><AlertTriangle className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Exception VA</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-warning-100 border border-warning-300 dark:bg-warning-500/20"><Crown className="w-3 h-3 text-warning-600 dark:text-warning-300" /></div><span className="caption">Treasury Center</span></div>
+          <div className="flex items-center gap-2"><div className="p-1.5 rounded bg-info-50 dark:bg-info-500/10 border border-info-300 dark:border-info-500/30"><PiggyBank className="w-3 h-3 text-info-600 dark:text-info-300" /></div><span className="caption">IHB Enabled</span></div>
         </div>
       </div>
 
@@ -4233,8 +4233,8 @@ const TreasuryHierarchyPage: React.FC = () => {
           <div className="flex items-start gap-3 p-3 bg-cat-2-soft dark:bg-cat-2/15 rounded-lg border border-cat-2/20 dark:border-cat-2/30">
             <Scale className="w-5 h-5 text-cat-2 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-cat-2">Settlement Virtual Account</p>
-              <p className="text-xs text-cat-2 mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
+              <p className="text-body-sm font-medium text-cat-2">Settlement Virtual Account</p>
+              <p className="text-caption text-cat-2 mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
             </div>
           </div>
           <div><label className="field-label block mb-1">VA Name</label><Input placeholder="e.g., GCC Settlement Account" /></div>

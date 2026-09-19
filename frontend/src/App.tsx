@@ -261,7 +261,7 @@ const BaaSDashboardPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-primary-900">Partner Performance</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900">Partner Performance</h2>
       </div>
       <div className="divide-y divide-neutral-100">
         {[
@@ -276,15 +276,15 @@ const BaaSDashboardPage: React.FC = () => (
               </div>
               <div>
                 <p className="font-medium text-primary-900">{partner.name}</p>
-                <p className="text-sm text-neutral-500">{partner.wallets.toLocaleString()} wallets</p>
+                <p className="body-sm">{partner.wallets.toLocaleString()} wallets</p>
               </div>
             </div>
             <div className="text-right flex items-center gap-4">
               <div>
                 <p className="font-semibold text-primary-900">{partner.volume}</p>
-                <span className="text-xs px-2 py-0.5 bg-success-100 text-success-700 rounded-full">{partner.status}</span>
+                <span className="text-caption px-2 py-0.5 bg-success-100 text-success-700 rounded-full">{partner.status}</span>
               </div>
-              <button className="text-primary-600 text-sm opacity-0 group-hover:opacity-100 transition-opacity">View</button>
+              <button className="text-primary-600 text-body-sm opacity-0 group-hover:opacity-100 transition-opacity">View</button>
             </div>
           </div>
         ))}
@@ -324,7 +324,7 @@ const BaaSPartnersPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <Building2 className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-primary-900">Partner Directory</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900">Partner Directory</h2>
       </div>
       <div className="p-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
@@ -367,7 +367,7 @@ const BaaSCardsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-500 to-accent-700 flex items-center justify-center">
           <CreditCard className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-primary-900">Virtual Card Programs</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900">Virtual Card Programs</h2>
       </div>
       <div className="p-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
@@ -406,7 +406,7 @@ const BaaSSettlementsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-success-500 to-success-700 flex items-center justify-center">
           <Wallet className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-primary-900">Settlement Cycles</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900">Settlement Cycles</h2>
       </div>
       <div className="p-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">
@@ -445,7 +445,7 @@ const BaaSTransactionsPage: React.FC = () => (
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
           <TrendingUp className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-semibold text-primary-900">Transaction History</h2>
+        <h2 className="text-body-lg font-semibold text-primary-900">Transaction History</h2>
       </div>
       <div className="p-8 text-center">
         <div className="w-16 h-16 rounded-2xl bg-neutral-100 flex items-center justify-center mx-auto mb-4">

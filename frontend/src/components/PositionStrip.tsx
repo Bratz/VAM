@@ -47,12 +47,12 @@ export const PositionStrip: React.FC<{ cells: PositionStripCell[] }> = ({ cells 
           i >= 2 && 'lg:border-t-0 border-t'
         )}
       >
-        <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">{cell.label}</p>
+        <p className="text-caption font-semibold text-neutral-600 dark:text-neutral-300">{cell.label}</p>
         {cell.format === 'count' ? (
           <p
             className={cn(
               'figure mt-1 font-semibold text-primary-900 dark:text-neutral-50',
-              cell.size === 'lg' ? 'text-[38px]' : 'text-[26px]'
+              cell.size === 'lg' ? 'text-stat' : 'text-stat-sm'
             )}
           >
             {cell.value.toLocaleString('en-US')}
@@ -63,12 +63,12 @@ export const PositionStrip: React.FC<{ cells: PositionStripCell[] }> = ({ cells 
             currency={cell.currency}
             className={cn(
               'block mt-1 font-semibold text-primary-900 dark:text-neutral-50',
-              cell.size === 'lg' ? 'text-[38px]' : 'text-[26px]'
+              cell.size === 'lg' ? 'text-stat' : 'text-stat-sm'
             )}
           />
         )}
         {cell.sublabel && (
-          <p className={cn('text-xs mt-0.5', cell.tone ? toneClass[cell.tone] : 'text-neutral-500 dark:text-neutral-400')}>
+          <p className={cn('text-caption mt-0.5', cell.tone ? toneClass[cell.tone] : 'text-neutral-500 dark:text-neutral-400')}>
             {cell.sublabel}
           </p>
         )}

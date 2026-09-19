@@ -184,18 +184,18 @@ const PickerNode: React.FC<PickerNodeProps> = ({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.nodeName}</p>
-          <p className="text-xs text-neutral-500 font-mono dark:text-neutral-400">{node.nodeCode}</p>
+          <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{node.nodeName}</p>
+          <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{node.nodeCode}</p>
         </div>
 
         {showBalance && (
-          <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+          <span className="label-cased">
             {formatCurrency(node.aggregatedBalance, node.currencyCode)}
           </span>
         )}
 
         {showViban && node.primaryViban && (
-          <span className="text-xs font-mono text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded dark:text-primary-200 dark:bg-primary-800/40">
+          <span className="text-caption font-mono text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded dark:text-primary-200 dark:bg-primary-800/40">
             {node.primaryViban.slice(-8)}
           </span>
         )}
@@ -360,7 +360,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
   return (
     <div className={cn('relative', className)} ref={dropdownRef}>
       {label && (
-        <label className="block text-sm font-medium text-primary-900 mb-1 dark:text-neutral-50">
+        <label className="block body-strong mb-1">
           {label}
           {required && <span className="text-error-500 ml-1">*</span>}
         </label>
@@ -383,12 +383,12 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Wallet className="w-4 h-4 text-primary-600 flex-shrink-0 dark:text-primary-200" />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-primary-900 truncate dark:text-neutral-50">{selectedNode.nodeName}</p>
-              <p className="text-xs text-neutral-500 font-mono truncate dark:text-neutral-400">{selectedNode.nodeCode}</p>
+              <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50">{selectedNode.nodeName}</p>
+              <p className="text-caption text-neutral-500 font-mono truncate dark:text-neutral-400">{selectedNode.nodeCode}</p>
             </div>
           </div>
         ) : (
-          <span className="text-neutral-400 text-sm dark:text-neutral-500">{placeholder}</span>
+          <span className="text-neutral-400 text-body-sm dark:text-neutral-500">{placeholder}</span>
         )}
         
         <div className="flex items-center gap-1">
@@ -408,7 +408,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
       </button>
 
       {error && (
-        <p className="text-sm text-error-600 mt-1 dark:text-error-300">{error}</p>
+        <p className="text-body-sm text-error-600 mt-1 dark:text-error-300">{error}</p>
       )}
 
       {/* Dropdown */}
@@ -423,7 +423,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
                 placeholder="Search hierarchy..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800"
+                className="w-full pl-9 pr-3 py-2 text-body-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-800"
                 autoFocus
               />
             </div>
@@ -434,7 +434,7 @@ export const HierarchyPicker: React.FC<HierarchyPickerProps> = ({
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary-500" />
-                <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400">Loading hierarchy...</span>
+                <span className="ml-2 body-sm">Loading hierarchy...</span>
               </div>
             ) : hierarchy ? (
               <PickerNode

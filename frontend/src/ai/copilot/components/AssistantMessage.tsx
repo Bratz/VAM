@@ -33,7 +33,7 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({ message }) =
       <div
         className={[
           'copilot-prose',
-          'text-sm leading-relaxed',
+          'text-body-sm leading-relaxed',
           'text-primary-900 dark:text-neutral-100',
         ].join(' ')}
       >

@@ -84,10 +84,10 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
 
       {/* Source Accounts */}
       <div>
-        <label className="block text-sm font-medium text-primary-900 dark:text-neutral-50 mb-3">
+        <label className="block body-strong mb-3">
           Source Accounts
         </label>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-3">Select accounts to sweep funds from</p>
+        <p className="body-sm mb-3">Select accounts to sweep funds from</p>
 
         <Tabs
           tabs={[
@@ -141,12 +141,12 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
                           <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-primary-900 dark:text-neutral-50 truncate">{acc.vaName}</p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono truncate">{acc.vaNumber || acc.viban}</p>
+                          <p className="font-medium text-body-sm text-primary-900 dark:text-neutral-50 truncate">{acc.vaName}</p>
+                          <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono truncate">{acc.vaNumber || acc.viban}</p>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <Badge variant="neutral" size="sm">{acc.currencyCode}</Badge>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                          <p className="caption mt-1">
                             {formatCompactCurrency(acc.currentBalance || 0, acc.currencyCode)}
                           </p>
                         </div>
@@ -163,7 +163,7 @@ export const Step2Accounts: React.FC<Step2AccountsProps> = ({
               {candidates.length > 0 && (
                 <>
                   {candidateLabel && (
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    <p className="body-sm">
                       Resolved from <span className="font-medium text-primary-900 dark:text-neutral-50">{candidateLabel}</span>
                     </p>
                   )}

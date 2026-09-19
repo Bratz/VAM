@@ -41,7 +41,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
     : path;
 
   if (!segments || segments.length === 0) {
-    return <span className="text-neutral-400 text-sm dark:text-neutral-500">—</span>;
+    return <span className="text-neutral-400 text-body-sm dark:text-neutral-500">—</span>;
   }
 
   // Truncate to maxLevels
@@ -61,7 +61,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
     return Layers;
   };
 
-  const textSize = size === 'sm' ? 'text-xs' : 'text-sm';
+  const textSize = size === 'sm' ? 'text-caption' : 'text-body-sm';
   const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-4 h-4';
 
   return (
@@ -163,7 +163,7 @@ export const CompactHierarchyPath: React.FC<CompactHierarchyPathProps> = ({
     : parts.join('/');
 
   return (
-    <span className={cn('text-xs text-neutral-500 font-mono dark:text-neutral-400', className)}>
+    <span className={cn('text-caption text-neutral-500 font-mono dark:text-neutral-400', className)}>
       {display}
     </span>
   );

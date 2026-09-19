@@ -312,7 +312,7 @@ const ForecastingPage: React.FC = () => {
       <Card padding="md">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+            <div className="flex items-center gap-2 text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
               <Sparkles className="w-3.5 h-3.5 text-accent-500" />
               Cash Forecast
             </div>
@@ -333,7 +333,7 @@ const ForecastingPage: React.FC = () => {
                   aria-selected={horizon === opt.value}
                   onClick={() => setHorizon(opt.value)}
                   className={cn(
-                    'px-3 py-1.5 text-sm font-medium transition-colors',
+                    'px-3 py-1.5 text-body-sm font-medium transition-colors',
                     horizon === opt.value
                       ? 'bg-primary-900 text-white dark:bg-primary-700'
                       : 'bg-white text-neutral-600 hover:bg-neutral-50 dark:bg-primary-900/40 dark:text-neutral-300 dark:hover:bg-primary-800/60'
@@ -350,7 +350,7 @@ const ForecastingPage: React.FC = () => {
               onChange={setCurrency}
               allowEmpty
               emptyLabel="All ccy"
-              className="h-9 text-sm rounded-xl border-neutral-200 dark:border-primary-800/60"
+              className="h-9 text-body-sm rounded-xl border-neutral-200 dark:border-primary-800/60"
             />
 
             <Button
@@ -685,21 +685,21 @@ const CategoryBreakdownCard: React.FC<CategoryBreakdownCardProps> = ({ runId, we
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-neutral-200 dark:border-primary-800/60">
-                <th className="sticky left-0 bg-white dark:bg-primary-900 text-left py-2 pr-3 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold">
+                <th className="sticky left-0 bg-white dark:bg-primary-900 text-left py-2 pr-3 label">
                   Category
                 </th>
                 {weeklyBuckets.map((b) => (
                   <th
                     key={b.weekStart}
-                    className="text-right py-2 px-2 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold whitespace-nowrap"
+                    className="text-right py-2 px-2 label whitespace-nowrap"
                   >
                     {ISO_WEEK_FMT(b.weekStart)}
                   </th>
                 ))}
-                <th className="text-right py-2 pl-3 text-xs uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-semibold whitespace-nowrap">
+                <th className="text-right py-2 pl-3 label whitespace-nowrap">
                   Total
                 </th>
               </tr>
@@ -759,7 +759,7 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
       size="md"
       title={(
         <>
-          <span className="block text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
+          <span className="block text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-1">
             Week of {FULL_DATE_FMT(bucket.weekStart)}
           </span>
           Net {formatCurrency(Number(bucket.netCashflow ?? 0), currency)}
@@ -786,28 +786,28 @@ const WeekDrawer: React.FC<WeekDrawerProps> = ({ bucket, lines, loading, currenc
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-primary-900 dark:text-neutral-100">
+                        <span className="body-strong">
                           {line.categoryLabel || line.categoryCode || 'Uncategorised'}
                         </span>
                         <span className={cn(
-                          'text-xs font-semibold px-1.5 py-0 leading-4 rounded-full',
+                          'text-caption font-semibold px-1.5 py-0 leading-4 rounded-full',
                           SOURCE_LABELS[line.source]?.tone ?? 'bg-neutral-100 text-neutral-600'
                         )}>
                           {SOURCE_LABELS[line.source]?.label ?? line.source}
                         </span>
                       </div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      <p className="caption mt-0.5">
                         {FULL_DATE_FMT(line.valueDate)} · {line.currency}
                       </p>
                       {line.sourceRef && (
-                        <p className="text-xs font-mono text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
+                        <p className="text-caption font-mono text-neutral-400 dark:text-neutral-500 mt-0.5 truncate">
                           {line.sourceRef}
                         </p>
                       )}
                     </div>
                     <div className="text-right shrink-0">
                       <span className={cn(
-                        'inline-flex items-center gap-1 amount text-sm font-semibold',
+                        'inline-flex items-center gap-1 amount text-body-sm font-semibold',
                         line.direction === 'OUT' ? 'text-error-600 dark:text-error-300' : 'text-success-600 dark:text-success-300'
                       )}>
                         {line.direction === 'OUT' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <ArrowUpRight className="w-3.5 h-3.5" />}
@@ -841,7 +841,7 @@ const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, 
       <div className="w-16 h-16 rounded-2xl bg-accent-100 dark:bg-accent-500/15 ring-1 ring-accent-200 dark:ring-accent-500/30 flex items-center justify-center mx-auto mb-4">
         <Sparkles className="w-8 h-8 text-accent-600 dark:text-accent-300" />
       </div>
-      <h2 className="page-title-display text-2xl text-primary-900 dark:text-neutral-50">
+      <h2 className="page-title-display text-heading-md text-primary-900 dark:text-neutral-50">
         No forecast yet
       </h2>
       <p className="body text-neutral-500 dark:text-neutral-400 mt-3 max-w-md mx-auto">

@@ -148,7 +148,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           <GripVertical className="w-4 h-4 text-neutral-400" />
-          <span className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-semibold dark:bg-primary-700 dark:text-neutral-200">
+          <span className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-body-sm font-semibold dark:bg-primary-700 dark:text-neutral-200">
             {level.levelNumber}
           </span>
         </div>
@@ -163,7 +163,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
             )}
           </div>
           {level.description && (
-            <p className="text-xs text-neutral-500 mt-0.5 truncate dark:text-neutral-400">{level.description}</p>
+            <p className="caption mt-0.5 truncate">{level.description}</p>
           )}
         </div>
 
@@ -228,20 +228,20 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
               checked={level.isRequired || false}
               onChange={(e) => onChange({ ...level, isRequired: e.target.checked })}
             />
-            <span className="text-sm text-neutral-700 dark:text-neutral-200">This level is required</span>
+            <span className="text-body-sm text-neutral-700 dark:text-neutral-200">This level is required</span>
           </label>
 
           {/* Allowed Values */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300">
+              <label className="block label-cased">
                 Allowed Values
                 <span className="font-normal text-neutral-400 ml-1">(leave empty for any value)</span>
               </label>
               {hasSuggestedValues && (
                 <button
                   onClick={handleApplySuggested}
-                  className="text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1 dark:text-primary-200"
+                  className="text-caption text-primary-600 hover:text-primary-700 flex items-center gap-1 dark:text-primary-200"
                 >
                   <RefreshCw className="w-3 h-3" />
                   Apply suggested
@@ -254,7 +254,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
               {(level.allowedValues || []).map((value) => (
                 <span
                   key={value}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-neutral-200 rounded text-sm dark:bg-primary-900 dark:border-primary-800"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-neutral-200 rounded text-body-sm dark:bg-primary-900 dark:border-primary-800"
                 >
                   {value}
                   <button
@@ -266,7 +266,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
                 </span>
               ))}
               {(level.allowedValues?.length || 0) === 0 && (
-                <span className="text-xs text-neutral-400 italic">No restrictions - any value allowed</span>
+                <span className="text-caption text-neutral-400 italic">No restrictions - any value allowed</span>
               )}
             </div>
 
@@ -274,7 +274,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                className="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 placeholder="Add allowed value..."
                 value={newValue}
                 onChange={(e) => setNewValue(e.target.value)}
@@ -288,7 +288,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
             {/* Suggested Values Quick Add */}
             {hasSuggestedValues && (
               <div className="mt-2">
-                <p className="text-xs text-neutral-500 mb-1 dark:text-neutral-400">Quick add:</p>
+                <p className="caption mb-1">Quick add:</p>
                 <div className="flex flex-wrap gap-1">
                   {SUGGESTED_VALUES[level.dimensionType]
                     .filter(v => !(level.allowedValues || []).includes(v))
@@ -300,7 +300,7 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
                           ...level,
                           allowedValues: [...(level.allowedValues || []), value],
                         })}
-                        className="px-2 py-0.5 text-xs bg-neutral-100 hover:bg-primary-100 rounded transition-colors dark:bg-primary-800"
+                        className="px-2 py-0.5 text-caption bg-neutral-100 hover:bg-primary-100 rounded transition-colors dark:bg-primary-800"
                       >
                         + {value}
                       </button>
@@ -425,8 +425,8 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         <div className="bg-neutral-50 rounded-lg p-3 dark:bg-primary-950">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-primary-900 dark:text-neutral-50">{programName || 'Program'}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="body-strong">{programName || 'Program'}</p>
+              <p className="caption">
                 Configure the hierarchy levels and allowed values for virtual accounts
               </p>
             </div>
@@ -437,9 +437,9 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         {/* Info Box */}
         <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex gap-2 dark:bg-info-500/10 dark:border-info-500/30">
           <Info className="w-4 h-4 text-info-600 flex-shrink-0 mt-0.5 dark:text-info-300" />
-          <div className="text-sm text-info-700 dark:text-info-300">
+          <div className="text-body-sm text-info-700 dark:text-info-300">
             <p className="font-medium">How Allowed Values Work</p>
-            <ul className="mt-1 space-y-0.5 text-xs">
+            <ul className="mt-1 space-y-0.5 text-caption">
               <li>• Define what values are valid for each hierarchy level</li>
               <li>• When creating VAs, users can only select from these values</li>
               <li>• Leave empty to allow any value (free-form input)</li>
@@ -452,14 +452,14 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         {hasExistingNodes && (
           <div className="bg-warning-50 border border-warning-300 rounded-lg p-3 flex gap-2 dark:bg-warning-500/10">
             <AlertCircle className="w-4 h-4 text-warning-600 flex-shrink-0 mt-0.5 dark:text-warning-300" />
-            <div className="text-sm text-warning-800 dark:text-warning-300">
+            <div className="text-body-sm text-warning-800 dark:text-warning-300">
               <p className="font-medium">Hierarchy Already Has Nodes</p>
-              <p className="mt-1 text-xs text-warning-700 dark:text-warning-300">
+              <p className="mt-1 text-caption text-warning-700 dark:text-warning-300">
                 This program has {existingNodeCount > 0 ? `${existingNodeCount} existing hierarchy nodes` : 'existing hierarchy nodes'}.
                 Modifying level configurations may cause inconsistencies with existing data.
                 Changes to allowed values will only affect new nodes - existing nodes will retain their current values.
               </p>
-              <p className="mt-1 text-xs text-warning-600 font-medium dark:text-warning-300">
+              <p className="mt-1 text-caption text-warning-600 font-medium dark:text-warning-300">
                 It is recommended to configure levels during program setup, before creating hierarchy nodes.
               </p>
             </div>
@@ -470,14 +470,14 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
         {error && (
           <div className="bg-error-50 border border-error-200 rounded-lg p-3 flex gap-2 dark:bg-error-500/10 dark:border-error-500/30">
             <AlertCircle className="w-4 h-4 text-error-600 flex-shrink-0 dark:text-error-300" />
-            <p className="text-sm text-error-700 dark:text-error-300">{error}</p>
+            <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>
           </div>
         )}
 
         {/* Level List */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+            <h3 className="text-body-sm font-semibold text-neutral-700 dark:text-neutral-200">
               Hierarchy Levels ({levels.length}/{effectiveMaxDepth})
             </h3>
             {levels.length < effectiveMaxDepth && (
@@ -505,7 +505,7 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t">
-          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <div className="flex items-center gap-2 caption">
             {hasChanges ? (
               <>
                 <AlertCircle className="w-3 h-3 text-warning-500" />

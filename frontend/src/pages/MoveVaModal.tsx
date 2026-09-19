@@ -75,7 +75,7 @@ const Badge: React.FC<{
   };
 
   return (
-    <span className={cn('px-2 py-0.5 text-xs font-medium rounded-full', variants[variant], className)}>
+    <span className={cn('px-2 py-0.5 text-caption font-medium rounded-full', variants[variant], className)}>
       {children}
     </span>
   );
@@ -114,7 +114,7 @@ const RadioOption: React.FC<{
           {recommended && <Badge variant="success">Recommended</Badge>}
           {requiresApproval && <Badge variant="warning">CFO Approval</Badge>}
         </div>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{description}</p>
+        <p className="body-sm mt-1">{description}</p>
       </div>
     </div>
   </button>
@@ -176,7 +176,7 @@ const filteredNodes = nodes.filter((node) => {
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={`Search ${moveType === 'TRANSACTION_VA' ? 'accounts' : 'aggregations'}...`}
-          className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2.5 border border-neutral-300 dark:border-primary-700 rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
       </div>
 
@@ -184,11 +184,11 @@ const filteredNodes = nodes.filter((node) => {
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-primary-600 dark:text-primary-200" />
-            <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400">Loading...</span>
+            <span className="ml-2 body-sm">Loading...</span>
           </div>
         ) : filteredNodes.length === 0 ? (
           <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-            <p className="text-sm">No {moveType === 'TRANSACTION_VA' ? 'accounts' : 'aggregations'} found</p>
+            <p className="text-body-sm">No {moveType === 'TRANSACTION_VA' ? 'accounts' : 'aggregations'} found</p>
           </div>
         ) : (
           <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
@@ -217,10 +217,10 @@ const filteredNodes = nodes.filter((node) => {
                   <p className="font-medium text-primary-900 dark:text-neutral-50 truncate">{node.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
                     {node.code && (
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">{node.code}</span>
+                      <span className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{node.code}</span>
                     )}
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">•</span>
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <span className="caption">•</span>
+                    <span className="caption">
                       Balance: {formatCurrency(node.balance, node.currencyCode)}
                     </span>
                   </div>
@@ -327,7 +327,7 @@ const ParentSelectionTree: React.FC<ParentSelectionTreeProps> = ({
 
         <span
           className={cn(
-            'flex-1 text-sm font-medium truncate',
+            'flex-1 text-body-sm font-medium truncate',
             isSelected && canSelect ? 'text-primary-700 dark:text-neutral-200' : 'text-primary-900 dark:text-neutral-50'
           )}
         >
@@ -380,7 +380,7 @@ const ValidationPanel: React.FC<ValidationPanelProps> = ({ validation, loading }
     return (
       <div className="flex items-center gap-2 p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
         <Loader2 className="w-4 h-4 animate-spin text-primary-600 dark:text-primary-200" />
-        <span className="text-sm text-neutral-600 dark:text-neutral-300">Validating...</span>
+        <span className="body-sm">Validating...</span>
       </div>
     );
   }
@@ -401,7 +401,7 @@ const ValidationPanel: React.FC<ValidationPanelProps> = ({ validation, loading }
       {validation.errors.length > 0 && (
         <div className="space-y-1">
           {validation.errors.map((error, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-error-600 dark:text-error-300">
+            <div key={i} className="flex items-start gap-2 text-body-sm text-error-600 dark:text-error-300">
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -412,7 +412,7 @@ const ValidationPanel: React.FC<ValidationPanelProps> = ({ validation, loading }
       {validation.warnings.length > 0 && (
         <div className="space-y-1">
           {validation.warnings.map((warning, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-warning-600 dark:text-warning-300">
+            <div key={i} className="flex items-start gap-2 text-body-sm text-warning-600 dark:text-warning-300">
               <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{warning}</span>
             </div>
@@ -422,21 +422,21 @@ const ValidationPanel: React.FC<ValidationPanelProps> = ({ validation, loading }
 
       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-neutral-200 dark:border-primary-800 mt-3">
         {validation.currencyMirrorWillBeCreated && (
-          <div className="flex items-center gap-2 text-sm text-cyan-600 dark:text-cyan-300">
+          <div className="flex items-center gap-2 text-body-sm text-cyan-600 dark:text-cyan-300">
             <Coins className="w-4 h-4" />
             <span>Currency mirror will be created</span>
           </div>
         )}
 
         {validation.settlementVaWillReResolve && (
-          <div className="flex items-center gap-2 text-sm text-cat-2">
+          <div className="flex items-center gap-2 text-body-sm text-cat-2">
             <Scale className="w-4 h-4" />
             <span>Settlement VA will re-resolve</span>
           </div>
         )}
 
         {validation.limitImpact && (
-          <div className="col-span-2 flex items-center gap-2 text-sm text-primary-600 dark:text-primary-200">
+          <div className="col-span-2 flex items-center gap-2 text-body-sm text-primary-600 dark:text-primary-200">
             <ArrowRight className="w-4 h-4" />
             <span>
               Limit transfer: {validation.limitImpact.amountToTransfer.toLocaleString()}{' '}
@@ -681,7 +681,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                   >
                     <div
                       className={cn(
-                        'w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium',
+                        'w-6 h-6 rounded-full flex items-center justify-center text-caption font-medium',
                         num === step
                           ? 'bg-primary-600 text-white'
                           : num < step
@@ -693,7 +693,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                     </div>
                     <span
                       className={cn(
-                        'text-sm font-medium',
+                        'text-body-sm font-medium',
                         num === step ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
                       )}
                     >
@@ -718,7 +718,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                 <p className="text-error-600 dark:text-error-300">{error}</p>
                 <button
                   onClick={loadData}
-                  className="mt-4 px-4 py-2 text-sm text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:hover:bg-primary-800/40 rounded-lg"
+                  className="mt-4 px-4 py-2 text-body-sm text-primary-600 dark:text-primary-200 hover:bg-primary-50 dark:hover:bg-primary-800/40 rounded-lg"
                 >
                   <RefreshCw className="w-4 h-4 inline mr-2" />
                   Retry
@@ -746,11 +746,11 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                       <div className="p-3 bg-primary-50 dark:bg-primary-800/40 rounded-lg border border-primary-200 dark:border-primary-700">
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                          <span className="text-sm font-medium text-primary-700 dark:text-neutral-200">
+                          <span className="text-body-sm font-medium text-primary-700 dark:text-neutral-200">
                             Selected: {selectedVa.name}
                           </span>
                         </div>
-                        <p className="text-xs text-primary-600 dark:text-primary-200 mt-1 ml-6">
+                        <p className="text-caption text-primary-600 dark:text-primary-200 mt-1 ml-6">
                           Currency: {selectedVa.currencyCode} • Balance:{' '}
                           {selectedVa.balance.toLocaleString()}
                         </p>
@@ -785,8 +785,8 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
 
                     {selectedParent && (
                       <div className="p-3 bg-info-50 dark:bg-info-500/10 rounded-lg border border-info-200 dark:border-info-500/30">
-                        <p className="text-sm font-medium text-info-700 dark:text-info-300">Path Preview:</p>
-                        <p className="text-sm text-info-600 dark:text-info-300 mt-1 font-mono">{getPathPreview()}</p>
+                        <p className="text-body-sm font-medium text-info-700 dark:text-info-300">Path Preview:</p>
+                        <p className="text-body-sm text-info-600 dark:text-info-300 mt-1 font-mono">{getPathPreview()}</p>
                       </div>
                     )}
                   </div>
@@ -797,8 +797,8 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                   <div className="space-y-6">
                     {/* Summary */}
                     <div className="p-4 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-                      <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200 mb-3">Move Summary</h4>
-                      <div className="space-y-2 text-sm">
+                      <h4 className="text-body-sm font-semibold text-neutral-700 dark:text-neutral-200 mb-3">Move Summary</h4>
+                      <div className="space-y-2 text-body-sm">
                         <div className="flex justify-between">
                           <span className="text-neutral-500 dark:text-neutral-400">Moving:</span>
                           <span className="font-medium text-primary-900 dark:text-neutral-50">{selectedVa?.name}</span>
@@ -843,10 +843,10 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                         <div className="flex items-start gap-3">
                           <AlertTriangle className="w-5 h-5 text-error-600 dark:text-error-300 mt-0.5 flex-shrink-0" />
                           <div>
-                            <p className="text-sm font-medium text-error-800 dark:text-error-300">
+                            <p className="text-body-sm font-medium text-error-800 dark:text-error-300">
                               Cannot proceed with this move
                             </p>
-                            <p className="text-sm text-error-600 dark:text-error-300 mt-1">
+                            <p className="text-body-sm text-error-600 dark:text-error-300 mt-1">
                               Please resolve the validation errors above before continuing.
                             </p>
                           </div>
@@ -877,7 +877,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                     (step === 2 && !selectedParent)
                   }
                   className={cn(
-                    'px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                    'px-4 py-2 text-body-sm font-medium rounded-lg transition-colors',
                     (step === 1 && !selectedVa) || (step === 2 && !selectedParent)
                       ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
                       : 'bg-primary-600 text-white hover:bg-primary-700'
@@ -890,7 +890,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
                   onClick={handleSubmit}
                   disabled={submitting || validating || (validation && !validation.valid)}
                   className={cn(
-                    'px-6 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2',
+                    'px-6 py-2 text-body-sm font-medium rounded-lg transition-colors flex items-center gap-2',
                     submitting || validating || (validation && !validation.valid)
                       ? 'bg-neutral-200 dark:bg-primary-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
                       : 'bg-primary-600 text-white hover:bg-primary-700'

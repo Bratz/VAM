@@ -57,7 +57,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
         <div className="flex items-center justify-between p-4 bg-primary-50 rounded-lg border border-primary-100">
           <div>
             <h4 className="font-medium text-primary-900">Inherit Program Defaults</h4>
-            <p className="text-sm text-primary-700">
+            <p className="text-body-sm text-primary-700">
               Apply default limits, KYC requirements, and wallet settings from the program
             </p>
           </div>
@@ -151,7 +151,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             error={!!errors.physicalAccountId}
           />
           {program && filteredPhysicalAccounts.length === 0 && (
-            <p className="text-xs text-warning-600 mt-1">
+            <p className="caption-warning mt-1">
               No physical accounts found for currency {program.currencyCode}
             </p>
           )}
@@ -175,7 +175,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             error={!!errors.currencyCode}
           />
           {program && (
-            <p className="text-xs text-neutral-500 mt-1">
+            <p className="caption mt-1">
               Currency is set by the program and cannot be changed
             </p>
           )}
@@ -196,7 +196,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
 
       {/* External Reference & Metadata */}
       <div className="border-t border-neutral-200 pt-6">
-        <h4 className="text-sm font-medium text-neutral-900 mb-4">Additional Information</h4>
+        <h4 className="body-strong mb-4">Additional Information</h4>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField 
@@ -229,7 +229,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
         <Alert variant="danger">
           <div>
             <strong>Please fix the following errors:</strong>
-            <ul className="list-disc list-inside mt-1 text-sm">
+            <ul className="list-disc list-inside mt-1 text-body-sm">
               {Object.entries(errors).map(([field, message]) => (
                 <li key={field}>{message}</li>
               ))}

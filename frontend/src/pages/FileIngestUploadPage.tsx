@@ -205,7 +205,7 @@ function formatElapsed(totalSeconds: number): string {
 const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: string; tone: 'live' | 'success' | 'error' } | null }> = ({ steps, elapsedLabel }) => (
   <div>
     {elapsedLabel && (
-      <div className={`mb-5 flex items-center justify-center gap-2 rounded-full py-2 text-sm font-medium ${
+      <div className={`mb-5 flex items-center justify-center gap-2 rounded-full py-2 text-body-sm font-medium ${
         elapsedLabel.tone === 'live'
           ? 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300'
           : elapsedLabel.tone === 'error'
@@ -236,7 +236,7 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
               ) : step.status === 'blocked' ? (
                 <XCircle className="w-4 h-4" />
               ) : (
-                <span className="text-xs font-semibold">{idx + 1}</span>
+                <span className="text-caption font-semibold">{idx + 1}</span>
               )}
             </div>
             {idx < steps.length - 1 && (
@@ -244,14 +244,14 @@ const IssueStatusTimeline: React.FC<{ steps: IssueStep[]; elapsedLabel: { text: 
             )}
           </div>
           <div className="pb-5 min-w-0">
-            <p className={`text-sm ${step.status === 'pending' ? 'text-neutral-400 dark:text-neutral-500' : 'font-semibold text-primary-900 dark:text-neutral-50'}`}>
+            <p className={`text-body-sm ${step.status === 'pending' ? 'text-neutral-400 dark:text-neutral-500' : 'font-semibold text-primary-900 dark:text-neutral-50'}`}>
               {step.title}
             </p>
             {step.subtitle && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{step.subtitle}</p>
+              <p className="caption mt-0.5">{step.subtitle}</p>
             )}
             {step.timestamp && (
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">{new Date(step.timestamp).toLocaleString()}</p>
+              <p className="caption mt-0.5">{new Date(step.timestamp).toLocaleString()}</p>
             )}
           </div>
         </div>
@@ -455,7 +455,7 @@ const FileIngestUploadPage: React.FC = () => {
         <CardHeader title="New Upload" subtitle="Every field below stays editable until you upload." />
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">What are you uploading?</label>
+            <label className="block text-body-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">What are you uploading?</label>
             <div className="grid grid-cols-3 gap-3">
               {DOMAIN_OPTIONS.map((opt) => {
                 const selected = domain === opt.value;
@@ -476,8 +476,8 @@ const FileIngestUploadPage: React.FC = () => {
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-2 ${selected ? 'bg-accent-500 text-white' : 'bg-neutral-100 text-neutral-500 dark:bg-primary-800 dark:text-neutral-300'}`}>
                       {opt.icon}
                     </div>
-                    <p className="text-sm font-semibold text-primary-900 dark:text-neutral-50">{opt.label}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{opt.description}</p>
+                    <p className="body-strong font-semibold">{opt.label}</p>
+                    <p className="caption mt-0.5">{opt.description}</p>
                   </Card>
                 );
               })}
@@ -511,18 +511,18 @@ const FileIngestUploadPage: React.FC = () => {
                 id="ingest-file-upload"
               />
               <Upload className={`w-8 h-8 mx-auto mb-2 transition-transform ${isDragging ? 'text-accent-500 scale-110' : 'text-neutral-400 dark:text-neutral-500'}`} />
-              <p className="text-sm text-neutral-600 dark:text-neutral-300">
+              <p className="body-sm">
                 Drop your file here, or{' '}
                 <label htmlFor="ingest-file-upload" className="text-accent-600 dark:text-accent-300 font-medium cursor-pointer hover:underline">
                   browse to upload
                 </label>
               </p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Any format — the pipeline figures out its structure</p>
+              <p className="caption mt-1">Any format — the pipeline figures out its structure</p>
             </div>
           )}
 
           {uploadError && (
-            <p className="text-xs text-error-600 dark:text-error-400 flex items-center gap-1.5">
+            <p className="caption-error flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" /> {uploadError}
             </p>
           )}
@@ -535,29 +535,29 @@ const FileIngestUploadPage: React.FC = () => {
           itself already prompts for that first step) rather than from first render. */}
       {!job && file && (
         <Card>
-          <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">Summary</p>
+          <p className="label mb-3">Summary</p>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Uploading</span>
-              <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">
+              <span className="caption">Uploading</span>
+              <span className="body-strong">
                 {DOMAIN_OPTIONS.find((o) => o.value === domain)?.label}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Customer</span>
-              <span className="text-sm font-medium text-primary-900 dark:text-neutral-50">{customerId.trim() || '—'}</span>
+              <span className="caption">Customer</span>
+              <span className="body-strong">{customerId.trim() || '—'}</span>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-primary-800/60">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">File</span>
+              <span className="caption">File</span>
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
-                <span className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12rem]">{file.name}</span>
+                <span className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12rem]">{file.name}</span>
                 <button onClick={() => setFile(null)} className="p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-primary-800 shrink-0">
                   <X className="w-3.5 h-3.5 text-neutral-400" />
                 </button>
               </div>
             </div>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 text-right">{formatFileSize(file.size)}</p>
+            <p className="caption text-right">{formatFileSize(file.size)}</p>
           </div>
         </Card>
       )}
@@ -567,8 +567,8 @@ const FileIngestUploadPage: React.FC = () => {
           <div className="p-3 rounded-lg bg-success-50 dark:bg-success-500/10 border border-success-200 dark:border-success-500/30 flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-success-600 dark:text-success-300 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-success-800 dark:text-success-300">Ready to upload</p>
-              <p className="text-xs text-success-700 dark:text-success-300 mt-0.5">
+              <p className="text-body-sm font-medium text-success-800 dark:text-success-300">Ready to upload</p>
+              <p className="text-caption text-success-700 dark:text-success-300 mt-0.5">
                 The pipeline starts analyzing this file the moment you upload it.
               </p>
             </div>
@@ -577,8 +577,8 @@ const FileIngestUploadPage: React.FC = () => {
           <div className="p-3 rounded-lg bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
-              <p className="text-xs text-warning-700 dark:text-warning-300 mt-0.5">Enter a customer ID above to continue.</p>
+              <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
+              <p className="text-caption text-warning-700 dark:text-warning-300 mt-0.5">Enter a customer ID above to continue.</p>
             </div>
           </div>
         )
@@ -614,8 +614,8 @@ const FileIngestUploadPage: React.FC = () => {
                 <div className="flex items-center gap-2 min-w-0">
                   <FileText className="w-4 h-4 shrink-0 text-neutral-400" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{pastJob.originalFilename}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="text-body-sm font-medium text-primary-900 dark:text-neutral-50 truncate">{pastJob.originalFilename}</p>
+                    <p className="caption">
                       {pastJob.domain} · {pastJob.customerId} · {new Date(pastJob.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -652,7 +652,7 @@ const FileIngestUploadPage: React.FC = () => {
             {job.stage === 'BLOCKED' && job.blockedReason && (
               <div className="mb-4 p-3 rounded-lg bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 flex items-start gap-2">
                 <PauseCircle className="w-4 h-4 text-error-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-error-700 dark:text-error-300">{job.blockedReason}</p>
+                <p className="text-body-sm text-error-700 dark:text-error-300">{job.blockedReason}</p>
               </div>
             )}
             {hasTicket ? (
@@ -671,7 +671,7 @@ const FileIngestUploadPage: React.FC = () => {
               </div>
             )}
             {isLive && (
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 text-center mt-1 flex items-center justify-center gap-1.5">
+              <p className="caption text-center mt-1 flex items-center justify-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent-500 animate-pulse-soft" />
                 Updating automatically
               </p>
@@ -681,23 +681,23 @@ const FileIngestUploadPage: React.FC = () => {
           {doneSummary && (
             <div className="grid grid-cols-4 gap-3">
               <Card padding="sm" className="text-center">
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Total rows</p>
-                <p className="text-xl font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
+                <p className="caption">Total rows</p>
+                <p className="text-heading-sm font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
               </Card>
               <Card padding="sm" className="text-center">
                 <CheckCircle2 className="w-4 h-4 text-success-500 mx-auto" />
-                <p className="text-xl font-semibold text-success-700 dark:text-success-300 mt-0.5">{doneSummary.processed}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Processed</p>
+                <p className="text-heading-sm font-semibold text-success-700 dark:text-success-300 mt-0.5">{doneSummary.processed}</p>
+                <p className="caption">Processed</p>
               </Card>
               <Card padding="sm" className="text-center">
                 <AlertTriangle className="w-4 h-4 text-warning-500 mx-auto" />
-                <p className="text-xl font-semibold text-warning-700 dark:text-warning-300 mt-0.5">{doneSummary.quarantined}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Quarantined</p>
+                <p className="text-heading-sm font-semibold text-warning-700 dark:text-warning-300 mt-0.5">{doneSummary.quarantined}</p>
+                <p className="caption">Quarantined</p>
               </Card>
               <Card padding="sm" className="text-center">
                 <XCircle className="w-4 h-4 text-error-500 mx-auto" />
-                <p className="text-xl font-semibold text-error-700 dark:text-error-300 mt-0.5">{doneSummary.failed}</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">Failed</p>
+                <p className="text-heading-sm font-semibold text-error-700 dark:text-error-300 mt-0.5">{doneSummary.failed}</p>
+                <p className="caption">Failed</p>
               </Card>
             </div>
           )}
@@ -708,9 +708,9 @@ const FileIngestUploadPage: React.FC = () => {
                 <CardHeader title="Rows" subtitle={`${rows.length} row(s) from ${job.originalFilename}.`} />
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-body-sm">
                   <thead>
-                    <tr className="border-t border-neutral-100 dark:border-primary-800/60 text-xs text-neutral-500 dark:text-neutral-400">
+                    <tr className="border-t border-neutral-100 dark:border-primary-800/60 caption">
                       <th className="text-left font-medium px-6 py-2">Row</th>
                       <th className="text-left font-medium px-3 py-2">Status</th>
                       <th className="text-right font-medium px-3 py-2">Amount</th>
@@ -721,17 +721,17 @@ const FileIngestUploadPage: React.FC = () => {
                   <tbody>
                     {rows.map((row) => (
                       <tr key={row.sourceRowNumber} className="border-t border-neutral-100 dark:border-primary-800/60">
-                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 font-mono text-xs">{row.sourceRowNumber}</td>
+                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 font-mono text-caption">{row.sourceRowNumber}</td>
                         <td className="px-3 py-2">
                           <Badge variant={ROW_STATUS_BADGE[row.status].variant} size="sm">{ROW_STATUS_BADGE[row.status].label}</Badge>
                         </td>
                         <td className="px-3 py-2 text-right text-primary-900 dark:text-neutral-50 font-mono">
                           {row.amount != null ? `${row.amount} ${row.currency ?? ''}` : '—'}
                         </td>
-                        <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300 font-mono text-xs truncate max-w-[10rem]">
+                        <td className="px-3 py-2 text-neutral-600 dark:text-neutral-300 font-mono text-caption truncate max-w-[10rem]">
                           {row.targetAccountReference ?? '—'}
                         </td>
-                        <td className="px-6 py-2 text-neutral-500 dark:text-neutral-400 text-xs">{row.reason ?? '—'}</td>
+                        <td className="px-6 py-2 caption">{row.reason ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>

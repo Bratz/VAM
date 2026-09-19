@@ -176,7 +176,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
                 </div>
                 <div>
                   <h2 className="section-title">{group.country}</h2>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="caption mt-0.5">
                     {group.shadowCount} shadow{group.shadowCount === 1 ? '' : 's'} · {group.currencies.length} currenc{group.currencies.length === 1 ? 'y' : 'ies'}
                   </p>
                 </div>
@@ -184,7 +184,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
             </div>
 
             <div className="p-5 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body-sm">
                 <thead>
                   <tr className="text-left">
                     <th className="label py-2">Currency</th>
@@ -201,7 +201,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
                       key={s.vaId}
                       className="border-t border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200"
                     >
-                      <td className="py-2.5 font-mono text-xs text-primary-900 dark:text-neutral-50">
+                      <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">
                         {i === 0 ? c.currencyCode : ''}
                       </td>
                       <td className="py-2.5">{s.bankAccountNumber ?? s.bankIban ?? '—'}</td>
@@ -217,7 +217,7 @@ export const ByCountryView: React.FC<ByCountryViewProps> = ({
                           onClick={() => refresh(s)}
                           disabled={refreshingIds.has(s.vaId)}
                           aria-label={`Refresh ${s.vaNumber}`}
-                          className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-xs inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
+                          className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
                         >
                           {refreshingIds.has(s.vaId)
                             ? <Loader2 className="w-3 h-3 animate-spin" />

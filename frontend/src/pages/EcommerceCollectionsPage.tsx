@@ -80,7 +80,7 @@ const EcommerceCollectionsPage: React.FC = () => {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
             <Input className="pl-9" placeholder="Search by reference or merchant..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <select className="border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+          <select className="border border-neutral-200 rounded-lg px-3 py-2 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-primary-800 dark:bg-primary-900" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="ALL">All Status</option>
             <option value="COMPLETED">Completed</option>
             <option value="PENDING">Pending</option>
@@ -112,7 +112,7 @@ const EcommerceCollectionsPage: React.FC = () => {
               render: (_, c) => (
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                  <span className="font-mono text-sm">{c.transactionRef}</span>
+                  <span className="font-mono text-body-sm">{c.transactionRef}</span>
                 </div>
               ),
             },
@@ -121,15 +121,15 @@ const EcommerceCollectionsPage: React.FC = () => {
               header: 'Merchant',
               render: (_, c) => (
                 <>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{c.merchantName}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{c.merchantId}</p>
+                  <p className="body-strong">{c.merchantName}</p>
+                  <p className="caption">{c.merchantId}</p>
                 </>
               ),
             },
             { key: 'paymentMethod', header: 'Payment Method', render: (_, c) => <Badge variant="neutral">{c.paymentMethod}</Badge> },
             { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
             { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
-            { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="text-sm text-neutral-600 dark:text-neutral-300">{new Date(c.transactionDate).toLocaleString()}</span> },
+            { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="body-sm">{new Date(c.transactionDate).toLocaleString()}</span> },
             {
               key: 'actions',
               header: 'Actions',
@@ -150,44 +150,44 @@ const EcommerceCollectionsPage: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Transaction Ref</p>
+                <p className="label mb-1">Transaction Ref</p>
                 <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.transactionRef}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Merchant</p>
+                <p className="label mb-1">Merchant</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.merchantName}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Amount</p>
-                {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-xl font-bold` hand-roll (same 20px scale). */}
+                <p className="label mb-1">Amount</p>
+                {/* Phase 12 Task E: .stat-value-xs replaces the raw `text-heading-sm font-bold` hand-roll (same 20px scale). */}
                 <p className="stat-value-xs">{formatCurrency(selectedCollection.amount, selectedCollection.currencyCode || 'AED')}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Status</p>
+                <p className="label mb-1">Status</p>
                 {getStatusBadge(selectedCollection.status)}
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Payment Method</p>
+                <p className="label mb-1">Payment Method</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.paymentMethod}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Card Type</p>
+                <p className="label mb-1">Card Type</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.cardType || '-'}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Auth Code</p>
+                <p className="label mb-1">Auth Code</p>
                 <p className="font-mono text-neutral-900 dark:text-neutral-50">{selectedCollection.authCode || '-'}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">RRN</p>
+                <p className="label mb-1">RRN</p>
                 <p className="font-mono text-neutral-900 dark:text-neutral-50">{selectedCollection.rrn || '-'}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Settlement Status</p>
+                <p className="label mb-1">Settlement Status</p>
                 <Badge variant="neutral">{selectedCollection.settlementStatus || 'PENDING'}</Badge>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 uppercase tracking-wider mb-1 dark:text-neutral-400">Transaction Date</p>
+                <p className="label mb-1">Transaction Date</p>
                 <p className="font-medium text-neutral-900 dark:text-neutral-50">{new Date(selectedCollection.transactionDate).toLocaleString()}</p>
               </div>
             </div>

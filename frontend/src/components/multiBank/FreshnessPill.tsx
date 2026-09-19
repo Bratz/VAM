@@ -23,7 +23,7 @@ const REFRESH_STATUS_TONE: Record<string, string> = {
 
 export const FreshnessPill: React.FC<{ shadow: ShadowSummary }> = ({ shadow }) => (
   <span className={cn(
-    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
+    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-caption',
     REFRESH_STATUS_TONE[shadow.stale ? 'STALE' : shadow.lastBalanceRefreshStatus] ?? REFRESH_STATUS_TONE.NEVER,
   )}>
     {shadow.stale

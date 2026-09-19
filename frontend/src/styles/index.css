@@ -218,7 +218,7 @@
 
   /* Page hero heading. Apply on <h1> inside every page body. */
   .page-title {
-    @apply text-3xl text-primary-900 dark:text-neutral-50;
+    @apply text-heading-lg text-primary-900 dark:text-neutral-50;
     font-family: var(--font-title);
     font-weight: 500;
     letter-spacing: -0.015em;
@@ -237,7 +237,7 @@
   }
   /* Section heading — one notch down from page-title. */
   .section-title {
-    @apply text-xl text-primary-900 dark:text-neutral-50;
+    @apply text-heading-sm text-primary-900 dark:text-neutral-50;
     font-family: var(--font-title);
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -246,7 +246,7 @@
   /* Big numeric display — for stat cards and hero balance figures.
      Fraunces with tabular-nums and tight tracking for banking-grade weight. */
   .stat-value {
-    @apply text-4xl text-primary-900 dark:text-neutral-50;
+    @apply text-stat text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -258,7 +258,7 @@
     line-height: 1.05;
   }
   .stat-value-sm {
-    @apply text-[28px] text-primary-900 dark:text-neutral-50;
+    @apply text-stat-sm text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -275,7 +275,7 @@
      inside a row that already has a dominant figure. Fraunces 20px/600
      tabular-nums. Phase 9.1 (2026-05-13). */
   .stat-value-xs {
-    @apply text-xl text-primary-900 dark:text-neutral-50;
+    @apply text-heading-sm text-primary-900 dark:text-neutral-50;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -291,7 +291,7 @@
      `text-primary-900` default — an `!important` smell. Use this
      variant instead. Both modes render white. */
   .stat-value-inverse {
-    @apply text-2xl text-white;
+    @apply text-heading-md text-white;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -301,7 +301,7 @@
   }
   /* Hero-sized inverse (matches `.stat-value` scale for full-bleed dark heroes). */
   .stat-value-inverse-lg {
-    @apply text-4xl text-white;
+    @apply text-stat text-white;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -315,12 +315,12 @@
      state: green for "Active" counts, warning for "Pending", error for
      "Failed", info for "POBO Volume" etc.
      Previously ~40 sites authored these inline as
-       `text-2xl font-bold text-success-600 dark:text-success-300`
+       `text-heading-md font-bold text-success-600 dark:text-success-300`
      which both bypassed the display tier (Fraunces + tabular-nums) and
      duplicated the styling. These variants share the same typographic
      treatment as `.stat-value-sm` but with semantic text colour.
      Final carry-over post-Tier-8 (2026-05-13). */
-  /* Fixed 2026-09-09: these were `text-2xl` (24px) — 4px smaller than
+  /* Fixed 2026-09-09: these were `text-heading-md` (24px) — 4px smaller than
      `.stat-value-sm` (28px) despite this file's own comment above saying
      they "share the same typographic treatment as .stat-value-sm" (and
      tokens.json documents the same claim). Confirmed live: a StatTile row
@@ -329,7 +329,7 @@
      and spaced identically to .stat-value-sm — colour is the only thing
      that should vary by tone. */
   .stat-value-success {
-    @apply text-[28px] text-success-600 dark:text-success-300;
+    @apply text-stat-sm text-success-600 dark:text-success-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -338,7 +338,7 @@
     line-height: 1;
   }
   .stat-value-warning {
-    @apply text-[28px] text-warning-600 dark:text-warning-300;
+    @apply text-stat-sm text-warning-600 dark:text-warning-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -347,7 +347,7 @@
     line-height: 1;
   }
   .stat-value-error {
-    @apply text-[28px] text-error-600 dark:text-error-300;
+    @apply text-stat-sm text-error-600 dark:text-error-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -356,7 +356,7 @@
     line-height: 1;
   }
   .stat-value-info {
-    @apply text-[28px] text-info-600 dark:text-info-300;
+    @apply text-stat-sm text-info-600 dark:text-info-300;
     font-family: var(--font-numeric);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -371,7 +371,7 @@
      The display tier (.page-title, .section-title, .stat-value, .stat-value-sm)
      was added in earlier work. This phase adds the *body* tier — the
      workhorses every page uses dozens of times. The goal is to retire the
-     raw `text-sm font-medium text-primary-900 dark:text-neutral-50` Tailwind
+     raw `text-body-sm font-medium text-primary-900 dark:text-neutral-50` Tailwind
      soup that's currently sprinkled across pages and replace it with a
      single semantic class.
 
@@ -382,7 +382,7 @@
   /* Default body copy — primary text. Use this for most paragraphs,
      descriptions, and inline labels that aren't form controls. */
   .body {
-    @apply text-base text-primary-900 dark:text-neutral-100;
+    @apply text-body text-primary-900 dark:text-neutral-100;
     font-family: var(--font-sans);
     font-weight: 400;
     line-height: 1.55;
@@ -392,7 +392,7 @@
      headings, intro paragraphs. One step above `.body`; doesn't compete
      with `.section-title`. Phase 9.1 (2026-05-13). */
   .body-lg {
-    @apply text-lg text-primary-900 dark:text-neutral-100;
+    @apply text-body-lg text-primary-900 dark:text-neutral-100;
     font-family: var(--font-sans);
     font-weight: 500;
     line-height: 1.5;
@@ -401,10 +401,10 @@
   /* Secondary body copy — for supporting / muted text. Pairs with `.body`
      in two-line patterns (e.g. account name above + account number below). */
   .body-sm {
-    @apply text-sm text-neutral-600 dark:text-neutral-400;
+    @apply text-body-sm text-neutral-600 dark:text-neutral-400;
     font-family: var(--font-sans);
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.25rem;
   }
 
   /* Form label / eyebrow. Uppercase, tracked. Used as stat-tile eyebrow,
@@ -412,7 +412,7 @@
      `.field-label` (non-uppercase) which is for the inline form-input
      label convention. */
   .label {
-    @apply text-xs font-semibold text-neutral-600 dark:text-neutral-300;
+    @apply text-caption font-semibold text-neutral-600 dark:text-neutral-300;
     font-family: var(--font-sans);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -420,11 +420,11 @@
   }
 
   /* Form-field label — non-uppercase, paired with form inputs. Replaces
-     the sprawling `text-sm font-medium text-neutral-700 dark:text-neutral-200`
+     the sprawling `text-body-sm font-medium text-neutral-700 dark:text-neutral-200`
      pattern used on every <label> across forms. Distinct from `.label`
      (uppercase eyebrow). Phase 9 Design System Unification (2026-05-13). */
   .field-label {
-    @apply text-sm font-medium text-neutral-700 dark:text-neutral-200;
+    @apply text-body-sm font-medium text-neutral-700 dark:text-neutral-200;
     font-family: var(--font-sans);
     line-height: 1.4;
   }
@@ -434,7 +434,7 @@
      that include lowercase tokens). `.overline` remains the uppercase
      variant for section eyebrows; this is the cased sibling. */
   .label-cased {
-    @apply text-xs font-medium text-neutral-500 dark:text-neutral-400;
+    @apply text-caption font-medium text-neutral-500 dark:text-neutral-400;
     font-family: var(--font-sans);
     line-height: 1.3;
   }
@@ -443,7 +443,7 @@
      used above page-title / section-title for context (e.g. "ACCOUNTS &
      STRUCTURE" above "Bank Accounts"). */
   .overline {
-    @apply text-xs font-semibold text-neutral-500 dark:text-neutral-400;
+    @apply text-caption font-semibold text-neutral-500 dark:text-neutral-400;
     font-family: var(--font-sans);
     line-height: 1.2;
   }
@@ -451,16 +451,51 @@
   /* Caption — supporting text under form inputs, chart axes, footnotes.
      Smaller than `.body-sm` but not uppercase. */
   .caption {
-    @apply text-xs text-neutral-500 dark:text-neutral-400;
+    @apply text-caption text-neutral-500 dark:text-neutral-400;
     font-family: var(--font-sans);
     font-weight: 400;
-    line-height: 1.4;
+    line-height: 1rem;
+  }
+
+  /* Emphasised 14px text — names, primary cell values, row titles. Add `font-semibold`
+     for the heavier variant. */
+  .body-strong {
+    @apply text-body-sm text-primary-900 dark:text-neutral-50;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    line-height: 1.25rem;
+  }
+
+  /* Status-toned captions (semantic colour only — for status meaning, not decoration). */
+  .caption-success {
+    @apply text-caption text-success-600 dark:text-success-300;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1rem;
+  }
+  .caption-warning {
+    @apply text-caption text-warning-600 dark:text-warning-300;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1rem;
+  }
+  .caption-error {
+    @apply text-caption text-error-600 dark:text-error-300;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1rem;
+  }
+  .caption-info {
+    @apply text-caption text-info-600 dark:text-info-300;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1rem;
   }
 
   /* Inline code / numeric reference. Mono so account numbers, VA codes,
      transaction IDs read cleanly with tabular-nums. */
   .code {
-    @apply text-[0.8125rem] text-neutral-700 dark:text-neutral-300;
+    @apply text-body-sm text-neutral-700 dark:text-neutral-300;
     font-family: var(--font-mono);
     font-weight: 500;
     font-variant-numeric: tabular-nums lining-nums;
@@ -474,7 +509,7 @@
      sparingly — most identifiers in body context should use `.code`.
      Phase 9.1 (2026-05-13). */
   .code-display {
-    @apply text-lg text-primary-900 dark:text-neutral-50;
+    @apply text-body-lg text-primary-900 dark:text-neutral-50;
     font-family: var(--font-mono);
     font-weight: 600;
     font-variant-numeric: tabular-nums lining-nums;
@@ -600,14 +635,14 @@
   }
 
   .data-table th {
-    @apply text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider;
+    @apply text-left text-caption font-semibold text-neutral-500 uppercase tracking-wider;
     @apply px-4 py-3.5 bg-neutral-50/80 border-b border-neutral-200;
     @apply dark:text-neutral-400 dark:bg-primary-950/50 dark:border-primary-800;
     letter-spacing: 0.05em;
   }
 
   .data-table td {
-    @apply px-4 py-4 text-sm text-primary-900 border-b border-neutral-100;
+    @apply px-4 py-4 text-body-sm text-primary-900 border-b border-neutral-100;
     @apply dark:text-neutral-100 dark:border-primary-800/60;
     transition: background-color var(--duration-fast);
   }
@@ -762,12 +797,12 @@
 
   /* ========== FORM ELEMENTS - Premium ========== */
   .form-label {
-    @apply block text-sm font-medium text-primary-900 mb-2;
+    @apply block text-body-sm font-medium text-primary-900 mb-2;
     letter-spacing: -0.01em;
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border border-neutral-300 rounded-xl text-base text-primary-900;
+    @apply w-full px-4 py-3 border border-neutral-300 rounded-xl text-body text-primary-900;
     @apply bg-white placeholder:text-neutral-400;
     box-shadow: var(--shadow-inner);
     transition: border-color var(--duration-fast),
@@ -804,11 +839,11 @@
   }
 
   .form-helper {
-    @apply mt-2 text-sm text-neutral-500 flex items-center gap-1.5;
+    @apply mt-2 text-body-sm text-neutral-500 flex items-center gap-1.5;
   }
 
   .form-error {
-    @apply mt-2 text-sm text-error-600 flex items-center gap-1.5;
+    @apply mt-2 text-body-sm text-error-600 flex items-center gap-1.5;
   }
 
   /* ========== PREMIUM BADGES ========== */
@@ -818,15 +853,15 @@
   }
 
   .badge-sm {
-    @apply px-2 py-0.5 text-xs gap-1;
+    @apply px-2 py-0.5 text-caption gap-1;
   }
 
   .badge-md {
-    @apply px-2.5 py-1 text-sm gap-1.5;
+    @apply px-2.5 py-1 text-body-sm gap-1.5;
   }
 
   .badge-lg {
-    @apply px-3 py-1.5 text-sm gap-2;
+    @apply px-3 py-1.5 text-body-sm gap-2;
   }
 
   /* Badge with subtle border for depth */
@@ -861,11 +896,11 @@
   }
 
   .mobile-card-label {
-    @apply text-xs font-medium text-neutral-500 uppercase tracking-wide;
+    @apply text-caption font-medium text-neutral-500 uppercase tracking-wide;
   }
 
   .mobile-card-value {
-    @apply text-sm font-medium text-primary-900;
+    @apply text-body-sm font-medium text-primary-900;
   }
 
   /* ========== BOTTOM SHEET (Mobile) ========== */
@@ -928,7 +963,7 @@
   }
 
   .bottom-nav-label {
-    @apply text-xs font-medium;
+    @apply text-caption font-medium;
   }
 
   @media (min-width: 1024px) {

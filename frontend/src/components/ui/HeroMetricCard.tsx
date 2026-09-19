@@ -11,7 +11,7 @@ import { cn } from '../../utils';
  *  - Full-width rounded card with subtle warm gradient
  *  - Soft gold "lens" glow anchored top-right (uses --section-accent-warm,
  *    so the hue shifts per route — gold for accounts, blue for treasury, etc.)
- *  - Primary metric rendered in Fraunces display at hero size (text-4xl/5xl)
+ *  - Primary metric rendered in Fraunces display at hero size (text-stat/5xl)
  *  - Optional secondary metric mounted side-by-side for "Total / Available"
  *    storytelling
  *  - Optional icon, trend chip, and sub-line slot (currency chips, count, etc.)
@@ -110,7 +110,7 @@ const MetricBlock: React.FC<{ metric: HeroMetric; dominant?: boolean }> = ({
   dominant,
 }) => {
   const trendClass = cn(
-    'ml-2 text-xs font-semibold',
+    'ml-2 text-caption font-semibold',
     metric.trendTone === 'error'
       ? 'text-error-600 dark:text-error-300'
       : metric.trendTone === 'neutral'
@@ -120,20 +120,20 @@ const MetricBlock: React.FC<{ metric: HeroMetric; dominant?: boolean }> = ({
 
   return (
     <div className="min-w-0">
-      <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
+      <p className="text-caption font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
         {metric.label}
       </p>
       <p
         className={cn(
           'stat-value leading-none flex items-baseline flex-wrap',
-          dominant ? 'text-4xl sm:text-5xl' : 'text-2xl sm:text-3xl'
+          dominant ? 'text-stat sm:text-display' : 'text-heading-md sm:text-heading-lg'
         )}
       >
         <span>{metric.value}</span>
         {metric.trend && <span className={trendClass}>{metric.trend}</span>}
       </p>
       {metric.sub && (
-        <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-3">
+        <div className="body-sm mt-3">
           {metric.sub}
         </div>
       )}

@@ -147,7 +147,7 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
                 </div>
                 <div>
                   <h2 className="section-title">{c.currencyCode}</h2>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="caption mt-0.5">
                     {c.rows.length} bank{c.rows.length === 1 ? '' : 's'} · {c.rows.reduce((a, r) => a + r.shadowCount, 0)} shadow{c.rows.reduce((a, r) => a + r.shadowCount, 0) === 1 ? '' : 's'}
                   </p>
                 </div>
@@ -173,7 +173,7 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
             </div>
 
             <div className="p-5 overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-body-sm">
                 <thead>
                   <tr className="text-left">
                     <th className="label py-2">Bank</th>
@@ -195,12 +195,12 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-primary-900 dark:text-neutral-50">{row.bankName ?? row.bankBic}</span>
                             {row.homeBank && (
-                              <span className="text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
+                              <span className="text-caption font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
                                 Home bank
                               </span>
                             )}
                           </div>
-                          <p className="font-mono text-xs text-neutral-500 dark:text-neutral-400">{row.bankBic}</p>
+                          <p className="font-mono text-caption text-neutral-500 dark:text-neutral-400">{row.bankBic}</p>
                         </td>
                         <td className="py-2.5">{s.bankAccountNumber ?? s.bankIban ?? '—'}</td>
                         <td className="py-2.5 amount text-right text-primary-900 dark:text-neutral-50">{formatCurrency(s.bankBalanceEffective, s.currencyCode)}</td>
@@ -215,7 +215,7 @@ export const ByCurrencyView: React.FC<ByCurrencyViewProps> = ({
                             onClick={() => refresh(s)}
                             disabled={refreshingIds.has(s.vaId)}
                             aria-label={`Refresh ${s.vaNumber}`}
-                            className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-xs inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
+                            className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
                           >
                             {refreshingIds.has(s.vaId)
                               ? <Loader2 className="w-3 h-3 animate-spin" />

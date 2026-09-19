@@ -187,7 +187,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
       <div key={n.id}>
         <div
           className={cn(
-            'flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-sm transition-colors',
+            'flex items-center gap-1.5 py-1.5 px-2 rounded-lg cursor-pointer text-body-sm transition-colors',
             isSelected
               ? 'bg-primary-50 ring-1 ring-primary-400 dark:bg-primary-800/40'
               : 'hover:bg-neutral-50 dark:hover:bg-primary-800/40'
@@ -214,7 +214,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
           {/* Codified dimension value as a secondary hint when it differs
               from the display name. */}
           {n.nodeName && n.dimensionValue && n.nodeName !== n.dimensionValue && (
-            <span className="text-xs font-mono text-neutral-400 dark:text-neutral-500 truncate shrink-0 max-w-[90px]">
+            <span className="text-caption font-mono text-neutral-400 dark:text-neutral-500 truncate shrink-0 max-w-[90px]">
               {n.dimensionValue}
             </span>
           )}
@@ -228,7 +228,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
         {canGrow && (isExpanded || isSelected) && !isGrowAnchor && (
           <button
             onClick={() => startGrow(n)}
-            className="flex items-center gap-1.5 py-1 px-2 text-xs text-info-600 dark:text-info-300 hover:underline"
+            className="flex items-center gap-1.5 py-1 px-2 caption-info hover:underline"
             style={{ marginLeft: (depth + 1) * 18 }}
           >
             <Plus className="w-3 h-3" />
@@ -243,7 +243,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
             style={{ marginLeft: (depth + 1) * 18 }}
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-info-700 dark:text-info-300">
+              <p className="text-caption font-medium text-info-700 dark:text-info-300">
                 New branch under {nodeLabel(n)} — intermediate nodes are auto-created
               </p>
               <button onClick={() => { setGrowFrom(null); setGrowValues({}); onChange(null); }}
@@ -256,14 +256,14 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
               return (
                 <div key={l.levelNumber} className="flex items-center gap-2">
                   <LevelIcon className="w-4 h-4 text-info-500 shrink-0" />
-                  <span className="text-xs w-24 shrink-0 text-neutral-600 dark:text-neutral-300">
+                  <span className="caption w-24 shrink-0">
                     L{l.levelNumber} {l.levelName}
                   </span>
                   {l.allowedValues && l.allowedValues.length > 0 ? (
                     <select
                       value={growValues[l.levelNumber] || ''}
                       onChange={(e) => setGrowValue(l.levelNumber, e.target.value)}
-                      className="flex-1 px-2 py-1 text-sm border border-neutral-300 dark:border-primary-700 rounded-lg bg-white dark:bg-primary-900"
+                      className="flex-1 px-2 py-1 text-body-sm border border-neutral-300 dark:border-primary-700 rounded-lg bg-white dark:bg-primary-900"
                     >
                       <option value="">Select…</option>
                       {l.allowedValues.map(v => <option key={v} value={v}>{v}</option>)}
@@ -273,7 +273,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
                       value={growValues[l.levelNumber] || ''}
                       onChange={(e) => setGrowValue(l.levelNumber, e.target.value)}
                       placeholder={`New ${l.levelName}…`}
-                      className="text-sm h-8"
+                      className="text-body-sm h-8"
                     />
                   )}
                 </div>
@@ -289,7 +289,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
     // Virgin program — no tree yet; grow from scratch.
     return (
       <div className="space-y-2">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="body-sm">
           This program has no hierarchy yet — define the first branch:
         </p>
         {growFrom !== 'ROOT' ? (
@@ -300,12 +300,12 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
           <div className="p-3 rounded-lg border border-info-200 dark:border-info-500/30 bg-info-50/50 dark:bg-info-500/10 space-y-2">
             {growLevels.map(l => (
               <div key={l.levelNumber} className="flex items-center gap-2">
-                <span className="text-xs w-24 shrink-0 text-neutral-600 dark:text-neutral-300">L{l.levelNumber} {l.levelName}</span>
+                <span className="caption w-24 shrink-0">L{l.levelNumber} {l.levelName}</span>
                 <Input
                   value={growValues[l.levelNumber] || ''}
                   onChange={(e) => setGrowValue(l.levelNumber, e.target.value)}
                   placeholder={`${l.levelName}…`}
-                  className="text-sm h-8"
+                  className="text-body-sm h-8"
                 />
               </div>
             ))}

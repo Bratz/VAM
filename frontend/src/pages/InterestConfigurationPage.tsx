@@ -154,7 +154,7 @@ const StatCard: React.FC<{
         <p className="stat-value-sm mt-1">{value}</p>
         {subtitle && (
           <p className={cn(
-            "text-xs mt-1 flex items-center gap-1",
+            "text-caption mt-1 flex items-center gap-1",
             trend === 'up' ? 'text-success-600 dark:text-success-300' : trend === 'down' ? 'text-error-600 dark:text-error-300' : 'text-neutral-500 dark:text-neutral-400'
           )}>
             {trend === 'up' && <ArrowUpRight className="w-3 h-3" />}
@@ -194,7 +194,7 @@ const ConfigCard: React.FC<{
         </div>
         <div>
           <h4 className="font-semibold text-primary-900 dark:text-neutral-50">{config.configName || 'Unnamed Config'}</h4>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">{config.currencyCode} • {config.targetType || 'CORPORATE'}</p>
+          <p className="caption">{config.currencyCode} • {config.targetType || 'CORPORATE'}</p>
         </div>
       </div>
       <Badge variant={getStatusVariant(config.status as ConfigStatus)} size="sm">
@@ -204,12 +204,12 @@ const ConfigCard: React.FC<{
 
     <div className="grid grid-cols-2 gap-3 mb-3">
       <div className="bg-success-50 rounded-xl p-3 dark:bg-success-500/10">
-        <p className="text-xs text-success-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-success-300">
+        <p className="text-caption text-success-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-success-300">
           <TrendingUp className="w-3 h-3" /> Credit
         </p>
-        <p className="font-bold text-success-700 text-lg dark:text-success-300">{formatRate(config.effectiveCreditRate)}</p>
+        <p className="font-bold text-success-700 text-body-lg dark:text-success-300">{formatRate(config.effectiveCreditRate)}</p>
         {config.creditBaseRateType && (
-          <p className="text-xs text-success-600 mt-1 dark:text-success-300">
+          <p className="caption-success mt-1">
             {config.creditBaseRateType}
             {config.creditSpread !== undefined && config.creditSpread !== null && (
               <span className="ml-1">
@@ -220,12 +220,12 @@ const ConfigCard: React.FC<{
         )}
       </div>
       <div className="bg-error-50 rounded-xl p-3 dark:bg-error-500/10">
-        <p className="text-xs text-error-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-error-300">
+        <p className="text-caption text-error-600 mb-1 flex items-center gap-1 font-medium uppercase tracking-wider dark:text-error-300">
           <TrendingDown className="w-3 h-3" /> Debit
         </p>
-        <p className="font-bold text-error-700 text-lg dark:text-error-300">{formatRate(config.effectiveDebitRate)}</p>
+        <p className="font-bold text-error-700 text-body-lg dark:text-error-300">{formatRate(config.effectiveDebitRate)}</p>
         {config.debitBaseRateType && (
-          <p className="text-xs text-error-600 mt-1 dark:text-error-300">
+          <p className="caption-error mt-1">
             {config.debitBaseRateType}
             {config.debitSpread !== undefined && config.debitSpread !== null && (
               <span className="ml-1">
@@ -237,7 +237,7 @@ const ConfigCard: React.FC<{
       </div>
     </div>
 
-    <div className="flex items-center justify-between text-xs text-neutral-500 border-t pt-3 dark:text-neutral-400">
+    <div className="flex items-center justify-between caption border-t pt-3">
       <div className="flex items-center gap-1">
         <Calendar className="w-3 h-3" />
         <span>{formatDate(config.effectiveFrom)}</span>
@@ -298,11 +298,11 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
             <Building className="w-5 h-5 text-primary-700 dark:text-neutral-200" />
           </div>
           <div className="min-w-[200px]">
-            <label className="text-xs font-medium text-primary-700 uppercase tracking-wide dark:text-neutral-200">Corporate</label>
+            <label className="text-caption font-medium text-primary-700 uppercase tracking-wide dark:text-neutral-200">Corporate</label>
             <select
               value={selectedCorporateId}
               onChange={(e) => onCorporateChange(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 bg-white border border-primary-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-primary-900 dark:border-primary-700"
+              className="w-full mt-0.5 px-2 py-1.5 bg-white border border-primary-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 dark:bg-primary-900 dark:border-primary-700"
               disabled={loading}
             >
               <option value="">Select Corporate...</option>
@@ -323,11 +323,11 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
             <Layers className="w-5 h-5 text-info-700 dark:text-info-300" />
           </div>
           <div className="min-w-[250px]">
-            <label className="text-xs font-medium text-info-700 uppercase tracking-wide dark:text-info-300">Program</label>
+            <label className="text-caption font-medium text-info-700 uppercase tracking-wide dark:text-info-300">Program</label>
             <select
               value={selectedProgramId}
               onChange={(e) => onProgramChange(e.target.value)}
-              className="w-full mt-0.5 px-2 py-1.5 bg-white border border-info-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-info-500 dark:bg-primary-900 dark:border-info-500/30"
+              className="w-full mt-0.5 px-2 py-1.5 bg-white border border-info-200 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-info-500 dark:bg-primary-900 dark:border-info-500/30"
               disabled={loading || activePrograms.length === 0}
             >
               <option value="">Select Program...</option>
@@ -357,7 +357,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
             </Badge>
           )}
           {!selectedCorporateId && !selectedProgramId && (
-            <span className="text-sm text-neutral-500 italic dark:text-neutral-400">Select a corporate and program</span>
+            <span className="text-body-sm text-neutral-500 italic dark:text-neutral-400">Select a corporate and program</span>
           )}
         </div>
 
@@ -754,14 +754,14 @@ const InterestConfigurationPage: React.FC = () => {
                 placeholder="Search configurations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
+                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-body-sm font-medium focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-primary-700"
               />
             </div>
           </div>
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="px-3 py-2 border border-neutral-300 rounded-lg text-sm font-medium bg-white min-w-[140px] dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-medium bg-white min-w-[140px] dark:border-primary-700 dark:bg-primary-900"
           >
             <option value="ALL">All Types</option>
             {CONFIG_TYPES.map(type => (
@@ -771,7 +771,7 @@ const InterestConfigurationPage: React.FC = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-3 py-2 border border-neutral-300 rounded-lg text-sm font-medium bg-white min-w-[140px] dark:border-primary-700 dark:bg-primary-900"
+            className="px-3 py-2 border border-neutral-300 rounded-lg text-body-sm font-medium bg-white min-w-[140px] dark:border-primary-700 dark:bg-primary-900"
           >
             <option value="ALL">All Statuses</option>
             {CONFIG_STATUSES.map(status => (
@@ -839,8 +839,8 @@ const InterestConfigurationPage: React.FC = () => {
             {/* Header */}
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold">{selectedConfig.configName}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <h3 className="text-body-lg font-semibold">{selectedConfig.configName}</h3>
+                <p className="body-sm">
                   {selectedConfig.currencyCode} • {selectedConfig.configType} • {selectedConfig.targetType || 'CORPORATE'}
                 </p>
               </div>
@@ -852,8 +852,8 @@ const InterestConfigurationPage: React.FC = () => {
             {/* Rates */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-success-50 rounded-xl p-4 dark:bg-success-500/10">
-                <h4 className="text-sm font-semibold text-success-700 mb-3 uppercase tracking-wider dark:text-success-300">Credit Interest</h4>
-                <div className="space-y-2 text-sm">
+                <h4 className="text-body-sm font-semibold text-success-700 mb-3 uppercase tracking-wider dark:text-success-300">Credit Interest</h4>
+                <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between">
                     <span className="text-success-600 dark:text-success-300">Base Rate Type</span>
                     <span className="font-medium">{selectedConfig.creditBaseRateType || '-'}</span>
@@ -868,14 +868,14 @@ const InterestConfigurationPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between pt-2 border-t border-success-200 dark:border-success-500/30">
                     <span className="font-semibold">Effective Rate</span>
-                    <span className="font-bold text-success-700 text-lg dark:text-success-300">{formatRate(selectedConfig.effectiveCreditRate)}</span>
+                    <span className="font-bold text-success-700 text-body-lg dark:text-success-300">{formatRate(selectedConfig.effectiveCreditRate)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="bg-error-50 rounded-xl p-4 dark:bg-error-500/10">
-                <h4 className="text-sm font-semibold text-error-700 mb-3 uppercase tracking-wider dark:text-error-300">Debit Interest</h4>
-                <div className="space-y-2 text-sm">
+                <h4 className="text-body-sm font-semibold text-error-700 mb-3 uppercase tracking-wider dark:text-error-300">Debit Interest</h4>
+                <div className="space-y-2 text-body-sm">
                   <div className="flex justify-between">
                     <span className="text-error-600 dark:text-error-300">Base Rate Type</span>
                     <span className="font-medium">{selectedConfig.debitBaseRateType || '-'}</span>
@@ -890,7 +890,7 @@ const InterestConfigurationPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between pt-2 border-t border-error-200 dark:border-error-500/30">
                     <span className="font-semibold">Effective Rate</span>
-                    <span className="font-bold text-error-700 text-lg dark:text-error-300">{formatRate(selectedConfig.effectiveDebitRate)}</span>
+                    <span className="font-bold text-error-700 text-body-lg dark:text-error-300">{formatRate(selectedConfig.effectiveDebitRate)}</span>
                   </div>
                 </div>
               </div>
@@ -898,8 +898,8 @@ const InterestConfigurationPage: React.FC = () => {
 
             {/* Calculation Parameters */}
             <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-              <h4 className="text-sm font-medium mb-3">Calculation Parameters</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <h4 className="text-body-sm font-medium mb-3">Calculation Parameters</h4>
+              <div className="grid grid-cols-2 gap-4 text-body-sm">
                 <div className="flex justify-between">
                   <span className="text-neutral-600 dark:text-neutral-300">Day Count</span>
                   <span className="font-medium">{selectedConfig.dayCountConvention || 'ACT/360'}</span>
@@ -920,7 +920,7 @@ const InterestConfigurationPage: React.FC = () => {
             </div>
 
             {/* Validity */}
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-body-sm">
               <div>
                 <span className="text-neutral-500 dark:text-neutral-400">Effective From: </span>
                 <span className="font-medium">{formatDate(selectedConfig.effectiveFrom)}</span>
@@ -973,7 +973,7 @@ const InterestConfigurationPage: React.FC = () => {
                 value={form.configName}
                 onChange={(e) => setForm(prev => ({ ...prev, configName: e.target.value }))}
                 placeholder="e.g., AED Treasury Internal Rate"
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
               />
             </div>
             <div>
@@ -982,7 +982,7 @@ const InterestConfigurationPage: React.FC = () => {
                 value={form.configType}
                 onChange={(e) => setForm(prev => ({ ...prev, configType: e.target.value as ConfigType }))}
                 disabled={isEditing}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
               >
                 {CONFIG_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -994,7 +994,7 @@ const InterestConfigurationPage: React.FC = () => {
               <select
                 value={form.currencyCode}
                 onChange={(e) => setForm(prev => ({ ...prev, currencyCode: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
               >
                 {CURRENCIES.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -1006,7 +1006,7 @@ const InterestConfigurationPage: React.FC = () => {
               <select
                 value={form.targetType}
                 onChange={(e) => setForm(prev => ({ ...prev, targetType: e.target.value as TargetType }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
               >
                 {TARGET_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -1018,7 +1018,7 @@ const InterestConfigurationPage: React.FC = () => {
               <select
                 value={form.status}
                 onChange={(e) => setForm(prev => ({ ...prev, status: e.target.value as ConfigStatus }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
               >
                 {CONFIG_STATUSES.map(s => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -1029,7 +1029,7 @@ const InterestConfigurationPage: React.FC = () => {
 
           {/* Credit Interest */}
           <div className="bg-success-50 rounded-xl p-4 dark:bg-success-500/10">
-            <h4 className="text-sm font-semibold text-success-800 mb-4 flex items-center gap-2 dark:text-success-300">
+            <h4 className="text-body-sm font-semibold text-success-800 mb-4 flex items-center gap-2 dark:text-success-300">
               <TrendingUp className="w-4 h-4" /> Credit Interest (on positive balances)
             </h4>
             <div className="grid grid-cols-3 gap-4">
@@ -1038,7 +1038,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.creditBaseRateType}
                   onChange={(e) => setForm(prev => ({ ...prev, creditBaseRateType: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {BASE_RATE_TYPES.map(t => (
                     <option key={t} value={t}>{t}</option>
@@ -1053,7 +1053,7 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.creditBaseRate}
                   onChange={(e) => setForm(prev => ({ ...prev, creditBaseRate: e.target.value }))}
                   placeholder="5.000"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
               </div>
               <div>
@@ -1064,9 +1064,9 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.creditSpread}
                   onChange={(e) => setForm(prev => ({ ...prev, creditSpread: e.target.value }))}
                   placeholder="-0.250"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Negative = treasury pays less</p>
+                <p className="caption mt-1">Negative = treasury pays less</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Min Balance</label>
@@ -1075,7 +1075,7 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.creditMinBalance}
                   onChange={(e) => setForm(prev => ({ ...prev, creditMinBalance: e.target.value }))}
                   placeholder="0"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
               </div>
             </div>
@@ -1083,7 +1083,7 @@ const InterestConfigurationPage: React.FC = () => {
 
           {/* Debit Interest */}
           <div className="bg-error-50 rounded-xl p-4 dark:bg-error-500/10">
-            <h4 className="text-sm font-semibold text-error-800 mb-4 flex items-center gap-2 dark:text-error-300">
+            <h4 className="text-body-sm font-semibold text-error-800 mb-4 flex items-center gap-2 dark:text-error-300">
               <TrendingDown className="w-4 h-4" /> Debit Interest (on negative/overdraft)
             </h4>
             <div className="grid grid-cols-3 gap-4">
@@ -1092,7 +1092,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.debitBaseRateType}
                   onChange={(e) => setForm(prev => ({ ...prev, debitBaseRateType: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {BASE_RATE_TYPES.map(t => (
                     <option key={t} value={t}>{t}</option>
@@ -1107,7 +1107,7 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.debitBaseRate}
                   onChange={(e) => setForm(prev => ({ ...prev, debitBaseRate: e.target.value }))}
                   placeholder="5.000"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
               </div>
               <div>
@@ -1118,9 +1118,9 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.debitSpread}
                   onChange={(e) => setForm(prev => ({ ...prev, debitSpread: e.target.value }))}
                   placeholder="0.500"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Positive = treasury charges more</p>
+                <p className="caption mt-1">Positive = treasury charges more</p>
               </div>
               <div>
                 <label className="field-label block mb-1">Penalty Rate (%)</label>
@@ -1130,16 +1130,16 @@ const InterestConfigurationPage: React.FC = () => {
                   value={form.penaltyRate}
                   onChange={(e) => setForm(prev => ({ ...prev, penaltyRate: e.target.value }))}
                   placeholder="2.000"
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
                 />
-                <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">For unauthorized overdraft</p>
+                <p className="caption mt-1">For unauthorized overdraft</p>
               </div>
             </div>
           </div>
 
           {/* Calculation Parameters */}
           <div className="bg-neutral-50 rounded-lg p-4 dark:bg-primary-950">
-            <h4 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2 dark:text-neutral-200">
+            <h4 className="text-body-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2 dark:text-neutral-200">
               <Calculator className="w-4 h-4" /> Calculation Parameters
             </h4>
             <div className="grid grid-cols-4 gap-4">
@@ -1148,7 +1148,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.dayCountConvention}
                   onChange={(e) => setForm(prev => ({ ...prev, dayCountConvention: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {DAY_COUNT_OPTIONS.map(o => (
                     <option key={o} value={o}>{o}</option>
@@ -1160,7 +1160,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.compoundingFrequency}
                   onChange={(e) => setForm(prev => ({ ...prev, compoundingFrequency: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {COMPOUNDING_OPTIONS.map(o => (
                     <option key={o} value={o}>{o}</option>
@@ -1172,7 +1172,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.calculationFrequency}
                   onChange={(e) => setForm(prev => ({ ...prev, calculationFrequency: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {CALCULATION_FREQ_OPTIONS.map(o => (
                     <option key={o} value={o}>{o}</option>
@@ -1184,7 +1184,7 @@ const InterestConfigurationPage: React.FC = () => {
                 <select
                   value={form.postingFrequency}
                   onChange={(e) => setForm(prev => ({ ...prev, postingFrequency: e.target.value }))}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm bg-white dark:border-primary-700 dark:bg-primary-900"
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm bg-white dark:border-primary-700 dark:bg-primary-900"
                 >
                   {POSTING_FREQ_OPTIONS.map(o => (
                     <option key={o} value={o}>{o}</option>
@@ -1202,7 +1202,7 @@ const InterestConfigurationPage: React.FC = () => {
                 type="date"
                 value={form.effectiveFrom}
                 onChange={(e) => setForm(prev => ({ ...prev, effectiveFrom: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
               />
             </div>
             <div>
@@ -1211,7 +1211,7 @@ const InterestConfigurationPage: React.FC = () => {
                 type="date"
                 value={form.effectiveTo}
                 onChange={(e) => setForm(prev => ({ ...prev, effectiveTo: e.target.value }))}
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:border-primary-700"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-body-sm dark:border-primary-700"
               />
             </div>
           </div>

@@ -175,15 +175,15 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                       {bank.bankName ?? bank.bankBic}
                     </h2>
                     {bank.homeBank && (
-                      <span className="text-xs font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
+                      <span className="text-caption font-bold uppercase tracking-wider px-2 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">
                         Home bank
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 font-mono">{bank.bankBic}</p>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-0.5 font-mono">{bank.bankBic}</p>
                 </div>
               </div>
-              <div className="text-sm text-neutral-600 dark:text-neutral-300">{shadowCountLabel}</div>
+              <div className="body-sm">{shadowCountLabel}</div>
             </div>
 
             <div className="divide-y divide-neutral-100 dark:divide-primary-800/60">
@@ -198,8 +198,8 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                           font-mono matches how the same code renders in
                           Overview's "By currency" rail and the By Entity/By
                           Country tables, instead of a plain sans weight. */}
-                      <span className="font-mono text-sm font-medium text-primary-900 dark:text-neutral-50">{ccy.currencyCode}</span>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">({ccy.shadowCount} mirror{ccy.shadowCount !== 1 ? 's' : ''})</span>
+                      <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{ccy.currencyCode}</span>
+                      <span className="caption">({ccy.shadowCount} mirror{ccy.shadowCount !== 1 ? 's' : ''})</span>
                     </div>
                     <div className="text-right">
                       {/* Disambiguate from the table's per-row Effective column.
@@ -216,7 +216,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                       </p>
                     </div>
                   </div>
-                  <table className="w-full text-sm">
+                  <table className="w-full text-body-sm">
                     <thead>
                       <tr className="text-left">
                         <th className="label py-2">Shadow</th>
@@ -237,7 +237,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                         // column) override back to primary-900 — hierarchy via
                         // tone, not weight.
                         <tr key={s.vaId} className="border-t border-neutral-100 dark:border-primary-800/60 hover:bg-neutral-50 dark:hover:bg-primary-800/40 text-neutral-700 dark:text-neutral-200">
-                          <td className="py-2.5 font-mono text-xs text-primary-900 dark:text-neutral-50">{s.vaNumber}</td>
+                          <td className="py-2.5 font-mono text-caption text-primary-900 dark:text-neutral-50">{s.vaNumber}</td>
                           <td className="py-2.5">
                             <FreshnessPill shadow={s} />
                           </td>
@@ -257,7 +257,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
                               // p-2 -m-2 expands the tap target to ~40px without
                               // changing the visual footprint — page is in the
                               // mobile bottom-nav.
-                              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-xs inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
+                              className="text-primary-600 hover:text-primary-700 dark:text-accent-400 dark:hover:text-accent-300 text-caption inline-flex items-center gap-1 ml-auto disabled:opacity-50 p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:focus-visible:ring-accent-400"
                             >
                               {refreshingIds.has(s.vaId)
                                 ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -285,7 +285,7 @@ export const ByBankView: React.FC<ByBankViewProps> = ({
             {currencyTotals.map(({ code, effective }) => (
               <span
                 key={code}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-primary-800/60 text-xs"
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-primary-800/60 text-caption"
               >
                 <span className="font-semibold text-neutral-700 dark:text-neutral-200">{code}</span>
                 <span className="amount text-neutral-900 dark:text-neutral-50">{formatCurrency(effective, code)}</span>

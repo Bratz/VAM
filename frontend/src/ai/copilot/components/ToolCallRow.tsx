@@ -19,7 +19,7 @@ export const ToolCallRow: React.FC<ToolCallRowProps> = ({ call }) => {
 
   return (
     <div className={[
-      'rounded-lg text-xs',
+      'rounded-lg text-caption',
       ok
         ? 'bg-primary-50 dark:bg-primary-900/40 border border-primary-100 dark:border-primary-800'
         : 'bg-error-50 dark:bg-error-900/30 border border-error-100 dark:border-error-800',
@@ -54,7 +54,7 @@ export const ToolCallRow: React.FC<ToolCallRowProps> = ({ call }) => {
               {call.errorMessage}
             </div>
           )}
-          <pre className="font-mono text-xs whitespace-pre-wrap break-all text-neutral-700 dark:text-neutral-300 max-h-64 overflow-y-auto">
+          <pre className="font-mono text-caption whitespace-pre-wrap break-all text-neutral-700 dark:text-neutral-300 max-h-64 overflow-y-auto">
             {JSON.stringify(call.data, null, 2)}
           </pre>
         </div>

@@ -66,8 +66,8 @@ const EcommerceDashboardPage: React.FC = () => {
                 <Badge variant="success">+12%</Badge>
               </div>
               <p className="stat-value-sm mt-3">{stats.totalMerchants}</p>
-              <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Merchants</p>
-              <p className="text-xs text-success-600 mt-1 dark:text-success-300">{stats.activeMerchants} active</p>
+              <p className="label">Total Merchants</p>
+              <p className="caption-success mt-1">{stats.activeMerchants} active</p>
             </div>
           </Card>
 
@@ -78,8 +78,8 @@ const EcommerceDashboardPage: React.FC = () => {
                 <Badge variant="success">+8%</Badge>
               </div>
               <p className="stat-value-sm mt-3">{formatCurrency(stats.totalCollections)}</p>
-              <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Total Collections</p>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Today: {formatCurrency(stats.todayCollections)}</p>
+              <p className="label">Total Collections</p>
+              <p className="caption mt-1">Today: {formatCurrency(stats.todayCollections)}</p>
             </div>
           </Card>
 
@@ -89,8 +89,8 @@ const EcommerceDashboardPage: React.FC = () => {
                 <StatusIconBadge tone="warning" icon={ShoppingCart} className="dark:bg-warning-500/20" />
               </div>
               <p className="stat-value-sm mt-3">{stats.transactionsToday}</p>
-              <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Transactions Today</p>
-              <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Avg: {formatCurrency(stats.averageTicketSize)}</p>
+              <p className="label">Transactions Today</p>
+              <p className="caption mt-1">Avg: {formatCurrency(stats.averageTicketSize)}</p>
             </div>
           </Card>
 
@@ -100,8 +100,8 @@ const EcommerceDashboardPage: React.FC = () => {
                 <StatusIconBadge tone="info" icon={TrendingUp} className="dark:bg-info-500/20" />
               </div>
               <p className="stat-value-sm mt-3">{stats.successRate}%</p>
-              <p className="text-xs text-neutral-500 uppercase tracking-wider dark:text-neutral-400">Success Rate</p>
-              <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">Pending: {formatCurrency(stats.pendingSettlements)}</p>
+              <p className="label">Success Rate</p>
+              <p className="caption-warning mt-1">Pending: {formatCurrency(stats.pendingSettlements)}</p>
             </div>
           </Card>
         </div>
@@ -110,7 +110,7 @@ const EcommerceDashboardPage: React.FC = () => {
       {/* Collection Trends Chart */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <div className="p-4 border-b border-neutral-100 dark:border-primary-800/60">
-          <h3 className="text-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Collection Trends (30 Days)</h3>
+          <h3 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Collection Trends (30 Days)</h3>
         </div>
         <div className="p-4" style={{ height: 300 }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -128,16 +128,16 @@ const EcommerceDashboardPage: React.FC = () => {
       {/* Navigation Cards */}
       <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/merchants'}>
-          <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Manage Merchants</h4>
-          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">View and manage merchant accounts</p>
+          <h4 className="body-strong font-semibold">Manage Merchants</h4>
+          <p className="caption mt-1">View and manage merchant accounts</p>
         </Card>
         <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/collections'}>
-          <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">View Collections</h4>
-          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Monitor transaction collections</p>
+          <h4 className="body-strong font-semibold">View Collections</h4>
+          <p className="caption mt-1">Monitor transaction collections</p>
         </Card>
         <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/settlements'}>
-          <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50">Process Settlements</h4>
-          <p className="text-xs text-neutral-500 mt-1 dark:text-neutral-400">Manage merchant settlements</p>
+          <h4 className="body-strong font-semibold">Process Settlements</h4>
+          <p className="caption mt-1">Manage merchant settlements</p>
         </Card>
       </div>
     </Page>

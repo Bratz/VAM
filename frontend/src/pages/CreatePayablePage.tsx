@@ -273,7 +273,7 @@ const Input: React.FC<{
   className?: string;
   size?: 'sm' | 'md' | 'lg';
 }> = ({ label, value, onChange, type = 'text', placeholder, required, disabled, prefix, suffix, error, helpText, className = '', size = 'md' }) => {
-  const sizes = { sm: 'px-2.5 py-1.5 text-sm', md: 'px-3 py-2 text-sm', lg: 'px-4 py-3 text-base' };
+  const sizes = { sm: 'px-2.5 py-1.5 text-body-sm', md: 'px-3 py-2 text-body-sm', lg: 'px-4 py-3 text-body' };
   
   return (
     <div className={className}>
@@ -290,8 +290,8 @@ const Input: React.FC<{
         />
         {suffix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">{suffix}</span>}
       </div>
-      {error && <p className="mt-1 text-xs text-error-500">{error}</p>}
-      {helpText && !error && <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{helpText}</p>}
+      {error && <p className="mt-1 text-caption text-error-500">{error}</p>}
+      {helpText && !error && <p className="mt-1 caption">{helpText}</p>}
     </div>
   );
 };
@@ -312,7 +312,7 @@ const Select: React.FC<{
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-primary-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none ${disabled ? 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed' : ''}`}
+      className={`w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm bg-white dark:bg-primary-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none ${disabled ? 'bg-neutral-100 dark:bg-primary-800 cursor-not-allowed' : ''}`}
     >
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -323,8 +323,8 @@ const Select: React.FC<{
 const Toggle: React.FC<{ label: string; description?: string; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; size?: 'sm' | 'md'; }> = ({ label, description, checked, onChange, disabled, size = 'md' }) => (
   <div className="flex items-center justify-between">
     <div>
-      <p className={`font-medium text-neutral-900 dark:text-neutral-50 ${size === 'sm' ? 'text-sm' : ''}`}>{label}</p>
-      {description && <p className="text-xs text-neutral-500 dark:text-neutral-400">{description}</p>}
+      <p className={`font-medium text-neutral-900 dark:text-neutral-50 ${size === 'sm' ? 'text-body-sm' : ''}`}>{label}</p>
+      {description && <p className="caption">{description}</p>}
     </div>
     <button
       type="button"
@@ -424,14 +424,14 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg text-neutral-900 dark:text-neutral-50">{selectedVendor.name}</h3>
+                <h3 className="font-semibold text-body-lg text-neutral-900 dark:text-neutral-50">{selectedVendor.name}</h3>
                 <Badge variant="success">Active</Badge>
               </div>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{selectedVendor.partyCode}</p>
-              {selectedVendor.taxRegistration && <p className="text-sm text-neutral-500 dark:text-neutral-400">TRN: {selectedVendor.taxRegistration}</p>}
+              <p className="body-sm mt-0.5">{selectedVendor.partyCode}</p>
+              {selectedVendor.taxRegistration && <p className="body-sm">TRN: {selectedVendor.taxRegistration}</p>}
               <div className="flex items-center gap-4 mt-2">
                 {selectedVendor.category && <Badge variant="neutral">{selectedVendor.category}</Badge>}
-                {selectedVendor.email && <span className="text-xs text-neutral-500 dark:text-neutral-400">{selectedVendor.email}</span>}
+                {selectedVendor.email && <span className="caption">{selectedVendor.email}</span>}
               </div>
             </div>
           </div>
@@ -441,7 +441,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
         </div>
         {selectedVendor.outstandingBalance !== undefined && (
           <div className="mt-4 pt-4 border-t border-primary-100 flex items-center justify-between dark:border-primary-700/60">
-            <span className="text-sm text-neutral-600 dark:text-neutral-300">Outstanding Balance</span>
+            <span className="body-sm">Outstanding Balance</span>
             <span className="font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(selectedVendor.outstandingBalance)}</span>
           </div>
         )}
@@ -459,7 +459,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
           onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); }}
           onFocus={() => setShowDropdown(true)}
           placeholder="Search vendors by name or code..."
-          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-xl text-base focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-500 transition-all"
+          className="w-full pl-12 pr-4 py-4 border-2 border-neutral-200 dark:border-primary-800 rounded-xl text-body focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none placeholder:text-neutral-400 dark:text-neutral-500 transition-all"
         />
         {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-neutral-400 dark:text-neutral-500" />}
       </div>
@@ -480,7 +480,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-neutral-900 dark:text-neutral-50 truncate">{vendor.name}</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">{vendor.partyCode} • {vendor.category}</p>
+                  <p className="body-sm">{vendor.partyCode} • {vendor.category}</p>
                 </div>
                 <Badge variant={vendor.bankAccounts.length > 0 ? 'success' : 'warning'} size="sm">
                   {vendor.bankAccounts.length} bank {vendor.bankAccounts.length === 1 ? 'account' : 'accounts'}
@@ -526,8 +526,8 @@ const BankAccountSelector: React.FC<{
               >
                 <Icon className={`w-5 h-5 ${isSelected ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400 dark:text-neutral-500'}`} />
                 <div>
-                  <p className={`font-medium text-sm ${isSelected ? 'text-primary-700 dark:text-neutral-200' : 'text-neutral-700 dark:text-neutral-200'}`}>{channel.label}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{channel.description}</p>
+                  <p className={`font-medium text-body-sm ${isSelected ? 'text-primary-700 dark:text-neutral-200' : 'text-neutral-700 dark:text-neutral-200'}`}>{channel.label}</p>
+                  <p className="caption">{channel.description}</p>
                 </div>
               </button>
             );
@@ -556,8 +556,8 @@ const BankAccountSelector: React.FC<{
                     {account.isPrimary && <Badge variant="primary" size="sm">Primary</Badge>}
                     <Badge variant="neutral" size="sm">{account.currencyCode}</Badge>
                   </div>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{account.iban || account.accountNumber}</p>
-                  {account.swift && <p className="text-xs text-neutral-400 dark:text-neutral-500">SWIFT: {account.swift}</p>}
+                  <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{account.iban || account.accountNumber}</p>
+                  {account.swift && <p className="caption">SWIFT: {account.swift}</p>}
                 </div>
                 {selectedId === account.id && <Check className="w-5 h-5 text-primary-600 dark:text-primary-200" />}
               </button>
@@ -569,7 +569,7 @@ const BankAccountSelector: React.FC<{
       {selectedAccount && (
         <div className="bg-success-50 border border-success-200 rounded-lg p-3 flex items-center gap-3 dark:bg-success-500/10 dark:border-success-500/30">
           <CheckCircle2 className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
-          <div className="text-sm">
+          <div className="text-body-sm">
             <span className="text-success-700 dark:text-success-300">Payment will be sent via </span>
             <span className="font-medium text-success-800 dark:text-success-300">{paymentChannel}</span>
             <span className="text-success-700 dark:text-success-300"> to </span>
@@ -643,7 +643,7 @@ const InvoiceLookup: React.FC<{
           <div className="fixed inset-0 z-10" onClick={() => setShowSuggestions(false)} />
           <div className="absolute z-20 mt-1 w-full bg-white dark:bg-primary-900 border border-neutral-200 dark:border-primary-800 rounded-lg shadow-lg max-h-48 overflow-y-auto">
             <div className="p-2 border-b border-neutral-100 dark:border-primary-800/60 bg-neutral-50 dark:bg-primary-950">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Pending invoices from this vendor</p>
+              <p className="label-cased">Pending invoices from this vendor</p>
             </div>
             {filteredInvoices.map((inv) => (
               <button
@@ -653,7 +653,7 @@ const InvoiceLookup: React.FC<{
               >
                 <div>
                   <p className="font-medium text-neutral-900 dark:text-neutral-50 font-mono">{inv.invoiceNumber}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">Due: {formatDate(inv.dueDate)}</p>
+                  <p className="caption">Due: {formatDate(inv.dueDate)}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-neutral-900 dark:text-neutral-50">{formatCurrency(inv.amount, inv.currencyCode)}</p>
@@ -672,9 +672,9 @@ const InvoiceLookup: React.FC<{
             <Badge variant="success">Auto-populated</Badge>
           </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div><p className="text-xs text-success-600 dark:text-success-300">Amount</p><p className="font-semibold text-success-900">{formatCurrency(matchedInvoice.amount, matchedInvoice.currencyCode)}</p></div>
-            <div><p className="text-xs text-success-600 dark:text-success-300">Invoice Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.invoiceDate)}</p></div>
-            <div><p className="text-xs text-success-600 dark:text-success-300">Due Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.dueDate)}</p></div>
+            <div><p className="caption-success">Amount</p><p className="font-semibold text-success-900">{formatCurrency(matchedInvoice.amount, matchedInvoice.currencyCode)}</p></div>
+            <div><p className="caption-success">Invoice Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.invoiceDate)}</p></div>
+            <div><p className="caption-success">Due Date</p><p className="font-medium text-success-900">{formatDate(matchedInvoice.dueDate)}</p></div>
           </div>
         </div>
       )}
@@ -697,7 +697,7 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
   return (
     <div className="space-y-6">
       <div>
-        <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-4 flex items-center gap-2"><Calculator className="w-4 h-4" />Tax Configuration</h4>
+        <h4 className="body-strong font-semibold mb-4 flex items-center gap-2"><Calculator className="w-4 h-4" />Tax Configuration</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select label="Tax Jurisdiction" value={formData.taxJurisdiction} onChange={(v) => updateField('taxJurisdiction', v)} options={[{ value: 'UAE', label: 'UAE - VAT 5%' }, { value: 'KSA', label: 'KSA - VAT 15%' }]} />
           <div className="space-y-3">
@@ -707,10 +707,10 @@ const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: 
         </div>
       </div>
       <div className="border-t border-neutral-200 dark:border-primary-800 pt-6">
-        <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-4">Additional Charges</h4>
+        <h4 className="body-strong font-semibold mb-4">Additional Charges</h4>
         {formData.additionalCharges.map((charge, index) => (
           <div key={charge.id} className="flex items-center gap-3 mb-3 p-3 bg-neutral-50 dark:bg-primary-950 rounded-lg">
-            <span className="flex-1 text-sm font-medium">{charge.description}</span>
+            <span className="flex-1 text-body-sm font-medium">{charge.description}</span>
             <span className="font-semibold">{formatCurrency(charge.amount, formData.currencyCode)}</span>
             <button onClick={() => removeCharge(index)} className="p-1 hover:bg-error-100 rounded text-error-500 dark:hover:bg-error-500/20"><X className="w-4 h-4" /></button>
           </div>
@@ -750,7 +750,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-neutral-500 dark:text-neutral-400">Payment On Behalf Of (POBO)</h4>
-              <p className="text-sm text-neutral-400 dark:text-neutral-500">Not available for this payment</p>
+              <p className="text-body-sm text-neutral-400 dark:text-neutral-500">Not available for this payment</p>
             </div>
             <div className="p-2 bg-warning-100 rounded-lg dark:bg-warning-500/20">
               <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />
@@ -761,10 +761,10 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
           <div className="flex items-start gap-3">
             <Info className="w-5 h-5 text-warning-600 mt-0.5 flex-shrink-0 dark:text-warning-300" />
             <div>
-              <p className="text-sm font-medium text-warning-800 dark:text-warning-300">POBO is not available because:</p>
+              <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">POBO is not available because:</p>
               <ul className="mt-2 space-y-1">
                 {poboEligibility.reasons.map((reason, idx) => (
-                  <li key={idx} className="text-sm text-warning-700 flex items-center gap-2 dark:text-warning-300">
+                  <li key={idx} className="text-body-sm text-warning-700 flex items-center gap-2 dark:text-warning-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-warning-500" />
                     {reason}
                   </li>
@@ -787,10 +787,10 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
             </div>
             <div>
               <h4 className="font-semibold text-neutral-900 dark:text-neutral-50">Payment On Behalf Of (POBO)</h4>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Central treasury pays on behalf of subsidiaries</p>
+              <p className="body-sm">Central treasury pays on behalf of subsidiaries</p>
             </div>
             {poboEligibility.eligible && !formData.poboEnabled && (
-              <span className="px-2 py-1 bg-success-100 text-success-700 text-xs font-medium rounded-full dark:bg-success-500/20 dark:text-success-300">
+              <span className="px-2 py-1 bg-success-100 text-success-700 text-caption font-medium rounded-full dark:bg-success-500/20 dark:text-success-300">
                 Available
               </span>
             )}
@@ -808,7 +808,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
               <button key={entity.id} onClick={() => { updateField('payingEntityId', entity.id); updateField('payingEntityName', entity.name); }}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.payingEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
                 <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{entity.code}</p></div>
+                <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="caption">{entity.code}</p></div>
               </button>
             ))}
           </div>
@@ -818,7 +818,7 @@ const PoboTab: React.FC<PoboTabProps> = ({ formData, updateField, legalEntities,
               <button key={entity.id} onClick={() => { updateField('onBehalfOfEntityId', entity.id); updateField('onBehalfOfEntityName', entity.name); }}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left mb-2 ${formData.onBehalfOfEntityId === entity.id ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
                 <Building2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="text-xs text-neutral-500 dark:text-neutral-400">{entity.code}</p></div>
+                <div><p className="font-medium text-neutral-900 dark:text-neutral-50">{entity.name}</p><p className="caption">{entity.code}</p></div>
               </button>
             ))}
           </div>
@@ -844,8 +844,8 @@ const HierarchyTab: React.FC<{ formData: PayableFormData; updateField: (field: k
             className={`w-full flex items-center gap-2 p-3 text-left border-b border-neutral-100 dark:border-primary-800/60 last:border-b-0 transition-colors ${formData.hierarchyNodeId === node.id ? 'bg-primary-50 dark:bg-primary-800/40' : 'hover:bg-neutral-50 dark:hover:bg-primary-800/50'}`}
             style={{ paddingLeft: `${node.level * 16 + 12}px` }}>
             <GitBranch className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-            <span className="text-xs text-neutral-400 dark:text-neutral-500 w-12">{node.code}</span>
-            <span className="text-sm text-neutral-900 dark:text-neutral-50 flex-1">{node.name}</span>
+            <span className="caption w-12">{node.code}</span>
+            <span className="text-body-sm text-neutral-900 dark:text-neutral-50 flex-1">{node.name}</span>
             <Badge variant="neutral" size="sm">{node.type}</Badge>
             {formData.hierarchyNodeId === node.id && <Check className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
           </button>
@@ -862,11 +862,11 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
       <div className="border-2 border-dashed border-neutral-300 dark:border-primary-700 rounded-xl p-8 text-center hover:border-primary-400 transition-colors cursor-pointer">
         <Upload className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
         <p className="text-neutral-600 dark:text-neutral-300 font-medium">Drop files here or click to upload</p>
-        <p className="text-sm text-neutral-400 dark:text-neutral-500 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
+        <p className="text-body-sm text-neutral-400 dark:text-neutral-500 mt-1">PDF, PNG, JPG, XLSX, DOCX (Max 10MB each)</p>
       </div>
     </div>
     <div>
-      <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-50 mb-3">Reference Links</h4>
+      <h4 className="body-strong font-semibold mb-3">Reference Links</h4>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Input label="Purchase Order" value={formData.linkedPurchaseOrder} onChange={(v) => updateField('linkedPurchaseOrder', v)} placeholder="PO-2024-XXXXX" prefix={<LinkIcon className="w-4 h-4" />} />
         <Input label="Contract" value={formData.linkedContract} onChange={(v) => updateField('linkedContract', v)} placeholder="CON-2024-XXXXX" prefix={<LinkIcon className="w-4 h-4" />} />
@@ -875,7 +875,7 @@ const DocumentsTab: React.FC<{ formData: PayableFormData; updateField: (field: k
     </div>
     <div>
       <label className="field-label block mb-2">Internal Notes</label>
-      <textarea value={formData.internalNotes} onChange={(e) => updateField('internalNotes', e.target.value)} placeholder="Add internal notes..." rows={4} className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none" />
+      <textarea value={formData.internalNotes} onChange={(e) => updateField('internalNotes', e.target.value)} placeholder="Add internal notes..." rows={4} className="w-full border border-neutral-300 dark:border-primary-700 rounded-lg px-3 py-2 text-body-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 focus:outline-none" />
     </div>
   </div>
 );
@@ -895,7 +895,7 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
             <label key={opt.value} className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${formData.scheduleType === opt.value ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40' : 'border-neutral-200 dark:border-primary-800 hover:border-neutral-300 dark:hover:border-primary-700'} dark:bg-primary-800/40 dark:hover:border-primary-700`}>
               <input type="radio" name="scheduleType" value={opt.value} checked={formData.scheduleType === opt.value} onChange={(e) => updateField('scheduleType', e.target.value)} className="w-4 h-4 text-primary-600 dark:text-primary-200" />
               <Icon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-              <div className="flex-1"><p className="font-medium text-neutral-900 dark:text-neutral-50">{opt.label}</p><p className="text-sm text-neutral-500 dark:text-neutral-400">{opt.description}</p></div>
+              <div className="flex-1"><p className="font-medium text-neutral-900 dark:text-neutral-50">{opt.label}</p><p className="body-sm">{opt.description}</p></div>
             </label>
           );
         })}
@@ -903,7 +903,7 @@ const SchedulingTab: React.FC<{ formData: PayableFormData; updateField: (field: 
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <Select label="Payment Priority" value={formData.paymentPriority} onChange={(v) => updateField('paymentPriority', v)} options={[{ value: 'LOW', label: '🟢 Low' }, { value: 'NORMAL', label: '🔵 Normal' }, { value: 'HIGH', label: '🟠 High' }, { value: 'URGENT', label: '🔴 Urgent' }]} />
-      <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg text-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
+      <div><label className="field-label block mb-1.5">Selected Channel</label><div className="px-3 py-2 bg-neutral-100 dark:bg-primary-800 rounded-lg text-body-sm text-neutral-700 dark:text-neutral-200">{PAYMENT_CHANNELS.find(c => c.value === formData.paymentChannel)?.label || 'Not selected'}</div></div>
     </div>
     <div className="border-t border-neutral-200 dark:border-primary-800 pt-4">
       <Toggle label="Notify Vendor" description="Send payment notification when processed" checked={formData.notifyVendor} onChange={(v) => updateField('notifyVendor', v)} />
@@ -934,37 +934,37 @@ const SummarySidebar: React.FC<{
       <div className="p-4 space-y-4">
         {formData.vendorName && (
           <div className="pb-4 border-b border-neutral-100 dark:border-primary-800/60">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Vendor</p>
+            <p className="label">Vendor</p>
             <p className="font-semibold text-neutral-900 dark:text-neutral-50 mt-1">{formData.vendorName}</p>
-            {formData.invoiceNumber && <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono mt-1">{formData.invoiceNumber}</p>}
+            {formData.invoiceNumber && <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono mt-1">{formData.invoiceNumber}</p>}
           </div>
         )}
         <div className="space-y-2">
-          <div className="flex justify-between text-sm"><span className="text-neutral-500 dark:text-neutral-400">Amount</span><span className="text-neutral-900 dark:text-neutral-50 font-medium">{formatCurrency(totalAmount, formData.currencyCode)}</span></div>
-          {formData.applyVat && totalTax > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500 dark:text-neutral-400">VAT ({formData.vatRate}%)</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalTax, formData.currencyCode)}</span></div>}
-          {totalCharges > 0 && <div className="flex justify-between text-sm"><span className="text-neutral-500 dark:text-neutral-400">Additional Charges</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalCharges, formData.currencyCode)}</span></div>}
-          <div className="flex justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="font-semibold text-neutral-900 dark:text-neutral-50">Total Payable</span><span className="font-bold text-xl text-primary-600 dark:text-primary-200">{formatCurrency(grandTotal, formData.currencyCode)}</span></div>
+          <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">Amount</span><span className="text-neutral-900 dark:text-neutral-50 font-medium">{formatCurrency(totalAmount, formData.currencyCode)}</span></div>
+          {formData.applyVat && totalTax > 0 && <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">VAT ({formData.vatRate}%)</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalTax, formData.currencyCode)}</span></div>}
+          {totalCharges > 0 && <div className="flex justify-between text-body-sm"><span className="text-neutral-500 dark:text-neutral-400">Additional Charges</span><span className="text-neutral-900 dark:text-neutral-50">{formatCurrency(totalCharges, formData.currencyCode)}</span></div>}
+          <div className="flex justify-between pt-3 border-t border-neutral-200 dark:border-primary-800"><span className="font-semibold text-neutral-900 dark:text-neutral-50">Total Payable</span><span className="font-bold text-heading-sm text-primary-600 dark:text-primary-200">{formatCurrency(grandTotal, formData.currencyCode)}</span></div>
         </div>
         {formData.dueDate && (
           <div className="bg-neutral-50 dark:bg-primary-950 rounded-lg p-3">
-            <div className="flex justify-between items-center"><span className="text-sm text-neutral-600 dark:text-neutral-300">Due Date</span><span className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(formData.dueDate)}</span></div>
-            {daysUntilDue !== null && <p className={`text-xs mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? `⚠️ ${Math.abs(daysUntilDue)} days overdue` : daysUntilDue === 0 ? '⏰ Due today' : `✓ ${daysUntilDue} days remaining`}</p>}
+            <div className="flex justify-between items-center"><span className="body-sm">Due Date</span><span className="font-medium text-neutral-900 dark:text-neutral-50">{formatDate(formData.dueDate)}</span></div>
+            {daysUntilDue !== null && <p className={`text-caption mt-1 ${daysUntilDue < 0 ? 'text-error-600 dark:text-error-300' : daysUntilDue < 7 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>{daysUntilDue < 0 ? `⚠️ ${Math.abs(daysUntilDue)} days overdue` : daysUntilDue === 0 ? '⏰ Due today' : `✓ ${daysUntilDue} days remaining`}</p>}
           </div>
         )}
         {formData.poboEnabled && (
           <div className="bg-accent-50 border border-accent-200 rounded-lg p-3 dark:bg-accent-500/10 dark:border-accent-500/30">
-            <div className="flex items-center gap-2 text-accent-700 dark:text-accent-300"><ArrowLeftRight className="w-4 h-4" /><span className="font-medium text-sm">POBO Enabled</span></div>
-            <p className="text-xs text-accent-600 mt-1 dark:text-accent-300">{formData.payingEntityName || 'Treasury'} → {formData.onBehalfOfEntityName || 'Subsidiary'}</p>
+            <div className="flex items-center gap-2 text-accent-700 dark:text-accent-300"><ArrowLeftRight className="w-4 h-4" /><span className="font-medium text-body-sm">POBO Enabled</span></div>
+            <p className="text-caption text-accent-600 mt-1 dark:text-accent-300">{formData.payingEntityName || 'Treasury'} → {formData.onBehalfOfEntityName || 'Subsidiary'}</p>
           </div>
         )}
         {grandTotal > 100000 && (
           <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 dark:bg-warning-500/10 dark:border-warning-500/30">
-            <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300"><AlertCircle className="w-4 h-4" /><span className="font-medium text-sm">Approval Required</span></div>
-            <p className="text-xs text-warning-600 mt-1 dark:text-warning-300">Amount exceeds AED 100,000 threshold</p>
+            <div className="flex items-center gap-2 text-warning-700 dark:text-warning-300"><AlertCircle className="w-4 h-4" /><span className="font-medium text-body-sm">Approval Required</span></div>
+            <p className="caption-warning mt-1">Amount exceeds AED 100,000 threshold</p>
           </div>
         )}
-        <div className="flex items-center gap-2 py-2"><div className="w-2 h-2 rounded-full bg-warning-400" /><span className="text-sm text-neutral-600 dark:text-neutral-300">Draft</span></div>
-        {!canSubmit && <p className="text-xs text-error-500 text-center">Select vendor, enter invoice number, choose source account, and select vendor bank account</p>}
+        <div className="flex items-center gap-2 py-2"><div className="w-2 h-2 rounded-full bg-warning-400" /><span className="body-sm">Draft</span></div>
+        {!canSubmit && <p className="text-caption text-error-500 text-center">Select vendor, enter invoice number, choose source account, and select vendor bank account</p>}
       </div>
     </div>
   );
@@ -1418,21 +1418,21 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                 <Building className="w-5 h-5 text-primary-600 dark:text-primary-200" />
               </div>
               <div>
-                <p className="text-xs font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Creating payable for</p>
+                <p className="text-caption font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Creating payable for</p>
                 <p className="font-semibold text-primary-900 dark:text-neutral-50">{corporateName || 'Loading...'}</p>
               </div>
               {selectedLegalEntity && (
                 <>
                   <div className="hidden sm:block w-px h-10 bg-primary-200" />
                   <div>
-                    <p className="text-xs font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Legal Entity</p>
+                    <p className="text-caption font-medium text-primary-600 dark:text-primary-200 uppercase tracking-wide">Legal Entity</p>
                     <p className="font-semibold text-primary-900 dark:text-neutral-50">{selectedLegalEntity.entityCode} - {selectedLegalEntity.entityName}</p>
                   </div>
                 </>
               )}
             </div>
             {!corporateIdFromParams && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 text-warning-800 rounded-lg text-sm dark:bg-warning-500/20 dark:text-warning-300">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 text-warning-800 rounded-lg text-body-sm dark:bg-warning-500/20 dark:text-warning-300">
                 <AlertTriangle className="w-4 h-4" />
                 <span>Using default corporate</span>
               </div>
@@ -1445,7 +1445,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             {/* Step 1: Vendor */}
             <Card padding="lg">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-sm font-bold text-primary-600 dark:text-primary-200">1</span></div>
+                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-body-sm font-bold text-primary-600 dark:text-primary-200">1</span></div>
                 <h2 className="section-title">Select Vendor</h2>
               </div>
               <VendorSearch selectedVendor={selectedVendor} onSelect={handleVendorSelect} onClear={() => { setSelectedVendor(null); setFormData(prev => ({ ...prev, vendorId: '', vendorName: '', vendorCode: '', vendorTrn: '', selectedBankAccountId: '', paymentChannel: '', invoiceNumber: '', amount: 0 })); }} corporateId={effectiveCorporateId} />
@@ -1455,7 +1455,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             {selectedVendor && (
               <Card padding="lg">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-sm font-bold text-primary-600 dark:text-primary-200">2</span></div>
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-body-sm font-bold text-primary-600 dark:text-primary-200">2</span></div>
                   <h2 className="section-title">Invoice Details</h2>
                 </div>
                 <div className="space-y-4">
@@ -1475,7 +1475,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             {selectedVendor && formData.invoiceNumber && (
               <Card padding="lg">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-sm font-bold text-primary-600 dark:text-primary-200">3</span></div>
+                  <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-700 flex items-center justify-center"><span className="text-body-sm font-bold text-primary-600 dark:text-primary-200">3</span></div>
                   <h2 className="section-title">Payment Method</h2>
                 </div>
 
@@ -1488,8 +1488,8 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                     <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 flex items-center gap-3 dark:bg-warning-500/10 dark:border-warning-500/30">
                       <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-300" />
                       <div>
-                        <p className="text-sm font-medium text-warning-800 dark:text-warning-300">No source accounts available</p>
-                        <p className="text-xs text-warning-600 dark:text-warning-300">No virtual accounts with positive balance found</p>
+                        <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">No source accounts available</p>
+                        <p className="caption-warning">No virtual accounts with positive balance found</p>
                       </div>
                     </div>
                   ) : (
@@ -1513,13 +1513,13 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                                 <Badge variant="neutral" size="sm">{va.currencyCode}</Badge>
                                 {!hasSufficientBalance && <Badge variant="warning" size="sm">Insufficient</Badge>}
                               </div>
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{va.vaNumber}</p>
+                              <p className="text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{va.vaNumber}</p>
                             </div>
                             <div className="text-right">
                               <p className={`font-semibold ${hasSufficientBalance ? 'text-success-600 dark:text-success-300' : 'text-warning-600 dark:text-warning-300'}`}>
                                 {formatCurrency(va.currentBalance, va.currencyCode)}
                               </p>
-                              <p className="text-xs text-neutral-400 dark:text-neutral-500">Available</p>
+                              <p className="caption">Available</p>
                             </div>
                             {isSelected && <Check className="w-5 h-5 text-primary-600 dark:text-primary-200" />}
                           </button>
@@ -1530,7 +1530,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   {formData.sourceVirtualAccountId && (
                     <div className="mt-3 bg-success-50 border border-success-200 rounded-lg p-3 flex items-center gap-3 dark:bg-success-500/10 dark:border-success-500/30">
                       <CheckCircle2 className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />
-                      <p className="text-sm text-success-700 dark:text-success-300">
+                      <p className="text-body-sm text-success-700 dark:text-success-300">
                         Payment will be debited from <span className="font-medium">{virtualAccounts.find(v => v.id === formData.sourceVirtualAccountId)?.name}</span>
                       </p>
                     </div>
@@ -1552,7 +1552,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   <div className="flex items-center gap-2 mb-4">
                     <Settings2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                     <h2 className="font-semibold text-neutral-900 dark:text-neutral-50">Optional Configuration</h2>
-                    <span className="text-sm text-neutral-400 dark:text-neutral-500 ml-2">Click to expand</span>
+                    <span className="text-body-sm text-neutral-400 dark:text-neutral-500 ml-2">Click to expand</span>
                   </div>
                   <div className="flex gap-1 -mb-px overflow-x-auto">
                     {TAB_CONFIG.map((tab) => {
@@ -1561,7 +1561,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                       const hasContent = tab.id === 'pobo' ? formData.poboEnabled : tab.id === 'tax' ? formData.additionalCharges.length > 0 : tab.id === 'hierarchy' ? !!formData.hierarchyNodeId : tab.id === 'documents' ? !!formData.linkedPurchaseOrder : tab.id === 'scheduling' ? formData.scheduleType !== 'DUE_DATE' : false;
                       return (
                         <button key={tab.id} onClick={() => setActiveTab(isActive ? null : tab.id)}
-                          className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive ? 'border-primary-500 text-primary-600 dark:text-primary-200 bg-primary-50 dark:bg-primary-800/40 dark:bg-primary-800/40' : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-primary-800/50'} dark:bg-primary-800/40 dark:hover:text-neutral-200 dark:hover:bg-primary-800/50`}>
+                          className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors whitespace-nowrap ${isActive ? 'border-primary-500 text-primary-600 dark:text-primary-200 bg-primary-50 dark:bg-primary-800/40 dark:bg-primary-800/40' : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-primary-800/50'} dark:bg-primary-800/40 dark:hover:text-neutral-200 dark:hover:bg-primary-800/50`}>
                           <Icon className="w-4 h-4" />
                           {tab.label}
                           {hasContent && !isActive && <span className="w-2 h-2 rounded-full bg-primary-50 dark:bg-primary-800/400" />}
@@ -1579,7 +1579,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                     {activeTab === 'scheduling' && <SchedulingTab formData={formData} updateField={updateField} />}
                   </div>
                 )}
-                {!activeTab && <div className="p-6 text-center text-neutral-500 dark:text-neutral-400"><p className="text-sm">Click a tab above to configure optional settings</p><p className="text-xs mt-1">Tax configuration, POBO, cost allocation, documents, and scheduling</p></div>}
+                {!activeTab && <div className="p-6 text-center text-neutral-500 dark:text-neutral-400"><p className="text-body-sm">Click a tab above to configure optional settings</p><p className="text-caption mt-1">Tax configuration, POBO, cost allocation, documents, and scheduling</p></div>}
               </Card>
             )}
             
@@ -1592,7 +1592,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
                   </div>
                   <div>
                     <h3 className={`font-semibold ${grandTotal > 100000 ? 'text-warning-800 dark:text-warning-300' : 'text-success-800 dark:text-success-300'}`}>{grandTotal > 100000 ? 'Approval Required' : 'Ready for Processing'}</h3>
-                    <p className={`text-sm mt-1 ${grandTotal > 100000 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>
+                    <p className={`text-body-sm mt-1 ${grandTotal > 100000 ? 'text-warning-600 dark:text-warning-300' : 'text-success-600 dark:text-success-300'}`}>
                       {grandTotal > 100000 ? `This payable of ${formatCurrency(grandTotal, formData.currencyCode)} requires manager approval` : `This payable of ${formatCurrency(grandTotal, formData.currencyCode)} will be auto-approved`}
                     </p>
                   </div>
@@ -1614,7 +1614,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
             divider still extends beyond Page's content column. */}
         <div className="mt-8 border-t border-neutral-200 dark:border-primary-800 bg-white dark:bg-primary-900 py-4">
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <button onClick={goBack} className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50">
+            <button onClick={goBack} className="px-4 py-2 text-body-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:text-neutral-50 transition-colors dark:hover:text-neutral-50">
               Cancel
             </button>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">

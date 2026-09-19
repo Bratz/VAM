@@ -138,7 +138,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
             type="button"
             onClick={() => setFilter(f.key)}
             className={cn(
-              'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+              'px-2.5 py-1 rounded-full text-caption font-medium transition-colors',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
               filter === f.key
                 ? 'bg-primary-900 text-white dark:bg-primary-200 dark:text-primary-900'
@@ -238,7 +238,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                             onClick={() => onAdd?.(pa)}
                             aria-label={`Add ${pa.accountName} to the structure`}
                             className={cn(
-                              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium shrink-0',
+                              'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-caption font-medium shrink-0',
                               'bg-primary-100 text-primary-800 hover:bg-primary-200',
                               'dark:bg-primary-800/60 dark:text-primary-200 dark:hover:bg-primary-800',
                               'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',

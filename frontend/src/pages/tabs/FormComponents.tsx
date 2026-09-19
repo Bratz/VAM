@@ -35,10 +35,10 @@ export const FormField: React.FC<FormFieldProps> = ({
     </label>
     {children}
     {hint && !error && (
-      <p className="text-xs text-neutral-500">{hint}</p>
+      <p className="caption">{hint}</p>
     )}
     {error && (
-      <p className="text-xs text-error-600 flex items-center gap-1">
+      <p className="caption-error flex items-center gap-1">
         <AlertCircle className="w-3 h-3" />
         {error}
       </p>
@@ -81,7 +81,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
     onChange={(e) => onChange(e.target.value)}
     disabled={disabled}
     className={cn(
-      'w-full px-3 py-2 border rounded-lg text-sm transition-colors appearance-none',
+      'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors appearance-none',
       'bg-white bg-no-repeat bg-right',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
@@ -137,7 +137,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
 }) => (
   <div className="relative">
     {prefix && (
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 pointer-events-none">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 body-sm pointer-events-none">
         {prefix}
       </span>
     )}
@@ -154,7 +154,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       placeholder={placeholder}
       disabled={disabled}
       className={cn(
-        'w-full px-3 py-2 border rounded-lg text-sm transition-colors',
+        'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
         '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
         error ? 'border-error-500' : 'border-neutral-300',
@@ -165,7 +165,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       )}
     />
     {suffix && (
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 pointer-events-none">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 body-sm pointer-events-none">
         {suffix}
       </span>
     )}
@@ -190,7 +190,7 @@ export const TextInput: React.FC<TextInputProps> = ({
     type="text"
     disabled={disabled}
     className={cn(
-      'w-full px-3 py-2 border rounded-lg text-sm transition-colors',
+      'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
       disabled && 'bg-neutral-100 cursor-not-allowed',
@@ -217,7 +217,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
   <textarea
     disabled={disabled}
     className={cn(
-      'w-full px-3 py-2 border rounded-lg text-sm transition-colors resize-y min-h-[80px]',
+      'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors resize-y min-h-[80px]',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
       disabled && 'bg-neutral-100 cursor-not-allowed',
@@ -258,9 +258,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
     />
     <div>
-      <span className="text-sm font-medium text-neutral-900">{label}</span>
+      <span className="body-strong">{label}</span>
       {description && (
-        <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+        <p className="caption mt-0.5">{description}</p>
       )}
     </div>
   </label>
@@ -291,9 +291,9 @@ export const Toggle: React.FC<ToggleProps> = ({
   )}>
     {(label || description) && (
       <div>
-        {label && <span className="text-sm font-medium text-neutral-900">{label}</span>}
+        {label && <span className="body-strong">{label}</span>}
         {description && (
-          <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+          <p className="caption mt-0.5">{description}</p>
         )}
       </div>
     )}
@@ -351,7 +351,7 @@ export const DateInput: React.FC<DateInputProps> = ({
     max={max}
     disabled={disabled}
     className={cn(
-      'w-full px-3 py-2 border rounded-lg text-sm transition-colors',
+      'w-full px-3 py-2 border rounded-lg text-body-sm transition-colors',
       'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
       error ? 'border-error-500' : 'border-neutral-300',
       disabled && 'bg-neutral-100 cursor-not-allowed',
@@ -386,9 +386,9 @@ export const FormSection: React.FC<FormSectionProps> = ({
       <div className="flex items-center gap-2">
         {icon}
         <div>
-          <h4 className="text-sm font-medium text-neutral-900">{title}</h4>
+          <h4 className="body-strong">{title}</h4>
           {description && (
-            <p className="text-xs text-neutral-500">{description}</p>
+            <p className="caption">{description}</p>
           )}
         </div>
       </div>
