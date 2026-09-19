@@ -35,6 +35,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, acti
   // same intentionally-incomplete-deps idiom the pre-existing
   // usePageHeaderActions callers already use elsewhere in this codebase.
   usePageHeaderTitle(title, description ?? null, [title]);
-  usePageHeaderActions(() => actions ?? null, [title]);
+  return (
+    <>
+      {actions !== undefined && <RegisterActions title={title} actions={actions} />}
+    </>
+  );
+};
+
+// Only pages that pass `actions` own the header's action slot. Without this split, a PageHeader
+// with no actions would clear actions the page registered itself via usePageHeaderActions
+// (e.g. when PageHeader mounts after a loading gate), leaving the toolbar empty.
+const RegisterActions: React.FC<{ title: string; actions: React.ReactNode }> = ({ title, actions }) => {
+  usePageHeaderActions(() => actions, [title]);
   return null;
 };

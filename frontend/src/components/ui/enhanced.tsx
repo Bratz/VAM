@@ -167,12 +167,27 @@ export const Tabs: React.FC<TabsProps> = ({
   };
 
   const style = variants[variant];
+  // Arrow keys move between enabled tabs (WAI-ARIA tabs pattern, automatic activation).
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    const enabled = tabs.filter((t) => !t.disabled);
+    const i = enabled.findIndex((t) => t.id === activeTab);
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? enabled.length - 1
+      : (i + (e.key === 'ArrowRight' ? 1 : -1) + enabled.length) % enabled.length;
+    e.preventDefault();
+    onChange(enabled[next].id);
+    (e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)')[next])?.focus();
+  };
 
   return (
-    <div className={cn('flex', style.container, fullWidth && 'w-full')}>
+    <div role="tablist" onKeyDown={onKeyDown} className={cn('flex', style.container, fullWidth && 'w-full')}>
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={activeTab === tab.id}
+          tabIndex={activeTab === tab.id ? 0 : -1}
           onClick={() => !tab.disabled && onChange(tab.id)}
           disabled={tab.disabled}
           className={cn(

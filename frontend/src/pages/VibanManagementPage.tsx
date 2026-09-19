@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, X, TrendingUp, XCircle, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
 import type { BulkVibanAssignItem, BulkVibanAssignResponse, VibanAssignResponse } from '../services/api';
@@ -815,18 +815,8 @@ const VibanManagementPage: React.FC = () => {
     <Page>
       {/* Toast Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 max-w-md p-4 rounded-lg shadow-lg border flex items-center gap-3 animate-in slide-in-from-top-2 duration-300 ${
-          notification.type === 'success' ? 'bg-success-50 border-success-300 text-success-800 dark:bg-success-500/10 dark:text-success-300' :
-          notification.type === 'error' ? 'bg-error-50 border-error-300 text-error-800 dark:bg-error-500/10 dark:text-error-300' :
-          'bg-info-50 border-info-300 text-info-800 dark:bg-info-500/10 dark:text-info-300'
-        }`}>
-          {notification.type === 'success' && <Check className="w-5 h-5 text-success-600 flex-shrink-0 dark:text-success-300" />}
-          {notification.type === 'error' && <XCircle className="w-5 h-5 text-error-600 flex-shrink-0 dark:text-error-300" />}
-          {notification.type === 'info' && <XCircle className="w-5 h-5 text-info-600 flex-shrink-0 dark:text-info-300" />}
-          <span className="flex-1">{notification.message}</span>
-          <button onClick={() => setNotification(null)} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 dark:text-neutral-400">
-            <X className="w-4 h-4" />
-          </button>
+        <div className="fixed top-4 right-4 z-50 max-w-md shadow-lg" role="status">
+          <Alert variant={notification.type} onClose={() => setNotification(null)}>{notification.message}</Alert>
         </div>
       )}
 
@@ -861,41 +851,21 @@ const VibanManagementPage: React.FC = () => {
 
       {/* Error */}
       {error && (
-        <Card className="bg-error-50 border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <XCircle className="w-5 h-5 text-error-600 dark:text-error-300" />
-              <span className="text-error-800 dark:text-error-300">{error}</span>
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => setError(null)}><X className="w-4 h-4" /></Button>
-          </div>
-        </Card>
+        <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-edge animate-fade-in" style={{ animationDelay: '0.15s' }}>
-        {[
-          { id: 'overview', label: 'Overview', icon: BarChart3 },
-          { id: 'pools', label: 'Pools', icon: Database, count: pools.length },
-          { id: 'vibans', label: 'VIBANs', icon: Hash, count: vibans.length }
-        ].map(tab => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id as any); setStatusFilter('ALL'); setSearchQuery(''); }}
-            className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.id ? 'border-primary-600 text-primary-600 dark:border-accent-400 dark:text-primary-200' : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
-            }`}>
-            <tab.icon className="w-4 h-4" />{tab.label}
-            {tab.count !== undefined && (
-              // Count pill — explicit text color in both modes so dark mode
-              // doesn't dim the number to invisible against the dark surface.
-              <span className={`text-caption font-semibold px-1.5 py-0.5 rounded-full ${
-                activeTab === tab.id
-                  ? 'bg-primary-100 text-primary-700 dark:bg-accent-500/20 dark:text-accent-300'
-                  : 'bg-neutral-100 text-neutral-600 dark:bg-primary-800/80 dark:text-neutral-200'
-              }`}>{tab.count}</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        variant="underline"
+        size="sm"
+        activeTab={activeTab}
+        onChange={(id) => { setActiveTab(id as typeof activeTab); setStatusFilter('ALL'); setSearchQuery(''); }}
+        tabs={[
+          { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+          { id: 'pools', label: 'Pools', icon: <Database className="w-4 h-4" />, badge: pools.length },
+          { id: 'vibans', label: 'VIBANs', icon: <Hash className="w-4 h-4" />, badge: vibans.length },
+        ]}
+      />
 
       {/* Tab Content */}
       {activeTab === 'overview' && <OverviewTab stats={stats} pools={pools} formatNumber={formatNumber} formatCurrency={formatCurrency} />}
@@ -1244,6 +1214,9 @@ const VibansTab: React.FC<{
   getStatusBadge: (status: string) => React.ReactNode; formatCurrency: (n: number) => string; processing: boolean;
 }> = ({ vibans, pools, searchQuery, setSearchQuery, selectedPool, setSelectedPool, statusFilter, setStatusFilter, onAssign, onRelease, getStatusBadge, formatCurrency, processing }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  useEffect(() => setPage(1), [vibans.length, searchQuery, selectedPool, statusFilter]);
   const copyToClipboard = (text: string, id: string) => { navigator.clipboard.writeText(text); setCopiedId(id); setTimeout(() => setCopiedId(null), 2000); };
 
   return (
@@ -1270,15 +1243,20 @@ const VibansTab: React.FC<{
       <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
         <DataTable
           hairline
-          data={vibans}
+          data={vibans.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)}
           keyExtractor={(v) => v.id}
+          pagination
+          pageSize={PAGE_SIZE}
+          currentPage={page}
+          totalCount={vibans.length}
+          onPageChange={setPage}
           emptyTitle="No VIBANs found"
           emptyDescription=""
           emptyIcon={<Hash className="w-8 h-8" />}
           columns={[
             { key: 'viban', header: 'VIBAN', minWidth: 200, mobileLabel: true, render: (_v, v) => (
               <div className="flex items-center gap-2">
-                <button onClick={(e) => { e.stopPropagation(); copyToClipboard(v.viban, v.id); }} className="p-1 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800">
+                <button aria-label={`Copy ${v.viban}`} onClick={(e) => { e.stopPropagation(); copyToClipboard(v.viban, v.id); }} className="p-1 hover:bg-neutral-100 rounded-md dark:hover:bg-primary-800">
                   {copiedId === v.id ? <Check className="w-3 h-3 text-success-600 dark:text-success-300" /> : <Copy className="w-3 h-3 text-neutral-400" />}
                 </button>
                 <span className="font-mono text-body-sm">{v.viban}</span>
@@ -1316,8 +1294,8 @@ const VibansTab: React.FC<{
             ) },
             { key: 'actions', header: 'Actions', align: 'right', minWidth: 100, render: (_v, v) => (
               <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                {(v.status === 'AVAILABLE' || v.status === 'RETURNED') && <Button size="sm" variant="outline" onClick={() => onAssign(v)}><Link className="w-4 h-4 mr-1" />Assign</Button>}
-                {v.status === 'ACTIVE' && <Button size="sm" variant="ghost" onClick={() => onRelease(v)} disabled={processing} className="text-warning-600 hover:bg-warning-50 dark:text-warning-300 dark:hover:bg-warning-500/10"><Unlink className="w-4 h-4" /></Button>}
+                {(v.status === 'AVAILABLE' || v.status === 'RETURNED') && <Button size="sm" variant="outline" aria-label={`Assign ${v.viban}`} onClick={() => onAssign(v)}><Link className="w-4 h-4 mr-1" />Assign</Button>}
+                {v.status === 'ACTIVE' && <Button size="sm" variant="ghost" aria-label={`Release ${v.viban}`} onClick={() => onRelease(v)} disabled={processing} className="text-warning-600 hover:bg-warning-50 dark:text-warning-300 dark:hover:bg-warning-500/10"><Unlink className="w-4 h-4" /></Button>}
               </div>
             ) },
           ]}

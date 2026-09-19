@@ -497,7 +497,7 @@ export function DataTable<T>({
         </p>
 
         <div className="flex items-center gap-1">
-          <Button
+          <Button aria-label="First page"
             variant="ghost"
             size="sm"
             disabled={currentPage === 1}
@@ -506,7 +506,7 @@ export function DataTable<T>({
           >
             <ChevronsLeft className="w-4 h-4" />
           </Button>
-          <Button
+          <Button aria-label="Previous page"
             variant="ghost"
             size="sm"
             disabled={currentPage === 1}
@@ -538,7 +538,7 @@ export function DataTable<T>({
             )}
           </div>
 
-          <Button
+          <Button aria-label="Next page"
             variant="ghost"
             size="sm"
             disabled={currentPage === totalPages}
@@ -546,7 +546,7 @@ export function DataTable<T>({
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
-          <Button
+          <Button aria-label="Last page"
             variant="ghost"
             size="sm"
             disabled={currentPage === totalPages}
