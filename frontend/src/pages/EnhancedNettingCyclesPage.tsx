@@ -64,9 +64,7 @@ interface SettlementInstruction {
 
 const LoadingSpinner: React.FC = () => (
   <div className="flex items-center justify-center py-12 animate-fade-in">
-    <div className="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center dark:bg-primary-700">
-      <Loader2 className="w-6 h-6 animate-spin text-primary-600 dark:text-primary-200" />
-    </div>
+    <StatusIconBadge tone="primary" icon={Loader2} size="lg" spin />
     <span className="ml-3 text-neutral-600 font-medium dark:text-neutral-300">Loading netting cycles...</span>
   </div>
 );

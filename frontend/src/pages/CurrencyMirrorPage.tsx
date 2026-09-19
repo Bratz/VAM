@@ -190,9 +190,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ breakdown, baseCurrency, on
       <div className={cn("p-4 rounded-t-lg", style.bg)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn("w-12 h-12 rounded-lg bg-surface-card shadow-sm flex items-center justify-center")}>
-              <CurrencyIcon currency={breakdown.currency} className={cn("w-6 h-6", style.text)} />
-            </div>
+            <StatusIconBadge tone={style.tone} icon={getCurrencyIcon(breakdown.currency)} size="lg" />
             <div>
               <h3 className="section-title">{breakdown.currency}</h3>
               <p className="label">Currency Mirror</p>

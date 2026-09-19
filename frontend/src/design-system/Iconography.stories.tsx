@@ -99,6 +99,14 @@ function DoDont() {
           <li>Colour props: <code className="code line-through">{'<Check color="green" />'}</code> - use text-* classes</li>
           <li>Off-scale sizes: <code className="code line-through">w-[18px]</code>, <code className="code line-through">w-7 h-7</code></li>
           <li>Changing <code className="code">strokeWidth</code> - stay at the default 2</li>
+          <li>Hand-built icon tiles - use <code className="code">StatusIconBadge</code> (tone, subtle, solid, inverse, spin, xs-xl)</li>
+        </ul>
+      </div>
+      <div className={`${box} md:col-span-2`}>
+        <h3 className="section-title">Allowed exceptions</h3>
+        <ul className="body-sm space-y-2">
+          <li>Brand marks: the sidebar logo and the Copilot avatar / launcher.</li>
+          <li>Third-party logos: integration connector logos (<code className="code">components/ConnectorIcons.tsx</code>, lucide ships no brand logos) and the frames around them, plus bank logos in Open Banking setup.</li>
         </ul>
       </div>
     </section>

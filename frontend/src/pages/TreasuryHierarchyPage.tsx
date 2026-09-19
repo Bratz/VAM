@@ -3926,9 +3926,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-primary-900 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.45s' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
-              <Banknote className="w-6 h-6 text-white" />
-            </div>
+            <StatusIconBadge tone="neutral" icon={Banknote} size="lg" inverse />
             <div>
               <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">Real Bank Account (Physical)</p>
               <p className="text-body-lg font-semibold mt-1">{displayPhysical.accountName}</p>
@@ -3950,9 +3948,7 @@ const TreasuryHierarchyPage: React.FC = () => {
         <div className="bg-gradient-to-r from-warning-700 via-warning-600 to-warning-700 text-white rounded-lg p-5 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                <Layers className="w-5 h-5 text-white" />
-              </div>
+              <StatusIconBadge tone="neutral" icon={Layers} inverse />
               <div>
                 <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Shadow Accounts (PHYSICAL_MIRROR)</p>
                 <p className="text-body-sm text-warning-100 mt-0.5">{shadowAccounts.length} account{shadowAccounts.length > 1 ? 's' : ''} mirroring bank balances</p>

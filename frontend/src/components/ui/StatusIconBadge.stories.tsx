@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Loader2, Banknote, CreditCard } from 'lucide-react';
 import { StatusIconBadge } from './StatusIconBadge';
 
 const TONES = ['success', 'warning', 'error', 'info', 'primary', 'neutral', 'accent'] as const;
-const SIZES = ['sm', 'md', 'lg', 'xl'] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
 const meta: Meta<typeof StatusIconBadge> = {
   title: 'Components/StatusIconBadge',
@@ -70,6 +70,41 @@ export const Solid: Story = {
           <StatusIconBadge tone={tone} icon={CheckCircle} solid />
           <span className="caption">{tone}</span>
         </div>
+      ))}
+    </div>
+  ),
+};
+
+/** `spin` animates the icon: use with Loader2 for loading states. */
+export const Spinning: Story = {
+  render: () => (
+    <div className="flex items-center gap-4">
+      <StatusIconBadge tone="primary" icon={Loader2} size="lg" spin />
+      <StatusIconBadge tone="primary" icon={Loader2} size="xl" spin />
+    </div>
+  ),
+};
+
+/** `inverse` is for badges on a dark hero or banner surface (tone is ignored). */
+export const Inverse: Story = {
+  render: () => (
+    <div className="flex items-center gap-4 rounded-lg p-6 bg-primary-900 dark:bg-primary-950">
+      <StatusIconBadge tone="neutral" icon={Banknote} size="lg" inverse />
+      <StatusIconBadge tone="neutral" icon={Banknote} inverse />
+      <span className="body-strong text-white">On a dark hero</span>
+    </div>
+  ),
+};
+
+/** `xs` (20px) is for legend keys and tree rows next to caption-sized text. */
+export const ExtraSmall: Story = {
+  render: () => (
+    <div className="flex items-center gap-4 text-caption">
+      {(['primary', 'success', 'warning', 'info'] as const).map((t) => (
+        <span key={t} className="flex items-center gap-1.5">
+          <StatusIconBadge tone={t} icon={CreditCard} size="xs" subtle />
+          <span className="text-neutral-600 dark:text-neutral-300">{t}</span>
+        </span>
       ))}
     </div>
   ),

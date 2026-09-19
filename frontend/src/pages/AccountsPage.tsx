@@ -1881,9 +1881,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
             const Icon = config.icon;
             return (
               <div key={cat} className="flex items-center gap-1.5">
-                <div className={cn("w-5 h-5 rounded-md flex items-center justify-center", config.bgColor)}>
-                  <Icon className={cn("w-3 h-3", config.color)} />
-                </div>
+                <StatusIconBadge tone={config.tone} icon={Icon} size="xs" subtle />
                 <span className="text-neutral-600 dark:text-neutral-300">{config.label}</span>
               </div>
             );

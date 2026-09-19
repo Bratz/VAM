@@ -450,9 +450,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
             const Icon = config.icon;
             return (
               <div key={key} className="flex items-center gap-1">
-                <div className={cn('w-4 h-4 rounded-md flex items-center justify-center', config.bgColor)}>
-                  <Icon className={cn('w-2.5 h-2.5', config.color)} />
-                </div>
+                <StatusIconBadge tone={config.tone} icon={Icon} size="xs" subtle />
                 <span className="text-neutral-600 dark:text-neutral-300">{config.label}</span>
               </div>
             );

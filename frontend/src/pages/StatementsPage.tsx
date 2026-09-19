@@ -15,6 +15,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, Calendar, Loader2, RefreshCw, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Clock, CheckCircle, ChevronDown, ChevronRight, ChevronUp, Network, FileCode, Bell, Layers, Eye, Search, X, Building2, User, Hash, Copy, Banknote, Receipt, CreditCard, Info, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, Skeleton, EmptyState , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { statementsApi, virtualAccountsApi, VirtualAccount } from '../services/api';
 import {
@@ -241,7 +242,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, className }) => {
 interface StatCardProps {
   label: string;
   value: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   color: 'primary' | 'success' | 'danger' | 'info';
   trend?: string;
   loading?: boolean;
@@ -278,9 +279,7 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon: Icon, color, tr
   return (
     <Card hover className={cn('transition-all duration-300', colors.bg)}>
       <div className="flex items-center gap-3">
-        <div className={cn('w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0', colors.iconBg)}>
-          <Icon className={cn('w-5 h-5 sm:w-6 sm:h-6', colors.text)} />
-        </div>
+        <StatusIconBadge tone={color === 'danger' ? 'error' : color} icon={Icon} className="shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="label truncate">{label}</p>
           <p className="stat-value-sm truncate">{value}</p>

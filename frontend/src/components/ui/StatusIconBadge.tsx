@@ -44,12 +44,13 @@ interface StatusIconBadgeProps {
   icon: LucideIcon;
   /**
    * Visual weight:
+   *   - `xs` — 5x5 chip with 3x3 icon. Legend keys and tree rows.
    *   - `sm` — 8x8 medallion with 4x4 icon. Inline / table-cell.
    *   - `md` — 10x10 medallion with 5x5 icon. Canonical card / stat tile (default).
    *   - `lg` — 12x12 medallion with 6x6 icon. Hero / page-title accent.
    *   - `xl` — 16x16 medallion with 8x8 icon. Empty states.
    */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** Corner radius: `lg` (12px, default) or `full` (circle). */
   rounded?: 'lg' | 'full';
   /**
@@ -63,6 +64,10 @@ interface StatusIconBadgeProps {
    * Not available for `neutral`-subtle semantics; use with primary/accent/status tones.
    */
   solid?: boolean;
+  /** For badges on a dark hero/banner surface: translucent white tile and white icon (tone ignored). */
+  inverse?: boolean;
+  /** Spin the icon (loading states, with Loader2). */
+  spin?: boolean;
   /** Extra utility classes (e.g. `shrink-0`, `mt-1`). */
   className?: string;
 }
@@ -164,6 +169,7 @@ const SOLID_BG: Record<Tone, string> = {
 
 // Size pairs — outer dimensions plus the icon's matching tailwind size class.
 const SIZE_CLASSES = {
+  xs: { box: 'w-5 h-5',  icon: 'w-3 h-3' },
   sm: { box: 'w-8 h-8',  icon: 'w-4 h-4' },
   md: { box: 'w-10 h-10', icon: 'w-5 h-5' },
   lg: { box: 'w-12 h-12', icon: 'w-6 h-6' },
@@ -182,6 +188,8 @@ export const StatusIconBadge: React.FC<StatusIconBadgeProps> = ({
   rounded = 'lg',
   subtle = false,
   solid = false,
+  inverse = false,
+  spin = false,
   className,
 }) => {
   const tonePair = TONE_CLASSES[tone][subtle ? 'subtle' : 'default'];
@@ -191,13 +199,13 @@ export const StatusIconBadge: React.FC<StatusIconBadgeProps> = ({
     <div
       className={cn(
         dim.box,
-        ROUNDED_CLASSES[rounded],
+        size === 'xs' && rounded === 'lg' ? 'rounded-md' : ROUNDED_CLASSES[rounded],
         'flex items-center justify-center',
-        solid ? SOLID_BG[tone] : tonePair.bg,
+        inverse ? 'bg-white/10 border border-white/20 backdrop-blur-sm' : solid ? SOLID_BG[tone] : tonePair.bg,
         className
       )}
     >
-      <Icon className={cn(dim.icon, solid ? 'text-white' : tonePair.text)} />
+      <Icon className={cn(dim.icon, inverse || solid ? 'text-white' : tonePair.text, spin && 'animate-spin')} />
     </div>
   );
 };

@@ -697,9 +697,7 @@ const PyramidView: React.FC<PyramidViewProps> = ({
     <div className="flex flex-col items-center gap-6 py-10 animate-fade-in">
       {/* Corporate Total - Top of Pyramid */}
       <div className="w-72 bg-neutral-800 rounded-lg p-6 text-center shadow-xl">
-        <div className="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-          <Globe className="w-6 h-6 text-white" />
-        </div>
+        <StatusIconBadge tone="neutral" icon={Globe} size="lg" inverse className="mx-auto mb-3" />
         <p className="text-white/70 text-body-sm font-medium">Corporate Total</p>
         <p className="stat-value text-white mt-1">
           {formatCurrency(totalBalance, reportingCurrency)}

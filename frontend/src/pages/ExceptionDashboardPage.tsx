@@ -18,6 +18,7 @@ import { Page } from '../components/layout/Page';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, Trash2, FileText, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
@@ -71,7 +72,7 @@ interface ToastNotification {
 const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
   label: string;
   variant: 'success' | 'warning' | 'error' | 'info' | 'neutral';
-  icon: React.FC<{ className?: string }>
+  icon: LucideIcon
 }> = {
   OPEN: { label: 'Open', variant: 'warning', icon: Clock },
   IN_PROGRESS: { label: 'In Progress', variant: 'info', icon: RefreshCw },
@@ -87,7 +88,7 @@ const EXCEPTION_STATUS_CONFIG: Record<ExceptionStatus, {
 // entry here, so a new/renamed type can't silently reach `undefined.icon`
 // the way this page's mock-data era ('CHARGE_REVERSAL', 'OTHER', etc. — none
 // of which the backend actually has) did.
-const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: React.FC<{ className?: string }> }> = {
+const EXCEPTION_TYPE_CONFIG: Record<ExceptionType, { label: string; icon: LucideIcon }> = {
   UNMATCHED_PAYMENT: { label: 'Unmatched Payment', icon: CreditCard },
   RECONCILIATION_DIFF: { label: 'Reconciliation Difference', icon: History },
   FAILED_PAYMENT: { label: 'Failed Payment', icon: XCircle },
@@ -162,7 +163,7 @@ const SummaryCard: React.FC<{
   title: string;
   count: number;
   amount: number;
-  icon: React.FC<{ className?: string }>;
+  icon: LucideIcon;
   color: 'warning' | 'info' | 'success' | 'neutral';
   detail?: string;
   onClick?: () => void;
@@ -201,9 +202,7 @@ const ExceptionRow: React.FC<{
     <div className={cn('px-6 py-4 border-b border-edge-subtle hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer transition-colors group', selected && 'bg-primary-50 dark:bg-primary-800/40')} onClick={onView}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-surface-muted flex items-center justify-center shrink-0 group-hover:bg-primary-100 dark:group-hover:bg-primary-700 transition-colors">
-            <TypeIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-hover:text-primary-600 dark:group-hover:text-primary-200 transition-colors" />
-          </div>
+          <StatusIconBadge tone="neutral" icon={TypeIcon} className="shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <p className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50 truncate">{exception.exceptionNumber}</p>

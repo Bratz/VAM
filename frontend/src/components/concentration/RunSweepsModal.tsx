@@ -181,9 +181,7 @@ export const RunSweepsModal: React.FC<RunSweepsModalProps> = ({ isOpen, onClose,
 
       {phase === 'running' && (
         <div className="text-center py-12 animate-fade-in">
-          <div className="w-16 h-16 rounded-lg bg-primary-100 dark:bg-primary-700 flex items-center justify-center mx-auto mb-6">
-            <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
-          </div>
+          <StatusIconBadge tone="primary" icon={Loader2} size="xl" spin className="mx-auto mb-6" />
           <p className="body-lg">Executing Sweeps...</p>
 
           {runStatus && runStatus.sourcesTotal > 0 ? (

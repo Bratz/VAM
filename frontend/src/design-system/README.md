@@ -198,7 +198,8 @@ Dark mode has no real shadows: depth comes from surface tone (page `primary-950`
 - **Library:** `lucide-react` only. Do not draw custom icons; do not use glyph characters (✓ × ⚠️ ▲) as icons.
 - **Sizes:** 12 `w-3 h-3` · 16 `w-4 h-4` (default) · 20 `w-5 h-5` · 24 `w-6 h-6` · 32 `w-8 h-8` · 48 `w-12 h-12` (empty-state art only). Default stroke; colour via `currentColor`.
 - **Canonical icons:** success `CheckCircle` · warning `AlertTriangle` · error `XCircle` · info `Info` · add `Plus` · close `X` · tick `Check` · refresh `RefreshCw` · download `Download` · upload `Upload` · search `Search` · edit `Pencil` · delete `Trash2` · settings `Settings` · loading `Loader2` · bank `Landmark` · entity `Building2`.
-- **Medallions:** use `StatusIconBadge` (`sm` 32/16, `md` 40/20, `lg` 48/24, `xl` 64/32; `rounded` lg|full; `subtle`).
+- **Medallions:** use `StatusIconBadge` (`xs` 20/12, `sm` 32/16, `md` 40/20, `lg` 48/24, `xl` 64/32; `rounded` lg|full; `subtle`; `solid` for selected; `inverse` on dark heroes; `spin` with Loader2). Never hand-build an icon tile.
+- **Allowed exceptions:** brand marks (sidebar logo, Copilot) and third-party logos (`ConnectorIcons.tsx` connector logos and their frames, Open Banking bank logos).
 - **Specimens:** `npm run storybook` → Design System / Iconography, Shapes, Elevation & Surfaces.
 
 ### Animation
