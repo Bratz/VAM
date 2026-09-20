@@ -1532,23 +1532,86 @@ export const escrowApi = {
 // ECOMMERCE API
 // ============================================================================
 
+/** Mirrors EcommerceService DTOs — all derived from COLLECTION-program movements. */
+export interface EcommerceStats {
+  collectionAccounts: number;
+  totalCollections: number;
+  totalTransactions: number;
+  todayCollections: number;
+  transactionsToday: number;
+  heldOnCollectionAccounts: number;
+  averageTicketSize: number;
+  successRate: number | null;
+}
+
+export interface EcommerceTrendPoint { date: string; transactions: number; collections: number }
+
+export interface EcommerceCollection {
+  id: string;
+  reference: string;
+  amount: number;
+  currencyCode: string;
+  status: string;
+  remitterName?: string;
+  remitterAccount?: string;
+  description?: string;
+  transactionDate: string;
+  channel?: string;
+  externalReference?: string;
+  viban?: string;
+  vaId: string;
+  vaNumber: string;
+  vaName: string;
+  programName: string;
+}
+
+export interface CollectionAccount {
+  vaId: string;
+  vaNumber: string;
+  vaName: string;
+  currencyCode: string;
+  currentBalance: number;
+  status: string;
+  programName: string;
+  collectionCount: number;
+  collectedVolume: number;
+  lastCollectionAt?: string;
+}
+
+/** Grouped from the merchant columns on va_movements, which no feed populates yet. */
+export interface EcommerceMerchant {
+  merchantId: string;
+  merchantName?: string;
+  category?: string;
+  transactionCount: number;
+  volume: number;
+  lastTransactionAt?: string;
+  terminalCount: number;
+}
+
+/** A settlement run is the SWEEP_OUT movements off collection accounts for a date. */
+export interface EcommerceSettlement {
+  settlementDate: string;
+  currencyCode: string;
+  transactionCount: number;
+  accountsSwept: number;
+  grossAmount: number;
+  fees: number;
+  netAmount: number;
+}
+
 export const ecommerceApi = {
-  // Dashboard
-  getDashboardStats: () => apiClient.get<ApiResponse<any>>('/ecommerce/dashboard/stats').then(r => r.data),
-  getCollectionTrends: (days = 30) => apiClient.get<ApiResponse<any[]>>('/ecommerce/dashboard/trends', { params: { days } }).then(r => r.data),
-  // Merchants
-  getMerchants: (page = 0, size = 20, status?: string) => 
-    apiClient.get<ApiResponse<any[]>>('/ecommerce/merchants', { params: { page, size, status } }).then(r => r.data),
-  getMerchantById: (id: string) => apiClient.get<ApiResponse<any>>(`/ecommerce/merchants/${id}`).then(r => r.data),
-  onboardMerchant: (data: any) => apiClient.post<ApiResponse<any>>('/ecommerce/merchants', data).then(r => r.data),
-  approveMerchant: (id: string) => apiClient.post<ApiResponse<any>>(`/ecommerce/merchants/${id}/approve`).then(r => r.data),
-  // Collections
-  getCollections: (page = 0, size = 20, merchantId?: string, status?: string) => 
-    apiClient.get<ApiResponse<any[]>>('/ecommerce/collections', { params: { page, size, merchantId, status } }).then(r => r.data),
-  getCollectionById: (id: string) => apiClient.get<ApiResponse<any>>(`/ecommerce/collections/${id}`).then(r => r.data),
-  // Settlements
-  getSettlements: (page = 0, size = 20) => apiClient.get<ApiResponse<any[]>>('/ecommerce/settlements', { params: { page, size } }).then(r => r.data),
-  processSettlements: () => apiClient.post<ApiResponse<any>>('/ecommerce/settlements/process').then(r => r.data),
+  getDashboardStats: () => apiClient.get<ApiResponse<EcommerceStats>>('/ecommerce/dashboard/stats').then(r => r.data),
+  getCollectionTrends: (days = 30) =>
+    apiClient.get<ApiResponse<EcommerceTrendPoint[]>>('/ecommerce/dashboard/trends', { params: { days } }).then(r => r.data),
+  getCollectionAccounts: () =>
+    apiClient.get<ApiResponse<CollectionAccount[]>>('/ecommerce/collection-accounts').then(r => r.data),
+  getMerchants: () => apiClient.get<ApiResponse<EcommerceMerchant[]>>('/ecommerce/merchants').then(r => r.data),
+  getCollections: (page = 0, size = 20, vaId?: string, status?: string) =>
+    apiClient.get<ApiResponse<EcommerceCollection[]>>('/ecommerce/collections', { params: { page, size, vaId, status } }).then(r => r.data),
+  getCollectionById: (id: string) => apiClient.get<ApiResponse<EcommerceCollection>>(`/ecommerce/collections/${id}`).then(r => r.data),
+  getSettlements: (limit = 20) =>
+    apiClient.get<ApiResponse<EcommerceSettlement[]>>('/ecommerce/settlements', { params: { limit } }).then(r => r.data),
 };
 
 // ============================================================================
@@ -3002,17 +3065,72 @@ export const payablesApiPhase2 = {
 // KYC API
 // ============================================================================
 
+/** A KYC case is a party whose KYC is still open; mirrors KycService.KycCaseResponse. */
+export interface KycCase {
+  partyId: string;
+  partyCode: string;
+  legalName: string;
+  displayName?: string;
+  kycStatus: 'PENDING' | 'IN_PROGRESS' | 'VERIFIED' | 'EXPIRED' | 'REJECTED' | 'EXEMPTED';
+  riskRating?: 'LOW' | 'MEDIUM' | 'HIGH' | 'PROHIBITED';
+  riskScore?: number;
+  kycExpiresAt?: string;
+  documentsSubmitted: number;
+  documentsVerified: number;
+  submittedAt?: string;
+}
+
+export interface KycDocument {
+  id: string;
+  documentType?: string;
+  name?: string;
+  fileName?: string;
+  verificationStatus?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  expiryDate?: string;
+  rejectionReason?: string;
+}
+
+export interface KycDetail {
+  summary: KycCase;
+  partyType?: string;
+  registrationNumber?: string;
+  taxId?: string;
+  country?: string;
+  registrationCountry?: string;
+  status?: string;
+  sanctionsStatus?: string;
+  sanctionsLastChecked?: string;
+  kycVerifiedAt?: string;
+  kycVerifiedBy?: string;
+  documents: KycDocument[];
+}
+
+export interface KycStats {
+  totalParties: number;
+  pendingReview: number;
+  inProgress: number;
+  verified: number;
+  rejected: number;
+  exempted: number;
+  expired: number;
+  highRisk: number;
+  sanctionsAlerts: number;
+  expiringWithin30Days: number;
+}
+
 export const kycApi = {
-  getPending: (page = 0, size = 20) => apiClient.get<ApiResponse<any[]>>('/kyc/pending', { params: { page, size } }).then(r => r.data),
-  getById: (id: string) => apiClient.get<ApiResponse<any>>(`/kyc/${id}`).then(r => r.data),
-  approve: (id: string, decidedBy: string, comments?: string) => 
-    apiClient.post<ApiResponse<any>>(`/kyc/${id}/approve`, { decidedBy, comments }).then(r => r.data),
-  reject: (id: string, decidedBy: string, reason: string, comments?: string) => 
-    apiClient.post<ApiResponse<any>>(`/kyc/${id}/reject`, { decidedBy, reason, comments }).then(r => r.data),
-  requestInfo: (id: string, requiredDocuments: string[], requestedBy: string) => 
-    apiClient.post<ApiResponse<any>>(`/kyc/${id}/request-info`, { requiredDocuments, requestedBy }).then(r => r.data),
-  getStats: () => apiClient.get<ApiResponse<any>>('/kyc/stats').then(r => r.data),
-  getExpiring: (daysAhead = 30) => apiClient.get<ApiResponse<any[]>>('/kyc/expiring', { params: { daysAhead } }).then(r => r.data),
+  getPending: () => apiClient.get<ApiResponse<KycCase[]>>('/kyc/pending').then(r => r.data),
+  getById: (partyId: string) => apiClient.get<ApiResponse<KycDetail>>(`/kyc/${partyId}`).then(r => r.data),
+  approve: (partyId: string, decidedBy: string, comments?: string, validUntil?: string) =>
+    apiClient.post<ApiResponse<KycCase>>(`/kyc/${partyId}/approve`, { decidedBy, comments, validUntil }).then(r => r.data),
+  reject: (partyId: string, decidedBy: string, reason: string, comments?: string) =>
+    apiClient.post<ApiResponse<KycCase>>(`/kyc/${partyId}/reject`, { decidedBy, reason, comments }).then(r => r.data),
+  requestInfo: (partyId: string, requiredDocuments: string[], requestedBy: string) =>
+    apiClient.post<ApiResponse<any>>(`/kyc/${partyId}/request-info`, { requiredDocuments, requestedBy }).then(r => r.data),
+  getStats: () => apiClient.get<ApiResponse<KycStats>>('/kyc/stats').then(r => r.data),
+  getExpiring: (daysAhead = 30) => apiClient.get<ApiResponse<KycCase[]>>('/kyc/expiring', { params: { daysAhead } }).then(r => r.data),
 };
 
 // ============================================================================

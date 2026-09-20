@@ -1,83 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { Store, Plus, Search, CheckCircle, Loader2, RefreshCw, Eye, Users, TrendingUp, Ban, AlertTriangle, XCircle } from 'lucide-react';
-import { Card, Button, Badge, Input , StatusIconBadge, DataTable } from '../components/ui';
-import { Modal } from '../components/ui/enhanced';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Store, Search, Loader2, RefreshCw, Users, TrendingUp, XCircle, Info } from 'lucide-react';
+import { Card, Button, Badge, Input, StatusIconBadge, DataTable } from '../components/ui';
+import { Alert } from '../components/ui/enhanced';
 import { ecommerceApi } from '../services/api';
-import { formatCurrency } from '../utils';
+import type { CollectionAccount, EcommerceMerchant } from '../services/api';
+import { formatCurrency, formatDate } from '../utils';
 import { Page } from '../components/layout/Page';
 
+/**
+ * Collection accounts — the accounts money is actually collected into, with the
+ * volume each has taken. Acquiring merchants are listed separately: va_movements
+ * carries the merchant columns but no feed populates them and there is no
+ * merchant registry to onboard into, so this page reports that rather than
+ * offering a form that writes nowhere.
+ */
 const MerchantOnboardingPage: React.FC = () => {
-  const [merchants, setMerchants] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<CollectionAccount[]>([]);
+  const [merchants, setMerchants] = useState<EcommerceMerchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedMerchant, setSelectedMerchant] = useState<any>(null);
-  const [processing, setProcessing] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      const res = await ecommerceApi.getMerchants();
-      if (res.success) setMerchants(res.data);
+      const [accountsRes, merchantsRes] = await Promise.all([
+        ecommerceApi.getCollectionAccounts(),
+        ecommerceApi.getMerchants(),
+      ]);
+      setAccounts(accountsRes.data ?? []);
+      setMerchants(merchantsRes.data ?? []);
     } catch (err: any) {
-      setError(err.message || 'Failed to load merchants');
+      setError(err?.response?.data?.message || err?.message || 'Could not load collection accounts');
+      setAccounts([]);
+      setMerchants([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
 
-  const handleCreate = async (data: any) => {
-    setProcessing(true);
-    try {
-      const res = await ecommerceApi.onboardMerchant(data);
-      if (res.success) {
-        await fetchData();
-        setShowCreateModal(false);
-      }
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleApprove = async (id: string) => {
-    setProcessing(true);
-    try {
-      await ecommerceApi.approveMerchant(id);
-      await fetchData();
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const viewDetails = async (id: string) => {
-    try {
-      const res = await ecommerceApi.getMerchantById(id);
-      if (res.success) {
-        setSelectedMerchant(res.data);
-        setShowDetailModal(true);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const filteredMerchants = merchants.filter(m =>
-    searchQuery === '' ||
-    m.merchantName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.merchantId?.toLowerCase().includes(searchQuery.toLowerCase())
+  const q = searchQuery.toLowerCase();
+  const filtered = accounts.filter(a =>
+    !q
+    || a.vaName?.toLowerCase().includes(q)
+    || a.vaNumber?.toLowerCase().includes(q)
+    || a.programName?.toLowerCase().includes(q)
   );
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'success' | 'warning' | 'error' | 'neutral'> = {
-      ACTIVE: 'success', PENDING: 'warning', PENDING_APPROVAL: 'warning', SUSPENDED: 'error'
-    };
-    return <Badge variant={variants[status] || 'neutral'}>{status.replace('_', ' ')}</Badge>;
-  };
+  const collecting = accounts.filter(a => a.collectionCount > 0);
+  const totalCollected = accounts.reduce((sum, a) => sum + (a.collectedVolume || 0), 0);
 
   if (loading) {
     return (
@@ -89,57 +63,53 @@ const MerchantOnboardingPage: React.FC = () => {
 
   return (
     <Page>
-      {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
-        <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={fetchData}>Refresh</Button>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateModal(true)}>Onboard Merchant</Button>
+        <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={() => void fetchData()}>
+          Refresh
+        </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      {merchants.length === 0 && (
+        <Alert variant="info" title="No acquiring merchants registered">
+          This platform collects through virtual accounts rather than a merchant register. Card
+          movements carry merchant fields, but nothing populates them yet and there is no merchant
+          record to onboard into, so merchant registration is unavailable.
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <Card hover>
           <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="primary" icon={Users} />
-            </div>
-            <p className="stat-value-sm mt-3">{merchants.length}</p>
-            <p className="label">Total Merchants</p>
+            <StatusIconBadge tone="primary" icon={Store} />
+            <p className="stat-value-sm mt-3">{accounts.length}</p>
+            <p className="label">Collection Accounts</p>
           </div>
         </Card>
         <Card hover>
           <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="success" icon={TrendingUp} />
-            </div>
-            <p className="stat-value-success mt-3">{merchants.filter(m => m.status === 'ACTIVE').length}</p>
-            <p className="label">Active</p>
+            <StatusIconBadge tone="success" icon={TrendingUp} />
+            <p className="stat-value-success mt-3">{collecting.length}</p>
+            <p className="label">With Collections</p>
           </div>
         </Card>
         <Card hover>
           <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="warning" icon={AlertTriangle} />
-            </div>
-            <p className="stat-value-warning mt-3">{merchants.filter(m => m.status === 'PENDING').length}</p>
-            <p className="label">Pending Approval</p>
-          </div>
-        </Card>
-        <Card hover>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <StatusIconBadge tone="error" icon={Ban} />
-            </div>
-            <p className="stat-value-error mt-3">{merchants.filter(m => m.status === 'SUSPENDED').length}</p>
-            <p className="label">Suspended</p>
+            <StatusIconBadge tone="info" icon={Users} />
+            <p className="stat-value-sm mt-3">{formatCurrency(totalCollected)}</p>
+            <p className="label">Collected to Date</p>
           </div>
         </Card>
       </div>
 
-      {/* Search */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
         <div className="p-4 relative">
           <Search className="w-4 h-4 absolute left-7 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <Input className="pl-9" placeholder="Search by name or ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          <Input
+            className="pl-9"
+            placeholder="Search by account name, number or program..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
         </div>
       </Card>
 
@@ -152,177 +122,81 @@ const MerchantOnboardingPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Merchants Table */}
       <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <DataTable
-          data={filteredMerchants}
-          keyExtractor={(m) => m.id}
+          data={filtered}
+          keyExtractor={(a) => a.vaId}
           emptyIcon={<Store className="w-12 h-12 text-neutral-300 dark:text-neutral-400" />}
-          emptyTitle="No merchants found"
+          emptyTitle={accounts.length === 0 ? 'No collection accounts' : 'No accounts match this search'}
           columns={[
             {
-              key: 'merchantName',
-              header: 'Merchant',
-              render: (_, m) => (
+              key: 'vaName',
+              header: 'Collection Account',
+              render: (_, a) => (
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone="primary" icon={Store} />
+                  <StatusIconBadge tone={a.collectionCount > 0 ? 'primary' : 'neutral'} icon={Store} />
                   <div>
-                    <p className="font-medium text-neutral-900 dark:text-neutral-50">{m.merchantName}</p>
-                    <p className="caption">{m.merchantId}</p>
+                    <p className="font-medium text-neutral-900 dark:text-neutral-50">{a.vaName}</p>
+                    <p className="caption">{a.vaNumber}</p>
                   </div>
                 </div>
               ),
             },
-            { key: 'category', header: 'Category', render: (_, m) => <Badge variant="neutral">{m.category}</Badge> },
-            { key: 'commissionRate', header: 'Commission', render: (_, m) => <span className="text-body-sm font-medium">{m.commissionRate}%</span> },
-            { key: 'monthlyVolume', header: 'Monthly Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.monthlyVolume)}</span> },
-            { key: 'status', header: 'Status', render: (_, m) => getStatusBadge(m.status) },
-            { key: 'onboardedAt', header: 'Onboarded', render: (_, m) => <span className="body-sm">{new Date(m.onboardedAt).toLocaleDateString()}</span> },
+            { key: 'programName', header: 'Program', render: (_, a) => <Badge variant="neutral">{a.programName}</Badge> },
             {
-              key: 'actions',
-              header: 'Actions',
+              key: 'collectionCount',
+              header: 'Collections',
               align: 'right',
-              render: (_, m) => (
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => viewDetails(m.id)}><Eye className="w-4 h-4" /></Button>
-                  {m.status === 'PENDING' && (
-                    <Button size="sm" variant="outline" onClick={() => handleApprove(m.id)} disabled={processing}>
-                      <CheckCircle className="w-4 h-4 mr-1" /> Approve
-                    </Button>
-                  )}
-                </div>
+              render: (_, a) => <span className="body-sm">{a.collectionCount.toLocaleString()}</span>,
+            },
+            {
+              key: 'collectedVolume',
+              header: 'Collected',
+              align: 'right',
+              render: (_, a) => (
+                <span className="font-medium tracking-tight">{formatCurrency(a.collectedVolume, a.currencyCode)}</span>
+              ),
+            },
+            {
+              key: 'currentBalance',
+              header: 'Balance',
+              align: 'right',
+              render: (_, a) => (
+                <span className="body-sm">{formatCurrency(a.currentBalance, a.currencyCode)}</span>
+              ),
+            },
+            {
+              key: 'lastCollectionAt',
+              header: 'Last Collection',
+              render: (_, a) => (
+                <span className="body-sm">{a.lastCollectionAt ? formatDate(a.lastCollectionAt) : '—'}</span>
               ),
             },
           ]}
         />
       </Card>
 
-      {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Onboard Merchant" size="lg">
-        <MerchantForm onSubmit={handleCreate} loading={processing} onCancel={() => setShowCreateModal(false)} />
-      </Modal>
-
-      {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Merchant Details" size="lg">
-        {selectedMerchant && <MerchantDetail merchant={selectedMerchant} />}
-      </Modal>
+      {merchants.length > 0 && (
+        <Card className="animate-fade-in" style={{ animationDelay: '0.25s' }}>
+          <div className="p-4 border-b border-edge flex items-center gap-2">
+            <Info className="w-4 h-4 text-neutral-400" />
+            <h3 className="body-strong">Acquiring merchants</h3>
+          </div>
+          <DataTable
+            data={merchants}
+            keyExtractor={(m) => m.merchantId}
+            columns={[
+              { key: 'merchantName', header: 'Merchant', render: (_, m) => <span className="body-strong">{m.merchantName || m.merchantId}</span> },
+              { key: 'category', header: 'Category', render: (_, m) => <Badge variant="neutral">{m.category || '—'}</Badge> },
+              { key: 'transactionCount', header: 'Transactions', align: 'right', render: (_, m) => <span className="body-sm">{m.transactionCount.toLocaleString()}</span> },
+              { key: 'volume', header: 'Volume', align: 'right', render: (_, m) => <span className="font-medium tracking-tight">{formatCurrency(m.volume)}</span> },
+              { key: 'terminalCount', header: 'Terminals', align: 'right', render: (_, m) => <span className="body-sm">{m.terminalCount}</span> },
+            ]}
+          />
+        </Card>
+      )}
     </Page>
   );
 };
-
-const MerchantForm: React.FC<{ onSubmit: (data: any) => void; loading: boolean; onCancel: () => void }> = ({ onSubmit, loading, onCancel }) => {
-  const [formData, setFormData] = useState({
-    merchantName: '', tradeName: '', legalName: '', registrationNumber: '', category: 'Retail',
-    mcc: '5411', contactName: '', contactEmail: '', contactPhone: '', settlementAccount: '', commissionRate: '2.0'
-  });
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="field-label block mb-1">Merchant Name *</label>
-          <Input value={formData.merchantName} onChange={e => setFormData({ ...formData, merchantName: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Trade Name</label>
-          <Input value={formData.tradeName} onChange={e => setFormData({ ...formData, tradeName: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Legal Name</label>
-          <Input value={formData.legalName} onChange={e => setFormData({ ...formData, legalName: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Registration Number</label>
-          <Input value={formData.registrationNumber} onChange={e => setFormData({ ...formData, registrationNumber: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Category</label>
-          <select className="w-full border rounded-lg px-3 py-2 dark:border-primary-800 dark:bg-primary-900" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-            <option value="Retail">Retail</option><option value="F&B">F&B</option><option value="Electronics">Electronics</option><option value="Fashion">Fashion</option><option value="Services">Services</option>
-          </select></div>
-        <div><label className="field-label block mb-1">MCC</label>
-          <Input value={formData.mcc} onChange={e => setFormData({ ...formData, mcc: e.target.value })} /></div>
-      </div>
-      <hr />
-      <h4 className="font-medium">Contact Information</h4>
-      <div className="grid grid-cols-3 gap-4">
-        <div><label className="field-label block mb-1">Contact Name</label>
-          <Input value={formData.contactName} onChange={e => setFormData({ ...formData, contactName: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Email</label>
-          <Input type="email" value={formData.contactEmail} onChange={e => setFormData({ ...formData, contactEmail: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Phone</label>
-          <Input value={formData.contactPhone} onChange={e => setFormData({ ...formData, contactPhone: e.target.value })} /></div>
-      </div>
-      <hr />
-      <h4 className="font-medium">Settlement</h4>
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className="field-label block mb-1">Settlement Account</label>
-          <Input value={formData.settlementAccount} onChange={e => setFormData({ ...formData, settlementAccount: e.target.value })} /></div>
-        <div><label className="field-label block mb-1">Commission Rate (%)</label>
-          <Input type="number" step="0.1" value={formData.commissionRate} onChange={e => setFormData({ ...formData, commissionRate: e.target.value })} /></div>
-      </div>
-      <div className="flex justify-end gap-2 pt-4 border-t dark:border-primary-800">
-        <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-        <Button onClick={() => onSubmit({ ...formData, commissionRate: parseFloat(formData.commissionRate) })} disabled={loading || !formData.merchantName}>
-          {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Submit Application
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-const MerchantDetail: React.FC<{ merchant: any }> = ({ merchant }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-2 gap-6">
-      <div>
-        <p className="label mb-1">Merchant ID</p>
-        <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{merchant.merchantId}</p>
-      </div>
-      <div>
-        <p className="label mb-1">Merchant Name</p>
-        <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.merchantName}</p>
-      </div>
-      <div>
-        <p className="label mb-1">Legal Name</p>
-        <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.legalName || '-'}</p>
-      </div>
-      <div>
-        <p className="label mb-1">Category</p>
-        <Badge variant="neutral">{merchant.category}</Badge>
-      </div>
-      <div>
-        <p className="label mb-1">MCC</p>
-        <p className="font-mono text-neutral-900 dark:text-neutral-50">{merchant.mcc}</p>
-      </div>
-      <div>
-        <p className="label mb-1">Commission Rate</p>
-        <p className="font-medium text-neutral-900 dark:text-neutral-50">{merchant.commissionRate}%</p>
-      </div>
-      <div>
-        <p className="label mb-1">Settlement Account</p>
-        <p className="font-mono text-neutral-900 dark:text-neutral-50">{merchant.settlementAccount}</p>
-      </div>
-      <div>
-        <p className="label mb-1">Status</p>
-        <Badge variant={merchant.status === 'ACTIVE' ? 'success' : 'warning'}>{merchant.status}</Badge>
-      </div>
-    </div>
-    {merchant.monthlyStats && (
-      <>
-        <hr className="border-edge" />
-        <h4 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Monthly Statistics</h4>
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <p className="label mb-1">Volume</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.volume)}</p>
-          </div>
-          <div>
-            <p className="label mb-1">Transactions</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{merchant.monthlyStats.transactions}</p>
-          </div>
-          <div>
-            <p className="label mb-1">Avg Ticket</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{formatCurrency(merchant.monthlyStats.avgTicket)}</p>
-          </div>
-          <div>
-            <p className="label mb-1">Chargebacks</p>
-            <p className="font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{merchant.monthlyStats.chargebacks}</p>
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-);
 
 export default MerchantOnboardingPage;

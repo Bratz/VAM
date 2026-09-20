@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, TrendingUp, Users, CreditCard, Loader2, RefreshCw, Download, XCircle } from 'lucide-react';
-import { Card, Button, Badge , StatusIconBadge } from '../components/ui';
+import { Card, Button, StatusIconBadge } from '../components/ui';
 import { ecommerceApi } from '../services/api';
+import type { EcommerceStats, EcommerceTrendPoint } from '../services/api';
 import { formatCurrency } from '../utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Page } from '../components/layout/Page';
 
 const EcommerceDashboardPage: React.FC = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [trends, setTrends] = useState<any[]>([]);
+  const [stats, setStats] = useState<EcommerceStats | null>(null);
+  const [trends, setTrends] = useState<EcommerceTrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,11 +64,10 @@ const EcommerceDashboardPage: React.FC = () => {
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <StatusIconBadge tone="primary" icon={Users} />
-                <Badge variant="success">+12%</Badge>
               </div>
-              <p className="stat-value-sm mt-3">{stats.totalMerchants}</p>
-              <p className="label">Total Merchants</p>
-              <p className="caption-success mt-1">{stats.activeMerchants} active</p>
+              <p className="stat-value-sm mt-3">{stats.collectionAccounts}</p>
+              <p className="label">Collection Accounts</p>
+              <p className="caption mt-1">{stats.totalTransactions.toLocaleString()} collections in total</p>
             </div>
           </Card>
 
@@ -75,7 +75,6 @@ const EcommerceDashboardPage: React.FC = () => {
             <div className="p-4">
               <div className="flex items-center justify-between">
                 <StatusIconBadge tone="success" icon={CreditCard} />
-                <Badge variant="success">+8%</Badge>
               </div>
               <p className="stat-value-sm mt-3">{formatCurrency(stats.totalCollections)}</p>
               <p className="label">Total Collections</p>
@@ -99,9 +98,9 @@ const EcommerceDashboardPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <StatusIconBadge tone="info" icon={TrendingUp} />
               </div>
-              <p className="stat-value-sm mt-3">{stats.successRate}%</p>
-              <p className="label">Success Rate</p>
-              <p className="caption-warning mt-1">Pending: {formatCurrency(stats.pendingSettlements)}</p>
+              <p className="stat-value-sm mt-3">{stats.successRate != null ? `${stats.successRate}%` : '—'}</p>
+              <p className="label">Completed Collections</p>
+              <p className="caption mt-1">Held on account: {formatCurrency(stats.heldOnCollectionAccounts)}</p>
             </div>
           </Card>
         </div>
@@ -127,17 +126,17 @@ const EcommerceDashboardPage: React.FC = () => {
 
       {/* Navigation Cards */}
       <div className="grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-        <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/merchants'}>
-          <h4 className="body-strong font-semibold">Manage Merchants</h4>
-          <p className="caption mt-1">View and manage merchant accounts</p>
+        <Card hover className="p-4 cursor-pointer" onClick={() => { window.location.search = '?page=merchant-onboarding'; }}>
+          <h4 className="body-strong font-semibold">Collection Accounts</h4>
+          <p className="caption mt-1">Accounts money is collected into</p>
         </Card>
-        <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/collections'}>
+        <Card hover className="p-4 cursor-pointer" onClick={() => { window.location.search = '?page=ecommerce-collections'; }}>
           <h4 className="body-strong font-semibold">View Collections</h4>
           <p className="caption mt-1">Monitor transaction collections</p>
         </Card>
-        <Card hover className="p-4 cursor-pointer" onClick={() => window.location.href = '/ecommerce/settlements'}>
-          <h4 className="body-strong font-semibold">Process Settlements</h4>
-          <p className="caption mt-1">Manage merchant settlements</p>
+        <Card hover className="p-4 cursor-pointer" onClick={() => { window.location.search = '?page=seller-collections'; }}>
+          <h4 className="body-strong font-semibold">Settlement Runs</h4>
+          <p className="caption mt-1">Sweeps off the collection accounts</p>
         </Card>
       </div>
     </Page>

@@ -15,7 +15,6 @@ const SellerCollectionsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'collections' | 'settlements'>('collections');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [processing, setProcessing] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -36,20 +35,10 @@ const SellerCollectionsPage: React.FC = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleProcessSettlements = async () => {
-    setProcessing(true);
-    try {
-      await ecommerceApi.processSettlements();
-      await fetchData();
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const filteredCollections = collections.filter(c =>
     searchQuery === '' ||
-    c.transactionRef?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.merchantName?.toLowerCase().includes(searchQuery.toLowerCase())
+    c.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.remitterName?.toLowerCase().includes(searchQuery.toLowerCase()) || c.vaName?.toLowerCase().includes(searchQuery.toLowerCase()) || c.reference?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const getStatusBadge = (status: string) => {
@@ -100,8 +89,8 @@ const SellerCollectionsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <StatusIconBadge tone="warning" icon={Clock} />
             </div>
-            <p className="stat-value-warning mt-3">{settlements.filter(s => s.status === 'PENDING').length}</p>
-            <p className="label">Pending Settlements</p>
+            <p className="stat-value-warning mt-3">{settlements.reduce((sum, s) => sum + s.accountsSwept, 0)}</p>
+            <p className="label">Accounts Swept</p>
           </div>
         </Card>
         <Card hover>
@@ -109,7 +98,7 @@ const SellerCollectionsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <StatusIconBadge tone="info" icon={CheckCircle} />
             </div>
-            <p className="stat-value-sm mt-3">{formatCurrency(settlements.filter(s => s.status === 'COMPLETED').reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
+            <p className="stat-value-sm mt-3">{formatCurrency(settlements.reduce((sum, s) => sum + (s.netAmount || 0), 0))}</p>
             <p className="label">Settled Amount</p>
           </div>
         </Card>
@@ -158,17 +147,17 @@ const SellerCollectionsPage: React.FC = () => {
               emptyTitle="No collections found"
               columns={[
                 {
-                  key: 'transactionRef',
+                  key: 'reference',
                   header: 'Reference',
                   render: (_, c) => (
                     <div className="flex items-center gap-2">
                       <ShoppingBag className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                      <span className="font-mono text-body-sm">{c.transactionRef}</span>
+                      <span className="font-mono text-body-sm">{c.reference}</span>
                     </div>
                   ),
                 },
-                { key: 'merchantName', header: 'Seller', render: (_, c) => <span className="body-strong">{c.merchantName}</span> },
-                { key: 'paymentMethod', header: 'Payment Method', render: (_, c) => <Badge variant="neutral">{c.paymentMethod}</Badge> },
+                { key: 'vaName', header: 'Collected into', render: (_, c) => <span className="body-strong">{c.vaName}</span> },
+                { key: 'remitterName', header: 'Paid by', render: (_, c) => <span className="body-sm">{c.remitterName || '—'}</span> },
                 { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
                 { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
                 { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="body-sm">{new Date(c.transactionDate).toLocaleString()}</span> },
@@ -194,9 +183,8 @@ const SellerCollectionsPage: React.FC = () => {
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <div className="p-4 flex justify-between items-center">
               <h3 className="text-body-sm font-semibold text-neutral-900 uppercase tracking-wider dark:text-neutral-50">Settlement Batches</h3>
-              <Button onClick={handleProcessSettlements} disabled={processing}>
-                {processing && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Process Settlements
-              </Button>
+              <p className="caption">Settlement runs are produced by the sweep engine as it moves
+              collected money off these accounts.</p>
             </div>
           </Card>
 
@@ -206,13 +194,13 @@ const SellerCollectionsPage: React.FC = () => {
               keyExtractor={(s) => s.id}
               emptyTitle="No settlements found"
               columns={[
-                { key: 'settlementRef', header: 'Settlement Ref', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementRef}</span> },
-                { key: 'merchantName', header: 'Seller', render: (_, s) => <span className="body-strong">{s.merchantName}</span> },
+                { key: 'settlementDate', header: 'Run date', render: (_, s) => <span className="font-mono text-body-sm">{s.settlementDate}</span> },
+                { key: 'currencyCode', header: 'Currency', render: (_, s) => <span className="body-strong">{s.currencyCode}</span> },
                 { key: 'grossAmount', header: 'Gross', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.grossAmount)}</span> },
-                { key: 'commission', header: 'Commission', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">-{formatCurrency(s.commission)}</span> },
+                { key: 'fees', header: 'Fees', align: 'right', render: (_, s) => <span className="text-error-600 font-medium dark:text-error-300">{s.fees > 0 ? `-${formatCurrency(s.fees)}` : '—'}</span> },
                 { key: 'netAmount', header: 'Net', align: 'right', render: (_, s) => <span className="font-medium tracking-tight">{formatCurrency(s.netAmount)}</span> },
-                { key: 'status', header: 'Status', render: (_, s) => getStatusBadge(s.status) },
-                { key: 'settlementDate', header: 'Date', render: (_, s) => <span className="body-sm">{s.settlementDate}</span> },
+                { key: 'accountsSwept', header: 'Accounts', align: 'right', render: (_, s) => <span className="body-sm">{s.accountsSwept}</span> },
+                { key: 'transactionCount', header: 'Sweeps', align: 'right', render: (_, s) => <span className="body-sm">{s.transactionCount}</span> },
               ]}
             />
           </Card>
@@ -226,11 +214,11 @@ const SellerCollectionsPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="label mb-1">Reference</p>
-                <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.transactionRef}</p>
+                <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.reference}</p>
               </div>
               <div>
-                <p className="label mb-1">Seller</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.merchantName}</p>
+                <p className="label mb-1">Collected into</p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedItem.vaName}</p>
               </div>
               <div>
                 <p className="label mb-1">Amount</p>
@@ -242,8 +230,8 @@ const SellerCollectionsPage: React.FC = () => {
                 {getStatusBadge(selectedItem.status)}
               </div>
               <div>
-                <p className="label mb-1">Payment Method</p>
-                <Badge variant="neutral">{selectedItem.paymentMethod}</Badge>
+                <p className="label mb-1">Channel</p>
+                <Badge variant="neutral">{selectedItem.channel || "—"}</Badge>
               </div>
               <div>
                 <p className="label mb-1">Date</p>

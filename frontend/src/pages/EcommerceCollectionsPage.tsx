@@ -44,8 +44,9 @@ const EcommerceCollectionsPage: React.FC = () => {
 
   const filteredCollections = collections.filter(c => {
     const matchesSearch = searchQuery === '' ||
-      c.transactionRef?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.merchantName?.toLowerCase().includes(searchQuery.toLowerCase());
+      c.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.remitterName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.vaName?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = filterStatus === 'ALL' || c.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
@@ -107,26 +108,26 @@ const EcommerceCollectionsPage: React.FC = () => {
           emptyTitle="No collections found"
           columns={[
             {
-              key: 'transactionRef',
+              key: 'reference',
               header: 'Reference',
               render: (_, c) => (
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-primary-600 dark:text-primary-200" />
-                  <span className="font-mono text-body-sm">{c.transactionRef}</span>
+                  <span className="font-mono text-body-sm">{c.reference}</span>
                 </div>
               ),
             },
             {
-              key: 'merchantName',
-              header: 'Merchant',
+              key: 'collectedInto',
+              header: 'Collected into',
               render: (_, c) => (
                 <>
-                  <p className="body-strong">{c.merchantName}</p>
-                  <p className="caption">{c.merchantId}</p>
+                  <p className="body-strong">{c.vaName}</p>
+                  <p className="caption">{c.vaNumber} · {c.programName}</p>
                 </>
               ),
             },
-            { key: 'paymentMethod', header: 'Payment Method', render: (_, c) => <Badge variant="neutral">{c.paymentMethod}</Badge> },
+            { key: 'remitterName', header: 'Paid by', render: (_, c) => <span className="body-sm">{c.remitterName || '—'}</span> },
             { key: 'amount', header: 'Amount', align: 'right', render: (_, c) => <span className="font-medium tracking-tight">{formatCurrency(c.amount, c.currencyCode || 'AED')}</span> },
             { key: 'status', header: 'Status', render: (_, c) => getStatusBadge(c.status) },
             { key: 'transactionDate', header: 'Date', render: (_, c) => <span className="body-sm">{new Date(c.transactionDate).toLocaleString()}</span> },
@@ -151,11 +152,11 @@ const EcommerceCollectionsPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="label mb-1">Transaction Ref</p>
-                <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.transactionRef}</p>
+                <p className="font-mono font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.reference}</p>
               </div>
               <div>
-                <p className="label mb-1">Merchant</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.merchantName}</p>
+                <p className="label mb-1">Collected into</p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.vaName}</p>
               </div>
               <div>
                 <p className="label mb-1">Amount</p>
@@ -167,8 +168,8 @@ const EcommerceCollectionsPage: React.FC = () => {
                 {getStatusBadge(selectedCollection.status)}
               </div>
               <div>
-                <p className="label mb-1">Payment Method</p>
-                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.paymentMethod}</p>
+                <p className="label mb-1">Channel</p>
+                <p className="font-medium text-neutral-900 dark:text-neutral-50">{selectedCollection.channel || "—"}</p>
               </div>
               <div>
                 <p className="label mb-1">Card Type</p>

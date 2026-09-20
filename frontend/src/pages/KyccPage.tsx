@@ -77,11 +77,11 @@ const getKycRiskBadge = (level: string) => {
 // the old hand-rolled table used.
 const KycActionsCell: React.FC<Omit<KycRowProps, 'kyc'> & { kyc: any }> = ({ kyc, onView, onApprove, onReject, processing }) => (
   <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-    <Button size="sm" variant="ghost" onClick={() => onView(kyc.id)}><Eye className="w-4 h-4" /></Button>
+    <Button size="sm" variant="ghost" onClick={() => onView(kyc.partyId)}><Eye className="w-4 h-4" /></Button>
     <Button
       size="sm"
       variant="ghost"
-      onClick={() => onApprove(kyc.id)}
+      onClick={() => onApprove(kyc.partyId)}
       disabled={processing}
       className="text-success-600 hover:bg-success-50 dark:text-success-300 dark:hover:bg-success-500/10"
     >
@@ -120,7 +120,7 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
     <Card
       interactive
       hover
-      onClick={() => onView(kyc.id)}
+      onClick={() => onView(kyc.partyId)}
       className="animate-fade-in"
       style={{ animationDelay: `${index * 0.03}s` }}
     >
@@ -134,11 +134,11 @@ const KycMobileCard: React.FC<KycMobileCardProps> = ({ kyc, onView, index }) => 
                   via .code, so the H3 is sans-serif (heading) and the ref
                   inside reads as data. */}
               <h3 className="font-semibold text-primary-900 text-body-sm truncate dark:text-neutral-50">
-                <span className="code">{kyc.applicationRef}</span>
+                <span className="code">{kyc.partyCode}</span>
               </h3>
-              <p className="caption mt-0.5">{kyc.entityName}</p>
+              <p className="caption mt-0.5">{kyc.legalName}</p>
             </div>
-            {getRiskBadge(kyc.riskLevel)}
+            {getRiskBadge(kyc.riskRating)}
           </div>
           <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div>
@@ -269,7 +269,7 @@ const KyccPage: React.FC = () => {
     if (!selectedKyc) return;
     setProcessing(true);
     try {
-      await kycApi.reject(selectedKyc.id, 'Current User', reason, '');
+      await kycApi.reject(selectedKyc.summary?.partyId, 'Current User', reason, '');
       await fetchData();
       setShowRejectModal(false);
       setShowDetailModal(false);
@@ -342,7 +342,7 @@ const KyccPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <StatCard
           title="Total Applications"
-          value={stats?.totalApplications || 0}
+          value={stats?.totalParties || 0}
           icon={<FileText className="w-6 h-6 text-primary-600 dark:text-primary-200" />}
           iconBg="bg-primary-100 dark:bg-primary-700"
           delay={0.05}
@@ -356,7 +356,7 @@ const KyccPage: React.FC = () => {
         />
         <StatCard
           title="Approved"
-          value={stats?.approved || 0}
+          value={stats?.verified || 0}
           icon={<CheckCircle className="w-6 h-6 text-success-600 dark:text-success-300" />}
           iconBg="bg-success-100 dark:bg-success-500/20"
           delay={0.15}
@@ -369,8 +369,8 @@ const KyccPage: React.FC = () => {
           delay={0.2}
         />
         <StatCard
-          title="Approval Rate"
-          value={`${stats?.approvalRate || 0}%`}
+          title="High Risk"
+          value={stats?.highRisk || 0}
           icon={<TrendingUp className="w-6 h-6 text-info-600 dark:text-info-300" />}
           iconBg="bg-info-100 dark:bg-info-500/20"
           delay={0.25}
@@ -414,8 +414,8 @@ const KyccPage: React.FC = () => {
 
         <DataTable
           data={paginatedKyc}
-          keyExtractor={(kyc) => kyc.id}
-          onRowClick={(kyc) => viewDetails(kyc.id)}
+          keyExtractor={(kyc) => kyc.partyId}
+          onRowClick={(kyc) => viewDetails(kyc.partyId)}
           pagination
           pageSize={pageSize}
           currentPage={currentPage + 1}
@@ -429,21 +429,21 @@ const KyccPage: React.FC = () => {
           emptyDescription="All KYC applications have been processed."
           columns={[
             {
-              key: 'applicationRef',
+              key: 'partyCode',
               header: 'Application',
               render: (_, kyc) => (
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="primary" icon={Shield} className="shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-body-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.applicationRef}</p>
+                    <p className="text-body-sm font-semibold text-primary-900 font-mono truncate dark:text-neutral-50">{kyc.partyCode}</p>
                     <p className="caption mt-0.5">{new Date(kyc.submittedAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               ),
             },
-            { key: 'entityName', header: 'Entity', render: (_, kyc) => <p className="body-strong">{kyc.entityName}</p> },
-            { key: 'entityType', header: 'Type', render: (_, kyc) => <Badge variant="neutral" size="sm">{kyc.entityType}</Badge> },
-            { key: 'riskLevel', header: 'Risk Level', render: (_, kyc) => getKycRiskBadge(kyc.riskLevel) },
+            { key: 'entityName', header: 'Entity', render: (_, kyc) => <p className="body-strong">{kyc.legalName}</p> },
+            { key: 'entityType', header: 'Type', render: (_, kyc) => <Badge variant="neutral" size="sm">{kyc.kycStatus}</Badge> },
+            { key: 'riskLevel', header: 'Risk Level', render: (_, kyc) => getKycRiskBadge(kyc.riskRating) },
             {
               key: 'documentsVerified',
               header: 'Documents',
@@ -484,11 +484,11 @@ const KyccPage: React.FC = () => {
                 {/* Phase 9 Task E: heading is sans-serif; the application
                     reference reads as data via .code. */}
                 <h3 className="section-title">
-                  <span className="code">{selectedKyc.applicationRef}</span>
+                  <span className="code">{selectedKyc.summary?.partyCode}</span>
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="warning">{selectedKyc.status?.replace('_', ' ')}</Badge>
-                  {getRiskBadge(selectedKyc.riskLevel)}
+                  <Badge variant="warning">{selectedKyc.summary?.kycStatus?.replace('_', ' ')}</Badge>
+                  {getRiskBadge(selectedKyc.summary?.riskRating)}
                 </div>
               </div>
             </div>
@@ -496,21 +496,21 @@ const KyccPage: React.FC = () => {
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-edge">
               <div>
-                <p className="label">Entity Name</p>
-                <p className="body-strong mt-1">{selectedKyc.entityName}</p>
+                <p className="label">Legal Name</p>
+                <p className="body-strong mt-1">{selectedKyc.summary?.legalName}</p>
               </div>
               <div>
-                <p className="label">Entity Type</p>
-                <Badge variant="neutral" className="mt-1">{selectedKyc.entityType}</Badge>
+                <p className="label">Party Type</p>
+                <Badge variant="neutral" className="mt-1">{selectedKyc.partyType}</Badge>
               </div>
               <div>
                 <p className="label">Risk Score</p>
-                <p className="body-strong mt-1">{selectedKyc.riskScore}/100</p>
+                <p className="body-strong mt-1">{selectedKyc.summary?.riskScore}/100</p>
               </div>
               <div>
                 <p className="label">Submitted</p>
                 <p className="body-strong mt-1">
-                  {new Date(selectedKyc.submittedAt).toLocaleDateString()}
+                  {new Date(selectedKyc.summary?.submittedAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -524,10 +524,10 @@ const KyccPage: React.FC = () => {
                     <div key={idx} className="flex items-center justify-between p-3 bg-surface-page rounded-lg">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                        <span className="text-body-sm text-primary-900 dark:text-neutral-50">{doc.type} - {doc.fileName}</span>
+                        <span className="text-body-sm text-primary-900 dark:text-neutral-50">{doc.documentType}{doc.fileName ? ` — ${doc.fileName}` : ''}</span>
                       </div>
-                      <Badge variant={doc.status === 'VERIFIED' ? 'success' : 'warning'} size="sm">
-                        {doc.status}
+                      <Badge variant={doc.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} size="sm">
+                        {doc.verificationStatus}
                       </Badge>
                     </div>
                   ))}
@@ -535,32 +535,27 @@ const KyccPage: React.FC = () => {
               </div>
             )}
 
-            {/* Screening Results */}
-            {selectedKyc.screeningResults && (
-              <div className="pt-4 border-t border-edge">
-                <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Screening Results</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-surface-page rounded-lg text-center">
-                    <p className="caption mb-1">Sanctions</p>
-                    <Badge variant={selectedKyc.screeningResults.sanctionsHit ? 'error' : 'success'}>
-                      {selectedKyc.screeningResults.sanctionsHit ? 'HIT' : 'CLEAR'}
-                    </Badge>
-                  </div>
-                  <div className="p-3 bg-surface-page rounded-lg text-center">
-                    <p className="caption mb-1">PEP</p>
-                    <Badge variant={selectedKyc.screeningResults.pepHit ? 'error' : 'success'}>
-                      {selectedKyc.screeningResults.pepHit ? 'HIT' : 'CLEAR'}
-                    </Badge>
-                  </div>
-                  <div className="p-3 bg-surface-page rounded-lg text-center">
-                    <p className="caption mb-1">Adverse Media</p>
-                    <Badge variant={selectedKyc.screeningResults.adverseMedia ? 'error' : 'success'}>
-                      {selectedKyc.screeningResults.adverseMedia ? 'HIT' : 'CLEAR'}
-                    </Badge>
-                  </div>
+            {/* Sanctions screening — the one screen the party model records */}
+            <div className="pt-4 border-t border-edge">
+              <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide mb-3 dark:text-neutral-50">Sanctions screening</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-surface-page rounded-lg text-center">
+                  <p className="caption mb-1">Status</p>
+                  <Badge variant={selectedKyc.sanctionsStatus === 'CLEAR' ? 'success'
+                    : selectedKyc.sanctionsStatus === 'CONFIRMED_MATCH' ? 'error' : 'warning'}>
+                    {selectedKyc.sanctionsStatus || 'NOT SCREENED'}
+                  </Badge>
+                </div>
+                <div className="p-3 bg-surface-page rounded-lg text-center">
+                  <p className="caption mb-1">Last screened</p>
+                  <p className="body-sm mt-1">
+                    {selectedKyc.sanctionsLastChecked
+                      ? new Date(selectedKyc.sanctionsLastChecked).toLocaleDateString()
+                      : 'Never'}
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-edge">
@@ -576,7 +571,7 @@ const KyccPage: React.FC = () => {
                 Reject
               </Button>
               <Button
-                onClick={() => handleApprove(selectedKyc.id)}
+                onClick={() => handleApprove(selectedKyc.summary?.partyId)}
                 disabled={processing}
                 leftIcon={processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               >
