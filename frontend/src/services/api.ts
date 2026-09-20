@@ -1464,17 +1464,68 @@ export const walletsApi = {
 // ESCROW API
 // ============================================================================
 
-const escrowApi = {
-  getAll: (page = 0, size = 20, status?: string) => 
-    apiClient.get<ApiResponse<any[]>>('/escrow', { params: { page, size, status } }).then(r => r.data),
-  getById: (id: string) => apiClient.get<ApiResponse<any>>(`/escrow/${id}`).then(r => r.data),
-  create: (data: any) => apiClient.post<ApiResponse<any>>('/escrow', data).then(r => r.data),
-  fund: (id: string, amount: number, sourceAccount: string) => apiClient.post<ApiResponse<any>>(`/escrow/${id}/fund`, { amount, sourceAccount }).then(r => r.data),
-  release: (id: string, amount: number, releaseTo: string, approvedBy: string) => 
-    apiClient.post<ApiResponse<any>>(`/escrow/${id}/release`, { amount, releaseTo, approvedBy }).then(r => r.data),
-  dispute: (id: string, reason: string, raisedBy: string) => apiClient.post<ApiResponse<any>>(`/escrow/${id}/dispute`, { reason, raisedBy }).then(r => r.data),
-  getStats: () => apiClient.get<ApiResponse<any>>('/escrow/stats').then(r => r.data),
-  getTypes: () => apiClient.get<ApiResponse<any[]>>('/escrow/types').then(r => r.data),
+export type EscrowStatus =
+  | 'PENDING_FUNDING'
+  | 'PARTIALLY_FUNDED'
+  | 'FUNDED'
+  | 'PARTIALLY_RELEASED'
+  | 'RELEASED'
+  | 'DISPUTED'
+  | 'CANCELLED'
+  | 'EXPIRED';
+
+/** Mirrors EscrowService.EscrowResponse. */
+export interface EscrowContract {
+  id: string;
+  escrowReference: string;
+  escrowType: string;
+  buyerId?: string;
+  buyerName?: string;
+  sellerId?: string;
+  sellerName?: string;
+  contractAmount: number;
+  fundedAmount: number;
+  currentBalance: number;
+  releasedAmount: number;
+  currencyCode: string;
+  status: EscrowStatus;
+  expiryDate?: string;
+  setupFee?: number;
+  totalFeesCharged?: number;
+  escrowVaId?: string;
+  createdAt?: string;
+}
+
+/** Mirrors EscrowService.EscrowStatsResponse. Money figures are converted to reportingCurrency. */
+export interface EscrowStats {
+  totalEscrows: number;
+  activeEscrows: number;
+  pendingRelease: number;
+  disputed: number;
+  totalValue: number;
+  escrowBalance: number;
+  releasedTotal: number;
+  reportingCurrency: string;
+  valueByCurrency: Record<string, number>;
+  excludedCurrencies: string[];
+}
+
+export const escrowApi = {
+  getAll: (corporateId?: string, status?: string) =>
+    apiClient.get<ApiResponse<EscrowContract[]>>('/escrow', { params: { corporateId, status } }).then(r => r.data),
+  getById: (id: string) => apiClient.get<ApiResponse<EscrowContract>>(`/escrow/${id}`).then(r => r.data),
+  create: (data: Record<string, unknown>) => apiClient.post<ApiResponse<EscrowContract>>('/escrow', data).then(r => r.data),
+  fund: (id: string, body: { amount: number; funderName?: string; sourceAccount?: string; reference?: string }) =>
+    apiClient.post<ApiResponse<any>>(`/escrow/${id}/fund`, body).then(r => r.data),
+  release: (id: string, body: { amount: number; releaseTo?: string; destinationAccount?: string; milestone?: string; approvedBy?: string; notes?: string }) =>
+    apiClient.post<ApiResponse<any>>(`/escrow/${id}/release`, body).then(r => r.data),
+  extend: (id: string, body: { newExpiryDate: string; reason?: string }) =>
+    apiClient.post<ApiResponse<any>>(`/escrow/${id}/extend`, body).then(r => r.data),
+  dispute: (id: string, reason: string, raisedBy: string) =>
+    apiClient.post<ApiResponse<EscrowContract>>(`/escrow/${id}/dispute`, { reason, raisedBy }).then(r => r.data),
+  getStats: (corporateId?: string) =>
+    apiClient.get<ApiResponse<EscrowStats>>('/escrow/stats', { params: { corporateId } }).then(r => r.data),
+  getTypes: () => apiClient.get<ApiResponse<{ code: string; name: string; description: string }[]>>('/escrow/types').then(r => r.data),
 };
 
 // ============================================================================
