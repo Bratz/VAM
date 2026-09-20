@@ -85,7 +85,7 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export interface PaginatedResponse<T> {
+interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
@@ -272,7 +272,7 @@ export interface VirtualAccount {
 }
 
 // Publish Status Info response
-export interface PublishStatusInfo {
+interface PublishStatusInfo {
   id: string;
   vaNumber: string;
   viban?: string;
@@ -287,12 +287,12 @@ export interface PublishStatusInfo {
 }
 
 // Publish/Unpublish request types
-export interface PublishVaRequest {
+interface PublishVaRequest {
   viban?: string;  // Optional - will be auto-generated if not provided
   publishedBy?: string;
 }
 
-export interface UnpublishVaRequest {
+interface UnpublishVaRequest {
   reason: string;
 }
 
@@ -405,7 +405,7 @@ export interface TransactionDetail extends Transaction {
   approvedBy?: string;
 }
 
-export interface RelatedTransaction {
+interface RelatedTransaction {
   id: string;
   referenceNumber: string;
   movementType: string;
@@ -414,7 +414,7 @@ export interface RelatedTransaction {
   vaName: string;
 }
 
-export interface AccountingEntry {
+interface AccountingEntry {
   id: string;
   transactionId: string;
   entryType: 'DEBIT' | 'CREDIT';
@@ -434,7 +434,7 @@ export interface AccountingEntry {
   status: string;
 }
 
-export interface TransactionListResponse {
+interface TransactionListResponse {
   content: Transaction[];
   page: number;
   pageSize: number;
@@ -540,7 +540,7 @@ export interface GroupedTransaction {
 /**
  * Accounting Entry Detail - Individual leg in a multi-leg transaction.
  */
-export interface AccountingEntryDetail {
+interface AccountingEntryDetail {
   legNumber: number;
   transactionId: string;
   referenceNumber: string;
@@ -571,7 +571,7 @@ export interface AccountingEntryDetail {
 /**
  * Grouped Transaction List Response - Paginated list.
  */
-export interface GroupedTransactionListResponse {
+interface GroupedTransactionListResponse {
   content: GroupedTransaction[];
   page: number;
   pageSize: number;
@@ -583,7 +583,7 @@ export interface GroupedTransactionListResponse {
 /**
  * Summary stats for grouped transactions.
  */
-export interface GroupedTransactionSummary {
+interface GroupedTransactionSummary {
   totalCredits: number;
   totalDebits: number;
   totalFees: number;
@@ -598,7 +598,7 @@ export interface GroupedTransactionSummary {
 /**
  * Parameters for grouped transaction queries.
  */
-export interface GroupedTransactionParams {
+interface GroupedTransactionParams {
   vaId?: string;
   corporateId?: string;
   direction?: 'INBOUND' | 'OUTBOUND' | 'ALL';
@@ -606,7 +606,7 @@ export interface GroupedTransactionParams {
   pageSize?: number;
 }
 
-export interface CreditRequest {
+interface CreditRequest {
   vaId: string;
   amount: number;
   valueDate?: string;
@@ -617,7 +617,7 @@ export interface CreditRequest {
   externalReference?: string;
 }
 
-export interface DebitRequest {
+interface DebitRequest {
   vaId: string;
   amount: number;
   valueDate?: string;
@@ -642,7 +642,7 @@ export interface BulkTransferRequest {
   description?: string;
 }
 
-export interface TransferItem {
+interface TransferItem {
   destinationVaId: string;
   amount: number;
   description?: string;
@@ -657,7 +657,7 @@ export interface BulkTransferResponse {
   results: TransferResult[];
 }
 
-export interface TransferResult {
+interface TransferResult {
   destinationVaId: string;
   success: boolean;
   transactionId?: string;
@@ -666,7 +666,7 @@ export interface TransferResult {
 }
 
 // Preview response types for showing fees before execution
-export interface FeeLineItem {
+interface FeeLineItem {
   chargeCode: string;
   chargeName: string;
   amount: number;
@@ -729,7 +729,7 @@ export interface PaymentPreviewResponse {
   validationMessage?: string;
 }
 
-export interface TransactionSearchParams {
+interface TransactionSearchParams {
   corporateId?: string;
   query?: string;
   movementType?: string;
@@ -1097,7 +1097,7 @@ export const statementsApi = {
 // SWEEPING (CASH CONCENTRATION) API
 // ============================================================================
 
-export interface SweepRuleSourceAccount {
+interface SweepRuleSourceAccount {
   id: string;
   accountId: string;
   accountNumber: string;
@@ -1257,7 +1257,7 @@ export interface CalculateInterestResponse {
   memberAllocations: MemberInterestAllocation[];
 }
 
-export interface MemberInterestAllocation {
+interface MemberInterestAllocation {
   memberId: string;
   entityCode: string;
   balance: number;
@@ -1283,7 +1283,7 @@ export interface AddMemberRequest {
   entityName: string;
 }
 
-export interface BulkAddMembersSkip {
+interface BulkAddMembersSkip {
   accountId: string;
   reason: string;
 }
@@ -1310,7 +1310,7 @@ export const poolingApi = {
 // NETTING API
 // ============================================================================
 
-export interface NettingEntryResponse {
+interface NettingEntryResponse {
   id: string;
   entryReference: string;
   flowDirection: 'PAYABLE' | 'RECEIVABLE';
@@ -1339,7 +1339,7 @@ export interface NettingEntryResponse {
   createdAt?: string;
 }
 
-export interface NettingSettlementResponse {
+interface NettingSettlementResponse {
   id: string;
   entityId: string;
   entityCode: string;
@@ -1386,7 +1386,7 @@ export interface NettingCycle {
   settlements?: NettingSettlementResponse[];
 }
 
-export interface PopulateCycleResponse {
+interface PopulateCycleResponse {
   cycleId: string;
   cycleReference: string;
   payablesAdded: number;
@@ -1464,7 +1464,7 @@ export const walletsApi = {
 // ESCROW API
 // ============================================================================
 
-export const escrowApi = {
+const escrowApi = {
   getAll: (page = 0, size = 20, status?: string) => 
     apiClient.get<ApiResponse<any[]>>('/escrow', { params: { page, size, status } }).then(r => r.data),
   getById: (id: string) => apiClient.get<ApiResponse<any>>(`/escrow/${id}`).then(r => r.data),
@@ -1548,14 +1548,14 @@ export type NettingStatusReceivable = 'NOT_INCLUDED' | 'PENDING' | 'INCLUDED' | 
 export type ReceivableStatusPhase3 = 'OPEN' | 'PENDING_COBO' | 'COBO_APPROVED' | 'COBO_REJECTED' | 'PENDING_NETTING' | 'NETTED' | 'PARTIAL' | 'PAID' | 'CANCELLED' | 'WRITTEN_OFF';
 
 // Entity Context
-export interface EntityContext {
+interface EntityContext {
   entityId: string;
   entityCode: string;
   entityName: string;
 }
 
 // Phase 3 Receivable
-export interface ReceivablePhase3 {
+interface ReceivablePhase3 {
   id: string;
   receivableNumber: string;
   invoiceNumber?: string;
@@ -1627,7 +1627,7 @@ export interface ReceivablePhase3 {
 }
 
 // Search & List
-export interface ReceivableSearchParamsPhase3 {
+interface ReceivableSearchParamsPhase3 {
   corporateId?: string;
   page?: number;
   size?: number;
@@ -1650,7 +1650,7 @@ export interface ReceivableSearchParamsPhase3 {
   searchTerm?: string;
 }
 
-export interface ReceivableListResponsePhase3 {
+interface ReceivableListResponsePhase3 {
   content: ReceivablePhase3[];
   totalElements: number;
   totalPages: number;
@@ -1659,21 +1659,14 @@ export interface ReceivableListResponsePhase3 {
 }
 
 // COBO Types
-export interface CoboSubmitRequest {
+interface CoboSubmitRequest {
   receivableId: string;
   collectorEntityId: string;
   requestedBy: string;
   notes?: string;
 }
 
-export interface CoboApprovalRequest {
-  receivableId: string;
-  actionedBy: string;
-  approved: boolean;
-  notes?: string;
-}
-
-export interface CoboExecuteRequest {
+interface CoboExecuteRequest {
   receivableId: string;
   // Treasury's collecting VA -- omit to let the backend resolve it from the
   // receivable's already-approved COBO collector entity.
@@ -1684,7 +1677,7 @@ export interface CoboExecuteRequest {
   notes?: string;
 }
 
-export interface CoboPreviewResponse {
+interface CoboPreviewResponse {
   receivableId: string;
   receivableNumber: string;
   grossAmount: number;
@@ -1696,7 +1689,7 @@ export interface CoboPreviewResponse {
   owningEntity: EntityContext;
 }
 
-export interface CoboStatsResponse {
+interface CoboStatsResponse {
   pendingApprovalCount: number;
   pendingApprovalAmount: number;
   approvedCount: number;
@@ -1708,7 +1701,7 @@ export interface CoboStatsResponse {
 }
 
 // Intercompany Types
-export interface CreateIntercompanyReceivableRequest {
+interface CreateIntercompanyReceivableRequest {
   corporateId: string;
   owningEntityId: string;
   intercompanyEntityId: string;
@@ -1721,7 +1714,7 @@ export interface CreateIntercompanyReceivableRequest {
   createdBy: string;
 }
 
-export interface IntercompanyBalanceSummary {
+interface IntercompanyBalanceSummary {
   owningEntityId: string;
   owningEntityCode: string;
   owningEntityName: string;
@@ -1737,13 +1730,13 @@ export interface IntercompanyBalanceSummary {
 }
 
 // Netting Types
-export interface NettingAddRequest {
+interface NettingAddRequest {
   receivableId: string;
   nettingCycleId: string;
   addedBy: string;
 }
 
-export interface NettingAddResponse {
+interface NettingAddResponse {
   receivableId: string;
   nettingCycleId: string;
   nettingEntryId: string;
@@ -1751,7 +1744,7 @@ export interface NettingAddResponse {
   message?: string;
 }
 
-export interface NettingEligibleReceivable {
+interface NettingEligibleReceivable {
   receivable: ReceivablePhase3;
   intercompanyEntityId: string;
   intercompanyEntityCode: string;
@@ -1760,7 +1753,7 @@ export interface NettingEligibleReceivable {
   potentialNetAmount?: number;
 }
 
-export interface NettingSummaryResponse {
+interface NettingSummaryResponse {
   corporateId: string;
   eligibleCount: number;
   eligibleAmount: number;
@@ -1772,7 +1765,7 @@ export interface NettingSummaryResponse {
 }
 
 // Phase 3 Stats
-export interface ReceivableStatsPhase3 {
+interface ReceivableStatsPhase3 {
   // Basic
   totalReceivables: number;
   openCount: number;
@@ -2044,7 +2037,7 @@ export const receivablesApiPhase3 = {
 // ============================================================================
 
 // Types
-export interface PayablesStats {
+interface PayablesStats {
   totalPayables: number;
   pendingApproval: number;
   scheduledPayments: number;
@@ -2091,7 +2084,7 @@ export interface Payable {
   createdAt: string;
 }
 
-export interface PaymentBatch {
+interface PaymentBatch {
   id: string;
   batchReference: string;
   createdDate: string;
@@ -2109,7 +2102,7 @@ export interface PaymentBatch {
   items?: BatchPaymentItem[];
 }
 
-export interface BatchPaymentItem {
+interface BatchPaymentItem {
   payableId: string;
   invoiceNumber: string;
   vendorName: string;
@@ -2119,7 +2112,7 @@ export interface BatchPaymentItem {
   errorMessage?: string;
 }
 
-export interface ScheduledPayment {
+interface ScheduledPayment {
   id: string;
   paymentReference: string;
   vendorName: string;
@@ -2135,7 +2128,7 @@ export interface ScheduledPayment {
   failureReason?: string;
 }
 
-export interface VendorPayableSummary {
+interface VendorPayableSummary {
   vendorId: string;
   vendorName: string;
   vendorCode: string;
@@ -2147,14 +2140,14 @@ export interface VendorPayableSummary {
   lastPaymentAmount?: number;
 }
 
-export interface PayablesAging {
+interface PayablesAging {
   buckets: AgingBucket[];
   totalPayables: number;
   totalInvoices: number;
   asOfDate: string;
 }
 
-export interface AgingBucket {
+interface AgingBucket {
   bucket: string;
   amount: number;
   invoiceCount: number;
@@ -2398,7 +2391,7 @@ export interface PayableListResponse {
   hasPrevious: boolean;
 }
 
-export interface PayableSearchParams {
+interface PayableSearchParams {
   corporateId?: string;
   programId?: string;
   owningEntityId?: string;
@@ -2466,7 +2459,7 @@ export interface CreatePayableRequest {
 }
 
 // POBO Types
-export interface PoboRequestRequest {
+interface PoboRequestRequest {
   payableIds: string[];
   payingEntityId: string;
   payingEntityCode?: string;
@@ -2475,7 +2468,7 @@ export interface PoboRequestRequest {
   createBatch?: boolean;
 }
 
-export interface PoboRequestResponse {
+interface PoboRequestResponse {
   payableId: string;
   payableNumber: string;
   poboRequestStatus: string;
@@ -2484,7 +2477,7 @@ export interface PoboRequestResponse {
   message: string;
 }
 
-export interface PoboBatchRequestResponse {
+interface PoboBatchRequestResponse {
   results: PoboRequestResponse[];
   successCount: number;
   failedCount: number;
@@ -2492,7 +2485,7 @@ export interface PoboBatchRequestResponse {
   currencyCode: string;
 }
 
-export interface PoboApprovalRequest {
+interface PoboApprovalRequest {
   payableId: string;
   approved: boolean;
   actionedBy: string;
@@ -2500,20 +2493,20 @@ export interface PoboApprovalRequest {
   notes?: string;
 }
 
-export interface PoboBatchApprovalRequest {
+interface PoboBatchApprovalRequest {
   payableIds: string[];
   approved: boolean;
   actionedBy: string;
   rejectionReason?: string;
 }
 
-export interface PoboPreviewRequest {
+interface PoboPreviewRequest {
   payableIds: string[];
   payingEntityId: string;
   behalfEntityId?: string;
 }
 
-export interface PoboChargeBreakdown {
+interface PoboChargeBreakdown {
   chargeCode: string;
   chargeName: string;
   chargeType: string;
@@ -2522,7 +2515,7 @@ export interface PoboChargeBreakdown {
   waiverReason?: string;
 }
 
-export interface PoboIhbLoanPreview {
+interface PoboIhbLoanPreview {
   principalAmount: number;
   interestRate: number;
   estimatedDailyInterest: number;
@@ -2564,7 +2557,7 @@ export interface PoboPreviewResponse {
   validationMessage?: string;
 }
 
-export interface PoboExecuteRequest {
+interface PoboExecuteRequest {
   payableIds: string[];
   payingEntityId: string;
   executedBy: string;
@@ -2573,7 +2566,7 @@ export interface PoboExecuteRequest {
   notes?: string;
 }
 
-export interface PoboExecutionResult {
+interface PoboExecutionResult {
   payableId: string;
   payableNumber: string;
   transactionRef: string;
@@ -2582,7 +2575,7 @@ export interface PoboExecutionResult {
   errorMessage?: string;
 }
 
-export interface PoboExecuteResponse {
+interface PoboExecuteResponse {
   batchTransactionRef: string;
   results: PoboExecutionResult[];
   successCount: number;
@@ -2595,7 +2588,7 @@ export interface PoboExecuteResponse {
 }
 
 // Intercompany Types
-export interface CreateIntercompanyPayableRequest {
+interface CreateIntercompanyPayableRequest {
   corporateId: string;
   owningEntityId: string;
   owningEntityCode?: string;
@@ -2616,7 +2609,7 @@ export interface CreateIntercompanyPayableRequest {
   createdBy?: string;
 }
 
-export interface IntercompanyPayableResponse {
+interface IntercompanyPayableResponse {
   id: string;
   payableNumber: string;
   owningEntityId: string;
@@ -2639,7 +2632,7 @@ export interface IntercompanyPayableResponse {
   createdAt: string;
 }
 
-export interface IntercompanyPositionResponse {
+interface IntercompanyPositionResponse {
   entityId: string;
   entityCode: string;
   entityName: string;
@@ -2657,13 +2650,13 @@ export interface IntercompanyPositionResponse {
 }
 
 // Netting Types
-export interface AddToNettingRequest {
+interface AddToNettingRequest {
   payableIds: string[];
   nettingCycleId: string;
   addedBy: string;
 }
 
-export interface NettingAddResult {
+interface NettingAddResult {
   payableId: string;
   payableNumber: string;
   nettingEntryId?: string;
@@ -2671,7 +2664,7 @@ export interface NettingAddResult {
   errorMessage?: string;
 }
 
-export interface AddToNettingResponse {
+interface AddToNettingResponse {
   nettingCycleId: string;
   nettingCycleRef: string;
   results: NettingAddResult[];
@@ -2680,7 +2673,7 @@ export interface AddToNettingResponse {
   totalAmountAdded: number;
 }
 
-export interface NettingEligiblePayablesResponse {
+interface NettingEligiblePayablesResponse {
   payables: PayablePhase2[];
   totalAmount: number;
   currencyCode: string;
@@ -2689,7 +2682,7 @@ export interface NettingEligiblePayablesResponse {
   byCounterparty: Record<string, number>;
 }
 
-export interface PayableBatchOperationResponse {
+interface PayableBatchOperationResponse {
   successIds: string[];
   errors: { payableId: string; payableNumber?: string; errorCode: string; errorMessage: string }[];
   successCount: number;
@@ -3044,7 +3037,7 @@ export interface VibanStats {
   totalAmountRouted: number;
 }
 
-export interface VibanAssignRequest {
+interface VibanAssignRequest {
   virtualAccountId: string;
   partyId?: string;           // Party Master reference (preferred over customerName)
   referenceType?: string;
@@ -3075,11 +3068,11 @@ export interface BulkVibanAssignItem {
   isPrimary?: boolean;
 }
 
-export interface BulkVibanAssignRequest {
+interface BulkVibanAssignRequest {
   assignments: BulkVibanAssignItem[];
 }
 
-export interface BulkVibanAssignError {
+interface BulkVibanAssignError {
   virtualAccountId: string;
   error: string;
 }
@@ -3092,7 +3085,7 @@ export interface BulkVibanAssignResponse {
   failed: BulkVibanAssignError[];
 }
 
-export interface InvoiceVibanRequest {
+interface InvoiceVibanRequest {
   invoiceId?: string;
   virtualAccountId?: string;
   partyId: string;
@@ -3103,7 +3096,7 @@ export interface InvoiceVibanRequest {
   paymentTerms?: string;
 }
 
-export interface InvoiceVibanResponse {
+interface InvoiceVibanResponse {
   invoiceId?: string;
   invoiceNumber: string;
   vibanId: string;
@@ -3196,7 +3189,7 @@ export const syncAdminApi = {
 // BALANCE STRUCTURE API (Treasury Hierarchy with full features)
 // ============================================================================
 
-export type BalanceNodeType = 'GROUP' | 'REGION' | 'ENTITY' | 'VIRTUAL_ACCOUNT' | 'SHADOW_ACCOUNT';
+type BalanceNodeType = 'GROUP' | 'REGION' | 'ENTITY' | 'VIRTUAL_ACCOUNT' | 'SHADOW_ACCOUNT';
 
 // Dashboard "Position breakdown" — flat FX-converted totals, by corporate or by program
 export interface BalanceBreakdownItem {
@@ -3323,7 +3316,7 @@ export interface BalanceNodeDetail {
   externalReference?: string;
 }
 
-export interface UpdateParticipationRequest {
+interface UpdateParticipationRequest {
   participatesInPooling?: boolean;
   poolReference?: string;
   participatesInNetting?: boolean;
@@ -3333,7 +3326,7 @@ export interface UpdateParticipationRequest {
   sweepTarget?: string;
 }
 
-export interface CurrencyInfo {
+interface CurrencyInfo {
   code: string;
   name: string;
   symbol: string;
@@ -3535,7 +3528,7 @@ export interface ChargeConfiguration {
 }
 
 // Mirrors backend TaxChargeDto.CalculateTaxResponse.
-export interface TaxCalculationResult {
+interface TaxCalculationResult {
   calculationId?: string;
   taxCode: string;
   taxName: string;
@@ -3550,7 +3543,7 @@ export interface TaxCalculationResult {
 }
 
 // Mirrors backend TaxChargeDto.ChargeLineItem.
-export interface ChargeLineItem {
+interface ChargeLineItem {
   calculationId?: string;
   chargeCode: string;
   chargeName: string;
@@ -3562,7 +3555,7 @@ export interface ChargeLineItem {
 }
 
 // Mirrors backend TaxChargeDto.CalculateChargesResponse.
-export interface ChargeCalculationResult {
+interface ChargeCalculationResult {
   referenceId?: string;
   baseAmount: number;
   charges: ChargeLineItem[];
@@ -3609,11 +3602,6 @@ export const taxChargeApi = {
 
 // ============================================================================
 // INTERCOMPANY API
-// ============================================================================
-
-export type TransactionType = 'POBO' | 'POBO_PAYMENT' | 'COBO' | 'COBO_COLLECTION' | 'SETTLEMENT' | 'INTEREST' | 'ADJUSTMENT' | 'IC_RECEIVABLE' | 'IC_PAYABLE';
-export type IntercompanyStatus = 'PENDING' | 'ACTIVE' | 'PROCESSED' | 'COMPLETED' | 'SETTLED' | 'REVERSED' | 'FAILED';
-
 export interface IntercompanyEntity {
   id: string;
   entityCode: string;
@@ -3636,7 +3624,7 @@ export interface IntercompanyEntity {
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 }
 
-export interface EntityValidationResponse {
+interface EntityValidationResponse {
   valid: boolean;
   reason?: string;
   availableLimit: number;
@@ -3647,19 +3635,6 @@ export interface EntityValidationResponse {
 }
 
 // Note: PoboPreviewResponse is defined earlier in this file (around line 2368)
-// with PoboChargeBreakdown type. This is an alias for backward compatibility.
-export type PoboPreviewResponseLegacy = {
-  payingEntity: { id: string; name: string; code: string };
-  behalfEntity: { id: string; name: string; code: string };
-  paymentAmount: number;
-  currencyCode: string;
-  charges: PoboChargeBreakdown[];
-  totalCharges: number;
-  netAmount: number;
-  ihbLoanPreview: PoboIhbLoanPreview;
-  warnings: string[];
-};
-
 // NOTE: IntercompanyTransaction interface is defined later in this file (around line 7217)
 // with the complete set of fields. Do not duplicate here.
 
@@ -3707,8 +3682,8 @@ export type PartyRole = 'CUSTOMER' | 'VENDOR' | 'EMPLOYEE' | 'GOVERNMENT' | 'FIN
 export type PartyType = 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'FINANCIAL_INSTITUTION';
 export type KycStatus = 'PENDING' | 'IN_PROGRESS' | 'VERIFIED' | 'EXPIRED' | 'REJECTED' | 'EXEMPTED';
 export type RiskRating = 'LOW' | 'MEDIUM' | 'HIGH' | 'PROHIBITED';
-export type SanctionsStatus = 'CLEAR' | 'POTENTIAL_MATCH' | 'FALSE_POSITIVE' | 'CONFIRMED_MATCH';
-export type PartyStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED' | 'INACTIVE';
+type SanctionsStatus = 'CLEAR' | 'POTENTIAL_MATCH' | 'FALSE_POSITIVE' | 'CONFIRMED_MATCH';
+type PartyStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED' | 'INACTIVE';
 export type IcSettlementMethod = 'NETTING' | 'DIRECT_TRANSFER' | 'IHB' | 'MANUAL';
 
 export interface Party {
@@ -3787,7 +3762,7 @@ export interface PartyBankAccount {
   poboEnabled?: boolean;
 }
 
-export interface PartyDocument {
+interface PartyDocument {
   id: string;
   documentType: string;
   category: string;
@@ -3827,7 +3802,7 @@ export interface PartyListResponse {
   stats: PartyStats;
 }
 
-export interface PartyDetailResponse {
+interface PartyDetailResponse {
   party: Party;
   bankAccounts: PartyBankAccount[];
   documents: PartyDocument[];
@@ -3854,21 +3829,21 @@ export interface PartySearchRequest {
   nettingEligibleOnly?: boolean;
 }
 
-export interface UpdatePoboEligibilityRequest {
+interface UpdatePoboEligibilityRequest {
   poboEligible: boolean;
   defaultPayerEntityId?: string;
   defaultPayerEntityCode?: string;
   approvalNotes?: string;
 }
 
-export interface ValidatePoboRequest {
+interface ValidatePoboRequest {
   partyId: string;
   payingEntityId?: string;
   amount?: number;
   currencyCode?: string;
 }
 
-export interface ValidatePoboResponse {
+interface ValidatePoboResponse {
   isValid: boolean;
   reason: string;
   partyStatus?: string;
@@ -3878,7 +3853,7 @@ export interface ValidatePoboResponse {
   warnings?: string[];
 }
 
-export interface UpdateIntercompanyConfigRequest {
+interface UpdateIntercompanyConfigRequest {
   isIntercompany: boolean;
   linkedLegalEntityId?: string;
   linkedLegalEntityCode?: string;
@@ -3886,13 +3861,13 @@ export interface UpdateIntercompanyConfigRequest {
   icSettlementMethod?: IcSettlementMethod;
 }
 
-export interface UpdateIcCreditLimitRequest {
+interface UpdateIcCreditLimitRequest {
   creditLimit: number;
   currency: string;
   approvalNotes?: string;
 }
 
-export interface CreateIntercompanyPartyRequest {
+interface CreateIntercompanyPartyRequest {
   owningEntityId: string;
   owningEntityCode: string;
   linkedLegalEntityId: string;
@@ -3902,26 +3877,6 @@ export interface CreateIntercompanyPartyRequest {
   icSettlementMethod?: IcSettlementMethod;
   icCreditLimit?: number;
   icCurrency?: string;
-}
-
-// Legacy interface for backward compatibility
-export interface PartySearchResult {
-  id: string;
-  partyCode: string;
-  partyName: string;
-  partyType: string;
-  role: string;
-  taxNumber?: string;
-  status: string;
-  bankAccounts?: Array<{
-    id: string;
-    bankName: string;
-    accountNumber: string;
-    iban?: string;
-    swiftCode?: string;
-    currencyCode: string;
-    isPrimary: boolean;
-  }>;
 }
 
 // ============================================================================
@@ -4247,7 +4202,7 @@ export const hierarchyApi = {
 // POBO API (Direct POBO Controller endpoints)
 // ============================================================================
 
-export interface PoboAuthorization {
+interface PoboAuthorization {
   id: string;
   authorizationCode: string;
   payerEntityId: string;
@@ -4267,28 +4222,7 @@ export interface PoboAuthorization {
   effectiveTo?: string;
 }
 
-export interface IntercompanyRecharge {
-  id: string;
-  rechargeReference: string;
-  payerEntityId: string;
-  payerEntityCode: string;
-  payerEntityName: string;
-  behalfEntityId: string;
-  behalfEntityCode: string;
-  behalfEntityName: string;
-  totalRecharge: number;
-  currencyCode: string;
-  status: 'PENDING' | 'APPROVED' | 'RECHARGED' | 'SETTLED' | 'DISPUTED' | 'CANCELLED';
-  settlementMethod?: 'IHB_LOAN' | 'NETTING' | 'DIRECT_PAYMENT' | 'OFFSET';
-  settlementReference?: string;
-  settlementDate?: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  rejectionReason?: string;
-  createdAt: string;
-}
-
-export const poboApi = {
+const poboApi = {
   getAuthorizations: () =>
     apiClient.get<ApiResponse<PoboAuthorization[]>>('/pobo/authorizations').then(r => r.data),
   getAuthorization: (id: string) =>
@@ -4338,26 +4272,26 @@ export interface SettlementVa {
   updatedAt?: string;
 }
 
-export interface SettlementVaSummary {
+interface SettlementVaSummary {
   totalSettlementVas: number;
   totalExceptionVas: number;
   totalSettlementBalance: number;
   totalExceptionBalance: number;
 }
 
-export interface SettlementVaListResponse {
+interface SettlementVaListResponse {
   settlementVas: SettlementVa[];
   exceptionVas: SettlementVa[];
   summary: SettlementVaSummary;
 }
 
-export interface SettlementVaDetailResponse {
+interface SettlementVaDetailResponse {
   va: SettlementVa;
   recentTransactions: SettlementVaTransaction[];
   coveredVas?: CoveredVa[];
 }
 
-export interface SettlementVaTransaction {
+interface SettlementVaTransaction {
   id: string;
   referenceNumber: string;
   movementType: string;
@@ -4370,14 +4304,14 @@ export interface SettlementVaTransaction {
   transactionDate: string;
 }
 
-export interface CoveredVa {
+interface CoveredVa {
   vaId: string;
   vaNumber: string;
   vaName: string;
   hierarchyPath?: string;
 }
 
-export interface CreateSettlementVaRequest {
+interface CreateSettlementVaRequest {
   programId: string;
   parentNodeId: string;
   currency: string;
@@ -4390,11 +4324,11 @@ export interface InitializeHierarchyRequest {
   currencies?: string[];
 }
 
-export interface ResolveSettlementVaRequest {
+interface ResolveSettlementVaRequest {
   sourceVaId: string;
 }
 
-export interface ResolveSettlementVaResponse {
+interface ResolveSettlementVaResponse {
   settlementVa: SettlementVa;
   resolutionPath: string;
   isExceptionFallback: boolean;
@@ -4496,7 +4430,7 @@ export interface ExceptionFilters {
   size?: number;
 }
 
-export interface ExceptionListResponse {
+interface ExceptionListResponse {
   exceptions: ExceptionTransaction[]; // real backend field name — was mistyped as `content` (Spring Page shape) here, never caught because no page called this endpoint until now
   totalElements: number;
   totalPages: number;
@@ -4504,7 +4438,7 @@ export interface ExceptionListResponse {
   size: number;
 }
 
-export interface InvestigateExceptionRequest {
+interface InvestigateExceptionRequest {
   notes: string;
   investigatedBy?: string;
 }
@@ -4515,12 +4449,12 @@ export interface AllocateExceptionRequest {
   allocatedBy?: string;
 }
 
-export interface ReverseExceptionRequest {
+interface ReverseExceptionRequest {
   reason: string;
   reversedBy?: string;
 }
 
-export interface WriteOffExceptionRequest {
+interface WriteOffExceptionRequest {
   reason: string;
   approvedBy: string;
   comments?: string;
@@ -4537,7 +4471,7 @@ export interface ExceptionTimelineEntry {
 // SETTLEMENT VA API
 // ============================================================================
 
-export const settlementVaApi = {
+const settlementVaApi = {
   /**
    * Get all Settlement and Exception VAs for a program
    */
@@ -4914,7 +4848,7 @@ export interface ShadowAccount {
   updatedAt?: string;
 }
 
-export interface ShadowSyncResult {
+interface ShadowSyncResult {
   shadowVaId: string;
   vaNumber: string;
   previousBalance: number;
@@ -5121,7 +5055,7 @@ export interface LegalEntity {
 // UPDATED STATISTICS INTERFACE
 // ============================================================================
 
-export interface LegalEntityStatistics {
+interface LegalEntityStatistics {
   totalEntities: number;
   activeEntities: number;
   bankCustomers: number;        // Count of entities with isBankCustomer=true
@@ -5283,7 +5217,7 @@ export interface AccountAttachmentStatistics {
   expiringIn30Days: number;
 }
 
-export interface AuthorizationCheckResult {
+interface AuthorizationCheckResult {
   authorized: boolean;
   authorizationType?: string;
   maxAllowed?: number;
@@ -5635,7 +5569,7 @@ export interface CreditLimit {
   updatedAt?: string;
 }
 
-export interface CreditLimitTotals {
+interface CreditLimitTotals {
   corporateId: string;
   externalLimitTotal: number;
   externalUtilizedTotal: number;
@@ -5684,7 +5618,7 @@ export interface FundsCheckResult {
   levelsChecked: number;
 }
 
-export interface FundsBatchCheckResult {
+interface FundsBatchCheckResult {
   totalChecks: number;
   approved: number;
   rejected: number;
@@ -5829,7 +5763,7 @@ export interface CreditAgreement {
   updatedAt?: string;
 }
 
-export interface CreditAgreementCreateRequest {
+interface CreditAgreementCreateRequest {
   corporateId: string;
   agreementName: string;
   agreementType: AgreementType;
@@ -5844,16 +5778,6 @@ export interface CreditAgreementCreateRequest {
   interestRateType?: 'FIXED' | 'FLOATING';
   baseRateType?: string;
   spreadBps?: number;
-}
-
-export interface AgreementSummary {
-  corporateId: string;
-  totalAgreements: number;
-  activeAgreements: number;
-  totalLimit: number;
-  totalUtilized: number;
-  totalAvailable: number;
-  utilizationPercent: number;
 }
 
 // ============================================================================
@@ -5943,7 +5867,7 @@ export type FacilityType =
   | 'LETTER_OF_CREDIT' | 'BANK_GUARANTEE' | 'WORKING_CAPITAL' | 'INVOICE_FINANCING' 
   | 'SUPPLY_CHAIN_FINANCE' | 'ASSET_BASED' | 'CASH_POOLING' | 'NOTIONAL_POOLING' | 'OTHER';
 
-export type FacilityStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CLOSED';
+type FacilityStatus = 'DRAFT' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CLOSED';
 
 
 export interface CreditFacility {
@@ -5975,7 +5899,7 @@ export interface CreditFacility {
   updatedAt?: string;
 }
 
-export interface CreditFacilityCreateRequest {
+interface CreditFacilityCreateRequest {
   creditAgreementId?: string;
   corporateId: string;
   facilityName: string;
@@ -5990,17 +5914,6 @@ export interface CreditFacilityCreateRequest {
   baseRateType?: string;
   baseRateValue?: number;
   spreadPercent?: number;
-}
-
-export interface FacilitySummary {
-  corporateId: string;
-  totalFacilities: number;
-  activeFacilities: number;
-  totalLimit: number;
-  totalOutstanding: number;
-  totalAvailable: number;
-  utilizationPercent: number;
-  byType: Record<FacilityType, { count: number; limit: number; outstanding: number }>;
 }
 
 // ============================================================================
@@ -6102,7 +6015,7 @@ export type TargetType = 'VIRTUAL_ACCOUNT' | 'LEGAL_ENTITY' | 'AGGREGATION_NODE'
 export type LimitStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED' | 'BREACHED';
 
 // External Limit Response (Bank-Provided, READ-ONLY)
-export interface ExternalLimitResponse {
+interface ExternalLimitResponse {
   id: string;
   limitName: string;
   facilityId?: string;
@@ -6124,7 +6037,7 @@ export interface ExternalLimitResponse {
 }
 
 // Facility Response (External facilities for entity)
-export interface FacilityResponse {
+interface FacilityResponse {
   id: string;
   facilityName: string;
   facilityType: string;
@@ -6185,7 +6098,7 @@ export interface InternalLimitResponse {
 }
 
 // Ceiling Response
-export interface CeilingResponse {
+interface CeilingResponse {
   entityId: string;
   currency?: string;
   externalCeiling?: number;
@@ -6193,7 +6106,7 @@ export interface CeilingResponse {
 }
 
 // Limit Check Result
-export interface LimitCheckResult {
+interface LimitCheckResult {
   entityId: string;
   requestedAmount: number;
   currency?: string;
@@ -6214,7 +6127,7 @@ export interface LimitCheckResult {
 }
 
 // Limit Totals (Dashboard)
-export interface LimitTotals {
+interface LimitTotals {
   corporateId: string;
   externalLimitTotal: number;
   externalUtilizedTotal: number;
@@ -6227,7 +6140,7 @@ export interface LimitTotals {
 }
 
 // Request DTOs
-export interface CreateGroupLimitRequest {
+interface CreateGroupLimitRequest {
   corporateId: string;
   limitName?: string;
   amount: number;
@@ -6236,7 +6149,7 @@ export interface CreateGroupLimitRequest {
   hardLimit?: boolean;
 }
 
-export interface CreateEntitySubLimitRequest {
+interface CreateEntitySubLimitRequest {
   corporateId: string;
   entityId: string;
   limitName?: string;
@@ -6248,15 +6161,10 @@ export interface CreateEntitySubLimitRequest {
   approvalThreshold?: number;
 }
 
-export interface UpdateControlsRequest {
+interface UpdateControlsRequest {
   hardLimit?: boolean;
   requiresApproval?: boolean;
   approvalThreshold?: number;
-}
-
-export interface UpdateThresholdsRequest {
-  warningPercent?: number;
-  criticalPercent?: number;
 }
 
 // ============================================================================
@@ -6644,7 +6552,7 @@ export interface CreateAggregationRequest {
   color?: string;
 }
 
-export interface CreateAggregationResponse {
+interface CreateAggregationResponse {
   success: boolean;
   nodeId?: string;
   vaId?: string;
@@ -6841,7 +6749,7 @@ export interface CreateAggregationRequest {
   color?: string;
 }
 
-export interface CreateAggregationResponse {
+interface CreateAggregationResponse {
   success: boolean;
   nodeId?: string;
   vaId?: string;
@@ -6945,7 +6853,7 @@ export interface CreateAggregationResponse {
 
 // Add these types after existing IHB types (around line 665)
 
-export interface IhbEntityUnified {
+interface IhbEntityUnified {
   id: string;
   entityCode: string;
   entityName: string;
@@ -6969,7 +6877,7 @@ export interface IhbEntityUnified {
   limitBreached: boolean;
 }
 
-export interface IhbStatsUnified {
+interface IhbStatsUnified {
   totalIhbEntities: number;
   activeLoans: number;
   activeDeposits: number;
@@ -6981,7 +6889,7 @@ export interface IhbStatsUnified {
   netInterestIncome: number;
 }
 
-export interface EnableIhbRequest {
+interface EnableIhbRequest {
   creditLimit: number;
   ihbCurrency: string;
   canLend?: boolean;
@@ -6992,24 +6900,6 @@ export interface EnableIhbRequest {
   autoSweepEnabled?: boolean;
   sweepFrequency?: string;
   ihbInterestConfigId?: string;
-}
-
-export interface CreateLoanUnifiedRequest {
-  lenderEntityId: string;
-  borrowerEntityId: string;
-  principalAmount: number;
-  currency: string;
-  maturityDate?: string;
-  notes?: string;
-}
-
-export interface CreateDepositUnifiedRequest {
-  depositorEntityId: string;
-  treasuryEntityId?: string;
-  principalAmount: number;
-  currency: string;
-  maturityDate?: string;
-  notes?: string;
 }
 
 export interface CalculateInterestResponse {
@@ -7250,7 +7140,7 @@ export interface NettingPosition {
   currency: string;
 }
 
-export interface NettingCycleDetail extends NettingCycle {
+interface NettingCycleDetail extends NettingCycle {
   entries: NettingEntry[];
   positions: NettingPosition[];
   settlementInstructions?: SettlementInstruction[];
@@ -7271,7 +7161,7 @@ export interface SettlementInstruction {
   executedAt?: string;
 }
 
-export interface NettingStats {
+interface NettingStats {
   totalCycles: number;
   openCycles: number;
   pendingApproval: number;
@@ -7284,7 +7174,7 @@ export interface NettingStats {
   activeParticipants: number;
 }
 
-export interface CreateNettingEntryRequest {
+interface CreateNettingEntryRequest {
   cycleId: string;
   flowDirection: 'PAYABLE' | 'RECEIVABLE';
   payerEntityId: string;
@@ -7352,7 +7242,7 @@ export interface SubsidiaryIntercompanyPosition {
   netPosition: number;
 }
 
-export interface BilateralPosition {
+interface BilateralPosition {
   entity1Id: string;
   entity1Code: string;
   entity1Name: string;
@@ -7370,7 +7260,7 @@ export interface BilateralPosition {
   asOfDate: string;
 }
 
-export interface NettingEligibility {
+interface NettingEligibility {
   entity1Id: string;
   entity2Id: string;
   isEligible: boolean;
@@ -7424,7 +7314,7 @@ export interface PoboPreview {
   }>;
 }
 
-export interface PoboRequest {
+interface PoboRequest {
   payingEntityId: string;
   behalfEntityId: string;
   amount: number;
@@ -7434,7 +7324,7 @@ export interface PoboRequest {
   createIhbLoan?: boolean;
 }
 
-export interface PoboResult {
+interface PoboResult {
   transactionRef: string;
   status: string;
   message: string;
@@ -7477,7 +7367,7 @@ export interface CoboResult {
   createdAt: string;
 }
 
-export interface BilateralSettlementRequest {
+interface BilateralSettlementRequest {
   entity1Id: string;
   entity2Id: string;
   settlementMethod?: string;
@@ -7485,7 +7375,7 @@ export interface BilateralSettlementRequest {
   notes?: string;
 }
 
-export interface BilateralSettlementResult {
+interface BilateralSettlementResult {
   settlementRef: string;
   entity1Id: string;
   entity2Id: string;
@@ -7499,7 +7389,7 @@ export interface BilateralSettlementResult {
   settledBy: string;
 }
 
-export interface IntercompanyPositionSummary {
+interface IntercompanyPositionSummary {
   corporateId: string;
   totalEntities: number;
   totalOutstandingPayables: number;
@@ -7511,7 +7401,7 @@ export interface IntercompanyPositionSummary {
   asOfDate: string;
 }
 
-export interface EntityIntercompanyReport {
+interface EntityIntercompanyReport {
   entityId: string;
   entityCode: string;
   entityName: string;
@@ -7531,7 +7421,7 @@ export interface EntityIntercompanyReport {
 // PHASE 7: ENHANCED NETTING API
 // ============================================================================
 
-export const nettingApiEnhanced = {
+const nettingApiEnhanced = {
   // Existing methods
   ...nettingApi,
 
@@ -7748,7 +7638,7 @@ export default {
 // ISO 20022 PAYMENT PROCESSING API
 // ============================================================================
 
-export interface Iso20022InwardPaymentRequest {
+interface Iso20022InwardPaymentRequest {
   messageId?: string;
   instructionId?: string;
   endToEndId?: string;
@@ -7764,7 +7654,7 @@ export interface Iso20022InwardPaymentRequest {
   channel?: string;
 }
 
-export interface Iso20022InwardPaymentResponse {
+interface Iso20022InwardPaymentResponse {
   success: boolean;
   statusCode: string;
   statusReason: string;
@@ -7809,7 +7699,7 @@ export interface Iso20022OutwardPaymentRequest {
   serviceLevel?: 'SEPA' | 'NURG' | 'URGP';
 }
 
-export interface Iso20022OutwardPaymentResponse {
+interface Iso20022OutwardPaymentResponse {
   success: boolean;
   statusCode: string;
   statusReason: string;
@@ -7827,14 +7717,14 @@ export interface Iso20022OutwardPaymentResponse {
   errorMessage?: string;
 }
 
-export interface Iso20022PaymentStatusRequest {
+interface Iso20022PaymentStatusRequest {
   originalMessageId?: string;
   originalInstructionId?: string;
   originalEndToEndId?: string;
   transactionReference?: string;
 }
 
-export interface Iso20022PaymentStatusResponse {
+interface Iso20022PaymentStatusResponse {
   messageId: string;
   originalMessageId: string;
   originalInstructionId?: string;
@@ -7851,7 +7741,7 @@ export interface Iso20022PaymentStatusResponse {
   pain002Xml?: string;
 }
 
-export interface Iso20022StatementRequest {
+interface Iso20022StatementRequest {
   virtualAccountId?: string;
   vaNumber?: string;
   fromDate?: string;
@@ -7859,7 +7749,7 @@ export interface Iso20022StatementRequest {
   format?: 'CAMT053' | 'CAMT052';
 }
 
-export interface Iso20022StatementResponse {
+interface Iso20022StatementResponse {
   messageId: string;
   statementId: string;
   accountIban: string;
@@ -7876,7 +7766,7 @@ export interface Iso20022StatementResponse {
   camt053Xml?: string;
 }
 
-export interface Iso20022BulkPaymentRequest {
+interface Iso20022BulkPaymentRequest {
   sourceVaId: string;
   messageId?: string;
   paymentInfoId?: string;
@@ -7891,7 +7781,7 @@ export interface Iso20022BulkPaymentRequest {
   behalfOfVaId?: string;
 }
 
-export interface Iso20022PaymentInstruction {
+interface Iso20022PaymentInstruction {
   instructionId?: string;
   endToEndId?: string;
   amount: number;
@@ -7903,7 +7793,7 @@ export interface Iso20022PaymentInstruction {
   structuredRef?: string;
 }
 
-export interface Iso20022BulkPaymentResponse {
+interface Iso20022BulkPaymentResponse {
   success: boolean;
   messageId: string;
   pain001Xml?: string;
@@ -7916,7 +7806,7 @@ export interface Iso20022BulkPaymentResponse {
   processingTimeMs: number;
 }
 
-export interface Iso20022PaymentInstructionResult {
+interface Iso20022PaymentInstructionResult {
   instructionId?: string;
   endToEndId?: string;
   success: boolean;
@@ -8018,7 +7908,7 @@ export interface ShadowSummary {
   stale: boolean;
 }
 
-export interface MultiBankCurrencyBucket {
+interface MultiBankCurrencyBucket {
   currencyCode: string;
   shadowCount: number;
   totalBankBalance: number;
@@ -8097,8 +7987,8 @@ export const marketProfileApi = {
 // CASH FORECASTING (T10 — Sprint 1)
 // ============================================================================
 export type ForecastSource = 'PATTERN' | 'AGING' | 'ML' | 'DRIVER' | 'MANUAL';
-export type ForecastDirection = 'IN' | 'OUT';
-export type RunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED';
+type ForecastDirection = 'IN' | 'OUT';
+type RunStatus = 'RUNNING' | 'COMPLETED' | 'FAILED';
 
 export interface ForecastWeeklyBucket {
   weekStart: string;
@@ -8132,7 +8022,7 @@ export interface ForecastLine {
   confidence: number | null;
 }
 
-export interface ForecastRun {
+interface ForecastRun {
   runId: string;
   status: RunStatus;
   runAt: string;
