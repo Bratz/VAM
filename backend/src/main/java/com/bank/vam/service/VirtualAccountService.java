@@ -546,10 +546,12 @@ public class VirtualAccountService {
         va.setHierarchyNodeId(node.getId());
         va = virtualAccountRepository.save(va);
 
-        // STEP 13: Update parent node
-        parentNode.setChildCount(parentNode.getChildCount() != null ? parentNode.getChildCount() + 1 : 1);
-        parentNode.setIsLeaf(false);
-        hierarchyNodeRepository.save(parentNode);
+        // STEP 13: the parent's child_count and is_leaf are maintained by the
+        // trg_hierarchy_nodes_child_count trigger, which already fired on the
+        // insert above. Incrementing here as well read a pre-insert snapshot and
+        // wrote back a value that only happened to match the trigger's; under
+        // concurrent creation both threads write parent+1 and one insert is lost,
+        // silently, since @Version is disabled on BaseEntity.
 
         // STEP 14: Increment program VA count
         program.incrementVaCount();
@@ -1032,12 +1034,9 @@ public class VirtualAccountService {
 
                 newNode = hierarchyNodeRepository.save(newNode);
 
-                // Update parent's child count
-                if (currentNode != null) {
-                    currentNode.setChildCount(currentNode.getChildCount() + 1);
-                    currentNode.setIsLeaf(false);
-                    hierarchyNodeRepository.save(currentNode);
-                } else {
+                // The parent's child_count and is_leaf are maintained by the
+                // trg_hierarchy_nodes_child_count trigger on the insert above.
+                if (currentNode == null) {
                     // This is L1 node, update program root if needed
                     if (program.getRootHierarchyNodeId() == null) {
                         program.setRootHierarchyNodeId(newNode.getId());

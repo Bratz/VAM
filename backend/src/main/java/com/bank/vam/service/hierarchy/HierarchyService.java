@@ -1110,10 +1110,8 @@ public class HierarchyService {
             node.setVirtualAccountId(aggVa.getId());
             nodeRepository.save(node);
 
-            // Update parent's child count
-            parentNode.setChildCount(parentNode.getChildCount() != null ? parentNode.getChildCount() + 1 : 1);
-            parentNode.setIsLeaf(false);
-            nodeRepository.save(parentNode);
+            // The parent's child_count and is_leaf are maintained by the
+            // trg_hierarchy_nodes_child_count trigger on the insert above.
 
             log.debug("  ✓ Created L{} node: {} -> VA: {}", level, nodeCode, vaNumber);
             return node;
@@ -1277,8 +1275,10 @@ public class HierarchyService {
 
         exceptionVa = virtualAccountRepository.save(exceptionVa);
 
-        parentNode.setChildCount(parentNode.getChildCount() + 1);
-        nodeRepository.save(parentNode);
+        // No child node is created here — the exception VA hangs off parentNode
+        // itself (see hierarchyNodeId above), so parentNode gains no child.
+        // Incrementing child_count here inflated it by one per exception VA,
+        // against children that don't exist.
 
         log.info("Created Exception VA {} for program {} currency {}",
             exceptionVa.getVaNumber(), program.getProgramCode(), currency);
@@ -1327,9 +1327,8 @@ public class HierarchyService {
 
         settlementNode = nodeRepository.save(settlementNode);
 
-        parentNode.setChildCount(parentNode.getChildCount() + 1);
-        parentNode.setIsLeaf(false);
-        nodeRepository.save(parentNode);
+        // The parent's child_count and is_leaf are maintained by the
+        // trg_hierarchy_nodes_child_count trigger on the insert above.
 
         VirtualAccount settlementVa = VirtualAccount.builder()
             .vaNumber(vaNumber)
@@ -1461,10 +1460,8 @@ public class HierarchyService {
             node.setVirtualAccountId(aggVa.getId());
             nodeRepository.save(node);
 
-            // STEP 9: Update parent node's child count
-            parentNode.setChildCount(parentNode.getChildCount() != null ? parentNode.getChildCount() + 1 : 1);
-            parentNode.setIsLeaf(false);
-            nodeRepository.save(parentNode);
+            // STEP 9: the parent's child_count and is_leaf are maintained by the
+            // trg_hierarchy_nodes_child_count trigger on the insert above.
 
             log.info("✓ Created aggregation node {} with VA {} at level {} under program {}", 
                 node.getNodeCode(), aggVa.getVaNumber(), newLevel, actualProgramId);

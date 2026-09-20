@@ -1443,10 +1443,8 @@ public class IhbUnifiedService {
             va.setProgramId(parentHierarchyNode.getProgramId());  // Update VA to use parent's program
             va = virtualAccountRepository.save(va);
 
-            // Update parent hierarchy node child count
-            parentHierarchyNode.setChildCount(parentHierarchyNode.getChildCount() != null ? parentHierarchyNode.getChildCount() + 1 : 1);
-            parentHierarchyNode.setIsLeaf(false);
-            hierarchyNodeRepository.save(parentHierarchyNode);
+            // The parent's child_count and is_leaf are maintained by the
+            // trg_hierarchy_nodes_child_count trigger on the insert above.
 
             log.info("✓ Linked IHB Current Account {} to hierarchy at level {} under {} (program: {})",
                 va.getVaNumber(), newLevel, parentHierarchyNode.getNodeCode(), parentHierarchyNode.getProgramId());
