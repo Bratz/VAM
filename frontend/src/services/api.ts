@@ -1268,6 +1268,11 @@ interface MemberInterestAllocation {
 export interface CreatePoolRequest {
   poolName: string;
   poolCurrency: string;
+  // Owning corporate / program (V11). createPool() persists both; the modal
+  // previously sent neither, so every pool created from the UI landed with
+  // them null and then failed the pickers that filter on them.
+  corporateId?: string;
+  programId?: string;
   targetBalance?: number;
   interestRate: number;
   interestCalculationMethod: 'DAILY_AVERAGE' | 'MONTH_END' | 'TIER_BASED';

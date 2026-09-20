@@ -16,9 +16,10 @@ export interface CreatePoolModalProps {
   onClose: () => void;
   onSave: (data: CreatePoolRequest) => Promise<NotionalPool>;
   corporateId?: string;
+  programId?: string;
 }
 
-export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClose, onSave, corporateId }) => {
+export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClose, onSave, corporateId, programId }) => {
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedMembers, setSelectedMembers] = useState<AddMemberRequest[]>([]);
@@ -52,6 +53,8 @@ export const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ isOpen, onClos
       await onSave({
         poolName: formData.poolName,
         poolCurrency: formData.poolCurrency,
+        corporateId: corporateId || undefined,
+        programId: programId || undefined,
         targetBalance: formData.targetBalance ? parseFloat(formData.targetBalance) : undefined,
         interestRate: parseFloat(formData.interestRate),
         interestCalculationMethod: formData.interestCalculationMethod,

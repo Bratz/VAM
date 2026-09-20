@@ -126,23 +126,11 @@ const NotionalPoolingPage: React.FC = () => {
     const loadCorporatesAndPrograms = async () => {
       setLoadingSelectors(true);
       try {
-        const [corporatesRes, programsRes] = await Promise.all([
-          corporatesApi.getAll(),
-          programsApi.getAll().catch(() => ({ data: { programs: [] } })),
-        ]);
+        const corporatesRes = await corporatesApi.getAll();
 
         const corporateData = corporatesRes?.data || corporatesRes;
         const corporateList = Array.isArray(corporateData) ? corporateData : [];
         setCorporates(corporateList);
-
-        const programData = programsRes?.data;
-        let programList: Program[] = [];
-        if (programData?.programs && Array.isArray(programData.programs)) {
-          programList = programData.programs;
-        } else if (Array.isArray(programData)) {
-          programList = programData;
-        }
-        setPrograms(programList);
 
         // Auto-select first corporate if available
         if (corporateList.length > 0) {
@@ -157,14 +145,41 @@ const NotionalPoolingPage: React.FC = () => {
     loadCorporatesAndPrograms();
   }, []);
 
-  // Filter pools by the selected corporate. V11 gave pools a real
-  // corporateId (V12 backfilled legacy pools from their members), so this
-  // is a strict match now. The previous `!p.corporateId ||` guard made it
-  // fail-open — every pool always passed and the picker did nothing.
+  // Programs follow THIS page's corporate picker, not the app-level one.
+  // apiClient auto-attaches X-Corporate-Id from localStorage when the caller
+  // doesn't set it, so fetching once at mount scoped the list to whatever
+  // corporate the top bar had — pick any other corporate here and the program
+  // dropdown came back empty. Passing corporateId explicitly overrides that.
+  useEffect(() => {
+    if (!selectedCorporateId) {
+      setPrograms([]);
+      return;
+    }
+    let cancelled = false;
+    programsApi.getAll({ corporateId: selectedCorporateId })
+      .then((res) => {
+        if (cancelled) return;
+        const data = (res as any)?.data;
+        const list: Program[] = Array.isArray(data?.programs) ? data.programs
+          : Array.isArray(data) ? data : [];
+        setPrograms(list);
+      })
+      .catch(() => { if (!cancelled) setPrograms([]); });
+    return () => { cancelled = true; };
+  }, [selectedCorporateId]);
+
+  // Filter pools by the selected corporate and program. V11 gave pools a
+  // real corporateId AND programId (V12 backfilled legacy pools from their
+  // members), but only the corporate half was ever wired up here — the
+  // program picker set state that nothing read, while the picker itself
+  // listed programs matching type 'POOLING', which was never one of the
+  // eleven ProgramType values, so it was always empty. Both dimensions are
+  // strict matches now; an unset picker means "all".
   const filteredPools = useMemo(() => {
-    if (!selectedCorporateId) return pools;
-    return pools.filter((p) => p.corporateId === selectedCorporateId);
-  }, [pools, selectedCorporateId]);
+    return pools.filter((p) =>
+      (!selectedCorporateId || p.corporateId === selectedCorporateId) &&
+      (!selectedProgramId || p.programId === selectedProgramId));
+  }, [pools, selectedCorporateId, selectedProgramId]);
 
   // Recalculate stats for filtered pools
   const filteredStats = useMemo(() => ({
@@ -240,11 +255,10 @@ const NotionalPoolingPage: React.FC = () => {
       <ScopeSelector
         mode="corporate-program"
         corporates={corporates}
-        // Scoped by corporate only. This used to filter on programType ===
-        // 'POOLING', which was never one of the eleven ProgramType values, so
-        // the selector was always empty. Pool membership lives on the pool, not
-        // on the program.
-        programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
+        // Already scoped to the selected corporate by the fetch above. This
+        // used to filter on programType === 'POOLING', which was never one of
+        // the eleven ProgramType values, so the dropdown was always empty.
+        programs={programs}
         selectedCorporateId={selectedCorporateId}
         selectedProgramId={selectedProgramId}
         onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}
@@ -343,6 +357,7 @@ const NotionalPoolingPage: React.FC = () => {
         onClose={() => setShowCreateModal(false)}
         onSave={createPool}
         corporateId={selectedCorporateId}
+        programId={selectedProgramId}
       />
 
       {selectedPool && (
