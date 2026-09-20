@@ -4868,9 +4868,16 @@ export const programsApi = {
     if (corporateId) {
       headers['X-Corporate-Id'] = corporateId;
     }
-    return apiClient.get<ApiResponse<any>>("/programs", { 
-      params: { page: queryParams.page || 0, size: queryParams.size || 100, status: queryParams.status },
-      headers 
+    // The wire parameter is pageSize, not size: ProgramController reads
+    // @RequestParam Integer pageSize and ignores anything else, so sending
+    // `size` silently fell back to its default of 20. Callers asking for 100
+    // or 200 got 20, and a corporate's 21st program simply did not exist as
+    // far as every program picker in the app was concerned. Mapped here rather
+    // than at each call site so the three callers that pass `size` are fixed
+    // without touching them (partiesApi already does the same mapping).
+    return apiClient.get<ApiResponse<any>>("/programs", {
+      params: { page: queryParams.page || 0, pageSize: queryParams.size || 100, status: queryParams.status },
+      headers
     }).then(r => r.data);
   },
   getById: (programId: string) => 
