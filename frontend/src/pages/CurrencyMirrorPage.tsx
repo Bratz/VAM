@@ -64,7 +64,6 @@ interface ProgramOption {
   programName: string;
   programCode: string;
   currencyCode: string;
-  programType: string;
   status: string;
   corporateId?: string;
 }

@@ -5,7 +5,6 @@ import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.Program;
 import com.bank.vam.entity.Program.ProgramStatus;
-import com.bank.vam.entity.Program.ProgramType;
 import com.bank.vam.entity.Program.VibanGenerationStrategy;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.exception.BusinessException;
@@ -84,13 +83,11 @@ public class ProgramService {
         Page<Program> programPage;
         if (corporateId != null) {
             programPage = programRepository.findByCorporateIdWithFilters(
-                corporateId, request.getQuery(), request.getProgramType(), 
-                request.getStatus(), pageable
+                corporateId, request.getQuery(), request.getStatus(), pageable
             );
         } else {
             programPage = programRepository.findAllWithFilters(
-                request.getQuery(), request.getProgramType(), 
-                request.getStatus(), pageable
+                request.getQuery(), request.getStatus(), pageable
             );
         }
 
@@ -269,7 +266,6 @@ public class ProgramService {
             // Core
             .programCode(request.getProgramCode())
             .programName(request.getProgramName())
-            .programType(ProgramType.valueOf(request.getProgramType()))
             .description(request.getDescription())
             .corporateId(effectiveCorporateId)
             .physicalAccountId(request.getPhysicalAccountId())
@@ -514,7 +510,6 @@ public class ProgramService {
             .corporateId(request.getTargetCorporateId() != null ? request.getTargetCorporateId() : source.getCorporateId())
             .physicalAccountId(request.getTargetPhysicalAccountId() != null ? request.getTargetPhysicalAccountId() : source.getPhysicalAccountId())
             // Copy all other fields
-            .programType(source.getProgramType())
             .description(source.getDescription())
             .currencyCode(source.getCurrencyCode())
             .vaPrefix(source.getVaPrefix())
@@ -616,21 +611,19 @@ public class ProgramService {
         long suspendedPrograms = programs.stream().filter(p -> p.getStatus() == ProgramStatus.SUSPENDED).count();
         long pendingPrograms = programs.stream().filter(p -> p.getStatus() == ProgramStatus.PENDING_APPROVAL).count();
 
-        // By Type
-        long collectionPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.COLLECTION).count();
-        long vibanPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.VIBAN).count();
-        long escrowPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.ESCROW).count();
-        long walletPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.WALLET).count();
-        long ihbPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.IHB).count();
-        long payablesPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.PAYABLES).count();
-        long loyaltyPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.LOYALTY).count();
-        long giftCardPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.GIFT_CARD).count();
-        long corporateCardPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.CORPORATE_CARD).count();
-        long mobileMoneyPrograms = programs.stream().filter(p -> p.getProgramType() == ProgramType.MOBILE_MONEY).count();
-
-        // By Feature
-        long hierarchyEnabledPrograms = programs.stream().filter(p -> Boolean.TRUE.equals(p.getHierarchyEnabled())).count();
-        long vibanEnabledPrograms = programs.stream().filter(p -> Boolean.TRUE.equals(p.getVibanEnabled())).count();
+        // By Feature. The per-programType counters these replace answered the
+        // same question less reliably: a program could be typed WALLET with
+        // walletEnabled false, or the reverse, and the tiles disagreed with what
+        // the features actually did.
+        long hierarchyEnabledPrograms = countEnabled(programs, Program::getHierarchyEnabled);
+        long vibanEnabledPrograms = countEnabled(programs, Program::getVibanEnabled);
+        long walletEnabledPrograms = countEnabled(programs, Program::getWalletEnabled);
+        long escrowEnabledPrograms = countEnabled(programs, Program::getEscrowEnabled);
+        long ihbEnabledPrograms = countEnabled(programs, Program::getIhbEnabled);
+        long loyaltyEnabledPrograms = countEnabled(programs, Program::getLoyaltyEnabled);
+        long giftCardEnabledPrograms = countEnabled(programs, Program::getGiftCardEnabled);
+        long corporateCardEnabledPrograms = countEnabled(programs, Program::getCorporateCardEnabled);
+        long mobileMoneyEnabledPrograms = countEnabled(programs, Program::getMobileMoneyEnabled);
 
         // Totals
         long totalVirtualAccounts = programs.stream()
@@ -662,16 +655,13 @@ public class ProgramService {
             .inactivePrograms(inactivePrograms)
             .suspendedPrograms(suspendedPrograms)
             .pendingPrograms(pendingPrograms)
-            .collectionPrograms(collectionPrograms)
-            .vibanPrograms(vibanPrograms)
-            .escrowPrograms(escrowPrograms)
-            .walletPrograms(walletPrograms)
-            .ihbPrograms(ihbPrograms)
-            .payablesPrograms(payablesPrograms)
-            .loyaltyPrograms(loyaltyPrograms)
-            .giftCardPrograms(giftCardPrograms)
-            .corporateCardPrograms(corporateCardPrograms)
-            .mobileMoneyPrograms(mobileMoneyPrograms)
+            .walletEnabledPrograms(walletEnabledPrograms)
+            .escrowEnabledPrograms(escrowEnabledPrograms)
+            .ihbEnabledPrograms(ihbEnabledPrograms)
+            .loyaltyEnabledPrograms(loyaltyEnabledPrograms)
+            .giftCardEnabledPrograms(giftCardEnabledPrograms)
+            .corporateCardEnabledPrograms(corporateCardEnabledPrograms)
+            .mobileMoneyEnabledPrograms(mobileMoneyEnabledPrograms)
             .hierarchyEnabledPrograms(hierarchyEnabledPrograms)
             .vibanEnabledPrograms(vibanEnabledPrograms)
             .totalVirtualAccounts(totalVirtualAccounts)
@@ -731,6 +721,12 @@ public class ProgramService {
     // HELPER METHODS
     // ========================================================================
 
+    /** Count programs whose flag is explicitly true; a null flag is not enabled. */
+    private static long countEnabled(List<Program> programs,
+                                     java.util.function.Function<Program, Boolean> flag) {
+        return programs.stream().filter(p -> Boolean.TRUE.equals(flag.apply(p))).count();
+    }
+
     private Program findProgramOrThrow(UUID programId) {
         return programRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
@@ -774,16 +770,11 @@ public class ProgramService {
             case CLOSED -> "error";
         };
 
-        // Program type label
-        String programTypeLabel = program.getProgramType().name();
-
         return ProgramResponse.builder()
             // Core
             .id(program.getId())
             .programCode(program.getProgramCode())
             .programName(program.getProgramName())
-            .programType(program.getProgramType().name())
-            .programTypeLabel(programTypeLabel)
             .description(program.getDescription())
             // Relationships
             .corporateId(program.getCorporateId())

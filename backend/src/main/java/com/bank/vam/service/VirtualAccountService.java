@@ -1,6 +1,5 @@
 package com.bank.vam.service;
 
-import com.bank.vam.dto.ProgramTypeConfigDto;
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.PhysicalAccount;
@@ -1208,6 +1207,17 @@ public class VirtualAccountService {
                     log.debug("Inherited ownership from parent VA {}: entityId={}, entityCode={}", 
                         parentVa.getVaNumber(), parentVa.getOwningEntityId(), parentVa.getOwningEntityCode());
                 }
+                // Points, miles and tokens are a property of the sub-tree you
+                // hang under, not of the program: this used to be forced to
+                // POINTS for every account of a LOYALTY-typed program, which
+                // meant a points balance needed a program of its own. Inheriting
+                // it puts value type on the same footing as currency and
+                // ownership, and the create request still overrides it.
+                if (parentVa.getValueType() != null && va.getValueType() == null) {
+                    va.setValueType(parentVa.getValueType());
+                    log.debug("Inherited value type {} from parent VA {}",
+                        parentVa.getValueType(), parentVa.getVaNumber());
+                }
             });
         }
         
@@ -1684,10 +1694,6 @@ public class VirtualAccountService {
             builder.expiresAt(LocalDate.now().plusDays(program.getWalletExpiryDays()));
         }
 
-        // Value Type (for loyalty programs)
-        if (program.getProgramType() == Program.ProgramType.LOYALTY) {
-            builder.valueType(VirtualAccount.ValueType.POINTS);
-        }
     }
 
     /**
@@ -2165,6 +2171,38 @@ public class VirtualAccountService {
         return virtualAccountRepository.save(va);
     }
 
+    // ------------------------------------------------------------------
+    // Periodic limit resets, across every account.
+    //
+    // The bulk queries these call have existed on the repository all along
+    // but had no caller: the only resets were the per-account REST endpoints
+    // above, so dailyUsed/weeklyUsed/monthlyUsed/annualUsed accumulated for
+    // the life of the account unless an operator reset each one by hand. A
+    // "daily" limit that never resets is a lifetime limit. ScheduledJobService
+    // now drives these on the period each one names.
+    // ------------------------------------------------------------------
+
+    /** Zero the daily spend and topup counters on accounts not yet reset today. */
+    @Transactional
+    public int resetAllDailyLimits() {
+        return virtualAccountRepository.resetDailyLimits(LocalDate.now());
+    }
+
+    @Transactional
+    public int resetAllWeeklyLimits() {
+        return virtualAccountRepository.resetWeeklyLimits();
+    }
+
+    @Transactional
+    public int resetAllMonthlyLimits() {
+        return virtualAccountRepository.resetMonthlyLimits();
+    }
+
+    @Transactional
+    public int resetAllAnnualLimits() {
+        return virtualAccountRepository.resetAnnualLimits();
+    }
+
     // ========================================================================
     // KYC MANAGEMENT (existing - unchanged)
     // ========================================================================
@@ -2636,13 +2674,7 @@ public class VirtualAccountService {
     // PROGRAM TYPE CONFIGURATION (existing - unchanged)
     // ========================================================================
 
-    public ProgramTypeConfigDto getProgramTypeConfig(String programType) {
-        return ProgramTypeConfigDto.forType(programType);
-    }
 
-    public List<ProgramTypeConfigDto> getAllProgramTypeConfigs() {
-        return ProgramTypeConfigDto.getAllConfigs();
-    }
 
     // ========================================================================
     // STATISTICS (existing - unchanged)
@@ -2742,13 +2774,9 @@ public class VirtualAccountService {
 
     public VirtualAccountDto.Response toResponse(VirtualAccount va) {
         String programName = null;
-        String programType = null;
         if (va.getProgramId() != null) {
-            Optional<Program> program = programRepository.findById(va.getProgramId());
-            if (program.isPresent()) {
-                programName = program.get().getProgramName();
-                programType = program.get().getProgramType().name();
-            }
+            programName = programRepository.findById(va.getProgramId())
+                .map(Program::getProgramName).orElse(null);
         }
 
         String corporateName = null;
@@ -2798,7 +2826,6 @@ public class VirtualAccountService {
                 .vaName(va.getVaName())
                 .programId(va.getProgramId())
                 .programName(programName)
-                .programType(programType)
                 .corporateId(va.getCorporateId())
                 .corporateName(corporateName)
                 .physicalAccountId(va.getPhysicalAccountId())

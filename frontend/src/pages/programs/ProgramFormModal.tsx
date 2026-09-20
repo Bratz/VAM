@@ -1,14 +1,14 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
-import { Percent, Plus, Building2, CreditCard, Wallet, Shield, CheckCircle, Clock, ChevronRight, Loader2, X, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, Info, Sparkles, Settings } from 'lucide-react';
+import { Percent, Plus, Building2, CreditCard, Wallet, Shield, CheckCircle, Clock, ChevronRight, Loader2, X, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, Info, Settings } from 'lucide-react';
 import { Badge, Button, StatusIconBadge, Checkbox } from '../../components/ui';
 import { CurrencyPicker } from '../../components/ui/CurrencyPicker';
 import { Modal, Alert } from '../../components/ui/enhanced';
 import toast from 'react-hot-toast';
 import { formatCurrency, cn } from '../../utils';
-import { HIERARCHY_TEMPLATES, getTemplatesForProgramType, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
+import { getTemplatesForFeatures, getOtherTemplates, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
 
-import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, ProgramType, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig, programTypeConfig, settlementFrequencyConfig, FeatureFlags, PROGRAM_TYPE_FEATURE_MAP } from './shared';
+import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig, featureConfig, settlementFrequencyConfig, FeatureFlags } from './shared';
 
 // ============================================================================
 // CHARGE CONFIGURATION ROW COMPONENT
@@ -116,7 +116,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     // Step 1: Basic Info
     programCode: '',
     programName: '',
-    programType: 'COLLECTION' as ProgramType,
     description: '',
     corporateId: '',
     physicalAccountId: '',
@@ -207,7 +206,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
   const isEdit = !!program;
   // Fetch wallet charges when editing a wallet program or when wallet is enabled
-  const needsWalletConfig = formData.walletEnabled || formData.programType === 'WALLET';
+  const needsWalletConfig = formData.walletEnabled;
   const needsHierarchyConfig = formData.hierarchyEnabled;
 
   // Dynamic step calculation
@@ -353,7 +352,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         // Step 1: Basic Info
         programCode: program.programCode,
         programName: program.programName,
-        programType: program.programType,
         description: program.description || '',
         corporateId: program.corporateId,
         physicalAccountId: program.physicalAccountId,
@@ -424,7 +422,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         // Step 1: Basic Info
         programCode: '',
         programName: '',
-        programType: 'COLLECTION',
         description: '',
         corporateId: defaultCorporateId || '', // Use default corporate from page picker
         physicalAccountId: '',
@@ -567,7 +564,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
       const cleanedData = {
         programCode: formData.programCode,
         programName: formData.programName,
-        programType: formData.programType,
         description: formData.description || undefined,
         corporateId: resolvedCorporateId,
         physicalAccountId: formData.physicalAccountId || undefined,
@@ -634,7 +630,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         corporateId: cleanedData.corporateId,
         physicalAccountId: cleanedData.physicalAccountId,
         programCode: cleanedData.programCode,
-        programType: cleanedData.programType
       });
 
       let programId: string;
@@ -755,43 +750,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               </div>
             )}
 
-            {/* Program Type Selection */}
-            <div>
-              <label className="field-label block mb-2">Program Type *</label>
-              <div className="grid grid-cols-4 gap-2">
-                {(Object.keys(programTypeConfig) as ProgramType[]).map(type => {
-                  const config = programTypeConfig[type];
-                  const Icon = config.icon;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => {
-                        // Auto-enable corresponding feature flags based on program type
-                        const autoEnabledFeatures = PROGRAM_TYPE_FEATURE_MAP[type] || {};
-                        setFormData({
-                          ...formData,
-                          programType: type,
-                          ...autoEnabledFeatures
-                        });
-                      }}
-                      disabled={isEdit}
-                      className={cn(
-                        'p-2.5 border rounded-lg text-left transition-all',
-                        formData.programType === type ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 dark:bg-primary-800/40' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700',
-                        isEdit && 'opacity-60 cursor-not-allowed'
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className={cn('w-4 h-4', config.color)} />
-                        <span className="font-medium text-caption">{config.label}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Program Code and Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -888,57 +846,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               Step 2: Features & Capabilities
             </h3>
 
-            {/* Program Type Summary */}
-            <div className="p-3 bg-primary-50 rounded-lg border border-primary-200 dark:bg-primary-800/40 dark:border-primary-700">
-              <div className="flex items-center gap-2 text-body-sm">
-                {(() => {
-                  const config = programTypeConfig[formData.programType];
-                  const Icon = config?.icon || Building2;
-                  return (
-                    <>
-                      <Icon className={cn('w-5 h-5', config?.color)} />
-                      <span className="font-medium text-primary-900 dark:text-neutral-50">{config?.label} Program</span>
-                      <span className="text-neutral-500 dark:text-neutral-400">— {config?.description}</span>
-                    </>
-                  );
-                })()}
-              </div>
-              {/* Show auto-enabled features for this program type */}
-              {(() => {
-                const autoFeatures = PROGRAM_TYPE_FEATURE_MAP[formData.programType];
-                const autoFeatureNames = Object.entries(autoFeatures || {})
-                  .filter(([, enabled]) => enabled)
-                  .map(([key]) => {
-                    const featureLabels: Record<string, string> = {
-                      vibanEnabled: 'VIBAN',
-                      walletEnabled: 'Wallet',
-                      escrowEnabled: 'Escrow',
-                      ihbEnabled: 'IHB',
-                      hierarchyEnabled: 'Hierarchy',
-                      loyaltyEnabled: 'Loyalty',
-                      giftCardEnabled: 'Gift Card',
-                      corporateCardEnabled: 'Corporate Card',
-                      mobileMoneyEnabled: 'Mobile Money',
-                    };
-                    return featureLabels[key] || key;
-                  });
-                if (autoFeatureNames.length > 0) {
-                  return (
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Sparkles className="w-4 h-4 text-success-600 dark:text-success-300" />
-                      <span className="text-caption text-success-700 font-medium dark:text-success-300">Auto-enabled:</span>
-                      {autoFeatureNames.map(name => (
-                        <Badge key={name} variant="success" size="sm">{name}</Badge>
-                      ))}
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-              <p className="caption mt-2">
-                Features marked <Badge variant="success" size="sm">Auto</Badge> are recommended for this program type. You can still toggle them on/off.
-              </p>
-            </div>
+            <p className="body-sm">
+              Pick what this program does. These capabilities used to be implied by
+              a program type; choosing them directly is the same information without
+              a second place for it to disagree.
+            </p>
 
             {/* Core Features - These affect wizard flow */}
             <div className="space-y-2">
@@ -955,8 +867,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   const Icon = f.icon;
                   const isChecked = formData[f.key as keyof typeof formData] as boolean;
                   // Check if this feature was auto-enabled by the selected program type
-                  const autoEnabledFeatures = PROGRAM_TYPE_FEATURE_MAP[formData.programType] || {};
-                  const isAutoEnabled = autoEnabledFeatures[f.key as keyof FeatureFlags] === true;
                   return (
                     <Checkbox
                       key={f.key}
@@ -967,7 +877,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                         <span className="flex items-center gap-2 flex-wrap">
                           <Icon className={cn('w-4 h-4', f.color)} />
                           <span>{f.label}</span>
-                          {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
                           {f.step && isChecked && <Badge variant="info" size="sm">+Step</Badge>}
                         </span>
                       }
@@ -979,7 +888,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             </div>
 
             {/* Extended Program Features - Only show if relevant */}
-            {['LOYALTY', 'GIFT_CARD', 'CORPORATE_CARD', 'MOBILE_MONEY'].includes(formData.programType) && (
+            {(
               <div className="space-y-2">
                 <h4 className="label">Extended Capabilities</h4>
                 <div className="grid grid-cols-2 gap-3">
@@ -988,12 +897,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     { key: 'giftCardEnabled', label: 'Gift Cards', icon: Gift, desc: 'Gift card issuance', color: 'text-cat-2 dark:text-cat-2-fg', forType: 'GIFT_CARD' },
                     { key: 'corporateCardEnabled', label: 'Corporate Cards', icon: CreditCard, desc: 'Expense cards, limits', color: 'text-cat-1 dark:text-cat-1-fg', forType: 'CORPORATE_CARD' },
                     { key: 'mobileMoneyEnabled', label: 'Mobile Money', icon: Smartphone, desc: 'Agent banking, M-Pesa style', color: 'text-cat-3 dark:text-cat-3-fg', forType: 'MOBILE_MONEY' },
-                  ].filter(f => f.forType === formData.programType || formData[f.key as keyof typeof formData]).map(f => {
+                  ].map(f => {
                     const Icon = f.icon;
                     const isChecked = formData[f.key as keyof typeof formData] as boolean;
                     // Check if this feature was auto-enabled by the selected program type
-                    const autoEnabledFeatures = PROGRAM_TYPE_FEATURE_MAP[formData.programType] || {};
-                    const isAutoEnabled = autoEnabledFeatures[f.key as keyof FeatureFlags] === true;
                     return (
                       <Checkbox
                         key={f.key}
@@ -1004,8 +911,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                           <span className="flex items-center gap-2 flex-wrap">
                             <Icon className={cn('w-4 h-4', f.color)} />
                             <span>{f.label}</span>
-                            {isAutoEnabled && isChecked && <Badge variant="success" size="sm">Auto</Badge>}
-                          </span>
+                            </span>
                         }
                         description={f.desc}
                       />
@@ -1048,15 +954,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             <p className="body-sm">Configure the hierarchy structure for this program. The hierarchy defines how virtual accounts are organized.</p>
 
-            {/* Hierarchy Template Selection - Dynamic based on Program Type */}
+            {/* Hierarchy Template Selection - driven by the features chosen in step 2 */}
             {(() => {
-              // Get templates filtered by program type
-              const matchingTemplates = getTemplatesForProgramType(formData.programType);
-              const recommendedTemplate = getRecommendedTemplate(formData.programType);
-              // Get other templates that don't match but can still be used
-              const otherTemplates = HIERARCHY_TEMPLATES.filter(
-                t => !t.forProgramTypes.includes(formData.programType)
-              );
+              const flags = formData as unknown as Record<string, boolean | undefined>;
+              const matchingTemplates = getTemplatesForFeatures(flags);
+              const recommendedTemplate = getRecommendedTemplate(flags);
+              const otherTemplates = getOtherTemplates(flags);
 
               return (
                 <div className="space-y-4">
@@ -1064,7 +967,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   {matchingTemplates.length > 0 && (
                     <div>
                       <label className="field-label block mb-2">
-                        Recommended for {programTypeConfig[formData.programType]?.label || formData.programType}
+                        Recommended for this program
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         {matchingTemplates.map(template => {
@@ -1142,7 +1045,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     <div>
                       <label className="field-label block mb-2">Available Templates</label>
                       <div className="grid grid-cols-2 gap-3">
-                        {HIERARCHY_TEMPLATES.map(template => {
+                        {otherTemplates.map(template => {
                           const Icon = template.icon;
                           const isSelected = formData.defaultHierarchyTemplate === template.id;
                           const levelPath = template.levels.map(l => l.levelName).join(' → ');
@@ -1940,7 +1843,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                   <div><span className="text-neutral-500 dark:text-neutral-400">Code:</span> <span className="font-mono font-medium">{formData.programCode}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
-                  <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <Badge variant="neutral">{programTypeConfig[formData.programType]?.label}</Badge></div>
+                  <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Features:</span>{' '}
+                    {(Object.keys(featureConfig) as (keyof FeatureFlags)[]).filter(k => (formData as unknown as Record<string, unknown>)[k] === true).map(k => (
+                      <Badge key={k} variant="neutral">{featureConfig[k].label}</Badge>
+                    ))}
+                  </div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="font-medium">{formData.currencyCode}</span></div>
                 </div>
               </div>

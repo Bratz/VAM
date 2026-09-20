@@ -2,7 +2,6 @@ package com.bank.vam.repository;
 
 import com.bank.vam.entity.Program;
 import com.bank.vam.entity.Program.ProgramStatus;
-import com.bank.vam.entity.Program.ProgramType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,10 +35,6 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
 
     List<Program> findByCorporateIdAndStatus(UUID corporateId, ProgramStatus status);
 
-    List<Program> findByProgramType(ProgramType programType);
-
-    Page<Program> findByProgramType(ProgramType programType, Pageable pageable);
-
     List<Program> findByStatus(ProgramStatus status);
 
     Page<Program> findByStatus(ProgramStatus status, Pageable pageable);
@@ -54,13 +49,11 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
             LOWER(CAST(p.programCode AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
             LOWER(CAST(p.programName AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
             LOWER(CAST(p.description AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')))
-        AND (:programType IS NULL OR :programType = '' OR CAST(p.programType AS string) = :programType)
         AND (:status IS NULL OR :status = '' OR CAST(p.status AS string) = :status)
         ORDER BY p.createdAt DESC
         """)
     Page<Program> findAllWithFilters(
         @Param("query") String query,
-        @Param("programType") String programType,
         @Param("status") String status,
         Pageable pageable
     );
@@ -72,14 +65,12 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
             LOWER(CAST(p.programCode AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
             LOWER(CAST(p.programName AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')) OR
             LOWER(CAST(p.description AS string)) LIKE LOWER(CONCAT('%', CAST(:query AS string), '%')))
-        AND (:programType IS NULL OR :programType = '' OR CAST(p.programType AS string) = :programType)
         AND (:status IS NULL OR :status = '' OR CAST(p.status AS string) = :status)
         ORDER BY p.createdAt DESC
         """)
     Page<Program> findByCorporateIdWithFilters(
         @Param("corporateId") UUID corporateId,
         @Param("query") String query,
-        @Param("programType") String programType,
         @Param("status") String status,
         Pageable pageable
     );
@@ -181,13 +172,9 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
 
     long countByStatus(ProgramStatus status);
 
-    long countByProgramType(ProgramType programType);
-
     long countByCorporateId(UUID corporateId);
 
     long countByCorporateIdAndStatus(UUID corporateId, ProgramStatus status);
-
-    long countByCorporateIdAndProgramType(UUID corporateId, ProgramType programType);
 
     long countByHierarchyEnabledTrue();
 
@@ -216,26 +203,6 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
 
     @Query("SELECT p FROM Program p WHERE p.corporateId = :corporateId AND p.status = 'ACTIVE'")
     List<Program> findActiveByCorporateId(@Param("corporateId") UUID corporateId);
-
-    @Query("SELECT p FROM Program p WHERE p.programType = :programType AND p.status = 'ACTIVE'")
-    List<Program> findActiveByProgramType(@Param("programType") ProgramType programType);
-
-    /**
-     * Find active IHB program for a corporate.
-     * Typically a corporate has one IHB program for treasury operations.
-     */
-    @Query("SELECT p FROM Program p WHERE p.corporateId = :corporateId " +
-           "AND p.programType = 'IHB' AND p.status = 'ACTIVE' ORDER BY p.createdAt ASC")
-    List<Program> findActiveIhbProgramsByCorporate(@Param("corporateId") UUID corporateId);
-
-    /**
-     * Find active program by corporate and type.
-     */
-    @Query("SELECT p FROM Program p WHERE p.corporateId = :corporateId " +
-           "AND p.programType = :programType AND p.status = 'ACTIVE' ORDER BY p.createdAt ASC")
-    List<Program> findActiveByCorporateIdAndProgramType(
-        @Param("corporateId") UUID corporateId,
-        @Param("programType") ProgramType programType);
 
     // ========================================================================
     // VIBAN POOL QUERIES (NEW)

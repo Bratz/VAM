@@ -3,7 +3,6 @@ package com.bank.vam.service.wallet;
 import com.bank.vam.dto.WalletDto.*;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.Program;
-import com.bank.vam.entity.Program.ProgramType;
 import com.bank.vam.entity.Program.ProgramStatus;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.Transaction.MovementType;
@@ -49,7 +48,7 @@ import java.util.stream.Collectors;
  * - VirtualAccount (with walletType) as Wallet
  * - Transaction for wallet operations (TOPUP, WITHDRAWAL, WALLET_TRANSFER_*)
  * - Party as wallet holder (linked via holderPartyId)
- * - Program (programType=WALLET or walletEnabled=true) for wallet program config
+ * - Program (walletEnabled=true) for wallet program config
  * 
  * MVC Pattern:
  * - Entity: VirtualAccount, Transaction, Party, Program (enhanced)
@@ -231,7 +230,6 @@ public class WalletService {
         Program program = Program.builder()
                 .programCode(request.getProgramCode())
                 .programName(request.getProgramName())
-                .programType(ProgramType.WALLET)
                 .corporateId(request.getCorporateId())
                 .physicalAccountId(request.getPhysicalAccountId())
                 .currencyCode(request.getCurrency() != null ? request.getCurrency() : marketProfile.getDefaultCurrency())
@@ -678,6 +676,36 @@ public class WalletService {
     }
 
     /**
+     * Reject a debit that would breach any of the wallet's spend limits.
+     *
+     * Checks each limit separately rather than calling
+     * {@link VirtualAccount#isWithinAllLimits} so the caller is told which one
+     * it hit. A null limit means "not configured" and never rejects.
+     *
+     * The weekly, monthly and annual limits were modelled end to end -- program
+     * default, VA column, usage counter, check helper -- but nothing ever called
+     * the checks, so only per-transaction and daily were live. The counters were
+     * maintained regardless.
+     */
+    private void assertWithinSpendLimits(VirtualAccount wallet, BigDecimal amount) {
+        if (!wallet.isWithinTransactionLimit(amount)) {
+            throw new BusinessException("Amount exceeds per-transaction limit");
+        }
+        if (!wallet.isWithinDailyLimit(amount)) {
+            throw new BusinessException("Amount exceeds daily limit");
+        }
+        if (!wallet.isWithinWeeklyLimit(amount)) {
+            throw new BusinessException("Amount exceeds weekly limit");
+        }
+        if (!wallet.isWithinMonthlyLimit(amount)) {
+            throw new BusinessException("Amount exceeds monthly limit");
+        }
+        if (!wallet.isWithinAnnualLimit(amount)) {
+            throw new BusinessException("Amount exceeds annual limit");
+        }
+    }
+
+    /**
      * Withdraw funds from wallet with fee posting to Settlement VA.
      */
     @Transactional
@@ -698,14 +726,8 @@ public class WalletService {
                 ", Required (including fee): " + totalDebit);
         }
         
-        if (!wallet.isWithinTransactionLimit(request.getAmount())) {
-            throw new BusinessException("Amount exceeds per-transaction limit");
-        }
-        
-        if (!wallet.isWithinDailyLimit(request.getAmount())) {
-            throw new BusinessException("Amount exceeds daily limit");
-        }
-        
+        assertWithinSpendLimits(wallet, request.getAmount());
+
         BigDecimal previousBalance = wallet.getCurrentBalance();
         String correlationId = "WTH-" + System.currentTimeMillis();
         
@@ -774,10 +796,25 @@ public class WalletService {
         BigDecimal totalDebit = request.getAmount().add(fee);
         
         if (!fromWallet.hasSufficientBalance(totalDebit)) {
-            throw new BusinessException("Insufficient balance. Available: " + fromWallet.getAvailableBalance() + 
+            throw new BusinessException("Insufficient balance. Available: " + fromWallet.getAvailableBalance() +
                 ", Required (including fee): " + totalDebit);
         }
-        
+
+        // A transfer moves the same money out of the same wallet as a withdrawal,
+        // so it answers to the same spend limits. It previously checked only the
+        // balance, which meant the caps could be walked around by transferring
+        // instead of withdrawing — while transferOut still consumed the usage
+        // counters, so the untested transfer ate the allowance a later
+        // withdrawal would be measured against.
+        assertWithinSpendLimits(fromWallet, request.getAmount());
+
+        // The credit side answers to the destination's ceiling, exactly as a
+        // topup does. Without this a transfer could push the receiving wallet
+        // past the maxBalance that loadFunds() refuses to breach.
+        if (!toWallet.canTopup(request.getAmount())) {
+            throw new BusinessException("Transfer would breach the destination wallet's balance or topup limits");
+        }
+
         // Perform transfer
         BigDecimal fromPrevBalance = fromWallet.getCurrentBalance();
         BigDecimal toPrevBalance = toWallet.getCurrentBalance();
@@ -1385,20 +1422,12 @@ public class WalletService {
     // ========================================================================
 
     private List<Program> getWalletPrograms(UUID corporateId) {
-        List<Program> programs = programRepository.findByProgramType(ProgramType.WALLET);
-        
-        // Also include programs with walletEnabled=true
-        List<Program> enabledPrograms = programRepository.findAll().stream()
-                .filter(p -> Boolean.TRUE.equals(p.getWalletEnabled()) && p.getProgramType() != ProgramType.WALLET)
-                .collect(Collectors.toList());
-        
-        Set<UUID> programIds = programs.stream().map(Program::getId).collect(Collectors.toSet());
-        for (Program p : enabledPrograms) {
-            if (!programIds.contains(p.getId())) {
-                programs.add(p);
-            }
-        }
-        
+        // This was a union of "typed WALLET" and "walletEnabled but not typed
+        // WALLET", de-duplicated by id — two encodings of one fact, reconciled at
+        // every call. With the type gone the flag answers it outright, and a
+        // full table scan goes with it.
+        List<Program> programs = new ArrayList<>(programRepository.findByWalletEnabledTrue());
+
         if (corporateId != null) {
             programs = programs.stream()
                     .filter(p -> corporateId.equals(p.getCorporateId()))

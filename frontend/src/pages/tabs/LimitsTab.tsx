@@ -8,7 +8,7 @@ import { Settings, TrendingUp, Info, AlertTriangle } from 'lucide-react';
 import { Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, NumberInput } from './FormComponents';
-import { CreateVaRequest, Program, ProgramTypeConfig } from '../vaTypes';
+import { CreateVaRequest, Program } from '../vaTypes';
 import { formatCurrency } from '../../utils';
 
 // ============================================================================
@@ -20,7 +20,6 @@ export interface LimitsTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
 }
 
 // ============================================================================
@@ -43,7 +42,6 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
 }) => {
   // Update field helper
   const updateField = <K extends keyof CreateVaRequest>(

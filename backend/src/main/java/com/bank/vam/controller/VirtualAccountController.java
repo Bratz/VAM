@@ -1,7 +1,6 @@
 package com.bank.vam.controller;
 
 import com.bank.vam.dto.ApiResponse;
-import com.bank.vam.dto.ProgramTypeConfigDto;
 import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.entity.Program;
@@ -958,39 +957,6 @@ public class VirtualAccountController {
             @RequestParam(required = false) UUID programId) {
         VirtualAccountDto.VaStats stats = virtualAccountService.getStats(corporateId, programId);
         return ResponseEntity.ok(ApiResponse.success(stats));
-    }
-
-    // ========================================================================
-    // PROGRAM TYPE CONFIGURATION ENDPOINTS (NEW)
-    // ========================================================================
-
-    /**
-     * Get field configuration for a program type
-     * GET /api/v1/virtual-accounts/program-type-config/{programType}
-     */
-    @GetMapping("/program-type-config/{programType}")
-    @Operation(summary = "Get program type config", 
-               description = "Get field configuration, defaults, and validation rules for a program type")
-    public ResponseEntity<ApiResponse<ProgramTypeConfigDto>> getProgramTypeConfig(
-            @Parameter(description = "Program type (COLLECTION, WALLET, IHB, etc.)") 
-            @PathVariable String programType) {
-        ProgramTypeConfigDto config = virtualAccountService.getProgramTypeConfig(programType);
-        if (config == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(ApiResponse.success(config));
-    }
-
-    /**
-     * Get all program type configurations
-     * GET /api/v1/virtual-accounts/program-type-configs
-     */
-    @GetMapping("/program-type-configs")
-    @Operation(summary = "Get all program type configs", 
-               description = "Get field configurations for all program types")
-    public ResponseEntity<ApiResponse<List<ProgramTypeConfigDto>>> getAllProgramTypeConfigs() {
-        List<ProgramTypeConfigDto> configs = virtualAccountService.getAllProgramTypeConfigs();
-        return ResponseEntity.ok(ApiResponse.success(configs));
     }
 
     // ========================================================================

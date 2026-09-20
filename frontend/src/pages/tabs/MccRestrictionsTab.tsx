@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Input, Button, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
-import { CreateVaRequest, Program, ProgramTypeConfig } from '../vaTypes';
+import { CreateVaRequest, Program } from '../vaTypes';
 import { cn } from '../../utils';
 
 // ============================================================================
@@ -29,7 +29,6 @@ export interface MccRestrictionsTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
 }
 
 // ============================================================================
@@ -171,7 +170,6 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
 }) => {
   // Input states
   const [mccInput, setMccInput] = useState('');

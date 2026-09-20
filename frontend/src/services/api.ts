@@ -4846,7 +4846,6 @@ export interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType?: 'COLLECTION' | 'PAYMENT' | 'TREASURY' | 'WALLET' | 'ESCROW';
   description?: string;
   currencyCode: string;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';

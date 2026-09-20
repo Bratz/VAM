@@ -19,7 +19,6 @@ import {
   LimitsInfo,
   LimitsUsage,
   MccRestrictions,
-  ProgramTypeConfig,
   ApiResponse,
   PagedResponse,
   VaSearchParams,
@@ -492,16 +491,10 @@ class VaApiClient {
   /**
    * Get program type config
    */
-  async getProgramTypeConfig(programType: string): Promise<ProgramTypeConfig> {
-    return this.fetch<ProgramTypeConfig>(`/program-type-config/${programType}`);
-  }
 
   /**
    * Get all program type configs
    */
-  async getAllProgramTypeConfigs(): Promise<ProgramTypeConfig[]> {
-    return this.fetch<ProgramTypeConfig[]>('/program-type-configs');
-  }
 
   // ========================================================================
   // BULK OPERATIONS

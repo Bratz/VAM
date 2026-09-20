@@ -8,7 +8,7 @@ import { Wallet, Shield, Star, Clock } from 'lucide-react';
 import { Input } from '../../components/ui';
 import { Badge } from '../../components/ui';
 import { FormField, SelectField, NumberInput } from './FormComponents';
-import { CreateVaRequest, Program, ProgramTypeConfig } from '../vaTypes';
+import { CreateVaRequest, Program } from '../vaTypes';
 
 // ============================================================================
 // TYPES
@@ -19,7 +19,6 @@ export interface WalletTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
 }
 
 // ============================================================================
@@ -74,7 +73,6 @@ export const WalletTab: React.FC<WalletTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
 }) => {
   // Update field helper
   const updateField = <K extends keyof CreateVaRequest>(
@@ -85,10 +83,9 @@ export const WalletTab: React.FC<WalletTabProps> = ({
   };
 
   // Determine if loyalty features should be shown
-  const showLoyalty = config?.supportsLoyalty || 
-    program?.programType === 'LOYALTY' ||
-    formData.valueType === 'POINTS' ||
-    formData.valueType === 'MILES';
+  // Loyalty is read off the account's value type now that the program no
+  // longer declares itself a loyalty program.
+  const showLoyalty = formData.valueType === 'POINTS' || formData.valueType === 'MILES';
 
   // Get selected KYC level info
   const selectedKycLevel = KYC_LEVELS.find(l => l.value === formData.kycLevel?.toString());

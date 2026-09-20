@@ -39,6 +39,7 @@ public class ScheduledJobService {
     private final SweepService sweepService;
     private final IhbUnifiedService ihbUnifiedService;
     private final LegalEntityRepository legalEntityRepository;
+    private final VirtualAccountService virtualAccountService;
 
     /**
      * Execute REAL_TIME-frequency sweeps every 5 minutes.
@@ -178,6 +179,51 @@ public class ScheduledJobService {
                     response.getFundedCount(), response.getSkippedCount(), response.getTotalFunded());
         } catch (Exception e) {
             log.error("Deficit funding failed", e);
+        }
+    }
+
+    /**
+     * Roll the spend and topup usage counters over at the start of each period.
+     *
+     * The bulk reset queries have been on VirtualAccountRepository all along
+     * with no caller — the only resets were per-account REST endpoints, so the
+     * counters accumulated for the life of an account and a "daily" limit
+     * behaved as a lifetime one. Same shape as the IHB interest job above:
+     * implemented, reachable by hand, never actually scheduled.
+     *
+     * Each job runs a few minutes past its boundary so it cannot race a
+     * transaction posted at exactly midnight.
+     */
+    @Scheduled(cron = "0 5 0 * * *") // 00:05 daily
+    @Async("taskExecutor")
+    public void resetDailyLimits() {
+        runLimitReset("daily", virtualAccountService::resetAllDailyLimits);
+    }
+
+    @Scheduled(cron = "0 10 0 * * MON") // 00:10 Monday
+    @Async("taskExecutor")
+    public void resetWeeklyLimits() {
+        runLimitReset("weekly", virtualAccountService::resetAllWeeklyLimits);
+    }
+
+    @Scheduled(cron = "0 15 0 1 * *") // 00:15 on the 1st
+    @Async("taskExecutor")
+    public void resetMonthlyLimits() {
+        runLimitReset("monthly", virtualAccountService::resetAllMonthlyLimits);
+    }
+
+    @Scheduled(cron = "0 20 0 1 1 *") // 00:20 on 1 January
+    @Async("taskExecutor")
+    public void resetAnnualLimits() {
+        runLimitReset("annual", virtualAccountService::resetAllAnnualLimits);
+    }
+
+    private void runLimitReset(String period, java.util.function.IntSupplier reset) {
+        try {
+            int affected = reset.getAsInt();
+            log.info("Reset {} usage counters on {} accounts", period, affected);
+        } catch (Exception e) {
+            log.error("Failed to reset {} usage counters", period, e);
         }
     }
 

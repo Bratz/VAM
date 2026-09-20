@@ -7,18 +7,6 @@
 // ENUMS
 // ============================================================================
 
-export type ProgramType = 
-  | 'COLLECTION'
-  | 'WALLET'
-  | 'IHB'
-  | 'CORPORATE_CARD'
-  | 'ESCROW'
-  | 'LOYALTY'
-  | 'PAYABLES'
-  | 'MOBILE_MONEY'
-  | 'GIFT_CARD'
-  | 'VIBAN';
-
 export type VaStatus = 
   | 'ACTIVE'
   | 'INACTIVE'
@@ -82,7 +70,6 @@ export interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType: ProgramType;
   currencyCode: string;
   status: string;
   corporateId: string;
@@ -125,37 +112,6 @@ export interface Program {
 // ============================================================================
 // PROGRAM TYPE CONFIG
 // ============================================================================
-
-export interface ProgramTypeConfig {
-  programType: string;
-  displayName: string;
-  description: string;
-  
-  // Feature flags
-  supportsWallet: boolean;
-  supportsLimits: boolean;
-  supportsKyc: boolean;
-  supportsHierarchy: boolean;
-  supportsMcc: boolean;
-  supportsLoyalty: boolean;
-  supportsCardProgram: boolean;
-  supportsExpiry: boolean;
-  
-  // Field classification
-  requiredFields: string[];
-  optionalFields: string[];
-  hiddenFields: string[];
-  
-  // Defaults
-  defaultValues: Record<string, any>;
-  
-  // Validation
-  validationRules?: Record<string, any>;
-  
-  // UI
-  tabs: string[];
-  uiConfig?: Record<string, any>;
-}
 
 // ============================================================================
 // VIRTUAL ACCOUNT - CREATE REQUEST
@@ -435,7 +391,6 @@ export interface VaResponse {
   vaName: string;
   programId: string;
   programName?: string;
-  programType?: string;
   corporateId: string;
   corporateName?: string;
   physicalAccountId: string;

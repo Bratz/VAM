@@ -20,7 +20,6 @@ interface ProgramOption {
   programName: string;
   programCode: string;
   currencyCode: string;
-  programType?: string;
   status: string;
   corporateId: string;
 }
@@ -456,7 +455,6 @@ const InterestConfigurationPage: React.FC = () => {
         programName: p.programName,
         programCode: p.programCode,
         currencyCode: p.currencyCode || 'AED',
-        programType: p.programType,
         status: p.status,
         corporateId: p.corporateId,
       }));

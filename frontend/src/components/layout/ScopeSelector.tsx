@@ -48,7 +48,6 @@ export interface ScopeProgram {
   id: string;
   programName?: string;
   name?: string;
-  programType?: string;
   currencyCode?: string;
   [extra: string]: any;
 }
@@ -155,7 +154,6 @@ const corporateLabel = (c: ScopeCorporate): string =>
 const programLabel = (p: ScopeProgram): string => {
   const name = p.programName || p.name || p.id;
   if (p.currencyCode) return `${name} (${p.currencyCode})`;
-  if (p.programType) return `${name} (${p.programType})`;
   return name;
 };
 

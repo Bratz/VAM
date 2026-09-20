@@ -8,7 +8,7 @@ import { GitBranch, ChevronRight, CheckCircle, Building2, Layers, Search, Refres
 import { Input, Button, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, SelectField } from './FormComponents';
-import { CreateVaRequest, Program, ProgramTypeConfig, HierarchyNode } from '../vaTypes';
+import { CreateVaRequest, Program, HierarchyNode } from '../vaTypes';
 import { cn } from '../../utils';
 
 // ============================================================================
@@ -20,7 +20,6 @@ export interface HierarchyTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
   hierarchyNodes?: HierarchyNode[];
   onLoadHierarchy?: (programId: string) => void;
   loading?: boolean;
@@ -196,7 +195,6 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
   hierarchyNodes = [],
   onLoadHierarchy,
   loading = false,

@@ -8,7 +8,7 @@ import { CreditCard, Users, Building2, Briefcase, Info, Plane, Package, Fuel, Us
 import { Input, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, SelectField, FormSection, FormRow } from './FormComponents';
-import { CreateVaRequest, Program, ProgramTypeConfig } from '../vaTypes';
+import { CreateVaRequest, Program } from '../vaTypes';
 import { cn } from '../../utils';
 
 // ============================================================================
@@ -20,7 +20,6 @@ export interface CardProgramTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
 }
 
 // ============================================================================
@@ -81,7 +80,6 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
 }) => {
   // Update field helper
   const updateField = <K extends keyof CreateVaRequest>(

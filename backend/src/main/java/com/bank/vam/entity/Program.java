@@ -15,9 +15,9 @@ import java.util.UUID;
  * - 7-level hierarchy support
  * - Multi-VIBAN pool management
  * - Balance aggregation settings
- * - Loyalty/Gift Card/Corporate Card program types
+ * - Loyalty/Gift Card/Corporate Card feature flags
  * 
- * When programType = WALLET or walletEnabled = true:
+ * When walletEnabled = true:
  * - Wallet-specific limits apply (daily, monthly, max balance)
  * - KYC requirements
  * - Topup/withdrawal settings
@@ -53,10 +53,6 @@ public class Program extends BaseEntity {
 
     @Column(name = "program_name", nullable = false)
     private String programName;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "program_type", nullable = false)
-    private ProgramType programType;
 
     @Column(name = "corporate_id", nullable = false)
     private UUID corporateId;
@@ -403,20 +399,6 @@ public class Program extends BaseEntity {
     // ENUMS (extended for new program types)
     // ========================================================================
 
-    public enum ProgramType {
-        COLLECTION,      // General collections
-        VIBAN,           // VIBAN-based collections
-        ESCROW,          // Escrow/milestone
-        WALLET,          // Wallet/prepaid
-        IHB,             // In-house bank
-        PAYABLES,        // Payables management
-        RECEIVABLES,     // Receivables management
-        LOYALTY,         // Loyalty/rewards
-        GIFT_CARD,       // Gift cards
-        CORPORATE_CARD,  // Corporate cards
-        MOBILE_MONEY     // Mobile money/agent
-    }
-
     public enum ProgramStatus {
         ACTIVE, INACTIVE, SUSPENDED, PENDING_APPROVAL, CLOSED
     }
@@ -455,7 +437,7 @@ public class Program extends BaseEntity {
      * Check if this is a wallet program.
      */
     public boolean isWalletProgram() {
-        return programType == ProgramType.WALLET || Boolean.TRUE.equals(walletEnabled);
+        return Boolean.TRUE.equals(walletEnabled);
     }
 
     /**
@@ -534,26 +516,6 @@ public class Program extends BaseEntity {
             case "CORPORATE_CARD" -> Boolean.TRUE.equals(corporateCardEnabled);
             case "MOBILE_MONEY" -> Boolean.TRUE.equals(mobileMoneyEnabled);
             default -> false;
-        };
-    }
-
-    /**
-     * Get appropriate template based on program type.
-     */
-    public String getDefaultTemplate() {
-        if (defaultHierarchyTemplate != null) {
-            return defaultHierarchyTemplate;
-        }
-        return switch (programType) {
-            case IHB -> TEMPLATE_IHB;
-            case COLLECTION, VIBAN, RECEIVABLES -> TEMPLATE_COLLECTION;
-            case WALLET -> TEMPLATE_WALLET;
-            case ESCROW -> TEMPLATE_ESCROW;
-            case LOYALTY -> TEMPLATE_LOYALTY;
-            case GIFT_CARD -> TEMPLATE_GIFT_CARD;
-            case CORPORATE_CARD -> TEMPLATE_CORPORATE_CARD;
-            case MOBILE_MONEY -> TEMPLATE_MOBILE_MONEY;
-            default -> TEMPLATE_COLLECTION;
         };
     }
 

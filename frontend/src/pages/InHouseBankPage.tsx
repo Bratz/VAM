@@ -41,7 +41,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType: 'COLLECTION' | 'WALLET' | 'IHB' | 'PAYABLES' | 'VIBAN' | 'ESCROW';
   corporateId?: string;
   currencyCode?: string;
 }
@@ -698,8 +697,11 @@ const InHouseBankPage: React.FC = () => {
       <ScopeSelector
         mode="corporate-program"
         corporates={corporates}
-        // IHB page scopes to IHB-type programs only.
-        programs={programs.filter(p => p.programType === 'IHB' && (!selectedCorporateId || p.corporateId === selectedCorporateId))}
+        // Scoped by corporate only. Filtering on a program flag implied a
+        // constraint that does not exist: the selection here is shown in the
+        // breadcrumb and sent to nothing, and IHB accounts take their program
+        // from the parent they hang under, not from a program the user picks.
+        programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
         selectedCorporateId={selectedCorporateId}
         selectedProgramId={selectedProgramId}
         onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}

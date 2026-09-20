@@ -63,7 +63,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType?: string;
   corporateId: string;
   status: string;
 }
@@ -2390,7 +2389,7 @@ export default function TransfersPage() {
                   { value: '', label: `All Programs (${filteredPrograms.length})` },
                   ...filteredPrograms.map((p) => ({
                     value: p.id,
-                    label: `${p.programName} (${p.programType || 'General'})`,
+                    label: p.programName,
                   })),
                 ]}
                 disabled={loading}
@@ -2464,7 +2463,7 @@ export default function TransfersPage() {
               { value: '', label: `All Programs (${filteredPrograms.length})` },
               ...filteredPrograms.map((p) => ({
                 value: p.id,
-                label: `${p.programName} (${p.programType || 'General'})`,
+                label: p.programName,
               })),
             ]}
             disabled={loading}

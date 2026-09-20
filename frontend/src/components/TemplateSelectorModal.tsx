@@ -27,10 +27,10 @@ import { Modal } from '../components/ui/enhanced';
 import { Button, Badge, StatusIconBadge } from '../components/ui';
 import { cn } from '../utils';
 import {
-  HIERARCHY_TEMPLATES,
   TemplateConfig,
   getRecommendedTemplate,
-  getTemplatesForProgramType,
+  getTemplatesForFeatures,
+  getOtherTemplates,
 } from '../config/templateHierarchy';
 
 // ============================================================================
@@ -41,9 +41,18 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType: string;
   currencyCode: string;
   status: string;
+  // Feature flags: what the program can do, which is what decides the templates.
+  vibanEnabled?: boolean;
+  walletEnabled?: boolean;
+  escrowEnabled?: boolean;
+  ihbEnabled?: boolean;
+  hierarchyEnabled?: boolean;
+  loyaltyEnabled?: boolean;
+  giftCardEnabled?: boolean;
+  corporateCardEnabled?: boolean;
+  mobileMoneyEnabled?: boolean;
 }
 
 interface TemplateSelectorModalProps {
@@ -76,13 +85,13 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
   // Auto-select recommended template when program changes
   useEffect(() => {
     if (program) {
-      const recommended = getRecommendedTemplate(program.programType);
+      const recommended = getRecommendedTemplate(program as unknown as Record<string, boolean | undefined>);
       if (recommended) {
         setSelectedTemplate(recommended.id);
         setPreviewTemplate(recommended);
       } else {
         // Fall back to first available template
-        const templates = getTemplatesForProgramType(program.programType);
+        const templates = getTemplatesForFeatures(program as unknown as Record<string, boolean | undefined>);
         if (templates.length > 0) {
           setSelectedTemplate(templates[0].id);
           setPreviewTemplate(templates[0]);
@@ -102,12 +111,9 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
   if (!program) return null;
 
   // Categorize templates
-  const relevantTemplates = HIERARCHY_TEMPLATES.filter((t) =>
-    t.forProgramTypes.includes(program.programType)
-  );
-  const otherTemplates = HIERARCHY_TEMPLATES.filter(
-    (t) => !t.forProgramTypes.includes(program.programType)
-  );
+  const programFlags = program as unknown as Record<string, boolean | undefined>;
+  const relevantTemplates = getTemplatesForFeatures(programFlags);
+  const otherTemplates = getOtherTemplates(programFlags);
 
   const handleTemplateClick = (template: TemplateConfig) => {
     setSelectedTemplate(template.id);
@@ -134,14 +140,14 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
         <div className="w-1/2 overflow-y-auto pr-4 border-r border-edge">
           <p className="body-sm mb-4">
             Select a hierarchy template for{' '}
-            <strong>{program.programName}</strong> ({program.programType})
+            <strong>{program.programName}</strong>
           </p>
 
           {/* Recommended Templates */}
           {relevantTemplates.length > 0 && (
             <>
               <h3 className="label mb-2">
-                Recommended for {program.programType}
+                Recommended
               </h3>
               <div className="space-y-2 mb-6">
                 {relevantTemplates.map((template) => {
@@ -217,7 +223,9 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                           </span>
                           <p className="caption">
                             {template.levels.length} levels •{' '}
-                            {template.forProgramTypes.join(', ')}
+                            {template.forFeatures.length > 0
+                              ? template.forFeatures.map((f) => f.replace(/Enabled$/, '')).join(', ')
+                              : 'any program'}
                           </p>
                         </div>
                       </div>

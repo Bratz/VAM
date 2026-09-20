@@ -5,7 +5,7 @@ import { Card, Badge, Button, StatusIconBadge } from '../../components/ui';
 import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
 
-import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, programTypeConfig, statusConfig, settlementFrequencyConfig } from './shared';
+import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, featureConfig, FEATURE_KEYS, statusConfig, settlementFrequencyConfig } from './shared';
 
 // ============================================================================
 // DETAIL MODAL
@@ -79,7 +79,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
 
   // Fetch wallet charges when viewing a wallet program
   useEffect(() => {
-    if (program && (program.walletEnabled || program.programType === 'WALLET')) {
+    if (program && program.walletEnabled) {
       setWalletChargesLoading(true);
       fetchApi<WalletChargesResponse>(`/programs/${program.id}/wallet`, {}, CHARGES_API_BASE)
         .then(res => {
@@ -95,7 +95,13 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
 
   if (!program) return null;
 
-  const TypeIcon = programTypeConfig[program.programType]?.icon || Layers;
+  // A program is identified by what it can do. The first feature it has
+  // switched on stands in for the old programType badge; a program with none is
+  // a plain virtual-account program.
+  const activeFeatures = FEATURE_KEYS.filter((k) => (program as unknown as Record<string, unknown>)[k] === true);
+  const primaryFeature = activeFeatures.find((k) => k !== 'hierarchyEnabled') ?? activeFeatures[0];
+  const primary = primaryFeature ? featureConfig[primaryFeature] : null;
+  const TypeIcon = primary?.icon || Layers;
   // NEW: Check if hierarchy is initialized
   const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
 
@@ -103,7 +109,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
     { id: 'overview' as const, label: 'Overview' },
     { id: 'hierarchy' as const, label: 'Hierarchy', badge: program.hierarchyEnabled && !hasHierarchy ? 'Setup' : undefined },
     { id: 'viban' as const, label: 'VIBAN Pool', show: program.vibanEnabled },
-    { id: 'wallet' as const, label: 'Wallet Fees', show: program.walletEnabled || program.programType === 'WALLET' },  // NEW
+    { id: 'wallet' as const, label: 'Wallet Fees', show: program.walletEnabled },
     { id: 'accounts' as const, label: 'Virtual Accounts', count: program.virtualAccountCount },
     { id: 'config' as const, label: 'Configuration' },
     { id: 'history' as const, label: 'Activity' },
@@ -114,7 +120,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-edge">
-          <StatusIconBadge tone={programTypeConfig[program.programType]?.tone || 'neutral'} icon={TypeIcon} size="lg" subtle />
+          <StatusIconBadge tone={primary?.tone || 'neutral'} icon={TypeIcon} size="lg" subtle />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="section-title truncate">{program.programName}</h2>
@@ -125,7 +131,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
             <div className="flex items-center gap-4 mt-1 body-sm">
               <span className="font-mono">{program.programCode}</span>
               <span>•</span>
-              <span>{programTypeConfig[program.programType]?.label}</span>
+              <span>{primary?.label ?? 'Virtual Accounts'}</span>
               <span>•</span>
               <span>{program.currencyCode}</span>
             </div>
@@ -186,7 +192,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 <h3 className="body-strong font-semibold">Program Details</h3>
                 <Card padding="sm" className="space-y-3">
                   <div className="flex justify-between"><span className="body-sm">Program Code</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.programCode}</span></div>
-                  <div className="flex justify-between"><span className="body-sm">Type</span><Badge variant="neutral">{programTypeConfig[program.programType]?.label}</Badge></div>
+                  <div className="flex justify-between"><span className="body-sm">Features</span><div className="flex flex-wrap gap-1 justify-end">{activeFeatures.length > 0 ? activeFeatures.map((k) => <Badge key={k} variant="neutral">{featureConfig[k].label}</Badge>) : <Badge variant="neutral">Virtual Accounts</Badge>}</div></div>
                   <div className="flex justify-between"><span className="body-sm">Currency</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{program.currencyCode}</span></div>
                   <div className="flex justify-between"><span className="body-sm">VA Prefix</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.vaPrefix || '-'}</span></div>
                   <div className="flex justify-between"><span className="body-sm">Created</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
@@ -608,7 +614,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
             </div>
           )}
           {/* Wallet Fees Tab - NEW */}{/* Wallet Fees Tab - NEW */}
-          {!loading && activeTab === 'wallet' && (program.walletEnabled || program.programType === 'WALLET') && (
+          {!loading && activeTab === 'wallet' && program.walletEnabled && (
             <div className="space-y-6">
               {walletChargesLoading ? (
                 <div className="flex items-center justify-center py-12">
@@ -907,7 +913,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 </div>
               </Card>
               {/* Wallet Limits - Only show if wallet is enabled */}
-              {(program.walletEnabled || program.programType === 'WALLET') && (
+              {program.walletEnabled && (
                 <Card padding="md">
                   <h4 className="font-medium text-primary-900 mb-4 flex items-center gap-2 dark:text-neutral-50">
                     <Wallet className="w-4 h-4" />Wallet Limits
@@ -933,7 +939,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 </Card>
               )}
               {/* KYC Settings - Only show if wallet is enabled */}
-              {(program.walletEnabled || program.programType === 'WALLET') && (
+              {program.walletEnabled && (
                 <Card padding="md">
                   <h4 className="font-medium text-primary-900 mb-4 flex items-center gap-2 dark:text-neutral-50">
                     <Shield className="w-4 h-4" />KYC Settings
@@ -951,7 +957,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 </Card>
               )}
               {/* Wallet Capabilities - Only show if wallet is enabled */}
-              {(program.walletEnabled || program.programType === 'WALLET') && (
+              {program.walletEnabled && (
                 <Card padding="md">
                   <h4 className="font-medium text-primary-900 mb-4 dark:text-neutral-50">Wallet Capabilities</h4>
                   <div className="grid grid-cols-2 gap-4">

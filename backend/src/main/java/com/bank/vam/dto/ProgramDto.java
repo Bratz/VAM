@@ -39,31 +39,6 @@ public class ProgramDto {
     // ENUMS
     // ========================================================================
 
-    public enum ProgramType {
-        COLLECTION("Collection", "Receivables collection program"),
-        VIBAN("VIBAN", "Virtual IBAN program"),
-        ESCROW("Escrow", "Digital escrow program"),
-        WALLET("Wallet", "Prepaid wallet program"),
-        IHB("In-House Bank", "In-house banking program"),
-        PAYABLES("Payables", "Payables management program"),
-        RECEIVABLES("Receivables", "Receivables management program"),
-        LOYALTY("Loyalty", "Loyalty/rewards program"),
-        GIFT_CARD("Gift Card", "Gift card program"),
-        CORPORATE_CARD("Corporate Card", "Corporate card program"),
-        MOBILE_MONEY("Mobile Money", "Mobile money/agent program");
-
-        private final String label;
-        private final String description;
-
-        ProgramType(String label, String description) {
-            this.label = label;
-            this.description = description;
-        }
-
-        public String getLabel() { return label; }
-        public String getDescription() { return description; }
-    }
-
     public enum ProgramStatus {
         ACTIVE("Active", "success"),
         INACTIVE("Inactive", "neutral"),
@@ -112,8 +87,6 @@ public class ProgramDto {
         private UUID id;
         private String programCode;
         private String programName;
-        private String programType;
-        private String programTypeLabel;
         private String description;
 
         // Relationships
@@ -365,21 +338,20 @@ public class ProgramDto {
         private Long suspendedPrograms;
         private Long pendingPrograms;
 
-        // By Type
-        private Long collectionPrograms;
-        private Long vibanPrograms;
-        private Long escrowPrograms;
-        private Long walletPrograms;
-        private Long ihbPrograms;
-        private Long payablesPrograms;
-        private Long loyaltyPrograms;
-        private Long giftCardPrograms;
-        private Long corporateCardPrograms;
-        private Long mobileMoneyPrograms;
-
-        // By Feature
+        // By Feature. These replace the old per-programType counters: the type
+        // was dropped, and every one of its values that carried real meaning had
+        // a feature flag saying the same thing. COLLECTION/PAYABLES/RECEIVABLES
+        // had no flag because they are the base case -- a plain VA program --
+        // and so have no counter here.
         private Long hierarchyEnabledPrograms;
         private Long vibanEnabledPrograms;
+        private Long walletEnabledPrograms;
+        private Long escrowEnabledPrograms;
+        private Long ihbEnabledPrograms;
+        private Long loyaltyEnabledPrograms;
+        private Long giftCardEnabledPrograms;
+        private Long corporateCardEnabledPrograms;
+        private Long mobileMoneyEnabledPrograms;
 
         // Totals
         private Long totalVirtualAccounts;
@@ -416,7 +388,6 @@ public class ProgramDto {
         // Core Fields
         private String programCode;
         private String programName;
-        private String programType;
         private String description;
 
         // Required relationships
@@ -600,7 +571,6 @@ public class ProgramDto {
     @AllArgsConstructor
     public static class ProgramSearchRequest {
         private String query;
-        private String programType;
         private String status;
         private UUID corporateId;
         private String currencyCode;

@@ -8,7 +8,7 @@ import { Info } from 'lucide-react';
 import { Input, Toggle } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, SelectField } from './FormComponents';
-import { CreateVaRequest, Program, ProgramTypeConfig } from '../vaTypes';
+import { CreateVaRequest, Program } from '../vaTypes';
 
 // ============================================================================
 // TYPES
@@ -19,7 +19,6 @@ export interface BasicInfoTabProps {
   setFormData: React.Dispatch<React.SetStateAction<CreateVaRequest>>;
   errors: Record<string, string>;
   program?: Program;
-  config?: ProgramTypeConfig;
   corporates: { id: string; name: string }[];
   physicalAccounts: { id: string; accountNumber: string; currency: string }[];
 }
@@ -33,7 +32,6 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
   setFormData,
   errors,
   program,
-  config,
   corporates,
   physicalAccounts,
 }) => {
@@ -76,7 +74,6 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
           <div>
             <strong>Program:</strong> {program.programName} ({program.programCode})
             <span className="mx-2">•</span>
-            <strong>Type:</strong> {program.programType}
             <span className="mx-2">•</span>
             <strong>Currency:</strong> {program.currencyCode}
           </div>

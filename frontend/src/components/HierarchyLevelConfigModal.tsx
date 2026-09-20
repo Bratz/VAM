@@ -30,7 +30,6 @@ interface HierarchyLevelConfigModalProps {
   onClose: () => void;
   programId: string;
   programName?: string;
-  programType?: string;
   initialLevels?: HierarchyLevelConfig[];
   onSave: (levels: HierarchyLevelConfig[]) => Promise<void>;
   /** If true, shows a warning that modifying levels may affect existing hierarchy nodes */
@@ -313,7 +312,6 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
   onClose,
   programId,
   programName,
-  programType,
   initialLevels,
   onSave,
   maxDepth,
@@ -419,7 +417,6 @@ export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps>
                 Configure the hierarchy levels and allowed values for virtual accounts
               </p>
             </div>
-            {programType && <Badge variant="info">{programType}</Badge>}
           </div>
         </div>
 

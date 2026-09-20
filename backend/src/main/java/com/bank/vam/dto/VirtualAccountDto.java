@@ -644,7 +644,6 @@ public class VirtualAccountDto {
         private String vaName;
         private UUID programId;
         private String programName;
-        private String programType;
         private UUID corporateId;
         private String corporateName;
         private UUID physicalAccountId;
@@ -1375,7 +1374,7 @@ public class VirtualAccountDto {
          *
          * When provided, the program must be:
          * - An active program (status = ACTIVE)
-         * - An IHB program type (programType = IHB)
+         * - A program with ihbEnabled = true
          * - Belong to the same corporate as the participant entity
          */
         private UUID programId;

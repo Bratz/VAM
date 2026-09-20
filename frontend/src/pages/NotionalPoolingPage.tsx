@@ -29,7 +29,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType: 'COLLECTION' | 'WALLET' | 'IHB' | 'PAYABLES' | 'VIBAN' | 'ESCROW' | 'POOLING';
   corporateId?: string;
   currencyCode?: string;
 }
@@ -241,8 +240,11 @@ const NotionalPoolingPage: React.FC = () => {
       <ScopeSelector
         mode="corporate-program"
         corporates={corporates}
-        // NotionalPooling only operates on POOLING-type programs.
-        programs={programs.filter(p => p.programType === 'POOLING' && (!selectedCorporateId || p.corporateId === selectedCorporateId))}
+        // Scoped by corporate only. This used to filter on programType ===
+        // 'POOLING', which was never one of the eleven ProgramType values, so
+        // the selector was always empty. Pool membership lives on the pool, not
+        // on the program.
+        programs={programs.filter(p => !selectedCorporateId || p.corporateId === selectedCorporateId)}
         selectedCorporateId={selectedCorporateId}
         selectedProgramId={selectedProgramId}
         onCorporateChange={(id) => { setSelectedCorporateId(id); setSelectedProgramId(''); }}

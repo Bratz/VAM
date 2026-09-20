@@ -1,6 +1,6 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React from 'react';
-import { Building2, CreditCard, Wallet, Shield, Banknote, CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch, Gift, Smartphone, DollarSign } from 'lucide-react';
+import { Building2, CreditCard, Wallet, Shield, CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch, Gift, Smartphone } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { StatusIconBadge } from '../../components/ui';
 
@@ -145,13 +145,12 @@ export const STANDARD_WALLET_BASE_RATES: WalletChargesResponse = {
   inactivity: { chargeCode: 'WALLET_INACTIVITY', chargeName: 'Wallet Inactivity Fee', percentage: 0, fixed: 10, isWaived: false, hasOverride: false, source: 'BASE' },
 };
 
-export type ProgramType = 'COLLECTION' | 'VIBAN' | 'ESCROW' | 'WALLET' | 'IHB' | 'PAYABLES' | 'RECEIVABLES' | 'LOYALTY' | 'GIFT_CARD' | 'CORPORATE_CARD' | 'MOBILE_MONEY';
 export type ProgramStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING_APPROVAL' | 'CLOSED';
 export type VibanGenerationStrategy = 'SEQUENTIAL' | 'RANDOM' | 'HIERARCHY_ENCODED';
 
 export interface Program {
-  id: string; programCode: string; programName: string; programType: ProgramType;
-  programTypeLabel?: string; description?: string; corporateId: string; corporateName?: string;
+  id: string; programCode: string; programName: string;
+  description?: string; corporateId: string; corporateName?: string;
   physicalAccountId: string; physicalAccountNumber?: string; currencyCode: string;
   vaPrefix?: string; vaFormat?: string; maxVirtualAccounts?: number; autoReconciliation: boolean;
   settlementFrequency?: string; settlementTime?: string; minBalanceThreshold?: number;
@@ -205,16 +204,16 @@ export interface ProgramDetail {
 
 export interface ProgramStats {
   totalPrograms: number; activePrograms: number; inactivePrograms: number; pendingPrograms: number;
-  collectionPrograms: number; vibanPrograms: number; escrowPrograms: number;
-  walletPrograms: number; ihbPrograms: number; payablesPrograms: number;
-  // NEW: Additional program type counts
-  loyaltyPrograms?: number;
-  giftCardPrograms?: number;
-  corporateCardPrograms?: number;
-  mobileMoneyPrograms?: number;
-  // NEW: Feature counts
+  // Per-feature counts, replacing the per-programType ones.
   hierarchyEnabledPrograms?: number;
   vibanEnabledPrograms?: number;
+  walletEnabledPrograms?: number;
+  escrowEnabledPrograms?: number;
+  ihbEnabledPrograms?: number;
+  loyaltyEnabledPrograms?: number;
+  giftCardEnabledPrograms?: number;
+  corporateCardEnabledPrograms?: number;
+  mobileMoneyEnabledPrograms?: number;
   totalVirtualAccounts: number; totalBalance: number;
 }
 
@@ -312,20 +311,27 @@ export const vibanStrategyConfig: Record<string, { label: string; description: s
 // CONFIGURATION
 // ============================================================================
 
-export const programTypeConfig: Record<string, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; description: string }> = {
-  COLLECTION: { label: 'Collection', icon: CreditCard, tone: 'info', color: 'text-info-600 dark:text-info-300', description: 'Receivables collection' },
-  VIBAN: { label: 'VIBAN', icon: Hash, tone: 'accent', color: 'text-accent-600 dark:text-accent-300', description: 'Virtual IBAN' },
-  ESCROW: { label: 'Escrow', icon: Shield, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Digital escrow' },
-  WALLET: { label: 'Wallet', icon: Wallet, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', description: 'Prepaid wallet' },
-  IHB: { label: 'In-House Bank', icon: Building2, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', description: 'In-house banking' },
-  PAYABLES: { label: 'Payables', icon: Banknote, tone: 'error', color: 'text-error-600 dark:text-error-300', description: 'Payables management' },
-  // NEW: Additional Program Types
-  RECEIVABLES: { label: 'Receivables', icon: DollarSign, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Receivables management' },
-  LOYALTY: { label: 'Loyalty', icon: TrendingUp, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', description: 'Loyalty/rewards program' },
-  GIFT_CARD: { label: 'Gift Card', icon: Gift, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', description: 'Gift card program' },
-  CORPORATE_CARD: { label: 'Corporate Card', icon: CreditCard, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', description: 'Corporate card program' },
-  MOBILE_MONEY: { label: 'Mobile Money', icon: Smartphone, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', description: 'Mobile money/agent banking' },
+/**
+ * Presentation for each product feature a program can switch on. This replaces
+ * the old programTypeConfig, which was keyed by the programType enum: every
+ * value of that enum that meant anything had a feature flag saying the same
+ * thing, and the two could disagree. Keyed by flag, they cannot.
+ */
+export const featureConfig: Record<keyof FeatureFlags, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; description: string }> = {
+  hierarchyEnabled: { label: 'Hierarchy', icon: GitBranch, tone: 'info', color: 'text-info-600 dark:text-info-300', description: 'Multi-level account tree' },
+  vibanEnabled: { label: 'VIBAN', icon: Hash, tone: 'accent', color: 'text-accent-600 dark:text-accent-300', description: 'Virtual IBAN' },
+  escrowEnabled: { label: 'Escrow', icon: Shield, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Digital escrow' },
+  walletEnabled: { label: 'Wallet', icon: Wallet, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', description: 'Prepaid wallet' },
+  ihbEnabled: { label: 'In-House Bank', icon: Building2, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', description: 'In-house banking' },
+  loyaltyEnabled: { label: 'Loyalty', icon: TrendingUp, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', description: 'Loyalty/rewards' },
+  giftCardEnabled: { label: 'Gift Card', icon: Gift, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', description: 'Gift cards' },
+  corporateCardEnabled: { label: 'Corporate Card', icon: CreditCard, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', description: 'Corporate cards' },
+  mobileMoneyEnabled: { label: 'Mobile Money', icon: Smartphone, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', description: 'Mobile money/agent banking' },
 };
+
+/** The flags in the order the UI shows them. */
+export const FEATURE_KEYS = Object.keys(featureConfig) as (keyof FeatureFlags)[];
+
 
 export type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 export const statusConfig: Record<string, { label: string; variant: BadgeVariant; icon: React.ElementType }> = {
@@ -363,18 +369,3 @@ export type FeatureFlags = {
   mobileMoneyEnabled?: boolean;
 };
 
-export const PROGRAM_TYPE_FEATURE_MAP: Record<ProgramType, FeatureFlags> = {
-  // Core program types
-  COLLECTION: { hierarchyEnabled: true },
-  VIBAN: { vibanEnabled: true },
-  ESCROW: { escrowEnabled: true },
-  WALLET: { walletEnabled: true },
-  IHB: { ihbEnabled: true, hierarchyEnabled: true },
-  PAYABLES: { hierarchyEnabled: true },
-  RECEIVABLES: { hierarchyEnabled: true },
-  // Extended program types
-  LOYALTY: { loyaltyEnabled: true, walletEnabled: true },
-  GIFT_CARD: { giftCardEnabled: true, walletEnabled: true },
-  CORPORATE_CARD: { corporateCardEnabled: true, walletEnabled: true },
-  MOBILE_MONEY: { mobileMoneyEnabled: true, walletEnabled: true },
-};

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Download, RefreshCw, Plus, Building2, CreditCard, Wallet, Shield, Banknote, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Hash, GitBranch, Zap, Pencil } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Zap, Pencil } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -13,7 +13,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
-import { CORPORATES_API, extractArray, Corporate, ProgramType, ProgramStatus, Program, ProgramStats, programApi, LevelConfigPayload, hierarchyLevelApi, programTypeConfig, statusConfig } from './programs/shared';
+import { CORPORATES_API, extractArray, Corporate, ProgramStatus, Program, ProgramStats, FeatureFlags, programApi, LevelConfigPayload, hierarchyLevelApi, featureConfig, FEATURE_KEYS, statusConfig } from './programs/shared';
 import { ProgramDetailModal } from './programs/ProgramDetailModal';
 import { ProgramFormModal } from './programs/ProgramFormModal';
 
@@ -22,7 +22,7 @@ import { ProgramFormModal } from './programs/ProgramFormModal';
 
 const ProgramsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<ProgramType | 'ALL'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<keyof FeatureFlags | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ProgramStatus | 'ALL'>('ALL');
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [editProgram, setEditProgram] = useState<Program | null>(null);
@@ -78,7 +78,6 @@ const ProgramsPage: React.FC = () => {
       const params: Record<string, string> = {};
       if (searchQuery) params.query = searchQuery;
       // VIBAN is a feature any program type can enable, so that tile filters on the flag client-side.
-      if (typeFilter !== 'ALL' && typeFilter !== 'VIBAN') params.programType = typeFilter;
       if (statusFilter !== 'ALL') params.status = statusFilter;
       if (selectedCorporateId) params.corporateId = selectedCorporateId;
       
@@ -170,8 +169,7 @@ const ProgramsPage: React.FC = () => {
   // Calculate display stats with safe defaults
   const defaultStats: ProgramStats = {
     totalPrograms: 0, activePrograms: 0, inactivePrograms: 0, pendingPrograms: 0,
-    collectionPrograms: 0, vibanPrograms: 0, escrowPrograms: 0, walletPrograms: 0,
-    ihbPrograms: 0, payablesPrograms: 0, totalVirtualAccounts: 0, totalBalance: 0,
+    totalVirtualAccounts: 0, totalBalance: 0,
   };
 
   const displayStats: ProgramStats = stats || {
@@ -180,12 +178,7 @@ const ProgramsPage: React.FC = () => {
     activePrograms: programs.filter(p => p.status === 'ACTIVE').length,
     inactivePrograms: programs.filter(p => p.status === 'INACTIVE').length,
     pendingPrograms: programs.filter(p => p.status === 'PENDING_APPROVAL').length,
-    collectionPrograms: programs.filter(p => p.programType === 'COLLECTION').length,
-    vibanPrograms: programs.filter(p => p.vibanEnabled).length,
-    escrowPrograms: programs.filter(p => p.programType === 'ESCROW').length,
-    walletPrograms: programs.filter(p => p.programType === 'WALLET').length,
-    ihbPrograms: programs.filter(p => p.programType === 'IHB').length,
-    payablesPrograms: programs.filter(p => p.programType === 'PAYABLES').length,
+    ...Object.fromEntries(FEATURE_KEYS.map(k => [`${k}Programs`, programs.filter(p => (p as unknown as Record<string, unknown>)[k] === true).length])),
     totalVirtualAccounts: programs.reduce((s, p) => s + (p.virtualAccountCount || 0), 0),
     totalBalance: programs.reduce((s, p) => s + (p.totalBalance || 0), 0),
   };
@@ -204,14 +197,14 @@ const ProgramsPage: React.FC = () => {
     0,
   );
 
-  const typeTabs: { id: ProgramType | 'ALL'; label: string; count: number; icon: React.ElementType }[] = [
-    { id: 'ALL', label: 'All', count: displayStats.totalPrograms, icon: Layers },
-    { id: 'COLLECTION', label: 'Collection', count: displayStats.collectionPrograms, icon: CreditCard },
-    { id: 'VIBAN', label: 'VIBAN-enabled', count: displayStats.vibanEnabledPrograms ?? programs.filter(p => p.vibanEnabled).length, icon: Hash },
-    { id: 'ESCROW', label: 'Escrow', count: displayStats.escrowPrograms, icon: Shield },
-    { id: 'WALLET', label: 'Wallet', count: displayStats.walletPrograms, icon: Wallet },
-    { id: 'IHB', label: 'IHB', count: displayStats.ihbPrograms, icon: Building2 },
-    { id: 'PAYABLES', label: 'Payables', count: displayStats.payablesPrograms, icon: Banknote },
+  const typeTabs: { id: keyof FeatureFlags | 'ALL'; label: string; count: number; icon: React.ElementType }[] = [
+    { id: 'ALL' as const, label: 'All', count: displayStats.totalPrograms, icon: Layers },
+    ...FEATURE_KEYS.map(k => ({
+      id: k,
+      label: featureConfig[k].label,
+      count: programs.filter(p => (p as unknown as Record<string, unknown>)[k] === true).length,
+      icon: featureConfig[k].icon,
+    })),
   ];
 
   const filteredPrograms = programs.filter(p => {
@@ -219,7 +212,7 @@ const ProgramsPage: React.FC = () => {
     const matchesSearch = !searchQuery || 
       (p.programName?.toLowerCase().includes(searchQuery.toLowerCase())) || 
       (p.programCode?.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch && (typeFilter === 'ALL' || (typeFilter === 'VIBAN' ? p.vibanEnabled : p.programType === typeFilter)) && (statusFilter === 'ALL' || p.status === statusFilter);
+    return matchesSearch && (typeFilter === 'ALL' || (p as unknown as Record<string, unknown>)[typeFilter] === true) && (statusFilter === 'ALL' || p.status === statusFilter);
   });
 
   // Toolbar actions in the Aperture Layout header — same pattern as the
@@ -325,7 +318,8 @@ const ProgramsPage: React.FC = () => {
           keyExtractor={(program) => program.id}
           columns={[
             { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
-              const typeConfig = programTypeConfig[program.programType];
+              const feature = FEATURE_KEYS.find(k => k !== 'hierarchyEnabled' && (program as unknown as Record<string, unknown>)[k] === true);
+              const typeConfig = feature ? featureConfig[feature] : null;
               const TypeIcon = typeConfig?.icon || Layers;
               const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
               return (
@@ -341,10 +335,6 @@ const ProgramsPage: React.FC = () => {
                   </div>
                 </div>
               );
-            } },
-            { key: 'programType', header: 'Type', minWidth: 130, dropOrder: 3, render: (_v, program) => {
-              const typeConfig = programTypeConfig[program.programType];
-              return <Badge variant="neutral">{typeConfig?.label || program.programType}</Badge>;
             } },
             { key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 2, render: (_v, program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> },
             { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, render: (_v, program) => (

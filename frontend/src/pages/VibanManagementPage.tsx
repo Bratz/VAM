@@ -92,7 +92,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType?: string;
   vibanEnabled?: boolean;
   status?: string;
   corporateId?: string;

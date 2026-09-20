@@ -133,7 +133,6 @@ interface ProgramOption {
   programName: string;
   programCode: string;
   currencyCode: string;
-  programType: string;
   status: string;
   corporateId?: string;
 }
@@ -3061,7 +3060,7 @@ const TreasuryHierarchyPage: React.FC = () => {
   const [showIhbConfig, setShowIhbConfig] = useState(false);
   const [selectedNodeForAction, setSelectedNodeForAction] = useState<ExtendedHierarchyNode | null>(null);
   const [selectedEntityForAction, setSelectedEntityForAction] = useState<string | null>(null);
-  const [selectedProgram, setSelectedProgram] = useState<{ programName: string; programCode: string; currencyCode: string; programType?: string; maxHierarchyDepth?: number } | null>(null);
+  const [selectedProgram, setSelectedProgram] = useState<{ programName: string; programCode: string; currencyCode: string; maxHierarchyDepth?: number } | null>(null);
   const [selectedCorporate, setSelectedCorporate] = useState<{ legalName: string; tradeName?: string } | null>(null);
   // ENHANCED: Treasury rates for IHB display
   const [treasuryRates, setTreasuryRates] = useState<TreasuryRates | null>(null);
@@ -3153,7 +3152,6 @@ const TreasuryHierarchyPage: React.FC = () => {
           programName: p.programName,
           programCode: p.programCode,
           currencyCode: p.currencyCode || 'AED',
-          programType: p.programType,
           status: p.status,
           corporateId: p.corporateId,
         }));
@@ -3167,7 +3165,6 @@ const TreasuryHierarchyPage: React.FC = () => {
             programName: activePrograms[0].programName,
             programCode: activePrograms[0].programCode,
             currencyCode: activePrograms[0].currencyCode,
-            programType: activePrograms[0].programType,
           });
         } else {
           setSelectedProgramId('');
@@ -3212,7 +3209,6 @@ const TreasuryHierarchyPage: React.FC = () => {
         programName: program.programName,
         programCode: program.programCode,
         currencyCode: program.currencyCode,
-        programType: program.programType,
       });
       setCheckingStatus(true);
     } else {
@@ -4086,7 +4082,6 @@ const TreasuryHierarchyPage: React.FC = () => {
         onClose={() => setShowLevelConfig(false)}
         programId={selectedProgramId || ''}
         programName={selectedProgram?.programName}
-        programType={selectedProgram?.programType}
         initialLevels={levelConfigs}
         onSave={handleSaveLevelConfigs}
         maxDepth={selectedProgram?.maxHierarchyDepth}

@@ -48,9 +48,6 @@ public class ProgramController {
             @Parameter(description = "Search query for program code, name, or description")
             @RequestParam(required = false) String query,
             
-            @Parameter(description = "Filter by program type: COLLECTION, VIBAN, ESCROW, WALLET, IHB, PAYABLES")
-            @RequestParam(required = false) String programType,
-            
             @Parameter(description = "Filter by status: ACTIVE, INACTIVE, SUSPENDED, PENDING_APPROVAL")
             @RequestParam(required = false) String status,
             
@@ -80,7 +77,6 @@ public class ProgramController {
 
         ProgramSearchRequest request = ProgramSearchRequest.builder()
             .query(query)
-            .programType(programType)
             .status(status)
             .corporateId(corporateId)
             .currencyCode(currencyCode)
@@ -341,25 +337,6 @@ public class ProgramController {
     // ========================================================================
     // LOOKUP ENDPOINTS
     // ========================================================================
-
-    @GetMapping("/types")
-    @Operation(
-        summary = "Get program types",
-        description = "Get list of available program types with labels"
-    )
-    public ResponseEntity<Map<String, Object>> getProgramTypes() {
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "data", Map.of(
-                "COLLECTION", Map.of("label", "Collection", "description", "Receivables collection program"),
-                "VIBAN", Map.of("label", "VIBAN", "description", "Virtual IBAN program"),
-                "ESCROW", Map.of("label", "Escrow", "description", "Digital escrow program"),
-                "WALLET", Map.of("label", "Wallet", "description", "Prepaid wallet program"),
-                "IHB", Map.of("label", "In-House Bank", "description", "In-house banking program"),
-                "PAYABLES", Map.of("label", "Payables", "description", "Payables management program")
-            )
-        ));
-    }
 
     @GetMapping("/statuses")
     @Operation(
