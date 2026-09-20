@@ -480,6 +480,15 @@ public class VirtualAccountService {
         // Apply program defaults
         applyProgramDefaultsToVa(va, program);
 
+        // Then the request's own values, which take precedence. Without this the
+        // flow accepted holderPartyId, walletType, limits and the stored-value
+        // fields on CreateRequest and silently discarded every one of them.
+        applyRequestOverridesToVa(va, request);
+
+        // Placement is derived from the parent here, so re-assert it: the request
+        // may carry its own hierarchyPath, and in this flow the parent decides.
+        va.setHierarchyPath(materializedPath);
+
         // Inherit ownership from parent if not specified
         if (va.getOwningEntityId() == null) {
             inheritOwnershipFromParent(va, parentNode);
@@ -875,7 +884,8 @@ public class VirtualAccountService {
         // Apply program defaults
         applyProgramDefaultsToVa(va, program);
 
-// Apply request overrides
+        // CreateWithHierarchyRequest is a different DTO from CreateRequest, so it
+        // cannot use applyRequestOverridesToVa; it carries only these two.
         if (request.getWalletType() != null) va.setWalletType(request.getWalletType());
         if (request.getKycLevel() != null) {
             va.setKycLevel(request.getKycLevel());
@@ -1678,6 +1688,151 @@ public class VirtualAccountService {
         // Value Type (for loyalty programs)
         if (program.getProgramType() == Program.ProgramType.LOYALTY) {
             builder.valueType(VirtualAccount.ValueType.POINTS);
+        }
+    }
+
+    /**
+     * Setter twin of {@link #applyRequestOverrides}, for flows that have already
+     * built the account before the request's optional fields are applied.
+     *
+     * createWithParentNode previously dropped every field this carries —
+     * holderPartyId, walletType, the limits, the stored-value attributes — so a
+     * caller supplying them got an account without them and no error. It runs
+     * after applyProgramDefaultsToVa so the request wins over program defaults.
+     *
+     * Callers must re-assert anything they derive themselves (createWithParentNode
+     * re-sets hierarchyPath), since the request may carry its own value.
+     */
+    private void applyRequestOverridesToVa(VirtualAccount va,
+                                        VirtualAccountDto.CreateRequest request) {
+        
+        // Hierarchy
+        if (request.getHierarchyNodeId() != null) {
+            va.setHierarchyNodeId(request.getHierarchyNodeId());
+            hierarchyNodeRepository.findById(request.getHierarchyNodeId())
+                    .ifPresent(node -> va.setHierarchyPath(node.getMaterializedPath()));
+        }
+        if (request.getCollectionChannel() != null) {
+            try {
+                va.setCollectionChannel(
+                        VirtualAccount.CollectionChannel.valueOf(request.getCollectionChannel().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid collection channel: {}", request.getCollectionChannel());
+            }
+        }
+
+        // Wallet Configuration
+        if (request.getWalletType() != null) {
+            va.setWalletType(request.getWalletType());
+        }
+        if (request.getKycLevel() != null) {
+            va.setKycLevel(request.getKycLevel());
+            va.setKycVerified(request.getKycLevel() > 0);
+        }
+        if (request.getExpiresAt() != null) {
+            va.setExpiresAt(request.getExpiresAt());
+        }
+        if (request.getHolderPartyId() != null) {
+            va.setHolderPartyId(request.getHolderPartyId());
+        }
+
+        // Spending Limits (override program defaults)
+        if (request.getPerTransactionLimit() != null) {
+            va.setPerTransactionLimit(request.getPerTransactionLimit());
+        }
+        if (request.getDailyLimit() != null) {
+            va.setDailyLimit(request.getDailyLimit());
+        }
+        if (request.getWeeklyLimit() != null) {
+            va.setWeeklyLimit(request.getWeeklyLimit());
+        }
+        if (request.getMonthlyLimit() != null) {
+            va.setMonthlyLimit(request.getMonthlyLimit());
+        }
+        if (request.getAnnualLimit() != null) {
+            va.setAnnualLimit(request.getAnnualLimit());
+        }
+        if (request.getMaxBalance() != null) {
+            va.setMaxBalance(request.getMaxBalance());
+        }
+
+        // Topup Limits
+        if (request.getDailyTopupLimit() != null) {
+            va.setDailyTopupLimit(request.getDailyTopupLimit());
+        }
+        if (request.getMonthlyTopupLimit() != null) {
+            va.setMonthlyTopupLimit(request.getMonthlyTopupLimit());
+        }
+
+        // Value Type
+        if (request.getValueType() != null) {
+            try {
+                va.setValueType(VirtualAccount.ValueType.valueOf(request.getValueType().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid value type: {}", request.getValueType());
+            }
+        }
+        if (request.getPointsToCurrencyRate() != null) {
+            va.setPointsToCurrencyRate(request.getPointsToCurrencyRate());
+        }
+        if (request.getLoyaltyTier() != null) {
+            try {
+                va.setLoyaltyTier(VirtualAccount.LoyaltyTier.valueOf(request.getLoyaltyTier().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid loyalty tier: {}", request.getLoyaltyTier());
+            }
+        }
+        if (request.getLoyaltyProgramId() != null) {
+            va.setLoyaltyProgramId(request.getLoyaltyProgramId());
+        }
+
+        // Card Program
+        if (request.getCardProgramType() != null) {
+            try {
+                va.setCardProgramType(
+                        VirtualAccount.CardProgramType.valueOf(request.getCardProgramType().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid card program type: {}", request.getCardProgramType());
+            }
+        }
+        if (request.getLinkedCardId() != null) {
+            va.setLinkedCardId(request.getLinkedCardId());
+        }
+        if (request.getBudgetOwnerId() != null) {
+            va.setBudgetOwnerId(request.getBudgetOwnerId());
+        }
+        if (request.getCostCenter() != null) {
+            va.setCostCenter(request.getCostCenter());
+        }
+        if (request.getDepartment() != null) {
+            va.setDepartment(request.getDepartment());
+        }
+
+        // MCC Restrictions
+        if (request.getMccWhitelist() != null) {
+            va.setMccWhitelist(request.getMccWhitelist());
+        }
+        if (request.getMccBlacklist() != null) {
+            va.setMccBlacklist(request.getMccBlacklist());
+        }
+        if (request.getMerchantWhitelist() != null) {
+            va.setMerchantWhitelist(request.getMerchantWhitelist());
+        }
+        if (request.getCountryWhitelist() != null) {
+            va.setCountryWhitelist(request.getCountryWhitelist());
+        }
+
+        // Expiry Configuration
+        if (request.getBalanceExpiryDate() != null) {
+            va.setBalanceExpiryDate(request.getBalanceExpiryDate());
+        }
+        if (request.getExpiryAction() != null) {
+            try {
+                va.setExpiryAction(
+                        VirtualAccount.ExpiryAction.valueOf(request.getExpiryAction().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid expiry action: {}", request.getExpiryAction());
+            }
         }
     }
 
