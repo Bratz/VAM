@@ -307,4 +307,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
            "OR t.correlationId LIKE :correlationId% " +
            "ORDER BY t.transactionDate DESC")
     List<Transaction> findAllTransactionsByCorrelationId(@Param("correlationId") String correlationId);
+
+    /** Movements on any of the given VAs from a point in time — used for wallet volumes. */
+    List<Transaction> findByVaIdInAndTransactionDateGreaterThanEqual(
+        List<UUID> vaIds, java.time.LocalDateTime from);
 }

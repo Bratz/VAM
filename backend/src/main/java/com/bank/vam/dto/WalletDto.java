@@ -469,6 +469,8 @@ public class WalletDto {
         private String holderName;
         private String holderMobile;
         private String holderEmail;
+        /** Currency for this wallet. A holder wanting several currencies gets one wallet each. */
+        private String currencyCode;
         private UUID partyId;                 // Optional - link to existing party
         
         // Initial settings

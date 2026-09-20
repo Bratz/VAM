@@ -73,6 +73,7 @@ public class WalletService {
     private final SettlementVaResolverService settlementVaResolver;
     private final ExceptionTransactionRepository exceptionTransactionRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final com.bank.vam.service.treasury.FxRateService fxRateService;
 
     // ========================================================================
     // STATS
@@ -80,17 +81,17 @@ public class WalletService {
 
     public WalletStatsResponse getStats(UUID corporateId) {
         log.info("Getting wallet stats for corporate: {}", corporateId);
-        
+
         // Get wallet programs
         List<Program> programs = getWalletPrograms(corporateId);
-        
+
         // Get wallet accounts (VAs with walletType set)
         List<VirtualAccount> allWallets = getWalletAccounts(corporateId, null);
-        
+
         long activePrograms = programs.stream()
                 .filter(p -> p.getStatus() == ProgramStatus.ACTIVE)
                 .count();
-        
+
         long activeWallets = allWallets.stream()
                 .filter(w -> w.getStatus() == VaStatus.ACTIVE)
                 .count();
@@ -100,25 +101,36 @@ public class WalletService {
         long blockedWallets = allWallets.stream()
                 .filter(w -> w.getStatus() == VaStatus.BLOCKED)
                 .count();
-        
-        BigDecimal totalBalance = allWallets.stream()
-                .map(VirtualAccount::getCurrentBalance)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        BigDecimal totalAvailable = allWallets.stream()
-                .map(VirtualAccount::getAvailableBalance)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
+        // Wallets are single-currency, so a holder with three currencies has three
+        // accounts. Adding their balances raw would be meaningless: group by
+        // currency, then convert each group to the market reporting currency.
+        String reportingCurrency = marketProfile.getDefaultCurrency();
+        List<String> excludedCurrencies = new ArrayList<>();
+        BigDecimal totalBalance = convertWalletTotal(
+            allWallets, VirtualAccount::getCurrentBalance, reportingCurrency, excludedCurrencies);
+        BigDecimal totalAvailable = convertWalletTotal(
+            allWallets, VirtualAccount::getAvailableBalance, reportingCurrency, excludedCurrencies);
+
         long kycVerified = allWallets.stream()
                 .filter(w -> Boolean.TRUE.equals(w.getKycVerified()))
                 .count();
-        
-        // Calculate volume (simplified - in production use aggregate queries)
-        BigDecimal monthlyVolume = BigDecimal.valueOf(2500000);
-        BigDecimal dailyVolume = BigDecimal.valueOf(125000);
-        
+
+        // Volumes come from the movements on these wallets, not from a constant.
+        List<UUID> walletIds = allWallets.stream().map(VirtualAccount::getId).toList();
+        LocalDateTime dayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+
+        List<Transaction> monthMovements = walletIds.isEmpty()
+            ? List.of()
+            : transactionRepository.findByVaIdInAndTransactionDateGreaterThanEqual(walletIds, monthStart);
+
+        BigDecimal monthlyVolume = sumConverted(monthMovements, reportingCurrency, excludedCurrencies);
+        List<Transaction> todayMovements = monthMovements.stream()
+            .filter(m -> m.getTransactionDate() != null && !m.getTransactionDate().isBefore(dayStart))
+            .toList();
+        BigDecimal dailyVolume = sumConverted(todayMovements, reportingCurrency, excludedCurrencies);
+
         return WalletStatsResponse.builder()
                 .totalPrograms(programs.size())
                 .activePrograms((int) activePrograms)
@@ -130,11 +142,48 @@ public class WalletService {
                 .totalAvailableBalance(totalAvailable)
                 .monthlyVolume(monthlyVolume)
                 .dailyVolume(dailyVolume)
-                .todayTransactions(45L)
-                .monthlyTransactions(1250L)
+                .todayTransactions((long) todayMovements.size())
+                .monthlyTransactions((long) monthMovements.size())
                 .kycVerifiedCount(kycVerified)
                 .kycPendingCount(allWallets.size() - kycVerified)
                 .build();
+    }
+
+    /** Group balances by currency, convert each to {@code target}, and report what had no rate. */
+    private BigDecimal convertWalletTotal(List<VirtualAccount> wallets,
+                                          java.util.function.Function<VirtualAccount, BigDecimal> field,
+                                          String target, List<String> excluded) {
+        Map<String, BigDecimal> byCurrency = new TreeMap<>();
+        for (VirtualAccount w : wallets) {
+            BigDecimal value = field.apply(w);
+            if (value != null && w.getCurrencyCode() != null) {
+                byCurrency.merge(w.getCurrencyCode(), value, BigDecimal::add);
+            }
+        }
+        return convertByCurrency(byCurrency, target, excluded);
+    }
+
+    private BigDecimal sumConverted(List<Transaction> movements, String target, List<String> excluded) {
+        Map<String, BigDecimal> byCurrency = new TreeMap<>();
+        for (Transaction m : movements) {
+            if (m.getAmount() != null && m.getCurrencyCode() != null) {
+                byCurrency.merge(m.getCurrencyCode(), m.getAmount().abs(), BigDecimal::add);
+            }
+        }
+        return convertByCurrency(byCurrency, target, excluded);
+    }
+
+    private BigDecimal convertByCurrency(Map<String, BigDecimal> byCurrency, String target, List<String> excluded) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<String, BigDecimal> e : byCurrency.entrySet()) {
+            try {
+                total = total.add(fxRateService.convert(e.getValue(), e.getKey(), target));
+            } catch (RuntimeException ex) {
+                log.warn("No FX rate {} -> {} for wallet stats; excluding", e.getKey(), target);
+                excluded.add(e.getKey());
+            }
+        }
+        return total;
     }
 
     // ========================================================================
@@ -464,6 +513,18 @@ public class WalletService {
             netInitialBalance = BigDecimal.ZERO;
         }
         
+        // A wallet holds one currency. A holder wanting several gets one wallet each,
+        // grouped under the program's aggregate for that currency (see ensureCurrencyAggregate).
+        String currencyCode = request.getCurrencyCode() != null && !request.getCurrencyCode().isBlank()
+            ? request.getCurrencyCode().toUpperCase()
+            : (program != null && program.getCurrencyCode() != null
+                ? program.getCurrencyCode()
+                : marketProfile.getDefaultCurrency());
+
+        VirtualAccount currencyAggregate = program != null
+            ? ensureCurrencyAggregate(program, currencyCode)
+            : null;
+
         // Create VirtualAccount with wallet configuration
         VirtualAccount wallet = VirtualAccount.builder()
                 .vaNumber(walletNumber)
@@ -471,7 +532,7 @@ public class WalletService {
                 .programId(request.getProgramId())
                 .corporateId(program != null ? program.getCorporateId() : null)
                 .physicalAccountId(program != null ? program.getPhysicalAccountId() : null)
-                .currencyCode(program != null ? program.getCurrencyCode() : marketProfile.getDefaultCurrency())
+                .currencyCode(currencyCode)
                 .currentBalance(netInitialBalance)
                 .availableBalance(netInitialBalance)
                 .status(VaStatus.ACTIVE)
@@ -489,6 +550,9 @@ public class WalletService {
                 .expiresAt(program != null ? program.calculateWalletExpiryDate() : null)
                 .externalReference(request.getExternalReference())
                 .metadata(buildWalletMetadata(request))
+                .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)
+                .parentAccountId(currencyAggregate != null ? currencyAggregate.getId() : null)
+                .hierarchyNodeId(currencyAggregate != null ? currencyAggregate.getHierarchyNodeId() : null)
                 .build();
         
         VirtualAccount saved = virtualAccountRepository.save(wallet);
@@ -1114,6 +1178,196 @@ public class WalletService {
     // ========================================================================
     // WALLET TYPES
     // ========================================================================
+
+    // ========================================================================
+    // MULTI-CURRENCY PLACEMENT
+    // ========================================================================
+
+    /**
+     * Find, or create, the aggregation account that groups every wallet held in
+     * one currency under this program.
+     *
+     * This is the IHB pattern with the program's entity in the Treasury's seat:
+     * IHB places a participant's current account under the treasury's AGGREGATION
+     * account for the matching currency, and a wallet is placed the same way. The
+     * node count therefore tracks the number of currencies, not the number of
+     * holders, and balances roll up the parentAccountId chain that
+     * CurrencyMirrorService already maintains.
+     *
+     * Deliberately no "any account will do" fallback: if the aggregate cannot be
+     * resolved it is created, and if it cannot be created the caller fails rather
+     * than having a wallet silently attached to an unrelated account.
+     */
+    @Transactional
+    public VirtualAccount ensureCurrencyAggregate(Program program, String currencyCode) {
+        String ccy = currencyCode.toUpperCase();
+
+        Optional<VirtualAccount> existing = virtualAccountRepository
+            .findByProgramIdAndCurrencyCodeAndAccountCategoryAndStatus(
+                program.getId(), ccy, VirtualAccount.AccountCategory.AGGREGATION, VaStatus.ACTIVE);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        // Chain the new aggregate upward so wallet balances reach the root. The
+        // currency mirror is the right parent when one exists, since that is what
+        // CurrencyMirrorService converts to base; otherwise fall back to the root
+        // account itself. An aggregate with no parent would strand every wallet
+        // beneath it outside the roll-up.
+        VirtualAccount root = virtualAccountRepository
+            .findByProgramIdAndAccountCategory(program.getId(), VirtualAccount.AccountCategory.ROOT)
+            .stream().findFirst().orElse(null);
+
+        VirtualAccount parent = null;
+        if (root != null) {
+            parent = virtualAccountRepository
+                .findByParentAccountIdAndAccountCategory(root.getId(),
+                    VirtualAccount.AccountCategory.CURRENCY_MIRROR)
+                .stream()
+                .filter(m -> ccy.equalsIgnoreCase(m.getCurrencyCode()))
+                .findFirst()
+                .orElse(root);
+        }
+
+        VirtualAccount aggregate = VirtualAccount.builder()
+            .vaNumber("WALLET-AGG-" + program.getProgramCode() + "-" + ccy)
+            .vaName("Wallet float - " + ccy)
+            .programId(program.getId())
+            .corporateId(program.getCorporateId())
+            .physicalAccountId(program.getPhysicalAccountId())
+            .currencyCode(ccy)
+            .accountCategory(VirtualAccount.AccountCategory.AGGREGATION)
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status(VaStatus.ACTIVE)
+            .parentAccountId(parent != null ? parent.getId() : null)
+            .hierarchyNodeId(parent != null ? parent.getHierarchyNodeId() : program.getRootHierarchyNodeId())
+            .build();
+
+        aggregate = virtualAccountRepository.save(aggregate);
+        log.info("Created wallet float aggregate {} for program {} currency {}",
+            aggregate.getVaNumber(), program.getProgramCode(), ccy);
+        return aggregate;
+    }
+
+    /**
+     * The wallet a holder has in one currency, creating it if this is their first.
+     * Idempotent, so a caller can ask for it on every load without checking first.
+     */
+    @Transactional
+    public VirtualAccount ensureWallet(UUID programId, UUID partyId, String currencyCode, String holderName) {
+        String ccy = currencyCode.toUpperCase();
+
+        Optional<VirtualAccount> existing = virtualAccountRepository.findByHolderPartyId(partyId).stream()
+            .filter(w -> ccy.equalsIgnoreCase(w.getCurrencyCode()))
+            .filter(w -> programId == null || programId.equals(w.getProgramId()))
+            .filter(w -> w.getStatus() == VaStatus.ACTIVE)
+            .findFirst();
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        Party holder = partyRepository.findById(partyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Party not found: " + partyId));
+
+        WalletAccountResponse issued = issueWallet(IssueWalletRequest.builder()
+            .programId(programId)
+            .partyId(partyId)
+            .holderName(holderName != null ? holderName : holder.getLegalName())
+            .currencyCode(ccy)
+            .build());
+
+        return virtualAccountRepository.findById(issued.getId())
+            .orElseThrow(() -> new BusinessException("Wallet could not be created for " + ccy));
+    }
+
+    /**
+     * Load funds for a holder in a given currency, opening that currency's wallet
+     * on first use. This is what makes a holder's wallet feel multi-currency while
+     * each underlying account stays single-currency.
+     */
+    @Transactional
+    public LoadFundsResponse loadFundsForHolder(UUID programId, UUID partyId, String currencyCode,
+                                                LoadFundsRequest request) {
+        VirtualAccount wallet = ensureWallet(programId, partyId, currencyCode, null);
+        return loadFunds(wallet.getId(), request);
+    }
+
+    /**
+     * A holder's position across every currency they hold, with a converted total.
+     * The wallets themselves stay separate accounts; this assembles the view, the
+     * way IHB assembles an entity's position across its current accounts.
+     */
+    @Transactional(readOnly = true)
+    public HolderPositionResponse getHolderPosition(UUID partyId, String reportingCurrency) {
+        String target = reportingCurrency != null && !reportingCurrency.isBlank()
+            ? reportingCurrency.toUpperCase()
+            : marketProfile.getDefaultCurrency();
+
+        List<VirtualAccount> wallets = virtualAccountRepository.findByHolderPartyId(partyId).stream()
+            .sorted(Comparator.comparing(VirtualAccount::getCurrencyCode,
+                Comparator.nullsLast(Comparator.naturalOrder())))
+            .toList();
+
+        List<HolderCurrencyBalance> balances = new ArrayList<>();
+        List<String> excluded = new ArrayList<>();
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (VirtualAccount w : wallets) {
+            BigDecimal balance = w.getCurrentBalance() != null ? w.getCurrentBalance() : BigDecimal.ZERO;
+            BigDecimal converted = null;
+            try {
+                converted = fxRateService.convert(balance, w.getCurrencyCode(), target);
+                total = total.add(converted);
+            } catch (RuntimeException ex) {
+                log.warn("No FX rate {} -> {} for holder position; excluding", w.getCurrencyCode(), target);
+                excluded.add(w.getCurrencyCode());
+            }
+            balances.add(HolderCurrencyBalance.builder()
+                .walletId(w.getId())
+                .vaNumber(w.getVaNumber())
+                .currencyCode(w.getCurrencyCode())
+                .balance(balance)
+                .availableBalance(w.getAvailableBalance())
+                .convertedBalance(converted)
+                .status(w.getStatus() != null ? w.getStatus().name() : null)
+                .build());
+        }
+
+        Party holder = partyRepository.findById(partyId).orElse(null);
+        return HolderPositionResponse.builder()
+            .partyId(partyId)
+            .holderName(holder != null ? holder.getLegalName() : null)
+            .kycStatus(holder != null && holder.getKycStatus() != null ? holder.getKycStatus().name() : null)
+            .reportingCurrency(target)
+            .totalConvertedBalance(total)
+            .currencies(balances)
+            .excludedCurrencies(excluded.stream().distinct().toList())
+            .build();
+    }
+
+    @lombok.Data @lombok.Builder @lombok.NoArgsConstructor @lombok.AllArgsConstructor
+    public static class HolderCurrencyBalance {
+        private UUID walletId;
+        private String vaNumber;
+        private String currencyCode;
+        private BigDecimal balance;
+        private BigDecimal availableBalance;
+        /** Null when no rate to the reporting currency was available. */
+        private BigDecimal convertedBalance;
+        private String status;
+    }
+
+    @lombok.Data @lombok.Builder @lombok.NoArgsConstructor @lombok.AllArgsConstructor
+    public static class HolderPositionResponse {
+        private UUID partyId;
+        private String holderName;
+        private String kycStatus;
+        private String reportingCurrency;
+        private BigDecimal totalConvertedBalance;
+        private List<HolderCurrencyBalance> currencies;
+        private List<String> excludedCurrencies;
+    }
 
     public List<Map<String, Object>> getWalletTypes() {
         return Arrays.asList(

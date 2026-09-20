@@ -160,6 +160,43 @@ public class WalletController {
         return ResponseEntity.ok(Map.of("success", true, "data", response, "message", "Funds loaded successfully"));
     }
 
+    // ========================================================================
+    // MULTI-CURRENCY HOLDER OPERATIONS
+    // ========================================================================
+
+    /**
+     * A holder's balances across every currency they hold, plus a converted total.
+     * Each currency is its own wallet account; this is the assembled view.
+     */
+    @GetMapping("/holders/{partyId}/position")
+    @Operation(summary = "Holder position",
+        description = "Balances across all of a holder's currency wallets, with a converted total")
+    public ResponseEntity<Map<String, Object>> getHolderPosition(
+            @PathVariable UUID partyId,
+            @RequestParam(required = false) String reportingCurrency) {
+        WalletService.HolderPositionResponse position =
+            walletService.getHolderPosition(partyId, reportingCurrency);
+        return ResponseEntity.ok(Map.of("success", true, "data", position));
+    }
+
+    /**
+     * Load funds for a holder in a given currency, opening that currency's wallet
+     * on first use rather than requiring it to be issued beforehand.
+     */
+    @PostMapping("/holders/{partyId}/load")
+    @Operation(summary = "Load a holder's currency wallet",
+        description = "Loads funds in the given currency, creating that wallet if the holder has none")
+    public ResponseEntity<Map<String, Object>> loadFundsForHolder(
+            @PathVariable UUID partyId,
+            @RequestParam String currencyCode,
+            @RequestParam(required = false) UUID programId,
+            @RequestBody LoadFundsRequest request) {
+        LoadFundsResponse response =
+            walletService.loadFundsForHolder(programId, partyId, currencyCode, request);
+        return ResponseEntity.ok(Map.of("success", true, "data", response,
+            "message", "Funds loaded successfully"));
+    }
+
     @PostMapping("/{walletId}/withdraw")
     @Operation(summary = "Withdraw funds", description = "Withdraw funds from a wallet")
     public ResponseEntity<Map<String, Object>> withdrawFunds(

@@ -47,19 +47,37 @@ const partyApi = {
       const total = response.totalCount || response.totalElements || parties.length;
       return { content: parties, totalElements: total, page: response.page || 0, pageSize: response.pageSize || 10 };
     } catch {
-      // Fallback to demo data
-      const filtered = demoParties.filter(p =>
-        p.legalName.toLowerCase().includes(query.toLowerCase()) ||
-        p.contactPhone?.includes(query) ||
-        p.contactEmail?.toLowerCase().includes(query.toLowerCase())
-      );
-      return { content: filtered, totalElements: filtered.length, page: 0, pageSize: 10 };
+      // No invented people: an unreachable party service returns nothing, and the
+      // caller shows an empty result rather than names that do not exist.
+      return { content: [], totalElements: 0, page: 0, pageSize: 10 };
     }
   },
   create: async (data: CreatePartyRequest): Promise<Party> => {
     return await fetchApi<Party>('', { method: 'POST', body: JSON.stringify(data) }, PARTY_API_BASE);
   },
 };
+
+/** A holder's balances across every currency they hold; mirrors WalletService.HolderPositionResponse. */
+interface HolderCurrencyBalance {
+  walletId: string;
+  vaNumber: string;
+  currencyCode: string;
+  balance: number;
+  availableBalance?: number;
+  /** Null when no rate to the reporting currency was available. */
+  convertedBalance: number | null;
+  status?: string;
+}
+
+interface HolderPosition {
+  partyId: string;
+  holderName?: string;
+  kycStatus?: string;
+  reportingCurrency: string;
+  totalConvertedBalance: number;
+  currencies: HolderCurrencyBalance[];
+  excludedCurrencies: string[];
+}
 
 const walletsApi = {
   // Stats
@@ -86,6 +104,20 @@ const walletsApi = {
     return fetchApi<WalletListResponse>(`/programs/${id}/wallets?${params}`);
   },
   
+  // Holders - a holder's wallets across currencies, and loading by currency
+  getHolderPosition: (partyId: string, reportingCurrency?: string) => {
+    const params = new URLSearchParams();
+    if (reportingCurrency) params.set('reportingCurrency', reportingCurrency);
+    return fetchApi<HolderPosition>(`/holders/${partyId}/position?${params}`);
+  },
+  loadFundsForHolder: (partyId: string, currencyCode: string, programId: string | undefined, body: LoadFundsRequest) => {
+    const params = new URLSearchParams({ currencyCode });
+    if (programId) params.set('programId', programId);
+    return fetchApi<LoadFundsResponse>(`/holders/${partyId}/load?${params}`, {
+      method: 'POST', body: JSON.stringify(body),
+    });
+  },
+
   // Wallets - Full CRUD
   getWallets: (params: WalletSearchParams = {}) => {
     const query = new URLSearchParams();
@@ -375,33 +407,9 @@ interface TransferResponse { fromWalletId: string; fromWalletReference: string; 
 // Demo Data
 // ============================================================================
 
-const demoParties: Party[] = [
-  { id: 'a0000001-0001-0001-0001-000000000001', partyCode: 'IND-001', partyType: 'INDIVIDUAL', legalName: 'Mohammed Al Rashid', contactPhone: '+971501234567', contactEmail: 'mohammed@email.com', city: 'Dubai', country: 'AE', status: 'ACTIVE', kycStatus: 'VERIFIED', emiratesId: '784-1990-1234567-1', createdAt: '2024-01-15T10:00:00Z' },
-  { id: 'a0000001-0001-0001-0001-000000000002', partyCode: 'IND-002', partyType: 'INDIVIDUAL', legalName: 'Sarah Ahmed', contactPhone: '+971509876543', contactEmail: 'sarah@email.com', city: 'Abu Dhabi', country: 'AE', status: 'ACTIVE', kycStatus: 'VERIFIED', createdAt: '2024-01-20T14:00:00Z' },
-  { id: 'a0000001-0001-0001-0001-000000000003', partyCode: 'CORP-001', partyType: 'CORPORATE', legalName: 'Tech Solutions LLC', tradeName: 'TechSol', contactPhone: '+97145551234', city: 'Dubai', country: 'AE', status: 'ACTIVE', kycStatus: 'VERIFIED', taxId: 'TRN-123456789', createdAt: '2024-02-01T09:00:00Z' },
-  { id: 'a0000001-0001-0001-0001-000000000004', partyCode: 'IND-003', partyType: 'INDIVIDUAL', legalName: 'Fatima Al Ali', contactPhone: '+971507778899', city: 'Sharjah', country: 'AE', status: 'ACTIVE', kycStatus: 'PENDING', createdAt: '2024-02-05T11:00:00Z' },
-  { id: 'a0000001-0001-0001-0001-000000000005', partyCode: 'EMP-001', partyType: 'EMPLOYEE', legalName: 'Omar Hassan', contactPhone: '+971501112233', contactEmail: 'omar@company.ae', city: 'Dubai', country: 'AE', status: 'ACTIVE', kycStatus: 'VERIFIED', createdAt: '2024-01-20T11:00:00Z' },
-];
 
-const demoPrograms: WalletProgram[] = [
-  { id: 'c0000001-0001-0001-0001-000000000001', programCode: 'BAAS-FINTECH-A', programName: 'Fintech Partner A - Consumer Wallets', operatorName: 'Fintech A Technologies', corporateId: '550e8400-e29b-41d4-a716-446655440000', currency: 'AED', activeWallets: 12500, totalWallets: 13200, totalBalance: 45000000, dailySpendLimit: 5000, monthlySpendLimit: 25000, maxBalance: 100000, kycRequired: true, status: 'ACTIVE', launchDate: '2024-01-01' },
-  { id: 'c0000001-0001-0001-0001-000000000002', programCode: 'BAAS-FINTECH-B', programName: 'Fintech Partner B - Merchant Wallets', operatorName: 'Fintech B Payments', corporateId: '550e8400-e29b-41d4-a716-446655440001', currency: 'AED', activeWallets: 3500, totalWallets: 3800, totalBalance: 125000000, dailySpendLimit: 50000, monthlySpendLimit: 500000, maxBalance: 1000000, kycRequired: true, status: 'ACTIVE', launchDate: '2023-06-15' },
-  { id: 'c0000001-0001-0001-0001-000000000003', programCode: 'WP-CORP-GIFT', programName: 'Corporate Gift Cards', operatorName: 'Emirates Group', corporateId: '550e8400-e29b-41d4-a716-446655440002', currency: 'AED', activeWallets: 1250, totalWallets: 1320, totalBalance: 4500000, dailySpendLimit: 5000, monthlySpendLimit: 25000, status: 'ACTIVE', launchDate: '2024-01-01' },
-];
 
-const demoWallets: WalletAccount[] = [
-  { id: 'b0000001-0001-0001-0001-000000000001', walletReference: 'WAL-FINTA-00012345', walletName: 'Mohammed Al Rashid', holderName: 'Mohammed Al Rashid', holderMobile: '+971501234567', partyId: 'a0000001-0001-0001-0001-000000000001', programId: 'c0000001-0001-0001-0001-000000000001', programName: 'Fintech Partner A - Consumer Wallets', programCode: 'BAAS-FINTECH-A', currentBalance: 25000, availableBalance: 25000, currency: 'AED', dailySpent: 500, monthlySpent: 3500, dailyLimit: 5000, monthlyLimit: 25000, status: 'ACTIVE', lastTransaction: '2024-02-12T14:30:00Z', transactionCount: 145, kycVerified: true, kycStatus: 'VERIFIED', createdAt: '2024-01-15T10:00:00Z' },
-  { id: 'b0000001-0001-0001-0001-000000000002', walletReference: 'WAL-FINTA-00012346', walletName: 'Sarah Ahmed', holderName: 'Sarah Ahmed', holderMobile: '+971509876543', partyId: 'a0000001-0001-0001-0001-000000000002', programId: 'c0000001-0001-0001-0001-000000000001', programName: 'Fintech Partner A - Consumer Wallets', programCode: 'BAAS-FINTECH-A', currentBalance: 12000, availableBalance: 12000, currency: 'AED', dailySpent: 0, monthlySpent: 1800, dailyLimit: 5000, monthlyLimit: 25000, status: 'ACTIVE', lastTransaction: '2024-02-11T09:15:00Z', transactionCount: 23, kycVerified: true, kycStatus: 'VERIFIED', createdAt: '2024-01-20T14:00:00Z' },
-  { id: 'b0000001-0001-0001-0001-000000000003', walletReference: 'WAL-FINTB-00005001', walletName: 'Tech Solutions LLC', holderName: 'Tech Solutions LLC', holderMobile: '+971505551234', partyId: 'a0000001-0001-0001-0001-000000000003', programId: 'c0000001-0001-0001-0001-000000000002', programName: 'Fintech Partner B - Merchant Wallets', programCode: 'BAAS-FINTECH-B', currentBalance: 850000, availableBalance: 850000, currency: 'AED', dailySpent: 15000, monthlySpent: 95000, dailyLimit: 50000, monthlyLimit: 500000, status: 'ACTIVE', lastTransaction: '2024-02-10T16:45:00Z', transactionCount: 512, kycVerified: true, kycStatus: 'VERIFIED', createdAt: '2024-02-01T09:00:00Z' },
-  { id: 'b0000001-0001-0001-0001-000000000004', walletReference: 'WAL-FINTA-00012347', walletName: 'Fatima Al Ali', holderName: 'Fatima Al Ali', holderMobile: '+971507778899', partyId: 'a0000001-0001-0001-0001-000000000004', programId: 'c0000001-0001-0001-0001-000000000001', programName: 'Fintech Partner A - Consumer Wallets', programCode: 'BAAS-FINTECH-A', currentBalance: 3500, availableBalance: 3500, currency: 'AED', dailySpent: 0, monthlySpent: 500, dailyLimit: 1000, monthlyLimit: 5000, status: 'ACTIVE', lastTransaction: '2024-02-09T11:20:00Z', transactionCount: 8, kycVerified: false, kycStatus: 'PENDING', createdAt: '2024-02-05T11:00:00Z' },
-  { id: 'b0000001-0001-0001-0001-000000000005', walletReference: 'WAL-FINTA-00012348', walletName: 'Omar Hassan', holderName: 'Omar Hassan', holderMobile: '+971501112233', partyId: 'a0000001-0001-0001-0001-000000000005', programId: 'c0000001-0001-0001-0001-000000000001', programName: 'Fintech Partner A - Consumer Wallets', programCode: 'BAAS-FINTECH-A', currentBalance: 0, availableBalance: 0, currency: 'AED', dailySpent: 0, monthlySpent: 0, dailyLimit: 1000, monthlyLimit: 5000, status: 'SUSPENDED', lastTransaction: '2024-01-25T11:20:00Z', transactionCount: 3, kycVerified: false, kycStatus: 'REJECTED', createdAt: '2024-01-20T11:00:00Z' },
-];
 
-const demoStats: WalletStats = {
-  totalPrograms: 3, activePrograms: 3, totalWallets: 17320, activeWallets: 17250, suspendedWallets: 50, blockedWallets: 20,
-  totalBalance: 174500000, totalAvailableBalance: 170000000, monthlyVolume: 25000000, dailyVolume: 1250000,
-  todayTransactions: 4500, monthlyTransactions: 125000, kycVerifiedCount: 16500, kycPendingCount: 820,
-};
 
 // ============================================================================
 // Status Configurations
@@ -851,9 +859,9 @@ const WalletPage: React.FC = () => {
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   
   // Data state
-  const [stats, setStats] = useState<WalletStats>(demoStats);
-  const [programs, setPrograms] = useState<WalletProgram[]>(demoPrograms);
-  const [wallets, setWallets] = useState<WalletAccount[]>(demoWallets);
+  const [stats, setStats] = useState<WalletStats | null>(null);
+  const [programs, setPrograms] = useState<WalletProgram[]>([]);
+  const [wallets, setWallets] = useState<WalletAccount[]>([]);
   const [totalWallets, setTotalWallets] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -1130,6 +1138,14 @@ const WalletPage: React.FC = () => {
     setShowEditWalletModal(true);
   };
 
+  // A holder's wallet is one account per currency, so the row shows the whole set
+  // the holder actually has. Derived from the loaded page rather than fetched per
+  // row; /wallets/holders/{partyId}/position gives the converted total when needed.
+  const holderCurrencies = (partyId: string): string[] =>
+    Array.from(new Set(
+      wallets.filter(w => w.partyId === partyId).map(w => w.currency).filter((c): c is string => !!c)
+    )).sort();
+
   const filteredWallets = wallets.filter(w => {
     const q = searchQuery.toLowerCase();
     return !searchQuery || w.holderName.toLowerCase().includes(q) || w.walletReference.toLowerCase().includes(q) || w.holderMobile.includes(searchQuery);
@@ -1177,8 +1193,8 @@ const WalletPage: React.FC = () => {
           </select>
           <div className="flex items-center gap-4 text-body-sm">
             <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{programs.length}</span> Programs</span>
-            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{stats.activeWallets?.toLocaleString()}</span> Wallets</span>
-            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(stats.totalBalance)}</span> Float</span>
+            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{stats?.activeWallets?.toLocaleString()}</span> Wallets</span>
+            <span className="text-neutral-600 dark:text-neutral-300"><span className="font-semibold text-primary-900 dark:text-neutral-50">{formatCurrency(stats?.totalBalance ?? 0)}</span> Float</span>
           </div>
         </div>
       </Card>
@@ -1192,10 +1208,10 @@ const WalletPage: React.FC = () => {
       {activeTab === 'overview' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Float" value={formatCurrency(stats.totalBalance)} subValue={`Available: ${formatCurrency(stats.totalAvailableBalance || stats.totalBalance)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
-            <StatCard label="Active Wallets" value={stats.activeWallets?.toLocaleString() || '0'} subValue={`${stats.suspendedWallets || 0} suspended`} icon={<CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />} iconBg="bg-success-50 dark:bg-success-500/10" trend={{ value: 12, label: 'month' }} loading={loading} delay="0.25s" />
-            <StatCard label="Daily Volume" value={formatCurrency(stats.dailyVolume || 0)} subValue={`${stats.todayTransactions?.toLocaleString() || 0} transactions`} icon={<Activity className="w-5 h-5 text-info-600 dark:text-info-300" />} iconBg="bg-info-50 dark:bg-info-500/10" loading={loading} delay="0.3s" />
-            <StatCard label="KYC Rate" value={`${Math.round((stats.kycVerifiedCount / (stats.kycVerifiedCount + stats.kycPendingCount || 1)) * 100)}%`} subValue={`${stats.kycPendingCount} pending verification`} icon={<Shield className="w-5 h-5 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-50 dark:bg-warning-500/10" loading={loading} delay="0.35s" />
+            <StatCard label="Total Float" value={formatCurrency(stats?.totalBalance ?? 0)} subValue={`Available: ${formatCurrency(stats?.totalAvailableBalance ?? stats?.totalBalance ?? 0)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
+            <StatCard label="Active Wallets" value={stats?.activeWallets?.toLocaleString() || '0'} subValue={`${stats?.suspendedWallets || 0} suspended`} icon={<CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />} iconBg="bg-success-50 dark:bg-success-500/10" loading={loading} delay="0.25s" />
+            <StatCard label="Daily Volume" value={formatCurrency(stats?.dailyVolume || 0)} subValue={`${stats?.todayTransactions?.toLocaleString() || 0} transactions`} icon={<Activity className="w-5 h-5 text-info-600 dark:text-info-300" />} iconBg="bg-info-50 dark:bg-info-500/10" loading={loading} delay="0.3s" />
+            <StatCard label="KYC Rate" value={`${Math.round(((stats?.kycVerifiedCount ?? 0) / ((stats?.kycVerifiedCount ?? 0) + (stats?.kycPendingCount ?? 0) || 1)) * 100)}%`} subValue={`${stats?.kycPendingCount ?? 0} pending verification`} icon={<Shield className="w-5 h-5 text-warning-600 dark:text-warning-300" />} iconBg="bg-warning-50 dark:bg-warning-500/10" loading={loading} delay="0.35s" />
           </div>
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
@@ -1303,6 +1319,23 @@ const WalletPage: React.FC = () => {
                             {wallet.partyId && <span className="text-caption px-1.5 py-0.5 bg-info-100 text-info-700 rounded-md dark:bg-info-500/20 dark:text-info-300">Linked</span>}
                           </div>
                           <p className="caption">{wallet.holderMobile}</p>
+                          {wallet.partyId && holderCurrencies(wallet.partyId).length > 1 && (
+                            <div className="flex items-center gap-1 mt-1">
+                              {holderCurrencies(wallet.partyId).map(c => (
+                                <span
+                                  key={c}
+                                  className={cn(
+                                    'text-caption px-1.5 py-0.5 rounded-md',
+                                    c === wallet.currency
+                                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200'
+                                      : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-500/20 dark:text-neutral-300'
+                                  )}
+                                >
+                                  {c}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) },
@@ -1317,8 +1350,8 @@ const WalletPage: React.FC = () => {
                     ) },
                     { key: 'currentBalance', header: 'Balance', minWidth: 140, render: (_v, wallet) => (
                       <>
-                        <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance)}</p>
-                        <p className="caption">Avail: {formatCurrency(wallet.availableBalance)}</p>
+                        <p className="body-strong font-semibold">{formatCurrency(wallet.currentBalance, wallet.currency)}</p>
+                        <p className="caption">Avail: {formatCurrency(wallet.availableBalance, wallet.currency)}</p>
                       </>
                     ) },
                     { key: 'usage', header: 'Usage', minWidth: 150, dropOrder: 1, render: (_v, wallet) => {
