@@ -10,8 +10,6 @@ import {
   XCircle,
   DollarSign,
   Calendar,
-  MoreHorizontal,
-  Eye,
   Play,
   Flag,
   Download,
@@ -80,6 +78,53 @@ const EMPTY_FORM: CreateForm = {
   releaseConditions: '',
 };
 
+// Which statuses accept money in or out — mirrors EscrowContract.canFund()
+// and canRelease() on the backend, which rejects anything else outright.
+const canFund = (c: EscrowContract) => c.status === 'PENDING_FUNDING' || c.status === 'PARTIALLY_FUNDED';
+const canRelease = (c: EscrowContract) => c.status === 'FUNDED' || c.status === 'PARTIALLY_RELEASED';
+
+type MoneyMode = 'fund' | 'release';
+
+interface MoneyForm {
+  amount: string;
+  counterparty: string;
+  account: string;
+  milestone: string;
+  approvedBy: string;
+  reference: string;
+}
+
+const EMPTY_MONEY_FORM: MoneyForm = {
+  amount: '',
+  counterparty: '',
+  account: '',
+  milestone: '',
+  approvedBy: '',
+  reference: '',
+};
+
+function validateMoney(mode: MoneyMode, form: MoneyForm, contract: EscrowContract): Partial<Record<keyof MoneyForm, string>> {
+  const errors: Partial<Record<keyof MoneyForm, string>> = {};
+  const amount = Number(form.amount);
+  if (!form.amount.trim()) {
+    errors.amount = 'Amount is required';
+  } else if (!Number.isFinite(amount) || amount <= 0) {
+    errors.amount = 'Enter an amount greater than zero';
+  } else if (mode === 'release' && amount > contract.currentBalance) {
+    errors.amount = `Only ${formatCurrency(contract.currentBalance, contract.currencyCode)} is held in escrow`;
+  } else if (mode === 'fund') {
+    // The setup fee is taken on first funding, and the backend refuses a first
+    // payment that cannot cover it. setupFee comes from the contract itself, so
+    // the rate is never duplicated here.
+    const feeOutstanding = (contract.setupFee ?? 0) > 0 && (contract.totalFeesCharged ?? 0) === 0;
+    if (feeOutstanding && amount < (contract.setupFee ?? 0)) {
+      errors.amount = `Must cover the ${formatCurrency(contract.setupFee ?? 0, contract.currencyCode)} setup fee`;
+    }
+  }
+  if (mode === 'release' && !form.approvedBy.trim()) errors.approvedBy = 'Record who approved the release';
+  return errors;
+}
+
 /** Everything the backend rejects, checked before we send it. */
 function validate(form: CreateForm): Partial<Record<keyof CreateForm, string>> {
   const errors: Partial<Record<keyof CreateForm, string>> = {};
@@ -134,7 +179,6 @@ const EscrowPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [, setSelectedContract] = useState<EscrowContract | null>(null);
 
   const [contracts, setContracts] = useState<EscrowContract[]>([]);
   const [stats, setStats] = useState<EscrowStats | null>(null);
@@ -149,6 +193,12 @@ const EscrowPage: React.FC = () => {
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof CreateForm, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Funding and release share the same plumbing, so one modal handles both.
+  const [moneyAction, setMoneyAction] = useState<{ mode: MoneyMode; contract: EscrowContract } | null>(null);
+  const [moneyForm, setMoneyForm] = useState<MoneyForm>(EMPTY_MONEY_FORM);
+  const [moneyErrors, setMoneyErrors] = useState<Partial<Record<keyof MoneyForm, string>>>({});
+  const [moneySubmitting, setMoneySubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -238,6 +288,73 @@ const EscrowPage: React.FC = () => {
       toast.error(err?.response?.data?.message || err?.message || 'Could not create the escrow contract');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openMoneyModal = (mode: MoneyMode, contract: EscrowContract) => {
+    setMoneyAction({ mode, contract });
+    setMoneyErrors({});
+    setMoneyForm({
+      ...EMPTY_MONEY_FORM,
+      // Funding comes from the buyer; a release goes to the seller.
+      counterparty: (mode === 'fund' ? contract.buyerName : contract.sellerName) ?? '',
+    });
+  };
+
+  const closeMoneyModal = () => {
+    setMoneyAction(null);
+    setMoneyForm(EMPTY_MONEY_FORM);
+    setMoneyErrors({});
+  };
+
+  const setMoneyField = <K extends keyof MoneyForm>(key: K, value: MoneyForm[K]) => {
+    setMoneyForm(prev => ({ ...prev, [key]: value }));
+    setMoneyErrors(prev => ({ ...prev, [key]: undefined }));
+  };
+
+  const handleMoneySubmit = async () => {
+    if (!moneyAction) return;
+    const { mode, contract } = moneyAction;
+
+    const errors = validateMoney(mode, moneyForm, contract);
+    setMoneyErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const amount = Number(moneyForm.amount);
+    setMoneySubmitting(true);
+    try {
+      const res = mode === 'fund'
+        ? await escrowApi.fund(contract.id, {
+            amount,
+            funderName: moneyForm.counterparty.trim() || undefined,
+            sourceAccount: moneyForm.account.trim() || undefined,
+            reference: moneyForm.reference.trim() || undefined,
+          })
+        : await escrowApi.release(contract.id, {
+            amount,
+            releaseTo: moneyForm.counterparty.trim() || undefined,
+            destinationAccount: moneyForm.account.trim() || undefined,
+            milestone: moneyForm.milestone.trim() || undefined,
+            approvedBy: moneyForm.approvedBy.trim(),
+          });
+
+      if (res.success) {
+        // Report what actually moved, including the fee the backend charged.
+        const fee = mode === 'fund' ? res.data?.setupFeeCharged : res.data?.releaseFeeCharged;
+        const feeNote = fee > 0 ? ` (fee ${formatCurrency(fee, contract.currencyCode)})` : '';
+        toast.success(
+          `${mode === 'fund' ? 'Funded' : 'Released'} ${formatCurrency(amount, contract.currencyCode)}` +
+          ` on ${contract.escrowReference}${feeNote}`
+        );
+        closeMoneyModal();
+        await loadData();
+      } else {
+        toast.error(res.message || `Could not ${mode} the escrow contract`);
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || `Could not ${mode} the escrow contract`);
+    } finally {
+      setMoneySubmitting(false);
     }
   };
 
@@ -479,8 +596,24 @@ const EscrowPage: React.FC = () => {
                 header: 'Actions',
                 render: (_, contract) => (
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedContract(contract)}><Eye className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="sm"><MoreHorizontal className="w-4 h-4" /></Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!canFund(contract)}
+                      title={canFund(contract) ? 'Pay money into escrow' : `Cannot fund a ${statusConfig[contract.status].label.toLowerCase()} contract`}
+                      onClick={() => openMoneyModal('fund', contract)}
+                    >
+                      Fund
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!canRelease(contract)}
+                      title={canRelease(contract) ? 'Release money to the seller' : `Cannot release from a ${statusConfig[contract.status].label.toLowerCase()} contract`}
+                      onClick={() => openMoneyModal('release', contract)}
+                    >
+                      Release
+                    </Button>
                   </div>
                 ),
               },
@@ -630,6 +763,96 @@ const EscrowPage: React.FC = () => {
             <p className="caption mt-1">Optional. Recorded against the contract; funds are released manually.</p>
           </div>
         </form>
+      </Modal>
+
+      {/* Fund / Release Modal */}
+      <Modal
+        isOpen={moneyAction !== null}
+        onClose={closeMoneyModal}
+        title={moneyAction?.mode === 'fund' ? 'Fund Escrow' : 'Release Funds'}
+        subtitle={moneyAction
+          ? `${moneyAction.contract.escrowReference} · ${formatCurrency(moneyAction.contract.currentBalance, moneyAction.contract.currencyCode)} held in escrow`
+          : undefined}
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={closeMoneyModal} disabled={moneySubmitting}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleMoneySubmit()}
+              disabled={moneySubmitting}
+              leftIcon={moneySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+            >
+              {moneySubmitting
+                ? (moneyAction?.mode === 'fund' ? 'Funding…' : 'Releasing…')
+                : (moneyAction?.mode === 'fund' ? 'Fund Escrow' : 'Release Funds')}
+            </Button>
+          </>
+        }
+      >
+        {moneyAction && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => { e.preventDefault(); void handleMoneySubmit(); }}
+          >
+            <Input
+              label={`Amount (${moneyAction.contract.currencyCode})`}
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              autoFocus
+              value={moneyForm.amount}
+              error={moneyErrors.amount}
+              hint={moneyAction.mode === 'fund'
+                ? `${formatCurrency(Math.max(0, moneyAction.contract.contractAmount - moneyAction.contract.fundedAmount), moneyAction.contract.currencyCode)} still to fund`
+                : `${formatCurrency(moneyAction.contract.currentBalance, moneyAction.contract.currencyCode)} available, less the release fee`}
+              onChange={(e) => setMoneyField('amount', e.target.value)}
+            />
+            <Input
+              label={moneyAction.mode === 'fund' ? 'Funded by' : 'Release to'}
+              placeholder={moneyAction.mode === 'fund' ? 'Buyer' : 'Seller'}
+              value={moneyForm.counterparty}
+              onChange={(e) => setMoneyField('counterparty', e.target.value)}
+            />
+            <Input
+              label={moneyAction.mode === 'fund' ? 'Source account' : 'Destination account'}
+              placeholder="IBAN or account number"
+              value={moneyForm.account}
+              onChange={(e) => setMoneyField('account', e.target.value)}
+            />
+            {moneyAction.mode === 'fund' ? (
+              <Input
+                label="Payment reference"
+                placeholder="Your own reference for this payment"
+                value={moneyForm.reference}
+                onChange={(e) => setMoneyField('reference', e.target.value)}
+              />
+            ) : (
+              <>
+                <Input
+                  label="Milestone"
+                  placeholder="What this release is for"
+                  value={moneyForm.milestone}
+                  onChange={(e) => setMoneyField('milestone', e.target.value)}
+                />
+                <Input
+                  label="Approved by"
+                  placeholder="Who authorised this release"
+                  value={moneyForm.approvedBy}
+                  error={moneyErrors.approvedBy}
+                  onChange={(e) => setMoneyField('approvedBy', e.target.value)}
+                />
+              </>
+            )}
+            <p className="caption">
+              {moneyAction.mode === 'fund'
+                ? 'The setup fee is taken from the escrow account on the first payment in.'
+                : 'A release fee is taken from the escrow account alongside the released amount.'}
+            </p>
+          </form>
+        )}
       </Modal>
     </Page>
   );
