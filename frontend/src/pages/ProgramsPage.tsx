@@ -110,12 +110,7 @@ const ProgramsPage: React.FC = () => {
       .finally(() => setCorporatesLoading(false));
   }, []);
 
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(id);
-  }, [searchQuery]);
-  // Full-page spinner only before the first load; later loads keep the page (and the search box) mounted.
+// Full-page spinner only before the first load; later loads keep the page (and the search box) mounted.
   const hasLoaded = useRef(false);
 
   const loadData = useCallback(async () => {
@@ -123,8 +118,7 @@ const ProgramsPage: React.FC = () => {
     setError(null);
     try {
       const params: Record<string, string> = {};
-      if (debouncedSearch) params.query = debouncedSearch;
-      // VIBAN is a feature any program type can enable, so that tile filters on the flag client-side.
+// VIBAN is a feature any program type can enable, so that tile filters on the flag client-side.
       if (statusFilter !== 'ALL') params.status = statusFilter;
       if (selectedCorporateId) params.corporateId = selectedCorporateId;
       
@@ -165,7 +159,7 @@ const ProgramsPage: React.FC = () => {
       hasLoaded.current = true;
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, selectedCorporateId]);
+  }, [statusFilter, selectedCorporateId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -285,11 +279,23 @@ const ProgramsPage: React.FC = () => {
   // Memoised: the header toolbar depends on it, and a new array every render loops the header update.
   const filteredPrograms = React.useMemo(() => programs.filter(p => {
     if (!p) return false;
-    const matchesSearch = !searchQuery || 
-      (p.programName?.toLowerCase().includes(searchQuery.toLowerCase())) || 
-      (p.programCode?.toLowerCase().includes(searchQuery.toLowerCase()));
+    // All pages are loaded, so search is local: name, code or corporate.
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q || [p.programName, p.programCode, p.corporateName].some(v => v?.toLowerCase().includes(q));
     return matchesSearch && (statusFilter === 'ALL' || p.status === statusFilter);
   }), [programs, searchQuery, statusFilter]);
+
+  // The table only reports header clicks; the page owns the order.
+  const [sort, setSort] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const sortedPrograms = React.useMemo(() => {
+    if (!sort) return filteredPrograms;
+    const factor = sort.direction === 'asc' ? 1 : -1;
+    return [...filteredPrograms].sort((a, b) => {
+      const x = (a as any)[sort.key], y = (b as any)[sort.key];
+      if (typeof x === 'number' || typeof y === 'number') return ((x ?? 0) - (y ?? 0)) * factor;
+      return String(x ?? '').localeCompare(String(y ?? '')) * factor;
+    });
+  }, [filteredPrograms, sort]);
 
   // Toolbar actions in the Aperture Layout header — same pattern as the
   // rest of Aperture's conformed pages (removes the floating in-page row).
@@ -374,10 +380,13 @@ const ProgramsPage: React.FC = () => {
         {filteredPrograms.length > 0 && (
         <DataTable
           hairline
-          data={filteredPrograms}
+          data={sortedPrograms}
+          sortKey={sort?.key}
+          sortDirection={sort?.direction}
+          onSort={(key, direction) => setSort({ key, direction })}
           keyExtractor={(program) => program.id}
           columns={[
-            { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
+            { key: 'programName', header: 'Program', minWidth: 240, sortable: true, mobileLabel: true, render: (_v, program) => {
               return (
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="neutral" icon={Layers} subtle />
@@ -391,21 +400,21 @@ const ProgramsPage: React.FC = () => {
               );
             } },
             // Which corporate owns each program: needed in the all-corporates view, redundant once one is picked.
-            ...(selectedCorporateId ? [] : [{ key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 1, render: (_v: unknown, program: Program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> }]),
-            { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, dropOrder: 2, render: (_v, program) => (
+            ...(selectedCorporateId ? [] : [{ key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 1, sortable: true, render: (_v: unknown, program: Program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> }]),
+            { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, dropOrder: 2, sortable: true, render: (_v, program) => (
               <><p className="text-body-sm font-medium">{program.virtualAccountCount || 0}</p><p className="caption">{program.activeVirtualAccountCount || 0} active</p></>
             ) },
             { key: 'totalBalance', header: 'Balance', align: 'right', minWidth: 140, mobileValue: true, render: (_v, program) => (
               <p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p>
             ) },
-            { key: 'status', header: 'Status', minWidth: 120, render: (_v, program) => {
+            { key: 'status', header: 'Status', minWidth: 120, sortable: true, render: (_v, program) => {
               const stConfig = statusConfig[program.status];
               return <Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge>;
             } },
             { key: 'actions', header: 'Actions', align: 'right', minWidth: 130, render: (_v, program) => (
               <div className="flex justify-end gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => setEditProgram(program)} title={program.status === 'CLOSED' ? 'Closed programs cannot be edited' : 'Edit Program'}><Pencil className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details" aria-label={`View ${program.programName}`}><Eye className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => setEditProgram(program)} title={program.status === 'CLOSED' ? 'Closed programs cannot be edited' : 'Edit Program'} aria-label={`Edit ${program.programName}`}><Pencil className="w-4 h-4" /></Button>
                 <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); }} title="VIBAN settings" aria-label="VIBAN settings"><Hash className="w-4 h-4" /></Button>
                 {/* Action Menu Dropdown */}
                 <div className="relative">
@@ -414,6 +423,7 @@ const ProgramsPage: React.FC = () => {
                     variant="ghost"
                     onClick={e => openMenu(program.id, e)}
                     title="More Actions"
+                    aria-label={`More actions for ${program.programName}`}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
@@ -559,7 +569,7 @@ const ProgramsPage: React.FC = () => {
           <p className="body-sm">
             Copies the settings of <span className="body-strong">{cloneSource?.programName}</span>. Accounts and balances are not copied; the new program starts pending approval.
           </p>
-          <Input label="Program code" value={cloneCode} onChange={e => setCloneCode(e.target.value)} />
+          <Input label="Program code" hint="Capital letters, digits, - and _" value={cloneCode} onChange={e => setCloneCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))} />
           <Input label="Program name" value={cloneName} onChange={e => setCloneName(e.target.value)} />
         </div>
       </Modal>

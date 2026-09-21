@@ -75,6 +75,16 @@ class CloseProgramTest {
     }
 
     @Test
+    void closedProgramCannotBeEdited() {
+        Program p = program();
+        p.setStatus(ProgramStatus.CLOSED);
+
+        assertThatThrownBy(() -> service.updateProgram(id, new com.bank.vam.dto.ProgramDto.UpdateProgramRequest()))
+            .isInstanceOf(BusinessException.class).hasMessageContaining("closed");
+        verify(programs, never()).save(any());
+    }
+
+    @Test
     void activeCustomerAccountsBlockClosing() {
         Program p = program();
         when(vas.findByProgramId(id)).thenReturn(List.of(active(AccountCategory.ROOT), active(AccountCategory.COLLECTION)));

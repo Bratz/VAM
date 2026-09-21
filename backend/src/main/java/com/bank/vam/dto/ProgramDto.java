@@ -235,6 +235,14 @@ public class ProgramDto {
         private String currencyCode;
         private BigDecimal currentBalance;
         private String status;
+        /**
+         * Set when this backing account's shadow belongs to another program: the program's
+         * payments are refused (they may only settle through its own bank accounts).
+         */
+        private String heldByProgramCode;
+        private String heldByProgramName;
+        /** True when the account has no shadow at all (nothing mirrors it). */
+        private boolean noShadow;
     }
 
     @Data

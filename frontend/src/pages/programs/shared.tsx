@@ -186,7 +186,13 @@ export interface Program {
 export interface ProgramDetail {
   program: Program;
   corporate?: { id: string; corporateId: string; legalName: string; tradeName?: string; status: string };
-  physicalAccount?: { id: string; accountNumber: string; accountName: string; bankName: string; currencyCode: string; currentBalance: number; status: string };
+  physicalAccount?: {
+    id: string; accountNumber: string; accountName: string; bankName: string; currencyCode: string; currentBalance: number; status: string;
+    /** Set when this backing account's shadow belongs to another program (payments are then refused). */
+    heldByProgramCode?: string; heldByProgramName?: string;
+    /** Nothing mirrors this account. */
+    noShadow?: boolean;
+  };
   recentVirtualAccounts: { id: string; vaNumber: string; viban?: string; vaName: string; currentBalance: number; status: string; createdAt: string }[];
   usageStats: { totalTransactions: number; todayTransactions: number; totalVolume: number; todayVolume: number; averageBalance: number; lastTransactionAt?: string };
   activityLog: { action: string; user: string; timestamp: string; type: string; details: string }[];

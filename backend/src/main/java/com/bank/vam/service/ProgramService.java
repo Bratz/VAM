@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -163,6 +164,14 @@ public class ProgramService {
                     .currentBalance(pa.getCurrentBalance())
                     .status(pa.getStatus().name())
                     .build();
+                Optional<VirtualAccount> shadow = virtualAccountRepository.findByLinkedPhysicalAccountId(pa.getId());
+                if (shadow.isEmpty()) {
+                    physicalAccountInfo.setNoShadow(true);
+                } else if (!programId.equals(shadow.get().getProgramId()) && shadow.get().getProgramId() != null) {
+                    Program holder = programRepository.findById(shadow.get().getProgramId()).orElse(null);
+                    physicalAccountInfo.setHeldByProgramCode(holder != null ? holder.getProgramCode() : null);
+                    physicalAccountInfo.setHeldByProgramName(holder != null ? holder.getProgramName() : "another program");
+                }
             }
         }
 
@@ -262,6 +271,7 @@ public class ProgramService {
     public ProgramResponse createProgram(UUID corporateId, CreateProgramRequest request) {
         log.info("Creating program: {}", request.getProgramCode());
 
+        validateProgramCode(request.getProgramCode());
         // Validate unique program code
         if (programRepository.existsByProgramCode(request.getProgramCode())) {
             throw new BusinessException("Program code already exists: " + request.getProgramCode());
@@ -367,6 +377,9 @@ public class ProgramService {
         log.info("Updating program: {}", programId);
 
         Program program = findProgramOrThrow(programId);
+        if (program.getStatus() == ProgramStatus.CLOSED) {
+            throw new BusinessException("Program " + program.getProgramCode() + " is closed and can't be changed");
+        }
         Map<String, Object> before = settingsOf(program);
         Set<UUID> shadowsBefore = shadowIdsOf(programId);
 
@@ -498,6 +511,7 @@ public class ProgramService {
 
         Program source = findProgramOrThrow(programId);
 
+        validateProgramCode(request.getNewProgramCode());
         // Validate unique program code
         if (programRepository.existsByProgramCode(request.getNewProgramCode())) {
             throw new BusinessException("Program code already exists: " + request.getNewProgramCode());
@@ -878,5 +892,12 @@ public class ProgramService {
     private Set<UUID> shadowIdsOf(UUID programId) {
         return shadowAccountService.getShadowAccountsByProgram(programId).stream()
             .map(VirtualAccount::getId).collect(Collectors.toSet());
+    }
+
+    /** Codes are identifiers: capitals, digits, dash and underscore, starting with a letter or digit. */
+    private static void validateProgramCode(String code) {
+        if (code == null || !code.matches("[A-Z0-9][A-Z0-9_-]{0,49}")) {
+            throw new BusinessException("Program code must be 1-50 capital letters, digits, '-' or '_' (e.g. COLL-001)");
+        }
     }
 }

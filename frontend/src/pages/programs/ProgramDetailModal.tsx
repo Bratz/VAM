@@ -6,6 +6,7 @@ import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
 import { HIERARCHY_TEMPLATES } from '../../config/templateHierarchy';
 import type { ProgramConfigStep } from './ProgramFormModal';
+import { useNavigation } from '../../App';
 
 import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, statusConfig } from './shared';
 
@@ -100,6 +101,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
     }
   }, [program, activeTab]);
 
+  const { navigate } = useNavigation();
   // The program's bank accounts (their shadows): home bank and any others it runs on.
   const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; physicalAccountNumber?: string; bankName?: string; currencyCode: string; bankBalance?: number; linkedPhysicalAccountId?: string }>>([]);
   useEffect(() => {
@@ -150,7 +152,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onEdit(program)} leftIcon={<Pencil className="w-4 h-4" />}>Edit</Button>
+            <Button variant="outline" size="sm" disabled={program.status === 'CLOSED'} title={program.status === 'CLOSED' ? 'Closed programs cannot be edited' : undefined} onClick={() => onEdit(program)} leftIcon={<Pencil className="w-4 h-4" />}>Edit</Button>
             <Button variant="outline" size="sm" aria-label="Close" onClick={onClose}><X className="w-4 h-4" /></Button>
           </div>
         </div>
@@ -220,6 +222,19 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                   </>
                 )}
                 <h3 className="body-strong font-semibold">Bank accounts</h3>
+                {detail?.physicalAccount && !bankAccounts.some(a => a.linkedPhysicalAccountId === detail.physicalAccount!.id) && (
+                  <Alert variant="warning">
+                    <p className="body-strong">
+                      Backing account {detail.physicalAccount.accountNumber} ({detail.physicalAccount.bankName}) is not one of this program's bank accounts
+                    </p>
+                    <p className="body-sm mt-1">
+                      {detail.physicalAccount.heldByProgramName
+                        ? `It belongs to ${detail.physicalAccount.heldByProgramName}${detail.physicalAccount.heldByProgramCode ? ` (${detail.physicalAccount.heldByProgramCode})` : ''}.`
+                        : 'Nothing mirrors it.'}
+                      {' '}Payments from this program's accounts are refused until it has its own {program.currencyCode} bank account.
+                    </p>
+                  </Alert>
+                )}
                 {bankAccounts.length === 0 ? (
                   <Card padding="sm"><p className="body-sm">No bank accounts yet. Add one with Edit.</p></Card>
                 ) : (
@@ -243,7 +258,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 <h3 className="body-strong font-semibold">Actions</h3>
                 <div className="flex flex-wrap gap-2">
                   {program.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'SUSPENDED')} leftIcon={<PauseCircle className="w-4 h-4" />}>Suspend</Button>}
-                  {program.status === 'SUSPENDED' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<PlayCircle className="w-4 h-4" />}>Activate</Button>}
+                  {(program.status === 'SUSPENDED' || program.status === 'INACTIVE') && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<PlayCircle className="w-4 h-4" />}>Activate</Button>}
                   {program.status === 'PENDING_APPROVAL' && <Button size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<CheckCircle className="w-4 h-4" />}>Approve</Button>}
                   <Button variant="outline" size="sm" onClick={() => onClone(program)} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
                 </div>
@@ -815,6 +830,17 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
           {/* Virtual Accounts Tab */}
           {!loading && activeTab === 'accounts' && detail && (
             <div className="space-y-4">
+              {detail.recentVirtualAccounts.length > 0 && (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="caption">
+                    Newest {detail.recentVirtualAccounts.length} of {program.virtualAccountCount ?? detail.recentVirtualAccounts.length}
+                  </p>
+                  <Button size="sm" variant="outline" rightIcon={<ChevronRight className="w-4 h-4" />}
+                    onClick={() => { onClose(); navigate('accounts', { programId: program.id, corporateId: program.corporateId }); }}>
+                    See all in Virtual Accounts
+                  </Button>
+                </div>
+              )}
               {detail.recentVirtualAccounts.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">
                   <CreditCard className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />

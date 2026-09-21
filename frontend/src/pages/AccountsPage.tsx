@@ -14,6 +14,7 @@ import type { LucideIcon } from 'lucide-react';
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigation } from '../App';
 import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer, StatusIconBadge, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
@@ -1466,8 +1467,10 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
   const [, setHierarchyNodes] = useState<HierarchyNode[]>([]);
 
   // Selection state (session-only)
-  const [selectedCorporateId, setSelectedCorporateId] = useState('');
-  const [selectedProgramId, setSelectedProgramId] = useState('');
+  // Start on the program another page sent us to (e.g. Programs -> "See all in Virtual Accounts").
+  const { params: navParams } = useNavigation();
+  const [selectedCorporateId, setSelectedCorporateId] = useState(navParams.corporateId ?? '');
+  const [selectedProgramId, setSelectedProgramId] = useState(navParams.programId ?? '');
 
   // UI state
   const [viewMode, setViewMode] = useState<ViewMode>('table');

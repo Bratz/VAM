@@ -720,7 +720,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   className="font-mono"
                   placeholder="e.g., COLL-001"
                   value={formData.programCode}
-                  onChange={e => setFormData({ ...formData, programCode: e.target.value.toUpperCase() })}
+                  onChange={e => setFormData({ ...formData, programCode: e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '') })}
                   disabled={isEdit}
                 />
               </div>
