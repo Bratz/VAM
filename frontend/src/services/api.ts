@@ -3382,6 +3382,8 @@ export interface BalanceHierarchyNode {
   id: string;
   /** Corporate node only: held in home-bank accounts no program has picked yet (not in consolidatedBalance). */
   unassignedBankBalance?: number;
+  /** Corporate node only: currencies with no FX rate to the reporting currency (left out of totals). */
+  unconvertedCurrencies?: string[];
   name: string;
   accountNumber?: string;
   type: BalanceNodeType;
@@ -3437,8 +3439,10 @@ export interface BalanceSummary {
   totalIntercompanyReceivable: number;
   totalIntercompanyPayable: number;
   netIntercompanyPosition: number;
-  poolRate: number;
+  /** null when none of these accounts is in a notional pool. */
+  poolRate: number | null;
   monthlyInterestAllocation: number;
+  unconvertedCurrencies?: string[];
   reportingCurrency: string;
   totalEntities: number;
   totalVirtualAccounts: number;

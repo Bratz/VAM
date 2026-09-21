@@ -26,6 +26,10 @@ public interface NettingEntryRepository extends JpaRepository<NettingEntry, UUID
     // ========================================================================
     
     List<NettingEntry> findByCycleId(UUID cycleId);
+
+    /** Entries still to be netted (not settled or excluded) where any of these entities pays or is paid. */
+    @Query("SELECT e FROM NettingEntry e WHERE e.status IN ('PENDING','INCLUDED') AND (e.payerEntityId IN :ids OR e.payeeEntityId IN :ids)")
+    List<NettingEntry> findOpenForEntities(@Param("ids") java.util.Collection<UUID> ids);
     
     List<NettingEntry> findByCycleIdAndStatus(UUID cycleId, EntryStatus status);
     

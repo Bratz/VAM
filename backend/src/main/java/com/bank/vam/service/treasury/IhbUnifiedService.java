@@ -181,6 +181,7 @@ public class IhbUnifiedService {
         SweepRule rule = new SweepRule();
         rule.setRuleReference(ruleRef);
         rule.setRuleName("IHB Sweep: " + entity.getEntityName() + " → Treasury");
+        rule.setCorporateId(entity.getCorporateId());
         rule.setSweepType(targetBalance.compareTo(BigDecimal.ZERO) == 0 ? 
                 SweepRule.SweepType.ZERO_BALANCE : SweepRule.SweepType.TARGET_BALANCE);
         rule.setTargetAmount(targetBalance);
@@ -304,7 +305,35 @@ public class IhbUnifiedService {
         }
         entity.disableIhb();
         legalEntityRepository.save(entity);
+        stopIhbSweeps(entity);
         log.info("IHB disabled for entity: {}", entity.getEntityCode());
+    }
+
+    /**
+     * Leaving IHB stops the sweeps that enabling it created: its IHB sweep rules are disabled
+     * (kept for the audit trail, never run again) and its accounts' sweep flag is cleared.
+     */
+    private void stopIhbSweeps(LegalEntity entity) {
+        List<VirtualAccount> vas = virtualAccountRepository.findByOwningEntityId(entity.getId());
+        java.util.Set<UUID> vaIds = new java.util.HashSet<>();
+        for (VirtualAccount va : vas) {
+            vaIds.add(va.getId());
+            if (Boolean.TRUE.equals(va.getIhbSweepEnabled())) {
+                va.setIhbSweepEnabled(false);
+                virtualAccountRepository.save(va);
+            }
+        }
+        // ponytail: scans every rule (older IHB rules were saved without a corporate); index by source account if this grows.
+        for (SweepRule rule : sweepRuleRepository.findAll()) {
+            boolean ihbRule = rule.getRuleReference() != null && rule.getRuleReference().startsWith("IHB");
+            boolean sweepsThisEntity = rule.getSourceAccounts() != null && rule.getSourceAccounts().stream()
+                .anyMatch(src -> vaIds.contains(src.getAccountId()));
+            if (ihbRule && sweepsThisEntity && rule.getStatus() != SweepRule.SweepStatus.DISABLED) {
+                rule.setStatus(SweepRule.SweepStatus.DISABLED);
+                sweepRuleRepository.save(rule);
+                log.info("Disabled IHB sweep rule {} for entity {}", rule.getRuleReference(), entity.getEntityCode());
+            }
+        }
     }
 
     // ========================================================================

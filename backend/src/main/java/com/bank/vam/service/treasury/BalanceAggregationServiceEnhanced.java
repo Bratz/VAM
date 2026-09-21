@@ -288,10 +288,16 @@ public class BalanceAggregationServiceEnhanced {
         // Update balance in base currency
         String baseCurrency = mirror.getBaseCurrency();
         if (baseCurrency != null && !baseCurrency.equals(currency)) {
-            BigDecimal fxRate = fxRateService.getRate(currency, baseCurrency);
-            mirror.setFxRate(fxRate);
-            mirror.setFxRateAt(LocalDateTime.now());
-            mirror.setBalanceInBase(newMirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
+            // On the posting path: a missing FX rate must not fail the payment. The mirror balance
+            // is still updated; only its cached base-currency figure waits for a rate.
+            if (fxRateService.hasRate(currency, baseCurrency)) {
+                BigDecimal fxRate = fxRateService.getRate(currency, baseCurrency);
+                mirror.setFxRate(fxRate);
+                mirror.setFxRateAt(LocalDateTime.now());
+                mirror.setBalanceInBase(newMirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
+            } else {
+                log.warn("No FX rate {}/{}: mirror {} base-currency figure not updated", currency, baseCurrency, mirror.getVaNumber());
+            }
         } else {
             mirror.setBalanceInBase(newMirrorBalance);
         }
@@ -341,6 +347,13 @@ public class BalanceAggregationServiceEnhanced {
 
                 BigDecimal convertedDelta = delta;
                 if (!sourceCurrency.equals(parentBaseCurrency)) {
+                    // Posting path: without a rate, leave this cached aggregate alone (the balance
+                    // hierarchy recomputes from account balances anyway) rather than fail the payment.
+                    if (!fxRateService.hasRate(sourceCurrency, parentBaseCurrency)) {
+                        log.warn("No FX rate {}/{}: {} aggregatedBalance not updated", sourceCurrency, parentBaseCurrency, parent.getVaNumber());
+                        currentParentId = parent.getParentAccountId();
+                        continue;
+                    }
                     convertedDelta = fxRateService.convert(delta, sourceCurrency, parentBaseCurrency);
                 }
 

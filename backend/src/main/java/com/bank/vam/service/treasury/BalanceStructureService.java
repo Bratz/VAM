@@ -102,11 +102,28 @@ public class BalanceStructureService {
         Map<UUID, PoolMember> poolMemberMap = getPoolMemberMap(corporateId);
         Map<UUID, SweepRule> sweepRuleMap = getSweepRuleMap(corporateId);
         Map<UUID, List<NettingEntry>> nettingMap = getNettingEntryMap(corporateId);
-        Map<String, IntercompanyPositions> icPositions = getIntercompanyPositions(corporateId);
 
         // Build hierarchy
-        return buildHierarchyFromAccounts(corporate, accounts, poolMemberMap, sweepRuleMap,
-                                          nettingMap, icPositions, reportingCurrency);
+        HierarchyNode root = buildHierarchyFromAccounts(corporate, accounts, poolMemberMap, sweepRuleMap,
+                                                        nettingMap, reportingCurrency);
+        root.setUnconvertedCurrencies(unconvertedCurrencies(accounts, reportingCurrency));
+        return root;
+    }
+
+    /**
+     * Currencies in these accounts with no FX rate to the reporting currency. Their balances are
+     * left out of every converted figure (never counted 1:1), and the page names them.
+     */
+    private List<String> unconvertedCurrencies(List<VirtualAccount> accounts, String reportingCurrency) {
+        String target = reportingTarget(reportingCurrency);
+        return accounts.stream()
+            .flatMap(va -> java.util.stream.Stream.of(va.getCurrencyCode(), va.getBaseCurrency()))
+            .filter(Objects::nonNull)
+            .filter(c -> !c.equalsIgnoreCase(target))
+            .distinct()
+            .filter(c -> !fxRateService.hasRate(c, target))
+            .sorted()
+            .toList();
     }
 
     /**
@@ -135,9 +152,10 @@ public class BalanceStructureService {
             .totalIntercompanyPayable(hierarchy.getIntercompanyPayable())
             .netIntercompanyPosition(hierarchy.getIntercompanyReceivable()
                 .subtract(hierarchy.getIntercompanyPayable()))
-            .poolRate(hierarchy.getInterestRate() != null ? hierarchy.getInterestRate() : new BigDecimal("3.75"))
-            .monthlyInterestAllocation(hierarchy.getInterestAllocation() != null ? 
-                hierarchy.getInterestAllocation() : BigDecimal.ZERO)
+            // From the notional pools these accounts are in: null when none (the page shows "-").
+            .poolRate(stats.poolRate())
+            .monthlyInterestAllocation(stats.poolInterest)
+            .unconvertedCurrencies(hierarchy.getUnconvertedCurrencies())
             .reportingCurrency(reportingCurrency)
             .totalEntities(stats.entityCount)
             .totalVirtualAccounts(stats.vaCount)
@@ -379,11 +397,28 @@ public class BalanceStructureService {
     private BigDecimal convertToReporting(BigDecimal amount, String currency, String reportingCurrency) {
         if (amount == null) return BigDecimal.ZERO;
         if (currency == null) return amount.setScale(2, RoundingMode.HALF_UP);
-        String target = (reportingCurrency != null && !reportingCurrency.isBlank())
-            ? reportingCurrency
-            : marketProfile.getDefaultCurrency();
+        String target = reportingTarget(reportingCurrency);
         if (currency.equalsIgnoreCase(target)) return amount.setScale(2, RoundingMode.HALF_UP);
-        return fxRateService.convert(amount, currency, target).setScale(2, RoundingMode.HALF_UP);
+        try {
+            return fxRateService.convert(amount, currency, target).setScale(2, RoundingMode.HALF_UP);
+        } catch (com.bank.vam.exception.BusinessException noRate) {
+            return BigDecimal.ZERO; // left out, and listed in unconvertedCurrencies
+        }
+    }
+
+    private String reportingTarget(String reportingCurrency) {
+        return (reportingCurrency != null && !reportingCurrency.isBlank())
+            ? reportingCurrency : marketProfile.getDefaultCurrency();
+    }
+
+    /** Rate for display next to a currency mirror; null when there is none. */
+    private BigDecimal rateOrNull(String from, String reportingCurrency) {
+        if (from == null) return null;
+        try {
+            return fxRateService.getRate(from, reportingTarget(reportingCurrency));
+        } catch (com.bank.vam.exception.BusinessException noRate) {
+            return null;
+        }
     }
 
     /**
@@ -438,11 +473,10 @@ public class BalanceStructureService {
                                                      Map<UUID, PoolMember> poolMemberMap,
                                                      Map<UUID, SweepRule> sweepRuleMap,
                                                      Map<UUID, List<NettingEntry>> nettingMap,
-                                                     Map<String, IntercompanyPositions> icPositions,
                                                      String reportingCurrency) {
         // Build hierarchical tree from flat list using parent relationships
         List<HierarchyNode> children = buildHierarchyTree(
-            accounts, poolMemberMap, sweepRuleMap, nettingMap, icPositions, reportingCurrency);
+            accounts, poolMemberMap, sweepRuleMap, nettingMap, reportingCurrency);
 
         // Recompute every node's consolidatedBalance as a true post-order
         // rollup before anything reads it — see recomputeRollup() for why
@@ -502,9 +536,9 @@ public class BalanceStructureService {
             .unassignedBankBalance(unassignedBankBalance)
             .intercompanyReceivable(totalICReceivable)
             .intercompanyPayable(totalICPayable)
-            .netPosition(totalBalance.add(totalICReceivable).subtract(totalICPayable))
-            .participatesInPooling(true)
-            .participatesInNetting(true)
+            .netPosition(totalBalance)   // IC mirrors are already in the total (payables subtracted)
+            .participatesInPooling(false)
+            .participatesInNetting(false)
             .participatesInSweep(false)
             .children(children)
             .build();
@@ -517,7 +551,6 @@ public class BalanceStructureService {
                                                    Map<UUID, PoolMember> poolMemberMap,
                                                    Map<UUID, SweepRule> sweepRuleMap,
                                                    Map<UUID, List<NettingEntry>> nettingMap,
-                                                   Map<String, IntercompanyPositions> icPositions,
                                                    String reportingCurrency) {
         // Map all accounts by ID
         Map<UUID, VirtualAccount> accountMap = accounts.stream()
@@ -529,7 +562,7 @@ public class BalanceStructureService {
         // Build all nodes first
         for (VirtualAccount va : accounts) {
             HierarchyNode node = buildNodeFromVA(va, poolMemberMap, sweepRuleMap, 
-                                                  nettingMap, icPositions, reportingCurrency);
+                                                  nettingMap, reportingCurrency);
             nodeMap.put(va.getId(), node);
         }
         
@@ -606,9 +639,20 @@ public class BalanceStructureService {
         if (isContainer) {
             node.setLocalBalance(BigDecimal.ZERO);
         }
-        BigDecimal icReceivable = node.getIntercompanyReceivable() != null ? node.getIntercompanyReceivable() : BigDecimal.ZERO;
-        BigDecimal icPayable = node.getIntercompanyPayable() != null ? node.getIntercompanyPayable() : BigDecimal.ZERO;
-        node.setNetPosition(total.add(icReceivable).subtract(icPayable));
+        // IC receivable/payable roll up like balances. They are already inside the total (an IC
+        // payable is subtracted above), so the net position is the total itself.
+        if (node.getChildren() != null) {
+            BigDecimal icReceivable = node.getIntercompanyReceivable() != null ? node.getIntercompanyReceivable() : BigDecimal.ZERO;
+            BigDecimal icPayable = node.getIntercompanyPayable() != null ? node.getIntercompanyPayable() : BigDecimal.ZERO;
+            for (HierarchyNode child : node.getChildren()) {
+                if (child.getAccountCategory() == AccountCategory.CURRENCY_MIRROR) continue;
+                if (child.getIntercompanyReceivable() != null) icReceivable = icReceivable.add(child.getIntercompanyReceivable());
+                if (child.getIntercompanyPayable() != null) icPayable = icPayable.add(child.getIntercompanyPayable());
+            }
+            node.setIntercompanyReceivable(icReceivable);
+            node.setIntercompanyPayable(icPayable);
+        }
+        node.setNetPosition(total);
         return total;
     }
 
@@ -616,12 +660,11 @@ public class BalanceStructureService {
                                           Map<UUID, PoolMember> poolMemberMap,
                                           Map<UUID, SweepRule> sweepRuleMap,
                                           Map<UUID, List<NettingEntry>> nettingMap,
-                                          Map<String, IntercompanyPositions> icPositions,
                                           String reportingCurrency) {
         PoolMember poolMember = poolMemberMap.get(va.getId());
         SweepRule sweepRule = sweepRuleMap.get(va.getId());
-        List<NettingEntry> nettingEntries = nettingMap.getOrDefault(va.getId(), List.of());
-        IntercompanyPositions icPos = icPositions.getOrDefault(va.getVaNumber(), new IntercompanyPositions());
+        List<NettingEntry> nettingEntries = va.getOwningEntityId() != null
+            ? nettingMap.getOrDefault(va.getOwningEntityId(), List.of()) : List.of();
 
         // Use getEffectiveBalance() which returns:
         // - aggregatedBalance for ROOT/AGGREGATION nodes (sum of children, stored in baseCurrency)
@@ -690,24 +733,27 @@ public class BalanceStructureService {
             .localBalance(effectiveBalance)
             .consolidatedBalance(consolidated)
             .availableBalance(va.getAvailableBalance())
-            .intercompanyReceivable(icPos.receivable)
-            .intercompanyPayable(icPos.payable)
-            .netPosition(consolidated.add(icPos.receivable).subtract(icPos.payable))
-            // Participation flags
+            // An IC mirror IS the intercompany position (Treasury's receivable/payable to a subsidiary).
+            .intercompanyReceivable(va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_RECEIVABLE ? consolidated : BigDecimal.ZERO)
+            .intercompanyPayable(va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_PAYABLE ? consolidated : BigDecimal.ZERO)
+            .netPosition(consolidated)
+            // Participation flags -- from real pool members, active sweep rules and open netting entries
             .participatesInPooling(poolMember != null)
             .participatesInNetting(!nettingEntries.isEmpty())
             .participatesInSweep(sweepRule != null)
-            .sweepTarget(sweepRule != null ? sweepRule.getTargetAccountId().toString() : null)
-            .interestRate(poolMember != null ? new BigDecimal("3.75") : null)
-            .interestAllocation(poolMember != null ? poolMember.getInterestAllocation() : null)
+            .sweepTarget(sweepRule != null && sweepRule.getTargetAccountId() != null ? sweepRule.getTargetAccountId().toString() : null)
+            .interestRate(poolMember != null ? poolMember.getPool().getInterestRate() : null)
+            .interestAllocation(poolMember != null && poolMember.getInterestAllocation() != null
+                ? convertToReporting(poolMember.getInterestAllocation(), poolMember.getPool().getPoolCurrency(), reportingCurrency) : null)
             // NEW: Additional metadata for special VAs
             .primaryViban(va.getViban())
             .baseCurrency(va.getBaseCurrency())
             // For currency mirrors - use actual mirrorBalance and balanceInBase from VA
             .mirrorBalance(specialType == SpecialVaType.CURRENCY_MIRROR ? va.getMirrorBalance() : null)
             .balanceInBase(specialType == SpecialVaType.CURRENCY_MIRROR ? va.getBalanceInBase() : null)
-            .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ?
-                    (va.getFxRate() != null ? va.getFxRate() : fxRateService.getRate(va.getCurrencyCode(), marketProfile.getDefaultCurrency())) : null)
+            // Rate into the currency this view reports in (the stored va.fxRate targets the mirror's
+            // own base currency, which the page then labelled as the reporting currency).
+            .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ? rateOrNull(va.getCurrencyCode(), reportingCurrency) : null)
             .fxRateAt(specialType == SpecialVaType.CURRENCY_MIRROR ?
                       (va.getFxRateAt() != null ? va.getFxRateAt().toString() : java.time.LocalDateTime.now().toString()) : null)
             // Placeholder counts - in production, query actual counts
@@ -726,7 +772,11 @@ public class BalanceStructureService {
     private NodeDetail buildNodeDetailFromVA(VirtualAccount va, String reportingCurrency) {
         BigDecimal currentBalance = va.getCurrentBalance() != null ? va.getCurrentBalance() : BigDecimal.ZERO;
         BigDecimal availableBalance = va.getAvailableBalance() != null ? va.getAvailableBalance() : BigDecimal.ZERO;
-        
+        UUID corporateId = va.getCorporateId();
+        BigDecimal converted = convertToReporting(currentBalance, va.getCurrencyCode(), reportingCurrency);
+        BigDecimal icReceivable = va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_RECEIVABLE ? converted : BigDecimal.ZERO;
+        BigDecimal icPayable = va.getMirrorAccountType() == VirtualAccount.MirrorAccountType.IC_PAYABLE ? converted : BigDecimal.ZERO;
+
         // Map special type and account category
         SpecialVaType specialType = mapSpecialType(va);
         AccountCategory accountCategory = mapAccountCategory(va);
@@ -742,40 +792,60 @@ public class BalanceStructureService {
             .accountCategory(accountCategory)
             .currencyCode(va.getCurrencyCode())
             .localBalance(currentBalance)
-            .consolidatedBalance(convertToReporting(currentBalance, va.getCurrencyCode(), reportingCurrency))
+            .consolidatedBalance(converted)
             .availableBalance(availableBalance)
             .holdAmount(currentBalance.subtract(availableBalance))
-            .intercompanyReceivable(BigDecimal.ZERO)
-            .intercompanyPayable(BigDecimal.ZERO)
-            .netIntercompanyPosition(BigDecimal.ZERO)
-            .participatesInPooling(false)  // TODO: Query pool membership
-            .participatesInNetting(false)  // TODO: Query netting entries
-            .participatesInSweep(Boolean.TRUE.equals(va.getIhbSweepEnabled()))  // Check VA sweep flag
+            .intercompanyReceivable(icReceivable)
+            .intercompanyPayable(icPayable)
+            .netIntercompanyPosition(icReceivable.subtract(icPayable))
+            .participatesInPooling(corporateId != null && getPoolMemberMap(corporateId).containsKey(va.getId()))
+            .participatesInNetting(corporateId != null && va.getOwningEntityId() != null
+                && getNettingEntryMap(corporateId).containsKey(va.getOwningEntityId()))
+            .participatesInSweep(corporateId != null && getSweepRuleMap(corporateId).containsKey(va.getId()))
             .externalReference(va.getExternalReference())
             // NEW: Special VA specific fields
             .coveredVaCount(specialType == SpecialVaType.SETTLEMENT ? 0 : null)
             .pendingExceptions(specialType == SpecialVaType.EXCEPTION ? 0 : null)
             .mirrorBalance(specialType == SpecialVaType.CURRENCY_MIRROR ? currentBalance : null)
-            .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ?
-                    fxRateService.getRate(va.getCurrencyCode(), marketProfile.getDefaultCurrency()) : null)
+            .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ? rateOrNull(va.getCurrencyCode(), reportingCurrency) : null)
             .build();
     }
 
+    /** Account id -> its membership in one of the corporate's active notional pools. */
     private Map<UUID, PoolMember> getPoolMemberMap(UUID corporateId) {
-        // In real implementation, fetch from repository
-        return new HashMap<>();
+        Map<UUID, PoolMember> map = new HashMap<>();
+        for (PoolMember m : poolMemberRepository.findActiveByCorporate(corporateId)) {
+            if (m.getAccountId() != null) map.putIfAbsent(m.getAccountId(), m);
+        }
+        return map;
     }
 
+    /** Account id -> the active sweep rule it is swept from (a source) or into (the target). */
     private Map<UUID, SweepRule> getSweepRuleMap(UUID corporateId) {
-        return new HashMap<>();
+        Map<UUID, SweepRule> map = new HashMap<>();
+        for (SweepRule rule : sweepRuleRepository.findByCorporateId(corporateId)) {
+            if (rule.getStatus() != SweepRule.SweepStatus.ACTIVE) continue;
+            if (rule.getSourceAccounts() != null) {
+                rule.getSourceAccounts().stream().map(SweepRuleSource::getAccountId)
+                    .filter(Objects::nonNull).forEach(id -> map.putIfAbsent(id, rule));
+            }
+            if (rule.getTargetAccountId() != null) map.putIfAbsent(rule.getTargetAccountId(), rule);
+        }
+        return map;
     }
 
+    /** Legal entity id -> its open (pending/included) netting entries, as payer or payee. */
     private Map<UUID, List<NettingEntry>> getNettingEntryMap(UUID corporateId) {
-        return new HashMap<>();
-    }
-
-    private Map<String, IntercompanyPositions> getIntercompanyPositions(UUID corporateId) {
-        return new HashMap<>();
+        List<UUID> entityIds = legalEntityRepository.findByCorporateIdOrderByHierarchyPath(corporateId).stream()
+            .map(LegalEntity::getId).toList();
+        Map<UUID, List<NettingEntry>> map = new HashMap<>();
+        if (entityIds.isEmpty()) return map;
+        for (NettingEntry e : nettingEntryRepository.findOpenForEntities(entityIds)) {
+            for (UUID id : new UUID[]{e.getPayerEntityId(), e.getPayeeEntityId()}) {
+                if (id != null && entityIds.contains(id)) map.computeIfAbsent(id, k -> new ArrayList<>()).add(e);
+            }
+        }
+        return map;
     }
 
     private void updatePoolMembership(VirtualAccount va, boolean participate, String poolReference) {
@@ -813,7 +883,16 @@ public class BalanceStructureService {
             stats.vaCount++;
         }
         
-        if (node.isParticipatesInPooling()) stats.poolParticipants++;
+        if (node.isParticipatesInPooling()) {
+            stats.poolParticipants++;
+            if (node.getInterestRate() != null) {
+                BigDecimal weight = node.getConsolidatedBalance() != null ? node.getConsolidatedBalance().abs() : BigDecimal.ZERO;
+                stats.rateWeighted = stats.rateWeighted.add(node.getInterestRate().multiply(weight));
+                stats.rateWeight = stats.rateWeight.add(weight);
+                stats.anyRate = node.getInterestRate();
+            }
+            if (node.getInterestAllocation() != null) stats.poolInterest = stats.poolInterest.add(node.getInterestAllocation());
+        }
         if (node.isParticipatesInSweep()) stats.sweepParticipants++;
         if (node.isParticipatesInNetting()) stats.nettingParticipants++;
         
@@ -846,12 +925,18 @@ public class BalanceStructureService {
         int exceptionVaCount = 0;
         int currencyMirrorCount = 0;
         List<String> currencies = new ArrayList<>();
+        BigDecimal rateWeighted = BigDecimal.ZERO;
+        BigDecimal rateWeight = BigDecimal.ZERO;
+        BigDecimal anyRate;
+        BigDecimal poolInterest = BigDecimal.ZERO;
+
+        /** Balance-weighted rate of the pools these accounts are in; null when they're in none. */
+        BigDecimal poolRate() {
+            if (rateWeight.signum() == 0) return anyRate;
+            return rateWeighted.divide(rateWeight, 4, RoundingMode.HALF_UP);
+        }
     }
 
-    private static class IntercompanyPositions {
-        BigDecimal receivable = BigDecimal.ZERO;
-        BigDecimal payable = BigDecimal.ZERO;
-    }
 
     // ========================================================================
     // ENHANCED: Helper methods for entity lookup
@@ -921,6 +1006,7 @@ public class BalanceStructureService {
                     .isTreasuryCenter(Boolean.TRUE.equals(entity.getCanLend()))
                     .canLend(Boolean.TRUE.equals(entity.getCanLend()))
                     .canBorrow(Boolean.TRUE.equals(entity.getCanBorrow()))
+                    .ihbCurrency(entity.getEffectiveIhbCurrency())
                     .creditLimit(entity.getIhbCreditLimit())
                     .currentExposure(entity.getIhbCurrentExposure())
                     .availableLimit(entity.getIhbAvailableLimit())

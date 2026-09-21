@@ -197,3 +197,14 @@ reported the change as absent although the file on disk had it.
 - After scripted edits, confirm the served module (`fetch('/src/...tsx')`) contains the change
   before trusting a live check; `touch` the file if it doesn't.
 - Prefer one read-modify-write per file per script run.
+
+## Whitespace-tolerant matching must not swallow the space after a match (2026-09-21)
+A scripted edit matched each line with `[ \t]*` at the end (to survive trailing spaces the Write
+tool strips from scripts). When a match ended mid-line (`<ArrowUpRight`, `hierarchyRes.success`)
+it also ate the separating space: `<ArrowUpRightclassName=`, `success&&`. Same class of bug as the
+glued `bg-surface-cardborder`.
+- Only allow trailing whitespace before a real newline: `[ \t]*(?=\n)`; never on the last line of
+  the pattern.
+- After any scripted edit, grep the added lines for glued tokens (`[A-Za-z]className=`, `[a-z)]&&`).
+- Idempotency checks of the form "new already in file" break when `new` contains `old`; restore
+  from git instead of re-running.

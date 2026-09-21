@@ -134,8 +134,22 @@ public class FxRateService {
             return defaultRate;
         }
 
+        // No rate at all: refuse rather than convert at 1.0, which silently mis-states money
+        // (1 GBP counted as 1 AED). Display callers catch this and leave the currency out, named.
         log.error("No FX rate found for {}/{}", fromCurrency, toCurrency);
-        return BigDecimal.ONE; // Safe fallback
+        throw new com.bank.vam.exception.BusinessException("FX_RATE_UNAVAILABLE",
+            "No FX rate for " + fromCurrency + "/" + toCurrency);
+    }
+
+    /** True when {@link #getRate} can convert this pair (a rate, an inverse, a hop or a default). */
+    @Transactional(readOnly = true)
+    public boolean hasRate(String fromCurrency, String toCurrency) {
+        try {
+            getRate(fromCurrency, toCurrency);
+            return true;
+        } catch (com.bank.vam.exception.BusinessException e) {
+            return false;
+        }
     }
 
     /**

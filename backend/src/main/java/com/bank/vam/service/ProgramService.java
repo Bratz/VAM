@@ -979,9 +979,13 @@ public class ProgramService {
             String currency = (String) row[0];
             BigDecimal amount = (BigDecimal) row[1];
             if (currency == null || amount == null || amount.signum() == 0) continue;
-            // ponytail: FxRateService falls back to 1.0 when it has no rate (known, tracked separately).
-            total = total.add(currency.equals(program.getCurrencyCode())
-                ? amount : fxRateService.convert(amount, currency, program.getCurrencyCode()));
+            if (currency.equals(program.getCurrencyCode())) { total = total.add(amount); continue; }
+            try {
+                total = total.add(fxRateService.convert(amount, currency, program.getCurrencyCode()));
+            } catch (com.bank.vam.exception.BusinessException noRate) {
+                // Left out, as the balance hierarchy does -- never counted 1:1.
+                log.warn("No FX rate {} -> {} for program {}; excluded from its balance", currency, program.getCurrencyCode(), program.getProgramCode());
+            }
         }
         return total;
     }

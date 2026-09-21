@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { ChevronRight, ChevronDown, Building2, Wallet, TrendingUp, TrendingDown, Globe, MapPin, DollarSign, Download, RefreshCw, ArrowUpRight, ArrowDownRight, Layers, Percent, ArrowLeftRight, Banknote, Loader2, XCircle, Plus, Settings, CreditCard, Coins, Check, Scale, AlertTriangle, Eye, X, GitBranch, FolderPlus, Crown, Power, Target, PiggyBank, Landmark, Sparkles, CheckCircle, MoreHorizontal } from 'lucide-react';
 import { Card, Button, Badge, Input , StatTile, StatusIconBadge, Toggle, Checkbox } from '../components/ui';
@@ -7,6 +7,7 @@ import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { Modal } from '../components/ui/enhanced';
+import { useMarket } from '../context/MarketContext';
 import { VaVibanModal } from '../components/viban/VaVibanModal';
 import { formatCurrency, cn } from '../utils';
 import {
@@ -69,6 +70,7 @@ interface IhbSummary {
   isTreasuryCenter: boolean;
   canLend: boolean;
   canBorrow: boolean;
+  ihbCurrency?: string;
   creditLimit: number;
   currentExposure: number;
   availableLimit: number;
@@ -137,6 +139,7 @@ interface ProgramOption {
   currencyCode: string;
   status: string;
   corporateId?: string;
+  maxHierarchyDepth?: number;
 }
 
 
@@ -1395,7 +1398,10 @@ interface IhbDetailSectionProps {
   treasuryRates?: TreasuryRates | null;
 }
 
-const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AED', onConfigure: _onConfigure, treasuryRates }) => {
+const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency: fallbackCurrency = 'AED', onConfigure: _onConfigure, treasuryRates }) => {
+  // Limits are held in the entity's IHB currency, not the page's reporting currency.
+  const currency = ihb.ihbCurrency || fallbackCurrency;
+  const pct = (r?: number | null) => (r == null ? 'Not set' : `${Number(r).toFixed(2)}%`);
   return (
     <div className="space-y-3">
       {/* Role Badges */}
@@ -1452,11 +1458,11 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
           <div className="grid grid-cols-2 gap-2 text-caption">
             <div>
               <p className="text-warning-600 dark:text-warning-300">Lending</p>
-              <p className="font-semibold text-warning-900">5.25%</p>
+              <p className="font-semibold text-warning-900 dark:text-warning-200">{pct(treasuryRates?.indicativeLendingRate)}</p>
             </div>
             <div>
               <p className="text-warning-600 dark:text-warning-300">Deposit</p>
-              <p className="font-semibold text-warning-900">4.75%</p>
+              <p className="font-semibold text-warning-900 dark:text-warning-200">{pct(treasuryRates?.indicativeDepositRate)}</p>
             </div>
           </div>
         </div>
@@ -1474,11 +1480,11 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
           <div className="grid grid-cols-2 gap-2 text-caption">
             <div>
               <p className="text-info-600 dark:text-info-300">Borrow at</p>
-              <p className="font-semibold text-error-600 dark:text-error-300">{treasuryRates.indicativeLendingRate?.toFixed(2)}%</p>
+              <p className="font-semibold text-error-600 dark:text-error-300">{pct(treasuryRates.indicativeLendingRate)}</p>
             </div>
             <div>
               <p className="text-info-600 dark:text-info-300">Deposit at</p>
-              <p className="font-semibold text-success-600 dark:text-success-300">{treasuryRates.indicativeDepositRate?.toFixed(2)}%</p>
+              <p className="font-semibold text-success-600 dark:text-success-300">{pct(treasuryRates.indicativeDepositRate)}</p>
             </div>
           </div>
         </div>
@@ -1501,7 +1507,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency = 'AE
             <span className="text-body-sm text-info-700 dark:text-info-300">EOD Sweep</span>
           </div>
           <Badge variant="info" size="sm">
-            {ihb.sweepFrequency === 'REAL_TIME' ? 'Real-time' : 'Daily @ 6PM'}
+            {ihb.sweepFrequency === 'REAL_TIME' ? 'Real-time' : 'Daily'}
           </Badge>
         </div>
       )}
@@ -1598,7 +1604,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
   const style = getNodeStyle();
   const Icon = style.icon;
-  const displayBalance = isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : node.localBalance;
+  // A container (ROOT/AGGREGATION) holds no money of its own: show what rolls up into it, in the
+  // reporting currency, instead of a bare 0.
+  const isContainerRow = node.accountCategory === 'ROOT' || node.accountCategory === 'AGGREGATION';
+  const displayBalance = isContainerRow ? node.consolidatedBalance
+    : isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : node.localBalance;
+  const displayCurrency = isContainerRow ? reportingCurrency : node.currencyCode;
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -1623,7 +1634,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         onClick={() => onSelect(node)}
       >
         {hasChildren ? (
-          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
+          <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
+            aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${node.name}`} aria-expanded={isExpanded}>
             {isExpanded ? <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> : <ChevronRight className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
           </button>
         ) : <span className="w-6" />}
@@ -1719,13 +1731,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           </div>
         </div>
 
-        <Badge variant="neutral" size="sm">{node.currencyCode}</Badge>
+        <Badge variant="neutral" size="sm">{displayCurrency}</Badge>
 
         <div className="text-right min-w-[120px]">
           <p className={cn('text-body-sm font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
-            {formatCurrency(displayBalance, node.currencyCode)}
+            {formatCurrency(displayBalance, displayCurrency)}
           </p>
-          {node.currencyCode !== reportingCurrency && (
+          {displayCurrency !== reportingCurrency && (
             <p className="caption">≈ {formatCurrency(node.consolidatedBalance, reportingCurrency)}</p>
           )}
         </div>
@@ -1747,12 +1759,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           return (
         <div className="text-right min-w-[130px]">
           <div className="flex items-center justify-end gap-1">
-            {hasIcActivity && (node.netPosition >= node.consolidatedBalance
+            {hasIcActivity && (Number(node.intercompanyReceivable || 0) >= Number(node.intercompanyPayable || 0)
               ? <ArrowUpRight className="w-4 h-4 text-success-500 dark:text-success-300" />
               : <ArrowDownRight className="w-4 h-4 text-error-500 dark:text-error-300" />)}
             <p className={cn('text-body-sm font-bold',
               !hasIcActivity ? 'text-primary-900 dark:text-neutral-50'
-                : node.netPosition >= node.consolidatedBalance ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
+                : Number(node.intercompanyReceivable || 0) >= Number(node.intercompanyPayable || 0) ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
               {formatCurrency(node.netPosition, reportingCurrency)}
             </p>
           </div>
@@ -1772,6 +1784,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               setShowContextMenu(!showContextMenu);
             }}
             className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-40 group-hover:opacity-100 transition-opacity"
+            aria-label={`Actions for ${node.name}`} aria-haspopup="menu" aria-expanded={showContextMenu}
           >
             <MoreHorizontal className="w-4 h-4 text-neutral-400" />
           </button>
@@ -1891,6 +1904,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   // Fetch currency breakdown when node changes (for aggregation nodes)
   useEffect(() => {
+    let cancelled = false;
     const fetchBreakdown = async () => {
       // UUID validation regex
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -1925,7 +1939,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         // v5.7.2: Use node-specific API to get only mirrors under this specific node
         // This ensures we don't show mirrors from sibling AGGREGATION nodes at the same level
         const res = await currencyMirrorApi.getBreakdownListByNode(node.id);
-        console.log('[DetailPanel] Currency breakdown response:', res);
+        if (cancelled) return;
         if (res.success && res.data) {
           setCurrencyBreakdown(res.data);
         } else {
@@ -1936,17 +1950,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         console.error('[DetailPanel] Failed to load currency breakdown:', err);
         setCurrencyBreakdown([]);
       } finally {
-        setBreakdownLoading(false);
+        if (!cancelled) setBreakdownLoading(false);
       }
     };
 
     fetchBreakdown();
+    return () => { cancelled = true; };
   }, [node?.id, node?.accountCategory]);
 
   if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-neutral-400" /></div>;
   if (!node) return <div className="h-full flex items-center justify-center text-neutral-400"><p>Select an entity to view details</p></div>;
 
   const displayData = detail || node;
+  const isContainerNode = node.accountCategory === 'ROOT' || node.accountCategory === 'AGGREGATION';
   const icNet = (displayData.intercompanyReceivable || 0) - (displayData.intercompanyPayable || 0);
 
   const determineSpecialType = (): VaSpecialType => {
@@ -1992,7 +2008,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             )}
           </div>
           {onRecalculateMirror && (
-            <Button variant="ghost" size="sm" onClick={() => onRecalculateMirror(node.id)}>
+            <Button variant="ghost" size="sm" onClick={() => onRecalculateMirror(node.id)} aria-label="Recalculate mirror balance">
               <RefreshCw className="w-4 h-4" />
             </Button>
           )}
@@ -2001,16 +2017,24 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className={cn('rounded-lg p-3', isCurrencyMirror ? 'bg-cyan-50 dark:bg-cyan-500/10' : 'bg-surface-page')}>
-          <p className="caption">{isCurrencyMirror ? 'Mirror Balance' : 'Local Balance'}</p>
+          <p className="caption">{isCurrencyMirror ? 'Mirror Balance' : isContainerNode ? 'Total below' : 'Local Balance'}</p>
           <p className={cn('text-body-lg font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
-            {formatCurrency(isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : displayData.localBalance, displayData.currencyCode)}
+            {isContainerNode
+              ? formatCurrency(node.consolidatedBalance, reportingCurrency)
+              : formatCurrency(isCurrencyMirror ? (node.mirrorBalance || node.localBalance) : displayData.localBalance, displayData.currencyCode)}
           </p>
         </div>
         <div className="bg-surface-page rounded-lg p-3">
-          <p className="caption">{isCurrencyMirror ? 'In Base Currency' : 'Available'}</p>
+          {/* balanceInBase is in the mirror's own base currency, not the reporting currency. */}
+          <p className="caption">{isCurrencyMirror
+            ? `In ${node.balanceInBase != null && node.baseCurrency ? node.baseCurrency : reportingCurrency}`
+            : 'Available'}</p>
           <p className="section-title">
             {isCurrencyMirror
-              ? formatCurrency(node.balanceInBase || node.consolidatedBalance, reportingCurrency)
+              ? (node.balanceInBase != null && node.baseCurrency
+                  ? formatCurrency(node.balanceInBase, node.baseCurrency)
+                  : formatCurrency(node.consolidatedBalance, reportingCurrency))
+              : isContainerNode ? '—'
               : formatCurrency(displayData.availableBalance || displayData.localBalance, displayData.currencyCode)
             }
           </p>
@@ -2052,21 +2076,26 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   </div>
                   <div className="text-right">
                     <p className="caption">
-                      {cb.currency === reportingCurrency ? 'Base' : `@ ${cb.fxRate?.toFixed(4) || '1.0000'}`}
+                      {cb.currency === (cb.baseCurrency || reportingCurrency) ? 'Base'
+                        : cb.fxRate != null ? `@ ${Number(cb.fxRate).toFixed(4)}` : 'No rate'}
                     </p>
                     <p className="text-body-sm font-medium text-cyan-700 dark:text-cyan-300">
-                      {formatCurrency(cb.convertedBalance, reportingCurrency)}
+                      {formatCurrency(cb.convertedBalance, cb.baseCurrency || reportingCurrency)}
                     </p>
                   </div>
                 </div>
               ))}
-              {/* Total row */}
-              <div className="flex items-center justify-between p-2.5 bg-cyan-100 rounded-lg border border-cyan-200 dark:bg-cyan-500/20 dark:border-cyan-500/30">
-                <span className="text-body-sm font-semibold text-cyan-800 dark:text-cyan-300">Total in {reportingCurrency}</span>
-                <span className="text-body font-bold text-cyan-900">
-                  {formatCurrency(currencyBreakdown.reduce((sum, cb) => sum + (cb.convertedBalance || 0), 0), reportingCurrency)}
-                </span>
-              </div>
+              {/* Total row(s): one per base currency -- never adds amounts held in different currencies. */}
+              {Object.entries(currencyBreakdown.reduce<Record<string, number>>((acc, cb) => {
+                const base = cb.baseCurrency || reportingCurrency;
+                acc[base] = (acc[base] || 0) + (cb.convertedBalance || 0);
+                return acc;
+              }, {})).map(([base, total]) => (
+                <div key={base} className="flex items-center justify-between p-2.5 bg-cyan-100 rounded-lg border border-cyan-200 dark:bg-cyan-500/20 dark:border-cyan-500/30">
+                  <span className="text-body-sm font-semibold text-cyan-800 dark:text-cyan-300">Total in {base}</span>
+                  <span className="text-body font-bold text-cyan-900 dark:text-cyan-200">{formatCurrency(total, base)}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -2320,6 +2349,9 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 }) => {
   const entity = entities.find(e => e.id === entityId);
   const isEnabling = entity && !entity.ihbEnabled;
+  // Interest configs and IHB limits are in the entity's own currency; the page's reporting
+  // currency (the prop) is only a fallback when the entity has none.
+  const ihbCurrency = entity?.functionalCurrency || currency;
   const treasuryCenter = entities.find(e => e.canLend === true && e.ihbEnabled === true);
   
   // Main config state
@@ -2366,7 +2398,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           const relevantConfigs = Array.isArray(configs) ? configs.filter((c: InterestConfiguration) => 
             c.configType === 'INTERNAL' && 
             (c.targetType === 'LEGAL_ENTITY' || c.targetType === 'CORPORATE') &&
-            c.currencyCode === currency
+            c.currencyCode === ihbCurrency
           ) : [];
           setInterestConfigs(relevantConfigs);
           
@@ -2388,7 +2420,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
       }
     };
     loadInterestConfigs();
-  }, [isOpen, corporateId, config.canLend, currency, entityId, entity?.ihbInterestConfigId]);
+  }, [isOpen, corporateId, config.canLend, ihbCurrency, entityId, entity?.ihbInterestConfigId]);
 
   // Load treasury rates when modal opens for participant
   useEffect(() => {
@@ -2447,7 +2479,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         configType: 'INTERNAL' as const,
         targetType: 'LEGAL_ENTITY' as const,
         targetId: entityId,
-        currencyCode: currency,
+        currencyCode: ihbCurrency,
         creditBaseRateType: newConfigForm.creditBaseRateType,
         creditBaseRate: parseFloat(newConfigForm.creditBaseRate),
         creditSpread: parseFloat(newConfigForm.creditSpread),
@@ -2484,7 +2516,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
       if (isEnabling) {
         await ihbUnifiedApi.enableIhb(entityId, {
           creditLimit: config.creditLimit,
-          ihbCurrency: currency,
+          ihbCurrency,
           canLend: config.canLend,
           canBorrow: config.canBorrow,
           targetCashBalance: config.targetCashBalance,
@@ -2514,7 +2546,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 
   const handleDisableIhb = async () => {
     if (!entityId) return;
-    if (!confirm('Are you sure you want to disable IHB for this entity? This will remove sweep rules.')) return;
+    if (!confirm('Are you sure you want to disable IHB for this entity? This stops its IHB sweep rules.')) return;
     setLoading(true);
     try {
       await ihbUnifiedApi.disableIhb(entityId);
@@ -3038,7 +3070,21 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
   const [highlightNodeId, setHighlightNodeId] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<ExtendedHierarchyNode | null>(null);
-  const [reportingCurrency, _setReportingCurrency] = useState('AED');
+  // The market's currency by default; the picker above the figures changes it (old: fixed to AED).
+  const { profile: marketProfile, loaded: marketLoaded } = useMarket();
+  const [reportingCurrency, setReportingCurrency] = useState(marketProfile?.defaultCurrency || 'AED');
+  const reportingCurrencyPicked = useRef(false);
+  // The profile arrives after first render (the fallback is AED): adopt its currency unless the
+  // user has already picked one.
+  useEffect(() => {
+    if (marketLoaded && !reportingCurrencyPicked.current && marketProfile?.defaultCurrency) {
+      setReportingCurrency(marketProfile.defaultCurrency);
+    }
+  }, [marketLoaded, marketProfile?.defaultCurrency]);
+  // Each load bumps these; a response from an older load (a previous corporate/program/node)
+  // is dropped instead of overwriting the newer one.
+  const loadSeq = useRef(0);
+  const detailSeq = useRef(0);
   // Default OFF: mirrors/settlement/exception VAs are system plumbing — the
   // treasurer's default view is the business tree; the toggle reveals them.
   const [showSystemVas, setShowSystemVas] = useState(false);
@@ -3101,36 +3147,41 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
 
   // NEW: Load legal entities when corporate changes
   useEffect(() => {
+    let cancelled = false;
     const loadEntities = async () => {
       if (!selectedCorporateId) { setLegalEntities([]); return; }
       try {
         const response = await legalEntityApi.getByCorporate(selectedCorporateId);
-        setLegalEntities(response.data || []);
+        if (!cancelled) setLegalEntities(response.data || []);
       } catch (err) {
         console.error('Failed to load legal entities:', err);
-        setLegalEntities([]);
+        if (!cancelled) setLegalEntities([]);
       }
     };
     loadEntities();
+    return () => { cancelled = true; };
   }, [selectedCorporateId]);
 
   // ENHANCED: Load treasury rates when corporate changes
   useEffect(() => {
+    let cancelled = false;
     const loadTreasuryRates = async () => {
       if (!selectedCorporateId) { setTreasuryRates(null); return; }
       try {
         const response = await ihbUnifiedApi.getTreasuryRates(selectedCorporateId);
-        setTreasuryRates(response.data || null);
-      } catch (err) {
-        console.error('Failed to load treasury rates:', err);
-        setTreasuryRates(null);
+        if (!cancelled) setTreasuryRates(response.data || null);
+      } catch {
+        // A corporate with no treasury center answers 404: no offered rates to show.
+        if (!cancelled) setTreasuryRates(null);
       }
     };
     loadTreasuryRates();
+    return () => { cancelled = true; };
   }, [selectedCorporateId]);
 
   // Load programs when corporate changes
   useEffect(() => {
+    let cancelled = false;
     const loadPrograms = async () => {
       if (!selectedCorporateId) {
         setPrograms([]);
@@ -3141,6 +3192,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       try {
         setLoadingPrograms(true);
         const response = await programsApi.getAll({ corporateId: selectedCorporateId });
+        if (cancelled) return;
         
         let programsData: any[] = [];
         if (response?.success && response?.data) {
@@ -3160,6 +3212,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           currencyCode: p.currencyCode || 'AED',
           status: p.status,
           corporateId: p.corporateId,
+          maxHierarchyDepth: p.maxHierarchyDepth,
         }));
         setPrograms(programList);
 
@@ -3171,6 +3224,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
             programName: activePrograms[0].programName,
             programCode: activePrograms[0].programCode,
             currencyCode: activePrograms[0].currencyCode,
+            maxHierarchyDepth: activePrograms[0].maxHierarchyDepth,
           });
         } else {
           setSelectedProgramId('');
@@ -3180,10 +3234,11 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         console.error('Failed to load programs:', err);
         setPrograms([]);
       } finally {
-        setLoadingPrograms(false);
+        if (!cancelled) setLoadingPrograms(false);
       }
     };
     loadPrograms();
+    return () => { cancelled = true; };
   }, [selectedCorporateId]);
 
   // Handle corporate change
@@ -3226,6 +3281,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         programName: program.programName,
         programCode: program.programCode,
         currencyCode: program.currencyCode,
+        maxHierarchyDepth: program.maxHierarchyDepth,
       });
       // No setCheckingStatus(true) here: the status effect sets and clears it, but only runs when
       // the id changes -- re-picking the current program left the page on "Checking..." forever.
@@ -3236,6 +3292,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
 
   // Check hierarchy status when program changes
   useEffect(() => {
+    let cancelled = false;
     const checkHierarchyStatus = async () => {
       if (!selectedProgramId) {
         setCheckingStatus(false);
@@ -3252,6 +3309,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       setCheckingStatus(true);
       try {
         const result = await hierarchyVaApi.getStatus(selectedProgramId);
+        if (cancelled) return;
         let statusData: HierarchyStatusResponse | null = null;
         if (result.success !== undefined && result.data) {
           statusData = result.data;
@@ -3276,25 +3334,29 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         console.error('Failed to check hierarchy status:', err);
         setHierarchyStatus(null);
       } finally {
-        setCheckingStatus(false);
+        if (!cancelled) setCheckingStatus(false);
       }
     };
 
     checkHierarchyStatus();
+    return () => { cancelled = true; };
   }, [selectedProgramId]);
 
   // Load hierarchy data
   const loadData = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    const stale = () => seq !== loadSeq.current;
     try {
-      setLoading(true); 
+      setLoading(true);
       setError(null);
-      
+
       const [hierarchyRes, summaryRes, physicalRes] = await Promise.all([
         balanceStructureApi.getHierarchy(selectedCorporateId || undefined, selectedProgramId || undefined, reportingCurrency),
         balanceStructureApi.getSummary(selectedCorporateId || undefined, selectedProgramId || undefined, reportingCurrency),
         balanceStructureApi.getPhysicalAccount(selectedCorporateId || undefined, selectedProgramId || undefined),
       ]);
-      
+      if (stale()) return;
+
       if (hierarchyRes.success && hierarchyRes.data) {
         // ENHANCED: Transform flat owningEntity fields to nested object
         const transformNode = (node: ExtendedHierarchyNode): ExtendedHierarchyNode => {
@@ -3347,9 +3409,10 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         let mirrorsRes;
         if (selectedProgramId) {
           mirrorsRes = await currencyMirrorApi.getByProgram(selectedProgramId);
-        } else if (corporateId) {
-          mirrorsRes = await currencyMirrorApi.getByCorporate(corporateId);
+        } else if (selectedCorporateId) {
+          mirrorsRes = await currencyMirrorApi.getByCorporate(selectedCorporateId);
         }
+        if (stale()) return;
         if (mirrorsRes?.success && mirrorsRes.data) {
           setCurrencyMirrors(mirrorsRes.data);
         }
@@ -3365,6 +3428,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         } else if (selectedCorporateId) {
           shadowRes = await shadowAccountApi.getByCorporate(selectedCorporateId);
         }
+        if (stale()) return;
         if (shadowRes?.success && shadowRes.data) {
           setShadowAccounts(shadowRes.data);
         } else {
@@ -3376,10 +3440,10 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       }
     } catch (err) {
       console.error('Failed to load:', err);
-      setError('Failed to load balance structure data');
+      if (!stale()) setError('Failed to load balance structure data');
     }
-    finally { setLoading(false); }
-  }, [reportingCurrency, collectAllIds, corporateId, selectedCorporateId, selectedProgramId]);
+    finally { if (!stale()) setLoading(false); }
+  }, [reportingCurrency, collectAllIds, selectedCorporateId, selectedProgramId]);
 
   // ENHANCED: Refresh all data including legal entities (used after IHB changes)
   const refreshAll = useCallback(async () => {
@@ -3397,14 +3461,15 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   }, [selectedCorporateId, loadData]);
 
   const loadNodeDetail = async (nodeId: string) => {
+    const seq = ++detailSeq.current;
     try {
       setDetailLoading(true);
       const res = await balanceStructureApi.getNodeDetail(nodeId, reportingCurrency);
-      if (res.success) setSelectedNodeDetail(res.data);
+      if (seq === detailSeq.current && res.success) setSelectedNodeDetail(res.data);
     } catch (err) {
       console.error('Failed to load node detail:', err);
     }
-    finally { setDetailLoading(false); }
+    finally { if (seq === detailSeq.current) setDetailLoading(false); }
   };
 
   // Load hierarchy level configurations
@@ -3549,16 +3614,20 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     setSelectedNode(node);
     // The top node is the corporate itself, not an account -- there's no account detail to fetch
     // (the backend answered "Node not found"); the panel shows the node's own figures instead.
-    if (node.id === selectedCorporateId) { setSelectedNodeDetail(null); return; }
+    if (node.id === selectedCorporateId) { detailSeq.current++; setSelectedNodeDetail(null); setDetailLoading(false); return; }
     loadNodeDetail(node.id);
   };
   
-  const handleRefresh = async () => { 
-    setRefreshing(true); 
-    await balanceStructureApi.refresh(); 
-    await loadData(); 
-    toast.success('Hierarchy refreshed');
-    setRefreshing(false); 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadData();
+      toast.success('Hierarchy refreshed');
+    } catch {
+      toast.error('Could not refresh the hierarchy');
+    } finally {
+      setRefreshing(false);
+    }
   };
   
   // Same client-side CSV as the Programs page -- the backend export endpoint is a stub.
@@ -3887,10 +3956,13 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   const displaySummary = summary || { 
     consolidatedBalance: hierarchy?.consolidatedBalance || 0, 
     netPosition: hierarchy?.netPosition || 0, 
-    totalIntercompanyReceivable: hierarchy?.intercompanyReceivable || 0, 
-    poolRate: 0, 
-    monthlyInterestAllocation: hierarchy?.interestAllocation || 0 
+    totalIntercompanyReceivable: hierarchy?.intercompanyReceivable || 0,
+    totalIntercompanyPayable: hierarchy?.intercompanyPayable || 0,
+    poolRate: null as number | null,
+    monthlyInterestAllocation: 0,
   };
+  const icNetTotal = Number(displaySummary.totalIntercompanyReceivable || 0) - Number(displaySummary.totalIntercompanyPayable || 0);
+  const unconverted = summary?.unconvertedCurrencies ?? hierarchy?.unconvertedCurrencies ?? [];
   
   // The program's own backing bank account (not "the corporate's first account", as before).
   const hasPhysical = !!physicalAccount && physicalAccount.status !== 'NOT_CONFIGURED';
@@ -3925,7 +3997,16 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         loading={loadingPrograms}
       />
 
-      {/* Headline figures — Consolidated + Net Position. Matches the
+      <div className="flex items-center justify-end gap-2">
+        <label htmlFor="hierarchy-reporting-ccy" className="caption">Reporting currency</label>
+        <div className="w-28">
+          <CurrencyPicker id="hierarchy-reporting-ccy" value={reportingCurrency}
+            extra={[reportingCurrency, ...(summary?.currencies ?? [])]}
+            onChange={(c) => { reportingCurrencyPicked.current = true; setReportingCurrency(c); }} />
+        </div>
+      </div>
+
+      {/* Headline figures— Consolidated + Net Position. Matches the
           hero+strip hierarchy used elsewhere (Virtual Accounts, VIBAN
           Management); these five metrics previously competed as an
           equal-weight strip with no visual hierarchy. */}
@@ -3939,6 +4020,11 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
               {!!summary?.unassignedBankBalance && (
                 <span className="block mt-0.5">
                   Not included: {formatCurrency(summary.unassignedBankBalance, reportingCurrency)} in bank accounts not yet in any program
+                </span>
+              )}
+              {unconverted.length > 0 && (
+                <span className="block mt-0.5 text-warning-700 dark:text-warning-300">
+                  Not included: balances in {unconverted.join(', ')} (no FX rate to {reportingCurrency})
                 </span>
               )}
             </>
@@ -3956,8 +4042,8 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         <StatTile
           layout="row"
           tone="info"
-          label="IC Positions"
-          value={<TileAmount value={displaySummary.totalIntercompanyReceivable} currency={reportingCurrency} />}
+          label="IC Net"
+          value={<TileAmount value={icNetTotal} currency={reportingCurrency} />}
           icon={<ArrowLeftRight className="w-5 h-5" />}
           delay="0.2s"
         />
@@ -3965,15 +4051,15 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           layout="row"
           tone="accent"
           label="Pool Rate"
-          value={`${displaySummary.poolRate}%`}
+          value={displaySummary.poolRate != null ? `${Number(displaySummary.poolRate).toFixed(2)}%` : 'Not pooled'}
           icon={<Percent className="w-5 h-5" />}
           delay="0.25s"
         />
         <StatTile
           layout="row"
           tone="warning"
-          label="Monthly Interest"
-          value={<>+<TileAmount value={displaySummary.monthlyInterestAllocation} currency={reportingCurrency} /></>}
+          label="Pool Interest"
+          value={<TileAmount value={displaySummary.monthlyInterestAllocation || 0} currency={reportingCurrency} />}
           icon={<Banknote className="w-5 h-5" />}
           delay="0.3s"
         />
@@ -4031,12 +4117,14 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
             </div>
             <div className="text-right">
               <p className="text-caption font-medium text-warning-200 uppercase tracking-wider">Total Mirrored Balance</p>
-              <p className="stat-value-sm mt-1">
-                {formatCurrency(
-                  shadowAccounts.reduce((sum, sa) => sum + (sa.bankBalance || 0), 0),
-                  shadowAccounts[0]?.currencyCode || 'AED'
-                )}
-              </p>
+              {/* One figure per currency: these are bank balances in their own currencies. */}
+              {Object.entries(shadowAccounts.reduce<Record<string, number>>((acc, sa) => {
+                const c = sa.currencyCode || reportingCurrency;
+                acc[c] = (acc[c] || 0) + (sa.bankBalance || 0);
+                return acc;
+              }, {})).map(([ccy, total]) => (
+                <p key={ccy} className="stat-value-sm mt-1">{formatCurrency(total, ccy)}</p>
+              ))}
             </div>
           </div>
           {/* Shadow Account Details Grid */}

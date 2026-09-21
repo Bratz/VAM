@@ -69,6 +69,8 @@ public class BalanceStructureDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class HierarchyNode {
+        /** Currencies with no FX rate to the reporting currency: left out of converted totals. */
+        private List<String> unconvertedCurrencies;
         private String id;
         private String name;
         private String accountNumber;
@@ -149,6 +151,7 @@ public class BalanceStructureDto {
         private boolean isTreasuryCenter;    // canLend = true
         private boolean canLend;
         private boolean canBorrow;
+        private String ihbCurrency;          // currency of the limits below (the entity's IHB currency)
         private BigDecimal creditLimit;
         private BigDecimal currentExposure;
         private BigDecimal availableLimit;
@@ -167,6 +170,8 @@ public class BalanceStructureDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class BalanceSummary {
+        /** Currencies with no FX rate to the reporting currency: left out of converted totals. */
+        private List<String> unconvertedCurrencies;
         private BigDecimal consolidatedBalance;
         /** Held in home-bank accounts no program has picked yet (not included in consolidatedBalance). */
         private BigDecimal unassignedBankBalance;
