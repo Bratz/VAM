@@ -127,6 +127,8 @@ interface LegalEntity {
   // ENHANCED: IHB fields
   ihbEnabled?: boolean;
   ihbCreditLimit?: number;
+  /** Currency the entity runs IHB in (can differ from its functional currency). */
+  ihbCurrency?: string;
   canLend?: boolean;
   canBorrow?: boolean;
   ihbInterestConfigId?: string;
@@ -1543,12 +1545,16 @@ interface TreeNodeProps {
   programId?: string;  // Added for program-based currency breakdown API
   /** Node to flash after creation so the user sees where it landed. */
   highlightId?: string | null;
+  /** Id of the top (corporate) node: it isn't an account, so nothing can be created under it. */
+  rootId?: string;
+  /** Currencies with no FX rate to the reporting currency. */
+  unconverted?: string[];
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   node, expandedIds, onToggle, selectedId, onSelect, reportingCurrency,
   showSystemVas = true, onAddChild, onCreateSettlementVa, onViewExceptions, onConfigureIhb, corporateId, programId,
-  highlightId,
+  highlightId, rootId, unconverted = [],
 }) => {
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedId === node.id;
@@ -1580,7 +1586,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   const specialConfig = SPECIAL_VA_CONFIG[specialType];
   const SpecialIcon = specialConfig.icon;
   const isCurrencyMirror = specialType === 'CURRENCY_MIRROR';
-  const canAddChildren = nodeCanHaveChildren(node);
+  const canAddChildren = nodeCanHaveChildren(node) && node.id !== rootId;
 
   const getNodeStyle = () => {
     if (isCurrencyMirror) {
@@ -1632,6 +1638,17 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         )}
         style={{ marginLeft: `${node.level * 28}px` }}
         onClick={() => onSelect(node)}
+        role="treeitem"
+        tabIndex={0}
+        aria-selected={isSelected}
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-level={node.level + 1}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return; // keys inside the row's own buttons
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(node); }
+          else if (e.key === 'ArrowRight' && hasChildren && !isExpanded) { e.preventDefault(); onToggle(node.id); }
+          else if (e.key === 'ArrowLeft' && hasChildren && isExpanded) { e.preventDefault(); onToggle(node.id); }
+        }}
       >
         {hasChildren ? (
           <button onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md"
@@ -1738,7 +1755,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             {formatCurrency(displayBalance, displayCurrency)}
           </p>
           {displayCurrency !== reportingCurrency && (
-            <p className="caption">≈ {formatCurrency(node.consolidatedBalance, reportingCurrency)}</p>
+            <p className="caption">{unconverted.includes(displayCurrency)
+              ? `No ${displayCurrency}/${reportingCurrency} rate`
+              : `≈ ${formatCurrency(node.consolidatedBalance, reportingCurrency)}`}</p>
           )}
         </div>
 
@@ -1763,12 +1782,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               ? <ArrowUpRight className="w-4 h-4 text-success-500 dark:text-success-300" />
               : <ArrowDownRight className="w-4 h-4 text-error-500 dark:text-error-300" />)}
             <p className={cn('text-body-sm font-bold',
-              !hasIcActivity ? 'text-primary-900 dark:text-neutral-50'
+              !hasIcActivity ? 'text-neutral-400 dark:text-neutral-500'
                 : Number(node.intercompanyReceivable || 0) >= Number(node.intercompanyPayable || 0) ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
-              {formatCurrency(node.netPosition, reportingCurrency)}
+              {hasIcActivity
+                ? formatCurrency(Number(node.intercompanyReceivable || 0) - Number(node.intercompanyPayable || 0), reportingCurrency)
+                : '—'}
             </p>
           </div>
-          <p className="caption">Net Position</p>
+          <p className="caption">Intercompany</p>
         </div>
           );
         })()}
@@ -1785,33 +1806,36 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             }}
             className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md opacity-40 group-hover:opacity-100 transition-opacity"
             aria-label={`Actions for ${node.name}`} aria-haspopup="menu" aria-expanded={showContextMenu}
+            onKeyDown={(e) => { if (e.key === 'Escape') setShowContextMenu(false); }}
           >
             <MoreHorizontal className="w-4 h-4 text-neutral-400" />
           </button>
           {showContextMenu && (
-            <div className={cn(
+            <div role="menu" aria-label={`Actions for ${node.name}`}
+              onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setShowContextMenu(false); } }}
+              className={cn(
               'absolute right-0 w-52 bg-surface-card rounded-lg shadow-lg border border-edge py-1 z-50',
               menuUp ? 'bottom-full mb-1' : 'top-full mt-1'
             )}>
               {canAddChildren && onAddChild && (
                 <>
                   {/* Node types listed directly — no intermediate chooser modal. */}
-                  <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'aggregation'); setShowContextMenu(false); }}
+                  <button role="menuitem" onClick={(e) => { e.stopPropagation(); onAddChild(node, 'aggregation'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <FolderPlus className="w-4 h-4 text-cat-1 dark:text-cat-1-fg" />Add Aggregation Node
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'transaction'); setShowContextMenu(false); }}
+                  <button role="menuitem" onClick={(e) => { e.stopPropagation(); onAddChild(node, 'transaction'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-success-600 dark:text-success-300" />Add Transaction VA
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); onAddChild(node, 'ihb-current-account'); setShowContextMenu(false); }}
+                  <button role="menuitem" onClick={(e) => { e.stopPropagation(); onAddChild(node, 'ihb-current-account'); setShowContextMenu(false); }}
                     className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                     <PiggyBank className="w-4 h-4 text-info-500 dark:text-info-300" />Add IHB Current Account
                   </button>
                 </>
               )}
               {canAddChildren && onCreateSettlementVa && (
-                <button onClick={(e) => { e.stopPropagation(); onCreateSettlementVa(node.id); setShowContextMenu(false); }}
+                <button role="menuitem" onClick={(e) => { e.stopPropagation(); onCreateSettlementVa(node.id); setShowContextMenu(false); }}
                   className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                   <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />Create Settlement VA
                 </button>
@@ -1822,12 +1846,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <>
                   <div className="border-t border-edge-subtle my-1" />
                   {node.ihb?.enabled ? (
-                    <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
+                    <button role="menuitem" onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
                       className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                       <Settings className="w-4 h-4 text-info-500 dark:text-info-300" />IHB Settings
                     </button>
                   ) : (
-                    <button onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
+                    <button role="menuitem" onClick={(e) => { e.stopPropagation(); node.owningEntity && onConfigureIhb?.(node.owningEntity.id); setShowContextMenu(false); }}
                       className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                       <Power className="w-4 h-4 text-success-500 dark:text-success-300" />Enable IHB
                     </button>
@@ -1836,7 +1860,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               )}
               
               <div className="border-t border-edge-subtle my-1" />
-              <button onClick={(e) => { e.stopPropagation(); onSelect(node); setShowContextMenu(false); }}
+              <button role="menuitem" onClick={(e) => { e.stopPropagation(); onSelect(node); setShowContextMenu(false); }}
                 className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
                 <Eye className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />View Details
               </button>
@@ -1865,6 +1889,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               corporateId={corporateId}
               programId={programId}
               highlightId={highlightId}
+              rootId={rootId}
+              unconverted={unconverted}
             />
           ))}
         </div>
@@ -1963,7 +1989,9 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   const displayData = detail || node;
   const isContainerNode = node.accountCategory === 'ROOT' || node.accountCategory === 'AGGREGATION';
-  const icNet = (displayData.intercompanyReceivable || 0) - (displayData.intercompanyPayable || 0);
+  // A container's detail is its own account (IC 0); what's under it is on the tree node.
+  const icSource = isContainerNode ? node : displayData;
+  const icNet = (icSource.intercompanyReceivable || 0) - (icSource.intercompanyPayable || 0);
 
   const determineSpecialType = (): VaSpecialType => {
     if (node.accountCategory === 'CURRENCY_MIRROR') return 'CURRENCY_MIRROR';
@@ -2080,13 +2108,13 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                         : cb.fxRate != null ? `@ ${Number(cb.fxRate).toFixed(4)}` : 'No rate'}
                     </p>
                     <p className="text-body-sm font-medium text-cyan-700 dark:text-cyan-300">
-                      {formatCurrency(cb.convertedBalance, cb.baseCurrency || reportingCurrency)}
+                      {cb.convertedBalance == null ? '—' : formatCurrency(cb.convertedBalance, cb.baseCurrency || reportingCurrency)}
                     </p>
                   </div>
                 </div>
               ))}
               {/* Total row(s): one per base currency -- never adds amounts held in different currencies. */}
-              {Object.entries(currencyBreakdown.reduce<Record<string, number>>((acc, cb) => {
+              {Object.entries(currencyBreakdown.filter(cb => cb.convertedBalance != null).reduce<Record<string, number>>((acc, cb) => {
                 const base = cb.baseCurrency || reportingCurrency;
                 acc[base] = (acc[base] || 0) + (cb.convertedBalance || 0);
                 return acc;
@@ -2188,17 +2216,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
       )}
 
-      {((displayData.intercompanyReceivable || 0) > 0 || (displayData.intercompanyPayable || 0) > 0) && (
+      {((icSource.intercompanyReceivable || 0) > 0 || (icSource.intercompanyPayable || 0) > 0) && (
         <>
           <h4 className="body-strong font-semibold pt-2">Intercompany Positions</h4>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-success-50 dark:bg-success-500/10 rounded-lg p-3">
               <p className="caption">Receivable</p>
-              <p className="text-body font-semibold text-success-600 dark:text-success-300">+{formatCurrency(displayData.intercompanyReceivable || 0, reportingCurrency)}</p>
+              <p className="text-body font-semibold text-success-600 dark:text-success-300">+{formatCurrency(icSource.intercompanyReceivable || 0, reportingCurrency)}</p>
             </div>
             <div className="bg-error-50 dark:bg-error-500/10 rounded-lg p-3">
               <p className="caption">Payable</p>
-              <p className="text-body font-semibold text-error-600 dark:text-error-300">-{formatCurrency(displayData.intercompanyPayable || 0, reportingCurrency)}</p>
+              <p className="text-body font-semibold text-error-600 dark:text-error-300">-{formatCurrency(icSource.intercompanyPayable || 0, reportingCurrency)}</p>
             </div>
             <div className={cn('rounded-lg p-3', icNet >= 0 ? 'bg-success-50 dark:bg-success-500/10' : 'bg-error-50 dark:bg-error-500/10')}>
               <p className="caption">Net</p>
@@ -2351,7 +2379,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
   const isEnabling = entity && !entity.ihbEnabled;
   // Interest configs and IHB limits are in the entity's own currency; the page's reporting
   // currency (the prop) is only a fallback when the entity has none.
-  const ihbCurrency = entity?.functionalCurrency || currency;
+  const ihbCurrency = entity?.ihbCurrency || entity?.functionalCurrency || currency;
   const treasuryCenter = entities.find(e => e.canLend === true && e.ihbEnabled === true);
   
   // Main config state
@@ -3251,12 +3279,26 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     setSelectedNodeForAction(null);
   };
 
+  // A switch invalidates whatever is still loading, and clears the previous scope's figures so they
+  // can't show under the new corporate/program name (a corporate with no program never reloads).
+  const resetScope = () => {
+    loadSeq.current++;
+    detailSeq.current++;
+    setLoading(false);
+    setDetailLoading(false);
+    setSummary(null);
+    setPhysicalAccount(null);
+    setShadowAccounts([]);
+    setCurrencyMirrors([]);
+  };
+
   const handleCorporateChange = (corpId: string) => {
     setSelectedCorporateId(corpId);
     setSelectedProgramId('');
     setHierarchy(null);
     setHierarchyStatus(null);
     clearNodeSelection();
+    resetScope();
     
     const corp = corporates.find(c => c.id === corpId);
     if (corp) {
@@ -3274,6 +3316,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     setHierarchy(null);
     setHierarchyStatus(null);
     clearNodeSelection();
+    resetScope();
     
     const program = programs.find(p => p.id === programId);
     if (program) {
@@ -3343,7 +3386,8 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   }, [selectedProgramId]);
 
   // Load hierarchy data
-  const loadData = useCallback(async () => {
+  /** Resolves true when this load landed, false when it failed; undefined when a newer load superseded it. */
+  const loadData = useCallback(async (): Promise<boolean | undefined> => {
     const seq = ++loadSeq.current;
     const stale = () => seq !== loadSeq.current;
     try {
@@ -3355,8 +3399,8 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         balanceStructureApi.getSummary(selectedCorporateId || undefined, selectedProgramId || undefined, reportingCurrency),
         balanceStructureApi.getPhysicalAccount(selectedCorporateId || undefined, selectedProgramId || undefined),
       ]);
-      if (stale()) return;
-
+      if (stale()) return undefined;
+      
       if (hierarchyRes.success && hierarchyRes.data) {
         // ENHANCED: Transform flat owningEntity fields to nested object
         const transformNode = (node: ExtendedHierarchyNode): ExtendedHierarchyNode => {
@@ -3412,7 +3456,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         } else if (selectedCorporateId) {
           mirrorsRes = await currencyMirrorApi.getByCorporate(selectedCorporateId);
         }
-        if (stale()) return;
+        if (stale()) return undefined;
         if (mirrorsRes?.success && mirrorsRes.data) {
           setCurrencyMirrors(mirrorsRes.data);
         }
@@ -3428,7 +3472,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         } else if (selectedCorporateId) {
           shadowRes = await shadowAccountApi.getByCorporate(selectedCorporateId);
         }
-        if (stale()) return;
+        if (stale()) return undefined;
         if (shadowRes?.success && shadowRes.data) {
           setShadowAccounts(shadowRes.data);
         } else {
@@ -3438,9 +3482,11 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         console.error('Failed to load shadow accounts:', err);
         setShadowAccounts([]);
       }
+      return hierarchyRes.success && summaryRes.success;
     } catch (err) {
       console.error('Failed to load:', err);
       if (!stale()) setError('Failed to load balance structure data');
+      return stale() ? undefined : false;
     }
     finally { if (!stale()) setLoading(false); }
   }, [reportingCurrency, collectAllIds, selectedCorporateId, selectedProgramId]);
@@ -3610,6 +3656,20 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     setTimeout(() => setHighlightNodeId(null), 3500);
   }, [pendingFocusId, hierarchy]);
 
+  // After any reload (a new reporting currency, a refresh), the selected node is re-read from the new
+  // tree and its detail re-fetched -- otherwise the panel keeps old figures under the new currency.
+  useEffect(() => {
+    if (!hierarchy) return;
+    setSelectedNode(prev => {
+      if (!prev) return prev;
+      const fresh = findNodeById(hierarchy, prev.id) as ExtendedHierarchyNode | null;
+      if (fresh && fresh.id !== selectedCorporateId) loadNodeDetail(fresh.id);
+      if (!fresh) setSelectedNodeDetail(null);
+      return fresh;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hierarchy]);
+
   const handleSelectNode = (node: ExtendedHierarchyNode) => {
     setSelectedNode(node);
     // The top node is the corporate itself, not an account -- there's no account detail to fetch
@@ -3621,10 +3681,9 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await loadData();
-      toast.success('Hierarchy refreshed');
-    } catch {
-      toast.error('Could not refresh the hierarchy');
+      const ok = await loadData();
+      if (ok === true) toast.success('Hierarchy refreshed');
+      else if (ok === false) toast.error('Could not refresh the hierarchy');
     } finally {
       setRefreshing(false);
     }
@@ -3633,9 +3692,16 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   // Same client-side CSV as the Programs page -- the backend export endpoint is a stub.
   const handleExport = () => {
     if (!hierarchy) return;
-    const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    // Text starting with = + - @ would run as a formula in a spreadsheet; numbers stay numbers.
+    const cell = (v: unknown) => {
+      const text = String(v ?? '');
+      const safe = typeof v === 'string' && /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const rows: unknown[][] = [];
     const walk = (n: ExtendedHierarchyNode, depth: number) => {
+      // A currency mirror restates its branch's total; listing it would double count.
+      if (n.accountCategory === 'CURRENCY_MIRROR') return;
       rows.push([depth, '  '.repeat(depth) + n.name, n.accountNumber, n.accountCategory, n.currencyCode,
         n.localBalance ?? 0, n.consolidatedBalance ?? 0]);
       (n.children as ExtendedHierarchyNode[] | undefined)?.forEach(c => walk(c, depth + 1));
@@ -4031,8 +4097,10 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
           ),
         }}
         secondary={{
-          label: 'Net Position',
-          value: <TileAmount value={displaySummary.netPosition} currency={reportingCurrency} />,
+          // The total already contains intercompany positions (IC payables subtracted); this is the
+          // position without them.
+          label: 'Excluding intercompany',
+          value: <TileAmount value={Number(displaySummary.consolidatedBalance || 0) - icNetTotal} currency={reportingCurrency} />,
         }}
         icon={<DollarSign className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
@@ -4176,7 +4244,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
                 <Button variant="ghost" size="sm" onClick={collapseAll}>Collapse</Button>
               </div>
             </div>
-            <div className="p-4 space-y-1 max-h-[600px] overflow-y-auto">
+            <div className="p-4 space-y-1 max-h-[600px] overflow-y-auto" role="tree" aria-label="Virtual account hierarchy">
               {hierarchy ? (
                 <TreeNode
                   node={hierarchy}
@@ -4193,6 +4261,8 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
                   corporateId={corporateId}
                   programId={selectedProgramId}
                   highlightId={highlightNodeId}
+                  rootId={hierarchy.id}
+                  unconverted={unconverted}
                 />
               ) : (
                 <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">

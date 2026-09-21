@@ -21,6 +21,10 @@ public interface SweepRuleRepository extends JpaRepository<SweepRule, UUID> {
      *  only ever sees their own corporate's rules. */
     List<SweepRule> findByCorporateId(UUID corporateId);
 
+    /** A corporate's rules plus rules saved without one (older IHB rules), with their sources. */
+    @Query("SELECT DISTINCT r FROM SweepRule r LEFT JOIN FETCH r.sourceAccounts WHERE r.corporateId = :corporateId OR r.corporateId IS NULL")
+    List<SweepRule> findByCorporateIdOrUnset(@Param("corporateId") UUID corporateId);
+
     @Query("SELECT r FROM SweepRule r LEFT JOIN FETCH r.sourceAccounts WHERE r.id = :id")
     Optional<SweepRule> findByIdWithSources(@Param("id") UUID id);
     

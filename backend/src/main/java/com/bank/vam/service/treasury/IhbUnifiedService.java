@@ -256,7 +256,6 @@ public class IhbUnifiedService {
                 enrolled, entity.getEntityCode(), targetBalance);
     }
 
-    @Transactional
     /** The rate configuration picked in the IHB window; null leaves the current one. */
     private void applyInterestConfig(LegalEntity entity, UUID configId) {
         if (configId == null) return;
@@ -266,6 +265,7 @@ public class IhbUnifiedService {
         entity.setIhbInterestConfigId(configId);
     }
 
+    @Transactional
     public IhbDto.EntityResponse updateIhbSettings(UUID entityId, IhbDto.UpdateIhbSettingsRequest request) {
         LegalEntity entity = legalEntityRepository.findById(entityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entity not found: " + entityId));

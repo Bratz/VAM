@@ -1187,10 +1187,10 @@ public class HierarchyVaService {
 
         BigDecimal fxRate = BigDecimal.ONE;
         if (!currency.equals(baseCurrency)) {
-            fxRate = fxRateService.getRate(currency, baseCurrency);
+            fxRate = fxRateService.hasRate(currency, baseCurrency) ? fxRateService.getRate(currency, baseCurrency) : null;
         }
 
-        BigDecimal balanceInBase = mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP);
+        BigDecimal balanceInBase = fxRate == null ? null : mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP);
 
         mirror.setMirrorBalance(mirrorBalance);
         mirror.setFxRate(fxRate);
@@ -1242,10 +1242,10 @@ public class HierarchyVaService {
 
         BigDecimal fxRate = BigDecimal.ONE;
         if (!currency.equals(baseCurrency)) {
-            fxRate = fxRateService.getRate(currency, baseCurrency);
+            fxRate = fxRateService.hasRate(currency, baseCurrency) ? fxRateService.getRate(currency, baseCurrency) : null;
         }
 
-        BigDecimal balanceInBase = mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP);
+        BigDecimal balanceInBase = fxRate == null ? null : mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP);
 
         mirror.setMirrorBalance(mirrorBalance);
         mirror.setFxRate(fxRate);

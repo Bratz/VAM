@@ -296,7 +296,10 @@ public class BalanceAggregationServiceEnhanced {
                 mirror.setFxRateAt(LocalDateTime.now());
                 mirror.setBalanceInBase(newMirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
             } else {
-                log.warn("No FX rate {}/{}: mirror {} base-currency figure not updated", currency, baseCurrency, mirror.getVaNumber());
+                // Empty, not stale: the page shows "no rate" instead of an old figure as current.
+                mirror.setFxRate(null);
+                mirror.setBalanceInBase(null);
+                log.warn("No FX rate {}/{}: mirror {} base-currency figure cleared", currency, baseCurrency, mirror.getVaNumber());
             }
         } else {
             mirror.setBalanceInBase(newMirrorBalance);
@@ -588,10 +591,10 @@ public class BalanceAggregationServiceEnhanced {
         // Convert to base currency
         String baseCurrency = mirror.getBaseCurrency();
         if (baseCurrency != null && !baseCurrency.equals(currency)) {
-            BigDecimal fxRate = fxRateService.getRate(currency, baseCurrency);
+            BigDecimal fxRate = fxRateService.hasRate(currency, baseCurrency) ? fxRateService.getRate(currency, baseCurrency) : null;
             mirror.setFxRate(fxRate);
             mirror.setFxRateAt(timestamp);
-            mirror.setBalanceInBase(mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
+            mirror.setBalanceInBase(fxRate == null ? null : mirrorBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
         } else {
             mirror.setFxRate(BigDecimal.ONE);
             mirror.setBalanceInBase(mirrorBalance);
@@ -674,6 +677,10 @@ public class BalanceAggregationServiceEnhanced {
 
                     // Convert to base currency if needed
                     if (baseCurrency != null && vaCurrency != null && !baseCurrency.equals(vaCurrency)) {
+                        if (!fxRateService.hasRate(vaCurrency, baseCurrency)) {
+                            log.warn("No FX rate {}/{}: {} left out of {}'s cached total", vaCurrency, baseCurrency, opVa.getVaNumber(), aggregation.getVaNumber());
+                            continue;
+                        }
                         BigDecimal fxRate = fxRateService.getRate(vaCurrency, baseCurrency);
                         balance = balance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP);
                     }

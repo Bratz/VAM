@@ -67,8 +67,6 @@ public class CurrencyMirrorService {
     private final LegalEntityRepository legalEntityRepository;
     private final FxRateService fxRateService;
 
-    // Default FX rate when rate service is unavailable
-    private static final BigDecimal DEFAULT_FX_RATE = BigDecimal.ONE;
 
     // ========================================================================
     // INNER CLASSES (DTOs for API responses)
@@ -388,9 +386,7 @@ public class CurrencyMirrorService {
             BigDecimal fxRate = calculateFxRate(currency, baseCurrency);
             mirror.setFxRate(fxRate);
             mirror.setFxRateAt(LocalDateTime.now());
-            BigDecimal balanceInBase = totalBalance.multiply(fxRate)
-                .setScale(4, RoundingMode.HALF_UP);
-            mirror.setBalanceInBase(balanceInBase);
+            mirror.setBalanceInBase(fxRate == null ? null : totalBalance.multiply(fxRate).setScale(4, RoundingMode.HALF_UP));
         } else {
             mirror.setFxRate(BigDecimal.ONE);
             mirror.setBalanceInBase(totalBalance);
@@ -599,7 +595,7 @@ public class CurrencyMirrorService {
             CurrencyBreakdown cb = entry.getValue();
             BigDecimal original = cb.getOriginalBalance() != null ? cb.getOriginalBalance() : BigDecimal.ZERO;
             BigDecimal rate = calculateFxRate(cb.getCurrency(), target);
-            BigDecimal converted = original.multiply(rate).setScale(4, RoundingMode.HALF_UP);
+            BigDecimal converted = rate == null ? null : original.multiply(rate).setScale(4, RoundingMode.HALF_UP);
             result.put(entry.getKey(), CurrencyBreakdown.builder()
                 .currency(cb.getCurrency())
                 .baseCurrency(target)
@@ -1088,7 +1084,7 @@ public class CurrencyMirrorService {
      * INTEGRATION WITH FxRateService:
      * 1. Attempts to get MID rate from FxRateService (MID is the spot equivalent)
      * 2. FxRateService handles: cache lookup, DB lookup, inverse calculation, multi-hop via pivot currencies
-     * 3. Falls back to DEFAULT_FX_RATE (1.0) only if FxRateService returns 1.0 (indicating failure)
+     * 3. Returns null when there is no rate (never a 1.0 stand-in)
      * 
      * @param fromCurrency The source currency (e.g., "EUR")
      * @param toCurrency The target/base currency (e.g., "AED")
@@ -1096,75 +1092,16 @@ public class CurrencyMirrorService {
      */
     private BigDecimal calculateFxRate(String fromCurrency, String toCurrency) {
         // Same currency - no conversion needed
-        if (fromCurrency == null || toCurrency == null) {
-            log.warn("Currency is null, using default rate 1.0");
-            return DEFAULT_FX_RATE;
+        // null = no usable rate. Callers leave the converted figure empty rather than store a 1:1
+        // stand-in that reads as real money.
+        if (fromCurrency == null || toCurrency == null) return null;
+        if (fromCurrency.equalsIgnoreCase(toCurrency)) return BigDecimal.ONE;
+        if (!fxRateService.hasRate(fromCurrency.toUpperCase(), toCurrency.toUpperCase())) {
+            log.warn("No FX rate {}/{}: converted figure left empty", fromCurrency, toCurrency);
+            return null;
         }
-        
-        if (fromCurrency.equalsIgnoreCase(toCurrency)) {
-            return BigDecimal.ONE;
-        }
-
-        try {
-            // Get rate from FxRateService (uses MID rate by default - the spot equivalent)
-            BigDecimal rate = fxRateService.getRate(fromCurrency.toUpperCase(), toCurrency.toUpperCase());
-            
-            if (rate == null || rate.compareTo(BigDecimal.ZERO) <= 0) {
-                log.warn("Invalid FX rate {} for {}/{}, using default 1.0", rate, fromCurrency, toCurrency);
-                return DEFAULT_FX_RATE;
-            }
-            
-            log.debug("FX rate for {}/{}: {}", fromCurrency, toCurrency, rate);
-            return rate;
-            
-        } catch (Exception e) {
-            log.error("Error fetching FX rate for {}/{}: {}", fromCurrency, toCurrency, e.getMessage());
-            return DEFAULT_FX_RATE;
-        }
-    }
-
-    /**
-     * Calculate FX rate with specific rate type (BID, ASK, MID).
-     * 
-     * NOTE: RateType was updated in v5.1.0 to match database constraints:
-     * - BID: Bank buying rate
-     * - ASK: Bank selling rate
-     * - MID: Mid-market rate (used as spot/default)
-     * 
-     * @param fromCurrency The source currency
-     * @param toCurrency The target/base currency
-     * @param rateType The type of rate to use (BID, ASK, or MID)
-     * @return The exchange rate
-     */
-    private BigDecimal calculateFxRate(String fromCurrency, String toCurrency, RateType rateType) {
-        if (fromCurrency == null || toCurrency == null) {
-            return DEFAULT_FX_RATE;
-        }
-        
-        if (fromCurrency.equalsIgnoreCase(toCurrency)) {
-            return BigDecimal.ONE;
-        }
-
-        try {
-            BigDecimal rate = fxRateService.getRate(
-                fromCurrency.toUpperCase(), 
-                toCurrency.toUpperCase(), 
-                rateType
-            );
-            
-            if (rate == null || rate.compareTo(BigDecimal.ZERO) <= 0) {
-                log.warn("Invalid FX rate {} for {}/{} ({}), using default 1.0", 
-                    rate, fromCurrency, toCurrency, rateType);
-                return DEFAULT_FX_RATE;
-            }
-            
-            return rate;
-            
-        } catch (Exception e) {
-            log.error("Error fetching FX rate for {}/{} ({}): {}", 
-                fromCurrency, toCurrency, rateType, e.getMessage());
-            return DEFAULT_FX_RATE;
-        }
+        BigDecimal rate = fxRateService.getRate(fromCurrency.toUpperCase(), toCurrency.toUpperCase());
+        return rate != null && rate.signum() > 0 ? rate : null;
     }
 
     /**
@@ -1232,6 +1169,7 @@ public class CurrencyMirrorService {
         
         // Get fresh rate from FxRateService
         BigDecimal freshRate = calculateFxRate(currency, baseCurrency);
+        if (freshRate == null) return 0; // no rate: leave the mirrors as they are
         Optional<FxRate> fxRateOpt = getFxRateWithMetadata(currency, baseCurrency);
         
         String rateSource = fxRateOpt.map(r -> r.getRateSource().name()).orElse("SYSTEM");

@@ -116,8 +116,12 @@ public class BalanceStructureService {
      */
     private List<String> unconvertedCurrencies(List<VirtualAccount> accounts, String reportingCurrency) {
         String target = reportingTarget(reportingCurrency);
+        // Only accounts whose own balance counts in the total (not containers, mirrors or shadows)
+        // and actually hold money -- anything else was never going to be converted.
         return accounts.stream()
-            .flatMap(va -> java.util.stream.Stream.of(va.getCurrencyCode(), va.getBaseCurrency()))
+            .filter(va -> va.getAccountCategory() == null || !NOT_OWN_MONEY.contains(va.getAccountCategory()))
+            .filter(va -> va.getCurrentBalance() != null && va.getCurrentBalance().signum() != 0)
+            .map(VirtualAccount::getCurrencyCode)
             .filter(Objects::nonNull)
             .filter(c -> !c.equalsIgnoreCase(target))
             .distinct()
@@ -405,6 +409,10 @@ public class BalanceStructureService {
             return BigDecimal.ZERO; // left out, and listed in unconvertedCurrencies
         }
     }
+
+    private static final java.util.Set<VirtualAccount.AccountCategory> NOT_OWN_MONEY = java.util.EnumSet.of(
+        VirtualAccount.AccountCategory.ROOT, VirtualAccount.AccountCategory.AGGREGATION,
+        VirtualAccount.AccountCategory.CURRENCY_MIRROR, VirtualAccount.AccountCategory.PHYSICAL_MIRROR);
 
     private String reportingTarget(String reportingCurrency) {
         return (reportingCurrency != null && !reportingCurrency.isBlank())
@@ -798,9 +806,11 @@ public class BalanceStructureService {
             .intercompanyReceivable(icReceivable)
             .intercompanyPayable(icPayable)
             .netIntercompanyPosition(icReceivable.subtract(icPayable))
-            .participatesInPooling(corporateId != null && getPoolMemberMap(corporateId).containsKey(va.getId()))
-            .participatesInNetting(corporateId != null && va.getOwningEntityId() != null
-                && getNettingEntryMap(corporateId).containsKey(va.getOwningEntityId()))
+            .participatesInPooling(poolMemberRepository.findByAccountId(va.getId()).stream()
+                .anyMatch(m -> m.getStatus() == PoolMember.MemberStatus.ACTIVE && m.getPool() != null
+                    && m.getPool().getStatus() == NotionalPool.PoolStatus.ACTIVE))
+            .participatesInNetting(va.getOwningEntityId() != null
+                && !nettingEntryRepository.findOpenForEntities(List.of(va.getOwningEntityId())).isEmpty())
             .participatesInSweep(corporateId != null && getSweepRuleMap(corporateId).containsKey(va.getId()))
             .externalReference(va.getExternalReference())
             // NEW: Special VA specific fields
@@ -823,7 +833,9 @@ public class BalanceStructureService {
     /** Account id -> the active sweep rule it is swept from (a source) or into (the target). */
     private Map<UUID, SweepRule> getSweepRuleMap(UUID corporateId) {
         Map<UUID, SweepRule> map = new HashMap<>();
-        for (SweepRule rule : sweepRuleRepository.findByCorporateId(corporateId)) {
+        // Rules without a corporate (older IHB rules) are included; the map is only read for this
+        // hierarchy's own accounts, so another corporate's rule never matches.
+        for (SweepRule rule : sweepRuleRepository.findByCorporateIdOrUnset(corporateId)) {
             if (rule.getStatus() != SweepRule.SweepStatus.ACTIVE) continue;
             if (rule.getSourceAccounts() != null) {
                 rule.getSourceAccounts().stream().map(SweepRuleSource::getAccountId)

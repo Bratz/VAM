@@ -85,7 +85,9 @@ public class FxRateService {
      * @param toCurrency Target currency
      * @return Exchange rate (1 from = rate * to)
      */
-    @Transactional(readOnly = true)
+    // noRollbackFor: "no rate" is an answer, not a failure -- without it, a caller that catches it
+    // still has its whole transaction marked rollback-only and fails at commit.
+    @Transactional(readOnly = true, noRollbackFor = com.bank.vam.exception.BusinessException.class)
     public BigDecimal getRate(String fromCurrency, String toCurrency) {
         return getRate(fromCurrency, toCurrency, RateType.MID);
     }
@@ -93,7 +95,7 @@ public class FxRateService {
     /**
      * Get exchange rate for currency pair with specific rate type.
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, noRollbackFor = com.bank.vam.exception.BusinessException.class)
     public BigDecimal getRate(String fromCurrency, String toCurrency, RateType rateType) {
         // Same currency - no conversion needed
         if (fromCurrency.equals(toCurrency)) {
