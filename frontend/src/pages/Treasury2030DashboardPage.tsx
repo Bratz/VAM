@@ -213,11 +213,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   // have been expanded to show their individual account rows.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hierarchyRoot, setHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
-  // Home-bank accounts no program has picked yet sit at the top of the tree as shadows:
-  // their cash is in the consolidated position, and this shows how much of it they are.
-  const unassignedCash = (hierarchyRoot?.children ?? [])
-    .filter(n => n.accountCategory === 'PHYSICAL_MIRROR')
-    .reduce((sum, n) => sum + (n.consolidatedBalance || 0), 0);
+  // Part of the consolidated position in home-bank accounts no program has picked yet.
+  const unassignedCash = hierarchyRoot?.unassignedBankBalance ?? 0;
   // Program-scoped tree for the Position breakdown's "By entity" drill-down
   // only — deliberately separate from `hierarchyRoot` above. They used to
   // share one fetch/state, which meant drilling into a program in the

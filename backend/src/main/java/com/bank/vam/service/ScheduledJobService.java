@@ -214,7 +214,7 @@ public class ScheduledJobService {
     @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
     public void backfillHomeBankShadows() {
         for (var pa : physicalAccountRepository.findAll()) {
-            if (!pa.isHomeBank() || pa.getShadowVaId() != null) continue;
+            if (!shadowAccountService.isAtHomeBank(pa) || pa.getShadowVaId() != null) continue;
             try {
                 var shadow = shadowAccountService.ensureHomeBankShadow(pa);
                 // An older program already running on this account keeps it; with more than one

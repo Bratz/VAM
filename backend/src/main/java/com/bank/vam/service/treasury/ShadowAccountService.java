@@ -88,6 +88,7 @@ public class ShadowAccountService {
     private final ProgramRepository programRepository;
     private final LegalEntityRepository legalEntityRepository;
     private final HierarchyVaService hierarchyVaService;
+    private final com.bank.vam.config.HomeBankProperties homeBank;
     
     // ========================================================================
     // CONFIGURATION
@@ -277,6 +278,15 @@ public class ShadowAccountService {
     // ========================================================================
 
     /**
+     * Held at the home bank: its BIC is the configured home-bank BIC. The same rule as the
+     * dashboard, pooling and sweeps. {@code PhysicalAccount.bankRelationship} is not used: older
+     * rows default it to INTERNAL at every bank.
+     */
+    public boolean isAtHomeBank(PhysicalAccount pa) {
+        return homeBank.matches(pa.getBankCode());
+    }
+
+    /**
      * Every home-bank account has a shadow from the moment it exists. A bank account usually
      * exists before any program, so the shadow starts unassigned (no program, no parent) and
      * joins a program when that program picks it. Idempotent.
@@ -317,7 +327,7 @@ public class ShadowAccountService {
             .filter(s -> currency == null || currency.equals(s.getCurrencyCode()))
             .filter(s -> s.getLinkedPhysicalAccountId() != null)
             .filter(s -> paRepository.findById(s.getLinkedPhysicalAccountId())
-                .map(PhysicalAccount::isHomeBank)
+                .map(this::isAtHomeBank)
                 .orElse(false))
             .toList();
         Map<UUID, String> programNames = new HashMap<>();

@@ -42,6 +42,7 @@ public class BalanceStructureService {
     private final FxRateService fxRateService;
     // MP3: active market profile drives the default base currency for roll-ups.
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final com.bank.vam.config.HomeBankProperties homeBank;
 
     /**
      * Build complete hierarchy tree for a corporate (backward compatible)
@@ -125,17 +126,9 @@ public class BalanceStructureService {
         // Calculate stats from hierarchy
         SummaryStats stats = calculateStats(hierarchy);
         
-        // A shadow at the top of the tree has no parent: it is a home-bank account no program
-        // has picked yet. Its cash is in the total; this says how much of the total it is.
-        BigDecimal unassigned = Optional.ofNullable(hierarchy.getChildren()).orElse(List.of()).stream()
-            .filter(n -> n.getAccountCategory() == AccountCategory.PHYSICAL_MIRROR)
-            .map(HierarchyNode::getConsolidatedBalance)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         return BalanceSummary.builder()
             .consolidatedBalance(hierarchy.getConsolidatedBalance())
-            .unassignedBankBalance(unassigned)
+            .unassignedBankBalance(Optional.ofNullable(hierarchy.getUnassignedBankBalance()).orElse(BigDecimal.ZERO))
             .netPosition(hierarchy.getNetPosition())
             .totalIntercompanyReceivable(hierarchy.getIntercompanyReceivable())
             .totalIntercompanyPayable(hierarchy.getIntercompanyPayable())
@@ -496,6 +489,20 @@ public class BalanceStructureService {
             .map(n -> n.getIntercompanyPayable() != null ? n.getIntercompanyPayable() : BigDecimal.ZERO)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Home-bank accounts no program has picked yet: shadows with no program and no parent,
+        // so they sit at the top of the tree. Their cash is in the total; this says how much.
+        Set<String> unassignedIds = accounts.stream()
+            .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.PHYSICAL_MIRROR
+                && va.getProgramId() == null && va.getParentAccountId() == null
+                && homeBank.matches(va.getBankSwift()))
+            .map(va -> va.getId().toString())
+            .collect(Collectors.toSet());
+        BigDecimal unassignedBankBalance = children.stream()
+            .filter(n -> unassignedIds.contains(n.getId()))
+            .map(HierarchyNode::getConsolidatedBalance)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return HierarchyNode.builder()
             .id(corporate.getId().toString())
             .name(corporate.getLegalName())
@@ -506,6 +513,7 @@ public class BalanceStructureService {
             .currencyCode(reportingCurrency)
             .localBalance(BigDecimal.ZERO)
             .consolidatedBalance(totalBalance)
+            .unassignedBankBalance(unassignedBankBalance)
             .intercompanyReceivable(totalICReceivable)
             .intercompanyPayable(totalICPayable)
             .netPosition(totalBalance.add(totalICReceivable).subtract(totalICPayable))

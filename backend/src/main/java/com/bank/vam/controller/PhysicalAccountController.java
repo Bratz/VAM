@@ -451,17 +451,12 @@ public class PhysicalAccountController {
             throw new BusinessException("IBAN already exists: " + request.iban);
         }
         
-        // Determine bank relationship and data source
-        BankRelationship bankRelationship = BankRelationship.INTERNAL;
+        // Relationship follows the bank: INTERNAL only at the configured home bank. It used to
+        // default to INTERNAL (or take the request's word), so accounts at every bank were
+        // marked home-bank.
+        BankRelationship bankRelationship = homeBank.matches(request.bankCode)
+                ? BankRelationship.INTERNAL : BankRelationship.EXTERNAL;
         DataSource dataSource = DataSource.CORE_BANKING;
-        
-        if (request.bankRelationship != null) {
-            try {
-                bankRelationship = BankRelationship.valueOf(request.bankRelationship.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid bank relationship: {}, defaulting to INTERNAL", request.bankRelationship);
-            }
-        }
         
         if (request.dataSource != null) {
             try {
@@ -519,7 +514,7 @@ public class PhysicalAccountController {
         PhysicalAccount saved = physicalAccountRepository.save(account);
         log.info("Created physical account: {} at {} for entity {}", 
                 saved.getAccountNumber(), saved.getBankName(), saved.getEntityCode());
-        if (saved.isHomeBank()) {
+        if (shadowAccountService.isAtHomeBank(saved)) {
             shadowAccountService.ensureHomeBankShadow(saved);
         }
         

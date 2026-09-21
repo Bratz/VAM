@@ -3380,6 +3380,8 @@ export interface BalanceBreakdownItem {
 
 export interface BalanceHierarchyNode {
   id: string;
+  /** Corporate node only: part of consolidatedBalance in home-bank accounts no program has picked yet. */
+  unassignedBankBalance?: number;
   name: string;
   accountNumber?: string;
   type: BalanceNodeType;

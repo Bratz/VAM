@@ -28,7 +28,23 @@ class HomeBankShadowTest {
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final PhysicalAccountRepository pas = mock(PhysicalAccountRepository.class);
     private final ShadowAccountService service = new ShadowAccountService(
-        vas, pas, mock(ProgramRepository.class), mock(LegalEntityRepository.class), mock(HierarchyVaService.class));
+        vas, pas, mock(ProgramRepository.class), mock(LegalEntityRepository.class), mock(HierarchyVaService.class), homeBank());
+
+    private static com.bank.vam.config.HomeBankProperties homeBank() {
+        var hb = new com.bank.vam.config.HomeBankProperties();
+        hb.setBic("HOMEBANKXXX");
+        return hb;
+    }
+
+    @Test
+    void homeBankIsTheConfiguredBicNotTheAccountFlag() {
+        PhysicalAccount elsewhere = homeAccount();          // flagged INTERNAL, as older rows are
+        elsewhere.setBankCode("CITIUS33XXX");
+        PhysicalAccount home = homeAccount();
+        home.setBankCode("homebankxxx");
+        assertThat(service.isAtHomeBank(elsewhere)).isFalse();
+        assertThat(service.isAtHomeBank(home)).isTrue();
+    }
 
     private final UUID corporateId = UUID.randomUUID();
 

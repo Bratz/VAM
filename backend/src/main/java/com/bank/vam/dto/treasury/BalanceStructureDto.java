@@ -105,6 +105,8 @@ public class BalanceStructureDto {
         // Hierarchy
         private String parentId;
         private List<HierarchyNode> children;
+        /** Corporate node only: part of consolidatedBalance in home-bank accounts no program has picked yet. */
+        private BigDecimal unassignedBankBalance;
         
         // ====================================================================
         // NEW: Additional metadata for special VAs

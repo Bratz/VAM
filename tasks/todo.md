@@ -63,6 +63,12 @@ program sees it as taken; tsc no new errors; backend tests green.
 - Decided: unassigned home-bank cash stays in the corporate headline (real corporate cash, counted
   once), shown as its own "Unassigned" line: `BalanceSummary.unassignedBankBalance`, Cash Position
   dashboard and Balance Hierarchy headline (the latter only when no program filter applies).
+- Follow-up done: "home bank" is the configured BIC (`vam.home-bank.bic`) everywhere, as the
+  dashboard/pooling/sweeps already had it. The shadow feature used `bank_relationship=INTERNAL`,
+  which every seeded account carries (28 shadows over 17 banks). Now: auto-shadow, backfill and
+  the program-setup picker use `ShadowAccountService.isAtHomeBank`; account creation derives
+  `bank_relationship` from the BIC; the Unassigned line counts home-bank shadows only (root node
+  `unassignedBankBalance`). Existing shadows at other banks left in place.
 - Follow-up done: `resolveShadowVa` settles only through the source account's own program's bank
   accounts in its currency (booked account, then the program's backing account); the cross-program
   and cross-currency fallbacks are gone, preview uses the same lookup, `ShadowRoutingTest` covers it.
