@@ -34,7 +34,6 @@ import java.util.UUID;
 @Table(name = "unified_programs", indexes = {
     @Index(name = "idx_program_code", columnList = "program_code"),
     @Index(name = "idx_program_corporate", columnList = "corporate_id"),
-    @Index(name = "idx_program_type", columnList = "program_type"),
     @Index(name = "idx_program_status", columnList = "status")
 })
 @Getter
@@ -79,20 +78,6 @@ public class Program extends BaseEntity {
     @Builder.Default
     private Integer currentVaCount = 0;
 
-
-
-
-
-
-
-    @Column(name = "escrow_enabled")
-    @Builder.Default
-    private Boolean escrowEnabled = false;
-
-    @Column(name = "ihb_enabled")
-    @Builder.Default
-    private Boolean ihbEnabled = false;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
@@ -107,7 +92,6 @@ public class Program extends BaseEntity {
     // ========================================================================
     // HIERARCHY SUPPORT (NEW - Week 2)
     // ========================================================================
-
 
     /**
      * Number of hierarchy levels to use.
@@ -180,27 +164,9 @@ public class Program extends BaseEntity {
     // BALANCE AGGREGATION SETTINGS (NEW - Week 2)
     // ========================================================================
 
-
-
     // ========================================================================
     // ADDITIONAL PROGRAM TYPES (NEW - Week 2)
     // ========================================================================
-
-    @Column(name = "loyalty_enabled")
-    @Builder.Default
-    private Boolean loyaltyEnabled = false;
-
-    @Column(name = "gift_card_enabled")
-    @Builder.Default
-    private Boolean giftCardEnabled = false;
-
-    @Column(name = "corporate_card_enabled")
-    @Builder.Default
-    private Boolean corporateCardEnabled = false;
-
-    @Column(name = "mobile_money_enabled")
-    @Builder.Default
-    private Boolean mobileMoneyEnabled = false;
 
     // ========================================================================
     // WALLET CONFIGURATION (existing wallet fields)
@@ -255,8 +221,6 @@ public class Program extends BaseEntity {
     // WALLET WITHDRAWAL LIMITS
     // ========================================================================
 
-
-
     // ========================================================================
     // WALLET KYC REQUIREMENTS
     // ========================================================================
@@ -272,7 +236,6 @@ public class Program extends BaseEntity {
     @Column(name = "min_kyc_level")
     @Builder.Default
     private Integer minKycLevel = 0;
-
 
     // ========================================================================
     // WALLET FEATURES
@@ -290,15 +253,12 @@ public class Program extends BaseEntity {
     @Builder.Default
     private Boolean allowTransfer = true;
 
-
-
     // ========================================================================
     // WALLET EXPIRY
     // ========================================================================
 
     @Column(name = "wallet_expiry_days")
     private Integer walletExpiryDays;
-
 
     // ========================================================================
     // WALLET FEES
@@ -339,8 +299,6 @@ public class Program extends BaseEntity {
     // ========================================================================
     // BRANDING (for wallet programs)
     // ========================================================================
-
-
 
     // ========================================================================
     // ENUMS (extended for new program types)

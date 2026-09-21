@@ -1,8 +1,7 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React from 'react';
-import { Building2, CreditCard, Shield, CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch, Gift, Smartphone } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { StatusIconBadge } from '../../components/ui';
 
 
 // ============================================================================
@@ -153,7 +152,6 @@ export interface Program {
   description?: string; corporateId: string; corporateName?: string;
   physicalAccountId: string; physicalAccountNumber?: string; currencyCode: string;
   vaPrefix?: string; vaFormat?: string; maxVirtualAccounts?: number; autoReconciliation: boolean;
-  escrowEnabled: boolean; ihbEnabled: boolean;
   // NEW: Hierarchy Support (7-level)
   hierarchyDepth?: number;
   defaultHierarchyTemplate?: string;
@@ -165,10 +163,6 @@ export interface Program {
   vibanBankCode?: string;
   // NEW: Balance Aggregation
   // NEW: Additional Program Type Flags
-  loyaltyEnabled?: boolean;
-  giftCardEnabled?: boolean;
-  corporateCardEnabled?: boolean;
-  mobileMoneyEnabled?: boolean;
   // NEW: Wallet Config
   defaultPerTransactionLimit?: number;
   defaultDailyLimit?: number;
@@ -200,13 +194,6 @@ export interface ProgramDetail {
 
 export interface ProgramStats {
   totalPrograms: number; activePrograms: number; inactivePrograms: number; pendingPrograms: number;
-  // Per-feature counts, replacing the per-programType ones.
-  escrowEnabledPrograms?: number;
-  ihbEnabledPrograms?: number;
-  loyaltyEnabledPrograms?: number;
-  giftCardEnabledPrograms?: number;
-  corporateCardEnabledPrograms?: number;
-  mobileMoneyEnabledPrograms?: number;
   totalVirtualAccounts: number; totalBalance: number;
 }
 
@@ -304,25 +291,6 @@ export const vibanStrategyConfig: Record<string, { label: string; description: s
 // CONFIGURATION
 // ============================================================================
 
-/**
- * Presentation for each product feature a program can switch on. This replaces
- * the old programTypeConfig, which was keyed by the programType enum: every
- * value of that enum that meant anything had a feature flag saying the same
- * thing, and the two could disagree. Keyed by flag, they cannot.
- */
-export const featureConfig: Record<keyof FeatureFlags, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; description: string }> = {
-  escrowEnabled: { label: 'Escrow', icon: Shield, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Digital escrow' },
-  ihbEnabled: { label: 'In-House Bank', icon: Building2, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', description: 'In-house banking' },
-  loyaltyEnabled: { label: 'Loyalty', icon: TrendingUp, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', description: 'Loyalty/rewards' },
-  giftCardEnabled: { label: 'Gift Card', icon: Gift, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', description: 'Gift cards' },
-  corporateCardEnabled: { label: 'Corporate Card', icon: CreditCard, tone: 'cat-1', color: 'text-cat-1 dark:text-cat-1-fg', description: 'Corporate cards' },
-  mobileMoneyEnabled: { label: 'Mobile Money', icon: Smartphone, tone: 'cat-3', color: 'text-cat-3 dark:text-cat-3-fg', description: 'Mobile money/agent banking' },
-};
-
-/** The flags in the order the UI shows them. */
-export const FEATURE_KEYS = Object.keys(featureConfig) as (keyof FeatureFlags)[];
-
-
 export type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 export const statusConfig: Record<string, { label: string; variant: BadgeVariant; icon: React.ElementType }> = {
   ACTIVE: { label: 'Active', variant: 'success', icon: CheckCircle },
@@ -339,13 +307,4 @@ export const statusConfig: Record<string, { label: string; variant: BadgeVariant
 // Based on backend design where features are orthogonal to types but have
 // natural associations
 // ============================================================================
-
-export type FeatureFlags = {
-  escrowEnabled?: boolean;
-  ihbEnabled?: boolean;
-  loyaltyEnabled?: boolean;
-  giftCardEnabled?: boolean;
-  corporateCardEnabled?: boolean;
-  mobileMoneyEnabled?: boolean;
-};
 

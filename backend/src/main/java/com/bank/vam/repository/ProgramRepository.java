@@ -79,8 +79,6 @@ public interface ProgramRepository extends JpaRepository<Program, UUID> {
 
     List<Program> findByRootHierarchyNodeIdIsNull();
 
-    List<Program> findByIhbEnabledTrue();
-
     // ========================================================================
     // HIERARCHY QUERIES (NEW)
     // ========================================================================

@@ -3320,6 +3320,10 @@ export const vibanApi = {
     apiClient.delete<ApiResponse<void>>(`/viban-pools/${poolId}`).then(r => r.data),
   generateForPool: (poolId: string, count: number) => 
     apiClient.post<ApiResponse<{ generated: number }>>(`/viban-pools/${poolId}/generate`, { count }).then(r => r.data),
+  getForVa: (vaId: string) =>
+    apiClient.get<Viban[]>(`/virtual-accounts/${vaId}/vibans`).then(r => r.data),
+  createForVa: (vaId: string, vibanType: 'PRIMARY' | 'CUSTOMER' = 'PRIMARY') =>
+    apiClient.post<Viban>(`/virtual-accounts/${vaId}/vibans`, { vibanType }).then(r => r.data),
   assignFromPool: (poolId: string, request: VibanAssignRequest) =>
     apiClient.post<ApiResponse<VibanAssignResponse>>(`/viban-pools/${poolId}/assign`, request).then(r => r.data),
   returnToPool: (poolId: string, vibanId: string) =>

@@ -38,8 +38,6 @@ export interface TemplateConfig {
   icon: LucideIcon;
   /** StatusIconBadge tone for this template's icon tile. */
   tone: 'success' | 'warning' | 'error' | 'info' | 'primary' | 'neutral' | 'accent' | 'cat-1' | 'cat-2' | 'cat-3' | 'cat-4' | 'cat-5' | 'cat-6' | 'cat-7' | 'cat-8';
-  /** Feature flags a program must have switched on for this template to apply. Empty = always applicable. */
-  forFeatures: string[];
   recommended?: boolean;
   levels: HierarchyLevelConfig[];
 }
@@ -58,7 +56,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For receivables collection with channel-based hierarchy',
     icon: CreditCard,
     tone: 'info',
-    forFeatures: [],
     recommended: true,
     levels: [
       {
@@ -120,7 +117,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For intercompany cash management and treasury',
     icon: Building2,
     tone: 'primary',
-    forFeatures: ['ihbEnabled'],
     recommended: true,
     levels: [
       {
@@ -181,7 +177,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For consumer and merchant wallet programs',
     icon: Wallet,
     tone: 'warning',
-    forFeatures: [],
     recommended: true,
     levels: [
       {
@@ -243,7 +238,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For escrow and trust account management',
     icon: Shield,
     tone: 'success',
-    forFeatures: ['escrowEnabled'],
     recommended: true,
     levels: [
       {
@@ -292,7 +286,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For VIBAN issuance and management',
     icon: Hash,
     tone: 'accent',
-    forFeatures: [],
     recommended: true,
     levels: [
       {
@@ -341,7 +334,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For accounts payable and vendor payments',
     icon: Banknote,
     tone: 'warning',
-    forFeatures: [],
     recommended: true,
     levels: [
       {
@@ -395,7 +387,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For loyalty points and rewards programs',
     icon: TrendingUp,
     tone: 'cat-4',
-    forFeatures: ['loyaltyEnabled'],
     recommended: false,
     levels: [
       {
@@ -457,7 +448,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For gift card issuance and management',
     icon: Gift,
     tone: 'cat-2',
-    forFeatures: ['giftCardEnabled'],
     recommended: false,
     levels: [
       {
@@ -518,7 +508,6 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For corporate card expense management',
     icon: CardIcon,
     tone: 'neutral',
-    forFeatures: ['corporateCardEnabled'],
     recommended: false,
     levels: [
       {
@@ -575,34 +564,13 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
-type Flags = Record<string, boolean | undefined>;
-
-const matches = (tpl: TemplateConfig, flags: Flags) =>
-  tpl.forFeatures.every((f) => flags[f] === true);
-
 /**
- * Templates applicable to a program, given the features it has switched on.
- *
- * This used to match on programType. The type is gone, and it was the weaker
- * key anyway: a program typed WALLET with walletEnabled false got wallet
- * templates it could not use, and one with walletEnabled true but another type
- * got none. Templates with no required feature apply to every program.
+ * The template to preselect. Templates used to be matched to a program's
+ * type, then to its feature flags; both are gone, so every template applies
+ * to every program and this is simply the one marked recommended.
  */
-export function getTemplatesForFeatures(flags: Flags): TemplateConfig[] {
-  return HIERARCHY_TEMPLATES.filter((t) => matches(t, flags));
-}
-
-/**
- * Best template for a program: the most specific applicable one, preferring any
- * marked recommended. Most specific = requires the most features.
- */
-export function getRecommendedTemplate(flags: Flags): TemplateConfig | null {
-  const applicable = getTemplatesForFeatures(flags)
-    .sort((a, b) => b.forFeatures.length - a.forFeatures.length);
-  if (applicable.length === 0) return null;
-  return applicable.find((t) => t.recommended && t.forFeatures.length > 0)
-    ?? applicable.find((t) => t.recommended)
-    ?? applicable[0];
+export function getRecommendedTemplate(): TemplateConfig | null {
+  return HIERARCHY_TEMPLATES.find((t) => t.recommended) ?? HIERARCHY_TEMPLATES[0] ?? null;
 }
 
 /**
@@ -610,14 +578,6 @@ export function getRecommendedTemplate(flags: Flags): TemplateConfig | null {
  */
 export function getTemplateById(templateId: string): TemplateConfig | null {
   return HIERARCHY_TEMPLATES.find((t) => t.id === templateId) || null;
-}
-
-/**
- * Templates that do NOT apply to the program's current features.
- * Used for the "Other Templates" section.
- */
-export function getOtherTemplates(flags: Flags): TemplateConfig[] {
-  return HIERARCHY_TEMPLATES.filter((t) => !matches(t, flags));
 }
 
 /**

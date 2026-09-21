@@ -105,8 +105,6 @@ public class ProgramDto {
         // Settlement
 
         // Feature Flags - Core
-        private Boolean escrowEnabled;
-        private Boolean ihbEnabled;
 
         // ====================================================================
         // HIERARCHY SUPPORT
@@ -133,10 +131,6 @@ public class ProgramDto {
         // ====================================================================
         // ADDITIONAL PROGRAM TYPE FLAGS
         // ====================================================================
-        private Boolean loyaltyEnabled;
-        private Boolean giftCardEnabled;
-        private Boolean corporateCardEnabled;
-        private Boolean mobileMoneyEnabled;
 
         // ====================================================================
         // WALLET CONFIGURATION
@@ -326,12 +320,6 @@ public class ProgramDto {
         // a feature flag saying the same thing. COLLECTION/PAYABLES/RECEIVABLES
         // had no flag because they are the base case -- a plain VA program --
         // and so have no counter here.
-        private Long escrowEnabledPrograms;
-        private Long ihbEnabledPrograms;
-        private Long loyaltyEnabledPrograms;
-        private Long giftCardEnabledPrograms;
-        private Long corporateCardEnabledPrograms;
-        private Long mobileMoneyEnabledPrograms;
 
         // Totals
         private Long totalVirtualAccounts;
@@ -383,12 +371,6 @@ public class ProgramDto {
         // Settlement
 
         // Feature Flags
-        private Boolean escrowEnabled;
-        private Boolean ihbEnabled;
-        private Boolean loyaltyEnabled;
-        private Boolean giftCardEnabled;
-        private Boolean corporateCardEnabled;
-        private Boolean mobileMoneyEnabled;
 
         // Hierarchy Settings
         private Integer hierarchyDepth;
@@ -461,12 +443,6 @@ public class ProgramDto {
         // Settlement
 
         // Feature Flags
-        private Boolean escrowEnabled;
-        private Boolean ihbEnabled;
-        private Boolean loyaltyEnabled;
-        private Boolean giftCardEnabled;
-        private Boolean corporateCardEnabled;
-        private Boolean mobileMoneyEnabled;
 
         // Hierarchy Settings
         private Integer hierarchyDepth;
@@ -525,8 +501,6 @@ public class ProgramDto {
         private String status;
         private UUID corporateId;
         private String currencyCode;
-        private Boolean escrowEnabled;
-        private Boolean ihbEnabled;
         private Integer page;
         private Integer pageSize;
         private String sortBy;

@@ -28,9 +28,8 @@ import { Button, Badge, StatusIconBadge } from '../components/ui';
 import { cn } from '../utils';
 import {
   TemplateConfig,
+  HIERARCHY_TEMPLATES,
   getRecommendedTemplate,
-  getTemplatesForFeatures,
-  getOtherTemplates,
 } from '../config/templateHierarchy';
 
 // ============================================================================
@@ -43,13 +42,6 @@ interface Program {
   programName: string;
   currencyCode: string;
   status: string;
-  // Feature flags: what the program can do, which is what decides the templates.
-  escrowEnabled?: boolean;
-  ihbEnabled?: boolean;
-  loyaltyEnabled?: boolean;
-  giftCardEnabled?: boolean;
-  corporateCardEnabled?: boolean;
-  mobileMoneyEnabled?: boolean;
 }
 
 interface TemplateSelectorModalProps {
@@ -82,13 +74,13 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
   // Auto-select recommended template when program changes
   useEffect(() => {
     if (program) {
-      const recommended = getRecommendedTemplate(program as unknown as Record<string, boolean | undefined>);
+      const recommended = getRecommendedTemplate();
       if (recommended) {
         setSelectedTemplate(recommended.id);
         setPreviewTemplate(recommended);
       } else {
         // Fall back to first available template
-        const templates = getTemplatesForFeatures(program as unknown as Record<string, boolean | undefined>);
+        const templates = HIERARCHY_TEMPLATES;
         if (templates.length > 0) {
           setSelectedTemplate(templates[0].id);
           setPreviewTemplate(templates[0]);
@@ -108,9 +100,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
   if (!program) return null;
 
   // Categorize templates
-  const programFlags = program as unknown as Record<string, boolean | undefined>;
-  const relevantTemplates = getTemplatesForFeatures(programFlags);
-  const otherTemplates = getOtherTemplates(programFlags);
+  const relevantTemplates = HIERARCHY_TEMPLATES;
 
   const handleTemplateClick = (template: TemplateConfig) => {
     setSelectedTemplate(template.id);
@@ -191,47 +181,6 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
           )}
 
           {/* Other Templates */}
-          {otherTemplates.length > 0 && (
-            <>
-              <h3 className="label mb-2">
-                Other Templates
-              </h3>
-              <div className="space-y-2">
-                {otherTemplates.map((template) => {
-                  const Icon = template.icon;
-                  const isSelected = selectedTemplate === template.id;
-
-                  return (
-                    <div
-                      key={template.id}
-                      onClick={() => handleTemplateClick(template)}
-                      className={cn(
-                        'p-3 border rounded-lg cursor-pointer transition-all',
-                        isSelected
-                          ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-500 opacity-100 dark:bg-primary-800/40'
-                          : 'border-edge hover:border-neutral-300 opacity-60 hover:opacity-100'
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <StatusIconBadge tone={template.tone} icon={Icon} size="sm" className="shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="body-strong">
-                            {template.name}
-                          </span>
-                          <p className="caption">
-                            {template.levels.length} levels •{' '}
-                            {template.forFeatures.length > 0
-                              ? template.forFeatures.map((f) => f.replace(/Enabled$/, '')).join(', ')
-                              : 'any program'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
         </div>
 
         {/* ─────────────────────────────────────────────────────────────────── */}

@@ -54,9 +54,6 @@ public class ProgramController {
             @Parameter(description = "Filter by currency code")
             @RequestParam(required = false) String currencyCode,
             
-            @Parameter(description = "Filter by Escrow enabled")
-            @RequestParam(required = false) Boolean escrowEnabled,
-            
             @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") Integer page,
             
@@ -74,7 +71,6 @@ public class ProgramController {
             .status(status)
             .corporateId(corporateId)
             .currencyCode(currencyCode)
-            .escrowEnabled(escrowEnabled)
             .page(page)
             .pageSize(pageSize)
             .sortBy(sortBy)

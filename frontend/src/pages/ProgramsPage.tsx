@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Pencil } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -13,19 +13,20 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 
-import { CORPORATES_API, extractArray, Corporate, ProgramStatus, Program, ProgramStats, FeatureFlags, programApi, LevelConfigPayload, hierarchyLevelApi, featureConfig, FEATURE_KEYS, statusConfig } from './programs/shared';
+import { CORPORATES_API, extractArray, Corporate, ProgramStatus, Program, ProgramStats, programApi, LevelConfigPayload, hierarchyLevelApi, statusConfig } from './programs/shared';
 import { ProgramDetailModal } from './programs/ProgramDetailModal';
-import { ProgramFormModal } from './programs/ProgramFormModal';
+import { ProgramFormModal, ProgramConfigStep } from './programs/ProgramFormModal';
 
 // MAIN PAGE
 // ============================================================================
 
 const ProgramsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<keyof FeatureFlags | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<ProgramStatus | 'ALL'>('ALL');
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [editProgram, setEditProgram] = useState<Program | null>(null);
+  // Set with editProgram to open the form on one step (VIBAN / limits / fees).
+  const [configStep, setConfigStep] = useState<ProgramConfigStep | undefined>(undefined);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [stats, setStats] = useState<ProgramStats | null>(null);
@@ -107,7 +108,7 @@ const ProgramsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, typeFilter, statusFilter, selectedCorporateId]);
+  }, [searchQuery, statusFilter, selectedCorporateId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -156,6 +157,7 @@ const ProgramsPage: React.FC = () => {
         // Don't throw - program was created successfully
       }
     }
+    return savedProgram;
   };
 
   const handleStatusChange = async (programId: string, status: string) => {
@@ -178,7 +180,6 @@ const ProgramsPage: React.FC = () => {
     activePrograms: programs.filter(p => p.status === 'ACTIVE').length,
     inactivePrograms: programs.filter(p => p.status === 'INACTIVE').length,
     pendingPrograms: programs.filter(p => p.status === 'PENDING_APPROVAL').length,
-    ...Object.fromEntries(FEATURE_KEYS.map(k => [`${k}Programs`, programs.filter(p => (p as unknown as Record<string, unknown>)[k] === true).length])),
     totalVirtualAccounts: programs.reduce((s, p) => s + (p.virtualAccountCount || 0), 0),
     totalBalance: programs.reduce((s, p) => s + (p.totalBalance || 0), 0),
   };
@@ -197,22 +198,12 @@ const ProgramsPage: React.FC = () => {
     0,
   );
 
-  const typeTabs: { id: keyof FeatureFlags | 'ALL'; label: string; count: number; icon: React.ElementType }[] = [
-    { id: 'ALL' as const, label: 'All', count: displayStats.totalPrograms, icon: Layers },
-    ...FEATURE_KEYS.map(k => ({
-      id: k,
-      label: featureConfig[k].label,
-      count: programs.filter(p => (p as unknown as Record<string, unknown>)[k] === true).length,
-      icon: featureConfig[k].icon,
-    })),
-  ];
-
   const filteredPrograms = programs.filter(p => {
     if (!p) return false;
     const matchesSearch = !searchQuery || 
       (p.programName?.toLowerCase().includes(searchQuery.toLowerCase())) || 
       (p.programCode?.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch && (typeFilter === 'ALL' || (p as unknown as Record<string, unknown>)[typeFilter] === true) && (statusFilter === 'ALL' || p.status === statusFilter);
+    return matchesSearch && (statusFilter === 'ALL' || p.status === statusFilter);
   });
 
   // Toolbar actions in the Aperture Layout header — same pattern as the
@@ -279,22 +270,6 @@ const ProgramsPage: React.FC = () => {
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
 
-      {/* Type Filter Tabs */}
-      <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-        {typeTabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <button key={tab.id} type="button" aria-pressed={typeFilter === tab.id} onClick={() => setTypeFilter(tab.id)}
-              className="text-left rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-accent-400">
-              <Card padding="sm" className={cn('transition-all hover:shadow-md', typeFilter === tab.id && 'ring-2 ring-primary-500')}>
-                <div className="flex items-center gap-2"><Icon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /><span className="caption truncate">{tab.label}</span></div>
-                <p className="text-body-lg font-semibold text-primary-900 mt-1 dark:text-neutral-50">{tab.count}</p>
-              </Card>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Search and Filters */}
       <Card padding="md">
         <div className="flex flex-col sm:flex-row gap-4">
@@ -318,13 +293,10 @@ const ProgramsPage: React.FC = () => {
           keyExtractor={(program) => program.id}
           columns={[
             { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
-              const feature = FEATURE_KEYS.find(k => (program as unknown as Record<string, unknown>)[k] === true);
-              const typeConfig = feature ? featureConfig[feature] : null;
-              const TypeIcon = typeConfig?.icon || Layers;
               const hasHierarchy = !!program.rootHierarchyNodeId;
               return (
                 <div className="flex items-center gap-3">
-                  <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} subtle />
+                  <StatusIconBadge tone="neutral" icon={Layers} subtle />
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
@@ -342,19 +314,6 @@ const ProgramsPage: React.FC = () => {
             { key: 'totalBalance', header: 'Balance', align: 'right', minWidth: 140, mobileValue: true, render: (_v, program) => (
               <p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p>
             ) },
-            { key: 'features', header: 'Features', minWidth: 200, dropOrder: 1, render: (_v, program) => {
-              const hasHierarchy = !!program.rootHierarchyNodeId;
-              return (
-                <div className="flex gap-1 flex-wrap">
-                  {program.escrowEnabled && <Badge variant="success" size="sm">Escrow</Badge>}
-                  {program.ihbEnabled && <Badge variant="info" size="sm">IHB</Badge>}
-                  {hasHierarchy && <Badge variant="neutral" size="sm">Hierarchy</Badge>}
-                  {program.loyaltyEnabled && <Badge variant="neutral" size="sm">Loyalty</Badge>}
-                  {program.giftCardEnabled && <Badge variant="neutral" size="sm">Gift</Badge>}
-                  {!program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
-                </div>
-              );
-            } },
             { key: 'status', header: 'Status', minWidth: 120, render: (_v, program) => {
               const stConfig = statusConfig[program.status];
               return <Badge variant={stConfig?.variant}>{stConfig?.label || program.status}</Badge>;
@@ -363,6 +322,7 @@ const ProgramsPage: React.FC = () => {
               <div className="flex justify-end gap-1">
                 <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
                 <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Pencil className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); }} title="VIBAN settings" aria-label="VIBAN settings"><Hash className="w-4 h-4" /></Button>
                 {/* Action Menu Dropdown */}
                 <div className="relative">
                   <Button
@@ -379,6 +339,20 @@ const ProgramsPage: React.FC = () => {
                       <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} />
                       {/* Dropdown Menu */}
                       <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
+                        {/* Configure: settings that are optional at create time */}
+                        <button
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
+                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Limits'); setActionMenuId(null); }}
+                        >
+                          <Gauge className="w-4 h-4" />Wallet limits
+                        </button>
+                        <button
+                          className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
+                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Fees'); setActionMenuId(null); }}
+                        >
+                          <Receipt className="w-4 h-4" />Wallet fees
+                        </button>
+                        <div className="border-t border-edge my-1" />
                         {/* Status Actions */}
                         {program.status === 'ACTIVE' && (
                           <button
@@ -448,7 +422,7 @@ const ProgramsPage: React.FC = () => {
             <Layers className="w-12 h-12 mx-auto mb-3 text-neutral-300 dark:text-neutral-400" />
             <p className="text-body-lg font-medium text-primary-900 dark:text-neutral-50">No programs found</p>
             <p className="body-sm mt-1">
-              {searchQuery || typeFilter !== 'ALL' || statusFilter !== 'ALL' 
+              {searchQuery || statusFilter !== 'ALL' 
                 ? 'Try adjusting your search or filters'
                 : selectedCorporateId 
                   ? 'Create a new program to get started'
@@ -489,7 +463,8 @@ const ProgramsPage: React.FC = () => {
       <ProgramFormModal
         isOpen={showCreateModal || !!editProgram}
         program={editProgram}
-        onClose={() => { setShowCreateModal(false); setEditProgram(null); }}
+        onlyStep={configStep}
+        onClose={() => { setConfigStep(undefined); setShowCreateModal(false); setEditProgram(null); }}
         onSave={handleSaveProgram}
         defaultCorporateId={selectedCorporateId}
       />

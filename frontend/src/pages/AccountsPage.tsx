@@ -18,6 +18,7 @@ import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Buil
 import { Card, Button, Badge, Input, EmptyState, Skeleton, Select, Drawer, StatusIconBadge, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
+import { VaVibanModal } from '../components/viban/VaVibanModal';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
@@ -35,7 +36,6 @@ import { ScopeSelector } from '../components/layout/ScopeSelector';
 // ============================================================================
 
 type VaStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLOCKED' | 'PENDING_ACTIVATION' | 'CLOSED';
-type ProgramType = 'COLLECTION' | 'WALLET' | 'IHB' | 'PAYABLES' | 'VIBAN' | 'ESCROW';
 type AccountCategory = 'TRANSACTION' | 'COLLECTION' | 'DISBURSEMENT' | 'SETTLEMENT' | 
                        'EXCEPTION' | 'SUSPENSE' | 'ROOT' | 'AGGREGATION' | 
                        'PHYSICAL_MIRROR' | 'EXTERNAL_MIRROR' | 'CURRENCY_MIRROR' |
@@ -50,7 +50,6 @@ interface VirtualAccount {
   vaName: string;
   programId?: string;
   programName?: string;
-  programType?: ProgramType;
   corporateId: string;
   corporateName?: string;
   physicalAccountId: string;
@@ -90,7 +89,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  programType: ProgramType;
   currencyCode: string;
 }
 
@@ -329,15 +327,6 @@ const accountCategoryConfig: Record<AccountCategory, {
   NETTING: { label: 'Netting', icon: Hash, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', bgColor: 'bg-cat-4-soft dark:bg-cat-4/15' },
 };
 
-const programTypeConfig: Record<ProgramType, { label: string; icon: React.ElementType; color: string }> = {
-  COLLECTION: { label: 'Collection', icon: ArrowDownRight, color: 'text-success-600 dark:text-success-300' },
-  WALLET: { label: 'Wallet', icon: CreditCard, color: 'text-primary-600 dark:text-primary-200' },
-  IHB: { label: 'In-House Bank', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg' },
-  PAYABLES: { label: 'Payables', icon: ArrowUpRight, color: 'text-warning-600 dark:text-warning-300' },
-  VIBAN: { label: 'VIBAN', icon: Hash, color: 'text-info-600 dark:text-info-300' },
-  ESCROW: { label: 'Escrow', icon: Shield, color: 'text-cat-3 dark:text-cat-3-fg' },
-};
-
 // Picker now uses the shared `<ScopeSelector mode="corporate-program">`
 // primitive from components/layout/ — see import block at the top. The
 // inline `SelectorBar` that lived here (Desktop + Mobile variants) is
@@ -447,6 +436,7 @@ interface AccountActionsProps {
 
 const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit, onStatusChange }) => {
   const [showActions, setShowActions] = useState(false);
+  const [showVibans, setShowVibans] = useState(false);
   return (
     <div className="relative text-left" onClick={(e) => e.stopPropagation()}>
       <button
@@ -470,6 +460,12 @@ const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit
               className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/50"
             >
               <Pencil className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> Edit Account
+            </button>
+            <button
+              onClick={() => { setShowVibans(true); setShowActions(false); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-body-sm text-primary-900 hover:bg-neutral-50 transition-colors dark:text-neutral-50 dark:hover:bg-primary-800/40"
+            >
+              <Hash className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> VIBANs
             </button>
             <hr className="my-1 border-edge-subtle" />
             {account.status === 'ACTIVE' && (
@@ -499,6 +495,7 @@ const AccountActions: React.FC<AccountActionsProps> = ({ account, onView, onEdit
           </div>
         </>
       )}
+      <VaVibanModal account={account} isOpen={showVibans} onClose={() => setShowVibans(false)} />
     </div>
   );
 };
@@ -547,9 +544,6 @@ const buildAccountColumns = (
             <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
               {account.programName}
             </p>
-            {account.programType && (
-              <p className="caption">{account.programType}</p>
-            )}
           </div>
         </div>
       ) : (

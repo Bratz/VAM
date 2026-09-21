@@ -1374,7 +1374,7 @@ public class VirtualAccountDto {
          *
          * When provided, the program must be:
          * - An active program (status = ACTIVE)
-         * - A program with ihbEnabled = true
+         * - An IHB-enabled owning entity (LegalEntity.ihbEnabled)
          * - Belong to the same corporate as the participant entity
          */
         private UUID programId;

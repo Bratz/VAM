@@ -5,7 +5,7 @@ import { Card, Badge, Button, StatusIconBadge } from '../../components/ui';
 import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
 
-import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, featureConfig, FEATURE_KEYS, statusConfig } from './shared';
+import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, statusConfig } from './shared';
 
 // ============================================================================
 // DETAIL MODAL
@@ -97,13 +97,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
 
   if (!program) return null;
 
-  // A program is identified by what it can do. The first feature it has
-  // switched on stands in for the old programType badge; a program with none is
-  // a plain virtual-account program.
-  const activeFeatures = FEATURE_KEYS.filter((k) => (program as unknown as Record<string, unknown>)[k] === true);
-  const primaryFeature = activeFeatures[0];
-  const primary = primaryFeature ? featureConfig[primaryFeature] : null;
-  const TypeIcon = primary?.icon || Layers;
   // NEW: Check if hierarchy is initialized
   const hasHierarchy = !!program.rootHierarchyNodeId;
 
@@ -122,7 +115,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
       <div className="flex flex-col h-full max-h-[85vh]">
         {/* Header */}
         <div className="flex items-start gap-4 pb-4 border-b border-edge">
-          <StatusIconBadge tone={primary?.tone || 'neutral'} icon={TypeIcon} size="lg" subtle />
+          <StatusIconBadge tone="neutral" icon={Layers} size="lg" subtle />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="section-title truncate">{program.programName}</h2>
@@ -131,8 +124,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
             </div>
             <div className="flex items-center gap-4 mt-1 body-sm">
               <span className="font-mono">{program.programCode}</span>
-              <span>•</span>
-              <span>{primary?.label ?? 'Virtual Accounts'}</span>
               <span>•</span>
               <span>{program.currencyCode}</span>
             </div>
@@ -193,7 +184,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 <h3 className="body-strong font-semibold">Program Details</h3>
                 <Card padding="sm" className="space-y-3">
                   <div className="flex justify-between"><span className="body-sm">Program Code</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.programCode}</span></div>
-                  <div className="flex justify-between"><span className="body-sm">Features</span><div className="flex flex-wrap gap-1 justify-end">{activeFeatures.length > 0 ? activeFeatures.map((k) => <Badge key={k} variant="neutral">{featureConfig[k].label}</Badge>) : <Badge variant="neutral">Virtual Accounts</Badge>}</div></div>
                   <div className="flex justify-between"><span className="body-sm">Currency</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{program.currencyCode}</span></div>
                   <div className="flex justify-between"><span className="body-sm">VA Prefix</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{program.vaPrefix || '-'}</span></div>
                   <div className="flex justify-between"><span className="body-sm">Created</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(program.createdAt)}</span></div>
@@ -225,37 +215,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                 )}
               </div>
               <div className="space-y-4">
-                <h3 className="body-strong font-semibold">Core Features</h3>
-                <Card padding="sm" className="space-y-3">
-                  {[
-                    { label: 'Escrow Enabled', value: program.escrowEnabled },
-                    { label: 'IHB Enabled', value: program.ihbEnabled },
-                  ].map(f => (
-                    <div key={f.label} className="flex items-center justify-between">
-                      <span className="body-sm">{f.label}</span>
-                      {f.value ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
-                    </div>
-                  ))}
-                </Card>
-                {/* Extended Program Types */}
-                {(program.loyaltyEnabled || program.giftCardEnabled || program.corporateCardEnabled || program.mobileMoneyEnabled) && (
-                  <>
-                    <h3 className="body-strong font-semibold">Extended Features</h3>
-                    <Card padding="sm" className="space-y-3">
-                      {[
-                        { label: 'Loyalty Program', value: program.loyaltyEnabled },
-                        { label: 'Gift Card', value: program.giftCardEnabled },
-                        { label: 'Corporate Card', value: program.corporateCardEnabled },
-                        { label: 'Mobile Money', value: program.mobileMoneyEnabled },
-                      ].filter(f => f.value).map(f => (
-                        <div key={f.label} className="flex items-center justify-between">
-                          <span className="body-sm">{f.label}</span>
-                          <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" />
-                        </div>
-                      ))}
-                    </Card>
-                  </>
-                )}
                 <h3 className="body-strong font-semibold">Actions</h3>
                 <div className="flex flex-wrap gap-2">
                   {program.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'SUSPENDED')} leftIcon={<PauseCircle className="w-4 h-4" />}>Suspend</Button>}

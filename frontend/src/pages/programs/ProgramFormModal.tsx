@@ -1,14 +1,14 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
-import { Percent, Plus, Building2, CreditCard, Wallet, Shield, CheckCircle, Clock, ChevronRight, Loader2, X, TrendingUp, Hash, GitBranch, Gift, Smartphone, Info, Settings } from 'lucide-react';
+import { Percent, Plus, Building2, Wallet, CheckCircle, Clock, ChevronRight, Loader2, X, Hash, GitBranch, Info, Settings } from 'lucide-react';
 import { Badge, Button, StatusIconBadge, Checkbox } from '../../components/ui';
 import { CurrencyPicker } from '../../components/ui/CurrencyPicker';
 import { Modal, Alert } from '../../components/ui/enhanced';
 import toast from 'react-hot-toast';
 import { formatCurrency, cn } from '../../utils';
-import { getTemplatesForFeatures, getOtherTemplates, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
+import { HIERARCHY_TEMPLATES, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
 
-import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig, featureConfig, FeatureFlags } from './shared';
+import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig } from './shared';
 
 // ============================================================================
 // CHARGE CONFIGURATION ROW COMPONENT
@@ -93,11 +93,19 @@ interface ProgramFormModalProps {
   isOpen: boolean;
   program?: Program | null;
   onClose: () => void;
-  onSave: (data: Partial<Program>) => Promise<void>;
+  /** Returns the saved program, so charges can be saved against a new program's id. */
+  onSave: (data: Partial<Program>) => Promise<Program | null | void>;
   defaultCorporateId?: string; // Pre-selected corporate from page picker
+  /**
+   * Open an existing program on just this step, as a Program-list action.
+   * These settings are optional at create time, so they need a way in after it.
+   */
+  onlyStep?: ProgramConfigStep;
 }
 
-export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, onClose, onSave, defaultCorporateId }) => {
+export type ProgramConfigStep = 'VIBAN Pool' | 'Wallet Limits' | 'Wallet Fees';
+
+export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, program, onClose, onSave, defaultCorporateId, onlyStep }) => {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [corporates, setCorporates] = useState<Array<{ id: string; legalName: string }>>([]);
@@ -123,14 +131,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     // Step 2: Core Features
     configureViban: false,
     configureWallet: false,
-    escrowEnabled: false,
-    ihbEnabled: false,
     configureHierarchy: false,
     // Step 2: Extended Program Features
-    loyaltyEnabled: false,
-    giftCardEnabled: false,
-    corporateCardEnabled: false,
-    mobileMoneyEnabled: false,
     // Step 3: Hierarchy Config (when configureHierarchy)
     hierarchyDepth: 7,
     defaultHierarchyTemplate: '' as string,
@@ -199,6 +201,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
   // Dynamic step calculation
   const stepLabels = (() => {
+    if (onlyStep) return [onlyStep];
     const labels = ['Basic Info', 'Features'];
     if (needsHierarchyConfig) labels.push('Hierarchy');
     if (formData.configureViban) labels.push('VIBAN Pool');
@@ -209,7 +212,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   })();
 
   // In edit mode, show 2 steps: Basic Info and Features
-  const totalSteps = isEdit ? 2 : stepLabels.length;
+  const totalSteps = onlyStep ? 1 : isEdit ? 2 : stepLabels.length;
+  // Step bodies render on create, or when a single step was asked for.
+  const showStepBody = !isEdit || !!onlyStep;
 
   // Fetch corporates on modal open
   useEffect(() => {
@@ -249,9 +254,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
   // Fetch VIBAN pools when VIBAN is enabled
   useEffect(() => {
-    if (formData.configureViban && !program) {
+    if (formData.configureViban) {
       setLoadingPools(true);
-      fetch('/api/v1/viban-pools')
+      fetch(program ? `/api/v1/programs/${program.id}/viban-pools` : '/api/v1/viban-pools')
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -345,16 +350,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         physicalAccountId: program.physicalAccountId,
         currencyCode: program.currencyCode,
         // Step 2: Core Features
-        configureViban: false,
-        configureWallet: false,
-        escrowEnabled: program.escrowEnabled,
-        ihbEnabled: program.ihbEnabled,
+        configureViban: onlyStep === 'VIBAN Pool',
+        configureWallet: onlyStep === 'Wallet Limits' || onlyStep === 'Wallet Fees',
         configureHierarchy: false,
         // Step 2: Extended Program Features
-        loyaltyEnabled: program.loyaltyEnabled || false,
-        giftCardEnabled: program.giftCardEnabled || false,
-        corporateCardEnabled: program.corporateCardEnabled || false,
-        mobileMoneyEnabled: program.mobileMoneyEnabled || false,
         // Step 3: Hierarchy Config
         hierarchyDepth: program.hierarchyDepth || 7,
         defaultHierarchyTemplate: program.defaultHierarchyTemplate || '',
@@ -405,14 +404,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         // Step 2: Core Features
         configureViban: false,
         configureWallet: false,
-        escrowEnabled: false,
-        ihbEnabled: false,
         configureHierarchy: false,
         // Step 2: Extended Program Features
-        loyaltyEnabled: false,
-        giftCardEnabled: false,
-        corporateCardEnabled: false,
-        mobileMoneyEnabled: false,
         // Step 3: Hierarchy Config
         hierarchyDepth: 7,
         defaultHierarchyTemplate: '',
@@ -462,7 +455,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         inactivity: { waived: false },
       });
     }
-  }, [program, isOpen, defaultCorporateId]);
+  }, [program, isOpen, defaultCorporateId, onlyStep]);
 
   // Save wallet charges via ChargeConfiguration API
   const saveWalletCharges = async (programId: string) => {
@@ -533,13 +526,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         physicalAccountId: formData.physicalAccountId || undefined,
         currencyCode: formData.currencyCode,
         // Core feature flags
-        escrowEnabled: formData.escrowEnabled,
-        ihbEnabled: formData.ihbEnabled,
         // Extended program features
-        loyaltyEnabled: formData.loyaltyEnabled,
-        giftCardEnabled: formData.giftCardEnabled,
-        corporateCardEnabled: formData.corporateCardEnabled,
-        mobileMoneyEnabled: formData.mobileMoneyEnabled,
         // Hierarchy Configuration
         hierarchyDepth: formData.configureHierarchy ? formData.hierarchyDepth : undefined,
         defaultHierarchyTemplate: formData.configureHierarchy ? (formData.defaultHierarchyTemplate || undefined) : undefined,
@@ -586,20 +573,13 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         programCode: cleanedData.programCode,
       });
 
-      let programId: string;
+      const saved = await onSave(cleanedData);
+      const programId = program?.id ?? saved?.id;
 
-      if (program) {
-        // Edit existing program
-        await onSave(cleanedData);
-        programId = program.id;
-      } else {
-        // Create new program - onSave returns void but we need the ID
-        await onSave(cleanedData);
-        programId = 'new'; // The actual save happens in parent, charges saved on next edit
-      }
-      
-      // Save wallet charges separately via ChargeConfiguration API
-      if (needsWalletConfig && program) {
+      // Save wallet charges separately via ChargeConfiguration API. On create
+      // this used to be skipped ("charges saved on next edit") -- and the edit
+      // wizard never showed the fees step, so fees entered at create were lost.
+      if (needsWalletConfig && programId) {
         await saveWalletCharges(programId);
       }
       
@@ -632,7 +612,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   const selectedPool = vibanPools.find(p => p.id === formData.defaultVibanPoolId);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title={isEdit ? 'Edit Program' : 'Create New Program'}>
+    <Modal isOpen={isOpen} onClose={onClose} size="lg" title={onlyStep ? `${onlyStep} — ${program?.programName ?? ''}` : isEdit ? 'Edit Program' : 'Create New Program'}>
       <div className="space-y-6">
         {/* Step Indicator - Show for Create and Edit (limited steps in edit mode) */}
         {(isEdit ? totalSteps > 1 : true) && (
@@ -666,7 +646,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         {/* ================================================================ */}
         {/* STEP 1: Basic Information */}
         {/* ================================================================ */}
-        {step === 1 && (
+        {step === 1 && !onlyStep && (
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Building2 className="w-4 h-4" />
@@ -797,14 +777,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Settings className="w-4 h-4" />
-              Step 2: Features & Capabilities
+              Step 2: Configure now or later
             </h3>
-
-            <p className="body-sm">
-              Pick what this program does. These capabilities used to be implied by
-              a program type; choosing them directly is the same information without
-              a second place for it to disagree.
-            </p>
 
             {/* Core Features - These affect wizard flow */}
             <div className="space-y-2">
@@ -814,8 +788,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   { key: 'configureHierarchy', label: 'Configure Hierarchy now', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
                   { key: 'configureViban', label: 'Configure VIBAN now', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
                   { key: 'configureWallet', label: 'Configure Wallets now', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
-                  { key: 'escrowEnabled', label: 'Escrow Features', icon: Shield, desc: 'Hold funds with release conditions', color: 'text-success-600 dark:text-success-300', step: null },
-                  { key: 'ihbEnabled', label: 'IHB Features', icon: Building2, desc: 'In-house banking capabilities', color: 'text-primary-600 dark:text-primary-200', step: null },
                 ].map(f => {
                   const Icon = f.icon;
                   const isChecked = formData[f.key as keyof typeof formData] as boolean;
@@ -839,40 +811,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 })}
               </div>
             </div>
-
-            {/* Extended Program Features - Only show if relevant */}
-            {(
-              <div className="space-y-2">
-                <h4 className="label">Extended Capabilities</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { key: 'loyaltyEnabled', label: 'Loyalty Program', icon: TrendingUp, desc: 'Points, tiers, rewards', color: 'text-cat-4 dark:text-cat-4-fg', forType: 'LOYALTY' },
-                    { key: 'giftCardEnabled', label: 'Gift Cards', icon: Gift, desc: 'Gift card issuance', color: 'text-cat-2 dark:text-cat-2-fg', forType: 'GIFT_CARD' },
-                    { key: 'corporateCardEnabled', label: 'Corporate Cards', icon: CreditCard, desc: 'Expense cards, limits', color: 'text-cat-1 dark:text-cat-1-fg', forType: 'CORPORATE_CARD' },
-                    { key: 'mobileMoneyEnabled', label: 'Mobile Money', icon: Smartphone, desc: 'Agent banking, M-Pesa style', color: 'text-cat-3 dark:text-cat-3-fg', forType: 'MOBILE_MONEY' },
-                  ].map(f => {
-                    const Icon = f.icon;
-                    const isChecked = formData[f.key as keyof typeof formData] as boolean;
-                    // Check if this feature was auto-enabled by the selected program type
-                    return (
-                      <Checkbox
-                        key={f.key}
-                        variant="card"
-                        checked={isChecked}
-                        onChange={(checked) => setFormData({ ...formData, [f.key]: checked })}
-                        label={
-                          <span className="flex items-center gap-2 flex-wrap">
-                            <Icon className={cn('w-4 h-4', f.color)} />
-                            <span>{f.label}</span>
-                            </span>
-                        }
-                        description={f.desc}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Info messages for enabled features */}
             {formData.configureViban && (
@@ -909,10 +847,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             {/* Hierarchy Template Selection - driven by the features chosen in step 2 */}
             {(() => {
-              const flags = formData as unknown as Record<string, boolean | undefined>;
-              const matchingTemplates = getTemplatesForFeatures(flags);
-              const recommendedTemplate = getRecommendedTemplate(flags);
-              const otherTemplates = getOtherTemplates(flags);
+              const matchingTemplates = HIERARCHY_TEMPLATES;
+              const recommendedTemplate = getRecommendedTemplate();
 
               return (
                 <div className="space-y-4">
@@ -920,7 +856,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   {matchingTemplates.length > 0 && (
                     <div>
                       <label className="field-label block mb-2">
-                        Recommended for this program
+                        Templates
                       </label>
                       <div className="grid grid-cols-2 gap-3">
                         {matchingTemplates.map(template => {
@@ -959,73 +895,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     </div>
                   )}
 
-                  {/* Other Available Templates */}
-                  {otherTemplates.length > 0 && (
-                    <div>
-                      <label className="block text-body-sm font-medium text-neutral-500 mb-2 dark:text-neutral-400">
-                        Other Templates ({otherTemplates.length} available)
-                      </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {otherTemplates.map(template => {
-                          const Icon = template.icon;
-                          const isSelected = formData.defaultHierarchyTemplate === template.id;
-                          return (
-                            <button
-                              key={template.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData({ ...formData, defaultHierarchyTemplate: template.id, hierarchyDepth: template.levels.length });
-                                setHierarchyLevelConfigs([...template.levels]);
-                              }}
-                              className={cn(
-                                'p-3 border rounded-lg text-left transition-all',
-                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Icon className={cn('w-4 h-4', isSelected ? 'text-cat-2 dark:text-cat-2-fg' : 'text-neutral-400')} />
-                                <span className="text-caption font-medium truncate">{template.name}</span>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
 
-                  {/* No matching templates fallback */}
-                  {matchingTemplates.length === 0 && (
-                    <div>
-                      <label className="field-label block mb-2">Available Templates</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {otherTemplates.map(template => {
-                          const Icon = template.icon;
-                          const isSelected = formData.defaultHierarchyTemplate === template.id;
-                          const levelPath = template.levels.map(l => l.levelName).join(' → ');
-                          return (
-                            <button
-                              key={template.id}
-                              type="button"
-                              onClick={() => {
-                                setFormData({ ...formData, defaultHierarchyTemplate: template.id, hierarchyDepth: template.levels.length });
-                                setHierarchyLevelConfigs([...template.levels]);
-                              }}
-                              className={cn(
-                                'p-4 border rounded-lg text-left transition-all',
-                                isSelected ? 'border-cat-2 bg-cat-2-soft ring-2 ring-cat-2 dark:bg-cat-2/15' : 'border-edge hover:border-neutral-300 dark:hover:border-primary-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2 mb-2">
-                                <StatusIconBadge tone={isSelected ? 'cat-2' : template.tone} icon={Icon} size="sm" />
-                                <span className="font-medium text-body-sm">{template.name}</span>
-                              </div>
-                              <p className="caption truncate" title={levelPath}>{levelPath}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })()}
@@ -1315,11 +1185,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         {/* ================================================================ */}
         {/* VIBAN Pool Configuration (only if VIBAN enabled) */}
         {/* ================================================================ */}
-        {isStepActive('VIBAN Pool') && !isEdit && (
+        {isStepActive('VIBAN Pool') && showStepBody && (
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Hash className="w-4 h-4" />
-              Step 3: VIBAN Pool Configuration
+              VIBAN Pool Configuration
             </h3>
 
             <p className="body-sm">Configure how VIBANs will be generated for this program.</p>
@@ -1429,7 +1299,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         {/* ================================================================ */}
         {/* WALLET LIMITS STEP (only if wallet enabled) - Transaction & Balance Limits */}
         {/* ================================================================ */}
-        {isStepActive('Wallet Limits') && !isEdit && (
+        {isStepActive('Wallet Limits') && showStepBody && (
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Settings className="w-4 h-4" />
@@ -1574,7 +1444,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         {/* ================================================================ */}
         {/* WALLET FEES STEP (only if wallet enabled) - Using ChargeConfiguration */}
         {/* ================================================================ */}
-        {isStepActive('Wallet Fees') && !isEdit && (
+        {isStepActive('Wallet Fees') && showStepBody && (
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Percent className="w-4 h-4" />
@@ -1722,28 +1592,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                   <div><span className="text-neutral-500 dark:text-neutral-400">Code:</span> <span className="font-mono font-medium">{formData.programCode}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
-                  <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Features:</span>{' '}
-                    {(Object.keys(featureConfig) as (keyof FeatureFlags)[]).filter(k => (formData as unknown as Record<string, unknown>)[k] === true).map(k => (
-                      <Badge key={k} variant="neutral">{featureConfig[k].label}</Badge>
-                    ))}
-                  </div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="font-medium">{formData.currencyCode}</span></div>
-                </div>
-              </div>
-
-              {/* Features */}
-              <div className="border-t pt-4">
-                <h4 className="label mb-2">Features</h4>
-                <div className="flex flex-wrap gap-2">
-                  {formData.escrowEnabled && <Badge variant="success">Escrow</Badge>}
-                  {formData.ihbEnabled && <Badge variant="info">IHB</Badge>}
-                  {formData.loyaltyEnabled && <Badge variant="info">Loyalty</Badge>}
-                  {formData.giftCardEnabled && <Badge variant="info">Gift Card</Badge>}
-                  {formData.corporateCardEnabled && <Badge variant="info">Corp Card</Badge>}
-                  {formData.mobileMoneyEnabled && <Badge variant="info">Mobile Money</Badge>}
-                  {!formData.escrowEnabled && !formData.ihbEnabled && !formData.loyaltyEnabled && !formData.giftCardEnabled && !formData.corporateCardEnabled && !formData.mobileMoneyEnabled && (
-                    <span className="text-body-sm text-neutral-400">Standard features only</span>
-                  )}
                 </div>
               </div>
 

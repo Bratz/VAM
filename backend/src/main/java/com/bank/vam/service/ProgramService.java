@@ -277,8 +277,6 @@ public class ProgramService {
             .currentVaCount(0)
             // Settlement
             // Feature Flags - Core
-            .escrowEnabled(request.getEscrowEnabled() != null ? request.getEscrowEnabled() : false)
-            .ihbEnabled(request.getIhbEnabled() != null ? request.getIhbEnabled() : false)
             // Hierarchy
             .hierarchyDepth(request.getHierarchyDepth() != null ? request.getHierarchyDepth() : 7)
             .defaultHierarchyTemplate(request.getDefaultHierarchyTemplate())
@@ -291,10 +289,6 @@ public class ProgramService {
             .vibanBankCode(request.getVibanBankCode())
             // Balance Aggregation
             // Additional Program Types
-            .loyaltyEnabled(request.getLoyaltyEnabled() != null ? request.getLoyaltyEnabled() : false)
-            .giftCardEnabled(request.getGiftCardEnabled() != null ? request.getGiftCardEnabled() : false)
-            .corporateCardEnabled(request.getCorporateCardEnabled() != null ? request.getCorporateCardEnabled() : false)
-            .mobileMoneyEnabled(request.getMobileMoneyEnabled() != null ? request.getMobileMoneyEnabled() : false)
             // Wallet Config
             .defaultWalletType(request.getDefaultWalletType())
             .defaultPerTransactionLimit(request.getDefaultPerTransactionLimit())
@@ -358,12 +352,6 @@ public class ProgramService {
         if (request.getMaxVirtualAccounts() != null) program.setMaxVirtualAccounts(request.getMaxVirtualAccounts());
 
         // Feature Flags
-        if (request.getEscrowEnabled() != null) program.setEscrowEnabled(request.getEscrowEnabled());
-        if (request.getIhbEnabled() != null) program.setIhbEnabled(request.getIhbEnabled());
-        if (request.getLoyaltyEnabled() != null) program.setLoyaltyEnabled(request.getLoyaltyEnabled());
-        if (request.getGiftCardEnabled() != null) program.setGiftCardEnabled(request.getGiftCardEnabled());
-        if (request.getCorporateCardEnabled() != null) program.setCorporateCardEnabled(request.getCorporateCardEnabled());
-        if (request.getMobileMoneyEnabled() != null) program.setMobileMoneyEnabled(request.getMobileMoneyEnabled());
 
         // Hierarchy
         if (request.getHierarchyDepth() != null) program.setHierarchyDepth(request.getHierarchyDepth());
@@ -478,12 +466,6 @@ public class ProgramService {
             .maxVirtualAccounts(source.getMaxVirtualAccounts())
             .currentVaCount(0)
             // Feature Flags
-            .escrowEnabled(source.getEscrowEnabled())
-            .ihbEnabled(source.getIhbEnabled())
-            .loyaltyEnabled(source.getLoyaltyEnabled())
-            .giftCardEnabled(source.getGiftCardEnabled())
-            .corporateCardEnabled(source.getCorporateCardEnabled())
-            .mobileMoneyEnabled(source.getMobileMoneyEnabled())
             // Hierarchy (don't copy root node - will need to create new one)
             .hierarchyDepth(source.getHierarchyDepth())
             .defaultHierarchyTemplate(source.getDefaultHierarchyTemplate())
@@ -554,19 +536,6 @@ public class ProgramService {
         long inactivePrograms = programs.stream().filter(p -> p.getStatus() == ProgramStatus.INACTIVE).count();
         long suspendedPrograms = programs.stream().filter(p -> p.getStatus() == ProgramStatus.SUSPENDED).count();
         long pendingPrograms = programs.stream().filter(p -> p.getStatus() == ProgramStatus.PENDING_APPROVAL).count();
-
-        // By Feature. The per-programType counters these replace answered the
-        // same question less reliably: a program could be typed WALLET with
-        // walletEnabled false, or the reverse, and the tiles disagreed with what
-        // the features actually did.
-        long escrowEnabledPrograms = countEnabled(programs, Program::getEscrowEnabled);
-        long ihbEnabledPrograms = countEnabled(programs, Program::getIhbEnabled);
-        long loyaltyEnabledPrograms = countEnabled(programs, Program::getLoyaltyEnabled);
-        long giftCardEnabledPrograms = countEnabled(programs, Program::getGiftCardEnabled);
-        long corporateCardEnabledPrograms = countEnabled(programs, Program::getCorporateCardEnabled);
-        long mobileMoneyEnabledPrograms = countEnabled(programs, Program::getMobileMoneyEnabled);
-
-        // Totals
         long totalVirtualAccounts = programs.stream()
             .mapToLong(p -> virtualAccountRepository.countByProgramId(p.getId()))
             .sum();
@@ -596,12 +565,6 @@ public class ProgramService {
             .inactivePrograms(inactivePrograms)
             .suspendedPrograms(suspendedPrograms)
             .pendingPrograms(pendingPrograms)
-            .escrowEnabledPrograms(escrowEnabledPrograms)
-            .ihbEnabledPrograms(ihbEnabledPrograms)
-            .loyaltyEnabledPrograms(loyaltyEnabledPrograms)
-            .giftCardEnabledPrograms(giftCardEnabledPrograms)
-            .corporateCardEnabledPrograms(corporateCardEnabledPrograms)
-            .mobileMoneyEnabledPrograms(mobileMoneyEnabledPrograms)
             .totalVirtualAccounts(totalVirtualAccounts)
             .totalBalance(totalBalance)
             .reportingCurrency(reportingCurrency)
@@ -617,12 +580,6 @@ public class ProgramService {
     // ========================================================================
     // HELPER METHODS
     // ========================================================================
-
-    /** Count programs whose flag is explicitly true; a null flag is not enabled. */
-    private static long countEnabled(List<Program> programs,
-                                     java.util.function.Function<Program, Boolean> flag) {
-        return programs.stream().filter(p -> Boolean.TRUE.equals(flag.apply(p))).count();
-    }
 
     private Program findProgramOrThrow(UUID programId) {
         return programRepository.findById(programId)
@@ -686,8 +643,6 @@ public class ProgramService {
             .currentVaCount(program.getCurrentVaCount())
             // Settlement
             // Feature Flags - Core
-            .escrowEnabled(program.getEscrowEnabled())
-            .ihbEnabled(program.getIhbEnabled())
             // ================================================================
             // HIERARCHY SUPPORT
             // ================================================================
@@ -709,10 +664,6 @@ public class ProgramService {
             // ================================================================
             // ADDITIONAL PROGRAM TYPE FLAGS
             // ================================================================
-            .loyaltyEnabled(program.getLoyaltyEnabled())
-            .giftCardEnabled(program.getGiftCardEnabled())
-            .corporateCardEnabled(program.getCorporateCardEnabled())
-            .mobileMoneyEnabled(program.getMobileMoneyEnabled())
             // ================================================================
             // WALLET CONFIGURATION
             // ================================================================
