@@ -3210,7 +3210,8 @@ const TreasuryHierarchyPage: React.FC = () => {
         programCode: program.programCode,
         currencyCode: program.currencyCode,
       });
-      setCheckingStatus(true);
+      // No setCheckingStatus(true) here: the status effect sets and clears it, but only runs when
+      // the id changes -- re-picking the current program left the page on "Checking..." forever.
     } else {
       setSelectedProgram(null);
     }
@@ -3274,7 +3275,7 @@ const TreasuryHierarchyPage: React.FC = () => {
       const [hierarchyRes, summaryRes, physicalRes] = await Promise.all([
         balanceStructureApi.getHierarchy(selectedCorporateId || undefined, selectedProgramId || undefined, reportingCurrency),
         balanceStructureApi.getSummary(selectedCorporateId || undefined, selectedProgramId || undefined, reportingCurrency),
-        balanceStructureApi.getPhysicalAccount(selectedCorporateId || undefined),
+        balanceStructureApi.getPhysicalAccount(selectedCorporateId || undefined, selectedProgramId || undefined),
       ]);
       
       if (hierarchyRes.success && hierarchyRes.data) {
@@ -3837,12 +3838,14 @@ const TreasuryHierarchyPage: React.FC = () => {
     monthlyInterestAllocation: hierarchy?.interestAllocation || 0 
   };
   
-  const displayPhysical = physicalAccount || { 
-    bankName: '-', 
-    accountNumber: '-', 
-    accountName: 'No Physical Account Linked', 
-    balance: 0, 
-    currency: selectedProgram?.currencyCode || 'AED' 
+  // The program's own backing bank account (not "the corporate's first account", as before).
+  const hasPhysical = !!physicalAccount && physicalAccount.status !== 'NOT_CONFIGURED';
+  const displayPhysical = hasPhysical ? physicalAccount! : {
+    bankName: '',
+    accountNumber: '',
+    accountName: physicalAccount?.accountName || 'No bank account linked to this program',
+    balance: 0,
+    currency: selectedProgram?.currencyCode || 'AED',
   };
 
   return (
@@ -3939,11 +3942,24 @@ const TreasuryHierarchyPage: React.FC = () => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">{displayPhysical.bankName}</p>
-            {/* Inverse variant — replaces the `stat-value-sm !text-white`
-                override. See .stat-value-inverse in index.css. */}
-            <p className="stat-value-inverse mt-1">{formatCurrency(displayPhysical.balance, displayPhysical.currency)}</p>
-            <p className="text-caption text-primary-300 mt-0.5">Held at bank — outside VA consolidation; mirrored via shadow accounts</p>
+            {hasPhysical ? (
+              <>
+                <p className="text-caption font-medium text-primary-200 uppercase tracking-wider">{displayPhysical.bankName}</p>
+                {/* Inverse variant — replaces the `stat-value-sm !text-white`
+                    override. See .stat-value-inverse in index.css. */}
+                <p className="stat-value-inverse mt-1">{formatCurrency(displayPhysical.balance, displayPhysical.currency)}</p>
+                {physicalAccount?.heldByProgramName ? (
+                  <p className="text-caption text-warning-300 mt-0.5">
+                    Belongs to {physicalAccount.heldByProgramName}{physicalAccount.heldByProgramCode ? ` (${physicalAccount.heldByProgramCode})` : ''} —
+                    this program's payments are refused until it has its own {displayPhysical.currency} bank account
+                  </p>
+                ) : (
+                  <p className="text-caption text-primary-300 mt-0.5">Held at bank — outside VA consolidation; mirrored via shadow accounts</p>
+                )}
+              </>
+            ) : (
+              <p className="text-caption text-primary-300">Add one in the program's setup (Programs → Edit → Bank accounts)</p>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import com.bank.vam.dto.treasury.BalanceStructureDto;
 import com.bank.vam.dto.treasury.BalanceStructureDto.*;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.PhysicalAccount;
+import com.bank.vam.entity.Program;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.treasury.*;
@@ -152,41 +153,34 @@ public class BalanceStructureService {
     }
 
     /**
-     * Get physical (real) bank account info
+     * The real bank account behind a program: its main backing account, else the first of its own
+     * bank-account shadows. Never another program's or "the corporate's first" account -- this used
+     * to return the corporate's first physical account in database order, whatever the program, with
+     * a bank name and BIC made up from the branch code (every account showed as Emirates NBD).
      */
     @Transactional(readOnly = true)
-    public PhysicalAccountInfo getPhysicalAccount(UUID corporateId) {
-        // Use pageable query and get first result
-        Page<PhysicalAccount> accountsPage = physicalAccountRepository.findByCorporateId(
-            corporateId, PageRequest.of(0, 1));
-        List<PhysicalAccount> accounts = accountsPage.getContent();
-        
-        if (accounts.isEmpty()) {
-            // Return empty info instead of demo data
-            return PhysicalAccountInfo.builder()
-                .id(null)
-                .bankName("Not Configured")
-                .bankBic("")
-                .accountNumber("")
-                .iban("")
-                .accountName("No physical account linked")
-                .balance(BigDecimal.ZERO)
-                .availableBalance(BigDecimal.ZERO)
-                .currency("AED")
-                .accountType("CURRENT")
-                .status("NOT_CONFIGURED")
-                .build();
+    public PhysicalAccountInfo getPhysicalAccount(UUID corporateId, UUID programId) {
+        if (programId == null) return notConfigured("Select a program to see its bank account");
+        Program program = programRepository.findById(programId).orElse(null);
+        if (program == null) return notConfigured("Program not found");
+
+        UUID accountId = program.getPhysicalAccountId();
+        if (accountId == null) {
+            accountId = virtualAccountRepository
+                .findByProgramIdAndAccountCategory(programId, VirtualAccount.AccountCategory.PHYSICAL_MIRROR).stream()
+                .filter(s -> s.getLinkedPhysicalAccountId() != null)
+                .min(Comparator.comparing(VirtualAccount::getVaNumber, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(VirtualAccount::getLinkedPhysicalAccountId)
+                .orElse(null);
         }
-        
-        PhysicalAccount pa = accounts.get(0);
-        // PhysicalAccount entity doesn't have bankName/bankBic - derive from branch or use defaults
-        String bankName = deriveBankName(pa.getBranchCode());
-        String bankBic = deriveBankBic(pa.getBranchCode());
-        
-        return PhysicalAccountInfo.builder()
+        if (accountId == null) return notConfigured("No bank account linked to this program");
+        PhysicalAccount pa = physicalAccountRepository.findById(accountId).orElse(null);
+        if (pa == null) return notConfigured("No bank account linked to this program");
+
+        PhysicalAccountInfo info = PhysicalAccountInfo.builder()
             .id(pa.getId())
-            .bankName(bankName)
-            .bankBic(bankBic)
+            .bankName(pa.getBankName())
+            .bankBic(pa.getBankCode())
             .accountNumber(pa.getAccountNumber())
             .iban(pa.getIban())
             .accountName(pa.getAccountName())
@@ -196,35 +190,26 @@ public class BalanceStructureService {
             .accountType(pa.getAccountType() != null ? pa.getAccountType().name() : "CURRENT")
             .status(pa.getStatus() != null ? pa.getStatus().name() : "ACTIVE")
             .build();
+        // Booked on an account whose shadow belongs to another program: say so (its payments are refused).
+        virtualAccountRepository.findByLinkedPhysicalAccountId(pa.getId())
+            .filter(s -> s.getProgramId() != null && !programId.equals(s.getProgramId()))
+            .flatMap(s -> programRepository.findById(s.getProgramId()))
+            .ifPresent(holder -> {
+                info.setHeldByProgramCode(holder.getProgramCode());
+                info.setHeldByProgramName(holder.getProgramName());
+            });
+        return info;
     }
-    
-    /**
-     * Derive bank name from branch code (placeholder - in production, lookup from reference data)
-     */
-    private String deriveBankName(String branchCode) {
-        if (branchCode == null) return "Emirates NBD";
-        // Map branch codes to bank names
-        return switch (branchCode.substring(0, Math.min(3, branchCode.length()))) {
-            case "ENB" -> "Emirates NBD";
-            case "FAB" -> "First Abu Dhabi Bank";
-            case "DIB" -> "Dubai Islamic Bank";
-            case "ADC" -> "Abu Dhabi Commercial Bank";
-            default -> "Emirates NBD";
-        };
-    }
-    
-    /**
-     * Derive bank BIC from branch code (placeholder - in production, lookup from reference data)
-     */
-    private String deriveBankBic(String branchCode) {
-        if (branchCode == null) return "EABOROAEDXXX";
-        return switch (branchCode.substring(0, Math.min(3, branchCode.length()))) {
-            case "ENB" -> "EABOROAEDXXX";
-            case "FAB" -> "FABIAEDIXXXX";
-            case "DIB" -> "DUIBAEDIXXXX";
-            case "ADC" -> "ADCBAEDIXXXX";
-            default -> "EABOROAEDXXX";
-        };
+
+    private static PhysicalAccountInfo notConfigured(String message) {
+        return PhysicalAccountInfo.builder()
+            .accountName(message)
+            .accountNumber("")
+            .bankName("")
+            .balance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .status("NOT_CONFIGURED")
+            .build();
     }
 
     /**

@@ -226,6 +226,9 @@ public class BalanceStructureDto {
         private String currency;
         private String accountType;
         private String status;
+        /** Set when this account's shadow belongs to another program (that program's account, not this one's). */
+        private String heldByProgramCode;
+        private String heldByProgramName;
     }
 
     // ========================================================================

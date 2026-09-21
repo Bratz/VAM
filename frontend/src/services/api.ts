@@ -3459,7 +3459,11 @@ export interface BalancePhysicalAccount {
   availableBalance: number;
   currency: string;
   accountType: string;
+  /** NOT_CONFIGURED when the program has no bank account (accountName then says why). */
   status: string;
+  /** Set when this account's shadow belongs to another program. */
+  heldByProgramCode?: string;
+  heldByProgramName?: string;
 }
 
 export interface BalanceNodeDetail {
@@ -3542,9 +3546,9 @@ export const balanceStructureApi = {
 
 
   // Physical bank account
-  getPhysicalAccount: (corporateId?: string) => 
+  getPhysicalAccount: (corporateId?: string, programId?: string) => 
     apiClient.get<ApiResponse<BalancePhysicalAccount>>('/treasury/balance-structure/physical-account', { 
-      params: { corporateId } 
+      params: { corporateId, programId } 
     }).then(r => r.data),
   
   // Node details

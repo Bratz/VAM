@@ -111,14 +111,14 @@ public class BalanceStructureController {
      */
     @GetMapping("/physical-account")
     @Operation(summary = "Get physical bank account",
-               description = "Returns the real bank account that backs all virtual accounts")
+               description = "Returns the program's real (backing) bank account; NOT_CONFIGURED when it has none")
     public ResponseEntity<ApiResponse<PhysicalAccountInfo>> getPhysicalAccount(
-            @RequestParam(required = false) UUID corporateId) {
+            @RequestParam(required = false) UUID corporateId,
+            @RequestParam(required = false) UUID programId) {
         
-        log.info("GET /api/v1/treasury/balance-structure/physical-account");
+        log.info("GET /api/v1/treasury/balance-structure/physical-account programId={}", programId);
         
-        UUID corpId = corporateId != null ? corporateId : getDefaultCorporateId();
-        PhysicalAccountInfo account = balanceStructureService.getPhysicalAccount(corpId);
+        PhysicalAccountInfo account = balanceStructureService.getPhysicalAccount(corporateId, programId);
         
         return ResponseEntity.ok(ApiResponse.success(account));
     }
