@@ -125,9 +125,11 @@ public class IhbUnifiedService {
      * Links entity's accounts to Treasury Center for automated sweeping.
      */
     private void createIhbSweepRules(LegalEntity entity, IhbDto.EnableIhbRequest request) {
-        // Find treasury center (entity that canLend)
-        LegalEntity treasuryCenter = legalEntityRepository.findByCanLendTrue()
+        // Treasury center = a lending entity of the SAME corporate (never another corporate's, and
+        // never the entity itself) -- otherwise cash would be swept across corporates.
+        LegalEntity treasuryCenter = legalEntityRepository.findByCorporateIdAndCanLendTrue(entity.getCorporateId())
                 .stream()
+                .filter(tc -> !tc.getId().equals(entity.getId()))
                 .findFirst()
                 .orElse(null);
         

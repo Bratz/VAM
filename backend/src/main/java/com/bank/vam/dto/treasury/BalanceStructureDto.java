@@ -1,5 +1,6 @@
 package com.bank.vam.dto.treasury;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -144,6 +145,7 @@ public class BalanceStructureDto {
     @AllArgsConstructor
     public static class IhbSummary {
         private boolean enabled;
+        @JsonProperty("isTreasuryCenter")   // Lombok's isX() getter would otherwise serialise as "treasuryCenter"
         private boolean isTreasuryCenter;    // canLend = true
         private boolean canLend;
         private boolean canBorrow;
