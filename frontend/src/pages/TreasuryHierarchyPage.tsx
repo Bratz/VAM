@@ -31,7 +31,6 @@ import {
   ihbUnifiedApi,
   virtualAccountsApi,
   shadowAccountApi,
-  settlementVaApi,
   ShadowAccount,
   TreasuryRates,
   CreateAggregationRequest,
@@ -1538,7 +1537,6 @@ interface TreeNodeProps {
   /** Opens the matching create modal directly — the context menu lists the
    *  node types, so no intermediate chooser. */
   onAddChild?: (parentNode: ExtendedHierarchyNode, type: NodeCreationType) => void;
-  onCreateSettlementVa?: (parentId: string) => void;
   onViewExceptions?: (nodeId: string) => void;
   onConfigureIhb?: (entityId: string) => void;
   corporateId?: string;
@@ -1553,7 +1551,7 @@ interface TreeNodeProps {
 
 const TreeNode: React.FC<TreeNodeProps> = ({
   node, expandedIds, onToggle, selectedId, onSelect, reportingCurrency,
-  showSystemVas = true, onAddChild, onCreateSettlementVa, onViewExceptions, onConfigureIhb, corporateId, programId,
+  showSystemVas = true, onAddChild, onViewExceptions, onConfigureIhb, corporateId, programId,
   highlightId, rootId, unconverted = [],
 }) => {
   const isExpanded = expandedIds.has(node.id);
@@ -1834,12 +1832,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   </button>
                 </>
               )}
-              {canAddChildren && onCreateSettlementVa && (
-                <button role="menuitem" onClick={(e) => { e.stopPropagation(); onCreateSettlementVa(node.id); setShowContextMenu(false); }}
-                  className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 dark:hover:bg-primary-800/50 flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-cat-2 dark:text-cat-2-fg" />Create Settlement VA
-                </button>
-              )}
               
               {/* ENHANCED: IHB Context Menu Items */}
               {node.owningEntity && (
@@ -1883,7 +1875,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               reportingCurrency={reportingCurrency}
               showSystemVas={showSystemVas}
               onAddChild={onAddChild}
-              onCreateSettlementVa={onCreateSettlementVa}
               onViewExceptions={onViewExceptions}
               onConfigureIhb={onConfigureIhb}
               corporateId={corporateId}
@@ -3119,9 +3110,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
   const [showLevelConfig, setShowLevelConfig] = useState(false);
   const [levelConfigs, setLevelConfigs] = useState<HierarchyLevelConfig[]>([]);
   const [showCreateViban, setShowCreateViban] = useState(false);
-  const [showCreateSettlementVa, setShowCreateSettlementVa] = useState(false);
-  const [settlementVaCurrency, setSettlementVaCurrency] = useState('AED');
-  const [creatingSettlementVa, setCreatingSettlementVa] = useState(false);
   const [corporateId, setCorporateId] = useState<string | undefined>(undefined);
 
   // NEW: Add Node Modal States (ENHANCED)
@@ -3716,31 +3704,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
     URL.revokeObjectURL(link.href);
   };
   
-  const handleCreateSettlementVa = (parentId: string) => { 
-    const parent = hierarchy ? findNodeById(hierarchy, parentId) : null;
-    setAddNodeParentNode(parent);
-    if (parent?.currencyCode) setSettlementVaCurrency(parent.currencyCode);
-    setShowCreateSettlementVa(true); 
-  };
-
-  const submitSettlementVa = async () => {
-    if (!selectedProgramId || !addNodeParentNode) return;
-    setCreatingSettlementVa(true);
-    try {
-      const res = await settlementVaApi.create({
-        programId: selectedProgramId, parentNodeId: addNodeParentNode.id, currency: settlementVaCurrency,
-      });
-      if (!res.success) throw new Error(res.message || 'Could not create the settlement VA');
-      toast.success(`Settlement VA ${res.data?.vaNumber ?? ''} created`);
-      setShowCreateSettlementVa(false);
-      await refreshAll();
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || e?.message || 'Could not create the settlement VA');
-    } finally {
-      setCreatingSettlementVa(false);
-    }
-  };
-  
   const handleViewExceptions = (_nodeId: string) => { onNavigate?.('exceptions'); };
 
   // ENHANCED: Entity and IHB action handlers
@@ -4255,7 +4218,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
                   reportingCurrency={reportingCurrency}
                   showSystemVas={showSystemVas}
                   onAddChild={handleAddChild}
-                  onCreateSettlementVa={handleCreateSettlementVa}
                   onViewExceptions={handleViewExceptions}
                   onConfigureIhb={handleConfigureIhb}
                   corporateId={corporateId}
@@ -4361,27 +4323,6 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
         programName={selectedProgram?.programName}
       />
 
-      <Modal isOpen={showCreateSettlementVa} onClose={() => setShowCreateSettlementVa(false)} title="Create Settlement VA" size="md">
-        <div className="p-4 space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-cat-2-soft dark:bg-cat-2/15 rounded-lg border border-cat-2/20 dark:border-cat-2/30">
-            <Scale className="w-5 h-5 text-cat-2 dark:text-cat-2-fg mt-0.5" />
-            <div>
-              <p className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg">Settlement Virtual Account</p>
-              <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
-              {addNodeParentNode && <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">Under: <span className="font-medium">{addNodeParentNode.name}</span> · named "{settlementVaCurrency} Settlement Account"</p>}
-            </div>
-          </div>
-          <div><label className="field-label block mb-1">Currency</label>
-            <CurrencyPicker value={settlementVaCurrency} onChange={setSettlementVaCurrency} />
-          </div>
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="ghost" onClick={() => setShowCreateSettlementVa(false)}>Cancel</Button>
-            <Button onClick={submitSettlementVa} disabled={creatingSettlementVa || !selectedProgramId || !addNodeParentNode}>
-              {creatingSettlementVa ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Scale className="w-4 h-4 mr-1" />}Create Settlement VA
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
       {selectedNode && (
         <VaVibanModal

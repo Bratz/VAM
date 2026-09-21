@@ -37,7 +37,6 @@ public class SettlementVaController {
 
     private final HierarchyService hierarchyService;
     private final SettlementVaResolverService settlementVaResolver;
-    private final com.bank.vam.service.treasury.SettlementVaService settlementVaService;
     private final VirtualAccountRepository vaRepository;
     private final HierarchyNodeRepository nodeRepository;
     private final TransactionRepository transactionRepository;
@@ -198,18 +197,6 @@ public class SettlementVaController {
             VirtualAccount standaloneSettlementVa = settlementVaResolver.provisionSettlementVa(
                 request.getProgramId(), request.getCurrency());
             return ResponseEntity.ok(ApiResponse.success(toSettlementVaResponse(standaloneSettlementVa)));
-        }
-
-        // The balance hierarchy tree is built from virtual accounts, so its "parent" is a VA id,
-        // not a hierarchy_nodes id -- create the settlement VA directly under that account.
-        if (!nodeRepository.existsById(request.getParentNodeId())) {
-            VirtualAccount parentVa = vaRepository.findById(request.getParentNodeId()).orElse(null);
-            if (parentVa == null) {
-                return ResponseEntity.badRequest().body(ApiResponse.error("Parent not found: " + request.getParentNodeId()));
-            }
-            VirtualAccount created = settlementVaService.createSettlementVaUnderParent(
-                parentVa.getId(), request.getCurrency(), parentVa.getCorporateId(), request.getProgramId());
-            return ResponseEntity.ok(ApiResponse.success(toSettlementVaResponse(created)));
         }
 
         VirtualAccount settlementVa = hierarchyService.createSettlementVa(
