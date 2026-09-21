@@ -37,8 +37,34 @@ const ProgramsPage: React.FC = () => {
   // The table scrolls horizontally, which clips an absolutely-placed menu, so the
   // menu is fixed to the viewport at the button's position (flipped up near the bottom).
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const menuTriggerRef = useRef<HTMLElement | null>(null);
+  // Closing the menu hands focus back to its button, before any dialog the item opens takes it
+  // (the dialog then returns focus there too, not to a menu item that no longer exists).
+  const closeMenu = () => {
+    setActionMenuId(null);
+    menuTriggerRef.current?.focus();
+  };
+  // The table renders each row twice (desktop and a hidden mobile layout), so the menu is found
+  // by what's on screen, not by a ref (which would land on the hidden copy).
+  const menuItems = (menu?: Element | null) => Array.from(
+    (menu ?? Array.from(document.querySelectorAll('[role="menu"]')).find(m => m.getBoundingClientRect().width > 0))
+      ?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+  const onMenuKeyDown = (e: React.KeyboardEvent) => {
+    const items = menuItems(e.currentTarget);
+    const at = items.indexOf(document.activeElement as HTMLElement);
+    const go = (i: number) => { e.preventDefault(); items[(i + items.length) % items.length]?.focus(); };
+    if (e.key === 'ArrowDown') go(at + 1);
+    else if (e.key === 'ArrowUp') go(at - 1);
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(items.length - 1);
+    else if (e.key === 'Tab') { e.preventDefault(); closeMenu(); }
+  };
+  useEffect(() => {
+    if (actionMenuId) menuItems()[0]?.focus();
+  }, [actionMenuId]);
   const openMenu = (id: string, e: React.MouseEvent<HTMLElement>) => {
-    if (actionMenuId === id) { setActionMenuId(null); return; }
+    if (actionMenuId === id) { closeMenu(); return; }
+    menuTriggerRef.current = e.currentTarget;
     const b = e.currentTarget.getBoundingClientRect();
     const up = window.innerHeight - b.bottom < 260;
     setMenuStyle({ right: window.innerWidth - b.right, ...(up ? { bottom: window.innerHeight - b.top + 4 } : { top: b.bottom + 4 }) });
@@ -46,7 +72,7 @@ const ProgramsPage: React.FC = () => {
   };
   useEffect(() => {
     if (!actionMenuId) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActionMenuId(null); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeMenu(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [actionMenuId]);
@@ -437,26 +463,32 @@ const ProgramsPage: React.FC = () => {
                     onClick={e => openMenu(program.id, e)}
                     title="More Actions"
                     aria-label={`More actions for ${program.programName}`}
+                    aria-haspopup="menu"
+                    aria-expanded={actionMenuId === program.id}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                   {actionMenuId === program.id && (
                     <>
                       {/* Backdrop to close menu when clicking outside */}
-                      <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} onWheel={() => setActionMenuId(null)} />
+                      <div className="fixed inset-0 z-10" onClick={closeMenu} onWheel={() => setActionMenuId(null)} />
                       {/* Dropdown Menu */}
-                      <div style={menuStyle} className="fixed w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
+                      <div role="menu" aria-label={`Actions for ${program.programName}`} onKeyDown={onMenuKeyDown} style={menuStyle} className="fixed w-48 bg-surface-cardborder border-edge rounded-lg shadow-lg z-20 py-1 text-left">
                         {/* Configure: settings that are optional at create time */}
                         {program.status !== 'CLOSED' && (<>
                         <button
+                          role="menuitem"
+                          tabIndex={-1}
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
-                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Limits'); setActionMenuId(null); }}
+                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Limits'); closeMenu(); }}
                         >
                           <Gauge className="w-4 h-4" />Wallet limits
                         </button>
                         <button
+                          role="menuitem"
+                          tabIndex={-1}
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
-                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Fees'); setActionMenuId(null); }}
+                          onClick={() => { setEditProgram(program); setConfigStep('Wallet Fees'); closeMenu(); }}
                         >
                           <Receipt className="w-4 h-4" />Wallet fees
                         </button>
@@ -465,8 +497,10 @@ const ProgramsPage: React.FC = () => {
                         {/* Status Actions */}
                         {program.status === 'ACTIVE' && (
                           <button
+                          role="menuitem"
+                          tabIndex={-1}
                             className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
-                            onClick={() => { requestStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
+                            onClick={() => { requestStatusChange(program.id, 'SUSPENDED'); closeMenu(); }}
                           >
                             <PauseCircle className="w-4 h-4" />
                             Suspend Program
@@ -474,8 +508,10 @@ const ProgramsPage: React.FC = () => {
                         )}
                         {(program.status === 'SUSPENDED' || program.status === 'INACTIVE') && (
                           <button
+                          role="menuitem"
+                          tabIndex={-1}
                             className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
-                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
+                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); closeMenu(); }}
                           >
                             <PlayCircle className="w-4 h-4" />
                             Activate Program
@@ -483,8 +519,10 @@ const ProgramsPage: React.FC = () => {
                         )}
                         {program.status === 'PENDING_APPROVAL' && (
                           <button
+                          role="menuitem"
+                          tabIndex={-1}
                             className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
-                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
+                            onClick={() => { handleStatusChange(program.id, 'ACTIVE'); closeMenu(); }}
                           >
                             <CheckCircle className="w-4 h-4" />
                             Approve Program
@@ -492,8 +530,10 @@ const ProgramsPage: React.FC = () => {
                         )}
                         {/* Clone Action */}
                         <button
+                          role="menuitem"
+                          tabIndex={-1}
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
-                          onClick={() => { startClone(program); setActionMenuId(null); }}
+                          onClick={() => { startClone(program); closeMenu(); }}
                         >
                           <Copy className="w-4 h-4" />
                           Clone Program
@@ -503,10 +543,12 @@ const ProgramsPage: React.FC = () => {
                         {/* Close Action */}
                         {program.status !== 'CLOSED' && (
                         <button
+                          role="menuitem"
+                          tabIndex={-1}
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
                           onClick={() => {
                             setDeleteTarget(program);
-                            setActionMenuId(null);
+                            closeMenu();
                           }}
                         >
                           <Archive className="w-4 h-4" />

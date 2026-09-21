@@ -54,17 +54,19 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       
       <div className="flex-1 flex items-center gap-2">
         <input type="number" min={0} step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
+          aria-label={`${charge.chargeName}: percentage override`}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
         <span className="caption">%</span>
         <span className="caption">+</span>
         <span className="caption">{currencyCode}</span>
         <input type="number" min={0} step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
+          aria-label={`${charge.chargeName}: fixed amount override (${currencyCode})`}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
       
-      <Checkbox size="sm" label="Waive" checked={isWaived} onChange={onWaiverChange} />
+      <Checkbox size="sm" label="Waive" aria-label={`Waive ${charge.chargeName}`} checked={isWaived} onChange={onWaiverChange} />
       
       <div className="w-16">
         {isWaived ? <Badge variant="warning" size="sm">Waived</Badge> :
@@ -1260,8 +1262,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             {/* Generation Strategy */}
             <div>
-              <label className="field-label block mb-2">Generation Strategy *</label>
-              <div className="grid grid-cols-3 gap-3">
+              <p id="viban-strategy-label" className="field-label block mb-2">Generation Strategy *</p>
+              <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-labelledby="viban-strategy-label">
                 {Object.entries(vibanStrategyConfig).map(([key, config]) => {
                   const StrategyIcon = config.icon;
                   const isSelected = formData.vibanGenerationStrategy === key;
@@ -1269,6 +1271,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     <button
                       key={key}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
                       onClick={() => setFormData({ ...formData, vibanGenerationStrategy: key as VibanGenerationStrategy })}
                       className={cn(
                         'p-4 border rounded-lg text-left transition-all',
@@ -1565,12 +1569,13 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.issuance.chargeName}</span>
-                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.issuance.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: checked } })} className="text-caption" />
+                    <Checkbox size="sm" label="Waive" aria-label={`Waive ${walletCharges.issuance.chargeName}`} checked={chargeOverrides.issuance.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.issuance.waived && 'bg-surface-muted')}
+                      aria-label={`${walletCharges.issuance.chargeName}: amount override (${formData.currencyCode})`}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
@@ -1579,12 +1584,13 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.monthly.chargeName}</span>
-                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.monthly.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: checked } })} className="text-caption" />
+                    <Checkbox size="sm" label="Waive" aria-label={`Waive ${walletCharges.monthly.chargeName}`} checked={chargeOverrides.monthly.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.monthly.waived && 'bg-surface-muted')}
+                      aria-label={`${walletCharges.monthly.chargeName}: amount override (${formData.currencyCode})`}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
@@ -1593,12 +1599,13 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="p-3 bg-surface-page rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-body-sm font-medium">{walletCharges.inactivity.chargeName}</span>
-                    <Checkbox size="sm" label="Waive" checked={chargeOverrides.inactivity.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: checked } })} className="text-caption" />
+                    <Checkbox size="sm" label="Waive" aria-label={`Waive ${walletCharges.inactivity.chargeName}`} checked={chargeOverrides.inactivity.waived} onChange={(checked) => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, waived: checked } })} className="text-caption" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
                     <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
+                      aria-label={`${walletCharges.inactivity.chargeName}: amount override (${formData.currencyCode})`}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />

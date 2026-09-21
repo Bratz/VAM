@@ -189,3 +189,11 @@ caught only because the new activity log said "Changed: bank accounts" on a no-o
 - A "full set" payload is sent only by the screen that shows the set, and is derived at save time
   from the loaded state unless the user actually changed it.
 - Verify no-op saves change nothing (DB diff + audit entries), several times, not once.
+
+## Verify against what the dev server actually serves after scripted multi-writes
+A script that rewrote ProgramFormModal.tsx several times in quick succession left Vite serving an
+intermediate version (the last write was missed by the watcher on Windows); the live check then
+reported the change as absent although the file on disk had it.
+- After scripted edits, confirm the served module (`fetch('/src/...tsx')`) contains the change
+  before trusting a live check; `touch` the file if it doesn't.
+- Prefer one read-modify-write per file per script run.
