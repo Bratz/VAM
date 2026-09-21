@@ -47,6 +47,10 @@ import java.util.stream.Collectors;
 @Transactional
 public class VibanService {
 
+    /** Days a returned pool VIBAN rests before it can be issued to anyone else. */
+    @org.springframework.beans.factory.annotation.Value("${vam.viban.reuse-cooloff-days:30}")
+    private int reuseCooloffDays;
+
     private final VibanRepository vibanRepository;
     private final VibanPoolRepository poolRepository;
     private final VirtualAccountRepository virtualAccountRepository;
@@ -546,10 +550,14 @@ public class VibanService {
             customerName = party.getDisplayName() != null ? party.getDisplayName() : party.getLegalName();
         }
 
-        // Get available VIBAN from pool (RETURNED status indicates available)
-        List<Viban> availableVibans = vibanRepository.findAvailableInPool(poolId);
+        // Get available VIBAN from pool (RETURNED status indicates available),
+        // skipping numbers still inside their reuse cool-off.
+        List<Viban> availableVibans = vibanRepository.findAvailableInPool(poolId,
+            LocalDateTime.now().minusDays(reuseCooloffDays),
+            org.springframework.data.domain.PageRequest.of(0, 1));
         if (availableVibans.isEmpty()) {
-            throw new BusinessException("No available VIBAN in pool");
+            throw new BusinessException("No VIBAN available in pool: every returned number is still inside its "
+                + reuseCooloffDays + "-day reuse cool-off, or the pool is empty");
         }
         Viban viban = availableVibans.get(0);
 

@@ -370,7 +370,12 @@ public class VibanController {
             @PathVariable UUID vaId,
             @RequestBody VibanCreateRequest request) {
         request.setVirtualAccountId(vaId);
-        VibanResponse response = vibanService.createViban(request.getVirtualAccountId(), request);
+        // A VIBAN belongs to its account's program. This used to pass the VA id
+        // as the programId, so every call failed with "Program not found".
+        UUID programId = virtualAccountRepository.findById(vaId)
+            .orElseThrow(() -> new com.bank.vam.exception.ResourceNotFoundException("Virtual account not found: " + vaId))
+            .getProgramId();
+        VibanResponse response = vibanService.createViban(programId, request);
         return ResponseEntity.ok(response);
     }
 

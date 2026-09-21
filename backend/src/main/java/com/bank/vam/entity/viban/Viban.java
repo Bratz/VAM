@@ -500,6 +500,12 @@ public class Viban extends BaseEntity {
      * Return to pool.
      */
     public void returnToPool() {
+        // Stamp when this number stopped being promised to its last payer: the
+        // later of when it was due back and now. A payer may still pay up to the
+        // validity they were given, so the reuse cool-off counts from here --
+        // findAvailableInPool won't hand the number to anyone else until it passes.
+        LocalDateTime now = LocalDateTime.now();
+        this.returnScheduledAt = (returnScheduledAt == null || returnScheduledAt.isBefore(now)) ? now : returnScheduledAt;
         this.status = STATUS_RETURNED;
         this.virtualAccountId = null;
         this.referenceType = null;

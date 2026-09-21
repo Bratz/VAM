@@ -103,8 +103,20 @@ public interface VibanRepository extends JpaRepository<Viban, UUID> {
     /**
      * Find available VIBANs in pool (returned status).
      */
-    @Query("SELECT v FROM Viban v WHERE v.poolId = :poolId AND v.status = 'RETURNED'")
-    List<Viban> findAvailableInPool(@Param("poolId") UUID poolId);
+    /**
+     * Pool stock that may be issued: never-issued numbers first, then the ones
+     * returned longest ago -- and nothing returned after {@code reusableBefore}.
+     *
+     * Without the cool-off a number went straight back into circulation the
+     * minute its TTL ran out, so a late payment from its previous holder was
+     * credited to the next one, and looked like a clean match.
+     */
+    @Query("SELECT v FROM Viban v WHERE v.poolId = :poolId AND v.status = 'RETURNED' " +
+           "AND (v.returnScheduledAt IS NULL OR v.returnScheduledAt <= :reusableBefore) " +
+           "ORDER BY v.returnScheduledAt ASC NULLS FIRST")
+    List<Viban> findAvailableInPool(@Param("poolId") UUID poolId,
+                                    @Param("reusableBefore") LocalDateTime reusableBefore,
+                                    org.springframework.data.domain.Pageable page);
 
     /**
      * Find VIBANs scheduled for return.
@@ -112,7 +124,7 @@ public interface VibanRepository extends JpaRepository<Viban, UUID> {
     @Query("SELECT v FROM Viban v WHERE v.poolId IS NOT NULL " +
            "AND v.returnScheduledAt IS NOT NULL " +
            "AND v.returnScheduledAt <= :now " +
-           "AND v.status = 'ACTIVE'")
+           "AND v.status IN ('ACTIVE', 'EXPIRED')")
     List<Viban> findScheduledForReturn(@Param("now") LocalDateTime now);
 
     /**
@@ -295,16 +307,6 @@ public interface VibanRepository extends JpaRepository<Viban, UUID> {
     @Query("UPDATE Viban v SET v.status = 'EXPIRED' " +
            "WHERE v.status = 'ACTIVE' AND v.validUntil IS NOT NULL AND v.validUntil < :now")
     int markExpired(@Param("now") LocalDateTime now);
-
-    /**
-     * Return to pool.
-     */
-    @Modifying
-    @Query("UPDATE Viban v SET v.status = 'RETURNED', v.virtualAccountId = NULL, " +
-           "v.referenceType = NULL, v.referenceId = NULL, " +
-           "v.customerName = NULL, v.customerReference = NULL, " +
-           "v.timesUsed = 0, v.totalAmountReceived = 0 WHERE v.id = :id")
-    int returnToPool(@Param("id") UUID id);
 
     // ========================================================================
     // Lookup with validation (for ROBO routing)
