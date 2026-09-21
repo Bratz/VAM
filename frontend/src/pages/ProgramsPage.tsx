@@ -473,7 +473,7 @@ const ProgramsPage: React.FC = () => {
                       {/* Backdrop to close menu when clicking outside */}
                       <div className="fixed inset-0 z-10" onClick={closeMenu} onWheel={() => setActionMenuId(null)} />
                       {/* Dropdown Menu */}
-                      <div role="menu" aria-label={`Actions for ${program.programName}`} onKeyDown={onMenuKeyDown} style={menuStyle} className="fixed w-48 bg-surface-cardborder border-edge rounded-lg shadow-lg z-20 py-1 text-left">
+                      <div role="menu" aria-label={`Actions for ${program.programName}`} onKeyDown={onMenuKeyDown} style={menuStyle} className="fixed w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
                         {/* Configure: settings that are optional at create time */}
                         {program.status !== 'CLOSED' && (<>
                         <button
