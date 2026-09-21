@@ -466,7 +466,10 @@ public class ProgramService {
             .programCode(request.getNewProgramCode())
             .programName(request.getNewProgramName())
             .corporateId(request.getTargetCorporateId() != null ? request.getTargetCorporateId() : source.getCorporateId())
-            .physicalAccountId(request.getTargetPhysicalAccountId() != null ? request.getTargetPhysicalAccountId() : source.getPhysicalAccountId())
+            // Not the source's bank account: that one belongs to the source program, so the clone's
+            // accounts on it would be refused and its payments would find no bank account. The
+            // clone picks its own in the program's setup.
+            .physicalAccountId(request.getTargetPhysicalAccountId())
             // Copy all other fields
             .description(source.getDescription())
             .currencyCode(source.getCurrencyCode())

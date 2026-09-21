@@ -59,8 +59,13 @@ class HomeBankShadowTest {
     }
 
     private VirtualAccount shadow(UUID programId, String currency) {
+        return shadowAt("HOMEBANKXXX", programId, currency);
+    }
+
+    private VirtualAccount shadowAt(String bic, UUID programId, String currency) {
         VirtualAccount s = VirtualAccount.builder()
-            .corporateId(corporateId).programId(programId).currencyCode(currency)
+            .corporateId(corporateId).programId(programId).currencyCode(currency).bankSwift(bic)
+            .linkedPhysicalAccountId(UUID.randomUUID())
             .accountCategory(VirtualAccount.AccountCategory.PHYSICAL_MIRROR).bankAccountNumber("PA-X").build();
         s.setId(UUID.randomUUID());
         when(vas.findById(s.getId())).thenReturn(Optional.of(s));
@@ -116,7 +121,28 @@ class HomeBankShadowTest {
         when(vas.findByProgramIdAndAccountCategory(p.getId(), VirtualAccount.AccountCategory.PHYSICAL_MIRROR)).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.setProgramShadows(p, List.of(gbp.getId())))
-            .isInstanceOf(BusinessException.class).hasMessageContaining("GBP");
+            .isInstanceOf(BusinessException.class).hasMessageContaining("home-bank accounts in AED");
+    }
+
+    @Test
+    void savingSetupLeavesAccountsItDoesNotShowAlone() {
+        // A multi-bank program: one home-bank account setup shows, and accounts at other banks
+        // and in other currencies that setup never lists.
+        Program p = program("AED");
+        VirtualAccount home = shadowAt("HOMEBANKXXX", p.getId(), "AED");
+        VirtualAccount otherBank = shadowAt("CITIUS33XXX", p.getId(), "AED");
+        VirtualAccount otherCurrency = shadowAt("HOMEBANKXXX", p.getId(), "USD");
+        p.setPhysicalAccountId(otherBank.getLinkedPhysicalAccountId());
+        when(vas.findByLinkedPhysicalAccountId(otherBank.getLinkedPhysicalAccountId())).thenReturn(Optional.of(otherBank));
+        when(vas.findByProgramIdAndAccountCategory(p.getId(), VirtualAccount.AccountCategory.PHYSICAL_MIRROR))
+            .thenReturn(List.of(home, otherBank, otherCurrency));
+
+        // e.g. a rename with the one listed account still ticked
+        UUID backing = service.setProgramShadows(p, List.of(home.getId()));
+
+        assertThat(otherBank.getProgramId()).isEqualTo(p.getId());
+        assertThat(otherCurrency.getProgramId()).isEqualTo(p.getId());
+        assertThat(backing).isEqualTo(otherBank.getLinkedPhysicalAccountId());   // backing unchanged
     }
 
     @Test

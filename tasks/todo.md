@@ -63,6 +63,11 @@ program sees it as taken; tsc no new errors; backend tests green.
 - Decided: unassigned home-bank cash stays in the corporate headline (real corporate cash, counted
   once), shown as its own "Unassigned" line: `BalanceSummary.unassignedBankBalance`, Cash Position
   dashboard and Balance Hierarchy headline (the latter only when no program filter applies).
+- Follow-up done (review 2): program setup only manages the shadows it shows (home bank, program
+  currency); saving no longer detaches a multi-bank program's other shadows or moves its backing
+  account (verified: Albion save kept Lloyds/Barclays/Citi, Lloyds still backing). Program list
+  loads every page (was capped at 20). A clone starts with no bank account instead of the
+  source program's.
 - Follow-up done: "home bank" is the configured BIC (`vam.home-bank.bic`) everywhere, as the
   dashboard/pooling/sweeps already had it. The shadow feature used `bank_relationship=INTERNAL`,
   which every seeded account carries (28 shadows over 17 banks). Now: auto-shadow, backfill and

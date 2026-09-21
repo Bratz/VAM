@@ -122,14 +122,24 @@ const ProgramsPage: React.FC = () => {
       if (statusFilter !== 'ALL') params.status = statusFilter;
       if (selectedCorporateId) params.corporateId = selectedCorporateId;
       
-      const res = await programApi.getAll(Object.keys(params).length > 0 ? params : undefined);
-      
+      // The API pages (20 by default). The table filters and totals client-side, so it needs
+      // every page; one page only ever showed the first 20 programs.
+      const PAGE_SIZE = 100;
+      const res = await programApi.getAll({ ...params, page: '0', pageSize: String(PAGE_SIZE) });
+
       if (res.success && res.data) {
         // Safe extraction - handles multiple response formats
         const responseData = res.data as any;
-        const programList = responseData.programs || extractArray<Program>(res as any);
+        let programList: Program[] = responseData.programs || extractArray<Program>(res as any) || [];
         const statsData = responseData.stats || null;
-        
+        const total: number = responseData.totalCount ?? programList.length;
+        for (let page = 1; programList.length < total; page++) {
+          const more = await programApi.getAll({ ...params, page: String(page), pageSize: String(PAGE_SIZE) });
+          const items: Program[] = (more.data as any)?.programs ?? [];
+          if (!more.success || items.length === 0) break;
+          programList = programList.concat(items);
+        }
+
         setPrograms(Array.isArray(programList) ? programList : []);
         setStats(statsData);
       } else {

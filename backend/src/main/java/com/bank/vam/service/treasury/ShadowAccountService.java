@@ -324,11 +324,7 @@ public class ShadowAccountService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getHomeBankShadows(UUID corporateId, String currency) {
         List<VirtualAccount> shadows = getShadowAccounts(corporateId).stream()
-            .filter(s -> currency == null || currency.equals(s.getCurrencyCode()))
-            .filter(s -> s.getLinkedPhysicalAccountId() != null)
-            .filter(s -> paRepository.findById(s.getLinkedPhysicalAccountId())
-                .map(this::isAtHomeBank)
-                .orElse(false))
+            .filter(s -> isOffered(s, currency))
             .toList();
         Map<UUID, String> programNames = new HashMap<>();
         programRepository.findAllById(shadows.stream().map(VirtualAccount::getProgramId).filter(Objects::nonNull).toList())
@@ -347,6 +343,17 @@ public class ShadowAccountService {
         }).toList();
     }
 
+    /**
+     * What program setup lists and manages: a shadow of a home-bank account in the program's
+     * currency. A program may hold other shadows (other banks, other currencies, e.g. a
+     * multi-bank treasury program); setup never shows them, so it never touches them either.
+     */
+    private boolean isOffered(VirtualAccount shadow, String currency) {
+        return shadow.getLinkedPhysicalAccountId() != null
+            && homeBank.matches(shadow.getBankSwift())
+            && (currency == null || currency.equals(shadow.getCurrencyCode()));
+    }
+
     /** The bank account behind the first chosen shadow: a program's main backing account. */
     public UUID backingAccountOf(List<UUID> shadowIds, UUID fallback) {
         if (shadowIds == null || shadowIds.isEmpty()) return fallback;
@@ -354,17 +361,41 @@ public class ShadowAccountService {
     }
 
     /**
-     * Make {@code shadowIds} exactly the program's bank-account shadows: new ones go under the
-     * program's hierarchy, dropped ones go back to unassigned. Returns the main backing account.
+     * Make {@code shadowIds} the program's set of the shadows setup offers (home bank, program
+     * currency): new ones go under the program's hierarchy, unticked ones go back to unassigned.
+     * Shadows setup doesn't offer are left exactly as they are. Returns the backing account.
      */
     @Transactional
     public UUID setProgramShadows(Program program, List<UUID> shadowIds) {
-        UUID newBacking = backingAccountOf(shadowIds, null);
+        String currency = program.getCurrencyCode();
+        for (UUID id : shadowIds) {
+            if (!isOffered(getShadowAccount(id), currency)) {
+                throw new BusinessException("Only home-bank accounts in " + currency + " can be picked here");
+            }
+        }
+        UUID newBacking = backingAfter(program, shadowIds);
         for (VirtualAccount current : getShadowAccountsByProgram(program.getId())) {
-            if (!shadowIds.contains(current.getId())) detachFromProgram(current, program, newBacking);
+            if (isOffered(current, currency) && !shadowIds.contains(current.getId())) {
+                detachFromProgram(current, program, newBacking);
+            }
         }
         for (UUID id : shadowIds) {
             attachToProgram(getShadowAccount(id), program);
+        }
+        return newBacking;
+    }
+
+    /**
+     * The backing account after a setup save: kept when setup doesn't manage it (another bank or
+     * currency) or when it is still ticked; otherwise the first ticked account, or none.
+     */
+    private UUID backingAfter(Program program, List<UUID> shadowIds) {
+        UUID current = program.getPhysicalAccountId();
+        if (current != null) {
+            Optional<VirtualAccount> currentShadow = vaRepository.findByLinkedPhysicalAccountId(current);
+            boolean managed = currentShadow.map(s -> isOffered(s, program.getCurrencyCode())).orElse(false);
+            if (!managed) return current;
+            if (shadowIds.contains(currentShadow.get().getId())) return current;
         }
         return backingAccountOf(shadowIds, null);
     }
