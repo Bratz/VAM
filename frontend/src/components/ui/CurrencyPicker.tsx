@@ -47,6 +47,7 @@ const CURRENCY_NAMES: Record<string, string> = {
   CAD: 'Canadian Dollar',
   AUD: 'Australian Dollar',
   SEK: 'Swedish Krona',
+  INR: 'Indian Rupee',
 };
 
 export const CurrencyPicker: React.FC<CurrencyPickerProps> = ({

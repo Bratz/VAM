@@ -16,9 +16,10 @@ interface ProgramDetailModalProps {
   onClose: () => void;
   onEdit: (program: Program) => void;
   onStatusChange: (programId: string, status: string) => void;
+  onClone: (program: Program) => void;
 }
 
-export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onStatusChange }) => {
+export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onClone, onStatusChange }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'hierarchy' | 'viban' | 'wallet' | 'accounts' | 'config' | 'history'>('overview');
   const [detail, setDetail] = useState<ProgramDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -220,7 +221,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                   {program.status === 'ACTIVE' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'SUSPENDED')} leftIcon={<PauseCircle className="w-4 h-4" />}>Suspend</Button>}
                   {program.status === 'SUSPENDED' && <Button variant="outline" size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<PlayCircle className="w-4 h-4" />}>Activate</Button>}
                   {program.status === 'PENDING_APPROVAL' && <Button size="sm" onClick={() => onStatusChange(program.id, 'ACTIVE')} leftIcon={<CheckCircle className="w-4 h-4" />}>Approve</Button>}
-                  <Button variant="outline" size="sm" leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
+                  <Button variant="outline" size="sm" onClick={() => onClone(program)} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
                 </div>
               </div>
             </div>
@@ -476,15 +477,15 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           <div className="pt-3 border-t">
                             <div className="grid grid-cols-3 gap-2 text-center">
                               <div>
-                                <p className="section-title">{vibanPool.totalVibans}</p>
+                                <p className="section-title">{vibanPool.poolSize}</p>
                                 <p className="caption">Total</p>
                               </div>
                               <div>
-                                <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{vibanPool.availableVibans}</p>
+                                <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{vibanPool.availableCount}</p>
                                 <p className="caption">Available</p>
                               </div>
                               <div>
-                                <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.usedVibans}</p>
+                                <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{vibanPool.assignedCount}</p>
                                 <p className="caption">Used</p>
                               </div>
                             </div>
@@ -492,12 +493,12 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                             <div className="mt-3">
                               <div className="flex justify-between caption mb-1">
                                 <span>Pool Usage</span>
-                                <span>{Math.round((vibanPool.usedVibans / vibanPool.totalVibans) * 100)}%</span>
+                                <span>{Math.round((vibanPool.assignedCount / vibanPool.poolSize) * 100)}%</span>
                               </div>
                               <div className="h-2 bg-neutral-200 rounded-full overflow-hidden dark:bg-primary-800">
                                 <div 
                                   className="h-full bg-primary-500 rounded-full transition-all"
-                                  style={{ width: `${(vibanPool.usedVibans / vibanPool.totalVibans) * 100}%` }}
+                                  style={{ width: `${(vibanPool.assignedCount / vibanPool.poolSize) * 100}%` }}
                                 />
                               </div>
                             </div>
@@ -519,7 +520,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                             <div className="text-body-sm text-accent-800 dark:text-accent-300">
                               <p className="font-medium">Pool Capacity</p>
                               <p className="text-accent-700 text-caption mt-1 dark:text-accent-300">
-                                {vibanPool.availableVibans} VIBANs available for new virtual accounts
+                                {vibanPool.availableCount} VIBANs available for new virtual accounts
                               </p>
                             </div>
                           </div>

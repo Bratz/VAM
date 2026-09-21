@@ -220,10 +220,10 @@ export interface VibanPool {
   poolCode: string;
   bankCode: string;
   prefix: string;
-  totalVibans: number;
-  availableVibans: number;
-  usedVibans: number;
-  reservedVibans: number;
+  poolSize: number;
+  availableCount: number;
+  assignedCount: number;
+  reservedCount: number;
   status: string;
 }
 
@@ -238,6 +238,8 @@ export const programApi = {
   update: (id: string, data: Partial<Program>) => fetchApi<Program>('/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   updateStatus: (id: string, status: string, reason?: string) => fetchApi<Program>('/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status, reason }) }),
   delete: (id: string) => fetchApi<void>('/' + id, { method: 'DELETE' }),
+  clone: (id: string, newProgramCode: string, newProgramName: string) =>
+    fetchApi<Program>('/' + id + '/clone', { method: 'POST', body: JSON.stringify({ newProgramCode, newProgramName }) }),
 };
 
 // NEW: Treasury API for Settlement VAs

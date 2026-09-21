@@ -513,6 +513,9 @@ public class ProgramService {
         cloned = programRepository.save(cloned);
         log.info("Program cloned successfully: {} -> {}", programId, cloned.getId());
 
+        // Every program has a hierarchy; the root node itself is never copied.
+        hierarchyService.bootstrap(cloned);
+
         return toProgramResponse(cloned);
     }
 

@@ -109,7 +109,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [corporates, setCorporates] = useState<Array<{ id: string; legalName: string }>>([]);
-  const [physicalAccounts, setPhysicalAccounts] = useState<Array<{ id: string; accountNumber: string; bankName: string; currencyCode: string }>>([]);
+  const [physicalAccounts, setPhysicalAccounts] = useState<Array<{ id: string; accountNumber: string; bankName: string; currency: string }>>([]);
   const [vibanPools, setVibanPools] = useState<VibanPool[]>([]);
   const [loadingCorporates, setLoadingCorporates] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -249,14 +249,17 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         })
         .catch(console.error)
         .finally(() => setLoadingAccounts(false));
+    } else {
+      setPhysicalAccounts([]);
     }
   }, [formData.corporateId, program]);
 
   // Fetch VIBAN pools when VIBAN is enabled
   useEffect(() => {
-    if (formData.configureViban) {
+    // A pool belongs to one program, so a program being created has none to pick from yet.
+    if (formData.configureViban && program) {
       setLoadingPools(true);
-      fetch(program ? `/api/v1/programs/${program.id}/viban-pools` : '/api/v1/viban-pools')
+      fetch(`/api/v1/programs/${program.id}/viban-pools`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -715,7 +718,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <label className="field-label block mb-1">Currency *</label>
                 <CurrencyPicker
                   value={formData.currencyCode}
-                  onChange={(c) => setFormData({ ...formData, currencyCode: c })}
+                  onChange={(c) => setFormData({ ...formData, currencyCode: c, physicalAccountId: '' })}
                   disabled={isEdit}
                   withName
                   extra={['SAR', 'INR']}
@@ -760,8 +763,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <option value="">
                     {!formData.corporateId ? 'Select corporate first...' : loadingAccounts ? 'Loading...' : 'None (VA hierarchy only)'}
                   </option>
-                  {physicalAccounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.accountNumber} - {a.bankName} ({a.currencyCode})</option>
+                  {physicalAccounts.filter(a => a.currency === formData.currencyCode).map(a => (
+                    <option key={a.id} value={a.id}>{a.accountNumber} - {a.bankName} ({a.currency})</option>
                   ))}
                 </select>
                 <p className="caption mt-1">Physical account provides liquidity backing. Not required for hierarchy-only programs.</p>
@@ -1229,12 +1232,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                 value={formData.defaultVibanPoolId}
                 onChange={e => setFormData({ ...formData, defaultVibanPoolId: e.target.value })}
-                disabled={loadingPools}
+                disabled={!program || loadingPools}
               >
-                <option value="">{loadingPools ? 'Loading pools...' : 'Select VIBAN Pool (optional)...'}</option>
+                <option value="">{!program ? 'Available after the program is created' : loadingPools ? 'Loading pools...' : vibanPools.length ? 'Select VIBAN Pool (optional)...' : 'No pools for this program yet'}</option>
                 {vibanPools.map(pool => (
                   <option key={pool.id} value={pool.id}>
-                    {pool.poolName} ({pool.availableVibans} available)
+                    {pool.poolName} ({pool.availableCount} available)
                   </option>
                 ))}
               </select>
@@ -1242,15 +1245,15 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="mt-2 p-3 bg-surface-page rounded-lg">
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <p className="section-title">{selectedPool.totalVibans}</p>
+                      <p className="section-title">{selectedPool.poolSize}</p>
                       <p className="caption">Total</p>
                     </div>
                     <div>
-                      <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{selectedPool.availableVibans}</p>
+                      <p className="text-body-lg font-semibold text-success-600 dark:text-success-300">{selectedPool.availableCount}</p>
                       <p className="caption">Available</p>
                     </div>
                     <div>
-                      <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{selectedPool.usedVibans}</p>
+                      <p className="text-body-lg font-semibold text-warning-600 dark:text-warning-300">{selectedPool.assignedCount}</p>
                       <p className="caption">Used</p>
                     </div>
                   </div>

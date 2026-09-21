@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
@@ -34,6 +34,38 @@ const ProgramsPage: React.FC = () => {
   const [_error, setError] = useState<string | null>(null);
   // Action menu state
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  // The table scrolls horizontally, which clips an absolutely-placed menu, so the
+  // menu is fixed to the viewport at the button's position (flipped up near the bottom).
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const openMenu = (id: string, e: React.MouseEvent<HTMLElement>) => {
+    if (actionMenuId === id) { setActionMenuId(null); return; }
+    const b = e.currentTarget.getBoundingClientRect();
+    const up = window.innerHeight - b.bottom < 260;
+    setMenuStyle({ right: window.innerWidth - b.right, ...(up ? { bottom: window.innerHeight - b.top + 4 } : { top: b.bottom + 4 }) });
+    setActionMenuId(id);
+  };
+  const [cloneSource, setCloneSource] = useState<Program | null>(null);
+  const [cloneCode, setCloneCode] = useState('');
+  const [cloneName, setCloneName] = useState('');
+  const [cloning, setCloning] = useState(false);
+  const startClone = (p: Program) => {
+    setCloneSource(p);
+    setCloneCode(p.programCode + '-COPY');
+    setCloneName(p.programName + ' (Copy)');
+  };
+  const confirmClone = async () => {
+    if (!cloneSource) return;
+    setCloning(true);
+    const res = await programApi.clone(cloneSource.id, cloneCode.trim(), cloneName.trim());
+    setCloning(false);
+    if (res.success) {
+      setPrograms(prev => [res.data, ...prev]);
+      toast.success(`Cloned as ${res.data.programName} (pending approval)`);
+      setCloneSource(null);
+    } else {
+      toast.error('Failed to clone program: ' + (res.message || 'Unknown error'));
+    }
+  };
   const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
   const [deleting, setDeleting] = useState(false);
   const confirmDelete = async () => {
@@ -72,12 +104,20 @@ const ProgramsPage: React.FC = () => {
       .finally(() => setCorporatesLoading(false));
   }, []);
 
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(id);
+  }, [searchQuery]);
+  // Full-page spinner only before the first load; later loads keep the page (and the search box) mounted.
+  const hasLoaded = useRef(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params: Record<string, string> = {};
-      if (searchQuery) params.query = searchQuery;
+      if (debouncedSearch) params.query = debouncedSearch;
       // VIBAN is a feature any program type can enable, so that tile filters on the flag client-side.
       if (statusFilter !== 'ALL') params.status = statusFilter;
       if (selectedCorporateId) params.corporateId = selectedCorporateId;
@@ -106,9 +146,10 @@ const ProgramsPage: React.FC = () => {
       setPrograms([]);
       setStats(null);
     } finally {
+      hasLoaded.current = true;
       setLoading(false);
     }
-  }, [searchQuery, statusFilter, selectedCorporateId]);
+  }, [debouncedSearch, statusFilter, selectedCorporateId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -160,6 +201,20 @@ const ProgramsPage: React.FC = () => {
     return savedProgram;
   };
 
+  const handleExport = () => {
+    const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [
+      ['Code', 'Name', 'Corporate', 'Currency', 'Virtual accounts', 'Active virtual accounts', 'Balance', 'Status'],
+      ...filteredPrograms.map(p => [p.programCode, p.programName, p.corporateName, p.currencyCode, p.virtualAccountCount ?? 0,
+        p.activeVirtualAccountCount ?? 0, p.totalBalance ?? 0, statusConfig[p.status]?.label ?? p.status]),
+    ].map(row => row.map(cell).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    link.download = `programs-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const handleStatusChange = async (programId: string, status: string) => {
     const res = await programApi.updateStatus(programId, status);
     if (res.success) {
@@ -198,20 +253,21 @@ const ProgramsPage: React.FC = () => {
     0,
   );
 
-  const filteredPrograms = programs.filter(p => {
+  // Memoised: the header toolbar depends on it, and a new array every render loops the header update.
+  const filteredPrograms = React.useMemo(() => programs.filter(p => {
     if (!p) return false;
     const matchesSearch = !searchQuery || 
       (p.programName?.toLowerCase().includes(searchQuery.toLowerCase())) || 
       (p.programCode?.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesSearch && (statusFilter === 'ALL' || p.status === statusFilter);
-  });
+  }), [programs, searchQuery, statusFilter]);
 
   // Toolbar actions in the Aperture Layout header — same pattern as the
   // rest of Aperture's conformed pages (removes the floating in-page row).
   usePageHeaderActions(
     () => (
       <>
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
+        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={filteredPrograms.length === 0}>
           <span className="hidden sm:inline">Export</span>
         </Button>
         <Button variant="outline" leftIcon={<RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />} onClick={loadData} disabled={loading}>
@@ -222,11 +278,11 @@ const ProgramsPage: React.FC = () => {
         </Button>
       </>
     ),
-    [loadData, loading]
+    [loadData, loading, filteredPrograms]
   );
 
   // Show loading only on initial load, not on filter changes
-  if (loading && programs.length === 0 && !corporatesLoading) {
+  if (!hasLoaded.current) {
     return (
       <div className="flex items-center justify-center h-96">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600 dark:text-primary-200" />
@@ -278,7 +334,7 @@ const ProgramsPage: React.FC = () => {
           </div>
           <div className="w-48 shrink-0">
             <Select selectSize="sm" aria-label="Status" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ProgramStatus | 'ALL')}>
-              <option value="ALL">All Statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="SUSPENDED">Suspended</option><option value="PENDING_APPROVAL">Pending</option>
+              <option value="ALL">All Statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="SUSPENDED">Suspended</option><option value="PENDING_APPROVAL">Pending</option><option value="CLOSED">Closed</option>
             </Select>
           </div>
         </div>
@@ -328,7 +384,7 @@ const ProgramsPage: React.FC = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setActionMenuId(actionMenuId === program.id ? null : program.id)}
+                    onClick={e => openMenu(program.id, e)}
                     title="More Actions"
                   >
                     <MoreHorizontal className="w-4 h-4" />
@@ -336,9 +392,9 @@ const ProgramsPage: React.FC = () => {
                   {actionMenuId === program.id && (
                     <>
                       {/* Backdrop to close menu when clicking outside */}
-                      <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} />
+                      <div className="fixed inset-0 z-10" onClick={() => setActionMenuId(null)} onWheel={() => setActionMenuId(null)} />
                       {/* Dropdown Menu */}
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
+                      <div style={menuStyle} className="fixed w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
                         {/* Configure: settings that are optional at create time */}
                         <button
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
@@ -384,11 +440,7 @@ const ProgramsPage: React.FC = () => {
                         {/* Clone Action */}
                         <button
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-neutral-700 dark:hover:bg-primary-800/50 dark:text-neutral-200"
-                          onClick={() => {
-                            // Clone by opening create modal with program data pre-filled
-                            setEditProgram({ ...program, id: '', programCode: program.programCode + '-COPY', programName: program.programName + ' (Copy)' } as Program);
-                            setActionMenuId(null);
-                          }}
+                          onClick={() => { startClone(program); setActionMenuId(null); }}
                         >
                           <Copy className="w-4 h-4" />
                           Clone Program
@@ -459,7 +511,27 @@ const ProgramsPage: React.FC = () => {
           <span className="body-strong">{deleteTarget?.programName}</span> will be deleted. This action cannot be undone.
         </p>
       </Modal>
-      <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onStatusChange={handleStatusChange} />
+      <Modal
+        isOpen={!!cloneSource}
+        onClose={() => setCloneSource(null)}
+        size="sm"
+        title="Clone program"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setCloneSource(null)} disabled={cloning}>Cancel</Button>
+            <Button onClick={confirmClone} loading={cloning} disabled={!cloneCode.trim() || !cloneName.trim()} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="body-sm">
+            Copies the settings of <span className="body-strong">{cloneSource?.programName}</span>. Accounts and balances are not copied; the new program starts pending approval.
+          </p>
+          <Input label="Program code" value={cloneCode} onChange={e => setCloneCode(e.target.value)} />
+          <Input label="Program name" value={cloneName} onChange={e => setCloneName(e.target.value)} />
+        </div>
+      </Modal>
+      <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onClone={p => { setSelectedProgram(null); startClone(p); }} onStatusChange={handleStatusChange} />
       <ProgramFormModal
         isOpen={showCreateModal || !!editProgram}
         program={editProgram}
