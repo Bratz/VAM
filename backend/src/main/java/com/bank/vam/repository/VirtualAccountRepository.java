@@ -582,8 +582,6 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT va FROM VirtualAccount va WHERE va.corporateId = :corporateId AND va.accountCategory = 'PHYSICAL_MIRROR' AND va.currencyCode = :currency")
     List<VirtualAccount> findShadowAccountsByCurrency(@Param("corporateId") UUID corporateId, @Param("currency") String currency);
     
-    @Query("SELECT v FROM VirtualAccount v WHERE v.corporateId = :corporateId AND v.accountCategory = 'PHYSICAL_MIRROR' AND v.status = 'ACTIVE'")
-    List<VirtualAccount> findShadowAccountsByCorporate(@Param("corporateId") UUID corporateId);
     
     @Query("SELECT COALESCE(SUM(va.bankBalance), 0) FROM VirtualAccount va WHERE va.corporateId = :corporateId AND va.accountCategory = 'PHYSICAL_MIRROR' AND va.status = 'ACTIVE'")
     BigDecimal sumShadowBankBalances(@Param("corporateId") UUID corporateId);

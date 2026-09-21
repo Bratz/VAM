@@ -746,7 +746,7 @@ public class TransactionService {
             request.getFromVaId(), totalDebit, fromVa.getCurrencyCode());
 
         // Find Shadow VA (for info)
-        VirtualAccount shadowVa = findShadowVa(fromVa);
+        VirtualAccount shadowVa = findProgramShadow(fromVa);
         boolean shadowAvailable = shadowVa != null;
 
         return TransactionDto.PaymentPreviewResponse.builder()
@@ -765,7 +765,7 @@ public class TransactionService {
             .fundsAvailable(fundsCheck.isApproved())
             .shadowVaAvailable(shadowAvailable)
             .validationMessage(fundsCheck.isApproved() ?
-                (shadowAvailable ? null : "No Shadow VA available for CBS payment") :
+                (shadowAvailable ? null : noBankAccountMessage(fromVa)) :
                 fundsCheck.getRejectionReason())
             .build();
     }
@@ -775,16 +775,6 @@ public class TransactionService {
         return shadow.getStatus() == VaStatus.ACTIVE && shadow.getProgramId() != null;
     }
 
-    /**
-     * Find Shadow VA for outbound payments.
-     */
-    private VirtualAccount findShadowVa(VirtualAccount sourceVa) {
-        // Try to find Shadow VA for the same program/currency
-        return virtualAccountRepository.findShadowAccountsByCurrency(
-                sourceVa.getCorporateId(), sourceVa.getCurrencyCode()).stream()
-            .filter(this::isPostableShadow)
-            .findFirst().orElse(null);
-    }
 
     // ========================================================================
     // OUTBOUND PAYMENT - VA to External via Shadow VA
@@ -847,10 +837,6 @@ public class TransactionService {
 
         // Resolve Shadow VA
         VirtualAccount shadowVa = resolveShadowVa(fromVa);
-        if (shadowVa == null) {
-            throw new BusinessException("No Shadow VA found for outbound payment. " +
-                "Shadow VA (PHYSICAL_MIRROR) is required to link to Physical Account for CBS settlement.");
-        }
 
         log.info("Payment routing: {} → {} → {} → CBS",
             fromVa.getVaNumber(), settlementVa.getVaNumber(), shadowVa.getVaNumber());
@@ -1033,10 +1019,6 @@ public class TransactionService {
 
         // Resolve Shadow VA from payer's hierarchy
         VirtualAccount shadowVa = resolveShadowVa(payerVa);
-        if (shadowVa == null) {
-            throw new BusinessException("No Shadow VA found for POBO payer. " +
-                "Shadow VA is required for Treasury Center to make external payments.");
-        }
 
         String correlationId = generateCorrelationId("POBO");
         LocalDate valueDate = request.getValueDate() != null ? request.getValueDate() : LocalDate.now();
@@ -1312,10 +1294,6 @@ public class TransactionService {
 
         // Resolve Shadow VA from treasury's hierarchy
         VirtualAccount shadowVa = resolveShadowVa(treasurySettlementVa);
-        if (shadowVa == null) {
-            throw new BusinessException("No Shadow VA found for Treasury POBO. " +
-                "Shadow VA is required for Treasury Center to make external payments.");
-        }
 
         String correlationId = generateCorrelationId("IHBPOBO");
         LocalDate valueDate = request.getValueDate() != null ? request.getValueDate() : LocalDate.now();
@@ -1630,10 +1608,6 @@ public class TransactionService {
             legalEntityRepository.findById(ownerVa.getOwningEntityId()).orElse(null) : null;
 
         VirtualAccount shadowVa = resolveShadowVa(treasurySettlementVa);
-        if (shadowVa == null) {
-            throw new BusinessException("No Shadow VA found for Treasury COBO. " +
-                "Shadow VA is required for Treasury Center to receive external collections.");
-        }
 
         String correlationId = generateCorrelationId("IHBCOBO");
         String behalfOfEntity = ownerEntity != null ? ownerEntity.getEntityCode() : ownerVa.getVaNumber();
@@ -2285,10 +2259,6 @@ public class TransactionService {
 
         // 2. Resolve Shadow VA (CBS entry point)
         VirtualAccount shadowVa = resolveShadowVa(targetVa);
-        if (shadowVa == null) {
-            throw new BusinessException("No Shadow VA found for inbound collection. " +
-                "Shadow VA (PHYSICAL_MIRROR) is required to link to Physical Account for CBS receipts.");
-        }
 
         // 3. Resolve Settlement VA (clearing house) with proper exception handling (v5.2.0)
         SettlementVaResolverService.SettlementVaResolutionResult settlementResolution =
@@ -2518,71 +2488,48 @@ public class TransactionService {
     // ========================================================================
 
     /**
-     * Resolve Shadow VA for outbound payments.
-     * 
-     * Resolution strategy (priority order):
-     * 1. Same Physical Account - Shadow VA linked to source VA's physical account
-     * 2. Same Currency Corporate - Shadow VA at corporate level for this currency
-     * 3. Any Currency Match - Shadow VA in the hierarchy with matching currency
+     * The bank account (shadow) a payment or collection on {@code sourceVa} settles through.
+     * Always one of the source account's own program's bank accounts in its currency:
+     * 1. the bank account the source account is booked on;
+     * 2. otherwise the program's main backing account, then its other bank accounts.
+     * Never another program's account or another currency: those used to be fallbacks here,
+     * and moved real cash through a bank account the program does not own.
      */
     private VirtualAccount resolveShadowVa(VirtualAccount sourceVa) {
-        try {
-            // Strategy 1: Same Physical Account link
-            if (sourceVa.getPhysicalAccountId() != null) {
-                Optional<VirtualAccount> shadowVa = virtualAccountRepository
-                    .findByLinkedPhysicalAccountIdAndAccountCategory(
-                        sourceVa.getPhysicalAccountId(), AccountCategory.PHYSICAL_MIRROR);
-                if (shadowVa.isPresent() && isPostableShadow(shadowVa.get())) {
-                    log.debug("Resolved Shadow VA by physical account link: {}", shadowVa.get().getVaNumber());
-                    return shadowVa.get();
-                }
-            }
-            
-            // Strategy 2: Same Currency at Corporate level
-            List<VirtualAccount> corporateShadows = virtualAccountRepository
-                .findShadowAccountsByCurrency(sourceVa.getCorporateId(), sourceVa.getCurrencyCode());
-            
-            Optional<VirtualAccount> activeShadow = corporateShadows.stream()
-                .filter(this::isPostableShadow)
-                .findFirst();
-            if (activeShadow.isPresent()) {
-                log.debug("Resolved Shadow VA by corporate currency: {}", activeShadow.get().getVaNumber());
-                return activeShadow.get();
-            }
-            
-            // Strategy 3: Any Shadow VA in corporate hierarchy
-            List<VirtualAccount> allShadows = virtualAccountRepository
-                .findShadowAccountsByCorporate(sourceVa.getCorporateId());
-            
-            Optional<VirtualAccount> matchingCurrency = allShadows.stream()
-                .filter(va -> sourceVa.getCurrencyCode().equals(va.getCurrencyCode()))
-                .filter(this::isPostableShadow)
-                .findFirst();
-            
-            if (matchingCurrency.isPresent()) {
-                log.debug("Resolved Shadow VA by currency match: {}", matchingCurrency.get().getVaNumber());
-                return matchingCurrency.get();
-            }
-            
-            // Fallback to any active shadow
-            Optional<VirtualAccount> anyShadow = allShadows.stream()
-                .filter(this::isPostableShadow)
-                .findFirst();
-            
-            if (anyShadow.isPresent()) {
-                log.warn("Using Shadow VA with different currency: {} (source: {}, shadow: {})", 
-                    anyShadow.get().getVaNumber(), sourceVa.getCurrencyCode(), anyShadow.get().getCurrencyCode());
-                return anyShadow.get();
-            }
-            
-            log.warn("No Shadow VA found for corporate: {}, currency: {}",
-                sourceVa.getCorporateId(), sourceVa.getCurrencyCode());
+        VirtualAccount shadow = findProgramShadow(sourceVa);
+        if (shadow == null) throw new BusinessException(noBankAccountMessage(sourceVa));
+        return shadow;
+    }
 
-        } catch (Exception e) {
-            log.error("Failed to resolve Shadow VA: {}", e.getMessage(), e);
+    /** {@link #resolveShadowVa} without the failure: null when the program has no such bank account. */
+    private VirtualAccount findProgramShadow(VirtualAccount sourceVa) {
+        UUID programId = sourceVa.getProgramId();
+        if (programId == null) return null;
+        if (sourceVa.getPhysicalAccountId() != null) {
+            Optional<VirtualAccount> booked = virtualAccountRepository.findByLinkedPhysicalAccountIdAndAccountCategory(
+                sourceVa.getPhysicalAccountId(), AccountCategory.PHYSICAL_MIRROR);
+            if (booked.isPresent() && isSettlementShadowFor(booked.get(), sourceVa)) return booked.get();
         }
+        // The program's ROOT carries its main backing account.
+        UUID backing = virtualAccountRepository.findByProgramIdAndAccountCategory(programId, AccountCategory.ROOT)
+            .stream().map(VirtualAccount::getPhysicalAccountId).filter(Objects::nonNull).findFirst().orElse(null);
+        return virtualAccountRepository.findByProgramIdAndAccountCategory(programId, AccountCategory.PHYSICAL_MIRROR)
+            .stream()
+            .filter(s -> isSettlementShadowFor(s, sourceVa))
+            .min(Comparator.comparing((VirtualAccount s) -> !Objects.equals(s.getLinkedPhysicalAccountId(), backing))
+                .thenComparing(VirtualAccount::getVaNumber))
+            .orElse(null);
+    }
 
-        return null;
+    private boolean isSettlementShadowFor(VirtualAccount shadow, VirtualAccount sourceVa) {
+        return isPostableShadow(shadow)
+            && Objects.equals(shadow.getProgramId(), sourceVa.getProgramId())
+            && Objects.equals(shadow.getCurrencyCode(), sourceVa.getCurrencyCode());
+    }
+
+    private String noBankAccountMessage(VirtualAccount sourceVa) {
+        return "Account " + sourceVa.getVaNumber() + " has no " + sourceVa.getCurrencyCode()
+            + " bank account in its program to settle through; add one in the program's setup";
     }
 
     // ========================================================================

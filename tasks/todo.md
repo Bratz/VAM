@@ -61,8 +61,10 @@ program sees it as taken; tsc no new errors; backend tests green.
   backing + scaffolding cleared; Bank Accounts page shows Unassigned / In program; Sync All 200.
   Backend 209 tests, only the known ReceivablesServiceTest error; tsc 327 = baseline.
 - Open: unassigned home-bank cash now counts in the corporate headline of balance-structure
-  (real corporate cash, counted once); `resolveShadowVa` can still pick another program's shadow
-  (pre-existing, not changed here).
+  (real corporate cash, counted once).
+- Follow-up done: `resolveShadowVa` settles only through the source account's own program's bank
+  accounts in its currency (booked account, then the program's backing account); the cross-program
+  and cross-currency fallbacks are gone, preview uses the same lookup, `ShadowRoutingTest` covers it.
 
 ## 🚧 Cash-Forecasting module — Sprint 1 / T2 (entities + repos)
 Domain mapping only — no business logic. Depends on **T1** (V13 migration) which
