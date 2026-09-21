@@ -92,7 +92,6 @@ interface Program {
   id: string;
   programCode: string;
   programName: string;
-  vibanEnabled?: boolean;
   status?: string;
   corporateId?: string;
 }
@@ -1292,7 +1291,7 @@ const PoolForm: React.FC<{
   // Ensure programs is always an array before filtering - triple safety
   const safePrograms = programs || [];
   const programsArray = Array.isArray(safePrograms) ? safePrograms : [];
-  const vibanEnabledPrograms = programsArray.filter(p => p && p.vibanEnabled !== false);
+  const vibanPrograms = programsArray.filter(p => !!p); // every program can issue VIBANs
 
   return (
     <form onSubmit={e => { e.preventDefault(); onSubmit(formData); }} className="space-y-6">
@@ -1301,7 +1300,7 @@ const PoolForm: React.FC<{
         <div className="grid grid-cols-2 gap-4">
           <div><label className="field-label block mb-1">Program *</label>
             <select value={formData.programId} onChange={e => setFormData(p => ({ ...p, programId: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-body-sm" required disabled={!!pool}>
-              <option value="">Select Program</option>{vibanEnabledPrograms.map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
+              <option value="">Select Program</option>{vibanPrograms.map(p => <option key={p.id} value={p.id}>{p.programName} ({p.programCode})</option>)}
             </select></div>
           <div><label className="field-label block mb-1">Pool Code *</label>
             <Input value={formData.poolCode} onChange={e => setFormData(p => ({ ...p, poolCode: e.target.value.toUpperCase() }))} placeholder="ECOM-POOL" required disabled={!!pool} /></div>

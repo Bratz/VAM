@@ -44,11 +44,8 @@ interface Program {
   currencyCode: string;
   status: string;
   // Feature flags: what the program can do, which is what decides the templates.
-  vibanEnabled?: boolean;
-  walletEnabled?: boolean;
   escrowEnabled?: boolean;
   ihbEnabled?: boolean;
-  hierarchyEnabled?: boolean;
   loyaltyEnabled?: boolean;
   giftCardEnabled?: boolean;
   corporateCardEnabled?: boolean;

@@ -75,7 +75,6 @@ public class SettlementVaController {
         String currencyCode = program.getCurrencyCode();
         
         // Check multiple conditions for initialization
-        boolean hasHierarchyEnabled = Boolean.TRUE.equals(program.getHierarchyEnabled());
         boolean hasRootNode = program.getRootHierarchyNodeId() != null;
         
         // Check for level configs
@@ -87,10 +86,10 @@ public class SettlementVaController {
         boolean hasExceptionVa = programVas.stream()
             .anyMatch(va -> va.getSpecialType() == VaSpecialType.EXCEPTION);
         
-        hierarchyInitialized = hasHierarchyEnabled && (hasRootNode || hasLevelConfigs || hasExceptionVa);
+        hierarchyInitialized = hasRootNode || hasLevelConfigs || hasExceptionVa;
         
-        log.info("Program {} hierarchy status: enabled={}, rootNode={}, levelConfigs={}, exceptionVa={}, initialized={}",
-            programId, hasHierarchyEnabled, hasRootNode, hasLevelConfigs, hasExceptionVa, hierarchyInitialized);
+        log.info("Program {} hierarchy status: rootNode={}, levelConfigs={}, exceptionVa={}, initialized={}",
+            programId, hasRootNode, hasLevelConfigs, hasExceptionVa, hierarchyInitialized);
         
         List<SettlementVaResponse> settlementVas = programVas.stream()
             .filter(va -> va.getSpecialType() == VaSpecialType.SETTLEMENT)

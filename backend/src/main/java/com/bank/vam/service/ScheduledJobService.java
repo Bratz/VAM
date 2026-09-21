@@ -40,6 +40,8 @@ public class ScheduledJobService {
     private final IhbUnifiedService ihbUnifiedService;
     private final LegalEntityRepository legalEntityRepository;
     private final VirtualAccountService virtualAccountService;
+    private final com.bank.vam.repository.ProgramRepository programRepository;
+    private final com.bank.vam.service.hierarchy.HierarchyService hierarchyService;
 
     /**
      * Execute REAL_TIME-frequency sweeps every 5 minutes.
@@ -179,6 +181,30 @@ public class ScheduledJobService {
                     response.getFundedCount(), response.getSkippedCount(), response.getTotalFunded());
         } catch (Exception e) {
             log.error("Deficit funding failed", e);
+        }
+    }
+
+    /**
+     * Give every program that still lacks a hierarchy its root, once.
+     *
+     * Program creation now always bootstraps a tree, but programs created before
+     * that -- with hierarchyEnabled off, through the wallet route, or where the old
+     * bootstrap failed silently -- have no root, and a program without one cannot
+     * take a parent-node account. Each program is its own transaction, so one
+     * failure is logged and the rest still run.
+     *
+     * ponytail: runs on every startup; after the first successful pass the query
+     * returns nothing. Move to a migration-style one-shot if startup cost matters.
+     */
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void bootstrapMissingHierarchies() {
+        for (var program : programRepository.findByRootHierarchyNodeIdIsNull()) {
+            try {
+                hierarchyService.bootstrap(program);
+                log.info("Bootstrapped hierarchy for existing program {}", program.getProgramCode());
+            } catch (Exception e) {
+                log.error("Could not bootstrap hierarchy for program {}: {}", program.getProgramCode(), e.getMessage());
+            }
         }
     }
 

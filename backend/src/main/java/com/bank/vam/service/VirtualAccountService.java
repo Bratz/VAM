@@ -767,10 +767,6 @@ public class VirtualAccountService {
                                                Map<String, String> hierarchyDimensions) {
         Program program = programRepository.findById(request.getProgramId())
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + request.getProgramId()));
-
-        if (!Boolean.TRUE.equals(program.getHierarchyEnabled())) {
-            throw new BusinessException("Hierarchy not enabled for program. Enable hierarchy first.");
-        }
         List<HierarchyLevelConfig> levelConfigs =
             hierarchyLevelConfigRepository.findByProgramIdOrderByLevelNumberAsc(program.getId());
         if (levelConfigs.isEmpty()) {
@@ -822,11 +818,6 @@ public class VirtualAccountService {
 
         Program program = programRepository.findById(request.getProgramId())
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + request.getProgramId()));
-
-        // Validate hierarchy is enabled
-        if (!Boolean.TRUE.equals(program.getHierarchyEnabled())) {
-            throw new BusinessException("Hierarchy not enabled for program. Enable hierarchy first.");
-        }
 
         // Get level configurations for the program
         List<HierarchyLevelConfig> levelConfigs = 

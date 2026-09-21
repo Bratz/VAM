@@ -324,11 +324,6 @@ public class ProgramChargeOverrideService {
         Program program = programRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
 
-        if (!program.isWalletProgram()) {
-            log.debug("Program {} is not a wallet program, skipping fee migration", program.getProgramCode());
-            return;
-        }
-
         // Migrate topup fee
         if (hasValue(program.getTopupFeePercent()) || hasValue(program.getTopupFeeFlat())) {
             upsertOverride(programId, WALLET_TOPUP, 

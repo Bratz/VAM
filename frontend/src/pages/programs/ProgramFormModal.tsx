@@ -1,6 +1,6 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
-import { Percent, Plus, Building2, CreditCard, Wallet, Shield, CheckCircle, Clock, ChevronRight, Loader2, X, TrendingUp, Hash, GitBranch, Zap, Gift, Smartphone, Info, Settings } from 'lucide-react';
+import { Percent, Plus, Building2, CreditCard, Wallet, Shield, CheckCircle, Clock, ChevronRight, Loader2, X, TrendingUp, Hash, GitBranch, Gift, Smartphone, Info, Settings } from 'lucide-react';
 import { Badge, Button, StatusIconBadge, Checkbox } from '../../components/ui';
 import { CurrencyPicker } from '../../components/ui/CurrencyPicker';
 import { Modal, Alert } from '../../components/ui/enhanced';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency, cn } from '../../utils';
 import { getTemplatesForFeatures, getOtherTemplates, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
 
-import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig, featureConfig, settlementFrequencyConfig, FeatureFlags } from './shared';
+import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig, featureConfig, FeatureFlags } from './shared';
 
 // ============================================================================
 // CHARGE CONFIGURATION ROW COMPONENT
@@ -121,18 +121,17 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     physicalAccountId: '',
     currencyCode: 'AED',
     // Step 2: Core Features
-    vibanEnabled: false,
-    walletEnabled: false,
+    configureViban: false,
+    configureWallet: false,
     escrowEnabled: false,
     ihbEnabled: false,
-    autoReconciliation: true,
-    hierarchyEnabled: false,
+    configureHierarchy: false,
     // Step 2: Extended Program Features
     loyaltyEnabled: false,
     giftCardEnabled: false,
     corporateCardEnabled: false,
     mobileMoneyEnabled: false,
-    // Step 3: Hierarchy Config (when hierarchyEnabled)
+    // Step 3: Hierarchy Config (when configureHierarchy)
     hierarchyDepth: 7,
     defaultHierarchyTemplate: '' as string,
     // Step 4: VIBAN Pool Config
@@ -140,7 +139,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     vibanGenerationStrategy: 'SEQUENTIAL' as VibanGenerationStrategy,
     vibanPrefix: '',
     vibanBankCode: '',
-    // Step 5: Wallet Limits (when walletEnabled)
+    // Step 5: Wallet Limits (when configureWallet)
     defaultPerTransactionLimit: undefined as number | undefined,
     defaultDailyLimit: undefined as number | undefined,
     defaultWeeklyLimit: undefined as number | undefined,
@@ -151,32 +150,21 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     maxTopup: undefined as number | undefined,
     defaultDailyTopupLimit: undefined as number | undefined,
     defaultMonthlyTopupLimit: undefined as number | undefined,
-    minWithdrawal: undefined as number | undefined,
-    maxWithdrawal: undefined as number | undefined,
     // Wallet KYC
     kycRequired: false,
     autoKyc: false,
     minKycLevel: 0,
-    kycValidityDays: undefined as number | undefined,
     // Wallet Features
     allowTopup: true,
     allowWithdrawal: true,
     allowTransfer: true,
-    allowPayment: true,
-    allowBulkOperations: true,
     // Wallet Expiry
     walletExpiryDays: undefined as number | undefined,
-    inactiveExpiryDays: undefined as number | undefined,
     defaultWalletType: 'CONSUMER' as string,
     // Step 6: Settlement & Limits
     vaPrefix: '',
     vaFormat: '',
     maxVirtualAccounts: undefined as number | undefined,
-    settlementFrequency: 'DAILY',
-    settlementTime: '',
-    minBalanceThreshold: undefined as number | undefined,
-    balanceAggregationIntervalMinutes: 5,
-    realtimeBalancePropagation: false,
     // Dates
     effectiveFrom: '',
     effectiveTo: '',
@@ -206,17 +194,17 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
   const isEdit = !!program;
   // Fetch wallet charges when editing a wallet program or when wallet is enabled
-  const needsWalletConfig = formData.walletEnabled;
-  const needsHierarchyConfig = formData.hierarchyEnabled;
+  const needsWalletConfig = formData.configureWallet;
+  const needsHierarchyConfig = formData.configureHierarchy;
 
   // Dynamic step calculation
   const stepLabels = (() => {
     const labels = ['Basic Info', 'Features'];
     if (needsHierarchyConfig) labels.push('Hierarchy');
-    if (formData.vibanEnabled) labels.push('VIBAN Pool');
+    if (formData.configureViban) labels.push('VIBAN Pool');
     if (needsWalletConfig) labels.push('Wallet Limits');
     if (needsWalletConfig) labels.push('Wallet Fees');
-    labels.push('Settlement', 'Review');
+    labels.push('VA Numbering', 'Review');
     return labels;
   })();
 
@@ -261,7 +249,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
   // Fetch VIBAN pools when VIBAN is enabled
   useEffect(() => {
-    if (formData.vibanEnabled && !program) {
+    if (formData.configureViban && !program) {
       setLoadingPools(true);
       fetch('/api/v1/viban-pools')
         .then(res => res.json())
@@ -274,7 +262,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         .catch(console.error)
         .finally(() => setLoadingPools(false));
     }
-  }, [formData.vibanEnabled, program]);
+  }, [formData.configureViban, program]);
 
  
   
@@ -357,12 +345,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         physicalAccountId: program.physicalAccountId,
         currencyCode: program.currencyCode,
         // Step 2: Core Features
-        vibanEnabled: program.vibanEnabled,
-        walletEnabled: program.walletEnabled,
+        configureViban: false,
+        configureWallet: false,
         escrowEnabled: program.escrowEnabled,
         ihbEnabled: program.ihbEnabled,
-        autoReconciliation: program.autoReconciliation,
-        hierarchyEnabled: program.hierarchyEnabled || false,
+        configureHierarchy: false,
         // Step 2: Extended Program Features
         loyaltyEnabled: program.loyaltyEnabled || false,
         giftCardEnabled: program.giftCardEnabled || false,
@@ -387,32 +374,21 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         maxTopup: undefined,
         defaultDailyTopupLimit: undefined,
         defaultMonthlyTopupLimit: undefined,
-        minWithdrawal: undefined,
-        maxWithdrawal: undefined,
         // Wallet KYC
         kycRequired: program.kycRequired || false,
         autoKyc: false,
         minKycLevel: program.minKycLevel || 0,
-        kycValidityDays: undefined,
         // Wallet Features
         allowTopup: program.allowTopup ?? true,
         allowWithdrawal: program.allowWithdrawal ?? true,
         allowTransfer: program.allowTransfer ?? true,
-        allowPayment: program.allowPayment ?? true,
-        allowBulkOperations: true,
         // Wallet Expiry
         walletExpiryDays: undefined,
-        inactiveExpiryDays: undefined,
         defaultWalletType: 'CONSUMER',
         // Step 6: Settlement & Limits
         vaPrefix: program.vaPrefix || '',
         vaFormat: program.vaFormat || '',
         maxVirtualAccounts: program.maxVirtualAccounts,
-        settlementFrequency: program.settlementFrequency || 'DAILY',
-        settlementTime: program.settlementTime || '',
-        minBalanceThreshold: program.minBalanceThreshold,
-        balanceAggregationIntervalMinutes: program.balanceAggregationIntervalMinutes || 5,
-        realtimeBalancePropagation: program.realtimeBalancePropagation || false,
         // Dates
         effectiveFrom: program.effectiveFrom || '',
         effectiveTo: program.effectiveTo || '',
@@ -427,12 +403,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         physicalAccountId: '',
         currencyCode: 'AED',
         // Step 2: Core Features
-        vibanEnabled: false,
-        walletEnabled: false,
+        configureViban: false,
+        configureWallet: false,
         escrowEnabled: false,
         ihbEnabled: false,
-        autoReconciliation: true,
-        hierarchyEnabled: false,
+        configureHierarchy: false,
         // Step 2: Extended Program Features
         loyaltyEnabled: false,
         giftCardEnabled: false,
@@ -457,32 +432,21 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         maxTopup: undefined,
         defaultDailyTopupLimit: undefined,
         defaultMonthlyTopupLimit: undefined,
-        minWithdrawal: undefined,
-        maxWithdrawal: undefined,
         // Wallet KYC
         kycRequired: false,
         autoKyc: false,
         minKycLevel: 0,
-        kycValidityDays: undefined,
         // Wallet Features
         allowTopup: true,
         allowWithdrawal: true,
         allowTransfer: true,
-        allowPayment: true,
-        allowBulkOperations: true,
         // Wallet Expiry
         walletExpiryDays: undefined,
-        inactiveExpiryDays: undefined,
         defaultWalletType: 'CONSUMER',
         // Step 6: Settlement & Limits
         vaPrefix: '',
         vaFormat: '',
         maxVirtualAccounts: undefined,
-        settlementFrequency: 'DAILY',
-        settlementTime: '',
-        minBalanceThreshold: undefined,
-        balanceAggregationIntervalMinutes: 5,
-        realtimeBalancePropagation: false,
         // Dates
         effectiveFrom: '',
         effectiveTo: '',
@@ -569,25 +533,21 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         physicalAccountId: formData.physicalAccountId || undefined,
         currencyCode: formData.currencyCode,
         // Core feature flags
-        vibanEnabled: formData.vibanEnabled,
-        walletEnabled: formData.walletEnabled,
         escrowEnabled: formData.escrowEnabled,
         ihbEnabled: formData.ihbEnabled,
-        autoReconciliation: formData.autoReconciliation,
-        hierarchyEnabled: formData.hierarchyEnabled,
         // Extended program features
         loyaltyEnabled: formData.loyaltyEnabled,
         giftCardEnabled: formData.giftCardEnabled,
         corporateCardEnabled: formData.corporateCardEnabled,
         mobileMoneyEnabled: formData.mobileMoneyEnabled,
         // Hierarchy Configuration
-        hierarchyDepth: formData.hierarchyEnabled ? formData.hierarchyDepth : undefined,
-        defaultHierarchyTemplate: formData.hierarchyEnabled ? (formData.defaultHierarchyTemplate || undefined) : undefined,
+        hierarchyDepth: formData.configureHierarchy ? formData.hierarchyDepth : undefined,
+        defaultHierarchyTemplate: formData.configureHierarchy ? (formData.defaultHierarchyTemplate || undefined) : undefined,
         // VIBAN Pool Config
-        defaultVibanPoolId: formData.vibanEnabled ? (formData.defaultVibanPoolId || undefined) : undefined,
-        vibanGenerationStrategy: formData.vibanEnabled ? formData.vibanGenerationStrategy : undefined,
-        vibanPrefix: formData.vibanEnabled ? (formData.vibanPrefix || undefined) : undefined,
-        vibanBankCode: formData.vibanEnabled ? (formData.vibanBankCode || undefined) : undefined,
+        defaultVibanPoolId: formData.configureViban ? (formData.defaultVibanPoolId || undefined) : undefined,
+        vibanGenerationStrategy: formData.configureViban ? formData.vibanGenerationStrategy : undefined,
+        vibanPrefix: formData.configureViban ? (formData.vibanPrefix || undefined) : undefined,
+        vibanBankCode: formData.configureViban ? (formData.vibanBankCode || undefined) : undefined,
         // Wallet Limits Configuration
         defaultPerTransactionLimit: needsWalletConfig ? formData.defaultPerTransactionLimit : undefined,
         defaultDailyLimit: needsWalletConfig ? formData.defaultDailyLimit : undefined,
@@ -598,20 +558,14 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         allowTopup: needsWalletConfig ? formData.allowTopup : undefined,
         allowWithdrawal: needsWalletConfig ? formData.allowWithdrawal : undefined,
         allowTransfer: needsWalletConfig ? formData.allowTransfer : undefined,
-        allowPayment: needsWalletConfig ? formData.allowPayment : undefined,
         // Settlement & Limits
         vaPrefix: formData.vaPrefix || undefined,
         vaFormat: formData.vaFormat || undefined,
         maxVirtualAccounts: formData.maxVirtualAccounts || undefined,
-        settlementFrequency: formData.settlementFrequency || undefined,
-        settlementTime: formData.settlementTime ? formData.settlementTime + ':00' : undefined,
-        minBalanceThreshold: formData.minBalanceThreshold || undefined,
-        balanceAggregationIntervalMinutes: formData.balanceAggregationIntervalMinutes || undefined,
-        realtimeBalancePropagation: formData.realtimeBalancePropagation,
         effectiveFrom: formData.effectiveFrom || undefined,
         effectiveTo: formData.effectiveTo || undefined,
         // Hierarchy Level Configurations (saved separately after program creation)
-        hierarchyLevelConfigs: formData.hierarchyEnabled && hierarchyLevelConfigs.length > 0
+        hierarchyLevelConfigs: formData.configureHierarchy && hierarchyLevelConfigs.length > 0
           ? hierarchyLevelConfigs.slice(0, formData.hierarchyDepth).map((level, idx) => ({
               levelNumber: idx + 1,
               levelName: level.levelName,
@@ -669,7 +623,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     switch (step) {
       case 1: return formData.programCode && formData.programName && (isEdit || formData.corporateId || defaultCorporateId);
       case 2: return true; // Features are optional
-      case 3: return !formData.vibanEnabled || true; // VIBAN config is optional
+      case 3: return true;
       case 4: return true; // Settlement is optional
       default: return true;
     }
@@ -854,15 +808,14 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             {/* Core Features - These affect wizard flow */}
             <div className="space-y-2">
-              <h4 className="label">Capabilities (affects configuration steps)</h4>
+              <h4 className="label">Every program can use these. Tick to configure them now; otherwise set them up later.</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: 'hierarchyEnabled', label: 'Multi-Level Hierarchy', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
-                  { key: 'vibanEnabled', label: 'VIBAN Support', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
-                  { key: 'walletEnabled', label: 'Wallet Features', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
+                  { key: 'configureHierarchy', label: 'Configure Hierarchy now', icon: GitBranch, desc: 'Organize VAs in 7-level tree structure', color: 'text-cat-2 dark:text-cat-2-fg', step: 'Hierarchy Config' },
+                  { key: 'configureViban', label: 'Configure VIBAN now', icon: Hash, desc: 'Virtual IBAN for each VA', color: 'text-accent-600 dark:text-accent-300', step: 'VIBAN Pool Config' },
+                  { key: 'configureWallet', label: 'Configure Wallets now', icon: Wallet, desc: 'Prepaid wallet with limits & KYC', color: 'text-warning-600 dark:text-warning-300', step: 'Wallet Limits & Fees' },
                   { key: 'escrowEnabled', label: 'Escrow Features', icon: Shield, desc: 'Hold funds with release conditions', color: 'text-success-600 dark:text-success-300', step: null },
                   { key: 'ihbEnabled', label: 'IHB Features', icon: Building2, desc: 'In-house banking capabilities', color: 'text-primary-600 dark:text-primary-200', step: null },
-                  { key: 'autoReconciliation', label: 'Auto Reconciliation', icon: Zap, desc: 'Automatic transaction matching', color: 'text-success-600 dark:text-success-300', step: null },
                 ].map(f => {
                   const Icon = f.icon;
                   const isChecked = formData[f.key as keyof typeof formData] as boolean;
@@ -922,7 +875,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             )}
 
             {/* Info messages for enabled features */}
-            {formData.vibanEnabled && (
+            {formData.configureViban && (
               <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex items-start gap-2 dark:bg-info-500/10 dark:border-info-500/30">
                 <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
                 <p className="text-body-sm text-info-700 dark:text-info-300">
@@ -931,7 +884,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               </div>
             )}
 
-            {formData.hierarchyEnabled && (
+            {formData.configureHierarchy && (
               <div className="bg-cat-2-soft border border-cat-2/20 rounded-lg p-3 flex items-start gap-2 dark:bg-cat-2/15 dark:border-cat-2/30">
                 <GitBranch className="w-4 h-4 text-cat-2 dark:text-cat-2-fg mt-0.5" />
                 <p className="text-body-sm text-cat-2 dark:text-cat-2-fg">
@@ -1549,20 +1502,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   </div>
                   <p className="caption mt-1">Cap on total wallet balance</p>
                 </div>
-                <div>
-                  <label className="block label-cased mb-1">Minimum Balance</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
-                    <input
-                      type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
-                      placeholder="0"
-                      value={formData.minBalanceThreshold ?? ''}
-                      onChange={e => setFormData({ ...formData, minBalanceThreshold: e.target.value ? parseFloat(e.target.value) : undefined })}
-                    />
-                  </div>
-                  <p className="caption mt-1">Required minimum balance to maintain</p>
-                </div>
               </div>
             </div>
 
@@ -1602,7 +1541,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   { key: 'allowTopup', label: 'Allow Topup', desc: 'Add funds to wallet', defaultVal: true },
                   { key: 'allowWithdrawal', label: 'Allow Withdrawal', desc: 'Withdraw to bank account', defaultVal: true },
                   { key: 'allowTransfer', label: 'Allow Transfer', desc: 'Transfer between wallets', defaultVal: true },
-                  { key: 'allowPayment', label: 'Allow Payment', desc: 'Pay merchants/bills', defaultVal: true },
                 ].map(cap => (
                   <Checkbox
                     key={cap.key}
@@ -1734,11 +1672,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         {/* ================================================================ */}
         {/* SETTLEMENT STEP: Settlement & Configuration */}
         {/* ================================================================ */}
-        {isStepActive('Settlement') && !isEdit && (
+        {isStepActive('VA Numbering') && !isEdit && (
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Clock className="w-4 h-4" />
-              Settlement & Configuration
+              Virtual Account Numbering
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -1764,65 +1702,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="field-label block mb-1">Settlement Frequency</label>
-                <select 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
-                  value={formData.settlementFrequency}
-                  onChange={e => setFormData({ ...formData, settlementFrequency: e.target.value })}
-                >
-                  {Object.entries(settlementFrequencyConfig).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label} - {v.description}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="field-label block mb-1">Settlement Time</label>
-                <input 
-                  type="time" 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
-                  value={formData.settlementTime} 
-                  onChange={e => setFormData({ ...formData, settlementTime: e.target.value })} 
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="field-label block mb-1">Min Balance Threshold</label>
-                <input 
-                  type="number" 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
-                  placeholder="0.00"
-                  value={formData.minBalanceThreshold || ''} 
-                  onChange={e => setFormData({ ...formData, minBalanceThreshold: e.target.value ? parseFloat(e.target.value) : undefined })} 
-                />
-              </div>
-              <div>
-                <label className="field-label block mb-1">Balance Aggregation Interval (min)</label>
-                <input 
-                  type="number" 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg" 
-                  placeholder="5"
-                  value={formData.balanceAggregationIntervalMinutes} 
-                  onChange={e => setFormData({ ...formData, balanceAggregationIntervalMinutes: parseInt(e.target.value) || 5 })} 
-                />
-              </div>
-            </div>
-
-            <Checkbox
-              variant="card"
-              checked={formData.realtimeBalancePropagation}
-              onChange={(checked) => setFormData({ ...formData, realtimeBalancePropagation: checked })}
-              label={
-                <span className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-success-500 dark:text-success-300" />
-                  Real-time Balance Propagation
-                </span>
-              }
-              description="Instantly update parent balances when child accounts change"
-            />
           </div>
         )}
 
@@ -1856,25 +1735,20 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               <div className="border-t pt-4">
                 <h4 className="label mb-2">Features</h4>
                 <div className="flex flex-wrap gap-2">
-                  {formData.vibanEnabled && <Badge variant="info">VIBAN</Badge>}
-                  {formData.walletEnabled && <Badge variant="warning">Wallet</Badge>}
                   {formData.escrowEnabled && <Badge variant="success">Escrow</Badge>}
                   {formData.ihbEnabled && <Badge variant="info">IHB</Badge>}
-                  {formData.hierarchyEnabled && <Badge variant="neutral">Hierarchy</Badge>}
                   {formData.loyaltyEnabled && <Badge variant="info">Loyalty</Badge>}
                   {formData.giftCardEnabled && <Badge variant="info">Gift Card</Badge>}
                   {formData.corporateCardEnabled && <Badge variant="info">Corp Card</Badge>}
                   {formData.mobileMoneyEnabled && <Badge variant="info">Mobile Money</Badge>}
-                  {formData.autoReconciliation && <Badge variant="neutral">Auto-Recon</Badge>}
-                  {formData.realtimeBalancePropagation && <Badge variant="success">Real-time</Badge>}
-                  {!formData.vibanEnabled && !formData.walletEnabled && !formData.escrowEnabled && !formData.ihbEnabled && (
+                  {!formData.escrowEnabled && !formData.ihbEnabled && !formData.loyaltyEnabled && !formData.giftCardEnabled && !formData.corporateCardEnabled && !formData.mobileMoneyEnabled && (
                     <span className="text-body-sm text-neutral-400">Standard features only</span>
                   )}
                 </div>
               </div>
 
               {/* Hierarchy Config */}
-              {formData.hierarchyEnabled && (
+              {formData.configureHierarchy && (
                 <div className="border-t pt-4">
                   <h4 className="label mb-2">Hierarchy Configuration</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
@@ -1919,13 +1793,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     {formData.allowTopup && <Badge variant="success" size="sm">Topup</Badge>}
                     {formData.allowWithdrawal && <Badge variant="success" size="sm">Withdrawal</Badge>}
                     {formData.allowTransfer && <Badge variant="success" size="sm">Transfer</Badge>}
-                    {formData.allowPayment && <Badge variant="success" size="sm">Payment</Badge>}
                   </div>
                 </div>
               )}
 
               {/* VIBAN Config */}
-              {formData.vibanEnabled && (
+              {formData.configureViban && (
                 <div className="border-t pt-4">
                   <h4 className="label mb-2">VIBAN Configuration</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
@@ -2000,8 +1873,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               <div className="border-t pt-4">
                 <h4 className="label mb-2">Settlement</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
-                  <div><span className="text-neutral-500 dark:text-neutral-400">Frequency:</span> <span className="font-medium">{settlementFrequencyConfig[formData.settlementFrequency]?.label}</span></div>
-                  <div><span className="text-neutral-500 dark:text-neutral-400">Time:</span> <span className="font-medium">{formData.settlementTime || 'Anytime'}</span></div>
                 </div>
               </div>
             </div>

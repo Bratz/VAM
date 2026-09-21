@@ -318,7 +318,6 @@ export interface CorporateScheme {
   autoSweepEnabled: boolean;
   sweepThreshold?: number;
   sweepTargetBalance?: number;
-  hierarchyEnabled: boolean;
   whitelistRequired: boolean;
   status: string;
   effectiveFrom: string;

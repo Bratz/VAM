@@ -147,7 +147,6 @@ interface TreasuryRates {
   hasInterestConfig: boolean;
   dayCountConvention?: string;
   compoundingFrequency?: string;
-  settlementFrequency?: string;
 }
 
 // ============================================================================

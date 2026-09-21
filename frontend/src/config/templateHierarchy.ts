@@ -181,7 +181,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For consumer and merchant wallet programs',
     icon: Wallet,
     tone: 'warning',
-    forFeatures: ['walletEnabled'],
+    forFeatures: [],
     recommended: true,
     levels: [
       {
@@ -292,7 +292,7 @@ export const HIERARCHY_TEMPLATES: TemplateConfig[] = [
     description: 'For VIBAN issuance and management',
     icon: Hash,
     tone: 'accent',
-    forFeatures: ['vibanEnabled'],
+    forFeatures: [],
     recommended: true,
     levels: [
       {

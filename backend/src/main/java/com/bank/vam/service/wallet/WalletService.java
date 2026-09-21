@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * - VirtualAccount (with walletType) as Wallet
  * - Transaction for wallet operations (TOPUP, WITHDRAWAL, WALLET_TRANSFER_*)
  * - Party as wallet holder (linked via holderPartyId)
- * - Program (walletEnabled=true) for wallet program config
+ * - Program for wallet program config (any program can hold wallets)
  * 
  * MVC Pattern:
  * - Entity: VirtualAccount, Transaction, Party, Program (enhanced)
@@ -73,6 +73,7 @@ public class WalletService {
     private final ExceptionTransactionRepository exceptionTransactionRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final com.bank.vam.service.treasury.FxRateService fxRateService;
+    private final com.bank.vam.service.hierarchy.HierarchyService hierarchyService;
 
     // ========================================================================
     // STATS
@@ -81,11 +82,15 @@ public class WalletService {
     public WalletStatsResponse getStats(UUID corporateId) {
         log.info("Getting wallet stats for corporate: {}", corporateId);
 
-        // Get wallet programs
-        List<Program> programs = getWalletPrograms(corporateId);
-
         // Get wallet accounts (VAs with walletType set)
         List<VirtualAccount> allWallets = getWalletAccounts(corporateId, null);
+
+        // Every program can hold wallets, so "wallet programs" in the stats means
+        // the programs that actually do -- not every program on the platform.
+        Set<UUID> walletProgramIds = allWallets.stream()
+                .map(VirtualAccount::getProgramId).filter(Objects::nonNull).collect(Collectors.toSet());
+        List<Program> programs = getWalletPrograms(corporateId).stream()
+                .filter(p -> walletProgramIds.contains(p.getId())).collect(Collectors.toList());
 
         long activePrograms = programs.stream()
                 .filter(p -> p.getStatus() == ProgramStatus.ACTIVE)
@@ -212,10 +217,6 @@ public class WalletService {
         Program program = programRepository.findById(programId)
                 .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
         
-        if (!program.isWalletProgram()) {
-            throw new BusinessException("Program is not a wallet program: " + programId);
-        }
-        
         return toProgramDetailResponse(program);
     }
 
@@ -237,7 +238,6 @@ public class WalletService {
                 .vaPrefix(request.getVaPrefix())
                 .vaFormat(request.getVaFormat())
                 .maxVirtualAccounts(request.getMaxVirtualAccounts())
-                .walletEnabled(true)
                 .defaultWalletType("CONSUMER")
                 .defaultDailyLimit(request.getDailySpendLimit())
                 .defaultMonthlyLimit(request.getMonthlySpendLimit())
@@ -255,6 +255,10 @@ public class WalletService {
                 .build();
         
         Program saved = programRepository.save(program);
+        // Same bootstrap as ProgramService.createProgram. This path used to skip
+        // it, which left wallet-route programs as the only ones without a root --
+        // and made ensureCurrencyAggregate() hang wallet aggregates off nothing.
+        hierarchyService.bootstrap(saved);
         log.info("Created wallet program: {}", saved.getId());
         
         return toProgramResponse(saved);
@@ -1421,20 +1425,11 @@ public class WalletService {
     // PRIVATE HELPER METHODS - Data Access
     // ========================================================================
 
+    /** Programs that can issue wallets: every program. Used for the issuance picker. */
     private List<Program> getWalletPrograms(UUID corporateId) {
-        // This was a union of "typed WALLET" and "walletEnabled but not typed
-        // WALLET", de-duplicated by id — two encodings of one fact, reconciled at
-        // every call. With the type gone the flag answers it outright, and a
-        // full table scan goes with it.
-        List<Program> programs = new ArrayList<>(programRepository.findByWalletEnabledTrue());
-
-        if (corporateId != null) {
-            programs = programs.stream()
-                    .filter(p -> corporateId.equals(p.getCorporateId()))
-                    .collect(Collectors.toList());
-        }
-        
-        return programs;
+        return corporateId != null
+                ? programRepository.findByCorporateId(corporateId)
+                : programRepository.findAll();
     }
 
     private List<VirtualAccount> getWalletAccounts(UUID corporateId, UUID programId) {

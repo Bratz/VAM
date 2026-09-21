@@ -93,7 +93,6 @@ export interface Program {
   minKycLevel?: number;
   
   // Hierarchy
-  hierarchyEnabled?: boolean;
   rootHierarchyNodeId?: string;
   
   // Expiry

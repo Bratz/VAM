@@ -1,6 +1,6 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React from 'react';
-import { Building2, CreditCard, Wallet, Shield, CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch, Gift, Smartphone } from 'lucide-react';
+import { Building2, CreditCard, Shield, CheckCircle, XCircle, Clock, PauseCircle, TrendingUp, Hash, GitBranch, Gift, Smartphone } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { StatusIconBadge } from '../../components/ui';
 
@@ -153,10 +153,8 @@ export interface Program {
   description?: string; corporateId: string; corporateName?: string;
   physicalAccountId: string; physicalAccountNumber?: string; currencyCode: string;
   vaPrefix?: string; vaFormat?: string; maxVirtualAccounts?: number; autoReconciliation: boolean;
-  settlementFrequency?: string; settlementTime?: string; minBalanceThreshold?: number;
-  vibanEnabled: boolean; walletEnabled: boolean; escrowEnabled: boolean; ihbEnabled: boolean;
+  escrowEnabled: boolean; ihbEnabled: boolean;
   // NEW: Hierarchy Support (7-level)
-  hierarchyEnabled?: boolean;
   hierarchyDepth?: number;
   defaultHierarchyTemplate?: string;
   rootHierarchyNodeId?: string;
@@ -166,8 +164,6 @@ export interface Program {
   vibanPrefix?: string;
   vibanBankCode?: string;
   // NEW: Balance Aggregation
-  balanceAggregationIntervalMinutes?: number;
-  realtimeBalancePropagation?: boolean;
   // NEW: Additional Program Type Flags
   loyaltyEnabled?: boolean;
   giftCardEnabled?: boolean;
@@ -205,9 +201,6 @@ export interface ProgramDetail {
 export interface ProgramStats {
   totalPrograms: number; activePrograms: number; inactivePrograms: number; pendingPrograms: number;
   // Per-feature counts, replacing the per-programType ones.
-  hierarchyEnabledPrograms?: number;
-  vibanEnabledPrograms?: number;
-  walletEnabledPrograms?: number;
   escrowEnabledPrograms?: number;
   ihbEnabledPrograms?: number;
   loyaltyEnabledPrograms?: number;
@@ -318,10 +311,7 @@ export const vibanStrategyConfig: Record<string, { label: string; description: s
  * thing, and the two could disagree. Keyed by flag, they cannot.
  */
 export const featureConfig: Record<keyof FeatureFlags, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone']; color: string; description: string }> = {
-  hierarchyEnabled: { label: 'Hierarchy', icon: GitBranch, tone: 'info', color: 'text-info-600 dark:text-info-300', description: 'Multi-level account tree' },
-  vibanEnabled: { label: 'VIBAN', icon: Hash, tone: 'accent', color: 'text-accent-600 dark:text-accent-300', description: 'Virtual IBAN' },
   escrowEnabled: { label: 'Escrow', icon: Shield, tone: 'success', color: 'text-success-600 dark:text-success-300', description: 'Digital escrow' },
-  walletEnabled: { label: 'Wallet', icon: Wallet, tone: 'warning', color: 'text-warning-600 dark:text-warning-300', description: 'Prepaid wallet' },
   ihbEnabled: { label: 'In-House Bank', icon: Building2, tone: 'primary', color: 'text-primary-600 dark:text-primary-200', description: 'In-house banking' },
   loyaltyEnabled: { label: 'Loyalty', icon: TrendingUp, tone: 'cat-4', color: 'text-cat-4 dark:text-cat-4-fg', description: 'Loyalty/rewards' },
   giftCardEnabled: { label: 'Gift Card', icon: Gift, tone: 'cat-2', color: 'text-cat-2 dark:text-cat-2-fg', description: 'Gift cards' },
@@ -342,27 +332,17 @@ export const statusConfig: Record<string, { label: string; variant: BadgeVariant
   CLOSED: { label: 'Closed', variant: 'error', icon: XCircle },
 };
 
-export const settlementFrequencyConfig: Record<string, { label: string; description: string }> = {
-  REAL_TIME: { label: 'Real-time', description: 'Immediate' },
-  HOURLY: { label: 'Hourly', description: 'Every hour' },
-  DAILY: { label: 'Daily', description: 'Once per day' },
-  WEEKLY: { label: 'Weekly', description: 'Once per week' },
-  MONTHLY: { label: 'Monthly', description: 'Once per month' },
-};
 
 // ============================================================================
 // PROGRAM TYPE → FEATURE FLAG MAPPING
 // Auto-enables the corresponding feature flag when a program type is selected
 // Based on backend design where features are orthogonal to types but have
-// natural associations (e.g., WALLET type → walletEnabled)
+// natural associations
 // ============================================================================
 
 export type FeatureFlags = {
-  vibanEnabled?: boolean;
-  walletEnabled?: boolean;
   escrowEnabled?: boolean;
   ihbEnabled?: boolean;
-  hierarchyEnabled?: boolean;
   loyaltyEnabled?: boolean;
   giftCardEnabled?: boolean;
   corporateCardEnabled?: boolean;

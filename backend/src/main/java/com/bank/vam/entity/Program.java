@@ -17,7 +17,7 @@ import java.util.UUID;
  * - Balance aggregation settings
  * - Loyalty/Gift Card/Corporate Card feature flags
  * 
- * When walletEnabled = true:
+ * Wallet programs (any program -- every program can hold wallets):
  * - Wallet-specific limits apply (daily, monthly, max balance)
  * - KYC requirements
  * - Topup/withdrawal settings
@@ -79,26 +79,11 @@ public class Program extends BaseEntity {
     @Builder.Default
     private Integer currentVaCount = 0;
 
-    @Column(name = "auto_reconciliation")
-    @Builder.Default
-    private Boolean autoReconciliation = true;
 
-    @Column(name = "settlement_frequency")
-    private String settlementFrequency;
 
-    @Column(name = "settlement_time")
-    private LocalTime settlementTime;
 
-    @Column(name = "min_balance_threshold", precision = 18, scale = 2)
-    private BigDecimal minBalanceThreshold;
 
-    @Column(name = "viban_enabled")
-    @Builder.Default
-    private Boolean vibanEnabled = false;
 
-    @Column(name = "wallet_enabled")
-    @Builder.Default
-    private Boolean walletEnabled = false;
 
     @Column(name = "escrow_enabled")
     @Builder.Default
@@ -123,13 +108,6 @@ public class Program extends BaseEntity {
     // HIERARCHY SUPPORT (NEW - Week 2)
     // ========================================================================
 
-    /**
-     * Whether hierarchy is enabled for this program.
-     * Default: false (backward compatible)
-     */
-    @Column(name = "hierarchy_enabled")
-    @Builder.Default
-    private Boolean hierarchyEnabled = false;
 
     /**
      * Number of hierarchy levels to use.
@@ -202,20 +180,7 @@ public class Program extends BaseEntity {
     // BALANCE AGGREGATION SETTINGS (NEW - Week 2)
     // ========================================================================
 
-    /**
-     * Frequency of balance aggregation for higher levels.
-     * Default: 5 minutes
-     */
-    @Column(name = "balance_aggregation_interval_minutes")
-    @Builder.Default
-    private Integer balanceAggregationIntervalMinutes = 5;
 
-    /**
-     * Whether to do real-time balance propagation for L7-L5.
-     */
-    @Column(name = "realtime_balance_propagation")
-    @Builder.Default
-    private Boolean realtimeBalancePropagation = true;
 
     // ========================================================================
     // ADDITIONAL PROGRAM TYPES (NEW - Week 2)
@@ -290,11 +255,7 @@ public class Program extends BaseEntity {
     // WALLET WITHDRAWAL LIMITS
     // ========================================================================
 
-    @Column(name = "min_withdrawal", precision = 18, scale = 2)
-    private BigDecimal minWithdrawal;
 
-    @Column(name = "max_withdrawal", precision = 18, scale = 2)
-    private BigDecimal maxWithdrawal;
 
     // ========================================================================
     // WALLET KYC REQUIREMENTS
@@ -312,8 +273,6 @@ public class Program extends BaseEntity {
     @Builder.Default
     private Integer minKycLevel = 0;
 
-    @Column(name = "kyc_validity_days")
-    private Integer kycValidityDays;
 
     // ========================================================================
     // WALLET FEATURES
@@ -331,13 +290,7 @@ public class Program extends BaseEntity {
     @Builder.Default
     private Boolean allowTransfer = true;
 
-    @Column(name = "allow_payment")
-    @Builder.Default
-    private Boolean allowPayment = true;
 
-    @Column(name = "allow_bulk_operations")
-    @Builder.Default
-    private Boolean allowBulkOperations = true;
 
     // ========================================================================
     // WALLET EXPIRY
@@ -346,8 +299,6 @@ public class Program extends BaseEntity {
     @Column(name = "wallet_expiry_days")
     private Integer walletExpiryDays;
 
-    @Column(name = "inactive_expiry_days")
-    private Integer inactiveExpiryDays;
 
     // ========================================================================
     // WALLET FEES
@@ -389,11 +340,7 @@ public class Program extends BaseEntity {
     // BRANDING (for wallet programs)
     // ========================================================================
 
-    @Column(name = "brand_name")
-    private String brandName;
 
-    @Column(name = "brand_logo_url")
-    private String brandLogoUrl;
 
     // ========================================================================
     // ENUMS (extended for new program types)
@@ -431,20 +378,6 @@ public class Program extends BaseEntity {
      */
     public boolean isActive() {
         return status == ProgramStatus.ACTIVE;
-    }
-
-    /**
-     * Check if this is a wallet program.
-     */
-    public boolean isWalletProgram() {
-        return Boolean.TRUE.equals(walletEnabled);
-    }
-
-    /**
-     * Check if hierarchy is enabled and configured.
-     */
-    public boolean hasHierarchy() {
-        return Boolean.TRUE.equals(hierarchyEnabled) && rootHierarchyNodeId != null;
     }
 
     /**
@@ -502,37 +435,11 @@ public class Program extends BaseEntity {
     }
 
     /**
-     * Check if program supports a specific feature.
-     */
-    public boolean supportsFeature(String feature) {
-        return switch (feature.toUpperCase()) {
-            case "VIBAN" -> Boolean.TRUE.equals(vibanEnabled);
-            case "WALLET" -> Boolean.TRUE.equals(walletEnabled);
-            case "ESCROW" -> Boolean.TRUE.equals(escrowEnabled);
-            case "IHB" -> Boolean.TRUE.equals(ihbEnabled);
-            case "HIERARCHY" -> Boolean.TRUE.equals(hierarchyEnabled);
-            case "LOYALTY" -> Boolean.TRUE.equals(loyaltyEnabled);
-            case "GIFT_CARD" -> Boolean.TRUE.equals(giftCardEnabled);
-            case "CORPORATE_CARD" -> Boolean.TRUE.equals(corporateCardEnabled);
-            case "MOBILE_MONEY" -> Boolean.TRUE.equals(mobileMoneyEnabled);
-            default -> false;
-        };
-    }
-
-    /**
      * Calculate wallet expiry date based on program config.
      */
     public LocalDate calculateWalletExpiryDate() {
         if (walletExpiryDays == null) return null;
         return LocalDate.now().plusDays(walletExpiryDays);
-    }
-
-    /**
-     * Calculate KYC expiry date.
-     */
-    public LocalDate calculateKycExpiryDate() {
-        if (kycValidityDays == null) return null;
-        return LocalDate.now().plusDays(kycValidityDays);
     }
 
     /**

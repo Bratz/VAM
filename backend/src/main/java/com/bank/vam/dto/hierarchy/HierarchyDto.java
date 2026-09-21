@@ -340,6 +340,13 @@ public class HierarchyDto {
         
         /** Optional: Hierarchy template to apply (IHB_PROGRAM, COLLECTION_PROGRAM, etc.) */
         private String templateType;
+
+        /**
+         * Build a demo aggregation path (L2..depth-1, first allowed value per level).
+         * Off by default: the nodes it creates are indistinguishable from real
+         * structure afterwards, and every program now bootstraps a hierarchy.
+         */
+        private boolean createSamplePath;
     }
 
     /**

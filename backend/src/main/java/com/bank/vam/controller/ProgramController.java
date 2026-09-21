@@ -54,12 +54,6 @@ public class ProgramController {
             @Parameter(description = "Filter by currency code")
             @RequestParam(required = false) String currencyCode,
             
-            @Parameter(description = "Filter by VIBAN enabled")
-            @RequestParam(required = false) Boolean vibanEnabled,
-            
-            @Parameter(description = "Filter by Wallet enabled")
-            @RequestParam(required = false) Boolean walletEnabled,
-            
             @Parameter(description = "Filter by Escrow enabled")
             @RequestParam(required = false) Boolean escrowEnabled,
             
@@ -80,8 +74,6 @@ public class ProgramController {
             .status(status)
             .corporateId(corporateId)
             .currencyCode(currencyCode)
-            .vibanEnabled(vibanEnabled)
-            .walletEnabled(walletEnabled)
             .escrowEnabled(escrowEnabled)
             .page(page)
             .pageSize(pageSize)

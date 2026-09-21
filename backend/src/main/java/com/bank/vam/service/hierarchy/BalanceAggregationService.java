@@ -113,9 +113,7 @@ public class BalanceAggregationService {
     public void scheduledAggregation() {
         log.info("Starting scheduled balance aggregation...");
         
-        List<Program> hierarchyPrograms = programRepository.findAll().stream()
-            .filter(p -> Boolean.TRUE.equals(p.getHierarchyEnabled()))
-            .toList();
+        List<Program> hierarchyPrograms = programRepository.findAll();
 
         for (Program program : hierarchyPrograms) {
             try {

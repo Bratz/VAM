@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Zap, Pencil } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Pencil } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -141,8 +141,8 @@ const ProgramsPage: React.FC = () => {
       }
     }
 
-    // Save hierarchy level configs if present and program has hierarchy enabled
-    if (savedProgram && hierarchyLevelConfigs && hierarchyLevelConfigs.length > 0 && programData.hierarchyEnabled) {
+    // Save hierarchy level configs if the user configured them in the wizard
+    if (savedProgram && hierarchyLevelConfigs && hierarchyLevelConfigs.length > 0) {
       try {
         const levelRes = await hierarchyLevelApi.saveLevelConfigs(savedProgram.id, hierarchyLevelConfigs);
         if (levelRes.success) {
@@ -318,10 +318,10 @@ const ProgramsPage: React.FC = () => {
           keyExtractor={(program) => program.id}
           columns={[
             { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
-              const feature = FEATURE_KEYS.find(k => k !== 'hierarchyEnabled' && (program as unknown as Record<string, unknown>)[k] === true);
+              const feature = FEATURE_KEYS.find(k => (program as unknown as Record<string, unknown>)[k] === true);
               const typeConfig = feature ? featureConfig[feature] : null;
               const TypeIcon = typeConfig?.icon || Layers;
-              const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
+              const hasHierarchy = !!program.rootHierarchyNodeId;
               return (
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone={typeConfig?.tone || 'neutral'} icon={TypeIcon} subtle />
@@ -329,7 +329,6 @@ const ProgramsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
                       {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500 dark:text-accent-300" /></span>}
-                      {program.realtimeBalancePropagation && <span title="Real-time Balance"><Zap className="w-3 h-3 text-success-500 dark:text-success-300" /></span>}
                     </div>
                     <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
                   </div>
@@ -344,17 +343,15 @@ const ProgramsPage: React.FC = () => {
               <p className="font-medium text-primary-900 dark:text-neutral-50">{formatCurrency(program.totalBalance || 0, program.currencyCode || 'AED')}</p>
             ) },
             { key: 'features', header: 'Features', minWidth: 200, dropOrder: 1, render: (_v, program) => {
-              const hasHierarchy = program.hierarchyEnabled && program.rootHierarchyNodeId;
+              const hasHierarchy = !!program.rootHierarchyNodeId;
               return (
                 <div className="flex gap-1 flex-wrap">
-                  {program.vibanEnabled && <Badge variant="info" size="sm">VIBAN</Badge>}
-                  {program.walletEnabled && <Badge variant="warning" size="sm">Wallet</Badge>}
                   {program.escrowEnabled && <Badge variant="success" size="sm">Escrow</Badge>}
                   {program.ihbEnabled && <Badge variant="info" size="sm">IHB</Badge>}
                   {hasHierarchy && <Badge variant="neutral" size="sm">Hierarchy</Badge>}
                   {program.loyaltyEnabled && <Badge variant="neutral" size="sm">Loyalty</Badge>}
                   {program.giftCardEnabled && <Badge variant="neutral" size="sm">Gift</Badge>}
-                  {!program.vibanEnabled && !program.walletEnabled && !program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
+                  {!program.escrowEnabled && !program.ihbEnabled && <span className="caption">Standard</span>}
                 </div>
               );
             } },

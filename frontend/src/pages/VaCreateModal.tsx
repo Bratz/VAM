@@ -56,7 +56,6 @@ export interface Program {
   programName: string;
   currencyCode: string;
   corporateId?: string;
-  hierarchyEnabled?: boolean;
   kycRequired?: boolean;
 }
 
@@ -261,9 +260,6 @@ const ProgramStep: React.FC<ProgramStepProps> = ({ programs, selectedId, onSelec
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="body-sm">{program.currencyCode}</span>
-                {program.hierarchyEnabled && (
-                  <Badge variant="success" size="sm">Hierarchy</Badge>
-                )}
               </div>
             </div>
             {selectedId === program.id && (

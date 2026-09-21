@@ -4854,8 +4854,6 @@ export interface Program {
   description?: string;
   currencyCode: string;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-  vibanEnabled: boolean;
-  hierarchyEnabled: boolean;
   createdAt: string;
   updatedAt?: string;
 }

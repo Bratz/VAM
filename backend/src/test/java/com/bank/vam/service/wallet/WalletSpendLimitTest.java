@@ -47,7 +47,7 @@ class WalletSpendLimitTest {
             when(vaRepo.findById(w.getId())).thenReturn(Optional.of(w));
         }
         when(vaRepo.save(any(VirtualAccount.class))).thenAnswer(i -> i.getArgument(0));
-        return new WalletService(null, vaRepo, null, null, null, null, null, null, null);
+        return new WalletService(null, vaRepo, null, null, null, null, null, null, null, null);
     }
 
     @Test

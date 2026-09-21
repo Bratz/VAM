@@ -88,8 +88,6 @@ public class HierarchyService {
 
         List<HierarchyLevelConfig> saved = levelConfigRepository.saveAll(configs);
 
-        // Enable hierarchy on program
-        program.setHierarchyEnabled(true);
         program.setHierarchyDepth(requests.size());
         programRepository.save(program);
 
@@ -139,10 +137,6 @@ public class HierarchyService {
     public NodeResponse createNode(UUID programId, NodeCreateRequest request) {
         Program program = programRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
-
-        if (!Boolean.TRUE.equals(program.getHierarchyEnabled())) {
-            throw new BusinessException("Hierarchy not enabled for program: " + programId);
-        }
 
         // Get max depth for this program
         int maxDepth = program.getMaxHierarchyDepth() != null
@@ -499,6 +493,34 @@ public class HierarchyService {
      * @param request Initialization request with configuration
      * @return InitializationResponse with created entity IDs
      */
+    /**
+     * Give a new program its hierarchy: ROOT node and VA, exception VA, currency
+     * mirror, and the chosen template. Every program gets one -- accounts are
+     * created by picking a parent node, so a program without a root cannot hold
+     * any account at all.
+     *
+     * Throws instead of logging: this used to swallow failures ("program is
+     * created, hierarchy can be initialized manually later"), which was
+     * survivable while the tree was optional and is not now. A caller inside a
+     * transaction rolls the program back with it. Already-initialized is fine.
+     */
+    @Transactional
+    public void bootstrap(Program program) {
+        InitializationResponse response = initializeHierarchyWithResponse(program.getId(),
+            InitializeHierarchyRequest.builder()
+                .rootName(program.getProgramName() + " - Group Treasury")
+                .rootCode("ROOT")
+                .baseCurrency(program.getCurrencyCode())
+                .createExceptionVa(true)
+                .createCurrencyMirror(true)
+                .templateType(program.getDefaultHierarchyTemplate())
+                .build());
+        if (!response.isSuccess() && !"ALREADY_INITIALIZED".equals(response.getStatus())) {
+            throw new BusinessException("Could not create the hierarchy for program "
+                + program.getProgramCode() + ": " + response.getMessage());
+        }
+    }
+
     @Transactional
     public InitializationResponse initializeHierarchyWithResponse(UUID programId, InitializeHierarchyRequest request) {
         log.info("╔════════════════════════════════════════════════════════════════════════════════╗");
@@ -618,7 +640,6 @@ public class HierarchyService {
             // 4. Update program
             // ================================================================
             program.setRootHierarchyNodeId(rootNode.getId());
-            program.setHierarchyEnabled(true);
             programRepository.save(program);
 
             // ================================================================
@@ -696,12 +717,12 @@ public class HierarchyService {
             // ================================================================
             int sampleNodesCreated = 0;
             log.info("Step 8: Checking sample path creation - hierarchyDepth: {}", program.getHierarchyDepth());
-            if (program.getHierarchyDepth() != null && program.getHierarchyDepth() > 1) {
+            if (request.isCreateSamplePath() && program.getHierarchyDepth() != null && program.getHierarchyDepth() > 1) {
                 log.info("Creating sample aggregation path for hierarchy depth {}...", program.getHierarchyDepth());
                 sampleNodesCreated = createSampleAggregationPath(program, rootNode, baseCurrency);
                 log.info("✓ Created {} sample aggregation nodes", sampleNodesCreated);
             } else {
-                log.warn("Skipping sample path creation - hierarchyDepth is null or <= 1");
+                log.info("Skipping sample path (not requested, or depth <= 1)");
             }
 
             log.info("╔════════════════════════════════════════════════════════════════════════════════╗");

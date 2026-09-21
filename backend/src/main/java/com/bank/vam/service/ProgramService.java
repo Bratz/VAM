@@ -160,7 +160,7 @@ public class ProgramService {
 
         // Get hierarchy info
         HierarchyInfo hierarchyInfo = null;
-        if (Boolean.TRUE.equals(program.getHierarchyEnabled())) {
+        if (program.getRootHierarchyNodeId() != null) {
             long totalNodes = hierarchyNodeRepository.countByProgramId(programId);
             long leafNodes = hierarchyNodeRepository.countActiveLeafNodes(programId);
             String rootNodeName = null;
@@ -275,18 +275,11 @@ public class ProgramService {
             .vaFormat(request.getVaFormat())
             .maxVirtualAccounts(request.getMaxVirtualAccounts())
             .currentVaCount(0)
-            .autoReconciliation(request.getAutoReconciliation() != null ? request.getAutoReconciliation() : true)
             // Settlement
-            .settlementFrequency(request.getSettlementFrequency())
-            .settlementTime(request.getSettlementTime())
-            .minBalanceThreshold(request.getMinBalanceThreshold())
             // Feature Flags - Core
-            .vibanEnabled(request.getVibanEnabled() != null ? request.getVibanEnabled() : false)
-            .walletEnabled(request.getWalletEnabled() != null ? request.getWalletEnabled() : false)
             .escrowEnabled(request.getEscrowEnabled() != null ? request.getEscrowEnabled() : false)
             .ihbEnabled(request.getIhbEnabled() != null ? request.getIhbEnabled() : false)
             // Hierarchy
-            .hierarchyEnabled(request.getHierarchyEnabled() != null ? request.getHierarchyEnabled() : false)
             .hierarchyDepth(request.getHierarchyDepth() != null ? request.getHierarchyDepth() : 7)
             .defaultHierarchyTemplate(request.getDefaultHierarchyTemplate())
             // VIBAN
@@ -297,10 +290,6 @@ public class ProgramService {
             .vibanPrefix(request.getVibanPrefix())
             .vibanBankCode(request.getVibanBankCode())
             // Balance Aggregation
-            .balanceAggregationIntervalMinutes(request.getBalanceAggregationIntervalMinutes() != null 
-                ? request.getBalanceAggregationIntervalMinutes() : 5)
-            .realtimeBalancePropagation(request.getRealtimeBalancePropagation() != null 
-                ? request.getRealtimeBalancePropagation() : true)
             // Additional Program Types
             .loyaltyEnabled(request.getLoyaltyEnabled() != null ? request.getLoyaltyEnabled() : false)
             .giftCardEnabled(request.getGiftCardEnabled() != null ? request.getGiftCardEnabled() : false)
@@ -319,21 +308,15 @@ public class ProgramService {
             // Wallet Settings
             .minTopup(request.getMinTopup())
             .maxTopup(request.getMaxTopup())
-            .minWithdrawal(request.getMinWithdrawal())
-            .maxWithdrawal(request.getMaxWithdrawal())
             .walletExpiryDays(request.getWalletExpiryDays())
-            .inactiveExpiryDays(request.getInactiveExpiryDays())
             // KYC
             .kycRequired(request.getKycRequired() != null ? request.getKycRequired() : false)
             .minKycLevel(request.getMinKycLevel())
             .autoKyc(request.getAutoKyc())
-            .kycValidityDays(request.getKycValidityDays())
             // Wallet Features
             .allowTopup(request.getAllowTopup() != null ? request.getAllowTopup() : true)
             .allowWithdrawal(request.getAllowWithdrawal() != null ? request.getAllowWithdrawal() : true)
             .allowTransfer(request.getAllowTransfer() != null ? request.getAllowTransfer() : true)
-            .allowPayment(request.getAllowPayment() != null ? request.getAllowPayment() : true)
-            .allowBulkOperations(request.getAllowBulkOperations() != null ? request.getAllowBulkOperations() : false)
             // Fees
             .issuanceFee(request.getIssuanceFee())
             .monthlyFee(request.getMonthlyFee())
@@ -344,8 +327,6 @@ public class ProgramService {
             .transferFeePercent(request.getTransferFeePercent())
             .transferFeeFlat(request.getTransferFeeFlat())
             // Branding
-            .brandName(request.getBrandName())
-            .brandLogoUrl(request.getBrandLogoUrl())
             // Status & Dates
             .status(ProgramStatus.ACTIVE)
             .effectiveFrom(request.getEffectiveFrom())
@@ -353,14 +334,10 @@ public class ProgramService {
             .build();
 
         program = programRepository.save(program);
-        log.info("Program created successfully: {} - hierarchyEnabled: {}, hierarchyDepth: {}, template: {}",
-            program.getId(), program.getHierarchyEnabled(), program.getHierarchyDepth(), program.getDefaultHierarchyTemplate());
+        log.info("Program created successfully: {} - hierarchyDepth: {}, template: {}",
+            program.getId(), program.getHierarchyDepth(), program.getDefaultHierarchyTemplate());
 
-        // Auto-initialize hierarchy if hierarchyEnabled is true
-        if (Boolean.TRUE.equals(program.getHierarchyEnabled())) {
-            log.info("Starting auto-initialization for program {} with depth {}", program.getProgramCode(), program.getHierarchyDepth());
-            autoInitializeHierarchy(program);
-        }
+        hierarchyService.bootstrap(program);
 
         return toProgramResponse(program);
     }
@@ -379,14 +356,8 @@ public class ProgramService {
         if (request.getVaPrefix() != null) program.setVaPrefix(request.getVaPrefix());
         if (request.getVaFormat() != null) program.setVaFormat(request.getVaFormat());
         if (request.getMaxVirtualAccounts() != null) program.setMaxVirtualAccounts(request.getMaxVirtualAccounts());
-        if (request.getAutoReconciliation() != null) program.setAutoReconciliation(request.getAutoReconciliation());
-        if (request.getSettlementFrequency() != null) program.setSettlementFrequency(request.getSettlementFrequency());
-        if (request.getSettlementTime() != null) program.setSettlementTime(request.getSettlementTime());
-        if (request.getMinBalanceThreshold() != null) program.setMinBalanceThreshold(request.getMinBalanceThreshold());
 
         // Feature Flags
-        if (request.getVibanEnabled() != null) program.setVibanEnabled(request.getVibanEnabled());
-        if (request.getWalletEnabled() != null) program.setWalletEnabled(request.getWalletEnabled());
         if (request.getEscrowEnabled() != null) program.setEscrowEnabled(request.getEscrowEnabled());
         if (request.getIhbEnabled() != null) program.setIhbEnabled(request.getIhbEnabled());
         if (request.getLoyaltyEnabled() != null) program.setLoyaltyEnabled(request.getLoyaltyEnabled());
@@ -395,7 +366,6 @@ public class ProgramService {
         if (request.getMobileMoneyEnabled() != null) program.setMobileMoneyEnabled(request.getMobileMoneyEnabled());
 
         // Hierarchy
-        if (request.getHierarchyEnabled() != null) program.setHierarchyEnabled(request.getHierarchyEnabled());
         if (request.getHierarchyDepth() != null) program.setHierarchyDepth(request.getHierarchyDepth());
         if (request.getDefaultHierarchyTemplate() != null) program.setDefaultHierarchyTemplate(request.getDefaultHierarchyTemplate());
 
@@ -408,12 +378,6 @@ public class ProgramService {
         if (request.getVibanBankCode() != null) program.setVibanBankCode(request.getVibanBankCode());
 
         // Balance Aggregation
-        if (request.getBalanceAggregationIntervalMinutes() != null) {
-            program.setBalanceAggregationIntervalMinutes(request.getBalanceAggregationIntervalMinutes());
-        }
-        if (request.getRealtimeBalancePropagation() != null) {
-            program.setRealtimeBalancePropagation(request.getRealtimeBalancePropagation());
-        }
 
         // Wallet Config
         if (request.getDefaultWalletType() != null) program.setDefaultWalletType(request.getDefaultWalletType());
@@ -428,14 +392,11 @@ public class ProgramService {
         if (request.getKycRequired() != null) program.setKycRequired(request.getKycRequired());
         if (request.getMinKycLevel() != null) program.setMinKycLevel(request.getMinKycLevel());
         if (request.getAutoKyc() != null) program.setAutoKyc(request.getAutoKyc());
-        if (request.getKycValidityDays() != null) program.setKycValidityDays(request.getKycValidityDays());
 
         // Wallet Features
         if (request.getAllowTopup() != null) program.setAllowTopup(request.getAllowTopup());
         if (request.getAllowWithdrawal() != null) program.setAllowWithdrawal(request.getAllowWithdrawal());
         if (request.getAllowTransfer() != null) program.setAllowTransfer(request.getAllowTransfer());
-        if (request.getAllowPayment() != null) program.setAllowPayment(request.getAllowPayment());
-        if (request.getAllowBulkOperations() != null) program.setAllowBulkOperations(request.getAllowBulkOperations());
 
         // Status & Dates
         if (request.getStatus() != null) {
@@ -516,13 +477,7 @@ public class ProgramService {
             .vaFormat(source.getVaFormat())
             .maxVirtualAccounts(source.getMaxVirtualAccounts())
             .currentVaCount(0)
-            .autoReconciliation(source.getAutoReconciliation())
-            .settlementFrequency(source.getSettlementFrequency())
-            .settlementTime(source.getSettlementTime())
-            .minBalanceThreshold(source.getMinBalanceThreshold())
             // Feature Flags
-            .vibanEnabled(source.getVibanEnabled())
-            .walletEnabled(source.getWalletEnabled())
             .escrowEnabled(source.getEscrowEnabled())
             .ihbEnabled(source.getIhbEnabled())
             .loyaltyEnabled(source.getLoyaltyEnabled())
@@ -530,7 +485,6 @@ public class ProgramService {
             .corporateCardEnabled(source.getCorporateCardEnabled())
             .mobileMoneyEnabled(source.getMobileMoneyEnabled())
             // Hierarchy (don't copy root node - will need to create new one)
-            .hierarchyEnabled(source.getHierarchyEnabled())
             .hierarchyDepth(source.getHierarchyDepth())
             .defaultHierarchyTemplate(source.getDefaultHierarchyTemplate())
             // VIBAN
@@ -538,8 +492,6 @@ public class ProgramService {
             .vibanPrefix(source.getVibanPrefix())
             .vibanBankCode(source.getVibanBankCode())
             // Balance Aggregation
-            .balanceAggregationIntervalMinutes(source.getBalanceAggregationIntervalMinutes())
-            .realtimeBalancePropagation(source.getRealtimeBalancePropagation())
             // Wallet Config
             .defaultWalletType(source.getDefaultWalletType())
             .defaultPerTransactionLimit(source.getDefaultPerTransactionLimit())
@@ -553,21 +505,15 @@ public class ProgramService {
             // Wallet Settings
             .minTopup(source.getMinTopup())
             .maxTopup(source.getMaxTopup())
-            .minWithdrawal(source.getMinWithdrawal())
-            .maxWithdrawal(source.getMaxWithdrawal())
             .walletExpiryDays(source.getWalletExpiryDays())
-            .inactiveExpiryDays(source.getInactiveExpiryDays())
             // KYC
             .kycRequired(source.getKycRequired())
             .minKycLevel(source.getMinKycLevel())
             .autoKyc(source.getAutoKyc())
-            .kycValidityDays(source.getKycValidityDays())
             // Wallet Features
             .allowTopup(source.getAllowTopup())
             .allowWithdrawal(source.getAllowWithdrawal())
             .allowTransfer(source.getAllowTransfer())
-            .allowPayment(source.getAllowPayment())
-            .allowBulkOperations(source.getAllowBulkOperations())
             // Fees
             .issuanceFee(source.getIssuanceFee())
             .monthlyFee(source.getMonthlyFee())
@@ -578,8 +524,6 @@ public class ProgramService {
             .transferFeePercent(source.getTransferFeePercent())
             .transferFeeFlat(source.getTransferFeeFlat())
             // Branding
-            .brandName(source.getBrandName())
-            .brandLogoUrl(source.getBrandLogoUrl())
             // Status
             .status(ProgramStatus.PENDING_APPROVAL)
             .build();
@@ -615,9 +559,6 @@ public class ProgramService {
         // same question less reliably: a program could be typed WALLET with
         // walletEnabled false, or the reverse, and the tiles disagreed with what
         // the features actually did.
-        long hierarchyEnabledPrograms = countEnabled(programs, Program::getHierarchyEnabled);
-        long vibanEnabledPrograms = countEnabled(programs, Program::getVibanEnabled);
-        long walletEnabledPrograms = countEnabled(programs, Program::getWalletEnabled);
         long escrowEnabledPrograms = countEnabled(programs, Program::getEscrowEnabled);
         long ihbEnabledPrograms = countEnabled(programs, Program::getIhbEnabled);
         long loyaltyEnabledPrograms = countEnabled(programs, Program::getLoyaltyEnabled);
@@ -655,15 +596,12 @@ public class ProgramService {
             .inactivePrograms(inactivePrograms)
             .suspendedPrograms(suspendedPrograms)
             .pendingPrograms(pendingPrograms)
-            .walletEnabledPrograms(walletEnabledPrograms)
             .escrowEnabledPrograms(escrowEnabledPrograms)
             .ihbEnabledPrograms(ihbEnabledPrograms)
             .loyaltyEnabledPrograms(loyaltyEnabledPrograms)
             .giftCardEnabledPrograms(giftCardEnabledPrograms)
             .corporateCardEnabledPrograms(corporateCardEnabledPrograms)
             .mobileMoneyEnabledPrograms(mobileMoneyEnabledPrograms)
-            .hierarchyEnabledPrograms(hierarchyEnabledPrograms)
-            .vibanEnabledPrograms(vibanEnabledPrograms)
             .totalVirtualAccounts(totalVirtualAccounts)
             .totalBalance(totalBalance)
             .reportingCurrency(reportingCurrency)
@@ -675,47 +613,6 @@ public class ProgramService {
     // ========================================================================
     // HIERARCHY AUTO-INITIALIZATION
     // ========================================================================
-
-    /**
-     * Automatically initialize hierarchy when program is created with hierarchyEnabled=true.
-     * Creates ROOT node and ROOT VA based on program configuration.
-     * Also applies level configs if template is specified.
-     */
-    private void autoInitializeHierarchy(Program program) {
-        log.info("Auto-initializing hierarchy for program: {} ({})", program.getProgramCode(), program.getId());
-
-        try {
-            // Build initialization request
-            InitializeHierarchyRequest initRequest = InitializeHierarchyRequest.builder()
-                .rootName(program.getProgramName() + " - Group Treasury")
-                .rootCode("ROOT")
-                .baseCurrency(program.getCurrencyCode())
-                .createExceptionVa(true)  // Always create exception VA for proper routing
-                .createCurrencyMirror(true)  // Create currency mirror for multi-currency support
-                .templateType(program.getDefaultHierarchyTemplate())  // Use selected template if any
-                .build();
-
-            // Initialize the hierarchy
-            InitializationResponse response = hierarchyService.initializeHierarchyWithResponse(
-                program.getId(),
-                initRequest
-            );
-
-            if (response.isSuccess()) {
-                log.info("✓ Hierarchy auto-initialized for program {} - ROOT node: {}, ROOT VA: {}",
-                    program.getProgramCode(), response.getRootNodeId(), response.getRootVaId());
-                // Note: Template is already applied inside initializeHierarchyWithResponse()
-                // No need to call applyTemplate() again here
-            } else {
-                log.warn("Hierarchy auto-initialization returned non-success for program {}: {} - {}",
-                    program.getProgramCode(), response.getStatus(), response.getMessage());
-            }
-        } catch (Exception e) {
-            log.error("Failed to auto-initialize hierarchy for program {}: {}",
-                program.getProgramCode(), e.getMessage(), e);
-            // Don't throw - program is created, hierarchy can be initialized manually later
-        }
-    }
 
     // ========================================================================
     // HELPER METHODS
@@ -787,20 +684,13 @@ public class ProgramService {
             .vaFormat(program.getVaFormat())
             .maxVirtualAccounts(program.getMaxVirtualAccounts())
             .currentVaCount(program.getCurrentVaCount())
-            .autoReconciliation(program.getAutoReconciliation())
             // Settlement
-            .settlementFrequency(program.getSettlementFrequency())
-            .settlementTime(program.getSettlementTime())
-            .minBalanceThreshold(program.getMinBalanceThreshold())
             // Feature Flags - Core
-            .vibanEnabled(program.getVibanEnabled())
-            .walletEnabled(program.getWalletEnabled())
             .escrowEnabled(program.getEscrowEnabled())
             .ihbEnabled(program.getIhbEnabled())
             // ================================================================
             // HIERARCHY SUPPORT
             // ================================================================
-            .hierarchyEnabled(program.getHierarchyEnabled())
             .hierarchyDepth(program.getHierarchyDepth())
             .maxHierarchyDepth(program.getMaxHierarchyDepth())
             .defaultHierarchyTemplate(program.getDefaultHierarchyTemplate())
@@ -816,8 +706,6 @@ public class ProgramService {
             // ================================================================
             // BALANCE AGGREGATION
             // ================================================================
-            .balanceAggregationIntervalMinutes(program.getBalanceAggregationIntervalMinutes())
-            .realtimeBalancePropagation(program.getRealtimeBalancePropagation())
             // ================================================================
             // ADDITIONAL PROGRAM TYPE FLAGS
             // ================================================================
@@ -839,21 +727,15 @@ public class ProgramService {
             .defaultMonthlyTopupLimit(program.getDefaultMonthlyTopupLimit())
             .minTopup(program.getMinTopup())
             .maxTopup(program.getMaxTopup())
-            .minWithdrawal(program.getMinWithdrawal())
-            .maxWithdrawal(program.getMaxWithdrawal())
             .walletExpiryDays(program.getWalletExpiryDays())
-            .inactiveExpiryDays(program.getInactiveExpiryDays())
             // KYC
             .kycRequired(program.getKycRequired())
             .minKycLevel(program.getMinKycLevel())
             .autoKyc(program.getAutoKyc())
-            .kycValidityDays(program.getKycValidityDays())
             // Wallet Features
             .allowTopup(program.getAllowTopup())
             .allowWithdrawal(program.getAllowWithdrawal())
             .allowTransfer(program.getAllowTransfer())
-            .allowPayment(program.getAllowPayment())
-            .allowBulkOperations(program.getAllowBulkOperations())
             // Fees
             .issuanceFee(program.getIssuanceFee())
             .monthlyFee(program.getMonthlyFee())
@@ -864,8 +746,6 @@ public class ProgramService {
             .transferFeePercent(program.getTransferFeePercent())
             .transferFeeFlat(program.getTransferFeeFlat())
             // Branding
-            .brandName(program.getBrandName())
-            .brandLogoUrl(program.getBrandLogoUrl())
             // Status
             .status(program.getStatus().name())
             .statusLabel(statusLabel)

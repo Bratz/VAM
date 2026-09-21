@@ -264,22 +264,6 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
     ? findNode(hierarchyNodes, formData.hierarchyNodeId) 
     : null;
 
-  // Check if hierarchy is enabled
-  if (!program?.hierarchyEnabled) {
-    return (
-      <Alert variant="info">
-        <Info className="w-4 h-4" />
-        <div>
-          <strong>Hierarchy not enabled</strong>
-          <p className="text-body-sm mt-1">
-            Hierarchy is not enabled for this program. Select a program with hierarchy support 
-            to assign this account to a hierarchy node.
-          </p>
-        </div>
-      </Alert>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Collection Channel Section */}

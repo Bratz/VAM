@@ -101,23 +101,16 @@ public class ProgramDto {
         private String vaFormat;
         private Integer maxVirtualAccounts;
         private Integer currentVaCount;
-        private Boolean autoReconciliation;
 
         // Settlement
-        private String settlementFrequency;
-        private LocalTime settlementTime;
-        private BigDecimal minBalanceThreshold;
 
         // Feature Flags - Core
-        private Boolean vibanEnabled;
-        private Boolean walletEnabled;
         private Boolean escrowEnabled;
         private Boolean ihbEnabled;
 
         // ====================================================================
         // HIERARCHY SUPPORT
         // ====================================================================
-        private Boolean hierarchyEnabled;
         private Integer hierarchyDepth;
         /** Level cap for this program's hierarchy (defaults to 20) — the UI
          *  level editor honors this instead of any hardcoded count. */
@@ -136,8 +129,6 @@ public class ProgramDto {
         // ====================================================================
         // BALANCE AGGREGATION SETTINGS
         // ====================================================================
-        private Integer balanceAggregationIntervalMinutes;
-        private Boolean realtimeBalancePropagation;
 
         // ====================================================================
         // ADDITIONAL PROGRAM TYPE FLAGS
@@ -165,23 +156,17 @@ public class ProgramDto {
         // Wallet Settings
         private BigDecimal minTopup;
         private BigDecimal maxTopup;
-        private BigDecimal minWithdrawal;
-        private BigDecimal maxWithdrawal;
         private Integer walletExpiryDays;
-        private Integer inactiveExpiryDays;
 
         // KYC Settings
         private Boolean kycRequired;
         private Integer minKycLevel;
         private Boolean autoKyc;
-        private Integer kycValidityDays;
 
         // Wallet Features
         private Boolean allowTopup;
         private Boolean allowWithdrawal;
         private Boolean allowTransfer;
-        private Boolean allowPayment;
-        private Boolean allowBulkOperations;
 
         // Fees
         private BigDecimal issuanceFee;
@@ -194,8 +179,6 @@ public class ProgramDto {
         private BigDecimal transferFeeFlat;
 
         // Branding
-        private String brandName;
-        private String brandLogoUrl;
 
         // Status
         private String status;
@@ -343,9 +326,6 @@ public class ProgramDto {
         // a feature flag saying the same thing. COLLECTION/PAYABLES/RECEIVABLES
         // had no flag because they are the base case -- a plain VA program --
         // and so have no counter here.
-        private Long hierarchyEnabledPrograms;
-        private Long vibanEnabledPrograms;
-        private Long walletEnabledPrograms;
         private Long escrowEnabledPrograms;
         private Long ihbEnabledPrograms;
         private Long loyaltyEnabledPrograms;
@@ -399,16 +379,10 @@ public class ProgramDto {
         private String vaPrefix;
         private String vaFormat;
         private Integer maxVirtualAccounts;
-        private Boolean autoReconciliation;
 
         // Settlement
-        private String settlementFrequency;
-        private LocalTime settlementTime;
-        private BigDecimal minBalanceThreshold;
 
         // Feature Flags
-        private Boolean vibanEnabled;
-        private Boolean walletEnabled;
         private Boolean escrowEnabled;
         private Boolean ihbEnabled;
         private Boolean loyaltyEnabled;
@@ -417,7 +391,6 @@ public class ProgramDto {
         private Boolean mobileMoneyEnabled;
 
         // Hierarchy Settings
-        private Boolean hierarchyEnabled;
         private Integer hierarchyDepth;
         private String defaultHierarchyTemplate;
 
@@ -428,8 +401,6 @@ public class ProgramDto {
         private String vibanBankCode;
 
         // Balance Aggregation
-        private Integer balanceAggregationIntervalMinutes;
-        private Boolean realtimeBalancePropagation;
 
         // Wallet Configuration
         private String defaultWalletType;
@@ -445,23 +416,17 @@ public class ProgramDto {
         // Wallet Settings
         private BigDecimal minTopup;
         private BigDecimal maxTopup;
-        private BigDecimal minWithdrawal;
-        private BigDecimal maxWithdrawal;
         private Integer walletExpiryDays;
-        private Integer inactiveExpiryDays;
 
         // KYC Settings
         private Boolean kycRequired;
         private Integer minKycLevel;
         private Boolean autoKyc;
-        private Integer kycValidityDays;
 
         // Wallet Features
         private Boolean allowTopup;
         private Boolean allowWithdrawal;
         private Boolean allowTransfer;
-        private Boolean allowPayment;
-        private Boolean allowBulkOperations;
 
         // Fees
         private BigDecimal issuanceFee;
@@ -474,8 +439,6 @@ public class ProgramDto {
         private BigDecimal transferFeeFlat;
 
         // Branding
-        private String brandName;
-        private String brandLogoUrl;
 
         // Effective Dates
         private LocalDate effectiveFrom;
@@ -494,16 +457,10 @@ public class ProgramDto {
         private String vaPrefix;
         private String vaFormat;
         private Integer maxVirtualAccounts;
-        private Boolean autoReconciliation;
 
         // Settlement
-        private String settlementFrequency;
-        private LocalTime settlementTime;
-        private BigDecimal minBalanceThreshold;
 
         // Feature Flags
-        private Boolean vibanEnabled;
-        private Boolean walletEnabled;
         private Boolean escrowEnabled;
         private Boolean ihbEnabled;
         private Boolean loyaltyEnabled;
@@ -512,7 +469,6 @@ public class ProgramDto {
         private Boolean mobileMoneyEnabled;
 
         // Hierarchy Settings
-        private Boolean hierarchyEnabled;
         private Integer hierarchyDepth;
         private String defaultHierarchyTemplate;
 
@@ -523,8 +479,6 @@ public class ProgramDto {
         private String vibanBankCode;
 
         // Balance Aggregation
-        private Integer balanceAggregationIntervalMinutes;
-        private Boolean realtimeBalancePropagation;
 
         // Wallet Configuration
         private String defaultWalletType;
@@ -539,14 +493,11 @@ public class ProgramDto {
         private Boolean kycRequired;
         private Integer minKycLevel;
         private Boolean autoKyc;
-        private Integer kycValidityDays;
 
         // Wallet Features
         private Boolean allowTopup;
         private Boolean allowWithdrawal;
         private Boolean allowTransfer;
-        private Boolean allowPayment;
-        private Boolean allowBulkOperations;
 
         // Status
         private String status;
@@ -574,11 +525,8 @@ public class ProgramDto {
         private String status;
         private UUID corporateId;
         private String currencyCode;
-        private Boolean vibanEnabled;
-        private Boolean walletEnabled;
         private Boolean escrowEnabled;
         private Boolean ihbEnabled;
-        private Boolean hierarchyEnabled;
         private Integer page;
         private Integer pageSize;
         private String sortBy;
@@ -603,7 +551,6 @@ public class ProgramDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class EnableHierarchyRequest {
-        private Boolean hierarchyEnabled;
         private Integer hierarchyDepth;
         private String template;
     }
