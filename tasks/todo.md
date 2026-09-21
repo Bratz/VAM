@@ -60,8 +60,9 @@ program sees it as taken; tsc no new errors; backend tests green.
   Operations aggregation, backing set; second program sees it "In use"; edit untick -> unassigned,
   backing + scaffolding cleared; Bank Accounts page shows Unassigned / In program; Sync All 200.
   Backend 209 tests, only the known ReceivablesServiceTest error; tsc 327 = baseline.
-- Open: unassigned home-bank cash now counts in the corporate headline of balance-structure
-  (real corporate cash, counted once).
+- Decided: unassigned home-bank cash stays in the corporate headline (real corporate cash, counted
+  once), shown as its own "Unassigned" line: `BalanceSummary.unassignedBankBalance`, Cash Position
+  dashboard and Balance Hierarchy headline (the latter only when no program filter applies).
 - Follow-up done: `resolveShadowVa` settles only through the source account's own program's bank
   accounts in its currency (booked account, then the program's backing account); the cross-program
   and cross-currency fallbacks are gone, preview uses the same lookup, `ShadowRoutingTest` covers it.

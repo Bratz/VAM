@@ -3429,6 +3429,8 @@ export interface BalanceHierarchyNode {
 
 export interface BalanceSummary {
   consolidatedBalance: number;
+  /** Part of consolidatedBalance in home-bank accounts no program has picked yet. */
+  unassignedBankBalance?: number;
   netPosition: number;
   totalIntercompanyReceivable: number;
   totalIntercompanyPayable: number;

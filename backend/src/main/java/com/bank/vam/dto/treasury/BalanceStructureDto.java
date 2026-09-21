@@ -164,6 +164,8 @@ public class BalanceStructureDto {
     @AllArgsConstructor
     public static class BalanceSummary {
         private BigDecimal consolidatedBalance;
+        /** Part of consolidatedBalance held in home-bank accounts no program has picked yet. */
+        private BigDecimal unassignedBankBalance;
         private BigDecimal netPosition;
         private BigDecimal totalIntercompanyReceivable;
         private BigDecimal totalIntercompanyPayable;

@@ -125,8 +125,17 @@ public class BalanceStructureService {
         // Calculate stats from hierarchy
         SummaryStats stats = calculateStats(hierarchy);
         
+        // A shadow at the top of the tree has no parent: it is a home-bank account no program
+        // has picked yet. Its cash is in the total; this says how much of the total it is.
+        BigDecimal unassigned = Optional.ofNullable(hierarchy.getChildren()).orElse(List.of()).stream()
+            .filter(n -> n.getAccountCategory() == AccountCategory.PHYSICAL_MIRROR)
+            .map(HierarchyNode::getConsolidatedBalance)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return BalanceSummary.builder()
             .consolidatedBalance(hierarchy.getConsolidatedBalance())
+            .unassignedBankBalance(unassigned)
             .netPosition(hierarchy.getNetPosition())
             .totalIntercompanyReceivable(hierarchy.getIntercompanyReceivable())
             .totalIntercompanyPayable(hierarchy.getIntercompanyPayable())

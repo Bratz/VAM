@@ -3876,7 +3876,16 @@ const TreasuryHierarchyPage: React.FC = () => {
         primary={{
           label: 'Consolidated',
           value: <TileAmount value={displaySummary.consolidatedBalance} currency={reportingCurrency} />,
-          sub: 'Aggregate balance across the VA tree',
+          sub: (
+            <>
+              Aggregate balance across the VA tree
+              {!!summary?.unassignedBankBalance && (
+                <span className="block mt-0.5">
+                  Unassigned: {formatCurrency(summary.unassignedBankBalance, reportingCurrency)} in bank accounts not yet in any program
+                </span>
+              )}
+            </>
+          ),
         }}
         secondary={{
           label: 'Net Position',
