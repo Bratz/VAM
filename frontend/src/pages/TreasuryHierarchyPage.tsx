@@ -3181,11 +3181,21 @@ const TreasuryHierarchyPage: React.FC = () => {
   }, [selectedCorporateId]);
 
   // Handle corporate change
+  // A node selected in the previous corporate/program must not survive the switch: the detail
+  // panel kept showing it and Add Node used it as the parent, creating the new account in the
+  // previous program (the backend takes the parent's program).
+  const clearNodeSelection = () => {
+    setSelectedNode(null);
+    setSelectedNodeDetail(null);
+    setSelectedNodeForAction(null);
+  };
+
   const handleCorporateChange = (corpId: string) => {
     setSelectedCorporateId(corpId);
     setSelectedProgramId('');
     setHierarchy(null);
     setHierarchyStatus(null);
+    clearNodeSelection();
     
     const corp = corporates.find(c => c.id === corpId);
     if (corp) {
@@ -3202,6 +3212,7 @@ const TreasuryHierarchyPage: React.FC = () => {
     setSelectedProgramId(programId);
     setHierarchy(null);
     setHierarchyStatus(null);
+    clearNodeSelection();
     
     const program = programs.find(p => p.id === programId);
     if (program) {

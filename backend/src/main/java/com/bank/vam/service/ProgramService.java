@@ -618,7 +618,7 @@ public class ProgramService {
         // the market reporting currency. Adding raw amounts across currencies produced a meaningless total.
         java.util.Map<String, BigDecimal> balancesByCurrency = new java.util.TreeMap<>();
         for (Program p : programs) {
-            BigDecimal b = virtualAccountRepository.sumBalanceByProgramId(p.getId());
+            BigDecimal b = programBalance(p);
             if (b != null && p.getCurrencyCode() != null) balancesByCurrency.merge(p.getCurrencyCode(), b, BigDecimal::add);
         }
         String reportingCurrency = marketProfile.getDefaultCurrency();
@@ -686,7 +686,7 @@ public class ProgramService {
         int activeVaCount = (int) virtualAccountRepository.countByProgramIdAndStatus(program.getId(), VirtualAccount.VaStatus.ACTIVE);
 
         // Sum balance
-        BigDecimal totalBalance = virtualAccountRepository.sumBalanceByProgramId(program.getId());
+        BigDecimal totalBalance = programBalance(program);
 
         // Status info
         String statusLabel = program.getStatus().name();
@@ -955,5 +955,34 @@ public class ProgramService {
         if (a != null && b != null && a.compareTo(b) > 0) {
             throw new BusinessException("The " + low + " can't be more than the " + high);
         }
+    }
+
+    /** Structural accounts: containers hold no money of their own; mirrors restate money held elsewhere. */
+    private static final java.util.EnumSet<VirtualAccount.AccountCategory> NOT_MONEY = java.util.EnumSet.of(
+        VirtualAccount.AccountCategory.ROOT, VirtualAccount.AccountCategory.AGGREGATION,
+        VirtualAccount.AccountCategory.CURRENCY_MIRROR,
+        VirtualAccount.AccountCategory.PHYSICAL_MIRROR, VirtualAccount.AccountCategory.EXTERNAL_MIRROR);
+
+    /**
+     * Money held in the program's accounts, in the program's currency. Same rule as the balance
+     * hierarchy's rollup (BalanceStructureService.recomputeRollup): no containers, no currency
+     * mirrors, IC payables negative -- except that bank-mirror (shadow) accounts are left out too,
+     * as their balance is the bank's, not money in the program's accounts.
+     *
+     * It used to be a raw SUM(currentBalance) over every account: mirrors counted on top of what
+     * they restate, stray balances on root accounts included, and currencies added unconverted.
+     */
+    private BigDecimal programBalance(Program program) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Object[] row : virtualAccountRepository.sumMoneyByProgramGroupedByCurrency(
+                program.getId(), NOT_MONEY, VirtualAccount.MirrorAccountType.IC_PAYABLE)) {
+            String currency = (String) row[0];
+            BigDecimal amount = (BigDecimal) row[1];
+            if (currency == null || amount == null || amount.signum() == 0) continue;
+            // ponytail: FxRateService falls back to 1.0 when it has no rate (known, tracked separately).
+            total = total.add(currency.equals(program.getCurrencyCode())
+                ? amount : fxRateService.convert(amount, currency, program.getCurrencyCode()));
+        }
+        return total;
     }
 }
