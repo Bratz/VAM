@@ -105,7 +105,7 @@ public class BalanceStructureDto {
         // Hierarchy
         private String parentId;
         private List<HierarchyNode> children;
-        /** Corporate node only: part of consolidatedBalance in home-bank accounts no program has picked yet. */
+        /** Corporate node only: held in home-bank accounts no program has picked yet (not in consolidatedBalance). */
         private BigDecimal unassignedBankBalance;
         
         // ====================================================================
@@ -166,7 +166,7 @@ public class BalanceStructureDto {
     @AllArgsConstructor
     public static class BalanceSummary {
         private BigDecimal consolidatedBalance;
-        /** Part of consolidatedBalance held in home-bank accounts no program has picked yet. */
+        /** Held in home-bank accounts no program has picked yet (not included in consolidatedBalance). */
         private BigDecimal unassignedBankBalance;
         private BigDecimal netPosition;
         private BigDecimal totalIntercompanyReceivable;

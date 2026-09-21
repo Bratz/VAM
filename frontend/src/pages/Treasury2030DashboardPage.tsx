@@ -213,7 +213,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
   // have been expanded to show their individual account rows.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hierarchyRoot, setHierarchyRoot] = useState<BalanceHierarchyNode | null>(null);
-  // Part of the consolidated position in home-bank accounts no program has picked yet.
+  // Held in home-bank accounts no program has picked yet -- reported beside the consolidated
+  // position, not in it (bank balances are outside the VA totals).
   const unassignedCash = hierarchyRoot?.unassignedBankBalance ?? 0;
   // Program-scoped tree for the Position breakdown's "By entity" drill-down
   // only — deliberately separate from `hierarchyRoot` above. They used to
@@ -629,7 +630,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                   <>
                     AED · FX-converted, live rates
                     {unassignedCash > 0 && (
-                      <span className="block">Unassigned: {formatCurrency(unassignedCash, 'AED')} in bank accounts not yet in any program</span>
+                      <span className="block">Not included: {formatCurrency(unassignedCash, 'AED')} in bank accounts not yet in any program</span>
                     )}
                   </>
                 ),

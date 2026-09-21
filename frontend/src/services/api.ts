@@ -3380,7 +3380,7 @@ export interface BalanceBreakdownItem {
 
 export interface BalanceHierarchyNode {
   id: string;
-  /** Corporate node only: part of consolidatedBalance in home-bank accounts no program has picked yet. */
+  /** Corporate node only: held in home-bank accounts no program has picked yet (not in consolidatedBalance). */
   unassignedBankBalance?: number;
   name: string;
   accountNumber?: string;
@@ -3431,7 +3431,7 @@ export interface BalanceHierarchyNode {
 
 export interface BalanceSummary {
   consolidatedBalance: number;
-  /** Part of consolidatedBalance in home-bank accounts no program has picked yet. */
+  /** Held in home-bank accounts no program has picked yet (not in consolidatedBalance). */
   unassignedBankBalance?: number;
   netPosition: number;
   totalIntercompanyReceivable: number;

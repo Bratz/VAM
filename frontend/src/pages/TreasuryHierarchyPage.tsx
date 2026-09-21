@@ -3895,7 +3895,7 @@ const TreasuryHierarchyPage: React.FC = () => {
               Aggregate balance across the VA tree
               {!!summary?.unassignedBankBalance && (
                 <span className="block mt-0.5">
-                  Unassigned: {formatCurrency(summary.unassignedBankBalance, reportingCurrency)} in bank accounts not yet in any program
+                  Not included: {formatCurrency(summary.unassignedBankBalance, reportingCurrency)} in bank accounts not yet in any program
                 </span>
               )}
             </>

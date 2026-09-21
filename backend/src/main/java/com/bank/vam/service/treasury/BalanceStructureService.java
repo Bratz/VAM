@@ -447,6 +447,21 @@ public class BalanceStructureService {
         // Recompute every node's consolidatedBalance as a true post-order
         // rollup before anything reads it — see recomputeRollup() for why
         // this can't just trust what buildNodeFromVA() set.
+        // Home-bank accounts no program has picked yet: shadows with no program and no parent, at the
+        // top of the tree. Shadows are not in the total (below), so this is reported beside it; read
+        // before the rollup, while a shadow node still carries its own (converted) bank balance.
+        Set<String> unassignedIds = accounts.stream()
+            .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.PHYSICAL_MIRROR
+                && va.getProgramId() == null && va.getParentAccountId() == null
+                && homeBank.matches(va.getBankSwift()))
+            .map(va -> va.getId().toString())
+            .collect(Collectors.toSet());
+        BigDecimal unassignedBankBalance = children.stream()
+            .filter(n -> unassignedIds.contains(n.getId()))
+            .map(HierarchyNode::getConsolidatedBalance)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         children.forEach(this::recomputeRollup);
 
         // DEBUG: Log children balances
@@ -472,20 +487,6 @@ public class BalanceStructureService {
 
         BigDecimal totalICPayable = children.stream()
             .map(n -> n.getIntercompanyPayable() != null ? n.getIntercompanyPayable() : BigDecimal.ZERO)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Home-bank accounts no program has picked yet: shadows with no program and no parent,
-        // so they sit at the top of the tree. Their cash is in the total; this says how much.
-        Set<String> unassignedIds = accounts.stream()
-            .filter(va -> va.getAccountCategory() == VirtualAccount.AccountCategory.PHYSICAL_MIRROR
-                && va.getProgramId() == null && va.getParentAccountId() == null
-                && homeBank.matches(va.getBankSwift()))
-            .map(va -> va.getId().toString())
-            .collect(Collectors.toSet());
-        BigDecimal unassignedBankBalance = children.stream()
-            .filter(n -> unassignedIds.contains(n.getId()))
-            .map(HierarchyNode::getConsolidatedBalance)
-            .filter(Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return HierarchyNode.builder()
@@ -594,7 +595,11 @@ public class BalanceStructureService {
         }
         boolean isContainer = node.getAccountCategory() == AccountCategory.ROOT
             || node.getAccountCategory() == AccountCategory.AGGREGATION;
-        BigDecimal ownBalance = isContainer ? BigDecimal.ZERO
+        // A shadow (bank-mirror) account's own figure is the bank's balance of the real account that
+        // backs these virtual accounts -- counting it too added the same cash twice. It stays on the
+        // row (localBalance) but not in any total; accounts under a shadow still count.
+        boolean isBankMirror = node.getAccountCategory() == AccountCategory.PHYSICAL_MIRROR;
+        BigDecimal ownBalance = (isContainer || isBankMirror) ? BigDecimal.ZERO
             : (node.getConsolidatedBalance() != null ? node.getConsolidatedBalance() : BigDecimal.ZERO);
         BigDecimal total = ownBalance.add(childrenSum);
         node.setConsolidatedBalance(total);
