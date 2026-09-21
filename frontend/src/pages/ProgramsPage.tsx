@@ -31,7 +31,7 @@ const ProgramsPage: React.FC = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [stats, setStats] = useState<ProgramStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [_error, setError] = useState<string | null>(null);
+  const [loadError, setError] = useState<string | null>(null);
   // Action menu state
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   // The table scrolls horizontally, which clips an absolutely-placed menu, so the
@@ -136,25 +136,25 @@ const ProgramsPage: React.FC = () => {
         for (let page = 1; programList.length < total; page++) {
           const more = await programApi.getAll({ ...params, page: String(page), pageSize: String(PAGE_SIZE) });
           const items: Program[] = (more.data as any)?.programs ?? [];
-          if (!more.success || items.length === 0) break;
+          if (!more.success) throw new Error(more.message || 'Could not load every page of programs');
+          if (items.length === 0) break;
           programList = programList.concat(items);
         }
 
         setPrograms(Array.isArray(programList) ? programList : []);
         setStats(statsData);
       } else {
-        // Handle failed response gracefully - show empty state, not error
+        // A failed load is an error, not an empty system: the page used to say "No programs
+        // found -- Programs will appear here once created" with zero totals.
         setPrograms([]);
         setStats(null);
-        if (res.message && res.message !== 'Network error') {
-          console.warn('Programs API returned:', res.message);
-        }
+        setError(res.message || 'The programs could not be loaded');
       }
     } catch (err) {
       console.error('Failed to load programs:', err);
-      // Set empty state rather than showing error for better UX
       setPrograms([]);
       setStats(null);
+      setError(err instanceof Error ? err.message : 'The programs could not be loaded');
     } finally {
       hasLoaded.current = true;
       setLoading(false);
@@ -215,7 +215,7 @@ const ProgramsPage: React.FC = () => {
     const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [
       ['Code', 'Name', 'Corporate', 'Currency', 'Virtual accounts', 'Active virtual accounts', 'Balance', 'Status'],
-      ...filteredPrograms.map(p => [p.programCode, p.programName, p.corporateName, p.currencyCode, p.virtualAccountCount ?? 0,
+      ...sortedPrograms.map(p => [p.programCode, p.programName, p.corporateName, p.currencyCode, p.virtualAccountCount ?? 0,
         p.activeVirtualAccountCount ?? 0, p.totalBalance ?? 0, statusConfig[p.status]?.label ?? p.status]),
     ].map(row => row.map(cell).join(',')).join('\n');
     const link = document.createElement('a');
@@ -302,7 +302,7 @@ const ProgramsPage: React.FC = () => {
   usePageHeaderActions(
     () => (
       <>
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={filteredPrograms.length === 0}>
+        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={sortedPrograms.length === 0}>
           <span className="hidden sm:inline">Export</span>
         </Button>
         <Button variant="outline" leftIcon={<RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />} onClick={loadData} disabled={loading}>
@@ -313,7 +313,7 @@ const ProgramsPage: React.FC = () => {
         </Button>
       </>
     ),
-    [loadData, loading, filteredPrograms]
+    [loadData, loading, sortedPrograms]
   );
 
   // Show loading only on initial load, not on filter changes
@@ -350,6 +350,17 @@ const ProgramsPage: React.FC = () => {
       {/* Headline figure — Total Balance across all programs. Matches the
           hero+strip hierarchy used elsewhere; these four metrics previously
           competed as an equal-weight strip with no visual hierarchy. */}
+      {loadError ? (
+        <Card padding="md" className="border-error-200 dark:border-error-500/30">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="body-strong">Programs could not be loaded</p>
+              <p className="body-sm mt-1">{loadError}</p>
+            </div>
+            <Button variant="outline" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={loadData} loading={loading}>Retry</Button>
+          </div>
+        </Card>
+      ) : (
       <HeroMetricCard
         primary={{
           label: 'Total Balance',
@@ -360,6 +371,7 @@ const ProgramsPage: React.FC = () => {
         }}
         icon={<TrendingUp className="w-6 h-6 text-accent-600 dark:text-accent-300" />}
       />
+      )}
 
       {/* Search and Filters */}
       <Card padding="md">
@@ -376,6 +388,7 @@ const ProgramsPage: React.FC = () => {
       </Card>
 
       {/* Programs Table */}
+      {!loadError && (
       <Card>
         {filteredPrograms.length > 0 && (
         <DataTable
@@ -535,6 +548,7 @@ const ProgramsPage: React.FC = () => {
           </div>
         )}
       </Card>
+      )}
 
       {/* Modals */}
       <Modal

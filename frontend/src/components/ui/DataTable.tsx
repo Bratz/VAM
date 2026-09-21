@@ -189,7 +189,11 @@ export function DataTable<T>({
   const hasSelection = selectedKeys.size > 0;
   const allSelected = selectedKeys.size === data.length && data.length > 0;
 
-  // Desktop Table View
+  // Desktop Table View.
+  // These three are called as functions ({DesktopTable()}), not rendered as <DesktopTable />:
+  // defined inside this component, each render made a new component type, so React rebuilt the
+  // whole table on every parent re-render -- losing focus, scroll and hover state (e.g. focus
+  // could not return to a row's button after a dialog closed).
   const DesktopTable = () => (
     <div className="hidden lg:block overflow-hidden">
       <div className={cn(
@@ -605,12 +609,12 @@ export function DataTable<T>({
           ? 'border-b border-edge-strong'
           : 'bg-surface-card rounded-lg border border-edge overflow-hidden shadow-sm'
       )}>
-        <DesktopTable />
-        <MobileCards />
+        {DesktopTable()}
+        {MobileCards()}
       </div>
 
       {/* Pagination */}
-      <Pagination />
+      {Pagination()}
     </div>
   );
 }

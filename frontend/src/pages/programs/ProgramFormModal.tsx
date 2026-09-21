@@ -53,13 +53,13 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       <ChevronRight className="w-4 h-4 text-neutral-400" />
       
       <div className="flex-1 flex items-center gap-2">
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
+        <input type="number" min={0} step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
         <span className="caption">%</span>
         <span className="caption">+</span>
         <span className="caption">{currencyCode}</span>
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
+        <input type="number" min={0} step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
@@ -623,7 +623,28 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     return step === getStepIndex(stepType);
   };
 
+  // Value checks (the API applies the same rules). Keyed by field; each step is blocked by its own.
+  const fieldErrors: Record<string, string> = {};
+  const negative = (v?: number | null) => v != null && v < 0;
+  if (formData.maxVirtualAccounts != null && formData.maxVirtualAccounts < 1) fieldErrors.maxVirtualAccounts = 'At least 1, or leave blank for no limit';
+  for (const k of ['defaultPerTransactionLimit', 'defaultDailyLimit', 'defaultMonthlyLimit', 'defaultMaxBalance'] as const) {
+    if (negative(formData[k])) fieldErrors[k] = 'Must be 0 or more';
+  }
+  const { defaultPerTransactionLimit: perTxn, defaultDailyLimit: daily, defaultMonthlyLimit: monthly } = formData;
+  if (!fieldErrors.defaultPerTransactionLimit && perTxn != null && daily != null && perTxn > daily) fieldErrors.defaultPerTransactionLimit = "Can't be more than the daily limit";
+  if (!fieldErrors.defaultDailyLimit && daily != null && monthly != null && daily > monthly) fieldErrors.defaultDailyLimit = "Can't be more than the monthly limit";
+  if (Object.values(chargeOverrides).some(c => negative((c as { percent?: number }).percent) || negative(c.flat))) fieldErrors.fees = 'Fees must be 0 or more';
+  const stepFields: Record<string, string[]> = {
+    'Basic Info': ['maxVirtualAccounts'],
+    'Wallet Limits': ['defaultPerTransactionLimit', 'defaultDailyLimit', 'defaultMonthlyLimit', 'defaultMaxBalance'],
+    'Wallet Fees': ['fees'],
+  };
+  const currentStepLabel = onlyStep ?? (isEdit ? 'Basic Info' : stepLabels[step - 1]);
+  const stepHasErrors = (stepFields[currentStepLabel] ?? []).some(k => fieldErrors[k]);
+  const hasErrors = Object.keys(fieldErrors).length > 0;
+
   const canProceed = () => {
+    if (stepHasErrors) return false;
     switch (step) {
       case 1: return formData.programCode && formData.programName && (isEdit || formData.corporateId || defaultCorporateId);
       case 2: return true; // Features are optional
@@ -754,7 +775,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   label="Max Virtual Accounts"
                   type="number"
                   placeholder="Unlimited"
-                  value={formData.maxVirtualAccounts || ''}
+                  min={1}
+                  error={fieldErrors.maxVirtualAccounts}
+                  value={formData.maxVirtualAccounts ?? ''}
                   onChange={e => setFormData({ ...formData, maxVirtualAccounts: e.target.value ? parseInt(e.target.value) : undefined })}
                 />
               </div>
@@ -1364,10 +1387,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                       type="number"
                       className="pl-12"
                       placeholder="50,000"
+                      min={0}
                       value={formData.defaultPerTransactionLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultPerTransactionLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
+                  {fieldErrors.defaultPerTransactionLimit && <p className="caption text-error-600 dark:text-error-300 mt-1" role="alert">{fieldErrors.defaultPerTransactionLimit}</p>}
                 </div>
                 <div>
                   <label className="block label-cased mb-1">Daily Limit</label>
@@ -1378,10 +1403,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                       type="number"
                       className="pl-12"
                       placeholder="200,000"
+                      min={0}
                       value={formData.defaultDailyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultDailyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
+                  {fieldErrors.defaultDailyLimit && <p className="caption text-error-600 dark:text-error-300 mt-1" role="alert">{fieldErrors.defaultDailyLimit}</p>}
                 </div>
                 <div>
                   <label className="block label-cased mb-1">Monthly Limit</label>
@@ -1392,10 +1419,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                       type="number"
                       className="pl-12"
                       placeholder="1,000,000"
+                      min={0}
                       value={formData.defaultMonthlyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMonthlyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
+                  {fieldErrors.defaultMonthlyLimit && <p className="caption text-error-600 dark:text-error-300 mt-1" role="alert">{fieldErrors.defaultMonthlyLimit}</p>}
                 </div>
               </div>
             </div>
@@ -1413,10 +1442,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                       type="number"
                       className="pl-12"
                       placeholder="500,000"
+                      min={0}
                       value={formData.defaultMaxBalance ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMaxBalance: e.target.value ? parseFloat(e.target.value) : undefined })}
                     />
                   </div>
+                  {fieldErrors.defaultMaxBalance && <p className="caption text-error-600 dark:text-error-300 mt-1" role="alert">{fieldErrors.defaultMaxBalance}</p>}
                   <p className="caption mt-1">Cap on total wallet balance</p>
                 </div>
               </div>
@@ -1539,7 +1570,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.issuance.waived && 'bg-surface-muted')}
+                    <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.issuance.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
@@ -1553,7 +1584,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.monthly.waived && 'bg-surface-muted')}
+                    <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.monthly.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
@@ -1567,7 +1598,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
+                    <input type="number" min={0} className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />
@@ -1582,6 +1613,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 Overrides apply to this program only. Leave a fee blank to use the standard rate.
               </p>
             </div>
+            {fieldErrors.fees && <p className="caption text-error-600 dark:text-error-300" role="alert">{fieldErrors.fees}</p>}
           </div>
         )}
 
@@ -1812,7 +1844,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={loading || !canProceed()}
+                disabled={loading || !canProceed() || hasErrors}
                 loading={loading}
               >
                 {isEdit ? 'Save Changes' : 'Create Program'}

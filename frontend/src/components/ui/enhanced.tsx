@@ -29,6 +29,35 @@ export const Modal: React.FC<ModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Keyboard users: focus moves into the dialog when it opens (first field, else first control),
+  // Tab stays inside it, and focus returns to what opened it when it closes.
+  useEffect(() => {
+    if (!isOpen) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const focusables = () => Array.from(modalRef.current?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) ?? []).filter(el => el.offsetParent !== null);
+    // setTimeout, not requestAnimationFrame: rAF is paused while a tab isn't painted.
+    const timer = window.setTimeout(() => {
+      const field = focusables().find(el => /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName));
+      (field ?? focusables()[0] ?? modalRef.current)?.focus();
+    }, 0);
+    const trapTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const els = focusables();
+      if (els.length === 0) return;
+      const first = els[0], last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', trapTab);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener('keydown', trapTab);
+      opener?.focus?.();
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -75,6 +104,7 @@ export const Modal: React.FC<ModalProps> = ({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={typeof title === 'string' ? title : undefined}
         className={cn(
           'relative bg-surface-card rounded-lg shadow-xl w-full mx-4 flex flex-col',

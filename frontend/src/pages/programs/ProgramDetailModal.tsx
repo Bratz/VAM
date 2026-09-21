@@ -24,6 +24,21 @@ interface ProgramDetailModalProps {
   onConfigure: (program: Program, step: ProgramConfigStep) => void;
 }
 
+/**
+ * A yes/no setting. Blank means "not set, the default applies" -- the same default the edit form
+ * shows -- and is labelled so, instead of reading as "no".
+ */
+const YesNo: React.FC<{ value?: boolean | null; fallback: boolean }> = ({ value, fallback }) => {
+  const on = value ?? fallback;
+  return (
+    <span className="flex items-center gap-1.5">
+      {value == null && <span className="caption">default</span>}
+      {on ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" aria-label="Yes" />
+          : <XCircle className="w-4 h-4 text-neutral-400" aria-label="No" />}
+    </span>
+  );
+};
+
 export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onClone, onConfigure, onStatusChange }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'hierarchy' | 'viban' | 'wallet' | 'accounts' | 'config' | 'history'>('overview');
   const [detail, setDetail] = useState<ProgramDetail | null>(null);
@@ -917,7 +932,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center justify-between">
                       <span className="body-sm">KYC Required</span>
-                      {program.kycRequired ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
+                      <YesNo value={program.kycRequired} fallback={false} />
                     </div>
                     <div>
                       <p className="caption mb-1">Minimum KYC Level</p>
@@ -938,7 +953,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     ].map(cap => (
                       <div key={cap.label} className="flex items-center justify-between">
                         <span className="body-sm">{cap.label}</span>
-                        {cap.value ? <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300" /> : <XCircle className="w-4 h-4 text-neutral-400" />}
+                        <YesNo value={cap.value} fallback={true} />
                       </div>
                     ))}
                   </div>

@@ -356,6 +356,7 @@ public class ProgramService {
             .effectiveTo(request.getEffectiveTo())
             .build();
 
+        validateValues(program);
         program = programRepository.save(program);
         log.info("Program created successfully: {} - hierarchyDepth: {}, template: {}",
             program.getId(), program.getHierarchyDepth(), program.getDefaultHierarchyTemplate());
@@ -438,6 +439,7 @@ public class ProgramService {
             program.setPhysicalAccountId(shadowAccountService.setProgramShadows(program, request.getShadowAccountIds()));
         }
 
+        validateValues(program);
         program = programRepository.save(program);
         log.info("Program updated successfully: {}", programId);
         List<String> changed = changedSettings(before, settingsOf(program));
@@ -898,6 +900,60 @@ public class ProgramService {
     private static void validateProgramCode(String code) {
         if (code == null || !code.matches("[A-Z0-9][A-Z0-9_-]{0,49}")) {
             throw new BusinessException("Program code must be 1-50 capital letters, digits, '-' or '_' (e.g. COLL-001)");
+        }
+    }
+
+    /**
+     * Limits and fees are amounts: none negative, at least one account allowed, and each spend
+     * limit no larger than the next longer period's (per transaction <= daily <= weekly <=
+     * monthly <= yearly, where set). The form checks the same, but the API is the rule.
+     */
+    private static void validateValues(Program p) {
+        if (p.getMaxVirtualAccounts() != null && p.getMaxVirtualAccounts() < 1) {
+            throw new BusinessException("Max virtual accounts must be at least 1 (leave it blank for no limit)");
+        }
+        Map<String, BigDecimal> amounts = new LinkedHashMap<>();
+        amounts.put("per-transaction limit", p.getDefaultPerTransactionLimit());
+        amounts.put("daily limit", p.getDefaultDailyLimit());
+        amounts.put("weekly limit", p.getDefaultWeeklyLimit());
+        amounts.put("monthly limit", p.getDefaultMonthlyLimit());
+        amounts.put("yearly limit", p.getDefaultYearlyLimit());
+        amounts.put("maximum balance", p.getDefaultMaxBalance());
+        amounts.put("minimum top-up", p.getMinTopup());
+        amounts.put("maximum top-up", p.getMaxTopup());
+        amounts.put("daily top-up limit", p.getDefaultDailyTopupLimit());
+        amounts.put("monthly top-up limit", p.getDefaultMonthlyTopupLimit());
+        amounts.put("issuance fee", p.getIssuanceFee());
+        amounts.put("monthly fee", p.getMonthlyFee());
+        amounts.put("top-up fee %", p.getTopupFeePercent());
+        amounts.put("top-up fee", p.getTopupFeeFlat());
+        amounts.put("withdrawal fee %", p.getWithdrawalFeePercent());
+        amounts.put("withdrawal fee", p.getWithdrawalFeeFlat());
+        amounts.put("transfer fee %", p.getTransferFeePercent());
+        amounts.put("transfer fee", p.getTransferFeeFlat());
+        amounts.forEach((name, v) -> {
+            if (v != null && v.signum() < 0) throw new BusinessException("The " + name + " can't be negative");
+        });
+        String[] periods = {"per-transaction limit", "daily limit", "weekly limit", "monthly limit", "yearly limit"};
+        String prevName = null;
+        BigDecimal prev = null;
+        for (String name : periods) {
+            BigDecimal v = amounts.get(name);
+            if (v == null) continue;
+            if (prev != null && prev.compareTo(v) > 0) {
+                throw new BusinessException("The " + prevName + " can't be more than the " + name);
+            }
+            prev = v;
+            prevName = name;
+        }
+        orderedPair(amounts, "minimum top-up", "maximum top-up");
+        orderedPair(amounts, "daily top-up limit", "monthly top-up limit");
+    }
+
+    private static void orderedPair(Map<String, BigDecimal> amounts, String low, String high) {
+        BigDecimal a = amounts.get(low), b = amounts.get(high);
+        if (a != null && b != null && a.compareTo(b) > 0) {
+            throw new BusinessException("The " + low + " can't be more than the " + high);
         }
     }
 }

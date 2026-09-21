@@ -84,6 +84,40 @@ class CloseProgramTest {
         verify(programs, never()).save(any());
     }
 
+    private com.bank.vam.dto.ProgramDto.UpdateProgramRequest limits(String perTxn, String daily, String monthly) {
+        var r = new com.bank.vam.dto.ProgramDto.UpdateProgramRequest();
+        if (perTxn != null) r.setDefaultPerTransactionLimit(new java.math.BigDecimal(perTxn));
+        if (daily != null) r.setDefaultDailyLimit(new java.math.BigDecimal(daily));
+        if (monthly != null) r.setDefaultMonthlyLimit(new java.math.BigDecimal(monthly));
+        return r;
+    }
+
+    @Test
+    void negativeLimitIsRefused() {
+        program();
+        assertThatThrownBy(() -> service.updateProgram(id, limits("-1", null, null)))
+            .isInstanceOf(BusinessException.class).hasMessageContaining("negative");
+        verify(programs, never()).save(any());
+    }
+
+    @Test
+    void perTransactionAboveDailyIsRefused() {
+        program();
+        assertThatThrownBy(() -> service.updateProgram(id, limits("500", "100", null)))
+            .isInstanceOf(BusinessException.class).hasMessageContaining("per-transaction limit can't be more than the daily limit");
+    }
+
+    @Test
+    void unsetPeriodsAreSkippedWhenComparing() {
+        program();
+        // per-transaction above monthly, with no daily in between, is still caught
+        assertThatThrownBy(() -> service.updateProgram(id, limits("500", null, "100")))
+            .isInstanceOf(BusinessException.class).hasMessageContaining("monthly limit");
+        // and a consistent chain passes
+        service.updateProgram(id, limits("10", "100", "1000"));
+        verify(programs).save(any());
+    }
+
     @Test
     void activeCustomerAccountsBlockClosing() {
         Program p = program();

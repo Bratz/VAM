@@ -534,6 +534,9 @@ public class ProgramChargeOverrideService {
         Optional<ProgramChargeOverride> existing = overrideRepository
             .findByProgramIdAndChargeCode(programId, chargeCode);
 
+        if ((percentage != null && percentage.signum() < 0) || (fixed != null && fixed.signum() < 0)) {
+            throw new BusinessException("Fees can't be negative");
+        }
         // Nothing overridden and not waived means "standard rate": store no row for it. Saving the
         // fee screen untouched used to create six such empty rows. An existing row that is itself
         // empty is removed; one holding a real rate is kept (only its waiver is cleared below).
