@@ -1186,7 +1186,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                 <button
                                   type="button"
                                   onClick={e => {
-                                    const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
+                                    // currentTarget, not target: a click on the icon makes target the <svg>,
+                                    // which has no previous sibling, so reading .value threw.
+                                    const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                                     const value = input.value.trim().toUpperCase();
                                     if (value && !(level.allowedValues || []).includes(value)) {
                                       const updated = [...hierarchyLevelConfigs];
