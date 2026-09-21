@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, GitBranch, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -230,7 +230,20 @@ const ProgramsPage: React.FC = () => {
     if (res.success) {
       setPrograms(prev => prev.map(p => p.id === programId ? res.data : p));
       if (selectedProgram?.id === programId) setSelectedProgram(res.data);
+      toast.success(`${res.data.programName} is now ${statusConfig[res.data.status]?.label.toLowerCase() ?? res.data.status}`);
+    } else {
+      toast.error('Could not change the status: ' + (res.message || 'Unknown error'));
     }
+  };
+
+  // Suspending stops a live program, so it asks first; the other changes don't.
+  const [suspendTarget, setSuspendTarget] = useState<Program | null>(null);
+  const requestStatusChange = (programId: string, status: string) => {
+    if (status === 'SUSPENDED') {
+      setSuspendTarget(programs.find(p => p.id === programId) ?? selectedProgram);
+      return;
+    }
+    handleStatusChange(programId, status);
   };
 
   // Calculate display stats with safe defaults
@@ -307,7 +320,7 @@ const ProgramsPage: React.FC = () => {
           Layout header via usePageHeaderActions above. */}
       <PageHeader
         title="Programs"
-        description="Manage program definitions across pooling, in-house bank, escrow, and other product types. Each program is corporate-scoped with its own currency and lifecycle."
+        description="Each program belongs to one corporate, runs in one currency on its bank accounts, and has its own account hierarchy, VIBANs and wallet settings."
       />
 
       {/* Corporate Context Selector — uses the shared ScopeSelector
@@ -359,15 +372,13 @@ const ProgramsPage: React.FC = () => {
           keyExtractor={(program) => program.id}
           columns={[
             { key: 'programName', header: 'Program', minWidth: 240, mobileLabel: true, render: (_v, program) => {
-              const hasHierarchy = !!program.rootHierarchyNodeId;
               return (
                 <div className="flex items-center gap-3">
                   <StatusIconBadge tone="neutral" icon={Layers} subtle />
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{program.programName}</p>
-                      {hasHierarchy && <span title="Hierarchy Enabled"><GitBranch className="w-3 h-3 text-accent-500 dark:text-accent-300" /></span>}
-                    </div>
+</div>
                     <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{program.programCode}</p>
                   </div>
                 </div>
@@ -423,7 +434,7 @@ const ProgramsPage: React.FC = () => {
                         {program.status === 'ACTIVE' && (
                           <button
                             className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-warning-600 dark:hover:bg-primary-800/50 dark:text-warning-300"
-                            onClick={() => { handleStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
+                            onClick={() => { requestStatusChange(program.id, 'SUSPENDED'); setActionMenuId(null); }}
                           >
                             <PauseCircle className="w-4 h-4" />
                             Suspend Program
@@ -541,7 +552,26 @@ const ProgramsPage: React.FC = () => {
           <Input label="Program name" value={cloneName} onChange={e => setCloneName(e.target.value)} />
         </div>
       </Modal>
-      <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onClone={p => { setSelectedProgram(null); startClone(p); }} onStatusChange={handleStatusChange} />
+      <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onClone={p => { setSelectedProgram(null); startClone(p); }} onConfigure={(p, step) => { setSelectedProgram(null); setEditProgram(p); setConfigStep(step); }} onStatusChange={requestStatusChange} />
+      <Modal
+        isOpen={!!suspendTarget}
+        onClose={() => setSuspendTarget(null)}
+        size="sm"
+        title="Suspend program?"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setSuspendTarget(null)}>Cancel</Button>
+            <Button variant="danger" leftIcon={<PauseCircle className="w-4 h-4" />}
+              onClick={() => { if (suspendTarget) handleStatusChange(suspendTarget.id, 'SUSPENDED'); setSuspendTarget(null); }}>
+              Suspend
+            </Button>
+          </>
+        }
+      >
+        <p className="body-sm">
+          <span className="body-strong">{suspendTarget?.programName}</span> will stop taking new activity until it is activated again.
+        </p>
+      </Modal>
       <ProgramFormModal
         isOpen={showCreateModal || !!editProgram}
         program={editProgram}

@@ -30,7 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -55,7 +58,9 @@ public class ProgramService {
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final VibanPoolRepository vibanPoolRepository;
     private final HierarchyService hierarchyService;
-    private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
+    private final com.bank.vam.service.audit.AuditLogService auditLogService;
+    private final com.bank.vam.repository.audit.AuditLogRepository auditLogRepository;
+private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
     private final com.bank.vam.service.treasury.FxRateService fxRateService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
@@ -198,15 +203,26 @@ public class ProgramService {
 
         ProgramUsageStats usageStats = calculateUsageStats(programId);
 
-        List<ActivityLogEntry> activityLog = List.of(
-            ActivityLogEntry.builder()
+        // What happened to the program, newest first, from the audit log. Programs from before
+        // their changes were recorded get their creation added so the list is never empty.
+        List<ActivityLogEntry> activityLog = new ArrayList<>(auditLogRepository
+            .findByEntityTypeAndEntityIdOrderByCreatedAtDesc(AUDIT_ENTITY, programId, PageRequest.of(0, 50))
+            .map(a -> ActivityLogEntry.builder()
+                .action(a.getSummary())
+                .user(a.getActor() != null ? a.getActor() : "System")
+                .timestamp(a.getCreatedAt())
+                .type(activityType(a))
+                .details(detailsOf(a))
+                .build())
+            .getContent());
+        if (activityLog.stream().noneMatch(e -> e.getAction() != null && e.getAction().startsWith("Program created"))) {
+            activityLog.add(ActivityLogEntry.builder()
                 .action("Program created")
                 .user(program.getCreatedBy() != null ? program.getCreatedBy() : "System")
                 .timestamp(program.getCreatedAt())
                 .type("success")
-                .details("Program " + program.getProgramCode() + " was created")
-                .build()
-        );
+                .build());
+        }
 
         // Get VIBAN pool info
         VibanPoolInfo vibanPoolInfo = null;
@@ -333,6 +349,7 @@ public class ProgramService {
             program.getId(), program.getHierarchyDepth(), program.getDefaultHierarchyTemplate());
 
         hierarchyService.bootstrap(program);
+        audit(program, "PROGRAM_CREATED", "Program created", null);
         // After bootstrap: the shadows hang under the program's own hierarchy.
         if (request.getShadowAccountIds() != null) {
             shadowAccountService.setProgramShadows(program, request.getShadowAccountIds());
@@ -406,6 +423,8 @@ public class ProgramService {
 
         program = programRepository.save(program);
         log.info("Program updated successfully: {}", programId);
+        audit(program, "PROGRAM_UPDATED",
+            request.getShadowAccountIds() != null ? "Details and bank accounts updated" : "Details updated", null);
 
         return toProgramResponse(program);
     }
@@ -421,10 +440,13 @@ public class ProgramService {
 
         validateStatusTransition(program.getStatus(), newStatus);
 
+        ProgramStatus oldStatus = program.getStatus();
         program.setStatus(newStatus);
         program = programRepository.save(program);
 
         log.info("Program status updated successfully: {} -> {}", programId, newStatus);
+        audit(program, "PROGRAM_STATUS_CHANGED", "Status changed to " + label(newStatus),
+            "From " + label(oldStatus) + (request.getReason() != null ? ". Reason: " + request.getReason() : ""));
         return toProgramResponse(program);
     }
 
@@ -446,6 +468,7 @@ public class ProgramService {
         programRepository.save(program);
 
         log.info("Program deactivated successfully: {}", programId);
+        audit(program, "PROGRAM_STATUS_CHANGED", "Program deleted (deactivated)", null);
     }
 
     /**
@@ -527,6 +550,7 @@ public class ProgramService {
 
         // Every program has a hierarchy; the root node itself is never copied.
         hierarchyService.bootstrap(cloned);
+        audit(cloned, "PROGRAM_CREATED", "Program created as a copy of " + source.getProgramCode(), null);
 
         return toProgramResponse(cloned);
     }
@@ -768,5 +792,40 @@ public class ProgramService {
             .averageBalance(BigDecimal.ZERO)
             .lastTransactionAt(null)
             .build();
+    }
+
+    // ========================================================================
+    // ACTIVITY (audit log)
+    // ========================================================================
+
+    private static final String AUDIT_ENTITY = "Program";
+
+    private void audit(Program program, String eventType, String summary, String details) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("programCode", program.getProgramCode());
+        if (details != null) payload.put("details", details);
+        auditLogService.record(eventType, AUDIT_ENTITY, program.getId(), program.getCorporateId(), summary, payload);
+    }
+
+    private static String label(ProgramStatus status) {
+        if (status == null) return "none";
+        String s = status.name().replace('_', ' ').toLowerCase();
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    private static String activityType(com.bank.vam.entity.audit.AuditLog a) {
+        String summary = a.getSummary() == null ? "" : a.getSummary();
+        if (summary.contains("Suspended") || summary.contains("deleted")) return "warning";
+        return "PROGRAM_UPDATED".equals(a.getEventType()) ? "info" : "success";
+    }
+
+    private String detailsOf(com.bank.vam.entity.audit.AuditLog a) {
+        if (a.getPayload() == null) return null;
+        try {
+            Object d = new com.fasterxml.jackson.databind.ObjectMapper().readTree(a.getPayload()).path("details").asText(null);
+            return (String) d;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

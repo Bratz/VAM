@@ -4,6 +4,8 @@ import { Plus, Building2, CreditCard, Wallet, Shield, Banknote, CheckCircle, XCi
 import { Card, Badge, Button, StatusIconBadge } from '../../components/ui';
 import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
+import { HIERARCHY_TEMPLATES } from '../../config/templateHierarchy';
+import type { ProgramConfigStep } from './ProgramFormModal';
 
 import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, statusConfig } from './shared';
 
@@ -17,9 +19,11 @@ interface ProgramDetailModalProps {
   onEdit: (program: Program) => void;
   onStatusChange: (programId: string, status: string) => void;
   onClone: (program: Program) => void;
+  /** Open one settings screen for this program (the same ones as the list's row actions). */
+  onConfigure: (program: Program, step: ProgramConfigStep) => void;
 }
 
-export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onClone, onStatusChange }) => {
+export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program, onClose, onEdit, onClone, onConfigure, onStatusChange }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'hierarchy' | 'viban' | 'wallet' | 'accounts' | 'config' | 'history'>('overview');
   const [detail, setDetail] = useState<ProgramDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -95,6 +99,17 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
       setWalletCharges(null);
     }
   }, [program, activeTab]);
+
+  // The program's bank accounts (their shadows): home bank and any others it runs on.
+  const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; physicalAccountNumber?: string; bankName?: string; currencyCode: string; bankBalance?: number; linkedPhysicalAccountId?: string }>>([]);
+  useEffect(() => {
+    setBankAccounts([]);
+    if (!program) return;
+    fetch(`/api/v1/treasury/shadow-accounts/program/${program.id}`)
+      .then(res => res.json())
+      .then(data => { if (data.success) setBankAccounts(data.data || []); })
+      .catch(console.error);
+  }, [program?.id]);
 
   if (!program) return null;
 
@@ -204,15 +219,24 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     </Card>
                   </>
                 )}
-                {detail?.physicalAccount && (
-                  <>
-                    <h3 className="body-strong font-semibold">Physical Account</h3>
-                    <Card padding="sm" className="space-y-3">
-                      <div className="flex justify-between"><span className="body-sm">Account</span><span className="text-body-sm font-mono text-primary-900 dark:text-neutral-50">{detail.physicalAccount.accountNumber}</span></div>
-                      <div className="flex justify-between"><span className="body-sm">Bank</span><span className="text-body-sm text-primary-900 dark:text-neutral-50">{detail.physicalAccount.bankName}</span></div>
-                      <div className="flex justify-between"><span className="body-sm">Balance</span><span className="body-strong">{formatCurrency(detail.physicalAccount.currentBalance, detail.physicalAccount.currencyCode)}</span></div>
-                    </Card>
-                  </>
+                <h3 className="body-strong font-semibold">Bank accounts</h3>
+                {bankAccounts.length === 0 ? (
+                  <Card padding="sm"><p className="body-sm">No bank accounts yet. Add one with Edit.</p></Card>
+                ) : (
+                  <Card padding="sm" className="divide-y divide-edge-subtle">
+                    {bankAccounts.map(a => (
+                      <div key={a.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+                        <div className="min-w-0">
+                          <p className="text-body-sm font-mono text-primary-900 dark:text-neutral-50 flex items-center gap-2">
+                            {a.physicalAccountNumber}
+                            {a.linkedPhysicalAccountId === program.physicalAccountId && <Badge variant="info" size="sm">Main</Badge>}
+                          </p>
+                          <p className="caption truncate">{a.bankName}</p>
+                        </div>
+                        <span className="body-strong shrink-0">{formatCurrency(a.bankBalance ?? 0, a.currencyCode)}</span>
+                      </div>
+                    ))}
+                  </Card>
                 )}
               </div>
               <div className="space-y-4">
@@ -250,17 +274,13 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     <Card padding="sm" className="space-y-3">
                       <div className="flex justify-between">
                         <span className="body-sm">Template</span>
-                        <span className="text-body-sm font-medium">{program.defaultHierarchyTemplate || 'Custom'}</span>
+                        <span className="text-body-sm font-medium">{HIERARCHY_TEMPLATES.find(t => t.id === program.defaultHierarchyTemplate)?.name ?? 'Standard'}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="body-sm">Depth</span>
                         <span className="text-body-sm">{program.hierarchyDepth || 7} levels</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="body-sm">Root Node</span>
-                        <span className="text-caption font-mono text-neutral-600 dark:text-neutral-300">{program.rootHierarchyNodeId?.slice(0, 8)}...</span>
-                      </div>
-                    </Card>
+</Card>
 
                     <h3 className="body-strong font-semibold flex items-center gap-2">
                       <XCircle className="w-4 h-4 text-error-500 dark:text-error-300" />Exception VAs
@@ -305,7 +325,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           <Card key={va.id} padding="sm" className="flex justify-between items-center hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
-                                <span className="text-caption font-medium text-accent-700 dark:text-accent-300">L{va.hierarchyLevel || '?'}</span>
+                                <span className="text-caption font-medium text-accent-700 dark:text-accent-300">{va.currency}</span>
                               </div>
                               <div>
                                 <p className="body-strong">{va.vaName}</p>
@@ -508,7 +528,8 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                         <Card padding="sm" className="text-center py-8">
                           <Hash className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
                           <p className="text-neutral-500 mb-2 dark:text-neutral-400">No VIBAN Pool Assigned</p>
-                          <p className="caption">Assign a VIBAN pool to enable VIBAN generation</p>
+                          <p className="caption mb-3">Assign a VIBAN pool to enable VIBAN generation</p>
+                          <Button size="sm" variant="outline" leftIcon={<Hash className="w-4 h-4" />} onClick={() => onConfigure(program, 'VIBAN Pool')}>Set up VIBAN pool</Button>
                         </Card>
                       )}
 
@@ -564,10 +585,10 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                         Wallet Fee Configuration
                       </h3>
                       <p className="caption mt-1">
-                        Fees managed via ChargeConfiguration system
+                        Standard rates apply unless this program overrides them
                       </p>
                     </div>
-                    <Badge variant="info">ChargeConfiguration API</Badge>
+                    <Button size="sm" variant="outline" leftIcon={<Pencil className="w-4 h-4" />} onClick={() => onConfigure(program, 'Wallet Fees')}>Edit fees</Button>
                   </div>
 
                   {/* Transaction Fees */}
@@ -584,7 +605,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           <StatusIconBadge tone="success" icon={Plus} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.topup.chargeName}</p>
-                            <p className="caption">{walletCharges.topup.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -614,7 +634,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           <StatusIconBadge tone="error" icon={Banknote} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.withdrawal.chargeName}</p>
-                            <p className="caption">{walletCharges.withdrawal.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -644,7 +663,6 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                           <StatusIconBadge tone="info" icon={TrendingUp} rounded="lg" />
                           <div>
                             <p className="body-strong">{walletCharges.transfer.chargeName}</p>
-                            <p className="caption">{walletCharges.transfer.chargeCode}</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -773,7 +791,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                       <div className="text-body-sm text-info-800 dark:text-info-300">
                         <p className="font-medium">About Wallet Fees</p>
                         <ul className="mt-1 space-y-1 text-info-700 text-caption dark:text-info-300">
-                          <li>• <strong>Base:</strong> Default rates from ChargeConfiguration</li>
+                          <li>• <strong>Base:</strong> The standard rate for all programs</li>
                           <li>• <strong>Override:</strong> Program-specific customized rates</li>
                           <li>• <strong>Waived:</strong> Fee is not charged for this program</li>
                         </ul>
@@ -908,9 +926,10 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
             <div className="space-y-3">
               {detail.activityLog.length === 0 ? <p className="text-center py-8 text-neutral-500 dark:text-neutral-400">No activity</p> : detail.activityLog.map((item, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 bg-surface-page rounded-lg">
-                  <StatusIconBadge tone="success" icon={CheckCircle} size="sm" rounded="full" />
+                  <StatusIconBadge tone={item.type === 'warning' ? 'warning' : item.type === 'error' ? 'error' : item.type === 'info' ? 'info' : 'success'} icon={item.type === 'warning' ? PauseCircle : CheckCircle} size="sm" rounded="full" />
                   <div className="flex-1">
                     <p className="body-strong">{item.action}</p>
+                    {item.details && <p className="body-sm">{item.details}</p>}
                     <p className="caption">by {item.user} • {formatDate(item.timestamp)}</p>
                   </div>
                 </div>

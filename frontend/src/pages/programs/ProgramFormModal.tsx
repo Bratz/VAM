@@ -1,7 +1,7 @@
 // Program page building blocks, split out of ProgramsPage.tsx.
 import React, { useState, useEffect } from 'react';
 import { Percent, Plus, Building2, Wallet, CheckCircle, Clock, ChevronRight, Loader2, X, Hash, GitBranch, Info, Settings } from 'lucide-react';
-import { Badge, Button, StatusIconBadge, Checkbox } from '../../components/ui';
+import { Badge, Button, StatusIconBadge, Checkbox, Input, Select, TextArea } from '../../components/ui';
 import { CurrencyPicker } from '../../components/ui/CurrencyPicker';
 import { Modal, Alert } from '../../components/ui/enhanced';
 import toast from 'react-hot-toast';
@@ -39,7 +39,6 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
     )}>
       <div className="w-36">
         <p className="body-strong">{charge.chargeName}</p>
-        <p className="caption">{charge.chargeCode}</p>
       </div>
       
       <div className="w-24 text-center">
@@ -54,13 +53,13 @@ const ChargeConfigRow: React.FC<ChargeConfigRowProps> = ({
       <ChevronRight className="w-4 h-4 text-neutral-400" />
       
       <div className="flex-1 flex items-center gap-2">
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-surface-muted')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.percentage)} value={overridePercent ?? ''}
           onChange={e => onPercentChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
         <span className="caption">%</span>
         <span className="caption">+</span>
         <span className="caption">{currencyCode}</span>
-        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border rounded-md', isWaived && 'bg-surface-muted')}
+        <input type="number" step="0.01" className={cn('w-16 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', isWaived && 'bg-surface-muted')}
           placeholder={String(charge.fixed)} value={overrideFlat ?? ''}
           onChange={e => onFlatChange(e.target.value ? parseFloat(e.target.value) : undefined)} disabled={isWaived} />
       </div>
@@ -215,8 +214,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     return labels;
   })();
 
-  // In edit mode, show 2 steps: Basic Info and Features
-  const totalSteps = onlyStep ? 1 : isEdit ? 2 : stepLabels.length;
+  // Edit is one screen (details + bank accounts); VIBAN, wallet limits and fees have their own actions.
+  const totalSteps = onlyStep || isEdit ? 1 : stepLabels.length;
   // Step bodies render on create, or when a single step was asked for.
   const showStepBody = !isEdit || !!onlyStep;
 
@@ -657,7 +656,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
           <div className="space-y-4">
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Building2 className="w-4 h-4" />
-              {isEdit ? 'Step 1: Program Details' : 'Step 1: Basic Information'}
+              {isEdit ? 'Program details' : 'Step 1: Basic Information'}
             </h3>
 
             {/* Corporate Selection - First (most important context) */}
@@ -675,8 +674,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   </div>
                 ) : (
                   // No corporate pre-selected - allow selection
-                  <select
-                    className={cn('w-full px-3 py-2 border rounded-lg bg-surface-card', !formData.corporateId ? 'border-warning-300' : 'border-edge-strong')}
+                  <Select
+                    selectSize="sm"
+                    aria-label="Corporate"
+                    className={cn(!formData.corporateId && 'border-warning-300')}
                     value={formData.corporateId}
                     onChange={e => setFormData({ ...formData, corporateId: e.target.value, shadowAccountIds: [] })}
                     disabled={loadingCorporates}
@@ -685,7 +686,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     {corporates.map(c => (
                       <option key={c.id} value={c.id}>{c.legalName}</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
                 <p className="caption mt-1">Programs are created under a specific corporate entity.</p>
               </div>
@@ -694,10 +695,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             {/* Program Code and Name */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="field-label block mb-1">Program Code *</label>
-                <input
+                <Input
+                  inputSize="sm"
+                  label="Program Code *"
                   type="text"
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
+                  className="font-mono"
                   placeholder="e.g., COLL-001"
                   value={formData.programCode}
                   onChange={e => setFormData({ ...formData, programCode: e.target.value.toUpperCase() })}
@@ -705,10 +707,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 />
               </div>
               <div>
-                <label className="field-label block mb-1">Program Name *</label>
-                <input
+                <Input
+                  inputSize="sm"
+                  label="Program Name *"
                   type="text"
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   placeholder="e.g., Main Collection Program"
                   value={formData.programName}
                   onChange={e => setFormData({ ...formData, programName: e.target.value })}
@@ -729,10 +731,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 />
               </div>
               <div>
-                <label className="field-label block mb-1">Max Virtual Accounts</label>
-                <input
+                <Input
+                  inputSize="sm"
+                  label="Max Virtual Accounts"
                   type="number"
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
                   placeholder="Unlimited"
                   value={formData.maxVirtualAccounts || ''}
                   onChange={e => setFormData({ ...formData, maxVirtualAccounts: e.target.value ? parseInt(e.target.value) : undefined })}
@@ -742,9 +744,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             {/* Description */}
             <div>
-              <label className="field-label block mb-1">Description</label>
-              <textarea
-                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
+              <TextArea
+                textareaSize="sm"
+                label="Description"
                 rows={2}
                 placeholder="Brief description of the program purpose..."
                 value={formData.description}
@@ -1014,7 +1016,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                   updated[idx] = { ...updated[idx], levelName: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md"
+                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50"
                               />
                             </div>
 
@@ -1028,7 +1030,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                   updated[idx] = { ...updated[idx], dimensionType: e.target.value };
                                   setHierarchyLevelConfigs(updated);
                                 }}
-                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md"
+                                className="w-full px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50"
                               >
                                 <option value="CURRENCY">💱 Currency</option>
                                 <option value="REGION">🌍 Region</option>
@@ -1120,7 +1122,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                 <input
                                   type="text"
                                   placeholder="Add value..."
-                                  className="flex-1 px-2 py-1 text-caption border border-edge-strong rounded-md"
+                                  className="flex-1 px-2 py-1 text-caption border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -1245,9 +1247,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             {/* VIBAN Pool Selection */}
             <div>
-              <label className="field-label block mb-1">VIBAN Pool</label>
-              <select
-                className="w-full px-3 py-2 border border-edge-strong rounded-lg"
+              <Select
+                selectSize="sm"
+                label="VIBAN Pool"
                 value={formData.defaultVibanPoolId}
                 onChange={e => setFormData({ ...formData, defaultVibanPoolId: e.target.value })}
                 disabled={!program || loadingPools}
@@ -1258,7 +1260,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     {pool.poolName} ({pool.availableCount} available)
                   </option>
                 ))}
-              </select>
+              </Select>
               {selectedPool && (
                 <div className="mt-2 p-3 bg-surface-page rounded-lg">
                   <div className="grid grid-cols-3 gap-4 text-center">
@@ -1282,10 +1284,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             {/* VIBAN Prefix and Bank Code */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="field-label block mb-1">VIBAN Prefix</label>
-                <input
+                <Input
+                  inputSize="sm"
+                  label="VIBAN Prefix"
                   type="text"
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
+                  className="font-mono"
                   placeholder="e.g., AE"
                   maxLength={4}
                   value={formData.vibanPrefix}
@@ -1293,10 +1296,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 />
               </div>
               <div>
-                <label className="field-label block mb-1">Bank Code</label>
-                <input
+                <Input
+                  inputSize="sm"
+                  label="Bank Code"
                   type="text"
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono"
+                  className="font-mono"
                   placeholder="e.g., 033"
                   maxLength={4}
                   value={formData.vibanBankCode}
@@ -1337,9 +1341,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <label className="block label-cased mb-1">Per Transaction Limit</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
-                    <input
+                    <Input
+                      inputSize="sm"
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
+                      className="pl-12"
                       placeholder="50,000"
                       value={formData.defaultPerTransactionLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultPerTransactionLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -1350,9 +1355,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <label className="block label-cased mb-1">Daily Limit</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
-                    <input
+                    <Input
+                      inputSize="sm"
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
+                      className="pl-12"
                       placeholder="200,000"
                       value={formData.defaultDailyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultDailyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -1363,9 +1369,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <label className="block label-cased mb-1">Monthly Limit</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
-                    <input
+                    <Input
+                      inputSize="sm"
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
+                      className="pl-12"
                       placeholder="1,000,000"
                       value={formData.defaultMonthlyLimit ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMonthlyLimit: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -1383,9 +1390,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <label className="block label-cased mb-1">Maximum Balance</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-body-sm dark:text-neutral-400">{formData.currencyCode}</span>
-                    <input
+                    <Input
+                      inputSize="sm"
                       type="number"
-                      className="w-full pl-12 pr-3 py-2 border border-edge-strong rounded-lg"
+                      className="pl-12"
                       placeholder="500,000"
                       value={formData.defaultMaxBalance ?? ''}
                       onChange={e => setFormData({ ...formData, defaultMaxBalance: e.target.value ? parseFloat(e.target.value) : undefined })}
@@ -1408,9 +1416,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   description="Require KYC verification for wallet holders"
                 />
                 <div>
-                  <label className="block label-cased mb-1">Minimum KYC Level</label>
-                  <select
-                    className="w-full px-3 py-2 border border-edge-strong rounded-lg"
+                  <Select
+                    selectSize="sm"
+                    label="Minimum KYC Level"
                     value={formData.minKycLevel ?? 1}
                     onChange={e => setFormData({ ...formData, minKycLevel: parseInt(e.target.value) })}
                     disabled={!formData.kycRequired}
@@ -1419,7 +1427,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                     <option value={2}>Level 2 - Standard (+ ID Document)</option>
                     <option value={3}>Level 3 - Enhanced (+ Address Proof)</option>
                     <option value={4}>Level 4 - Full (+ Income Proof)</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -1470,7 +1478,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             <h3 className="font-medium text-primary-900 flex items-center gap-2 dark:text-neutral-50">
               <Percent className="w-4 h-4" />
               Wallet Fees Configuration
-              <Badge variant="info" size="sm">ChargeConfiguration</Badge>
             </h3>
 
             <p className="body-sm">Configure fee overrides for this program. Leave blank to use base rates.</p>
@@ -1514,7 +1521,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.issuance.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.issuance.waived && 'bg-surface-muted')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.issuance.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.issuance.fixed)} value={chargeOverrides.issuance.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, issuance: { ...chargeOverrides.issuance, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.issuance.waived} />
@@ -1528,7 +1535,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.monthly.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.monthly.waived && 'bg-surface-muted')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.monthly.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.monthly.fixed)} value={chargeOverrides.monthly.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, monthly: { ...chargeOverrides.monthly, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.monthly.waived} />
@@ -1542,7 +1549,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div className="flex items-center gap-2">
                     <span className="caption">Base: {formData.currencyCode} {walletCharges.inactivity.fixed}</span>
                     <ChevronRight className="w-3 h-3 text-neutral-300 dark:text-neutral-400" />
-                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border rounded-md', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
+                    <input type="number" className={cn('w-20 px-2 py-1 text-body-sm border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50', chargeOverrides.inactivity.waived && 'bg-surface-muted')}
                       placeholder={String(walletCharges.inactivity.fixed)} value={chargeOverrides.inactivity.flat ?? ''}
                       onChange={e => setChargeOverrides({ ...chargeOverrides, inactivity: { ...chargeOverrides.inactivity, flat: e.target.value ? parseFloat(e.target.value) : undefined } })}
                       disabled={chargeOverrides.inactivity.waived} />
@@ -1554,7 +1561,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
             <div className="bg-info-50 border border-info-200 rounded-lg p-3 flex items-start gap-2 dark:bg-info-500/10 dark:border-info-500/30">
               <Info className="w-4 h-4 text-info-600 mt-0.5 dark:text-info-300" />
               <p className="text-body-sm text-info-700 dark:text-info-300">
-                Fees are managed via ChargeConfiguration. Override values apply to this program only. Leave blank to use base rates.
+                Overrides apply to this program only. Leave a fee blank to use the standard rate.
               </p>
             </div>
           </div>
@@ -1572,20 +1579,22 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="field-label block mb-1">VA Prefix</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono" 
+                <Input
+                  inputSize="sm"
+                  label="VA Prefix"
+                  type="text"
+                  className="font-mono"
                   placeholder="e.g., VA"
                   value={formData.vaPrefix} 
                   onChange={e => setFormData({ ...formData, vaPrefix: e.target.value.toUpperCase() })} 
                 />
               </div>
               <div>
-                <label className="field-label block mb-1">VA Format</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg font-mono" 
+                <Input
+                  inputSize="sm"
+                  label="VA Format"
+                  type="text"
+                  className="font-mono"
                   placeholder="{PREFIX}{SEQ:8}"
                   value={formData.vaFormat} 
                   onChange={e => setFormData({ ...formData, vaFormat: e.target.value })} 
@@ -1611,6 +1620,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               <div>
                 <h4 className="label mb-2">Basic Information</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
+                  <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Corporate:</span> <span className="font-medium">{corporates.find(c => c.id === (formData.corporateId || defaultCorporateId))?.legalName ?? '—'}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Code:</span> <span className="font-mono font-medium">{formData.programCode}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="font-medium">{formData.currencyCode}</span></div>
@@ -1625,7 +1635,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <div className="border-t pt-4">
                   <h4 className="label mb-2">Hierarchy Configuration</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
-                    <div><span className="text-neutral-500 dark:text-neutral-400">Template:</span> <span className="font-medium">{formData.defaultHierarchyTemplate || 'Custom'}</span></div>
+                    <div><span className="text-neutral-500 dark:text-neutral-400">Template:</span> <span className="font-medium">{HIERARCHY_TEMPLATES.find(t => t.id === formData.defaultHierarchyTemplate)?.name ?? 'Standard'}</span></div>
                     <div><span className="text-neutral-500 dark:text-neutral-400">Depth:</span> <span className="font-medium">{formData.hierarchyDepth} levels</span></div>
                   </div>
                 </div>
@@ -1676,7 +1686,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <h4 className="label mb-2">VIBAN Configuration</h4>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
                     <div><span className="text-neutral-500 dark:text-neutral-400">Strategy:</span> <span className="font-medium">{vibanStrategyConfig[formData.vibanGenerationStrategy]?.label}</span></div>
-                    <div><span className="text-neutral-500 dark:text-neutral-400">Prefix:</span> <span className="font-mono">{formData.vibanPrefix || 'Default'}</span></div>
+                    <div><span className="text-neutral-500 dark:text-neutral-400">Prefix:</span> <span className="font-mono">{formData.vibanPrefix || 'Not set'}</span></div>
                     {selectedPool && <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Pool:</span> <span className="font-medium">{selectedPool.poolName}</span></div>}
                   </div>
                 </div>
@@ -1686,7 +1696,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               {needsWalletConfig && walletCharges && (
                 <div className="border-t pt-4">
                   <h4 className="label mb-2 flex items-center gap-2">
-                    Wallet Fees <Badge variant="info" size="sm">ChargeConfiguration</Badge>
+                    Wallet Fees
                   </h4>
                   {/* Transaction Fees */}
                   <div className="grid grid-cols-3 gap-2 text-caption mb-2">
@@ -1742,10 +1752,12 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 </div>
               )}
 
-              {/* Settlement */}
+              {/* Account numbering */}
               <div className="border-t pt-4">
-                <h4 className="label mb-2">Settlement</h4>
+                <h4 className="label mb-2">Account numbering</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-body-sm">
+                  <div><span className="text-neutral-500 dark:text-neutral-400">Prefix:</span> <span className="font-mono">{formData.vaPrefix || 'Automatic'}</span></div>
+                  <div><span className="text-neutral-500 dark:text-neutral-400">Format:</span> <span className="font-mono">{formData.vaFormat || 'Automatic'}</span></div>
                 </div>
               </div>
             </div>

@@ -386,6 +386,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     disabled,
     ...props
   }, ref) => {
+    const autoId = React.useId();
+    const fieldId = props.id ?? autoId;
     const sizeStyles: Record<string, string> = {
       sm: 'h-9 px-3 text-body-sm',
       md: 'h-11 px-4 text-body',
@@ -401,7 +403,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block body-strong mb-2">
+          <label htmlFor={fieldId} className="block body-strong mb-2">
             {label}
           </label>
         )}
@@ -416,6 +418,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
+            id={fieldId}
             disabled={disabled}
             className={cn(
               // Base styles
@@ -504,6 +507,8 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
     rows = 3,
     ...props
   }, ref) => {
+    const autoId = React.useId();
+    const fieldId = props.id ?? autoId;
     const sizeStyles: Record<string, string> = {
       sm: 'px-3 py-2 text-body-sm',
       md: 'px-4 py-2.5 text-body',
@@ -513,12 +518,13 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block body-strong mb-2">
+          <label htmlFor={fieldId} className="block body-strong mb-2">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
+          id={fieldId}
           rows={rows}
           disabled={disabled}
           className={cn(
@@ -584,6 +590,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     disabled,
     ...props
   }, ref) => {
+    const autoId = React.useId();
+    const fieldId = props.id ?? autoId;
     const sizeStyles: Record<string, string> = {
       sm: 'h-9 px-3 pr-9 text-body-sm',
       md: 'h-11 px-4 pr-10 text-body',
@@ -593,13 +601,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block body-strong mb-2">
+          <label htmlFor={fieldId} className="block body-strong mb-2">
             {label}
           </label>
         )}
         <div className="relative">
           <select
             ref={ref}
+            id={fieldId}
             disabled={disabled}
             className={cn(
               // Base styles
