@@ -418,10 +418,27 @@ public class ShadowAccountService {
     }
 
     /** The program's own scaffolding: it copies the backing account but holds no customer money. */
-    private static final Set<AccountCategory> STRUCTURAL = EnumSet.of(
+    public static final Set<AccountCategory> STRUCTURAL = EnumSet.of(
         AccountCategory.ROOT, AccountCategory.AGGREGATION, AccountCategory.CURRENCY_MIRROR,
         AccountCategory.PHYSICAL_MIRROR, AccountCategory.EXTERNAL_MIRROR,
         AccountCategory.EXCEPTION, AccountCategory.SUSPENSE, AccountCategory.SETTLEMENT);
+
+    /**
+     * A closed program gives its bank accounts back: each shadow returns to unassigned so
+     * another program can pick it. One with accounts hanging under it stays (and is counted).
+     */
+    @Transactional
+    public int releaseProgramShadows(Program program) {
+        int kept = 0;
+        for (VirtualAccount shadow : getShadowAccountsByProgram(program.getId())) {
+            if (!vaRepository.findByParentAccountId(shadow.getId()).isEmpty()) {
+                kept++;
+                continue;
+            }
+            vaRepository.save(unassigned(shadow));
+        }
+        return kept;
+    }
 
     private void detachFromProgram(VirtualAccount shadow, Program program, UUID newBacking) {
         if (!vaRepository.findByParentAccountId(shadow.getId()).isEmpty()) {

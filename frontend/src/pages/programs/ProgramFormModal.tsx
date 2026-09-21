@@ -113,6 +113,10 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   const [bankShadows, setBankShadows] = useState<BankShadow[]>([]);
   // Only send the selection once the list loaded: on edit an empty list means "detach all".
   const [bankShadowsLoaded, setBankShadowsLoaded] = useState(false);
+  // Until the user changes a tick, the selection is what the program has now, worked out at
+  // render/save time. Storing it from the fetch raced the form reset: an untouched save could
+  // send an empty list, which the backend reads as "untick every account shown".
+  const [bankTouched, setBankTouched] = useState(false);
   const [vibanPools, setVibanPools] = useState<VibanPool[]>([]);
   const [loadingCorporates, setLoadingCorporates] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -198,6 +202,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   const [expandedLevelIndex, setExpandedLevelIndex] = useState<number | null>(null);
 
   const isEdit = !!program;
+  const chosenShadowIds = bankTouched || !program
+    ? formData.shadowAccountIds
+    : bankShadows.filter(s => s.programId === program.id).map(s => s.id);
   // Fetch wallet charges when editing a wallet program or when wallet is enabled
   const needsWalletConfig = formData.configureWallet;
   const needsHierarchyConfig = formData.configureHierarchy;
@@ -239,23 +246,29 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   // Load the corporate's home-bank shadow accounts in the program currency. On edit, the
   // ones already in this program start ticked.
   const shadowCorporateId = program?.corporateId || formData.corporateId;
+  // On edit the currency is the program's (fixed); formData only catches up after its reset.
+  const shadowCurrency = program?.currencyCode || formData.currencyCode;
   useEffect(() => {
     setBankShadows([]);
     setBankShadowsLoaded(false);
-    if (!isOpen || !shadowCorporateId || !formData.currencyCode) return;
+    setBankTouched(false);
+    if (!isOpen || !shadowCorporateId || !shadowCurrency) return;
+    // A superseded request must not land: an empty answer for the wrong currency arriving last
+    // made an untouched save untick every account.
+    let current = true;
     setLoadingAccounts(true);
-    fetch(`/api/v1/treasury/shadow-accounts/corporate/${shadowCorporateId}/available?currency=${formData.currencyCode}`)
+    fetch(`/api/v1/treasury/shadow-accounts/corporate/${shadowCorporateId}/available?currency=${shadowCurrency}`)
       .then(res => res.json())
       .then(data => {
-        if (!data.success) return;
+        if (!current || !data.success) return;
         const shadows: BankShadow[] = data.data || [];
         setBankShadows(shadows);
         setBankShadowsLoaded(true);
-        setFormData(prev => ({ ...prev, shadowAccountIds: program ? shadows.filter(s => s.programId === program.id).map(s => s.id) : [] }));
       })
       .catch(console.error)
-      .finally(() => setLoadingAccounts(false));
-  }, [isOpen, shadowCorporateId, formData.currencyCode, program]);
+      .finally(() => { if (current) setLoadingAccounts(false); });
+    return () => { current = false; };
+  }, [isOpen, shadowCorporateId, shadowCurrency, program]);
 
   // Fetch VIBAN pools when VIBAN is enabled
   useEffect(() => {
@@ -522,6 +535,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
       return;
     }
 
+    const ifChanged = <T,>(loaded: T, value: T) => (isEdit && loaded === value ? undefined : value);
     setLoading(true);
     try {
       const cleanedData = {
@@ -529,7 +543,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         programName: formData.programName,
         description: formData.description || undefined,
         corporateId: resolvedCorporateId,
-        shadowAccountIds: bankShadowsLoaded ? formData.shadowAccountIds : undefined,
+        // Only the screen that shows the bank-account list sends it (not VIBAN / limits / fees).
+        shadowAccountIds: !onlyStep && bankShadowsLoaded ? chosenShadowIds : undefined,
         currencyCode: formData.currencyCode,
         // Core feature flags
         // Extended program features
@@ -546,11 +561,13 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         defaultDailyLimit: needsWalletConfig ? formData.defaultDailyLimit : undefined,
         defaultMonthlyLimit: needsWalletConfig ? formData.defaultMonthlyLimit : undefined,
         defaultMaxBalance: needsWalletConfig ? formData.defaultMaxBalance : undefined,
-        kycRequired: needsWalletConfig ? formData.kycRequired : undefined,
+        // On edit, only send what was changed: the form shows a blank setting as its default and
+        // used to save that default back, reporting settings nobody touched as changed.
+        kycRequired: needsWalletConfig ? ifChanged(program?.kycRequired ?? false, formData.kycRequired) : undefined,
         minKycLevel: needsWalletConfig && formData.kycRequired ? formData.minKycLevel : undefined,
-        allowTopup: needsWalletConfig ? formData.allowTopup : undefined,
-        allowWithdrawal: needsWalletConfig ? formData.allowWithdrawal : undefined,
-        allowTransfer: needsWalletConfig ? formData.allowTransfer : undefined,
+        allowTopup: needsWalletConfig ? ifChanged(program?.allowTopup ?? true, formData.allowTopup) : undefined,
+        allowWithdrawal: needsWalletConfig ? ifChanged(program?.allowWithdrawal ?? true, formData.allowWithdrawal) : undefined,
+        allowTransfer: needsWalletConfig ? ifChanged(program?.allowTransfer ?? true, formData.allowTransfer) : undefined,
         // Settlement & Limits
         vaPrefix: formData.vaPrefix || undefined,
         vaFormat: formData.vaFormat || undefined,
@@ -585,7 +602,8 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
       // Save wallet charges separately via ChargeConfiguration API. On create
       // this used to be skipped ("charges saved on next edit") -- and the edit
       // wizard never showed the fees step, so fees entered at create were lost.
-      if (needsWalletConfig && programId) {
+      // Fees only when the fee screen was part of this save (not from Wallet limits alone).
+      if (needsWalletConfig && onlyStep !== 'Wallet Limits' && programId) {
         await saveWalletCharges(programId);
       }
       
@@ -774,11 +792,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                         key={s.id}
                         variant="card"
                         disabled={takenElsewhere}
-                        checked={formData.shadowAccountIds.includes(s.id)}
-                        onChange={checked => setFormData(prev => ({
+                        checked={chosenShadowIds.includes(s.id)}
+                        onChange={checked => { setBankTouched(true); setFormData(prev => ({
                           ...prev,
-                          shadowAccountIds: checked ? [...prev.shadowAccountIds, s.id] : prev.shadowAccountIds.filter(id => id !== s.id),
-                        }))}
+                          shadowAccountIds: checked ? [...chosenShadowIds, s.id] : chosenShadowIds.filter(id => id !== s.id),
+                        })); }}
                         label={<span className="font-mono">{s.bankAccountNumber} · {s.bankName}</span>}
                         description={takenElsewhere
                           ? `In use by ${s.programName ?? 'another program'}`
@@ -1625,7 +1643,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="font-medium">{formData.currencyCode}</span></div>
                   <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Bank accounts:</span>{' '}
-                    <span className="font-medium">{bankShadows.filter(s => formData.shadowAccountIds.includes(s.id)).map(s => `${s.bankAccountNumber} (${s.bankName})`).join(', ') || 'None'}</span>
+                    <span className="font-medium">{bankShadows.filter(s => chosenShadowIds.includes(s.id)).map(s => `${s.bankAccountNumber} (${s.bankName})`).join(', ') || 'None'}</span>
                   </div>
                 </div>
               </div>

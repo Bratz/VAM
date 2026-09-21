@@ -34,6 +34,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,7 +62,7 @@ public class ProgramService {
     private final HierarchyService hierarchyService;
     private final com.bank.vam.service.audit.AuditLogService auditLogService;
     private final com.bank.vam.repository.audit.AuditLogRepository auditLogRepository;
-private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
+    private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
     private final com.bank.vam.service.treasury.FxRateService fxRateService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
@@ -209,7 +211,7 @@ private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountSe
             .findByEntityTypeAndEntityIdOrderByCreatedAtDesc(AUDIT_ENTITY, programId, PageRequest.of(0, 50))
             .map(a -> ActivityLogEntry.builder()
                 .action(a.getSummary())
-                .user(a.getActor() != null ? a.getActor() : "System")
+                .user(a.getActor() == null ? "System" : "anonymousUser".equals(a.getActor()) ? "Not signed in" : a.getActor())
                 .timestamp(a.getCreatedAt())
                 .type(activityType(a))
                 .details(detailsOf(a))
@@ -365,6 +367,8 @@ private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountSe
         log.info("Updating program: {}", programId);
 
         Program program = findProgramOrThrow(programId);
+        Map<String, Object> before = settingsOf(program);
+        Set<UUID> shadowsBefore = shadowIdsOf(programId);
 
         // Update fields if provided
         if (request.getProgramName() != null) program.setProgramName(request.getProgramName());
@@ -423,8 +427,12 @@ private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountSe
 
         program = programRepository.save(program);
         log.info("Program updated successfully: {}", programId);
-        audit(program, "PROGRAM_UPDATED",
-            request.getShadowAccountIds() != null ? "Details and bank accounts updated" : "Details updated", null);
+        List<String> changed = changedSettings(before, settingsOf(program));
+        boolean bankAccountsChanged = !shadowsBefore.equals(shadowIdsOf(programId));
+        if (bankAccountsChanged) changed.add("bank accounts");
+        if (!changed.isEmpty()) {
+            audit(program, "PROGRAM_UPDATED", "Settings updated", "Changed: " + String.join(", ", changed));
+        }
 
         return toProgramResponse(program);
     }
@@ -453,22 +461,33 @@ private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountSe
     /**
      * Delete (deactivate) program
      */
-    public void deleteProgram(UUID programId) {
-        log.info("Deactivating program: {}", programId);
-
+    /**
+     * Close a program for good (a closed program cannot be reopened). Only its customer accounts
+     * block this: its own scaffolding (root, mirrors, exception, settlement) is always active, so
+     * counting every active account made closing -- then called delete -- impossible for any
+     * program. Its bank accounts are released for other programs.
+     */
+    public ProgramResponse closeProgram(UUID programId) {
         Program program = findProgramOrThrow(programId);
-
-        // Check if program has active virtual accounts
-        long activeVaCount = virtualAccountRepository.countByProgramIdAndStatus(programId, VirtualAccount.VaStatus.ACTIVE);
-        if (activeVaCount > 0) {
-            throw new BusinessException("Cannot delete program with " + activeVaCount + " active virtual accounts");
+        if (program.getStatus() == ProgramStatus.CLOSED) {
+            throw new BusinessException("Program " + program.getProgramCode() + " is already closed");
         }
-
-        program.setStatus(ProgramStatus.INACTIVE);
-        programRepository.save(program);
-
-        log.info("Program deactivated successfully: {}", programId);
-        audit(program, "PROGRAM_STATUS_CHANGED", "Program deleted (deactivated)", null);
+        long customerAccounts = virtualAccountRepository.findByProgramId(programId).stream()
+            .filter(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE)
+            .filter(va -> !com.bank.vam.service.treasury.ShadowAccountService.STRUCTURAL.contains(va.getAccountCategory()))
+            .count();
+        if (customerAccounts > 0) {
+            throw new BusinessException("Close or move the program's " + customerAccounts
+                + " active customer accounts before closing it");
+        }
+        int kept = shadowAccountService.releaseProgramShadows(program);
+        ProgramStatus old = program.getStatus();
+        program.setStatus(ProgramStatus.CLOSED);
+        program = programRepository.save(program);
+        log.info("Program closed: {}", programId);
+        audit(program, "PROGRAM_STATUS_CHANGED", "Program closed",
+            "From " + label(old) + (kept > 0 ? "; " + kept + " bank account(s) with accounts under them stay with it" : "; bank accounts released"));
+        return toProgramResponse(program);
     }
 
     /**
@@ -827,5 +846,37 @@ private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountSe
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /** Record something done to a program elsewhere (e.g. its wallet fees) in its activity. */
+    public void recordActivity(UUID programId, String eventType, String summary) {
+        programRepository.findById(programId).ifPresent(p -> audit(p, eventType, summary, null));
+    }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper SETTINGS_MAPPER =
+        new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules();
+
+    /** The program's own settings as name -> value (no counts, balances or timestamps). */
+    private Map<String, Object> settingsOf(Program program) {
+        Map<String, Object> all = SETTINGS_MAPPER.convertValue(toProgramResponse(program),
+            new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+        all.keySet().removeIf(k -> k.endsWith("Count") || k.contains("Balance") || k.endsWith("At")
+            || k.endsWith("Name") && !k.equals("programName") || k.equals("id") || k.equals("stats"));
+        return all;
+    }
+
+    private static List<String> changedSettings(Map<String, Object> before, Map<String, Object> after) {
+        List<String> changed = new ArrayList<>();
+        for (String key : after.keySet()) {
+            if (!Objects.equals(before.get(key), after.get(key))) {
+                changed.add(key.replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase());
+            }
+        }
+        return changed;
+    }
+
+    private Set<UUID> shadowIdsOf(UUID programId) {
+        return shadowAccountService.getShadowAccountsByProgram(programId).stream()
+            .map(VirtualAccount::getId).collect(Collectors.toSet());
     }
 }

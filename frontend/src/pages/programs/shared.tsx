@@ -249,7 +249,8 @@ export const programApi = {
   create: (data: Partial<Program>) => fetchApi<Program>('', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Partial<Program>) => fetchApi<Program>('/' + id, { method: 'PUT', body: JSON.stringify(data) }),
   updateStatus: (id: string, status: string, reason?: string) => fetchApi<Program>('/' + id + '/status', { method: 'PATCH', body: JSON.stringify({ status, reason }) }),
-  delete: (id: string) => fetchApi<void>('/' + id, { method: 'DELETE' }),
+  /** Close for good (DELETE on the API): releases its bank accounts; refused while customer accounts are active. */
+  close: (id: string) => fetchApi<Program>('/' + id, { method: 'DELETE' }),
   clone: (id: string, newProgramCode: string, newProgramName: string) =>
     fetchApi<Program>('/' + id + '/clone', { method: 'POST', body: JSON.stringify({ newProgramCode, newProgramName }) }),
 };

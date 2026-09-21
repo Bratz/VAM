@@ -30,6 +30,7 @@ import java.util.UUID;
 public class ProgramChargeOverrideController {
 
     private final ProgramChargeOverrideService overrideService;
+    private final com.bank.vam.service.ProgramService programService;
 
     // ========================================================================
     // CRUD OPERATIONS
@@ -102,6 +103,7 @@ public class ProgramChargeOverrideController {
         request.setProgramId(programId);
         log.info("Setting wallet charges for program {}", programId);
         WalletChargesResponse response = overrideService.setWalletCharges(request);
+        programService.recordActivity(programId, "PROGRAM_UPDATED", "Wallet fees updated");
         return ResponseEntity.ok(ApiResponse.success(response, "Wallet charges updated"));
     }
 

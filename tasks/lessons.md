@@ -177,3 +177,15 @@ Build failure: `Expected "as" but found "{"`. Cascade: had to manually repair tw
 **Trigger:** 2026-09-19. `bg-white dark:bg-primary-900`-style pairs appeared ~1,700 times; forgetting the dark half caused the dark-mode contrast bugs.
 **Rule:** Use `bg-surface-page|card|muted` and `border-edge|edge-subtle|edge-strong` (and `divide-edge*`); they are themed by CSS variables in `design-system/variables.css`.
 **How to apply:** Only exact light+dark pairs in the same class string were migrated; pairs split by other tokens or built from template literals remain and can be migrated when touched.
+
+## A form that saves a whole set must derive it from what it loaded, and ignore stale loads
+Programs form: the bank-account list is saved as the program's full set (untick = remove). The
+list was fetched in an effect with no stale-response guard, and on Edit the first request used
+the form's default currency (AED) before the program's (GBP) arrived. When the empty AED answer
+landed last, an untouched save sent an empty set and detached a live bank account -- twice,
+caught only because the new activity log said "Changed: bank accounts" on a no-op save.
+- Every fetch-in-effect that feeds a save gets `let current = true; ... return () => { current = false }`.
+- Seed request params from the entity being edited (program.currencyCode), not from form defaults.
+- A "full set" payload is sent only by the screen that shows the set, and is derived at save time
+  from the loaded state unless the user actually changed it.
+- Verify no-op saves change nothing (DB diff + audit entries), several times, not once.

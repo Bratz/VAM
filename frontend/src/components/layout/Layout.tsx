@@ -662,6 +662,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
         </div>
       </div>
 
+      {/* Page actions on phones: the right cluster has no room for them, and hiding them
+          left pages like Programs with no way to create, export or refresh. */}
+      {pageActions && (
+        <div className="md:hidden flex flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          {pageActions}
+        </div>
+      )}
+
       {/* Mobile Search Overlay */}
       {showSearch && (
         <div className="lg:hidden absolute inset-x-0 top-full bg-surface-card border-b border-edge p-4 animate-slide-down">

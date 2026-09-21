@@ -43,8 +43,11 @@ public class ProgramController {
     )
     public ResponseEntity<Map<String, Object>> getAllPrograms(
             @Parameter(description = "Corporate ID filter (from header)")
-            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
-            
+            @RequestHeader(value = "X-Corporate-Id", required = false) UUID headerCorporateId,
+
+            @Parameter(description = "Corporate ID filter; takes precedence over the header")
+            @RequestParam(value = "corporateId", required = false) UUID paramCorporateId,
+
             @Parameter(description = "Search query for program code, name, or description")
             @RequestParam(required = false) String query,
             
@@ -66,6 +69,9 @@ public class ProgramController {
             @Parameter(description = "Sort order: asc or desc")
             @RequestParam(defaultValue = "desc") String sortOrder) {
 
+        // The Programs page sends the corporate as ?corporateId=; it used to be read only from
+        // the header, so picking a corporate filtered nothing.
+        UUID corporateId = paramCorporateId != null ? paramCorporateId : headerCorporateId;
         ProgramSearchRequest request = ProgramSearchRequest.builder()
             .query(query)
             .status(status)
@@ -213,18 +219,19 @@ public class ProgramController {
 
     @DeleteMapping("/{programId}")
     @Operation(
-        summary = "Delete program",
-        description = "Deactivate a program (soft delete). Programs with active virtual accounts cannot be deleted."
+        summary = "Close program",
+        description = "Close a program for good and release its bank accounts. Refused while it has active customer accounts."
     )
     public ResponseEntity<Map<String, Object>> deleteProgram(
             @Parameter(description = "Program UUID")
             @PathVariable UUID programId) {
         
-        programService.deleteProgram(programId);
-        
+        ProgramResponse closed = programService.closeProgram(programId);
+
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "message", "Program deactivated successfully"
+            "data", closed,
+            "message", "Program closed"
         ));
     }
 

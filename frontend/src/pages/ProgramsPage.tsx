@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Trash2, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
+import { Search, Download, RefreshCw, Plus, Eye, MoreHorizontal, CheckCircle, Copy, Archive, Loader2, Layers, PauseCircle, PlayCircle, TrendingUp, Pencil, Hash, Gauge, Receipt } from 'lucide-react';
 import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '../components/ui';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
@@ -44,6 +44,12 @@ const ProgramsPage: React.FC = () => {
     setMenuStyle({ right: window.innerWidth - b.right, ...(up ? { bottom: window.innerHeight - b.top + 4 } : { top: b.bottom + 4 }) });
     setActionMenuId(id);
   };
+  useEffect(() => {
+    if (!actionMenuId) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActionMenuId(null); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [actionMenuId]);
   const [cloneSource, setCloneSource] = useState<Program | null>(null);
   const [cloneCode, setCloneCode] = useState('');
   const [cloneName, setCloneName] = useState('');
@@ -68,17 +74,17 @@ const ProgramsPage: React.FC = () => {
   };
   const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const confirmDelete = async () => {
+  const confirmClose = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
-    const res = await programApi.delete(deleteTarget.id);
+    const res = await programApi.close(deleteTarget.id);
     setDeleting(false);
     if (res.success) {
-      setPrograms(prev => prev.filter(p => p.id !== deleteTarget.id));
-      toast.success(`Deleted ${deleteTarget.programName}`);
+      setPrograms(prev => prev.map(p => p.id === deleteTarget.id ? res.data : p));
+      toast.success(`Closed ${deleteTarget.programName}`);
       setDeleteTarget(null);
     } else {
-      toast.error('Failed to delete program: ' + (res.message || 'Unknown error'));
+      toast.error('Could not close the program: ' + (res.message || 'Unknown error'));
     }
   };
 
@@ -384,8 +390,9 @@ const ProgramsPage: React.FC = () => {
                 </div>
               );
             } },
-            { key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 2, render: (_v, program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> },
-            { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, render: (_v, program) => (
+            // Which corporate owns each program: needed in the all-corporates view, redundant once one is picked.
+            ...(selectedCorporateId ? [] : [{ key: 'corporateName', header: 'Corporate', minWidth: 150, dropOrder: 1, render: (_v: unknown, program: Program) => <p className="text-body-sm text-primary-900 dark:text-neutral-50">{program.corporateName || '-'}</p> }]),
+            { key: 'virtualAccountCount', header: 'VAs', align: 'center', minWidth: 90, dropOrder: 2, render: (_v, program) => (
               <><p className="text-body-sm font-medium">{program.virtualAccountCount || 0}</p><p className="caption">{program.activeVirtualAccountCount || 0} active</p></>
             ) },
             { key: 'totalBalance', header: 'Balance', align: 'right', minWidth: 140, mobileValue: true, render: (_v, program) => (
@@ -398,8 +405,8 @@ const ProgramsPage: React.FC = () => {
             { key: 'actions', header: 'Actions', align: 'right', minWidth: 130, render: (_v, program) => (
               <div className="flex justify-end gap-1">
                 <Button size="sm" variant="ghost" onClick={() => setSelectedProgram(program)} title="View Details"><Eye className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => setEditProgram(program)} title="Edit Program"><Pencil className="w-4 h-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); }} title="VIBAN settings" aria-label="VIBAN settings"><Hash className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => setEditProgram(program)} title={program.status === 'CLOSED' ? 'Closed programs cannot be edited' : 'Edit Program'}><Pencil className="w-4 h-4" /></Button>
+                <Button size="sm" variant="ghost" disabled={program.status === 'CLOSED'} onClick={() => { setEditProgram(program); setConfigStep('VIBAN Pool'); }} title="VIBAN settings" aria-label="VIBAN settings"><Hash className="w-4 h-4" /></Button>
                 {/* Action Menu Dropdown */}
                 <div className="relative">
                   <Button
@@ -417,6 +424,7 @@ const ProgramsPage: React.FC = () => {
                       {/* Dropdown Menu */}
                       <div style={menuStyle} className="fixed w-48 bg-surface-card border border-edge rounded-lg shadow-lg z-20 py-1 text-left">
                         {/* Configure: settings that are optional at create time */}
+                        {program.status !== 'CLOSED' && (<>
                         <button
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 dark:hover:bg-primary-800/40"
                           onClick={() => { setEditProgram(program); setConfigStep('Wallet Limits'); setActionMenuId(null); }}
@@ -430,6 +438,7 @@ const ProgramsPage: React.FC = () => {
                           <Receipt className="w-4 h-4" />Wallet fees
                         </button>
                         <div className="border-t border-edge my-1" />
+                        </>)}
                         {/* Status Actions */}
                         {program.status === 'ACTIVE' && (
                           <button
@@ -440,7 +449,7 @@ const ProgramsPage: React.FC = () => {
                             Suspend Program
                           </button>
                         )}
-                        {program.status === 'SUSPENDED' && (
+                        {(program.status === 'SUSPENDED' || program.status === 'INACTIVE') && (
                           <button
                             className="w-full px-3 py-2 text-left text-body-sm hover:bg-neutral-50 flex items-center gap-2 text-success-600 dark:hover:bg-primary-800/50 dark:text-success-300"
                             onClick={() => { handleStatusChange(program.id, 'ACTIVE'); setActionMenuId(null); }}
@@ -468,7 +477,8 @@ const ProgramsPage: React.FC = () => {
                         </button>
                         {/* Divider */}
                         <div className="border-t border-edge-subtle my-1" />
-                        {/* Delete Action */}
+                        {/* Close Action */}
+                        {program.status !== 'CLOSED' && (
                         <button
                           className="w-full px-3 py-2 text-left text-body-sm hover:bg-error-50 flex items-center gap-2 text-error-600 dark:hover:bg-error-500/10 dark:text-error-300"
                           onClick={() => {
@@ -476,9 +486,10 @@ const ProgramsPage: React.FC = () => {
                             setActionMenuId(null);
                           }}
                         >
-                          <Trash2 className="w-4 h-4" />
-                          Delete Program
+                          <Archive className="w-4 h-4" />
+                          Close Program
                         </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -520,16 +531,16 @@ const ProgramsPage: React.FC = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         size="sm"
-        title="Delete program?"
+        title="Close program?"
         footer={
           <>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
-            <Button variant="danger" onClick={confirmDelete} loading={deleting} leftIcon={<Trash2 className="w-4 h-4" />}>Delete</Button>
+            <Button variant="danger" onClick={confirmClose} loading={deleting} leftIcon={<Archive className="w-4 h-4" />}>Close program</Button>
           </>
         }
       >
         <p className="body-sm">
-          <span className="body-strong">{deleteTarget?.programName}</span> will be deleted. This action cannot be undone.
+          <span className="body-strong">{deleteTarget?.programName}</span> will be closed and its bank accounts released for other programs. A closed program can't be reopened. Its customer accounts must be closed or moved first.
         </p>
       </Modal>
       <Modal

@@ -534,6 +534,17 @@ public class ProgramChargeOverrideService {
         Optional<ProgramChargeOverride> existing = overrideRepository
             .findByProgramIdAndChargeCode(programId, chargeCode);
 
+        // Nothing overridden and not waived means "standard rate": store no row for it. Saving the
+        // fee screen untouched used to create six such empty rows. An existing row that is itself
+        // empty is removed; one holding a real rate is kept (only its waiver is cleared below).
+        if (percentage == null && fixed == null && !waived) {
+            if (existing.isEmpty()) return;
+            if (existing.get().getOverridePercentage() == null && existing.get().getOverrideFixed() == null) {
+                overrideRepository.delete(existing.get());
+                return;
+            }
+        }
+
         ProgramChargeOverride override;
         if (existing.isPresent()) {
             override = existing.get();
