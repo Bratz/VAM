@@ -1,5 +1,69 @@
 # Active Work / Status Tracker
 
+## ✅ Home-bank shadow accounts: automatic, and chosen at program setup
+User decisions: every home-bank (INTERNAL) bank account gets a shadow account automatically;
+program setup presents those shadows to pick from.
+
+**Design gap found:** today a shadow must have a program and a parent node when it is created
+(`ShadowAccountService.createShadowAccount` throws without one), but a bank account is usually
+added before any program exists. So a shadow is created **unassigned** (programId + parent null,
+PHYSICAL_MIRROR, balances mirrored as today) and is **attached** to a program at setup.
+One bank account backs one program at a time (existing guard, `VirtualAccountService.java:1568`).
+
+Backend
+- [x] `ShadowAccountService.createUnassignedShadow(pa)`: builds the mirror with no program/parent;
+      idempotent (skips when the account already has one).
+- [x] Call it after every INTERNAL account save: `PhysicalAccountController.createAccount`
+      (the only creation path), and when an account is switched to INTERNAL.
+- [x] Startup backfill (same pattern as `bootstrapMissingHierarchies`): INTERNAL accounts with no
+      shadow get an unassigned one (7 of 28 today).
+- [x] `attachToProgram(shadowId, programId)`: sets programId, parent = the program's default
+      AGGREGATION, path/level, then `ensureCurrencyInfrastructure`. Refuses a shadow already in
+      another program.
+- [x] Fix `findOrCreateDefaultAggregation`: use the program's own root (`program.rootHierarchyNodeId`)
+      instead of `findRootAccount(corporateId)`, which picks the corporate's *oldest* root.
+- [x] `GET /treasury/shadow-accounts/corporate/{id}/available?currency=`: shadows of home-bank
+      accounts in that currency, each marked free or "in program X".
+- [x] Program create/update accept `shadowAccountIds[]`; attach each; the first becomes
+      `physicalAccountId` (still what HierarchyService uses as the backing account).
+- [x] Check every reader of shadows / null-programId VAs (balance structure rollup, multi-bank
+      liquidity, `/shadow-accounts/program/{id}`) copes with unassigned shadows.
+- [x] Tests: auto-create on INTERNAL save (not EXTERNAL), idempotent, attach sets program+parent,
+      attach to a second program refused.
+
+Frontend
+- [x] `ProgramFormModal` step 1: replace the "Physical Account" select with a "Bank accounts" list
+      of the corporate's home-bank shadows in the program currency: checkboxes for free ones,
+      disabled rows showing the owning program for taken ones. Also shown on edit.
+- [x] Review step lists the chosen accounts.
+- [x] Bank Accounts page: show "Shadow: unassigned / in program X" per home-bank account;
+      fix "Sync All" (calls `/shadow-accounts/sync-all`, backend path is `/corporate/{id}/sync`).
+
+Not in this round (separate decision): fetching accounts from BaNCS / open banking on onboarding,
+shadows for other banks' accounts.
+
+Verify: restart backend, backfill count = 0 remaining; add a home-bank account -> shadow appears
+unassigned; create a program picking it -> shadow sits under that program's hierarchy; second
+program sees it as taken; tsc no new errors; backend tests green.
+
+**Review**
+- Shadow audit (every PHYSICAL_MIRROR reader) drove four extra fixes: payment/collection posting
+  skips unassigned shadows (`TransactionService.isPostableShadow`); an unassigned shadow is not a
+  valid parent (controller check + both valid-parent queries); the legacy create path adopts an
+  existing unassigned shadow instead of throwing; clear message when a VA names such an account.
+- Backfill also attaches a shadow to an older program when exactly one program already uses that
+  account as its backing account. Also repairs missing `physical_accounts.shadow_va_id`.
+- Removing a bank account from a program is blocked only by customer accounts booked on it; the
+  program's scaffolding (root, mirrors, exception) is repointed to the new backing account.
+- `attachToParent` no longer writes `null/...` paths under old aggregations without a path.
+- Verified live: backfill 0 remaining; create with PA-GBP-002 -> under the program's own
+  Operations aggregation, backing set; second program sees it "In use"; edit untick -> unassigned,
+  backing + scaffolding cleared; Bank Accounts page shows Unassigned / In program; Sync All 200.
+  Backend 209 tests, only the known ReceivablesServiceTest error; tsc 327 = baseline.
+- Open: unassigned home-bank cash now counts in the corporate headline of balance-structure
+  (real corporate cash, counted once); `resolveShadowVa` can still pick another program's shadow
+  (pre-existing, not changed here).
+
 ## 🚧 Cash-Forecasting module — Sprint 1 / T2 (entities + repos)
 Domain mapping only — no business logic. Depends on **T1** (V13 migration) which
 is NOT yet present in this workspace; entities are written against the V13

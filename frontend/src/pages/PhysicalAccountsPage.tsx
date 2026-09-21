@@ -1623,10 +1623,14 @@ const PhysicalAccountsPage: React.FC = () => {
               header: 'Shadow',
               align: 'center',
               render: (_, account) => hasShadow(account) ? (
-                <div className="flex items-center justify-center gap-1">
-                  <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
-                  <span className="text-caption text-success-600 font-medium dark:text-success-300">Linked</span>
-                </div>
+                shadowFor(account)?.programId ? (
+                  <div className="flex items-center justify-center gap-1">
+                    <Layers className="w-4 h-4 text-success-600 dark:text-success-300" />
+                    <span className="text-caption text-success-600 font-medium dark:text-success-300">In program</span>
+                  </div>
+                ) : (
+                  <span className="text-caption text-neutral-500 dark:text-neutral-400" title="Pick it when setting up a program">Unassigned</span>
+                )
               ) : (
                 <span className="text-neutral-400">—</span>
               ),

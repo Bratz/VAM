@@ -770,14 +770,20 @@ public class TransactionService {
             .build();
     }
 
+    /** Active and in a program: an unassigned home-bank shadow belongs to no program's books yet. */
+    private boolean isPostableShadow(VirtualAccount shadow) {
+        return shadow.getStatus() == VaStatus.ACTIVE && shadow.getProgramId() != null;
+    }
+
     /**
      * Find Shadow VA for outbound payments.
      */
     private VirtualAccount findShadowVa(VirtualAccount sourceVa) {
         // Try to find Shadow VA for the same program/currency
-        List<VirtualAccount> shadowVas = virtualAccountRepository.findShadowAccountsByCurrency(
-            sourceVa.getCorporateId(), sourceVa.getCurrencyCode());
-        return shadowVas.isEmpty() ? null : shadowVas.get(0);
+        return virtualAccountRepository.findShadowAccountsByCurrency(
+                sourceVa.getCorporateId(), sourceVa.getCurrencyCode()).stream()
+            .filter(this::isPostableShadow)
+            .findFirst().orElse(null);
     }
 
     // ========================================================================
@@ -2526,7 +2532,7 @@ public class TransactionService {
                 Optional<VirtualAccount> shadowVa = virtualAccountRepository
                     .findByLinkedPhysicalAccountIdAndAccountCategory(
                         sourceVa.getPhysicalAccountId(), AccountCategory.PHYSICAL_MIRROR);
-                if (shadowVa.isPresent() && shadowVa.get().getStatus() == VaStatus.ACTIVE) {
+                if (shadowVa.isPresent() && isPostableShadow(shadowVa.get())) {
                     log.debug("Resolved Shadow VA by physical account link: {}", shadowVa.get().getVaNumber());
                     return shadowVa.get();
                 }
@@ -2537,7 +2543,7 @@ public class TransactionService {
                 .findShadowAccountsByCurrency(sourceVa.getCorporateId(), sourceVa.getCurrencyCode());
             
             Optional<VirtualAccount> activeShadow = corporateShadows.stream()
-                .filter(va -> va.getStatus() == VaStatus.ACTIVE)
+                .filter(this::isPostableShadow)
                 .findFirst();
             if (activeShadow.isPresent()) {
                 log.debug("Resolved Shadow VA by corporate currency: {}", activeShadow.get().getVaNumber());
@@ -2550,7 +2556,7 @@ public class TransactionService {
             
             Optional<VirtualAccount> matchingCurrency = allShadows.stream()
                 .filter(va -> sourceVa.getCurrencyCode().equals(va.getCurrencyCode()))
-                .filter(va -> va.getStatus() == VaStatus.ACTIVE)
+                .filter(this::isPostableShadow)
                 .findFirst();
             
             if (matchingCurrency.isPresent()) {
@@ -2560,7 +2566,7 @@ public class TransactionService {
             
             // Fallback to any active shadow
             Optional<VirtualAccount> anyShadow = allShadows.stream()
-                .filter(va -> va.getStatus() == VaStatus.ACTIVE)
+                .filter(this::isPostableShadow)
                 .findFirst();
             
             if (anyShadow.isPresent()) {

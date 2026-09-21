@@ -361,6 +361,8 @@ public class ProgramDto {
         // Required relationships
         private UUID corporateId;
         private UUID physicalAccountId;
+        /** Shadow accounts of home-bank accounts the program runs on; the first is its main backing account. */
+        private List<UUID> shadowAccountIds;
         private String currencyCode;
 
         // VA Configuration
@@ -434,6 +436,8 @@ public class ProgramDto {
     public static class UpdateProgramRequest {
         private String programName;
         private String description;
+        /** When present, the program's full set of bank-account shadows (null leaves them as they are). */
+        private List<UUID> shadowAccountIds;
 
         // VA Configuration
         private String vaPrefix;

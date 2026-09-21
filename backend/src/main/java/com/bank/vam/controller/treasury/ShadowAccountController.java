@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -153,6 +154,18 @@ public class ShadowAccountController {
         List<CurrencyGroupDto> groups = shadowAccountService.getShadowAccountsGroupedByCurrency(corporateId);
         
         return ResponseEntity.ok(ApiResponse.success(groups));
+    }
+
+    /**
+     * Home-bank shadows of a corporate in one currency, each with the program using it (if any).
+     * Offered when a program is set up.
+     */
+    @GetMapping("/corporate/{corporateId}/available")
+    @Operation(summary = "Home-bank shadow accounts a program can run on")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getHomeBankShadows(
+            @PathVariable UUID corporateId,
+            @RequestParam(required = false) String currency) {
+        return ResponseEntity.ok(ApiResponse.success(shadowAccountService.getHomeBankShadows(corporateId, currency)));
     }
 
     // ========================================================================

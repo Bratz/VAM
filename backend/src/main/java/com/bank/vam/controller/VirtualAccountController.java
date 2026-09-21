@@ -1360,6 +1360,11 @@ public class VirtualAccountController {
                                category == AccountCategory.ROOT ||
                                category == AccountCategory.AGGREGATION;
         
+        if (category == AccountCategory.PHYSICAL_MIRROR && parent.getProgramId() == null) {
+            throw new BusinessException("Bank account " + parent.getBankAccountNumber()
+                + " is not in a program yet; add it to one in the program's setup first");
+        }
+
         if (!isValidParent) {
             throw new BusinessException(
                 "Invalid parent account type: " + category + 

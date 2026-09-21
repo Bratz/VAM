@@ -55,6 +55,7 @@ public class ProgramService {
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final VibanPoolRepository vibanPoolRepository;
     private final HierarchyService hierarchyService;
+    private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
     private final com.bank.vam.service.treasury.FxRateService fxRateService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
@@ -268,7 +269,7 @@ public class ProgramService {
             .programName(request.getProgramName())
             .description(request.getDescription())
             .corporateId(effectiveCorporateId)
-            .physicalAccountId(request.getPhysicalAccountId())
+            .physicalAccountId(shadowAccountService.backingAccountOf(request.getShadowAccountIds(), request.getPhysicalAccountId()))
             .currencyCode(request.getCurrencyCode())
             // VA Config
             .vaPrefix(request.getVaPrefix())
@@ -332,6 +333,10 @@ public class ProgramService {
             program.getId(), program.getHierarchyDepth(), program.getDefaultHierarchyTemplate());
 
         hierarchyService.bootstrap(program);
+        // After bootstrap: the shadows hang under the program's own hierarchy.
+        if (request.getShadowAccountIds() != null) {
+            shadowAccountService.setProgramShadows(program, request.getShadowAccountIds());
+        }
 
         return toProgramResponse(program);
     }
@@ -394,6 +399,10 @@ public class ProgramService {
         }
         if (request.getEffectiveFrom() != null) program.setEffectiveFrom(request.getEffectiveFrom());
         if (request.getEffectiveTo() != null) program.setEffectiveTo(request.getEffectiveTo());
+
+        if (request.getShadowAccountIds() != null) {
+            program.setPhysicalAccountId(shadowAccountService.setProgramShadows(program, request.getShadowAccountIds()));
+        }
 
         program = programRepository.save(program);
         log.info("Program updated successfully: {}", programId);

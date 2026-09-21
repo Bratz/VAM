@@ -5022,6 +5022,8 @@ export interface ShadowAccount {
   bankAvailableBalance: number;
   bankBalanceAt?: string;
   balanceDataSource: 'CORE_BANKING' | 'SWIFT_MT940' | 'SWIFT_MT942' | 'OPEN_BANKING' | 'MANUAL';
+  /** Null while the shadow is not in any program yet. */
+  programId?: string | null;
   parentAccountId?: string;
   hierarchyLevel?: number;
   hierarchyPathVa?: string;
@@ -5090,9 +5092,7 @@ export const shadowAccountApi = {
 
   // Sync all for corporate
   syncAllForCorporate: (corporateId: string) =>
-    apiClient.post<ApiResponse<ShadowSyncResult[]>>(`/treasury/shadow-accounts/sync-all`, {
-      corporateId
-    }).then(r => r.data),
+    apiClient.post<ApiResponse<ShadowSyncResult[]>>(`/treasury/shadow-accounts/corporate/${corporateId}/sync`).then(r => r.data),
 
   // Update balance manually
   updateBalanceManual: (shadowId: string, balance: number, availableBalance: number) =>

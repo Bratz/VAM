@@ -54,6 +54,7 @@ public class PhysicalAccountController {
     private final LegalEntityRepository legalEntityRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final com.bank.vam.config.HomeBankProperties homeBank;
+    private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
 
     // ========================================================================
     // STATS & SUMMARY
@@ -518,6 +519,9 @@ public class PhysicalAccountController {
         PhysicalAccount saved = physicalAccountRepository.save(account);
         log.info("Created physical account: {} at {} for entity {}", 
                 saved.getAccountNumber(), saved.getBankName(), saved.getEntityCode());
+        if (saved.isHomeBank()) {
+            shadowAccountService.ensureHomeBankShadow(saved);
+        }
         
         return ResponseEntity.ok(Map.of(
                 "success", true, 

@@ -1569,6 +1569,10 @@ public class VirtualAccountService {
             virtualAccountRepository.findByLinkedPhysicalAccountId(request.getPhysicalAccountId())
                 .filter(mirror -> !Objects.equals(mirror.getProgramId(), request.getProgramId()))
                 .ifPresent(mirror -> {
+                    if (mirror.getProgramId() == null) {
+                        throw new BusinessException("Bank account " + mirror.getBankAccountNumber()
+                            + " is not in this program; add it in the program's setup first");
+                    }
                     throw new BusinessException(
                         "Physical account " + request.getPhysicalAccountId() + " is already mirrored by "
                         + mirror.getVaNumber() + " under a different program. Represent cross-program "

@@ -93,6 +93,8 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     long countByProgramIdAndStatus(UUID programId, VaStatus status);
     
     long countByProgramIdAndAccountCategory(UUID programId, AccountCategory accountCategory);
+
+    List<VirtualAccount> findByProgramIdAndPhysicalAccountId(UUID programId, UUID physicalAccountId);
     
     List<VirtualAccount> findByProgramIdAndStatus(UUID programId, VaStatus status);
     
@@ -492,6 +494,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT va FROM VirtualAccount va " +
            "WHERE va.owningEntityId = :entityId " +
            "AND va.accountCategory IN ('PHYSICAL_MIRROR', 'CURRENCY_MIRROR', 'ROOT', 'AGGREGATION') " +
+           "AND NOT (va.accountCategory = 'PHYSICAL_MIRROR' AND va.programId IS NULL) " +
            "AND va.status = 'ACTIVE' " +
            "ORDER BY va.accountCategory, va.currencyCode, va.vaNumber")
     List<VirtualAccount> findValidParentAccounts(@Param("entityId") UUID entityId);
@@ -499,6 +502,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT va FROM VirtualAccount va " +
            "WHERE va.corporateId = :corporateId " +
            "AND va.accountCategory IN ('PHYSICAL_MIRROR', 'CURRENCY_MIRROR', 'ROOT', 'AGGREGATION') " +
+           "AND NOT (va.accountCategory = 'PHYSICAL_MIRROR' AND va.programId IS NULL) " +
            "AND va.status = 'ACTIVE' " +
            "ORDER BY va.accountCategory, va.currencyCode, va.vaNumber")
     List<VirtualAccount> findValidParentAccountsByCorporate(@Param("corporateId") UUID corporateId);

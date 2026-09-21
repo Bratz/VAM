@@ -213,6 +213,18 @@ export interface SettlementVa {
   createdAt?: string;
 }
 
+/** Shadow account of a home-bank account, as offered at program setup. programId is null while unassigned. */
+export interface BankShadow {
+  id: string;
+  vaNumber: string;
+  bankAccountNumber: string;
+  bankName: string;
+  currencyCode: string;
+  bankBalance?: number;
+  programId?: string | null;
+  programName?: string | null;
+}
+
 // NEW: VIBAN Pool interface for VIBAN tab
 export interface VibanPool {
   id: string;

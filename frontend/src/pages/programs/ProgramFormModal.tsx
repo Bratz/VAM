@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { formatCurrency, cn } from '../../utils';
 import { HIERARCHY_TEMPLATES, getRecommendedTemplate, HierarchyLevelConfig } from '../../config/templateHierarchy';
 
-import { fetchApi, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig } from './shared';
+import { fetchApi, BankShadow, CHARGES_API_BASE, ChargeDetail, WalletChargesResponse, WalletChargesRequest, STANDARD_WALLET_BASE_RATES, VibanGenerationStrategy, Program, VibanPool, vibanStrategyConfig } from './shared';
 
 // ============================================================================
 // CHARGE CONFIGURATION ROW COMPONENT
@@ -109,7 +109,11 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [corporates, setCorporates] = useState<Array<{ id: string; legalName: string }>>([]);
-  const [physicalAccounts, setPhysicalAccounts] = useState<Array<{ id: string; accountNumber: string; bankName: string; currency: string }>>([]);
+  // Shadow accounts of the corporate's home-bank accounts: every one gets a shadow automatically,
+  // and a program picks which of them it runs on.
+  const [bankShadows, setBankShadows] = useState<BankShadow[]>([]);
+  // Only send the selection once the list loaded: on edit an empty list means "detach all".
+  const [bankShadowsLoaded, setBankShadowsLoaded] = useState(false);
   const [vibanPools, setVibanPools] = useState<VibanPool[]>([]);
   const [loadingCorporates, setLoadingCorporates] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -126,7 +130,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     programName: '',
     description: '',
     corporateId: '',
-    physicalAccountId: '',
+    shadowAccountIds: [] as string[],
     currencyCode: 'AED',
     // Step 2: Core Features
     configureViban: false,
@@ -233,26 +237,26 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     }
   }, [isOpen, program]);
 
-  // Fetch physical accounts when corporate is selected
+  // Load the corporate's home-bank shadow accounts in the program currency. On edit, the
+  // ones already in this program start ticked.
+  const shadowCorporateId = program?.corporateId || formData.corporateId;
   useEffect(() => {
-    if (formData.corporateId && !program) {
-      setLoadingAccounts(true);
-      setPhysicalAccounts([]);
-      setFormData(prev => ({ ...prev, physicalAccountId: '' }));
-      fetch(`/api/v1/physical-accounts?corporateId=${formData.corporateId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            const accounts = data.data?.content || data.data || [];
-            setPhysicalAccounts(accounts);
-          }
-        })
-        .catch(console.error)
-        .finally(() => setLoadingAccounts(false));
-    } else {
-      setPhysicalAccounts([]);
-    }
-  }, [formData.corporateId, program]);
+    setBankShadows([]);
+    setBankShadowsLoaded(false);
+    if (!isOpen || !shadowCorporateId || !formData.currencyCode) return;
+    setLoadingAccounts(true);
+    fetch(`/api/v1/treasury/shadow-accounts/corporate/${shadowCorporateId}/available?currency=${formData.currencyCode}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) return;
+        const shadows: BankShadow[] = data.data || [];
+        setBankShadows(shadows);
+        setBankShadowsLoaded(true);
+        setFormData(prev => ({ ...prev, shadowAccountIds: program ? shadows.filter(s => s.programId === program.id).map(s => s.id) : [] }));
+      })
+      .catch(console.error)
+      .finally(() => setLoadingAccounts(false));
+  }, [isOpen, shadowCorporateId, formData.currencyCode, program]);
 
   // Fetch VIBAN pools when VIBAN is enabled
   useEffect(() => {
@@ -350,7 +354,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         programName: program.programName,
         description: program.description || '',
         corporateId: program.corporateId,
-        physicalAccountId: program.physicalAccountId,
+        shadowAccountIds: [] as string[],
         currencyCode: program.currencyCode,
         // Step 2: Core Features
         configureViban: onlyStep === 'VIBAN Pool',
@@ -402,7 +406,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         programName: '',
         description: '',
         corporateId: defaultCorporateId || '', // Use default corporate from page picker
-        physicalAccountId: '',
+        shadowAccountIds: [] as string[],
         currencyCode: 'AED',
         // Step 2: Core Features
         configureViban: false,
@@ -526,7 +530,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
         programName: formData.programName,
         description: formData.description || undefined,
         corporateId: resolvedCorporateId,
-        physicalAccountId: formData.physicalAccountId || undefined,
+        shadowAccountIds: bankShadowsLoaded ? formData.shadowAccountIds : undefined,
         currencyCode: formData.currencyCode,
         // Core feature flags
         // Extended program features
@@ -572,7 +576,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
       console.log('handleSubmit - cleanedData (JSON):', JSON.stringify(cleanedData, null, 2));
       console.log('handleSubmit - key fields:', {
         corporateId: cleanedData.corporateId,
-        physicalAccountId: cleanedData.physicalAccountId,
+        shadowAccountIds: cleanedData.shadowAccountIds,
         programCode: cleanedData.programCode,
       });
 
@@ -674,7 +678,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <select
                     className={cn('w-full px-3 py-2 border rounded-lg bg-surface-card', !formData.corporateId ? 'border-warning-300' : 'border-edge-strong')}
                     value={formData.corporateId}
-                    onChange={e => setFormData({ ...formData, corporateId: e.target.value, physicalAccountId: '' })}
+                    onChange={e => setFormData({ ...formData, corporateId: e.target.value, shadowAccountIds: [] })}
                     disabled={loadingCorporates}
                   >
                     <option value="">{loadingCorporates ? 'Loading...' : 'Select Corporate...'}</option>
@@ -718,7 +722,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                 <label className="field-label block mb-1">Currency *</label>
                 <CurrencyPicker
                   value={formData.currencyCode}
-                  onChange={(c) => setFormData({ ...formData, currencyCode: c, physicalAccountId: '' })}
+                  onChange={(c) => setFormData({ ...formData, currencyCode: c, shadowAccountIds: [] })}
                   disabled={isEdit}
                   withName
                   extra={['SAR', 'INR']}
@@ -748,28 +752,42 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               />
             </div>
 
-            {/* Physical Account - Optional, shown at bottom */}
-            {!isEdit && (
-              <div className="border-t pt-4">
-                <label className="field-label block mb-1">
-                  Physical Account <span className="text-neutral-400 font-normal dark:text-neutral-400">(Optional)</span>
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-edge-strong rounded-lg"
-                  value={formData.physicalAccountId}
-                  onChange={e => setFormData({ ...formData, physicalAccountId: e.target.value })}
-                  disabled={!formData.corporateId || loadingAccounts}
-                >
-                  <option value="">
-                    {!formData.corporateId ? 'Select corporate first...' : loadingAccounts ? 'Loading...' : 'None (VA hierarchy only)'}
-                  </option>
-                  {physicalAccounts.filter(a => a.currency === formData.currencyCode).map(a => (
-                    <option key={a.id} value={a.id}>{a.accountNumber} - {a.bankName} ({a.currency})</option>
-                  ))}
-                </select>
-                <p className="caption mt-1">Physical account provides liquidity backing. Not required for hierarchy-only programs.</p>
-              </div>
-            )}
+            {/* Bank accounts: shadows of the corporate's home-bank accounts in this currency */}
+            <div className="border-t border-edge pt-4">
+              <p className="field-label mb-1">
+                Bank accounts <span className="text-neutral-400 font-normal dark:text-neutral-400">(Optional)</span>
+              </p>
+              {!shadowCorporateId ? (
+                <p className="caption">Select a corporate first.</p>
+              ) : loadingAccounts ? (
+                <p className="caption flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> Loading bank accounts...</p>
+              ) : bankShadows.length === 0 ? (
+                <p className="caption">No home-bank accounts in {formData.currencyCode} for this corporate.</p>
+              ) : (
+                <div className="space-y-2">
+                  {bankShadows.map(s => {
+                    const takenElsewhere = !!s.programId && s.programId !== program?.id;
+                    return (
+                      <Checkbox
+                        key={s.id}
+                        variant="card"
+                        disabled={takenElsewhere}
+                        checked={formData.shadowAccountIds.includes(s.id)}
+                        onChange={checked => setFormData(prev => ({
+                          ...prev,
+                          shadowAccountIds: checked ? [...prev.shadowAccountIds, s.id] : prev.shadowAccountIds.filter(id => id !== s.id),
+                        }))}
+                        label={<span className="font-mono">{s.bankAccountNumber} · {s.bankName}</span>}
+                        description={takenElsewhere
+                          ? `In use by ${s.programName ?? 'another program'}`
+                          : formatCurrency(s.bankBalance ?? 0, s.currencyCode)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+              <p className="caption mt-1">The program's accounts sit on these bank accounts. The first one ticked is the main backing account.</p>
+            </div>
           </div>
         )}
 
@@ -1596,6 +1614,9 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                   <div><span className="text-neutral-500 dark:text-neutral-400">Code:</span> <span className="font-mono font-medium">{formData.programCode}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="font-medium">{formData.programName}</span></div>
                   <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="font-medium">{formData.currencyCode}</span></div>
+                  <div className="col-span-2"><span className="text-neutral-500 dark:text-neutral-400">Bank accounts:</span>{' '}
+                    <span className="font-medium">{bankShadows.filter(s => formData.shadowAccountIds.includes(s.id)).map(s => `${s.bankAccountNumber} (${s.bankName})`).join(', ') || 'None'}</span>
+                  </div>
                 </div>
               </div>
 

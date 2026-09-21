@@ -96,6 +96,10 @@ public class ShadowAccountService {
     /** If true, throw exception when ownership chain is broken */
     private static final boolean STRICT_OWNERSHIP_VALIDATION = false;
 
+    /** Where an unassigned shadow sits: not level 0, which "ROOT-only" totals treat as a root. */
+    static final int UNASSIGNED_LEVEL = 1;
+    static final String UNASSIGNED_PATH_PREFIX = "/UNASSIGNED/";
+
     // ========================================================================
     // CREATE OPERATIONS
     // ========================================================================
@@ -126,6 +130,10 @@ public class ShadowAccountService {
 
         // 2. Check if shadow already exists
         Optional<VirtualAccount> existing = vaRepository.findByLinkedPhysicalAccountId(physicalAccountId);
+        if (existing.isPresent() && existing.get().getProgramId() == null && parentVaId != null) {
+            // Home-bank accounts already have an unassigned shadow: place that one instead.
+            return attachToParent(existing.get().getId(), parentVaId);
+        }
         if (existing.isPresent()) {
             throw new BusinessException("Shadow account already exists for physical account: " + pa.getAccountNumber());
         }
@@ -180,49 +188,12 @@ public class ShadowAccountService {
                        pa.getAccountNumber().substring(Math.max(0, pa.getAccountNumber().length() - 4));
         int hierarchyLevel = parentVa.getHierarchyLevel() + 1;
 
-        // 6. Try to get Legal Entity ownership from Physical Account
-        UUID owningEntityId = null;
-        String owningEntityCode = null;
-        
-        if (pa.getLegalEntityId() != null) {
-            LegalEntity entity = legalEntityRepository.findById(pa.getLegalEntityId()).orElse(null);
-            if (entity != null) {
-                owningEntityId = entity.getId();
-                owningEntityCode = entity.getEntityCode();
-                log.info("Auto-inheriting ownership from Physical Account's Legal Entity: {}", owningEntityCode);
-            }
-        }
-
-        // 7. Create shadow account
-        VirtualAccount shadow = VirtualAccount.builder()
-            .vaNumber(generateShadowVaNumber(pa))
-            .vaName("Shadow: " + (pa.getAccountName() != null ? pa.getAccountName() : pa.getAccountNumber()))
-            .corporateId(corporateId)
+        // 6-7. Create shadow account (ownership inherited from the account's legal entity)
+        VirtualAccount shadow = newShadow(pa, corporateId)
             .programId(effectiveProgramId)  // FIX v4.5.2: Set programId
-            .physicalAccountId(physicalAccountId)
-            .currencyCode(pa.getCurrencyCode())
-            .accountType(AccountType.REAL)
-            .accountCategory(AccountCategory.PHYSICAL_MIRROR)
             .parentAccountId(effectiveParentId)
             .hierarchyLevel(hierarchyLevel)
             .hierarchyPathVa(hierarchyPath)
-            .linkedPhysicalAccountId(physicalAccountId)
-            .bankBalance(pa.getCurrentBalance() != null ? pa.getCurrentBalance() : BigDecimal.ZERO)
-            .bankAvailableBalance(pa.getAvailableBalance())
-            .bankBalanceAt(LocalDateTime.now())
-            .bankAccountNumber(pa.getAccountNumber())
-            .bankIban(pa.getIban())
-            .bankSwift(pa.getBankCode())
-            .bankName(pa.getBankName())
-            .balanceDataSource(mapDataSource(pa))
-            // OWNERSHIP - Auto-inherit from Physical Account if available
-            .owningEntityId(owningEntityId)
-            .owningEntityCode(owningEntityCode)
-            // Balances - Shadow doesn't have operational balance, only bank balance
-            .currentBalance(BigDecimal.ZERO)
-            .availableBalance(BigDecimal.ZERO)
-            .aggregatedBalance(BigDecimal.ZERO)
-            .status(VaStatus.ACTIVE)
             .build();
 
         shadow = vaRepository.save(shadow);
@@ -263,6 +234,176 @@ public class ShadowAccountService {
         return shadow;
     }
 
+    /** The fields every shadow of {@code pa} has, wherever (or whether) it sits in a hierarchy. */
+    private VirtualAccount.VirtualAccountBuilder newShadow(PhysicalAccount pa, UUID corporateId) {
+        UUID owningEntityId = null;
+        String owningEntityCode = null;
+        if (pa.getLegalEntityId() != null) {
+            LegalEntity entity = legalEntityRepository.findById(pa.getLegalEntityId()).orElse(null);
+            if (entity != null) {
+                owningEntityId = entity.getId();
+                owningEntityCode = entity.getEntityCode();
+            }
+        }
+        return VirtualAccount.builder()
+            .vaNumber(generateShadowVaNumber(pa))
+            .vaName("Shadow: " + (pa.getAccountName() != null ? pa.getAccountName() : pa.getAccountNumber()))
+            .corporateId(corporateId)
+            .physicalAccountId(pa.getId())
+            .currencyCode(pa.getCurrencyCode())
+            .accountType(AccountType.REAL)
+            .accountCategory(AccountCategory.PHYSICAL_MIRROR)
+            .linkedPhysicalAccountId(pa.getId())
+            .bankBalance(pa.getCurrentBalance() != null ? pa.getCurrentBalance() : BigDecimal.ZERO)
+            .bankAvailableBalance(pa.getAvailableBalance())
+            .bankBalanceAt(LocalDateTime.now())
+            .bankAccountNumber(pa.getAccountNumber())
+            .bankIban(pa.getIban())
+            .bankSwift(pa.getBankCode())
+            .bankName(pa.getBankName())
+            .balanceDataSource(mapDataSource(pa))
+            // OWNERSHIP - Auto-inherit from Physical Account if available
+            .owningEntityId(owningEntityId)
+            .owningEntityCode(owningEntityCode)
+            // Balances - Shadow doesn't have operational balance, only bank balance
+            .currentBalance(BigDecimal.ZERO)
+            .availableBalance(BigDecimal.ZERO)
+            .aggregatedBalance(BigDecimal.ZERO)
+            .status(VaStatus.ACTIVE);
+    }
+
+    // ========================================================================
+    // HOME-BANK SHADOWS: created with the account, joined to a program at setup
+    // ========================================================================
+
+    /**
+     * Every home-bank account has a shadow from the moment it exists. A bank account usually
+     * exists before any program, so the shadow starts unassigned (no program, no parent) and
+     * joins a program when that program picks it. Idempotent.
+     */
+    @Transactional
+    public VirtualAccount ensureHomeBankShadow(PhysicalAccount pa) {
+        Optional<VirtualAccount> existing = vaRepository.findByLinkedPhysicalAccountId(pa.getId());
+        if (existing.isPresent()) {
+            if (pa.getShadowVaId() == null) {  // back-reference missing on older rows
+                pa.setShadowVaId(existing.get().getId());
+                paRepository.save(pa);
+            }
+            return existing.get();
+        }
+        VirtualAccount shadow = vaRepository.save(unassigned(newShadow(pa, pa.getCorporateId()).build()));
+        pa.setShadowVaId(shadow.getId());
+        paRepository.save(pa);
+        log.info("Created unassigned shadow {} for home-bank account {}", shadow.getVaNumber(), pa.getAccountNumber());
+        return shadow;
+    }
+
+    /** Out of any program's hierarchy. */
+    private VirtualAccount unassigned(VirtualAccount shadow) {
+        shadow.setProgramId(null);
+        shadow.setParentAccountId(null);
+        shadow.setHierarchyLevel(UNASSIGNED_LEVEL);
+        shadow.setHierarchyPathVa(UNASSIGNED_PATH_PREFIX + shadow.getVaNumber());
+        return shadow;
+    }
+
+    /**
+     * Home-bank shadows of a corporate in one currency, each with the program it is in (if any):
+     * what program setup offers.
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getHomeBankShadows(UUID corporateId, String currency) {
+        List<VirtualAccount> shadows = getShadowAccounts(corporateId).stream()
+            .filter(s -> currency == null || currency.equals(s.getCurrencyCode()))
+            .filter(s -> s.getLinkedPhysicalAccountId() != null)
+            .filter(s -> paRepository.findById(s.getLinkedPhysicalAccountId())
+                .map(PhysicalAccount::isHomeBank)
+                .orElse(false))
+            .toList();
+        Map<UUID, String> programNames = new HashMap<>();
+        programRepository.findAllById(shadows.stream().map(VirtualAccount::getProgramId).filter(Objects::nonNull).toList())
+            .forEach(p -> programNames.put(p.getId(), p.getProgramName()));
+        return shadows.stream().map(s -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", s.getId());
+            m.put("vaNumber", s.getVaNumber());
+            m.put("bankAccountNumber", s.getBankAccountNumber());
+            m.put("bankName", s.getBankName());
+            m.put("currencyCode", s.getCurrencyCode());
+            m.put("bankBalance", s.getBankBalance());
+            m.put("programId", s.getProgramId());
+            m.put("programName", programNames.get(s.getProgramId()));
+            return m;
+        }).toList();
+    }
+
+    /** The bank account behind the first chosen shadow: a program's main backing account. */
+    public UUID backingAccountOf(List<UUID> shadowIds, UUID fallback) {
+        if (shadowIds == null || shadowIds.isEmpty()) return fallback;
+        return getShadowAccount(shadowIds.get(0)).getLinkedPhysicalAccountId();
+    }
+
+    /**
+     * Make {@code shadowIds} exactly the program's bank-account shadows: new ones go under the
+     * program's hierarchy, dropped ones go back to unassigned. Returns the main backing account.
+     */
+    @Transactional
+    public UUID setProgramShadows(Program program, List<UUID> shadowIds) {
+        UUID newBacking = backingAccountOf(shadowIds, null);
+        for (VirtualAccount current : getShadowAccountsByProgram(program.getId())) {
+            if (!shadowIds.contains(current.getId())) detachFromProgram(current, program, newBacking);
+        }
+        for (UUID id : shadowIds) {
+            attachToProgram(getShadowAccount(id), program);
+        }
+        return backingAccountOf(shadowIds, null);
+    }
+
+    /** Put an unassigned shadow under the program's hierarchy (no-op if it is already there). */
+    @Transactional
+    public void attachToProgram(VirtualAccount shadow, Program program) {
+        if (program.getId().equals(shadow.getProgramId())) return;
+        if (shadow.getProgramId() != null) {
+            throw new BusinessException("Bank account " + shadow.getBankAccountNumber() + " is already used by another program");
+        }
+        if (!program.getCorporateId().equals(shadow.getCorporateId())) {
+            throw new BusinessException("Bank account " + shadow.getBankAccountNumber() + " belongs to another corporate");
+        }
+        if (!program.getCurrencyCode().equals(shadow.getCurrencyCode())) {
+            throw new BusinessException("Bank account " + shadow.getBankAccountNumber() + " is in "
+                + shadow.getCurrencyCode() + ", the program is in " + program.getCurrencyCode());
+        }
+        attachToParent(shadow.getId(), findOrCreateDefaultAggregation(program).getId());
+    }
+
+    /** The program's own scaffolding: it copies the backing account but holds no customer money. */
+    private static final Set<AccountCategory> STRUCTURAL = EnumSet.of(
+        AccountCategory.ROOT, AccountCategory.AGGREGATION, AccountCategory.CURRENCY_MIRROR,
+        AccountCategory.PHYSICAL_MIRROR, AccountCategory.EXTERNAL_MIRROR,
+        AccountCategory.EXCEPTION, AccountCategory.SUSPENSE, AccountCategory.SETTLEMENT);
+
+    private void detachFromProgram(VirtualAccount shadow, Program program, UUID newBacking) {
+        if (!vaRepository.findByParentAccountId(shadow.getId()).isEmpty()) {
+            throw new BusinessException("Bank account " + shadow.getBankAccountNumber() + " has accounts under it in "
+                + program.getProgramCode() + "; move them first");
+        }
+        List<VirtualAccount> booked = vaRepository.findByProgramIdAndPhysicalAccountId(
+            program.getId(), shadow.getLinkedPhysicalAccountId());
+        // Customer accounts booked on this bank account would be left on cash another program
+        // could then claim, so they block the removal.
+        if (booked.stream().anyMatch(va -> !STRUCTURAL.contains(va.getAccountCategory()))) {
+            throw new BusinessException("Accounts in " + program.getProgramCode() + " are booked on bank account "
+                + shadow.getBankAccountNumber() + "; it cannot be removed from the program");
+        }
+        // The scaffolding only copied it as the backing account: move it to the new one.
+        booked.stream().filter(va -> va != shadow && !va.getId().equals(shadow.getId())).forEach(va -> {
+            va.setPhysicalAccountId(newBacking);
+            vaRepository.save(va);
+        });
+        vaRepository.save(unassigned(shadow));
+        log.info("Shadow {} returned to unassigned from program {}", shadow.getVaNumber(), program.getProgramCode());
+    }
+
     /**
      * Backward compatible overload - derives programId from parent.
      */
@@ -295,8 +436,10 @@ public class ShadowAccountService {
     private VirtualAccount findOrCreateDefaultAggregation(Program program) {
         UUID corporateId = program.getCorporateId();
         
-        // Look for existing AGGREGATION under ROOT
-        VirtualAccount root = vaRepository.findRootAccount(corporateId).orElse(null);
+        // The program's own ROOT: findRootAccount(corporateId) returns the corporate's oldest,
+        // i.e. some other program's once the corporate has more than one.
+        VirtualAccount root = vaRepository.findByProgramIdAndAccountCategory(program.getId(), AccountCategory.ROOT)
+            .stream().findFirst().orElse(null);
         if (root == null) {
             throw new BusinessException("ROOT VA not found. Initialize hierarchy first for program: " + 
                 program.getProgramCode());
@@ -358,7 +501,9 @@ public class ShadowAccountService {
         UUID oldParentId = shadow.getParentAccountId();
         
         // Update hierarchy info
-        String newHierarchyPath = newParent.getHierarchyPathVa() + "/" + 
+        // Older nodes can lack a path; fall back to the parent's number rather than "null/...".
+        String parentPath = newParent.getHierarchyPathVa() != null ? newParent.getHierarchyPathVa() : "/" + newParent.getVaNumber();
+        String newHierarchyPath = parentPath + "/" + 
             shadow.getVaNumber().replace("SHADOW-", "S-");
         int newLevel = newParent.getHierarchyLevel() + 1;
         

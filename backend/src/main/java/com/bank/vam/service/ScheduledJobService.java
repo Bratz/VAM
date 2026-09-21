@@ -42,6 +42,8 @@ public class ScheduledJobService {
     private final VirtualAccountService virtualAccountService;
     private final com.bank.vam.repository.ProgramRepository programRepository;
     private final com.bank.vam.service.hierarchy.HierarchyService hierarchyService;
+    private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
+    private final com.bank.vam.service.treasury.ShadowAccountService shadowAccountService;
 
     /**
      * Execute REAL_TIME-frequency sweeps every 5 minutes.
@@ -204,6 +206,25 @@ public class ScheduledJobService {
                 log.info("Bootstrapped hierarchy for existing program {}", program.getProgramCode());
             } catch (Exception e) {
                 log.error("Could not bootstrap hierarchy for program {}: {}", program.getProgramCode(), e.getMessage());
+            }
+        }
+    }
+
+    /** Every home-bank account has a shadow; accounts from before that rule get theirs on startup. */
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void backfillHomeBankShadows() {
+        for (var pa : physicalAccountRepository.findAll()) {
+            if (!pa.isHomeBank() || pa.getShadowVaId() != null) continue;
+            try {
+                var shadow = shadowAccountService.ensureHomeBankShadow(pa);
+                // An older program already running on this account keeps it; with more than one
+                // claimant it stays unassigned for someone to decide.
+                var users = programRepository.findByPhysicalAccountId(pa.getId()).stream()
+                    .filter(p -> p.getRootHierarchyNodeId() != null && pa.getCurrencyCode().equals(p.getCurrencyCode()))
+                    .toList();
+                if (users.size() == 1 && shadow.getProgramId() == null) shadowAccountService.attachToProgram(shadow, users.get(0));
+            } catch (Exception e) {
+                log.error("Could not create shadow for home-bank account {}: {}", pa.getAccountNumber(), e.getMessage());
             }
         }
     }
