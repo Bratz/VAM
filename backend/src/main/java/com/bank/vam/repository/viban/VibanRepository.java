@@ -104,19 +104,18 @@ public interface VibanRepository extends JpaRepository<Viban, UUID> {
      * Find available VIBANs in pool (returned status).
      */
     /**
-     * Pool stock that may be issued: never-issued numbers first, then the ones
-     * returned longest ago -- and nothing returned after {@code reusableBefore}.
-     *
-     * Without the cool-off a number went straight back into circulation the
-     * minute its TTL ran out, so a late payment from its previous holder was
-     * credited to the next one, and looked like a clean match.
+     * Pool stock that may be issued now: never-issued numbers first, then the
+     * ones released from cool-off longest ago. Numbers still cooling off are
+     * status COOLING, so they are excluded here and from the pool's count alike.
      */
     @Query("SELECT v FROM Viban v WHERE v.poolId = :poolId AND v.status = 'RETURNED' " +
-           "AND (v.returnScheduledAt IS NULL OR v.returnScheduledAt <= :reusableBefore) " +
            "ORDER BY v.returnScheduledAt ASC NULLS FIRST")
     List<Viban> findAvailableInPool(@Param("poolId") UUID poolId,
-                                    @Param("reusableBefore") LocalDateTime reusableBefore,
                                     org.springframework.data.domain.Pageable page);
+
+    /** Numbers whose reuse cool-off has passed and can go back into the available stock. */
+    @Query("SELECT v FROM Viban v WHERE v.status = 'COOLING' AND v.returnScheduledAt <= :reusableBefore")
+    List<Viban> findCooledOff(@Param("reusableBefore") LocalDateTime reusableBefore);
 
     /**
      * Find VIBANs scheduled for return.

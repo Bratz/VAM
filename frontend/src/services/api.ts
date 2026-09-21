@@ -3160,6 +3160,8 @@ export interface VibanPool {
   poolSize: number;
   availableCount: number;
   reservedCount: number;
+  /** Returned and resting before reuse: neither available nor assigned. */
+  coolingCount?: number;
   assignedCount: number;
   utilizationPercent?: number;
   assignmentTtlMinutes: number;

@@ -35,6 +35,7 @@ interface VibanPool {
   prefix: string;
   suffixLength: number;
   poolSize: number;
+  coolingCount?: number;
   availableCount: number;
   reservedCount: number;
   assignedCount: number;
@@ -525,7 +526,8 @@ const VibanManagementPage: React.FC = () => {
       // Enrich pools with calculated fields
       const enrichedPools = poolsData.map(pool => ({
         ...pool,
-        assignedCount: pool.assignedCount || (pool.poolSize - pool.availableCount - (pool.reservedCount || 0)),
+        // ?? not ||: 0 assigned is a real answer, and the fallback must not count cooling numbers as assigned.
+        assignedCount: pool.assignedCount ?? (pool.poolSize - pool.availableCount - (pool.reservedCount || 0) - (pool.coolingCount || 0)),
       }));
 
       setPools(enrichedPools);
@@ -769,6 +771,7 @@ const VibanManagementPage: React.FC = () => {
     const config: Record<string, { variant: 'success' | 'warning' | 'info' | 'neutral' | 'error'; label: string }> = {
       ACTIVE: { variant: 'success', label: 'Active' },
       RETURNED: { variant: 'info', label: 'Available' },
+      COOLING: { variant: 'neutral', label: 'Cooling off' },
       AVAILABLE: { variant: 'info', label: 'Available' },
       PARTIAL: { variant: 'warning', label: 'Reserved' },
       RESERVED: { variant: 'warning', label: 'Reserved' },
@@ -1110,8 +1113,9 @@ const PoolsTab: React.FC<{
                   {getStatusBadge(pool.status)}
                 </div>
                 <div className="flex items-center gap-2 body-sm mb-4"><Building2 className="w-4 h-4" /><span>{pool.programName || 'Unknown'}</span></div>
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-4 gap-3 mb-4">
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-info-600 dark:text-info-300">{formatNumber(pool.availableCount)}</p><p className="caption">Available</p></div>
+                  <div className="bg-surface-page rounded-lg p-2 text-center" title="Returned to the pool and resting before they can be reissued"><p className="text-body-lg font-bold text-neutral-600 dark:text-neutral-300">{formatNumber(pool.coolingCount || 0)}</p><p className="caption">Cooling off</p></div>
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-success-600 dark:text-success-300">{formatNumber(pool.assignedCount)}</p><p className="caption">Assigned</p></div>
                   <div className="bg-surface-page rounded-lg p-2 text-center"><p className="text-body-lg font-bold text-warning-600 dark:text-warning-300">{formatNumber(pool.reservedCount)}</p><p className="caption">Reserved</p></div>
                 </div>

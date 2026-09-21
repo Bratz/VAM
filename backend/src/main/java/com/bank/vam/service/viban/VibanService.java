@@ -553,11 +553,10 @@ public class VibanService {
         // Get available VIBAN from pool (RETURNED status indicates available),
         // skipping numbers still inside their reuse cool-off.
         List<Viban> availableVibans = vibanRepository.findAvailableInPool(poolId,
-            LocalDateTime.now().minusDays(reuseCooloffDays),
             org.springframework.data.domain.PageRequest.of(0, 1));
         if (availableVibans.isEmpty()) {
-            throw new BusinessException("No VIBAN available in pool: every returned number is still inside its "
-                + reuseCooloffDays + "-day reuse cool-off, or the pool is empty");
+            throw new BusinessException("No VIBAN available in pool (returned numbers are not counted until their "
+                + reuseCooloffDays + "-day reuse cool-off has passed)");
         }
         Viban viban = availableVibans.get(0);
 
@@ -779,9 +778,8 @@ public class VibanService {
 
         viban.returnToPool();
         vibanRepository.save(viban);
-
-        // Increment pool available count
-        poolRepository.incrementAvailable(viban.getPoolId());
+        // Not counted as available yet: it is COOLING. processExpiredVibans adds
+        // it to the pool's availableCount when the cool-off passes.
 
         log.info("Returned VIBAN {} to pool", viban.getViban());
     }
@@ -825,7 +823,7 @@ public class VibanService {
             log.info("Marked {} VIBANs as expired", expired);
         }
 
-        // Return pool VIBANs scheduled for return
+        // Return pool VIBANs scheduled for return (they start cooling off)
         List<Viban> toReturn = vibanRepository.findScheduledForReturn(now);
         for (Viban viban : toReturn) {
             try {
@@ -833,6 +831,13 @@ public class VibanService {
             } catch (Exception e) {
                 log.error("Error returning VIBAN {} to pool: {}", viban.getViban(), e.getMessage());
             }
+        }
+
+        // Release numbers whose cool-off has passed back into the available stock
+        for (Viban viban : vibanRepository.findCooledOff(now.minusDays(reuseCooloffDays))) {
+            viban.setStatus(Viban.STATUS_RETURNED);
+            vibanRepository.save(viban);
+            poolRepository.incrementAvailable(viban.getPoolId());
         }
     }
 
@@ -912,6 +917,9 @@ public class VibanService {
     }
 
     private PoolResponse toPoolResponse(VibanPool pool) {
+        // Cooling numbers are neither available nor assigned; the stored counters
+        // don't know about them, so they are counted live and taken out of "assigned".
+        long cooling = vibanRepository.countByPoolIdAndStatus(pool.getId(), Viban.STATUS_COOLING);
         return PoolResponse.builder()
             .id(pool.getId())
             .programId(pool.getProgramId())
@@ -920,7 +928,8 @@ public class VibanService {
             .prefix(pool.getPrefix())
             .poolSize(pool.getPoolSize())
             .availableCount(pool.getAvailableCount())
-            .assignedCount(pool.getAssignedCount())
+            .coolingCount((int) cooling)
+            .assignedCount(pool.getAssignedCount() - (int) cooling)
             .utilizationPercent(pool.getUtilizationPercent())
             .assignmentTtlMinutes(pool.getAssignmentTtlMinutes())
             .status(pool.getStatus())

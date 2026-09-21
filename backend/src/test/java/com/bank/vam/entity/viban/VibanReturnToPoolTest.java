@@ -30,7 +30,8 @@ class VibanReturnToPoolTest {
         LocalDateTime before = LocalDateTime.now();
         v.returnToPool();
         assertThat(v.getReturnScheduledAt()).isAfterOrEqualTo(before);
-        assertThat(v.getStatus()).isEqualTo(Viban.STATUS_RETURNED);
+        // COOLING, not RETURNED: it must not count as available stock until the cool-off passes.
+        assertThat(v.getStatus()).isEqualTo(Viban.STATUS_COOLING);
         assertThat(v.getVirtualAccountId()).isNull();
     }
 

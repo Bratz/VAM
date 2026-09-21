@@ -591,6 +591,7 @@ public class VibanController {
     }
 
     private PoolResponse toPoolResponse(VibanPool pool) {
+        long cooling = vibanRepository.countByPoolIdAndStatus(pool.getId(), Viban.STATUS_COOLING);
         // Get program name
         String programName = null;
         if (pool.getProgramId() != null) {
@@ -618,7 +619,8 @@ public class VibanController {
             .poolSize(pool.getPoolSize())
             .availableCount(pool.getAvailableCount())
             .reservedCount(pool.getReservedCount())
-            .assignedCount(pool.getAssignedCount())
+            .coolingCount((int) cooling)
+            .assignedCount(pool.getAssignedCount() - (int) cooling)
             .utilizationPercent(utilizationPercent)
             .assignmentTtlMinutes(pool.getAssignmentTtlMinutes())
             .autoReturnExpired(pool.getAutoReturnExpired())

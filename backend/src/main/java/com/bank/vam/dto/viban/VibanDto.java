@@ -162,6 +162,8 @@ public class VibanDto {
         private Integer poolSize;
         private Integer availableCount;
         private Integer reservedCount;
+        /** Returned to the pool, resting before reuse: neither available nor assigned. */
+        private Integer coolingCount;
         private Integer assignedCount;
         private Double utilizationPercent;  // Changed from Integer to Double to match entity
         private Integer assignmentTtlMinutes;

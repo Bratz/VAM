@@ -336,6 +336,8 @@ public class Viban extends BaseEntity {
     public static final String STATUS_CANCELLED = "CANCELLED";
     public static final String STATUS_SUSPENDED = "SUSPENDED";
     public static final String STATUS_RETURNED = "RETURNED";
+    /** Returned to its pool but not yet reissuable: see VibanService.processExpiredVibans. */
+    public static final String STATUS_COOLING = "COOLING";
 
     // ========================================================================
     // Reference type constants
@@ -506,7 +508,10 @@ public class Viban extends BaseEntity {
         // findAvailableInPool won't hand the number to anyone else until it passes.
         LocalDateTime now = LocalDateTime.now();
         this.returnScheduledAt = (returnScheduledAt == null || returnScheduledAt.isBefore(now)) ? now : returnScheduledAt;
-        this.status = STATUS_RETURNED;
+        // COOLING, not RETURNED: RETURNED means "issuable now" and is what the
+        // pool's availableCount counts. The number moves to RETURNED, and back
+        // into that count, only once its cool-off has passed.
+        this.status = STATUS_COOLING;
         this.virtualAccountId = null;
         this.referenceType = null;
         this.referenceId = null;
