@@ -4659,7 +4659,7 @@ export interface ExceptionTimelineEntry {
 // SETTLEMENT VA API
 // ============================================================================
 
-const settlementVaApi = {
+export const settlementVaApi = {
   /**
    * Get all Settlement and Exception VAs for a program
    */

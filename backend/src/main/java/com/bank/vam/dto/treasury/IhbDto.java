@@ -80,7 +80,8 @@ public class IhbDto {
         private BigDecimal lendingRateSpread;
         private BigDecimal borrowingRateSpread;
         private UUID settlementVaId;
-        
+        private UUID ihbInterestConfigId;        // Treasury Center's rate configuration
+
         // ENHANCED: Sweep configuration
         private BigDecimal targetCashBalance;    // 0 = sweep all surplus
         private boolean autoSweepEnabled = true;
@@ -99,6 +100,7 @@ public class IhbDto {
         private BigDecimal lendingRateSpread;
         private BigDecimal borrowingRateSpread;
         private UUID settlementVaId;
+        private UUID ihbInterestConfigId;
     }
 
 

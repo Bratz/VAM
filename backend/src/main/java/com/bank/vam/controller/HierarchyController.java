@@ -501,31 +501,35 @@ public class HierarchyController {
     // Level Configuration
     // ------------------------------------------------------------------------
 
+    /** Every client sends {"levels": [...]} (Programs wizard, Balance Hierarchy's level editor). */
+    record LevelsBody(List<LevelConfigRequest> levels) {}
+
     @PostMapping("/api/v1/programs/{programId}/hierarchy/config")
     @Operation(summary = "Configure hierarchy levels", description = "Set up the level configuration for a program's hierarchy")
-    public ResponseEntity<List<LevelConfigResponse>> configureLevels(
+    public ResponseEntity<ApiResponse<List<LevelConfigResponse>>> configureLevels(
             @PathVariable UUID programId,
-            @RequestBody List<LevelConfigRequest> requests) {
+            @RequestBody LevelsBody body) {
+        // Saving replaces every level, so an empty list would wipe the program's structure.
+        if (body == null || body.levels() == null || body.levels().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("At least one level is required"));
+        }
         log.info("Configuring hierarchy levels for program: {}", programId);
-        List<LevelConfigResponse> configs = hierarchyService.configureLevels(programId, requests);
-        return ResponseEntity.ok(configs);
+        return ResponseEntity.ok(ApiResponse.success(hierarchyService.configureLevels(programId, body.levels())));
     }
 
     @GetMapping("/api/v1/programs/{programId}/hierarchy/config")
     @Operation(summary = "Get level configurations", description = "Get the level configuration for a program's hierarchy")
-    public ResponseEntity<List<LevelConfigResponse>> getLevelConfigs(@PathVariable UUID programId) {
-        List<LevelConfigResponse> configs = hierarchyService.getLevelConfigs(programId);
-        return ResponseEntity.ok(configs);
+    public ResponseEntity<ApiResponse<List<LevelConfigResponse>>> getLevelConfigs(@PathVariable UUID programId) {
+        return ResponseEntity.ok(ApiResponse.success(hierarchyService.getLevelConfigs(programId)));
     }
 
     @PostMapping("/api/v1/programs/{programId}/hierarchy/config/template")
     @Operation(summary = "Apply hierarchy template", description = "Apply a predefined template for hierarchy levels")
-    public ResponseEntity<List<LevelConfigResponse>> applyTemplate(
+    public ResponseEntity<ApiResponse<List<LevelConfigResponse>>> applyTemplate(
             @PathVariable UUID programId,
             @RequestBody TemplateRequest request) {
         log.info("Applying template {} to program: {}", request.getTemplateType(), programId);
-        List<LevelConfigResponse> configs = hierarchyService.applyTemplate(programId, request.getTemplateType());
-        return ResponseEntity.ok(configs);
+        return ResponseEntity.ok(ApiResponse.success(hierarchyService.applyTemplate(programId, request.getTemplateType())));
     }
 
     // ------------------------------------------------------------------------

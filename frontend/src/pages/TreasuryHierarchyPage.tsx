@@ -7,6 +7,7 @@ import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { Modal } from '../components/ui/enhanced';
+import { VaVibanModal } from '../components/viban/VaVibanModal';
 import { formatCurrency, cn } from '../utils';
 import {
   balanceStructureApi,
@@ -29,6 +30,7 @@ import {
   ihbUnifiedApi,
   virtualAccountsApi,
   shadowAccountApi,
+  settlementVaApi,
   ShadowAccount,
   TreasuryRates,
   CreateAggregationRequest,
@@ -1524,7 +1526,6 @@ interface TreeNodeProps {
   selectedId: string | null;
   onSelect: (node: ExtendedHierarchyNode) => void;
   reportingCurrency: string;
-  showInterest: boolean;
   showSystemVas?: boolean;  // Toggle to show/hide system VAs (Currency Mirrors, Settlement, Exception, Shadow)
   /** Opens the matching create modal directly — the context menu lists the
    *  node types, so no intermediate chooser. */
@@ -1539,7 +1540,7 @@ interface TreeNodeProps {
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
-  node, expandedIds, onToggle, selectedId, onSelect, reportingCurrency, showInterest,
+  node, expandedIds, onToggle, selectedId, onSelect, reportingCurrency,
   showSystemVas = true, onAddChild, onCreateSettlementVa, onViewExceptions, onConfigureIhb, corporateId, programId,
   highlightId,
 }) => {
@@ -1843,7 +1844,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               selectedId={selectedId}
               onSelect={onSelect}
               reportingCurrency={reportingCurrency}
-              showInterest={showInterest}
               showSystemVas={showSystemVas}
               onAddChild={onAddChild}
               onCreateSettlementVa={onCreateSettlementVa}
@@ -2490,13 +2490,16 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
           targetCashBalance: config.targetCashBalance,
           autoSweepEnabled: config.autoSweepEnabled,
           sweepFrequency: config.sweepFrequency,
-          ihbInterestConfigId: config.canLend ? selectedConfigId : undefined,
+          ihbInterestConfigId: config.canLend && selectedConfigId ? selectedConfigId : undefined,
         });
         toast.success('IHB enabled successfully', { icon: <Landmark className="w-5 h-5 text-primary-600" /> });
       } else {
+        // Target balance and sweep schedule live on the sweep rule (Sweeping page), not here.
         await ihbUnifiedApi.updateSettings(entityId, {
-          ...config,
-          ihbInterestConfigId: config.canLend ? selectedConfigId : undefined,
+          creditLimit: config.creditLimit,
+          canLend: config.canLend,
+          canBorrow: config.canBorrow,
+          ihbInterestConfigId: config.canLend && selectedConfigId ? selectedConfigId : undefined,
         });
         toast.success('IHB settings updated');
       }
@@ -2957,7 +2960,10 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
         </div>
         
         {/* Target Balance */}
-        {(isEnabling || !entity?.canLend) && (
+        {!isEnabling && (
+          <p className="caption">Target balance and sweep schedule are set on this entity's sweep rule (Sweeping page).</p>
+        )}
+        {isEnabling && (
           <div>
             <label className="field-label block mb-1">Target Cash Balance</label>
             <input
@@ -3006,7 +3012,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
 // MAIN PAGE COMPONENT
 // ============================================================================
 
-const TreasuryHierarchyPage: React.FC = () => {
+const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> = ({ onNavigate }) => {
   // Corporate & Program selection state
   const [corporates, setCorporates] = useState<Corporate[]>([]);
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
@@ -3033,7 +3039,6 @@ const TreasuryHierarchyPage: React.FC = () => {
   const [highlightNodeId, setHighlightNodeId] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<ExtendedHierarchyNode | null>(null);
   const [reportingCurrency, _setReportingCurrency] = useState('AED');
-  const [showInterest, setShowInterest] = useState(true);
   // Default OFF: mirrors/settlement/exception VAs are system plumbing — the
   // treasurer's default view is the business tree; the toggle reveals them.
   const [showSystemVas, setShowSystemVas] = useState(false);
@@ -3042,6 +3047,7 @@ const TreasuryHierarchyPage: React.FC = () => {
   const [showCreateViban, setShowCreateViban] = useState(false);
   const [showCreateSettlementVa, setShowCreateSettlementVa] = useState(false);
   const [settlementVaCurrency, setSettlementVaCurrency] = useState('AED');
+  const [creatingSettlementVa, setCreatingSettlementVa] = useState(false);
   const [corporateId, setCorporateId] = useState<string | undefined>(undefined);
 
   // NEW: Add Node Modal States (ENHANCED)
@@ -3539,7 +3545,13 @@ const TreasuryHierarchyPage: React.FC = () => {
     setTimeout(() => setHighlightNodeId(null), 3500);
   }, [pendingFocusId, hierarchy]);
 
-  const handleSelectNode = (node: ExtendedHierarchyNode) => { setSelectedNode(node); loadNodeDetail(node.id); };
+  const handleSelectNode = (node: ExtendedHierarchyNode) => {
+    setSelectedNode(node);
+    // The top node is the corporate itself, not an account -- there's no account detail to fetch
+    // (the backend answered "Node not found"); the panel shows the node's own figures instead.
+    if (node.id === selectedCorporateId) { setSelectedNodeDetail(null); return; }
+    loadNodeDetail(node.id);
+  };
   
   const handleRefresh = async () => { 
     setRefreshing(true); 
@@ -3549,21 +3561,52 @@ const TreasuryHierarchyPage: React.FC = () => {
     setRefreshing(false); 
   };
   
-  const handleExport = async () => { 
-    const res = await balanceStructureApi.exportReport('XLSX', reportingCurrency); 
-    if (res.success && res.data) {
-      toast.success('Export started');
-      console.log('Export URL:', res.data); 
-    }
+  // Same client-side CSV as the Programs page -- the backend export endpoint is a stub.
+  const handleExport = () => {
+    if (!hierarchy) return;
+    const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows: unknown[][] = [];
+    const walk = (n: ExtendedHierarchyNode, depth: number) => {
+      rows.push([depth, '  '.repeat(depth) + n.name, n.accountNumber, n.accountCategory, n.currencyCode,
+        n.localBalance ?? 0, n.consolidatedBalance ?? 0]);
+      (n.children as ExtendedHierarchyNode[] | undefined)?.forEach(c => walk(c, depth + 1));
+    };
+    walk(hierarchy, 0);
+    const csv = [['Level', 'Name', 'Account', 'Category', 'Currency', 'Own balance', `Total (${reportingCurrency})`], ...rows]
+      .map(r => r.map(cell).join(',')).join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    link.download = `balance-hierarchy-${selectedProgram?.programCode ?? 'all'}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   };
   
   const handleCreateSettlementVa = (parentId: string) => { 
     const parent = hierarchy ? findNodeById(hierarchy, parentId) : null;
     setAddNodeParentNode(parent);
+    if (parent?.currencyCode) setSettlementVaCurrency(parent.currencyCode);
     setShowCreateSettlementVa(true); 
   };
+
+  const submitSettlementVa = async () => {
+    if (!selectedProgramId || !addNodeParentNode) return;
+    setCreatingSettlementVa(true);
+    try {
+      const res = await settlementVaApi.create({
+        programId: selectedProgramId, parentNodeId: addNodeParentNode.id, currency: settlementVaCurrency,
+      });
+      if (!res.success) throw new Error(res.message || 'Could not create the settlement VA');
+      toast.success(`Settlement VA ${res.data?.vaNumber ?? ''} created`);
+      setShowCreateSettlementVa(false);
+      await refreshAll();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Could not create the settlement VA');
+    } finally {
+      setCreatingSettlementVa(false);
+    }
+  };
   
-  const handleViewExceptions = (nodeId: string) => { console.log('Navigate to exceptions:', nodeId); };
+  const handleViewExceptions = (_nodeId: string) => { onNavigate?.('exceptions'); };
 
   // ENHANCED: Entity and IHB action handlers
   const handleAssignEntity = (node: ExtendedHierarchyNode) => {
@@ -3699,7 +3742,7 @@ const TreasuryHierarchyPage: React.FC = () => {
             {programs.filter(p => p.status === 'ACTIVE').length === 0 && (
               <div className="mt-4">
                 <p className="text-warning-600 text-body-sm mb-2 dark:text-warning-300">No active programs found for this corporate.</p>
-                <Button variant="outline" onClick={() => window.location.href = '/programs'}>
+                <Button variant="outline" onClick={() => onNavigate?.('programs')}>
                   <Plus className="w-4 h-4 mr-1" />Create Program
                 </Button>
               </div>
@@ -4028,7 +4071,6 @@ const TreasuryHierarchyPage: React.FC = () => {
               <h2 className="section-title">Virtual Account Hierarchy</h2>
               <div className="flex items-center gap-2">
                 <Checkbox size="sm" label="System VAs" checked={showSystemVas} onChange={setShowSystemVas} className="body-sm" />
-                <Checkbox size="sm" label="Interest" checked={showInterest} onChange={setShowInterest} className="body-sm" />
                 {/* Discoverable creation entry: works off the selected node
                     (the row kebab remains the contextual shortcut). Routes
                     through the type-selector modal, whose cards explain the
@@ -4055,7 +4097,6 @@ const TreasuryHierarchyPage: React.FC = () => {
                   selectedId={selectedNode?.id ?? null}
                   onSelect={handleSelectNode}
                   reportingCurrency={reportingCurrency}
-                  showInterest={showInterest}
                   showSystemVas={showSystemVas}
                   onAddChild={handleAddChild}
                   onCreateSettlementVa={handleCreateSettlementVa}
@@ -4169,35 +4210,28 @@ const TreasuryHierarchyPage: React.FC = () => {
             <div>
               <p className="text-body-sm font-medium text-cat-2 dark:text-cat-2-fg">Settlement Virtual Account</p>
               <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-0.5">Automatically receives fee postings from all VAs under this hierarchy level.</p>
+              {addNodeParentNode && <p className="text-caption text-cat-2 dark:text-cat-2-fg mt-1">Under: <span className="font-medium">{addNodeParentNode.name}</span> · named "{settlementVaCurrency} Settlement Account"</p>}
             </div>
           </div>
-          <div><label className="field-label block mb-1">VA Name</label><Input placeholder="e.g., GCC Settlement Account" /></div>
           <div><label className="field-label block mb-1">Currency</label>
             <CurrencyPicker value={settlementVaCurrency} onChange={setSettlementVaCurrency} />
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="ghost" onClick={() => setShowCreateSettlementVa(false)}>Cancel</Button>
-            <Button onClick={() => { setShowCreateSettlementVa(false); }}>
-              <Scale className="w-4 h-4 mr-1" />Create Settlement VA
+            <Button onClick={submitSettlementVa} disabled={creatingSettlementVa || !selectedProgramId || !addNodeParentNode}>
+              {creatingSettlementVa ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Scale className="w-4 h-4 mr-1" />}Create Settlement VA
             </Button>
           </div>
         </div>
       </Modal>
 
-      <Modal isOpen={showCreateViban} onClose={() => setShowCreateViban(false)} title="Add VIBAN" size="md">
-        <div className="p-4 space-y-4">
-          <div><label className="field-label block mb-1">VIBAN Type</label>
-            <select className="w-full border border-edge-strong rounded-lg px-3 py-2">
-              <option value="PRIMARY">Primary</option><option value="INVOICE">Invoice</option><option value="CUSTOMER">Customer</option>
-            </select>
-          </div>
-          <div><label className="field-label block mb-1">Reference ID</label><Input placeholder="e.g., INV-2024-001" /></div>
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="ghost" onClick={() => setShowCreateViban(false)}>Cancel</Button>
-            <Button onClick={() => { setShowCreateViban(false); }}>Create VIBAN</Button>
-          </div>
-        </div>
-      </Modal>
+      {selectedNode && (
+        <VaVibanModal
+          account={{ id: selectedNode.id, vaNumber: selectedNode.accountNumber || '', vaName: selectedNode.name, programId: selectedProgramId || undefined }}
+          isOpen={showCreateViban}
+          onClose={() => setShowCreateViban(false)}
+        />
+      )}
 
       {/* ENHANCED: Assign Entity Modal */}
       <AssignEntityModal

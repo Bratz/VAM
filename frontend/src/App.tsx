@@ -587,7 +587,7 @@ const App: React.FC = () => {
       case 'simulator':
         return <SimulatorPage />;
       case 'netting-enhanced': return <EnhancedNettingCyclesPage />;  // Phase 7 Enhanced
-      case 'hierarchy': return <TreasuryHierarchyPage />;
+      case 'hierarchy': return <TreasuryHierarchyPage onNavigate={handleNavigate} />;
       case 'forecasting': return <ForecastingPage />;
       
       // ====================================================================

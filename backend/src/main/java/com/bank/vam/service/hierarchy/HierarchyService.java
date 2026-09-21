@@ -66,8 +66,10 @@ public class HierarchyService {
         Program program = programRepository.findById(programId)
             .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId));
 
-        // Delete existing configs
+        // Delete existing configs -- flushed now, or Hibernate would run the inserts first and
+        // trip uq_program_level whenever a level number is re-saved.
         levelConfigRepository.deleteByProgramId(programId);
+        levelConfigRepository.flush();
 
         // Create new configs
         List<HierarchyLevelConfig> configs = new ArrayList<>();

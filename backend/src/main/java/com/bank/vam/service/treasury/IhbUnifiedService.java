@@ -103,7 +103,8 @@ public class IhbUnifiedService {
             validateSettlementVa(request.getSettlementVaId(), entity);
             entity.setSettlementVaId(request.getSettlementVaId());
         }
-        
+        applyInterestConfig(entity, request.getIhbInterestConfigId());
+
         entity = legalEntityRepository.save(entity);
         log.info("IHB enabled for entity: {} with limit {}", entity.getEntityCode(), request.getCreditLimit());
         
@@ -255,6 +256,15 @@ public class IhbUnifiedService {
     }
 
     @Transactional
+    /** The rate configuration picked in the IHB window; null leaves the current one. */
+    private void applyInterestConfig(LegalEntity entity, UUID configId) {
+        if (configId == null) return;
+        if (!interestConfigRepository.existsById(configId)) {
+            throw new BusinessException("Interest configuration not found: " + configId);
+        }
+        entity.setIhbInterestConfigId(configId);
+    }
+
     public IhbDto.EntityResponse updateIhbSettings(UUID entityId, IhbDto.UpdateIhbSettingsRequest request) {
         LegalEntity entity = legalEntityRepository.findById(entityId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entity not found: " + entityId));
@@ -276,6 +286,7 @@ public class IhbUnifiedService {
             validateSettlementVa(request.getSettlementVaId(), entity);
             entity.setSettlementVaId(request.getSettlementVaId());
         }
+        applyInterestConfig(entity, request.getIhbInterestConfigId());
         entity = legalEntityRepository.save(entity);
         log.info("Updated IHB settings for entity: {}", entity.getEntityCode());
         return toEntityResponse(entity);
