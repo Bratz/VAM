@@ -617,17 +617,25 @@ const ProgramsPage: React.FC = () => {
         footer={
           <>
             <Button variant="outline" onClick={() => setCloneSource(null)} disabled={cloning}>Cancel</Button>
-            <Button onClick={confirmClone} loading={cloning} disabled={!cloneCode.trim() || !cloneName.trim()} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
+            <Button type="submit" form="clone-program-form" loading={cloning} disabled={!cloneCode.trim() || !cloneName.trim()} leftIcon={<Copy className="w-4 h-4" />}>Clone</Button>
           </>
         }
       >
-        <div className="space-y-3">
+        {/* A form, so Enter in either field clones (the button sits in the footer, linked by id). */}
+        <form
+          id="clone-program-form"
+          className="space-y-3"
+          onSubmit={e => {
+            e.preventDefault();
+            if (!cloning && cloneCode.trim() && cloneName.trim()) confirmClone();
+          }}
+        >
           <p className="body-sm">
             Copies the settings of <span className="body-strong">{cloneSource?.programName}</span>. Accounts and balances are not copied; the new program starts pending approval.
           </p>
           <Input label="Program code" hint="Capital letters, digits, - and _" value={cloneCode} onChange={e => setCloneCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))} />
           <Input label="Program name" value={cloneName} onChange={e => setCloneName(e.target.value)} />
-        </div>
+        </form>
       </Modal>
       <ProgramDetailModal program={selectedProgram} onClose={() => setSelectedProgram(null)} onEdit={p => { setSelectedProgram(null); setEditProgram(p); }} onClone={p => { setSelectedProgram(null); startClone(p); }} onConfigure={(p, step) => { setSelectedProgram(null); setEditProgram(p); setConfigStep(step); }} onStatusChange={requestStatusChange} />
       <Modal

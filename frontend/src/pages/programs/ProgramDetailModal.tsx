@@ -352,7 +352,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     ) : settlementVas.length > 0 ? (
                       <div className="space-y-2 max-h-[400px] overflow-y-auto">
                         {settlementVas.map((va) => (
-                          <Card key={va.id} padding="sm" className="flex justify-between items-center hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50">
+                          <Card key={va.id} padding="sm" className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-accent-100 flex items-center justify-center dark:bg-accent-500/20">
                                 <span className="text-caption font-medium text-accent-700 dark:text-accent-300">{va.currency}</span>
@@ -423,10 +423,8 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                             key={key} 
                             padding="sm" 
                             className={cn(
-                              'cursor-pointer transition-all',
-                              isActive 
-                                ? 'ring-2 ring-primary-500 border-primary-500 bg-primary-50 dark:bg-primary-800/40' 
-                                : 'hover:border-neutral-300 dark:hover:border-primary-700'
+                              // Read-only here (change it via "VIBAN settings"), so no pointer or hover.
+                              isActive && 'ring-2 ring-primary-500 border-primary-500 bg-primary-50 dark:bg-primary-800/40'
                             )}
                           >
                             <div className="flex items-start gap-3">
@@ -864,7 +862,7 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
               ) : (
                 <div className="space-y-2">
                   {detail.recentVirtualAccounts.map(va => (
-                    <Card key={va.id} padding="sm" className="flex items-center justify-between hover:bg-neutral-50 cursor-pointer dark:hover:bg-primary-800/50">
+                    <Card key={va.id} padding="sm" className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" />
                         <div>

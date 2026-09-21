@@ -972,6 +972,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
               <div className="flex items-center gap-4">
                 <input
                   type="range"
+                  aria-label="Hierarchy depth"
                   min="1"
                   max="7"
                   value={formData.hierarchyDepth}
@@ -1053,6 +1054,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                               <label className="block label-cased mb-1">Level Name</label>
                               <input
                                 type="text"
+                                aria-label={`Level ${idx + 1} name`}
                                 value={level.levelName}
                                 onChange={e => {
                                   const updated = [...hierarchyLevelConfigs];
@@ -1067,6 +1069,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                             <div>
                               <label className="block label-cased mb-1">Dimension Type</label>
                               <select
+                                aria-label={`Level ${idx + 1} dimension type`}
                                 value={level.dimensionType}
                                 onChange={e => {
                                   const updated = [...hierarchyLevelConfigs];
@@ -1150,6 +1153,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                           setHierarchyLevelConfigs(updated);
                                         }}
                                         className="hover:text-cat-2"
+                                        aria-label={`Remove ${value} from ${level.levelName}`}
                                       >
                                         <X className="w-3 h-3" />
                                       </button>
@@ -1165,6 +1169,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                 <input
                                   type="text"
                                   placeholder="Add value..."
+                                  aria-label={`New allowed value for ${level.levelName}`}
                                   className="flex-1 px-2 py-1 text-caption border border-edge-strong rounded-md bg-surface-card text-primary-900 dark:bg-primary-900 dark:border-primary-700 dark:text-neutral-50"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
@@ -1201,6 +1206,7 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
                                     }
                                   }}
                                   className="px-2 py-1 text-caption bg-cat-2 text-white rounded-md hover:bg-cat-2/90"
+                                  aria-label={`Add value to ${level.levelName}`}
                                 >
                                   <Plus className="w-3 h-3" />
                                 </button>
