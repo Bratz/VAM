@@ -108,13 +108,13 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
      * Money held in a program's accounts, per currency: IC payables count negative (a liability),
      * and the categories in {@code notMoney} (containers, mirrors) are left out.
      */
-    @Query("SELECT v.currencyCode, COALESCE(SUM(CASE WHEN v.mirrorAccountType = :icPayable " +
-           "THEN -v.currentBalance ELSE v.currentBalance END), 0) " +
+    @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) " +
            "FROM VirtualAccount v WHERE v.programId = :programId AND v.accountCategory NOT IN :notMoney " +
+           "AND (v.mirrorAccountType IS NULL OR v.mirrorAccountType NOT IN :notMoneyMirrors) " +
            "GROUP BY v.currencyCode")
     List<Object[]> sumMoneyByProgramGroupedByCurrency(@Param("programId") UUID programId,
                                                       @Param("notMoney") java.util.Collection<AccountCategory> notMoney,
-                                                      @Param("icPayable") VirtualAccount.MirrorAccountType icPayable);
+                                                      @Param("notMoneyMirrors") java.util.Collection<VirtualAccount.MirrorAccountType> notMoneyMirrors);
     
     @Query("SELECT COALESCE(SUM(v.availableBalance), 0) FROM VirtualAccount v WHERE v.programId = :programId")
     BigDecimal sumAvailableBalanceByProgramId(@Param("programId") UUID programId);

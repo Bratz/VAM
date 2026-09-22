@@ -624,14 +624,14 @@ public class BalanceStructureService {
                 if (child.getAccountCategory() == AccountCategory.CURRENCY_MIRROR) {
                     continue; // restates a branch's total, not a disjoint slice of it
                 }
-                // IC Payable is Treasury's liability to a subsidiary (COBO), not an asset —
-                // it must reduce Treasury's own rollup, the same real money an IC Receivable
-                // (the POBO counterpart) correctly adds, just viewed from the other side.
-                if ("IC_PAYABLE".equals(child.getMirrorAccountType())) {
-                    childrenSum = childrenSum.subtract(childTotal);
-                } else {
-                    childrenSum = childrenSum.add(childTotal);
+                // An IC mirror is Treasury's view of a subsidiary's own IHB position -- the same
+                // money seen from the other side. Counting it (either sign) cancelled the real
+                // movement: a POBO payment left the total unchanged although the cash had gone.
+                // It stays on its row and in the intercompany figures below, not in the total.
+                if (isIntercompanyMirror(child)) {
+                    continue;
                 }
+                childrenSum = childrenSum.add(childTotal);
             }
         }
         boolean isContainer = node.getAccountCategory() == AccountCategory.ROOT
@@ -647,8 +647,8 @@ public class BalanceStructureService {
         if (isContainer) {
             node.setLocalBalance(BigDecimal.ZERO);
         }
-        // IC receivable/payable roll up like balances. They are already inside the total (an IC
-        // payable is subtracted above), so the net position is the total itself.
+        // IC receivable/payable roll up for reporting only: they are no longer part of the total,
+        // so the net position (money plus what the group owes itself) is the total itself.
         if (node.getChildren() != null) {
             BigDecimal icReceivable = node.getIntercompanyReceivable() != null ? node.getIntercompanyReceivable() : BigDecimal.ZERO;
             BigDecimal icPayable = node.getIntercompanyPayable() != null ? node.getIntercompanyPayable() : BigDecimal.ZERO;
@@ -662,6 +662,12 @@ public class BalanceStructureService {
         }
         node.setNetPosition(total);
         return total;
+    }
+
+    /** Treasury's IC receivable/payable: the other side of a subsidiary's own position, not extra money. */
+    private static boolean isIntercompanyMirror(HierarchyNode node) {
+        return "IC_RECEIVABLE".equals(node.getMirrorAccountType())
+            || "IC_PAYABLE".equals(node.getMirrorAccountType());
     }
 
     private HierarchyNode buildNodeFromVA(VirtualAccount va,

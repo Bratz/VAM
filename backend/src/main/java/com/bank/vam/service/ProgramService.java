@@ -963,6 +963,10 @@ public class ProgramService {
         VirtualAccount.AccountCategory.CURRENCY_MIRROR,
         VirtualAccount.AccountCategory.PHYSICAL_MIRROR, VirtualAccount.AccountCategory.EXTERNAL_MIRROR);
 
+    /** Treasury's view of a subsidiary's own position: the same money from the other side. */
+    private static final java.util.EnumSet<VirtualAccount.MirrorAccountType> NOT_MONEY_MIRRORS = java.util.EnumSet.of(
+        VirtualAccount.MirrorAccountType.IC_RECEIVABLE, VirtualAccount.MirrorAccountType.IC_PAYABLE);
+
     /**
      * Money held in the program's accounts, in the program's currency. Same rule as the balance
      * hierarchy's rollup (BalanceStructureService.recomputeRollup): no containers, no currency
@@ -975,7 +979,7 @@ public class ProgramService {
     private BigDecimal programBalance(Program program) {
         BigDecimal total = BigDecimal.ZERO;
         for (Object[] row : virtualAccountRepository.sumMoneyByProgramGroupedByCurrency(
-                program.getId(), NOT_MONEY, VirtualAccount.MirrorAccountType.IC_PAYABLE)) {
+                program.getId(), NOT_MONEY, NOT_MONEY_MIRRORS)) {
             String currency = (String) row[0];
             BigDecimal amount = (BigDecimal) row[1];
             if (currency == null || amount == null || amount.signum() == 0) continue;
