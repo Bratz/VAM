@@ -95,6 +95,21 @@ public class FeePostingService {
     // FULL FEE POSTING (DEBIT SOURCE BALANCE + CREDIT SETTLEMENT BALANCE)
     // ========================================================================
 
+    private static final java.util.Set<VirtualAccount.AccountCategory> CONTAINERS = java.util.EnumSet.of(
+        VirtualAccount.AccountCategory.ROOT, VirtualAccount.AccountCategory.AGGREGATION,
+        VirtualAccount.AccountCategory.CURRENCY_MIRROR);
+
+    /** The account that pays a result: itself, or for a container the nearest settlement VA below it (else its Exception VA). */
+    private VirtualAccount payingAccount(VirtualAccount charged) {
+        if (charged.getAccountCategory() == null || !CONTAINERS.contains(charged.getAccountCategory())) return charged;
+        return settlementVaResolver.findSettlementVaBelow(charged, charged.getCurrencyCode())
+            .orElseGet(() -> {
+                log.warn("No settlement VA below container {} ({}): its fee goes to the Exception VA",
+                    charged.getVaNumber(), charged.getCurrencyCode());
+                return settlementVaResolver.resolveOrCreateExceptionVa(charged);
+            });
+    }
+
     /**
      * Post a fee/charge from source VA to Settlement VA.
      * 
@@ -131,6 +146,10 @@ public class FeePostingService {
             log.warn("Source VA not found for fee posting: {}", sourceVaId);
             return FeePostingResult.failed(referenceId, "Source VA not found: " + sourceVaId);
         }
+        // A container holds no money of its own: its fee is paid by the settlement VA below it
+        // (Tieto 4.8.2.5). The contra is still resolved from the container itself.
+        VirtualAccount chargedVa = sourceVa;
+        sourceVa = payingAccount(chargedVa);
         
         // 3. Validate source VA has sufficient balance
         if (sourceVa.getCurrentBalance().compareTo(amount) < 0) {
@@ -143,7 +162,7 @@ public class FeePostingService {
 
         // 4. Resolve Settlement VA with proper exception handling (v5.2.0)
         SettlementVaResolverService.SettlementVaResolutionResult resolution =
-            settlementVaResolver.resolveSettlementVaWithResult(sourceVa, amount, referenceId);
+            settlementVaResolver.resolveSettlementVaWithResult(chargedVa, amount, referenceId);
 
         VirtualAccount settlementVa = resolution.getResolvedVa();
         boolean isExceptionFallback = !resolution.isSuccess();
@@ -301,6 +320,10 @@ public class FeePostingService {
             log.warn("Source VA not found for fee pair posting: {}", sourceVaId);
             return FeePostingResult.failed(referenceId, "Source VA not found: " + sourceVaId);
         }
+        // A container holds no money of its own: its fee is paid by the settlement VA below it
+        // (Tieto 4.8.2.5). The contra is still resolved from the container itself.
+        VirtualAccount chargedVa = sourceVa;
+        sourceVa = payingAccount(chargedVa);
         
         // 3. Validate source VA has sufficient balance for fee (v5.2)
         if (sourceVa.getCurrentBalance().compareTo(amount) < 0) {
@@ -313,7 +336,7 @@ public class FeePostingService {
 
         // 4. Resolve Settlement VA with proper exception handling (v5.2.0)
         SettlementVaResolverService.SettlementVaResolutionResult resolution =
-            settlementVaResolver.resolveSettlementVaWithResult(sourceVa, amount, referenceId);
+            settlementVaResolver.resolveSettlementVaWithResult(chargedVa, amount, referenceId);
 
         VirtualAccount settlementVa = resolution.getResolvedVa();
         boolean isExceptionFallback = !resolution.isSuccess();
@@ -487,6 +510,10 @@ public class FeePostingService {
             log.warn("Source VA not found for fee pair to target posting: {}", sourceVaId);
             return FeePostingResult.failed(referenceId, "Source VA not found: " + sourceVaId);
         }
+        // A container holds no money of its own: its fee is paid by the settlement VA below it
+        // (Tieto 4.8.2.5). The contra is still resolved from the container itself.
+        VirtualAccount chargedVa = sourceVa;
+        sourceVa = payingAccount(chargedVa);
         
         // 3. Validate source VA has sufficient balance for fee (v5.2)
         if (sourceVa.getCurrentBalance().compareTo(amount) < 0) {

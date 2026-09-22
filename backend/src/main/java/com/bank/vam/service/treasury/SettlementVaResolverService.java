@@ -21,8 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -234,12 +237,21 @@ public class SettlementVaResolverService {
                 contraVa.getVaNumber(), contraVa.getCurrencyCode());
         }
 
+        // Tieto VAM 4.8.2.4: the contra is found on the source's own path -- a settlement VA beside it,
+        // then beside each ancestor, then at the program's top level. Never in another branch or
+        // another program (the old program-wide and corporate-wide fallbacks). For a currency mirror
+        // the search starts from its mother.
+        VirtualAccount pathStart = sourceVa;
+        if (sourceVa.getAccountCategory() == AccountCategory.CURRENCY_MIRROR && sourceVa.getParentAccountId() != null) {
+            pathStart = vaRepository.findById(sourceVa.getParentAccountId()).orElse(sourceVa);
+        }
+
         // =====================================================================
         // STEP 1: Check for Settlement VA as SIBLING (same parent as sourceVa)
         // =====================================================================
-        if (sourceVa.getParentAccountId() != null) {
+        if (pathStart.getParentAccountId() != null) {
             Optional<VirtualAccount> siblingSettlement = findSettlementVaByParent(
-                sourceVa.getParentAccountId(), sourceVa.getCurrencyCode());
+                pathStart.getParentAccountId(), sourceVa.getCurrencyCode());
 
             if (siblingSettlement.isPresent()) {
                 VirtualAccount settlementVa = siblingSettlement.get();
@@ -260,7 +272,7 @@ public class SettlementVaResolverService {
         // STEP 2: TRAVERSE UP the hierarchy looking for Settlement VA
         // =====================================================================
         Optional<VirtualAccount> hierarchySettlement = traverseHierarchyForSettlementVa(
-            sourceVa, sourceVa.getCurrencyCode());
+            pathStart, sourceVa.getCurrencyCode());
 
         if (hierarchySettlement.isPresent()) {
             VirtualAccount settlementVa = hierarchySettlement.get();
@@ -277,9 +289,9 @@ public class SettlementVaResolverService {
         }
 
         // =====================================================================
-        // STEP 3: Fallback to program-level Settlement VA
+        // STEP 3: The top of the path -- the program's top-level (parentless) Settlement VA
         // =====================================================================
-        Optional<VirtualAccount> programSettlement = findSettlementVa(
+        Optional<VirtualAccount> programSettlement = findTopLevelSettlementVa(
             sourceVa.getProgramId(), sourceVa.getCurrencyCode());
 
         if (programSettlement.isPresent()) {
@@ -297,33 +309,11 @@ public class SettlementVaResolverService {
         }
 
         // =====================================================================
-        // STEP 4: Fallback to corporate-level Settlement VA
-        // =====================================================================
-        if (sourceVa.getCorporateId() != null) {
-            Optional<VirtualAccount> corporateSettlement = findSettlementVaByCorporate(
-                sourceVa.getCorporateId(), sourceVa.getCurrencyCode());
-
-            if (corporateSettlement.isPresent()) {
-                VirtualAccount settlementVa = corporateSettlement.get();
-                log.debug("Found corporate-level Settlement VA: {}", settlementVa.getVaNumber());
-
-                // Validate legal entity ownership
-                SettlementVaResolutionResult entityValidation =
-                    validateLegalEntityOwnership(settlementVa, sourceVa, contraVa, amount, transactionId);
-                if (entityValidation != null) {
-                    return entityValidation;
-                }
-
-                return SettlementVaResolutionResult.success(settlementVa);
-            }
-        }
-
-        // =====================================================================
         // STEP 5: Settlement VA NOT FOUND - Park in Exception VA
         // =====================================================================
         String failureReason = String.format(
             "CONFIGURATION ERROR: Settlement VA not found for program %s currency %s. " +
-            "Searched: sibling level, hierarchy traversal, program level, corporate level. " +
+            "Searched the account's path: beside it, beside each ancestor, the program's top level. " +
             "Settlement VA must be created during program setup.",
             sourceVa.getProgramId(), sourceVa.getCurrencyCode());
 
@@ -393,6 +383,56 @@ public class SettlementVaResolverService {
      * @param currency The currency to match
      * @return Settlement VA if found
      */
+    /** The program's top-level settlement VA (no parent): the top of every account's path. */
+    public Optional<VirtualAccount> findTopLevelSettlementVa(UUID programId, String currency) {
+        if (programId == null || currency == null) return Optional.empty();
+        return vaRepository.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT).stream()
+            .filter(va -> va.getParentAccountId() == null)
+            .filter(va -> currency.equals(va.getCurrencyCode()) && va.getStatus() == VaStatus.ACTIVE)
+            .findFirst();
+    }
+
+    /**
+     * Tieto VAM 4.8.2.5: a container (root, aggregation, currency mirror) can't hold results of its
+     * own, so they are settled on the nearest settlement VA BELOW it in the same currency (level by
+     * level, closest first). For a currency mirror the search starts from its mother.
+     */
+    public Optional<VirtualAccount> findSettlementVaBelow(VirtualAccount container, String currency) {
+        UUID start = container.getAccountCategory() == AccountCategory.CURRENCY_MIRROR
+            ? container.getParentAccountId() : container.getId();
+        return start == null ? Optional.empty() : searchDown(List.of(start), currency);
+    }
+
+    /**
+     * Where a result on the program's real bank account settles (bank charges, bank interest): the
+     * program's top-level settlement VA, else the nearest one below its top-level accounts.
+     */
+    public Optional<VirtualAccount> findSettlementVaForProgramResult(UUID programId, String currency) {
+        Optional<VirtualAccount> top = findTopLevelSettlementVa(programId, currency);
+        if (top.isPresent() || programId == null) return top;
+        List<UUID> topLevel = vaRepository.findByProgramId(programId).stream()
+            .filter(va -> va.getParentAccountId() == null).map(VirtualAccount::getId).toList();
+        return searchDown(topLevel, currency);
+    }
+
+    /** Breadth-first: settlement VAs directly under these parents, then a level deeper, and so on. */
+    private Optional<VirtualAccount> searchDown(List<UUID> parents, String currency) {
+        Set<UUID> seen = new HashSet<>(parents);
+        List<UUID> level = parents;
+        for (int depth = 0; !level.isEmpty() && depth < 20; depth++) {
+            List<UUID> next = new ArrayList<>();
+            for (UUID parentId : level) {
+                Optional<VirtualAccount> here = findSettlementVaByParent(parentId, currency);
+                if (here.isPresent()) return here;
+                for (VirtualAccount child : vaRepository.findByParentAccountId(parentId)) {
+                    if (seen.add(child.getId())) next.add(child.getId());
+                }
+            }
+            level = next;
+        }
+        return Optional.empty();
+    }
+
     public Optional<VirtualAccount> findSettlementVaByParent(UUID parentVaId, String currency) {
         return vaRepository.findByParentAccountIdAndAccountCategory(parentVaId, AccountCategory.SETTLEMENT)
             .stream()

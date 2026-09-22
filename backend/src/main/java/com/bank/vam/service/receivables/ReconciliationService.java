@@ -247,7 +247,8 @@ public class ReconciliationService {
     }
 
     /**
-     * Process bank charge/fee - routes to Exception VA (as a debit to investigate).
+     * Process bank charge/fee - posted on the program's settlement VA; to an open exception only
+     * when the program has no settlement VA in that currency.
      */
     @Transactional
     public BankStatementProcessingResult processBankCharge(
@@ -263,6 +264,15 @@ public class ReconciliationService {
         log.info("Processing bank charge: program={}, amount={} {}", programId, amount, currencyCode);
         
         try {
+            // Tieto VAM 4.4.2.1.4: a price the bank charges on the real account is posted on the
+            // settlement account -- the program's top-level one, else the nearest one below its top.
+            // Only when there is none does it fall back to an open exception, as before.
+            Optional<VirtualAccount> settlement = settlementVaResolver.findSettlementVaForProgramResult(programId, currencyCode);
+            if (settlement.isPresent()) {
+                return postBankChargeToSettlement(settlement.get(), programId, physicalAccountId, amount,
+                    currencyCode, valueDate, bankReference, description);
+            }
+
             // Get or create Exception VA
             UUID corporateId = getCorporateIdFromProgram(programId);
             VirtualAccount exceptionVa = settlementVaResolver.getOrCreateExceptionVa(programId, currencyCode, corporateId);
@@ -309,6 +319,55 @@ public class ReconciliationService {
                     .message("Error processing bank charge: " + e.getMessage())
                     .build();
         }
+    }
+
+    /** Debits the settlement VA with the bank's charge; a statement line (bank reference) is posted once. */
+    private BankStatementProcessingResult postBankChargeToSettlement(VirtualAccount settlementVa, UUID programId,
+            UUID physicalAccountId, BigDecimal amount, String currencyCode, LocalDate valueDate,
+            String bankReference, String description) {
+        String reference = bankReference != null ? "BANKCHG-" + bankReference : null;
+        if (reference != null) {
+            Optional<Transaction> already = transactionRepository.findByReferenceNumber(reference);
+            if (already.isPresent()) {
+                return BankStatementProcessingResult.builder()
+                    .processed(true).processingType(ProcessingType.BANK_CHARGE)
+                    .transactionId(already.get().getId()).settlementVaId(settlementVa.getId())
+                    .amount(amount.negate())
+                    .message("Bank charge " + bankReference + " was already posted")
+                    .build();
+            }
+        }
+        BigDecimal before = settlementVa.getCurrentBalance() != null ? settlementVa.getCurrentBalance() : BigDecimal.ZERO;
+        settlementVa.setCurrentBalance(before.subtract(amount));
+        settlementVa.setAvailableBalance(settlementVa.getCurrentBalance());
+        virtualAccountRepository.save(settlementVa);
+
+        Transaction txn = transactionRepository.save(Transaction.builder()
+            .movementType(Transaction.MovementType.FEE)
+            .transactionCategory(Transaction.TransactionCategory.EXTERNAL)  // charged on the real account
+            .corporateId(settlementVa.getCorporateId())
+            .vaId(settlementVa.getId())
+            .physicalAccountId(physicalAccountId)
+            .programId(programId)
+            .amount(amount)
+            .currencyCode(currencyCode)
+            .balanceBefore(before)
+            .balanceAfter(settlementVa.getCurrentBalance())
+            .transactionDate(LocalDateTime.now())
+            .valueDate(valueDate != null ? valueDate : LocalDate.now())
+            .referenceNumber(reference)
+            .description("BANK CHARGE: " + (description != null ? description : ""))
+            .channel("BANK")
+            .status(Transaction.TransactionStatus.COMPLETED)
+            .build());
+
+        log.info("Bank charge {} {} posted to settlement VA {}", amount, currencyCode, settlementVa.getVaNumber());
+        return BankStatementProcessingResult.builder()
+            .processed(true).processingType(ProcessingType.BANK_CHARGE)
+            .transactionId(txn.getId()).settlementVaId(settlementVa.getId())
+            .amount(amount.negate())
+            .message("Bank charge posted to settlement VA " + settlementVa.getVaNumber())
+            .build();
     }
 
     /**
@@ -1284,6 +1343,7 @@ public class ReconciliationService {
         private UUID exceptionTransactionId;
         private String exceptionNumber;
         private UUID exceptionVaId;
+        private UUID settlementVaId;
         private UUID transactionId;
         private BigDecimal amount;
         private String message;
