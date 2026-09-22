@@ -1325,6 +1325,15 @@ public class HierarchyService {
                 "Please select a parent at L1-L6.");
         }
 
+        // Only when missing, like every other path: an active settlement VA in this currency already
+        // under this node (made here, or by the automatic sibling creation) is returned instead.
+        Optional<VirtualAccount> existing = findSettlementVaUnderNode(parentNode, currency);
+        if (existing.isPresent()) {
+            log.info("Settlement VA {} already exists under node {} for {} - reusing",
+                existing.get().getVaNumber(), parentNodeId, currency);
+            return existing.get();
+        }
+
         String programPrefix = program.getProgramCode().length() > 8 
             ? program.getProgramCode().substring(0, 8).toUpperCase()
             : program.getProgramCode().toUpperCase();
@@ -1360,6 +1369,7 @@ public class HierarchyService {
             .corporateId(program.getCorporateId())
             .physicalAccountId(program.getPhysicalAccountId())
             .currencyCode(currency)
+            .accountCategory(VirtualAccount.AccountCategory.SETTLEMENT)   // so settlement lookups find it
             .specialType(VirtualAccount.VaSpecialType.SETTLEMENT)
             .hierarchyNodeId(settlementNode.getId())
             .hierarchyPath(settlementNode.getMaterializedPath())
@@ -1380,9 +1390,19 @@ public class HierarchyService {
         return settlementVa;
     }
 
-    /**
-     * Create an AGGREGATION node under a parent with corresponding VA.
-     */
+    /** Active settlement VA in this currency under the node: its SETTLEMENT-ccy child node's, or one beside the node's own account. */
+    private Optional<VirtualAccount> findSettlementVaUnderNode(HierarchyNode parentNode, String currency) {
+        Optional<VirtualAccount> viaNode = nodeRepository.findByParentIdAndNodeCode(parentNode.getId(), "SETTLEMENT-" + currency)
+            .map(HierarchyNode::getVirtualAccountId)
+            .flatMap(virtualAccountRepository::findById)
+            .filter(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE);
+        if (viaNode.isPresent() || parentNode.getVirtualAccountId() == null) return viaNode;
+        return virtualAccountRepository.findByParentAccountIdAndAccountCategory(
+                parentNode.getVirtualAccountId(), VirtualAccount.AccountCategory.SETTLEMENT).stream()
+            .filter(va -> currency.equals(va.getCurrencyCode()) && va.getStatus() == VirtualAccount.VaStatus.ACTIVE)
+            .findFirst();
+    }
+
     /**
      * Create an AGGREGATION node under a parent with corresponding VA.
      * 

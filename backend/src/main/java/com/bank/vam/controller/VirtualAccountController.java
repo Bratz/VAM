@@ -1251,6 +1251,10 @@ public class VirtualAccountController {
         
         // 7. Determine account category
         AccountCategory category = parseAccountCategory(request.getAccountCategory());
+        if (category.isSystemCreated()) {
+            throw new com.bank.vam.exception.BusinessException("SYSTEM_CATEGORY",
+                category + " accounts are created by the system, not directly");
+        }
         
         // 8. Create the VA
         VirtualAccount va = VirtualAccount.builder()

@@ -389,6 +389,9 @@ public class VirtualAccountService {
                 log.warn("Invalid account category: {}, defaulting to TRANSACTION", request.getAccountCategory());
             }
         }
+        if (category.isSystemCreated()) {
+            throw new BusinessException("SYSTEM_CATEGORY", category + " accounts are created by the system, not directly");
+        }
 
         // STEP 6: Determine account type
         VirtualAccount.AccountType accountType = VirtualAccount.AccountType.VIRTUAL;

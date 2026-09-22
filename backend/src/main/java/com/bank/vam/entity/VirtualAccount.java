@@ -1012,7 +1012,16 @@ public class VirtualAccount extends BaseEntity {
         ESCROW,             // Escrow holding
         NETTING,            // Netting settlement
         POOL_HEADER,        // Notional pool header
-        POOL_PARTICIPANT    // Notional pool member
+        POOL_PARTICIPANT;   // Notional pool member
+
+        /**
+         * Created only by the system, and only when one is missing (settlement/exception VAs,
+         * currency mirrors, the program root) -- never through the generic VA create, which
+         * would add a duplicate without looking for the existing one.
+         */
+        public boolean isSystemCreated() {
+            return this == SETTLEMENT || this == EXCEPTION || this == CURRENCY_MIRROR || this == ROOT;
+        }
     }
 
     /**
