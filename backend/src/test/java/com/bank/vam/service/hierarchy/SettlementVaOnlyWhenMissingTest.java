@@ -54,6 +54,39 @@ class SettlementVaOnlyWhenMissingTest {
     }
 
     @Test
+    void aNewOneIsLinkedUnderTheNodesOwnAccount() {
+        UUID programId = UUID.randomUUID();
+        Program program = new Program();
+        program.setId(programId);
+        program.setProgramCode("PRG");
+        when(programs.findById(programId)).thenReturn(Optional.of(program));
+
+        VirtualAccount parentVa = new VirtualAccount();
+        parentVa.setId(UUID.randomUUID());
+        parentVa.setHierarchyLevel(2);
+        parentVa.setHierarchyPathVa("/ROOT/EMEA");
+        parentVa.setOwningEntityCode("ACME-UK");
+        HierarchyNode parent = new HierarchyNode();
+        parent.setId(UUID.randomUUID());
+        parent.setLevelNumber(2);
+        parent.setVirtualAccountId(parentVa.getId());
+        when(nodes.findById(parent.getId())).thenReturn(Optional.of(parent));
+        when(nodes.findByParentIdAndNodeCode(any(), any())).thenReturn(Optional.empty());
+        when(nodes.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(vas.findById(parentVa.getId())).thenReturn(Optional.of(parentVa));
+        when(vas.findByParentAccountIdAndAccountCategory(any(), any())).thenReturn(List.of());
+        when(vas.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        VirtualAccount created = service.createSettlementVa(programId, parent.getId(), "EUR", null);
+
+        assertThat(created.getParentAccountId()).isEqualTo(parentVa.getId());
+        assertThat(created.getHierarchyLevel()).isEqualTo(3);
+        assertThat(created.getHierarchyPathVa()).startsWith("/ROOT/EMEA/SETTLEMENT-EUR-");
+        assertThat(created.getOwningEntityCode()).isEqualTo("ACME-UK");
+        assertThat(created.getAccountCategory()).isEqualTo(VirtualAccount.AccountCategory.SETTLEMENT);
+    }
+
+    @Test
     void systemCategoriesAreNotForTheGenericCreate() {
         assertThat(VirtualAccount.AccountCategory.SETTLEMENT.isSystemCreated()).isTrue();
         assertThat(VirtualAccount.AccountCategory.EXCEPTION.isSystemCreated()).isTrue();

@@ -1362,15 +1362,28 @@ public class HierarchyService {
         // The parent's child_count and is_leaf are maintained by the
         // trg_hierarchy_nodes_child_count trigger on the insert above.
 
+        // Linked into the account tree under the node's own account, as the automatic sibling
+        // creation does -- so it shows in the balance hierarchy and that creation finds it.
+        VirtualAccount parentVa = parentNode.getVirtualAccountId() != null
+            ? virtualAccountRepository.findById(parentNode.getVirtualAccountId()).orElse(null) : null;
+
         VirtualAccount settlementVa = VirtualAccount.builder()
             .vaNumber(vaNumber)
             .vaName(vaName != null ? vaName : "Settlement Account - " + currency)
             .programId(programId)
             .corporateId(program.getCorporateId())
-            .physicalAccountId(program.getPhysicalAccountId())
+            .physicalAccountId(parentVa != null && parentVa.getPhysicalAccountId() != null
+                ? parentVa.getPhysicalAccountId() : program.getPhysicalAccountId())
             .currencyCode(currency)
             .accountCategory(VirtualAccount.AccountCategory.SETTLEMENT)   // so settlement lookups find it
             .specialType(VirtualAccount.VaSpecialType.SETTLEMENT)
+            .parentAccountId(parentVa != null ? parentVa.getId() : null)
+            .hierarchyLevel(parentVa != null && parentVa.getHierarchyLevel() != null
+                ? parentVa.getHierarchyLevel() + 1 : settlementNode.getLevelNumber())
+            .hierarchyPathVa(parentVa != null && parentVa.getHierarchyPathVa() != null
+                ? parentVa.getHierarchyPathVa() + "/" + vaNumber : null)
+            .owningEntityId(parentVa != null ? parentVa.getOwningEntityId() : null)
+            .owningEntityCode(parentVa != null ? parentVa.getOwningEntityCode() : null)
             .hierarchyNodeId(settlementNode.getId())
             .hierarchyPath(settlementNode.getMaterializedPath())
             .status(VirtualAccount.VaStatus.ACTIVE)
