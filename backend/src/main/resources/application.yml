@@ -24,7 +24,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    # Off deliberately: with the schedulers below firing every 1-5 minutes
+    # forever, echoing every statement (twice -- this AND org.hibernate.SQL)
+    # wrote ~37GB to the OCI VM's stdout and filled its 45GB disk. See the
+    # logging block for how to turn SQL logging back on for one run.
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -181,7 +185,18 @@ logging:
     console: "%d{HH:mm:ss.SSS} %clr(%-5level) %clr([%15.15thread]){faint} %clr(%-40.40logger{39}){cyan} : %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} : %msg%n"
   
-  # Log levels by package
+  # Log levels by package.
+  #
+  # Production-quiet by default, debug opt-in. This used to run at DEBUG/TRACE
+  # everywhere, which is fine for a few minutes on a laptop and ruinous for a
+  # long-running deployment: BasicBinder at TRACE logs every bind parameter of
+  # every query, and the @Scheduled sweeps (every 1, 2 and 5 minutes, forever)
+  # each scan hundreds of accounts. That filled the OCI VM's 45GB disk and broke
+  # every build until the logs were truncated.
+  #
+  # To get SQL and parameters back for one run:
+  #   mvn spring-boot:run "-Dspring-boot.run.jvmArguments=-Dspring.jpa.show-sql=true -Dlogging.level.org.hibernate.SQL=DEBUG -Dlogging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE"
+  # Or for one package: -Dlogging.level.com.bank.vam.service.treasury=DEBUG
   level:
     # Root level
     root: INFO
@@ -189,22 +204,19 @@ logging:
     # Spring Framework
     org.springframework: INFO
     org.springframework.web: INFO
-    org.springframework.transaction: DEBUG
+    org.springframework.transaction: WARN
     org.springframework.orm.jpa: WARN
     
-    # Hibernate - Show SQL and parameters
+    # Hibernate — quiet. org.hibernate alone is not enough: a level set on a
+    # child logger here wins over its parent, so each noisy one needs naming.
     org.hibernate: WARN
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.hibernate.engine.transaction: DEBUG
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.hibernate.engine.transaction: WARN
     
-    # Application packages - DEBUG for troubleshooting
-    com.bank.vam: DEBUG
-    com.bank.vam.service: DEBUG
-    com.bank.vam.service.hierarchy: DEBUG
-    com.bank.vam.controller: DEBUG
-    com.bank.vam.exception: DEBUG
-    com.bank.vam.repository: DEBUG
+    # Application packages. One entry — the five sub-package lines that used to
+    # follow all inherited this same level anyway.
+    com.bank.vam: INFO
 
 # Springdoc OpenAPI
 springdoc:
