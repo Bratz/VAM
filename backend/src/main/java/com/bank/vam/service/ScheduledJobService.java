@@ -273,13 +273,4 @@ public class ScheduledJobService {
             log.error("Failed to reset {} usage counters", period, e);
         }
     }
-
-    /**
-     * Health check for BaNCS integration every minute
-     */
-    @Scheduled(fixedRate = 60000) // 1 minute
-    public void checkBancsHealth() {
-        // Implemented in BancsClient, just log status here
-        log.debug("BaNCS health check scheduled task running");
-    }
 }

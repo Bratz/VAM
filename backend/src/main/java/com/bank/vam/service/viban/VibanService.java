@@ -812,7 +812,10 @@ public class VibanService {
     /**
      * Process expired VIBANs - mark as expired or return to pool.
      */
-    @Scheduled(fixedRate = 60000) // Every minute
+    // Hourly, not per-minute: every deadline this sweep acts on is a date or a
+    // multi-day cool-off (vam.viban.reuse-cooloff-days, 30 by default), so checking
+    // 1,440 times a day bought nothing but wake-ups on a 1-OCPU VM.
+    @Scheduled(fixedRateString = "${vam.viban.sweep-interval-ms:3600000}")
     @Transactional
     public void processExpiredVibans() {
         LocalDateTime now = LocalDateTime.now();

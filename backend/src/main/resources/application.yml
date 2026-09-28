@@ -71,6 +71,14 @@ server:
 # VAM Application Configuration
 # ============================================================================
 vam:
+  # Master switch for every @Scheduled job in the app (see config/SchedulingConfig).
+  # Set VAM_SCHEDULING_ENABLED=false on a deployment that should sit still — a
+  # read-only demo, a starved VM, or a debugging session where the recurring sweeps
+  # keep changing the data underneath you. What stops: sweeps stop moving money, IHB
+  # interest stops accruing, usage limits stop resetting, shadow balances stop
+  # refreshing, VIBAN cooling periods never release. Every job stays callable by hand.
+  scheduling:
+    enabled: ${VAM_SCHEDULING_ENABLED:true}
   # Active market profile — switches default currency / country / locale / timezone
   # / base-rate type / weekend / home bank across the platform. One of
   # UAE | KSA | UK | EU | US | SG. Individual fields below can override.
