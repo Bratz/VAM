@@ -50,3 +50,22 @@
 		format console
 	}
 }
+# APPEND this block to vam-portal/deploy/oci/Caddyfile — purely additive, never edit the existing
+# site block. Add it only once uc05-api is running (a block with no upstream answers 502 and makes
+# Caddy request a certificate, and Let's Encrypt rate-limits per hostname per week).
+# Apply without downtime for the sibling:
+#   sudo docker compose --profile mcp --profile defectfix --profile fileingest exec caddy caddy reload --config /etc/caddy/Caddyfile
+# (run in vam-portal/deploy/oci; caddy is profile-scoped there, so without the flags compose can't see it)
+# Revert = delete this block and reload.
+
+uc05.161-33-9-182.sslip.io {
+	handle /api/* {
+		reverse_proxy uc05-api:8060 {
+			flush_interval -1  # stream SSE as it's produced; no buffering in front of /run
+		}
+	}
+	log {
+		output stdout
+		format console
+	}
+}
