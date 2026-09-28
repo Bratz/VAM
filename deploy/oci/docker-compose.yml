@@ -65,10 +65,22 @@
 # It reuses the shared `db` Postgres instance (its own `fileingest` schema,
 # created automatically on first run) rather than a separate database.
 #
+# Docker's json-file log driver has NO default size cap: every container's stdout
+# grows forever (Caddy logs every request, the Java services log every startup and
+# error) until it fills the VM's 45GB disk and breaks builds and git alike. Capping
+# it here is the only thing that keeps `docker compose up --build` working long-term.
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    <<: *logging
     environment:
       POSTGRES_DB: vam_db
       POSTGRES_USER: vam_user
@@ -86,6 +98,7 @@ services:
       # Repo root is the build context — uses the root Dockerfile.
       context: ../..
     restart: unless-stopped
+    <<: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -140,6 +153,7 @@ services:
       context: ../..
       dockerfile: mcp-gateway/Dockerfile
     restart: unless-stopped
+    <<: *logging
     profiles: ["mcp"]   # `docker compose --profile mcp up -d` — opt-in, off by default
     depends_on:
       db:
@@ -180,6 +194,7 @@ services:
       context: ../..
       dockerfile: defect-fix-service/Dockerfile
     restart: unless-stopped
+    <<: *logging
     profiles: ["defectfix"]   # opt-in, same pattern as the mcp profile — off by default
     # NOT `:?required` on any of these, deliberately: Compose interpolates
     # every service's `environment:` block while parsing the file, before
@@ -219,6 +234,7 @@ services:
       context: ../..
       dockerfile: file-ingest-agent-service/Dockerfile
     restart: unless-stopped
+    <<: *logging
     profiles: ["fileingest"]   # opt-in, same pattern as the mcp/defectfix profiles — off by default
     # No dependency on `backend` — the two are fully decoupled (see
     # tasks/file-ingest-pipeline-design.md's "Revised architecture"). This
@@ -261,6 +277,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    <<: *logging
     profiles: ["mcp", "defectfix", "fileingest"]   # starts if any dependent service is enabled
     # No depends_on here on purpose: mcp-gateway only exists in the compose
     # project when the "mcp" profile is active. A hard depends_on on it would

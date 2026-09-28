@@ -50,6 +50,11 @@ sudo netfilter-persistent save
 ### 3. Install Docker & deploy
 ```bash
 sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
+# Cap the systemd journal — it defaults to 10% of the disk (~4.5GB here) and
+# never shrinks. One of the four things that filled this 45GB root volume; the
+# others are container logs (capped in the compose file), BuildKit cache
+# (pruned by the deploy workflow) and old images.
+echo 'SystemMaxUse=500M' | sudo tee -a /etc/systemd/journald.conf && sudo systemctl restart systemd-journald
 git clone https://github.com/Bratz/VAM.git ~/VAM && cd ~/VAM/deploy/oci
 echo 'VAM_DB_PASSWORD=<pick-a-strong-password>' > .env   # untracked; compose reads it
 sudo docker compose up -d --build
@@ -209,6 +214,15 @@ The Vercel side already auto-deploys on push natively.
    not instance deletion.
 
 ## Gotchas log
+- **`/` fills up and the build dies with "no space left on device"**: four
+  compounding causes. `docker system df` does NOT count container log files, so
+  the real hog is usually `/var/lib/docker/containers/*/*-json.log` (the compose
+  file now caps these at 10m x 3 per service, but only for *recreated*
+  containers — truncate the existing ones with
+  `sudo sh -c 'for f in /var/lib/docker/containers/*/*-json.log; do : > "$f"; done'`).
+  Then BuildKit cache (`sudo docker builder prune -af`), the journal (above),
+  and old images. Never `docker system prune --volumes` — that destroys `pgdata`
+  and Caddy's Let's Encrypt cert.
 - **ARM works out of the box**: temurin/maven/postgres images are multi-arch;
   no Dockerfile changes were needed for aarch64.
 - **Always-Free capacity**: A1 instances in popular regions intermittently

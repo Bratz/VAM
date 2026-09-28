@@ -42,6 +42,11 @@ jobs:
             cd ~/VAM
             git pull origin main
             cd deploy/oci
+            # Prune BEFORE building as well as after: the post-build prune below
+            # only runs on success, so once the disk fills, the build fails, the
+            # prune never executes and every later deploy fails identically until
+            # someone SSHes in (that is exactly how this wedged once already).
+            sudo docker builder prune -af --filter until=48h
             sudo docker compose --profile mcp --profile defectfix --profile fileingest up -d --build
             sudo docker image prune -f
             # BuildKit cache isn't touched by image prune and grows unbounded
