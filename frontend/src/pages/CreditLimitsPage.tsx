@@ -10,7 +10,7 @@ import { Page } from '../components/layout/Page';
  * 5. Currency breakdown in Entity Tree
  */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Building2, Plus, RefreshCw, Search, Loader2, CheckCircle, AlertTriangle, Lock, Unlock, ExternalLink, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, Calendar, Percent, FileText, TrendingUp, DollarSign, Clock, ChevronUp, Layers, CreditCard, Pencil } from 'lucide-react';
+import { Building2, Plus, RefreshCw, Search, Loader2, CheckCircle, AlertTriangle, Lock, Unlock, GitBranch, Target, X, Info, Trash2, ChevronDown, ChevronRight, Wallet, Download, Crown, Landmark, Users, Briefcase, ArrowLeftRight, FlaskConical, DollarSign, Layers, CreditCard, Pencil } from 'lucide-react';
 import { StatusIconBadge, RadioGroup } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import {

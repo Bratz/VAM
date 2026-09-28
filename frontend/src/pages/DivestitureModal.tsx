@@ -6,8 +6,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X, Check, AlertTriangle, Info, Loader2, Building2, Globe, Folder, GitBranch,
-  ChevronRight, ChevronDown,
+  Check,
+  AlertTriangle,
+  Info,
+  Loader2,
+  Building2,
+  Globe,
+  Folder,
+  GitBranch,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';

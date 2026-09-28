@@ -12,7 +12,7 @@ import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
-import { creditAgreementsApi, CreditAgreement, AgreementType, AgreementStatus, ApiResponse } from '../services/api';
+import { creditAgreementsApi, CreditAgreement, AgreementType, ApiResponse } from '../services/api';
 
 // ============================================================================
 // CONSTANTS

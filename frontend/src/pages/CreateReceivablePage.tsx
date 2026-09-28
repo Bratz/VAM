@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, ChevronDown, ChevronUp, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, Percent, DollarSign, ArrowDownLeft, Share2, Info, Package, Receipt, Clock, Send, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, DollarSign, ArrowDownLeft, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
 import { useNavigation } from '../App';
 import { Page } from '../components/layout/Page';

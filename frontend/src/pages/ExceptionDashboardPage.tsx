@@ -17,7 +17,7 @@ import { Page } from '../components/layout/Page';
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, Trash2, FileText, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Search, Filter, RefreshCw, Download, Loader2, Eye, Trash2, DollarSign, CreditCard, X, Info, TrendingUp, TrendingDown, Wallet, Target, History, CheckCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } from '../components/ui';
 import { EventTimeline } from '../components/ui/EventTimeline';

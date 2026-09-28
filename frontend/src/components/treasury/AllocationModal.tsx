@@ -22,9 +22,9 @@
  * - Audit trail entry creation
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AlertTriangle, Search, Loader2, X, Wallet, Layers, Target, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, Clock, XCircle, TrendingUp, TrendingDown, CheckCircle, RefreshCw } from 'lucide-react';
-import { Card, Badge, Button, Radio } from '../../components/ui';
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Search, Loader2, X, Wallet, Layers, ChevronRight, ChevronDown, Building2, Globe, MapPin, Check, Info, TreePine, Sparkles, ArrowRight, XCircle, TrendingUp, TrendingDown, CheckCircle, RefreshCw } from 'lucide-react';
+import { Badge, Button, Radio } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
 import { formatCurrency, cn } from '../../utils';
 

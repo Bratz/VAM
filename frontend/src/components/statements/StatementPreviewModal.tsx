@@ -17,8 +17,8 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Loader2, Calendar, TrendingUp, TrendingDown, RefreshCw, FileJson, FileCode, Copy, CheckCircle, Building2, User, Hash, Clock, CreditCard, Info, Banknote, Receipt, ExternalLink, Bell } from 'lucide-react';
-import { Button, Badge, Input, Skeleton, Card, Divider } from '../ui';
+import { FileText, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Loader2, Calendar, TrendingUp, RefreshCw, FileJson, FileCode, Copy, CheckCircle, Building2, User, Hash, Clock, CreditCard, Info, Banknote, Receipt, Bell } from 'lucide-react';
+import { Button, Badge, Input, Skeleton } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { cn, formatCurrency, formatDate, formatDateTime, copyToClipboard } from '../../utils';
 import { statementsApi } from '../../services/api';
@@ -26,8 +26,6 @@ import type {
   ISO20022Statement,
   StatementEntry,
   StatementSummary,
-  StatementBalance,
-  StatementAccountInfo,
   ISO20022StatementFormat,
   StatementRequest,
   CreditDebitIndicator,

@@ -12,7 +12,7 @@ import {
   Check,
   Loader2,
 } from 'lucide-react';
-import { Card, Badge, Button, Input } from '../ui';
+import { Card, Button } from '../ui';
 import { formatCurrency, cn } from '../../utils';
 
 // ============================================================================

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Wallet, Plus, Search, Filter, CreditCard, ArrowUpRight, ArrowDownRight, Users, TrendingUp, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, FileText, UserCheck, XCircle, LayoutDashboard, Banknote, PieChart, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, Phone, Mail, MapPin, GitBranch, X, Pencil, ChevronRight } from 'lucide-react';
+import { Wallet, Plus, Search, CreditCard, ArrowUpRight, ArrowDownRight, Users, MoreHorizontal, Eye, Lock, Unlock, Ban, RefreshCw, Send, Download, Settings, Loader2, CheckCircle, Building2, Shield, Upload, UserCheck, XCircle, LayoutDashboard, Activity, Clock, ChevronDown, ChevronUp, Copy, ExternalLink, User, GitBranch, X, Pencil, ChevronRight } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton , StatusIconBadge, Checkbox, DataTable } from '../components/ui';
 import { Modal, Tabs, ProgressBar, Avatar, Alert } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
-import { HierarchyPicker } from '../components/hierarchy/HierarchyPicker';
 import { Page } from '../components/layout/Page';
 
 // ============================================================================

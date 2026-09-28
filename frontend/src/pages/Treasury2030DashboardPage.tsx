@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, ArrowRight, Plus, Clock, AlertTriangle, ArrowLeftRight, Repeat, Sparkles, ChevronDown, ChevronRight, Download, Loader2, Landmark } from 'lucide-react';
+import { RefreshCw, ArrowRight, Plus, AlertTriangle, ArrowLeftRight, Repeat, Sparkles, ChevronDown, ChevronRight, Download, Loader2, Landmark } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
 import { useNavigation } from '../App';

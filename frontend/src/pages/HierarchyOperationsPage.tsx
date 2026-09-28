@@ -6,14 +6,18 @@
 // ============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, Plus, CheckCircle, XCircle, ArrowUpDown, Settings, Layers, MoreHorizontal } from 'lucide-react';
-import { Card as SharedCard, Badge as SharedBadge, Button as SharedButton, Skeleton, StatusIconBadge } from '../components/ui';
+import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, CheckCircle, XCircle, ArrowUpDown, Settings, MoreHorizontal } from 'lucide-react';
+import { Button as SharedButton, StatusIconBadge } from '../components/ui';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { cn } from '../utils';
 import {
   hierarchyOperationsApi,
-  HierarchyNode, OperationHistoryEntry, OperationRules, CorporateSummary,
-  MoveOperationResult, HierarchyInitResult, AccountCategory,
+  HierarchyNode,
+  OperationHistoryEntry,
+  OperationRules,
+  MoveOperationResult,
+  HierarchyInitResult,
+  AccountCategory,
 } from '../services/hierarchyOperationsApi';
 import { programsApi as programsApiService } from '../services/api';
 import axios from 'axios';

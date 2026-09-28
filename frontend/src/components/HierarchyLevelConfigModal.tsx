@@ -5,9 +5,9 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, Layers, Tag, List, RefreshCw, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
+import { Settings, Save, X, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, CheckCircle, Info, RefreshCw, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
 import { Modal } from './ui/enhanced';
-import { Card, Badge, Button, Input, Select, Checkbox } from './ui';
+import { Badge, Button, Input, Select, Checkbox } from './ui';
 import { cn } from '../utils';
 
 // ============================================================================

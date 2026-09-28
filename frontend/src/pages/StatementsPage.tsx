@@ -24,12 +24,11 @@ import {
   StatementPreviewModal,
 } from '../components/statements';
 import { formatCurrency, formatDate, formatDateTime, cn, copyToClipboard } from '../utils';
-import { isCredit, isDebit, getAmountColorClass, getMovementBgClass } from '../utils/transactionUtils';
+import { isCredit, isDebit, getMovementBgClass } from '../utils/transactionUtils';
 import type {
   StatementSummary,
   VAHierarchyNode,
   ISO20022StatementFormat,
-  StatementBalance,
   StatementBalanceType,
   CreditDebitIndicator,
   StatementEntryStatus,

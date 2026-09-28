@@ -93,7 +93,7 @@ import ExceptionDashboardPage from './pages/ExceptionDashboardPage';
 // PHASE 7 & 8: NETTING & INTERCOMPANY PAGES
 // ============================================================================
 import EnhancedNettingCyclesPage from './pages/EnhancedNettingCyclesPage'; // Phase 7 Enhanced Netting
-import IntercompanyDashboardPage, { IntercompanyTabType } from './pages/IntercompanyDashboardPage';
+import IntercompanyDashboardPage from './pages/IntercompanyDashboardPage';
 // ============================================================================
 // ADMIN PAGES
 // ============================================================================

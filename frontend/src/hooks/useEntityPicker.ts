@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useUser, UserEntity } from '../context/UserContext';
 
 export interface EntityPickerState {

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, XCircle, AlertTriangle, Loader2, ChevronRight, ChevronDown, CreditCard, Wallet, Layers, ArrowRight, DollarSign, TrendingUp, Clock, Eye, RefreshCw, Info, CheckCircle } from 'lucide-react';
+import { Shield, XCircle, AlertTriangle, Loader2, ChevronRight, ChevronDown, CreditCard, Wallet, Layers, ArrowRight, TrendingUp, Eye, Info, CheckCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
-import { fundsAvailabilityApi } from '../services/api';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 

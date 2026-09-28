@@ -38,7 +38,6 @@ import {
   type PartyBankAccount,
   type TransferPreviewResponse,
   type PaymentPreviewResponse,
-  type FeeBreakdown,
 } from '../services/api';
 
 import toast from 'react-hot-toast';

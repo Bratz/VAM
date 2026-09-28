@@ -11,9 +11,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X,
   Check,
-  ChevronRight,
   AlertTriangle,
   Info,
   Loader2,
@@ -21,8 +19,6 @@ import {
   Search,
   Globe,
   Folder,
-  Wallet,
-  ArrowRight,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';

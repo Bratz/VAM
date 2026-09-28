@@ -3,7 +3,7 @@
 // Hierarchy node assignment and collection channel configuration
 // ============================================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GitBranch, ChevronRight, CheckCircle, Building2, Layers, Search, RefreshCw, Info, Landmark, CreditCard, Smartphone, Banknote, FileText, Wallet, XCircle } from 'lucide-react';
 import { Input, Button, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';

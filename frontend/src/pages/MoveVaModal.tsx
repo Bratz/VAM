@@ -12,7 +12,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X,
   Search,
   ChevronRight,
   ChevronDown,
@@ -23,7 +22,6 @@ import {
   Wallet,
   Folder,
   Globe,
-  Building2,
   ArrowRight,
   Coins,
   Scale,

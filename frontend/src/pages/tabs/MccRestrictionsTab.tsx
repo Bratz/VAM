@@ -4,12 +4,11 @@
 // ============================================================================
 
 import React, { useState, useCallback } from 'react';
-import { 
-  Shield, 
-  Plus, 
-  X, 
-  CheckCircle, 
-  Ban, 
+import {
+  Plus,
+  X,
+  CheckCircle,
+  Ban,
   Globe,
   Store,
   Info,

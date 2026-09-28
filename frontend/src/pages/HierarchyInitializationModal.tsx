@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { Globe, Check, Loader2, ChevronRight, Wallet, AlertTriangle, Info, X, Coins, XCircle } from 'lucide-react';
+import { Globe, Check, Loader2, ChevronRight, AlertTriangle, Info, X, Coins, XCircle } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
 import { Checkbox, RadioGroup } from '../components/ui';

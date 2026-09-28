@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, ArrowLeftRight, ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Wallet, DollarSign, RefreshCw, Settings, Plus, Eye, ChevronRight, Calendar, Layers, GitBranch, Target, Loader2, X, FileText, Search, Filter, ChevronLeft, Download, MoreHorizontal, Briefcase, XCircle } from 'lucide-react';
+import { Building2, TrendingUp, TrendingDown, Wallet, RefreshCw, Plus, Eye, Loader2, X, Briefcase, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, EmptyState, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';

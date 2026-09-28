@@ -21,7 +21,6 @@ import {
   Play,
   Info,
   FolderTree,
-  ChevronRight,
 } from 'lucide-react';
 import { Modal } from '../components/ui/enhanced';
 import { Button, Badge, StatusIconBadge } from '../components/ui';

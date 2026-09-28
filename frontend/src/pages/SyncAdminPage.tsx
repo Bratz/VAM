@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Play, Clock, CheckCircle, XCircle, Loader2, List } from 'lucide-react';
+import { RefreshCw, Play, XCircle, Loader2, List } from 'lucide-react';
 import { Card, Button, Badge } from '../components/ui';
 import { syncAdminApi } from '../services/api';
 import { PageHeader } from '../components/layout/PageHeader';

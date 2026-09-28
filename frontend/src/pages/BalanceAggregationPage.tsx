@@ -8,7 +8,7 @@ import { StatStrip } from '../components/layout/StatStrip';
  * Backend: BalanceAggregationController.java at /api/v1/treasury/aggregation/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Layers, RefreshCw, Search, Loader2, ChevronRight, ChevronDown, Building2, Globe, MapPin, Briefcase, Wallet, TrendingUp, DollarSign, PieChart, Clock, Eye, Download, X } from 'lucide-react';
+import { Layers, RefreshCw, Search, Loader2, ChevronRight, ChevronDown, Building2, Globe, MapPin, Briefcase, Wallet, TrendingUp, DollarSign, PieChart, Clock, Download, X } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';

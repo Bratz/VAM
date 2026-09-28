@@ -11,7 +11,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X,
   Check,
   AlertTriangle,
   Info,
@@ -21,7 +20,6 @@ import {
   Globe,
   Folder,
   GitMerge,
-  ArrowRight,
 } from 'lucide-react';
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';

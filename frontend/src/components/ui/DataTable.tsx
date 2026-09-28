@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax -- DataTable is the one place a raw <table> belongs */
 import React, { useState, useMemo, useRef, useLayoutEffect } from 'react';
 import { cn } from '../../utils';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Filter, Download, MoreHorizontal, ArrowUpDown, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, ArrowUpDown, Check } from 'lucide-react';
 import { Button, Badge, Skeleton, EmptyState } from './index';
 
 // ============================================================================

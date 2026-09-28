@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, FileText, Users, ArrowRight, ArrowLeftRight, Building2, X, ChevronDown, ChevronUp, Filter, Download, BarChart3, Layers, Target, Send, XCircle } from 'lucide-react';
+import { GitMerge, Plus, Calculator, CheckCircle, Clock, Loader2, RefreshCw, DollarSign, TrendingUp, Eye, Users, ArrowRight, Building2, Filter, Download, BarChart3, Layers, Send, XCircle } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge, StatTile, Checkbox, DataTable } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
-import { nettingApi, NettingCycle, ApiResponse, corporatesApi, Corporate } from '../services/api';
+import { nettingApi, NettingCycle, corporatesApi, Corporate } from '../services/api';
 import { useUser } from '../context/UserContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { TreasuryOnly, PermissionGate } from '../components/permissions';
+import { TreasuryOnly } from '../components/permissions';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';

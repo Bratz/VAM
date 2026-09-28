@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, TrendingUp, Pencil } from 'lucide-react';
+import { Hash, Plus, Search, Link, Unlink, Loader2, RefreshCw, Database, Settings, Trash2, Eye, Copy, Check, Clock, AlertTriangle, Layers, Activity, BarChart3, Building2, CreditCard, FileText, ShoppingCart, Timer, Pencil } from 'lucide-react';
 import { Card, Button, Badge, Input, Select, StatusIconBadge, StatTile, Checkbox, RadioGroup, DataTable } from '../components/ui';
 import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
-import type { BulkVibanAssignItem, BulkVibanAssignResponse, VibanAssignResponse } from '../services/api';
+import type { BulkVibanAssignItem, BulkVibanAssignResponse } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';

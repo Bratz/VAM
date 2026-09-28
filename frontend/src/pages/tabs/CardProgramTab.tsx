@@ -4,7 +4,7 @@
 // ============================================================================
 
 import React from 'react';
-import { CreditCard, Users, Building2, Briefcase, Info, Plane, Package, Fuel, User, Banknote } from 'lucide-react';
+import { CreditCard, Users, Briefcase, Info, Plane, Package, Fuel, User, Banknote } from 'lucide-react';
 import { Input, Badge } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { FormField, SelectField, FormSection, FormRow } from './FormComponents';
