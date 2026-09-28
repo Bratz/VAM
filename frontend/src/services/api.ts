@@ -403,6 +403,7 @@ export interface TransactionDetail extends Transaction {
   relatedTransactions?: RelatedTransaction[];
   initiatedBy?: string;
   approvedBy?: string;
+  isRobo?: boolean;
 }
 
 interface RelatedTransaction {
@@ -1202,7 +1203,8 @@ export const sweepingApi = {
   execute: (ruleIds?: string[]) => apiClient.post<ApiResponse<any>>('/sweeping/execute', { ruleIds }).then(r => r.data),
   executeAsync: (ruleIds?: string[]) => apiClient.post<ApiResponse<{ runId: string }>>('/sweeping/execute-async', { ruleIds }).then(r => r.data),
   getRunStatus: (runId: string) => apiClient.get<ApiResponse<SweepRunStatus>>(`/sweeping/runs/${runId}`).then(r => r.data),
-  getHistory: (ruleId?: string) => apiClient.get<ApiResponse<SweepExecution[]>>('/sweeping/history', { params: { ruleId } }).then(r => r.data),
+  // SweepController.getExecutionHistory returns ApiResponse<Page<ExecutionResponse>> -> data is paged, not a bare array
+  getHistory: (ruleId?: string) => apiClient.get<ApiResponse<PaginatedResponse<SweepExecution>>>('/sweeping/history', { params: { ruleId } }).then(r => r.data),
 };
 
 // ============================================================================
@@ -3198,6 +3200,10 @@ export interface Viban {
   purpose?: string;
   paymentLink?: string;
   createdAt: string;
+  // Only returned by GET /vibans/lookup/{viban} (VibanLookupResponse) — the
+  // list/CRUD endpoints omit them, hence optional.
+  isValid?: boolean;
+  validationMessage?: string;
 }
 
 export interface VibanStats {
@@ -3600,19 +3606,58 @@ export const balanceStructureApi = {
 // INTEGRATIONS API
 // ============================================================================
 
+// Types mirror IntegrationDto on the backend; they are declared alongside the
+// hook that owns this surface. Type-only import, so no runtime import cycle.
+import type {
+  AspspResponse,
+  ConnectorFilter,
+  CreateConnectionRequest,
+  DataFlow,
+  FieldMapping,
+  InitiateOpenBankingAuthRequest,
+  InitiateOpenBankingAuthResponse,
+  IntegrationConnection,
+  IntegrationConnector,
+  IntegrationStats,
+  SyncLog,
+  TestConnectionRequest,
+  TestConnectionResponse,
+} from '../hooks/useIntegrations';
+
+// Mirrors backend IntegrationDto.TriggerSyncResponse.
+export interface TriggerSyncResponse {
+  syncId: string;
+  status: string;
+  message?: string;
+  estimatedCompletionTime?: string;
+}
+
 export const integrationsApi = {
-  getStats: () => apiClient.get<ApiResponse<any>>('/integrations/stats').then(r => r.data),
-  getConnectors: () => apiClient.get<ApiResponse<any[]>>('/integrations/connectors').then(r => r.data),
-  getConnectorsByCategory: (category: string) => apiClient.get<ApiResponse<any[]>>(`/integrations/connectors/category/${category}`).then(r => r.data),
-  getConnections: () => apiClient.get<ApiResponse<any[]>>('/integrations/connections').then(r => r.data),
-  createConnection: (data: any) => apiClient.post<ApiResponse<any>>('/integrations/connections', data).then(r => r.data),
-  updateConnection: (id: string, data: any) => apiClient.put<ApiResponse<any>>(`/integrations/connections/${id}`, data).then(r => r.data),
+  getStats: () => apiClient.get<ApiResponse<IntegrationStats>>('/integrations/stats').then(r => r.data),
+  getConnectors: (filter?: ConnectorFilter) => apiClient.get<ApiResponse<IntegrationConnector[]>>('/integrations/connectors', { params: filter }).then(r => r.data),
+  getConnectorsByCategory: (category: string) => apiClient.get<ApiResponse<IntegrationConnector[]>>(`/integrations/connectors/category/${category}`).then(r => r.data),
+  getConnections: () => apiClient.get<ApiResponse<IntegrationConnection[]>>('/integrations/connections').then(r => r.data),
+  createConnection: (data: CreateConnectionRequest) => apiClient.post<ApiResponse<IntegrationConnection>>('/integrations/connections', data).then(r => r.data),
+  updateConnection: (id: string, data: Partial<CreateConnectionRequest>) => apiClient.put<ApiResponse<IntegrationConnection>>(`/integrations/connections/${id}`, data).then(r => r.data),
   deleteConnection: (id: string) => apiClient.delete<ApiResponse<void>>(`/integrations/connections/${id}`).then(r => r.data),
-  testConnection: (id: string) => apiClient.post<ApiResponse<any>>(`/integrations/connections/${id}/test`).then(r => r.data),
-  getFlows: (connectionId: string) => apiClient.get<ApiResponse<any[]>>(`/integrations/connections/${connectionId}/flows`).then(r => r.data),
-  createFlow: (connectionId: string, data: any) => apiClient.post<ApiResponse<any>>(`/integrations/connections/${connectionId}/flows`, data).then(r => r.data),
-  triggerSync: (connectionId: string) => apiClient.post<ApiResponse<any>>('/integrations/sync', { connectionId }).then(r => r.data),
-  getLogs: (connectionId?: string) => apiClient.get<ApiResponse<any[]>>('/integrations/logs', { params: { connectionId } }).then(r => r.data),
+  // POST /connections/test takes the candidate credentials in the body - there is
+  // no per-connection /connections/{id}/test endpoint on the backend.
+  testConnection: (data: TestConnectionRequest) => apiClient.post<ApiResponse<TestConnectionResponse>>('/integrations/connections/test', data).then(r => r.data),
+  getFlows: (connectionId: string) => apiClient.get<ApiResponse<DataFlow[]>>(`/integrations/connections/${connectionId}/flows`).then(r => r.data),
+  // POST /flows; connectionId travels in the body (CreateDataFlowRequest.connectionId).
+  createFlow: (connectionId: string, data: Partial<DataFlow>) => apiClient.post<ApiResponse<DataFlow>>('/integrations/flows', { connectionId, ...data }).then(r => r.data),
+  updateFieldMappings: (flowId: string, data: { mappings: FieldMapping[] }) => apiClient.put<ApiResponse<DataFlow>>(`/integrations/flows/${flowId}/mappings`, data).then(r => r.data),
+  toggleFlowStatus: (flowId: string) => apiClient.post<ApiResponse<DataFlow>>(`/integrations/flows/${flowId}/toggle`).then(r => r.data),
+  triggerSync: (data: { connectionId: string; flowIds?: string[]; forceRefresh?: boolean }) => apiClient.post<ApiResponse<TriggerSyncResponse>>('/integrations/sync', data).then(r => r.data),
+  getLogs: (connectionId?: string, flowId?: string) => apiClient.get<ApiResponse<PaginatedResponse<SyncLog>>>('/integrations/logs', { params: { connectionId, flowId } }).then(r => r.data),
+
+  // Open Banking
+  getAspsps: (country?: string, connectorCode?: string) => apiClient.get<ApiResponse<AspspResponse[]>>('/integrations/open-banking/aspsps', { params: { country, connectorCode } }).then(r => r.data),
+  initiateOpenBankingAuth: (data: InitiateOpenBankingAuthRequest) => apiClient.post<ApiResponse<InitiateOpenBankingAuthResponse>>('/integrations/open-banking/authorize', data).then(r => r.data),
+  handleOpenBankingCallback: (data: { code: string; state: string }) => apiClient.post<ApiResponse<IntegrationConnection>>('/integrations/open-banking/callback', data).then(r => r.data),
+  // Backend returns the refreshed ConnectionResponse, not a new authorization URL.
+  refreshConsent: (connectionId: string) => apiClient.post<ApiResponse<IntegrationConnection>>(`/integrations/connections/${connectionId}/refresh-consent`).then(r => r.data),
+  revokeConsent: (connectionId: string) => apiClient.delete<ApiResponse<void>>(`/integrations/connections/${connectionId}/revoke-consent`).then(r => r.data),
 };
 
 // ============================================================================
@@ -4511,7 +4556,10 @@ interface CreateSettlementVaRequest {
   description?: string;
 }
 
-export interface InitializeHierarchyRequest {
+// Body of POST /treasury/settlement-vas/initialize. Named apart from the
+// programs/{id}/hierarchy/initialize request below — two interfaces with the
+// same name in one module silently merge into one impossible shape.
+export interface InitializeSettlementVasRequest {
   programId: string;
   currencies?: string[];
 }
@@ -4696,7 +4744,7 @@ const settlementVaApi = {
   /**
    * Initialize program hierarchy with Exception VA
    */
-  initialize: async (request: InitializeHierarchyRequest): Promise<ApiResponse<SettlementVaListResponse>> => {
+  initialize: async (request: InitializeSettlementVasRequest): Promise<ApiResponse<SettlementVaListResponse>> => {
     return apiClient.post<ApiResponse<SettlementVaListResponse>>(
       '/treasury/settlement-vas/initialize',
       request
@@ -5026,6 +5074,8 @@ export interface ShadowAccount {
   corporateName?: string;
   linkedPhysicalAccountId: string;
   bankAccountNumber: string;
+  /** ShadowAccountController maps the linked physical account number here. */
+  physicalAccountNumber?: string;
   bankIban?: string;
   bankSwift?: string;
   bankName?: string;
@@ -6684,6 +6734,8 @@ export interface InitializeHierarchyRequest {
   baseCurrency: string;
   /** Whether to create Exception VA for unmatched transactions */
   createExceptionVa: boolean;
+  /** Whether to create Currency Mirror for the base currency (backend default: true) */
+  createCurrencyMirror?: boolean;
   /** Additional currencies for Exception VAs (multi-currency support) */
   additionalExceptionCurrencies?: string[];
   /** Optional: Hierarchy template to apply */

@@ -1009,7 +1009,7 @@ const PartyFormModal: React.FC<{
                             id: `temp-${Date.now()}`,
                             ...bankAccountForm,
                             isVerified: false,
-                            status: 'PENDING',
+                            status: 'ACTIVE',
                           };
                           setBankAccounts(prev => [...prev, tempAccount]);
                           setBankAccountForm({ label: '', holderName: '', bankName: '', bankCode: '', iban: '', accountNumber: '', routingNumber: '', currency: 'AED', isPrimary: false });
@@ -1548,7 +1548,7 @@ const PartyDetailModal: React.FC<{
   const handleRunScreening = async () => {
     setRunningScreening(true);
     try {
-      const res = await partiesApi.runScreening(party.id, { screeningTypes: ['SANCTIONS', 'PEP', 'ADVERSE_MEDIA'] });
+      const res = await partiesApi.runScreening(party.id, { runSanctions: true, runPep: true, runAdverseMedia: true });
       if (res.success) {
         showToast('Screening completed', 'success');
         onPartyUpdated?.();
@@ -1846,12 +1846,6 @@ const PartyDetailModal: React.FC<{
                     <div className="flex items-center justify-between">
                       <span className="body-sm">Expires</span>
                       <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycExpiresAt).toLocaleDateString()}</span>
-                    </div>
-                  )}
-                  {party.kycVerifiedAt && (
-                    <div className="flex items-center justify-between">
-                      <span className="body-sm">Verified</span>
-                      <span className="text-body-sm text-primary-900 dark:text-neutral-50">{new Date(party.kycVerifiedAt).toLocaleDateString()}</span>
                     </div>
                   )}
                 </Card>

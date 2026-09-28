@@ -234,7 +234,7 @@ const TemplateSelectorModal: React.FC<TemplateSelectorModalProps> = ({
                           <span className="font-medium text-primary-900 dark:text-neutral-50">
                             {level.levelName}
                           </span>
-                          <Badge variant="default" size="sm">
+                          <Badge variant="neutral" size="sm">
                             {level.dimensionType}
                           </Badge>
                           {level.isRequired && (

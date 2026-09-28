@@ -71,6 +71,6 @@ export const ihbIntegrationApi = {
 
   submitCoboDeposit: async (request: CoboRequest): Promise<ApiResponse<CoboResult>> => {
     // Delegate to actual intercompanyApi
-    return intercompanyApi.cobo.setup(request);
+    return intercompanyApi.setupCobo(request);
   },
 };

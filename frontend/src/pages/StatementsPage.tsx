@@ -1602,7 +1602,7 @@ const StatementsPage: React.FC = () => {
           accountName={selectedAccountDetails.vaName}
           currencyCode={selectedAccountDetails.currencyCode || 'AED'}
           isAggregationAccount={isAggregationAccount}
-          childAccountCount={selectedAccountDetails.childAccountCount}
+          childAccountCount={aggregatedBalance?.childAccountCount}
           onStatementGenerated={handleStatementGenerated}
           onPreview={handlePreview}
         />

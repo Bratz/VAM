@@ -1341,8 +1341,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
       try {
         // Load collection accounts (virtual accounts)
-        const accountsResponse = await virtualAccountsApi.getAll({ corporateId: effectiveCorporateId, pageSize: 50 });
-        const accountsList = accountsResponse?.virtualAccounts || accountsResponse?.data?.virtualAccounts || accountsResponse?.data || [];
+        const accountsResponse = await virtualAccountsApi.getAll(0, 50, effectiveCorporateId);
+        const accountsList = accountsResponse?.data || [];
         setAccounts(accountsList.map((va: any) => ({
           id: va.id,
           accountName: va.vaName || 'Collection Account',

@@ -232,7 +232,7 @@ const ConfigCard: React.FC<{
     <div className="flex items-center justify-between caption border-t pt-3">
       <div className="flex items-center gap-1">
         <Calendar className="w-3 h-3" />
-        <span>{formatDate(config.effectiveFrom)}</span>
+        <span>{config.effectiveFrom ? formatDate(config.effectiveFrom) : '-'}</span>
       </div>
       <div className="font-medium">{config.dayCountConvention || 'ACT/360'}</div>
     </div>
@@ -339,7 +339,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
           {selectedCorporate && (
             <Badge variant="info" size="sm">
               <Building2 className="w-3 h-3 mr-1" />
-              {selectedCorporate.shortName || selectedCorporate.tradeName || selectedCorporate.legalName}
+              {selectedCorporate.tradeName || selectedCorporate.legalName}
             </Badge>
           )}
           {selectedProgram && (
@@ -615,24 +615,24 @@ const InterestConfigurationPage: React.FC = () => {
         configName: form.configName,
         configType: form.configType,
         targetType: form.targetType,
-        targetId: form.targetId || null,
+        targetId: form.targetId || undefined,
         currencyCode: form.currencyCode,
-        creditBaseRateType: form.creditBaseRateType || null,
-        creditBaseRate: form.creditBaseRate ? parseFloat(form.creditBaseRate) : null,
-        creditSpread: form.creditSpread ? parseFloat(form.creditSpread) : null,
-        creditMinBalance: form.creditMinBalance ? parseFloat(form.creditMinBalance) : null,
-        debitBaseRateType: form.debitBaseRateType || null,
-        debitBaseRate: form.debitBaseRate ? parseFloat(form.debitBaseRate) : null,
-        debitSpread: form.debitSpread ? parseFloat(form.debitSpread) : null,
-        penaltyRate: form.penaltyRate ? parseFloat(form.penaltyRate) : null,
+        creditBaseRateType: form.creditBaseRateType || undefined,
+        creditBaseRate: form.creditBaseRate ? parseFloat(form.creditBaseRate) : undefined,
+        creditSpread: form.creditSpread ? parseFloat(form.creditSpread) : undefined,
+        creditMinBalance: form.creditMinBalance ? parseFloat(form.creditMinBalance) : undefined,
+        debitBaseRateType: form.debitBaseRateType || undefined,
+        debitBaseRate: form.debitBaseRate ? parseFloat(form.debitBaseRate) : undefined,
+        debitSpread: form.debitSpread ? parseFloat(form.debitSpread) : undefined,
+        penaltyRate: form.penaltyRate ? parseFloat(form.penaltyRate) : undefined,
         dayCountConvention: form.dayCountConvention,
         compoundingFrequency: form.compoundingFrequency,
         calculationFrequency: form.calculationFrequency,
         postingFrequency: form.postingFrequency,
         isTiered: form.isTiered,
-        tierConfig: form.tierConfig || null,
+        tierConfig: form.tierConfig || undefined,
         effectiveFrom: form.effectiveFrom,
-        effectiveTo: form.effectiveTo || null,
+        effectiveTo: form.effectiveTo || undefined,
         status: form.status,
       };
 
@@ -912,7 +912,7 @@ const InterestConfigurationPage: React.FC = () => {
             <div className="flex items-center justify-between text-body-sm">
               <div>
                 <span className="text-neutral-500 dark:text-neutral-400">Effective From: </span>
-                <span className="font-medium">{formatDate(selectedConfig.effectiveFrom)}</span>
+                <span className="font-medium">{selectedConfig.effectiveFrom ? formatDate(selectedConfig.effectiveFrom) : '-'}</span>
               </div>
               {selectedConfig.effectiveTo && (
                 <div>

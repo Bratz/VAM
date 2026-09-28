@@ -362,7 +362,7 @@ const VendorSearch: React.FC<{ selectedVendor: Vendor | null; onSelect: (vendor:
       const response = await partiesApi.getAll({
         corporateId: corporateId,
         role: 'VENDOR',
-        searchTerm: q || undefined,
+        query: q || undefined,
         pageSize: 20
       });
       const partiesList = response?.parties || response?.data?.parties || [];

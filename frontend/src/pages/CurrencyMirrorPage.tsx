@@ -39,13 +39,6 @@ interface CurrencyBreakdown extends ApiCurrencyBreakdown {
 // Use the API FxRate type directly - it already has isActive: boolean
 type FxRate = ApiFxRate;
 
-interface ConsolidatedBalance {
-  corporateId: string;
-  baseCurrency: string;
-  totalBalance: number;
-  currencyCount: number;
-  asOf: string;
-}
 
 
 // Corporate type for selection
@@ -456,16 +449,12 @@ const CurrencyMirrorPage: React.FC = () => {
 
       // Load consolidated balance - prefer program-based API for accuracy
       try {
-        let consolidatedResponse;
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (selectedProgramId && uuidRegex.test(selectedProgramId)) {
+        const consolidatedData = (selectedProgramId && uuidRegex.test(selectedProgramId))
           // Use program-based API (preferred)
-          consolidatedResponse = await currencyMirrorApi.getConsolidatedBalanceByProgram(selectedProgramId, baseCurrency);
-        } else {
+          ? extractData(await currencyMirrorApi.getConsolidatedBalanceByProgram(selectedProgramId, baseCurrency))
           // Fallback to corporate-based API
-          consolidatedResponse = await currencyMirrorApi.getConsolidatedBalance(selectedCorporateId, baseCurrency);
-        }
-        const consolidatedData = extractData(consolidatedResponse) as ConsolidatedBalance;
+          : extractData(await currencyMirrorApi.getConsolidatedBalance(selectedCorporateId, baseCurrency));
         setStats({
           totalInBase: consolidatedData?.totalBalance ?? totalBase,
           currencyCount: consolidatedData?.currencyCount ?? breakdownData.length,

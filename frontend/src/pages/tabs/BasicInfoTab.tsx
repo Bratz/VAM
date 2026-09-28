@@ -92,7 +92,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             value={formData.vaName}
             onChange={(e) => updateField('vaName', e.target.value)}
             placeholder="Enter account name"
-            error={!!errors.vaName}
+            className={errors.vaName ? 'border-error-500' : undefined}
             maxLength={100}
           />
         </FormField>
@@ -165,7 +165,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
             placeholder="e.g., USD, EUR, GBP"
             maxLength={3}
             disabled={!!program}
-            error={!!errors.currencyCode}
+            className={errors.currencyCode ? 'border-error-500' : undefined}
           />
           {program && (
             <p className="caption mt-1">

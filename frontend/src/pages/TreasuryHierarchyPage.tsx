@@ -270,7 +270,7 @@ const AddNodeTypeSelector: React.FC<AddNodeTypeSelectorProps> = ({ onSelect, onC
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-body font-semibold text-cat-2 dark:text-cat-2-fg">Add IHB Current Account</h3>
-              <Badge variant="default" size="sm" className="bg-cat-2/10 dark:bg-cat-2/15 text-cat-2 dark:text-cat-2-fg">IHB</Badge>
+              <Badge size="sm" className="bg-cat-2/10 dark:bg-cat-2/15 text-cat-2 dark:text-cat-2-fg">IHB</Badge>
             </div>
             <p className="text-body-sm text-cat-2 dark:text-cat-2-fg mt-1">
               Creates a Transaction VA with IHB participation enabled. Supports credit/debit
@@ -978,7 +978,7 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
               <div className="flex items-center gap-2">
                 <p className="text-body-sm font-semibold text-cat-2 dark:text-cat-2-fg">IHB Current Account</p>
                 {programName && (
-                  <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
+                  <Badge size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                     {programName}
                   </Badge>
                 )}

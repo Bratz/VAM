@@ -392,7 +392,8 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
     try {
       const result = await hierarchyOperationsApi.validateAcquisition(
         acquirerCorporateId,
-        selectedTarget.id
+        selectedTarget.id,
+        selectedPolicy
       );
       if (result.success && result.data) {
         setValidation(result.data);

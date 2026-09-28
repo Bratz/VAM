@@ -338,7 +338,8 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           const result = await transactionsApi.previewPayment({
             fromVaId: sourceAccount.id,
             amount: amount,
-            channel: formData.channel || 'SWIFT',
+            // The form has no channel selector, so outward previews are quoted on SWIFT
+            channel: 'SWIFT',
           });
           setFeePreview(result.data || result);
         }
@@ -353,7 +354,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     // Debounce the API call
     const timeoutId = setTimeout(fetchFeePreview, 500);
     return () => clearTimeout(timeoutId);
-  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName, formData.channel]);
+  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName]);
 
   // Get transfer type display info
   const getTypeInfo = () => {
@@ -500,12 +501,6 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                   <div className="flex justify-between">
                     <span className="text-neutral-500 dark:text-neutral-400">BIC/SWIFT</span>
                     <span className="text-neutral-700 font-mono dark:text-neutral-200">{formData.creditorBic}</span>
-                  </div>
-                )}
-                {formData.channel && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500 dark:text-neutral-400">Channel</span>
-                    <Badge variant="info" size="sm">{formData.channel}</Badge>
                   </div>
                 )}
               </div>
@@ -2041,7 +2036,7 @@ export default function TransfersPage() {
 
     // Only IHB participants (subsidiaries that can borrow) can use POBO
     // They pay on behalf of themselves through the Treasury Center
-    const isIhbParticipant = sourceEntity.ihbEnabled && sourceEntity.canBorrow;
+    const isIhbParticipant = sourceEntity.ihbEnabled === true && sourceEntity.canBorrow === true;
     return isIhbParticipant;
   };
 

@@ -51,9 +51,6 @@ export const useSweeping = () => {
         } else {
           setExecutions([]);
         }
-      } else if (response?.content) {
-        // Direct Page response
-        setExecutions(response.content);
       } else if (Array.isArray(response)) {
         setExecutions(response);
       } else {

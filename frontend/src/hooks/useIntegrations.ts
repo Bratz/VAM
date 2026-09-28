@@ -222,15 +222,15 @@ export const useIntegrations = () => {
       
       const [statsRes, connectorsRes, connectionsRes, logsRes] = await Promise.all([
         integrationsApi.getStats(),
-        integrationsApi.getAllConnectors(),
-        integrationsApi.getAllConnections(),
-        integrationsApi.getSyncLogs(),
+        integrationsApi.getConnectors(),
+        integrationsApi.getConnections(),
+        integrationsApi.getLogs(),
       ]);
-      
+
       if (statsRes.success) setStats(statsRes.data);
       if (connectorsRes.success) setConnectors(connectorsRes.data);
       if (connectionsRes.success) setConnections(connectionsRes.data);
-      if (logsRes.success) setSyncLogs(logsRes.data.content || logsRes.data);
+      if (logsRes.success) setSyncLogs(logsRes.data.content);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to fetch integrations';
       console.error('Failed to fetch integrations:', err);
@@ -243,13 +243,7 @@ export const useIntegrations = () => {
   // Fetch connectors with filter
   const fetchConnectors = useCallback(async (filter?: ConnectorFilter) => {
     try {
-      const params = new URLSearchParams();
-      if (filter?.category) params.append('category', filter.category);
-      if (filter?.status) params.append('status', filter.status);
-      if (filter?.region) params.append('region', filter.region);
-      if (filter?.search) params.append('search', filter.search);
-      
-      const response = await integrationsApi.getAllConnectors(params.toString());
+      const response = await integrationsApi.getConnectors(filter);
       if (response.success) {
         setConnectors(response.data);
       }
@@ -373,7 +367,7 @@ export const useIntegrations = () => {
   }, []);
 
   // Open Banking: Refresh consent
-  const refreshConsent = useCallback(async (connectionId: string): Promise<InitiateOpenBankingAuthResponse> => {
+  const refreshConsent = useCallback(async (connectionId: string): Promise<IntegrationConnection> => {
     try {
       const response = await integrationsApi.refreshConsent(connectionId);
       if (response.success) {
@@ -400,7 +394,7 @@ export const useIntegrations = () => {
   // Data Flow operations
   const createDataFlow = useCallback(async (connectionId: string, data: Partial<DataFlow>) => {
     try {
-      const response = await integrationsApi.createDataFlow(connectionId, data);
+      const response = await integrationsApi.createFlow(connectionId, data);
       if (response.success) {
         await fetchAll();
         return response.data;
@@ -442,9 +436,9 @@ export const useIntegrations = () => {
   // Fetch sync logs with filtering
   const fetchSyncLogs = useCallback(async (connectionId?: string, flowId?: string) => {
     try {
-      const response = await integrationsApi.getSyncLogs(connectionId, flowId);
+      const response = await integrationsApi.getLogs(connectionId, flowId);
       if (response.success) {
-        const logs = response.data.content || response.data;
+        const logs = response.data.content;
         setSyncLogs(logs);
         return logs;
       }

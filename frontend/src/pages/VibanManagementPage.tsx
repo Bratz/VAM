@@ -63,7 +63,7 @@ interface Viban {
   expectedAmount?: number;
   remainingAmount?: number;
   currencyCode?: string;
-  status: 'ACTIVE' | 'AVAILABLE' | 'RESERVED' | 'EXPIRED' | 'DISABLED';
+  status: 'ACTIVE' | 'AVAILABLE' | 'RESERVED' | 'EXPIRED' | 'DISABLED' | 'RETURNED';
   isPrimary?: boolean;
   singleUse?: boolean;
   timesUsed?: number;

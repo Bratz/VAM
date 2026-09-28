@@ -886,7 +886,7 @@ export const MoveVaModal: React.FC<MoveVaModalProps> = ({
               ) : (
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting || validating || (validation && !validation.valid)}
+                  disabled={submitting || validating || validation?.valid === false}
                   className={cn(
                     'px-6 py-2 text-body-sm font-medium rounded-lg transition-colors flex items-center gap-2',
                     submitting || validating || (validation && !validation.valid)

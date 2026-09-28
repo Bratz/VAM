@@ -845,7 +845,7 @@ const HierarchyTreeNode: React.FC<{
               </Badge>
             )}
             {entity.isTreasuryCenter && (
-              <Badge variant="default" size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
+              <Badge variant="neutral" size="sm" className="bg-cat-2/10 text-cat-2 dark:text-cat-2-fg dark:bg-cat-2/15">
                 <Crown className="w-3 h-3 mr-1" />Treasury
               </Badge>
             )}

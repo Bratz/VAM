@@ -148,20 +148,17 @@ const OperationDetailModal: React.FC<OperationDetailModalProps> = ({ operation, 
               <div className="p-4 bg-surface-page rounded-lg">
                 <span className="field-label">Additional Details</span>
                 <dl className="mt-2 space-y-2 text-body-sm">
-                  {operation.details.sourceNode && (
-                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Source:</dt><dd className="font-medium">{operation.details.sourceNode}</dd></div>
+                  {operation.details.oldParentName && (
+                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Source:</dt><dd className="font-medium">{operation.details.oldParentName}</dd></div>
                   )}
-                  {operation.details.targetNode && (
-                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Target:</dt><dd className="font-medium">{operation.details.targetNode}</dd></div>
+                  {operation.details.newParentName && (
+                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Target:</dt><dd className="font-medium">{operation.details.newParentName}</dd></div>
                   )}
-                  {operation.details.vaCount !== undefined && (
-                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">VAs Affected:</dt><dd className="font-medium">{operation.details.vaCount}</dd></div>
+                  {operation.details.movedVaCount !== undefined && (
+                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">VAs Affected:</dt><dd className="font-medium">{operation.details.movedVaCount}</dd></div>
                   )}
                   {operation.details.limitTransferred !== undefined && (
                     <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Limit Transferred:</dt><dd className="font-medium">{operation.details.limitTransferred.toLocaleString()}</dd></div>
-                  )}
-                  {operation.details.policy && (
-                    <div className="flex justify-between"><dt className="text-neutral-500 dark:text-neutral-400">Policy:</dt><dd className="font-medium">{operation.details.policy}</dd></div>
                   )}
                 </dl>
               </div>
@@ -298,7 +295,8 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
     if (!selectedCorporateId) return;
     setLoading(true);
     try {
-      const res = await hierarchyOperationsApi.getOperationHistory(selectedCorporateId, page, pageSize);
+      // getOperationHistory(corporateId, operationType, startDate, endDate, page, size)
+      const res = await hierarchyOperationsApi.getOperationHistory(selectedCorporateId, undefined, undefined, undefined, page, pageSize);
       if (res.success && res.data) {
         let filtered = res.data.content;
 

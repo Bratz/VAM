@@ -609,7 +609,7 @@ const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, en
         {step === 'preview' && (
           <>
             <Button variant="ghost" onClick={() => setStep('form')}>Back</Button>
-            <Button onClick={handleExecute} disabled={loading || (preview && !preview.withinCreditLimit)}>
+            <Button onClick={handleExecute} disabled={loading || preview?.withinCreditLimit === false}>
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Execute {mode}
             </Button>
