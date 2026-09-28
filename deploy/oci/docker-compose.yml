@@ -115,6 +115,11 @@ services:
       APERTURE_CORS_ALLOWED_ORIGINS: "https://vam-five.vercel.app,https://161-33-9-182.sslip.io"
       VAM_MARKET_PROFILE: UK
       VAM_HOME_BANK_BIC: HBUKGB4BXXX
+      # Every @Scheduled job in the app, on or off (see config/SchedulingConfig).
+      # `echo 'VAM_SCHEDULING_ENABLED=false' >> .env` + `up -d` parks the treasury
+      # automation: no sweeps, no IHB interest accrual, no limit resets, no shadow
+      # refresh, no VIBAN cooling release. Everything stays callable by hand.
+      VAM_SCHEDULING_ENABLED: ${VAM_SCHEDULING_ENABLED:-true}
       # MCP off by default; both flags flip together — a signed context is
       # only meaningful once something is actually minting one (the gateway).
       VAM_MCP_ENABLED: ${VAM_MCP_ENABLED:-false}
