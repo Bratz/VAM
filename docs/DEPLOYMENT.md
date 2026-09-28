@@ -7,12 +7,16 @@ Browser ──▶ Vercel (static frontend, free)
               │  server-side rewrite of /api/* (no CORS, no mixed content)
               ▼
         OCI Always-Free VM (Ampere A1, Ubuntu)
-        └─ docker compose: backend (self-seeding) + Postgres 16
+        └─ docker compose: Caddy (real HTTPS, :80/:443) ──▶ backend :8053
+                           + Postgres 16
 ```
 
-The frontend build uses `VITE_API_BASE_URL=/api/v1` (same-origin); Vercel's
-edge proxies `/api/*` to the VM, so the backend needs **no domain, no TLS
-cert, and no CORS config** to start with.
+The frontend build uses `VITE_API_BASE_URL=/api/v1` (same-origin) and Vercel's
+edge proxies `/api/*` to the VM. That rewrite now targets the VM's **HTTPS**
+hostname via Caddy, not plain `http://<ip>:8053` — see the gotchas log for why
+the plain-HTTP version had to go. So TLS (free, automatic) and a CORS allow-list
+(`APERTURE_CORS_ALLOWED_ORIGINS` in the compose file) are both required, not
+optional extras.
 
 ---
 
@@ -33,17 +37,22 @@ cert, and no CORS config** to start with.
   no path to the internet and every later step fails silently.
 - Note the **public IP**.
 
-### 2. Open port 8053 — BOTH firewalls (the classic OCI gotcha)
+### 2. Open ports 80, 443 and 8053 — BOTH firewalls (the classic OCI gotcha)
 Traffic must pass the *cloud* firewall **and** the *VM's own* iptables —
 Oracle's Ubuntu images ship with restrictive iptables rules, so opening only
 the Security List silently doesn't work.
 
-**a) Cloud:** VCN → your subnet's **Security List** → Add Ingress Rule:
-source `0.0.0.0/0`, protocol TCP, destination port `8053`.
+80 and 443 are for Caddy (Let's Encrypt's HTTP-01 challenge, then HTTPS
+itself) — the path the deployed frontend's `/api/*` calls actually take. 8053
+is the backend directly, useful for health checks and `curl` debugging; it can
+be closed later (see *Later hardening*).
+
+**a) Cloud:** VCN → your subnet's **Security List** → Add Ingress Rule, source
+`0.0.0.0/0`, protocol TCP, destination port `80`; repeat for `443` and `8053`.
 
 **b) VM:** SSH in, then:
 ```bash
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8053 -j ACCEPT
+for p in 80 443 8053; do sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport $p -j ACCEPT; done
 sudo netfilter-persistent save
 ```
 
@@ -57,11 +66,20 @@ sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 git
 echo 'SystemMaxUse=500M' | sudo tee -a /etc/systemd/journald.conf && sudo systemctl restart systemd-journald
 git clone https://github.com/Bratz/VAM.git ~/VAM && cd ~/VAM/deploy/oci
 echo 'VAM_DB_PASSWORD=<pick-a-strong-password>' > .env   # untracked; compose reads it
-sudo docker compose up -d --build
+sudo docker compose --profile mcp --profile defectfix --profile fileingest up -d --build
 sudo docker compose logs -f backend   # watch for "[seed] Dump loaded." then the Spring banner
 ```
 (The password lives only in `deploy/oci/.env` on the VM — the tracked compose
 file stays clean, so auto-deploy `git pull` never conflicts.)
+
+**The `--profile` flags are not optional**, even though the profiled services
+themselves are. `caddy` is declared `profiles: ["mcp","defectfix","fileingest"]`,
+so a plain `docker compose up -d --build` starts Postgres and the backend but
+**never starts Caddy** — nothing listens on 443, and every `/api/*` call from the
+deployed frontend fails. Drop a profile only when you also stop needing what it
+fronts. The profiled services will start without their secrets configured (see
+Part 1.5 and the compose file's comments) and simply fail their own outbound
+calls, deliberately, rather than taking the stack down.
 
 ### 1GB fallback (AMD E2.1.Micro regions)
 This Spring context wants ~1 GB by itself, so on a 1 GB VM two things are
@@ -97,8 +115,11 @@ down but the API serves; `/api/v1/...` endpoints are what matter.)
 
 Puts the Aperture MCP server (see [`docs/mcp-architecture.md`](mcp-architecture.md))
 behind a real OAuth 2.1 trust boundary reachable from ChatGPT/Claude, instead
-of only `localhost:9443` on a dev machine. Entirely opt-in — skip this
-section and the VM behaves exactly as Part 1 describes.
+of only `localhost:9443` on a dev machine. Opt-in: Part 1's command starts the
+gateway *container*, but the backend's `/mcp` endpoint stays off (`VAM_MCP_ENABLED`
+defaults to false) and the gateway's OAuth issuer points at localhost until you
+do the two steps below. Skip this section and the VM serves the app exactly as
+Part 1 describes, with an idle gateway container alongside.
 
 **Real HTTPS is required**, not optional — Claude's connector flow is a
 browser redirect from `https://claude.ai` and won't complete against plain
@@ -111,9 +132,9 @@ registration is needed — `<ip-with-dashes>.sslip.io` (e.g.
 The one downside: if the VM's IP ever changes, this hostname changes with
 it — worth a real domain later if the deployment becomes long-lived.
 
-### 1. Open ports 80 and 443 — same two firewalls as step 2 above
-Caddy needs 80 for the Let's Encrypt HTTP-01 challenge (and the HTTP→HTTPS
-redirect) and 443 for HTTPS itself. The gateway's own port 9443 no longer
+### 1. Ports 80 and 443 — already open if you followed step 2 above
+Step 2 opens them, since `/api/*` needs Caddy too; if you opened only 8053 back
+when this section was the only reason for 80/443, go back and add them. The gateway's own port 9443 no longer
 needs a public firewall rule at all — it's not published outside the
 compose network anymore (Caddy is the sole public entry point); leaving an
 old 9443 rule in place is harmless, since nothing will be listening on the
@@ -144,11 +165,13 @@ requires every call to carry a gateway-signed context (see
 containers pick this up on their next restart, so re-run the `up -d --build`
 above if you only edited `.env`.
 
-The routine `docker compose up -d --build` that `deploy-oci.yml` runs on
-every push to `main` does **not** include `--profile mcp`, so a normal
-auto-deploy never starts or restarts the gateway (or Caddy) unexpectedly —
-re-run the profiled command by hand (or SSH in) whenever they need to pick
-up a change.
+`deploy-oci.yml` passes `--profile mcp --profile defectfix --profile fileingest`
+on every push to `main`, so the gateway (and Caddy) are rebuilt and restarted by
+the routine auto-deploy along with everything else. That is deliberate: Compose
+neither rebuilds nor stops a running container whose profile is inactive for the
+invocation, so a plain `up` would leave these serving their old image forever
+even after `git pull` fetched new code. If you stop using a profile on the VM,
+remove its flag from the workflow too.
 
 ### 3. Verify
 ```bash
@@ -167,9 +190,11 @@ see `docs/mcp-architecture.md`.
 
 ## Part 2 — Vercel frontend
 
-1. Edit [`frontend/vercel.json`](../frontend/vercel.json): replace
-   `REPLACE_WITH_OCI_PUBLIC_IP` with the VM's public IP. Commit + push.
-   (vercel.json cannot use env vars — the IP is hardcoded by design.)
+1. Edit [`frontend/vercel.json`](../frontend/vercel.json): point the `/api/:path*`
+   rewrite at the VM's **HTTPS** hostname — `https://<ip-with-dashes>.sslip.io/api/:path*`,
+   the same host Caddy serves (currently `161-33-9-182.sslip.io`). Commit + push.
+   (vercel.json cannot use env vars — the host is hardcoded by design, which is
+   why a new VM IP means editing it. NOT `http://<ip>:8053`: see the gotchas log.)
 2. vercel.com → Add New Project → import `Bratz/VAM`.
    - **Root Directory: `frontend`** (critical — the repo root is not the app).
    - Framework preset: Vite (auto-detected). Build command/output: defaults.
@@ -201,11 +226,15 @@ The Vercel side already auto-deploys on push natively.
 ---
 
 ## Later hardening (optional, in order of value)
-1. **Domain + TLS on the VM**: point a (sub)domain at the IP, add a Caddy
-   service (`caddy reverse_proxy backend:8053`) — auto-HTTPS. Then the Vercel
-   rewrite destination becomes `https://api.yourdomain.com/...`.
-2. **Close 8053 to the world**: once fronted by Caddy on 443, drop the 8053
-   ingress rules.
+1. ~~**TLS on the VM**~~ — **done**: the `caddy` service terminates real
+   Let's Encrypt HTTPS for `/api/*`, the webhooks and the MCP gateway (see
+   `deploy/oci/Caddyfile`). Remaining upgrade: a **real domain** instead of
+   sslip.io, so a new VM IP doesn't mean editing the Caddyfile, `vercel.json`,
+   `APERTURE_CORS_ALLOWED_ORIGINS`, `GATEWAY_PUBLIC_BASE_URL` and the `VM_HOST`
+   secret — five hardcoded places today.
+2. **Close 8053 to the world**: Caddy already fronts `/api/*` on 443, so the
+   8053 ingress rule is only a debugging convenience — drop it once you don't
+   need direct `curl` access.
 3. **Credentials**: the compose file's DB password is VM-local; the demo
    fallbacks in `application.yml` / `.env.example` should be blanked if the
    GitHub repo is public.
@@ -228,6 +257,13 @@ The Vercel side already auto-deploys on push natively.
 - **Always-Free capacity**: A1 instances in popular regions intermittently
   show "out of capacity" — retry, try another availability domain, or create
   the account in a less busy home region.
-- **Vercel rewrite to plain http is fine**: the proxy runs server-side on
-  Vercel's edge, so the browser only ever sees https — no mixed-content
-  blocking, no CORS.
+- **Vercel rewrite to plain http is NOT fine** (superseded — this entry used to
+  say the opposite). The browser never sees mixed content, true, but Vercel's
+  rewrite proxy silently **403s any non-GET method** to an `http://` destination:
+  confirmed live, every POST in the app failed this way, not just uploads. Fixed
+  by fronting the backend with Caddy's real cert too (`handle /api/*` in the
+  Caddyfile) and pointing the rewrite at the HTTPS host.
+- **"Invalid CORS request" on every POST from the deployed frontend**: not a
+  Vercel or TLS problem despite appearances — `WebConfig`'s CorsFilter defaults
+  to localhost-only dev origins. Both the Vercel origin and the VM's own HTTPS
+  host must be listed in `APERTURE_CORS_ALLOWED_ORIGINS` in the compose file.
