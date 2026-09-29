@@ -252,7 +252,7 @@ const SelectorBar: React.FC<SelectorBarProps> = ({
     rightSlot={(
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="success" icon={DollarSign} size="sm" />
-        <div className="min-w-[160px]">
+        <div className="min-w-[10rem]">
           <label className="label">Currency</label>
           <Select
             value={reportingCurrency}
@@ -641,7 +641,7 @@ const AccountRow: React.FC<AccountRowProps> = ({
         {account.currencyCode}
       </Badge>
 
-      <div className="text-right min-w-[120px]">
+      <div className="text-right min-w-[7.5rem]">
         <p className={cn('text-body-sm font-semibold', balance >= 0 ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300')}>
           {formatCurrency(balance, account.currencyCode)}
         </p>

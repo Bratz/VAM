@@ -1370,7 +1370,7 @@ const WalletPage: React.FC = () => {
                         <p className="caption">{wallet.lastTransaction ? formatDate(wallet.lastTransaction) : 'No activity'}</p>
                       </>
                     ) },
-                    { key: 'actions', header: '', width: '48px', minWidth: 64, render: (_v, wallet) => (
+                    { key: 'actions', header: '', width: '3rem', minWidth: 64, render: (_v, wallet) => (
                       <WalletActionsCell wallet={wallet} onView={() => handleViewWallet(wallet)} onEdit={() => handleEditWallet(wallet)} onAction={(a) => handleWalletAction(a, wallet)} />
                     ) },
                   ]}

@@ -169,7 +169,7 @@ const BeneficiaryMobileCard: React.FC<BeneficiaryMobileCardProps> = ({
           <div className="mt-3 pt-3 border-t border-edge-subtle flex items-center justify-between">
             <div>
               <p className="caption">Account</p>
-              <p className="text-body-sm font-mono text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
+              <p className="text-body-sm font-mono text-primary-900 truncate max-w-[9.375rem] dark:text-neutral-50">
                 {beneficiary.iban || beneficiary.accountNumber || '-'}
               </p>
             </div>
@@ -616,7 +616,7 @@ const BeneficiariesPage: React.FC = () => {
               header: 'Account/IBAN',
               render: (_, beneficiary) => (
                 <>
-                  <p className="text-body-sm font-mono text-primary-900 truncate max-w-[200px] dark:text-neutral-50">
+                  <p className="text-body-sm font-mono text-primary-900 truncate max-w-[12.5rem] dark:text-neutral-50">
                     {beneficiary.iban || beneficiary.accountNumber || '-'}
                   </p>
                   <p className="caption mt-0.5">{beneficiary.currencyCode || 'AED'}</p>

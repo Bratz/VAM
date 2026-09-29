@@ -1294,7 +1294,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <p className="caption">{tx.payingEntityName}</p>
                   </>
                 ) },
-                { key: 'direction', header: '', align: 'center', width: '48px', render: () => (
+                { key: 'direction', header: '', align: 'center', width: '3rem', render: () => (
                   <ArrowRight className="w-4 h-4 text-primary-400 inline" />
                 ) },
                 { key: 'behalfEntityCode', header: isTreasuryView ? 'Subsidiary (Owes)' : 'Treasury (Owed To)', minWidth: 160, dropOrder: 2, render: (_, tx) => (
@@ -1378,7 +1378,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     <p className="caption">{tx.payingEntityName}</p>
                   </>
                 ) },
-                { key: 'direction', header: '', align: 'center', width: '48px', render: () => (
+                { key: 'direction', header: '', align: 'center', width: '3rem', render: () => (
                   <ArrowLeft className="w-4 h-4 text-info-400 inline" />
                 ) },
                 { key: 'behalfEntityCode', header: 'Subsidiary (Behalf Of)', minWidth: 160, dropOrder: 2, render: (_, tx) => (

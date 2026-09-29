@@ -224,7 +224,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, className }) => {
       )}
       title="Copy to clipboard"
     >
-      <span className="truncate max-w-[120px]">{value}</span>
+      <span className="truncate max-w-[7.5rem]">{value}</span>
       {copied ? (
         <CheckCircle className="w-3 h-3 text-success-500 dark:text-success-300 shrink-0" />
       ) : (
@@ -473,7 +473,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
 
         {/* Description */}
         <td className="data-table-cell">
-          <span className="text-body-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
+          <span className="text-body-sm text-primary-900 truncate max-w-[12.5rem] block dark:text-neutral-50">
             {description}
           </span>
           {entry.bankTransactionCode && (
@@ -612,7 +612,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     {relatedParties.debtor.name && (
                       <div className="flex justify-between">
                         <span className="text-neutral-500 dark:text-neutral-400">Name</span>
-                        <span className="font-medium truncate max-w-[120px]">{relatedParties.debtor.name}</span>
+                        <span className="font-medium truncate max-w-[7.5rem]">{relatedParties.debtor.name}</span>
                       </div>
                     )}
                     {relatedParties.debtor.accountIban && (
@@ -642,7 +642,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
                     {relatedParties.creditor.name && (
                       <div className="flex justify-between">
                         <span className="text-neutral-500 dark:text-neutral-400">Name</span>
-                        <span className="font-medium truncate max-w-[120px]">{relatedParties.creditor.name}</span>
+                        <span className="font-medium truncate max-w-[7.5rem]">{relatedParties.creditor.name}</span>
                       </div>
                     )}
                     {relatedParties.creditor.accountIban && (
@@ -743,7 +743,7 @@ const TransactionRow: React.FC<TransactionRowProps> = ({ transaction: tx, curren
         <span className="font-mono text-caption text-neutral-600 dark:text-neutral-300">{tx.referenceNumber}</span>
       </td>
       <td className="data-table-cell">
-        <span className="text-body-sm text-primary-900 truncate max-w-[200px] block dark:text-neutral-50">
+        <span className="text-body-sm text-primary-900 truncate max-w-[12.5rem] block dark:text-neutral-50">
           {tx.description || '-'}
         </span>
       </td>
@@ -1135,7 +1135,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon }) => {
         <CopyButton value={value} />
       ) : (
         // Info-row value: small body text at primary-900 — no font-X needed.
-        <span className="text-caption text-primary-900 text-right max-w-[150px] truncate dark:text-neutral-50">
+        <span className="text-caption text-primary-900 text-right max-w-[9.375rem] truncate dark:text-neutral-50">
           {value}
         </span>
       )}

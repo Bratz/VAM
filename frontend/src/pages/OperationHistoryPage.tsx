@@ -423,7 +423,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
                     <div className="p-2 bg-surface-muted rounded-lg">{getOperationIcon(op.operationType)}</div>
                     <div>
                       <p className="font-medium text-primary-900 dark:text-neutral-50">{op.operationType.replace(/_/g, ' ')}</p>
-                      <p className="text-body-sm text-neutral-500 truncate max-w-[300px] dark:text-neutral-400">{op.summary}</p>
+                      <p className="text-body-sm text-neutral-500 truncate max-w-[18.75rem] dark:text-neutral-400">{op.summary}</p>
                     </div>
                   </div>
                 ),

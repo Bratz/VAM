@@ -231,7 +231,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ value, label, className }) => {
       )}
       title={`Copy ${label || 'value'}`}
     >
-      <span className="truncate max-w-[180px]">{value}</span>
+      <span className="truncate max-w-[11.25rem]">{value}</span>
       {copied ? (
         <CheckCircle className="w-4 h-4 text-success-500 dark:text-success-300 shrink-0" />
       ) : (
@@ -265,7 +265,7 @@ const InfoRow: React.FC<InfoRowProps> = ({ label, value, copyable, icon, classNa
       {copyable && typeof value === 'string' ? (
         <CopyButton value={value} label={label} />
       ) : (
-        <span className="text-caption font-medium text-primary-900 dark:text-neutral-50 text-right max-w-[200px] truncate">
+        <span className="text-caption font-medium text-primary-900 dark:text-neutral-50 text-right max-w-[12.5rem] truncate">
           {value}
         </span>
       )}
@@ -533,7 +533,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         </div>
 
         {/* Amount */}
-        <div className="text-right shrink-0 min-w-[100px]">
+        <div className="text-right shrink-0 min-w-[6.25rem]">
           <p className={cn(
             'text-body-sm font-bold tabular-nums',
             isCredit ? 'text-success-600 dark:text-success-300' : 'text-error-600 dark:text-error-300'

@@ -89,7 +89,7 @@ export const ExecutionHistory: React.FC<ExecutionHistoryProps> = ({ executions, 
               </Badge>
               {/* Error message if failed */}
               {(exec as any).errorMessage && (
-                <p className="text-caption text-error-500 dark:text-error-300 mt-1 max-w-[150px] truncate"
+                <p className="text-caption text-error-500 dark:text-error-300 mt-1 max-w-[9.375rem] truncate"
                    title={(exec as any).errorMessage}>
                   {(exec as any).errorMessage}
                 </p>

@@ -642,23 +642,23 @@ const EntityTreeNode: React.FC<{
             <TypeIcon className={cn("w-4 h-4", typeConfig.color)} />
           </div>
 
-          <div className="flex-1 min-w-[180px]">
+          <div className="flex-1 min-w-[11.25rem]">
             <div className="flex items-center gap-2">
               <span className="body-strong">{entity.entityCode}</span>
               {entity.isBankCustomer && <span className="px-2 py-0.5 rounded-full text-caption bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-300"><Wallet className="w-3 h-3 inline" /> Bank</span>}
               {entity.isTreasuryCenter && <span className="px-2 py-0.5 rounded-full text-caption bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300">Treasury</span>}
             </div>
-            <p className="caption truncate max-w-[200px]">{entity.entityName}</p>
+            <p className="caption truncate max-w-[12.5rem]">{entity.entityName}</p>
           </div>
 
-          <div className="w-[100px] text-right">
+          <div className="w-[6.25rem] text-right">
             <p className="text-caption text-neutral-400 uppercase dark:text-neutral-400">External</p>
             {entity.isBankCustomer && externalCeiling ? (
               <p className="text-body-sm font-medium text-info-700 dark:text-info-300">{formatCurrency(externalCeiling, entity.functionalCurrency)}</p>
             ) : <p className="text-body-sm text-neutral-400">—</p>}
           </div>
 
-          <div className="w-[100px]">
+          <div className="w-[6.25rem]">
             {missingCurrencies.length > 0 && (
               <button type="button" onClick={() => onAllocate(entity)} className="text-body-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 dark:text-primary-200 dark:hover:text-neutral-200">
                 <Plus className="w-3 h-3" /> Add Limit
@@ -1286,10 +1286,10 @@ const CreditLimitsPage: React.FC = () => {
               </div>
 
               <div className="px-4 py-2 bg-surface-page border-b border-edge-subtle flex items-center gap-3 label">
-                <div style={{ width: '28px' }} /><div style={{ width: '32px' }} />
-                <div className="flex-1 min-w-[180px]">Entity</div>
-                <div className="w-[100px] text-right">External</div>
-                <div className="w-[100px]">Actions</div>
+                <div style={{ width: '1.75rem' }} /><div style={{ width: '2rem' }} />
+                <div className="flex-1 min-w-[11.25rem]">Entity</div>
+                <div className="w-[6.25rem] text-right">External</div>
+                <div className="w-[6.25rem]">Actions</div>
               </div>
 
               <div className="max-h-[500px] overflow-y-auto">

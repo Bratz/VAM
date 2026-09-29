@@ -21,7 +21,10 @@ export interface Column<T> {
   // Custom render function
   render?: (value: unknown, row: T, index: number) => React.ReactNode;
   /**
-   * Desktop table only. Approximate width (px, including cell padding) this column needs.
+   * Desktop table only. Approximate width this column needs, including cell padding,
+   * in px at a 16px root -- i.e. the same unit rem is authored in, NOT raw device px.
+   * DataTable scales it by the live root font size before comparing against the
+   * container, so a column budget tracks the density knob in styles/index.css.
    * Used with `dropOrder` to decide what fits; defaults to 140.
    */
   minWidth?: number;
@@ -122,17 +125,28 @@ export function DataTable<T>({
   // sidebar collapsing changes this without the viewport changing, so breakpoints can't do it).
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  // Column budgets are px at a 16px root; the app runs a smaller one (the density knob
+  // in styles/index.css), and a cell's text, padding and gaps are all rem, so a column
+  // genuinely needs less room than its number says. Without this the budget overstates
+  // every column and drops ones that now fit.
+  const [remScale, setRemScale] = useState(1);
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     setContainerWidth(el.clientWidth);
-    const ro = new ResizeObserver(() => setContainerWidth(el.clientWidth));
+    const readScale = () => {
+      const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      setRemScale(Number.isFinite(root) && root > 0 ? root / 16 : 1);
+    };
+    readScale();
+    const ro = new ResizeObserver(() => { setContainerWidth(el.clientWidth); readScale(); });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   const visibleColumns = useMemo(() => {
     if (containerWidth == null) return columns;
-    const needed = (cols: Column<T>[]) => cols.reduce((sum, c) => sum + (c.minWidth ?? 140), selectable ? 48 : 0);
+    const needed = (cols: Column<T>[]) =>
+      cols.reduce((sum, c) => sum + (c.minWidth ?? 140) * remScale, (selectable ? 48 : 0) * remScale);
     // Keep the always-shown columns, then add optional ones by priority (lowest dropOrder first),
     // skipping any that don't fit so a narrower low-priority column can still take leftover space.
     const keep = new Set(columns.filter((c) => c.dropOrder == null));
@@ -142,7 +156,7 @@ export function DataTable<T>({
     }
     const cols = columns.filter((c) => keep.has(c));
     return cols;
-  }, [columns, containerWidth, selectable]);
+  }, [columns, containerWidth, selectable, remScale]);
 
   const effectiveStriped = hairline ? false : striped;
 

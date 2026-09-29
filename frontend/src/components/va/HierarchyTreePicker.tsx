@@ -214,7 +214,7 @@ export const HierarchyTreePicker: React.FC<HierarchyTreePickerProps> = ({
           {/* Codified dimension value as a secondary hint when it differs
               from the display name. */}
           {n.nodeName && n.dimensionValue && n.nodeName !== n.dimensionValue && (
-            <span className="text-caption font-mono text-neutral-400 truncate shrink-0 max-w-[90px]">
+            <span className="text-caption font-mono text-neutral-400 truncate shrink-0 max-w-[5.625rem]">
               {n.dimensionValue}
             </span>
           )}

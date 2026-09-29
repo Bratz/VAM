@@ -542,7 +542,7 @@ const buildAccountColumns = (
         <div className="flex items-center gap-2">
           <StatusIconBadge tone="primary" icon={Briefcase} size="sm" />
           <div className="min-w-0">
-            <p className="text-body-sm font-medium text-primary-900 truncate max-w-[150px] dark:text-neutral-50">
+            <p className="text-body-sm font-medium text-primary-900 truncate max-w-[9.375rem] dark:text-neutral-50">
               {account.programName}
             </p>
           </div>
@@ -609,7 +609,7 @@ const buildAccountColumns = (
   {
     key: 'actions',
     header: 'Actions',
-    width: '64px',
+    width: '4rem',
     minWidth: 64,
     render: (_, account) => (
       <AccountActions account={account} onView={onView} onEdit={onEdit} onStatusChange={onStatusChange} />
@@ -1112,7 +1112,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                 {account.hierarchyPathVa && (
                   <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-500 dark:text-neutral-400">Hierarchy</span>
-                    <span className="font-mono text-caption text-neutral-700 truncate max-w-[200px] dark:text-neutral-200">
+                    <span className="font-mono text-caption text-neutral-700 truncate max-w-[12.5rem] dark:text-neutral-200">
                       {account.hierarchyPathVa}
                     </span>
                   </div>
@@ -1248,7 +1248,7 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
                           return (
                             <tr key={idx} className="hover:bg-neutral-50 dark:hover:bg-primary-800/50">
                               <td className="p-2 text-neutral-700 dark:text-neutral-200">{new Date(tx.transactionDate).toLocaleDateString()}</td>
-                              <td className="p-2 text-neutral-700 truncate max-w-[150px] dark:text-neutral-200">{tx.description || tx.referenceNumber}</td>
+                              <td className="p-2 text-neutral-700 truncate max-w-[9.375rem] dark:text-neutral-200">{tx.description || tx.referenceNumber}</td>
                               <td className="p-2 text-right text-error-600 dark:text-error-300">
                                 {isDebitTxn ? formatCurrency(tx.amount, statement.currencyCode) : '-'}
                               </td>

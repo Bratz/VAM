@@ -1510,7 +1510,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           {/* overflow-hidden: with non-shrinking badges, excess pills clip
               instead of crushing the name — the name keeps ≥72px. */}
           <div className="flex items-center gap-2 overflow-hidden">
-            <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50 min-w-[72px]">{node.name}</p>
+            <p className="text-body-sm font-medium text-primary-900 truncate dark:text-neutral-50 min-w-[4.5rem]">{node.name}</p>
             {(() => {
               // Cap visible badges at 3 and roll the rest into a "+N" pill —
               // pixel-clipping a pill mid-word ("MNC-UK" → "M") reads as a
@@ -1595,7 +1595,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
         <Badge variant="neutral" size="sm">{displayCurrency}</Badge>
 
-        <div className="text-right min-w-[120px]">
+        <div className="text-right min-w-[7.5rem]">
           <p className={cn('text-body-sm font-semibold', isCurrencyMirror ? 'text-cyan-700 dark:text-cyan-300' : 'text-primary-900 dark:text-neutral-50')}>
             {formatCurrency(displayBalance, displayCurrency)}
           </p>
@@ -1611,7 +1611,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             position merely repeats the parent's and reads as double counting,
             so mirrors get an empty spacer to keep column alignment. */}
         {isCurrencyMirror ? (
-          <div className="min-w-[130px]" />
+          <div className="min-w-[8.125rem]" />
         ) : (() => {
           // The up/down arrow only means something when intercompany positions
           // move net away from the consolidated balance — with zero IC activity
@@ -1621,7 +1621,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             Number(node.intercompanyReceivable || 0) !== 0 ||
             Number(node.intercompanyPayable || 0) !== 0;
           return (
-        <div className="text-right min-w-[130px]">
+        <div className="text-right min-w-[8.125rem]">
           <div className="flex items-center justify-end gap-1">
             {hasIcActivity && (Number(node.intercompanyReceivable || 0) >= Number(node.intercompanyPayable || 0)
               ? <ArrowUpRight className="w-4 h-4 text-success-500 dark:text-success-300" />

@@ -1720,7 +1720,7 @@ const TransactionsPage: React.FC = () => {
       render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
     },
     {
-      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true, minWidth: 90,
+      key: 'actions', header: 'Actions', align: 'right', width: '5rem', mobileHidden: true, minWidth: 90,
       render: (_, t) => (
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button
@@ -1827,7 +1827,7 @@ const TransactionsPage: React.FC = () => {
       render: (_, t) => <Badge variant="neutral" size="sm">{t.channel || 'N/A'}</Badge>,
     },
     {
-      key: 'actions', header: 'Actions', align: 'right', width: '80px', mobileHidden: true, minWidth: 100,
+      key: 'actions', header: 'Actions', align: 'right', width: '5rem', mobileHidden: true, minWidth: 100,
       render: (_, t) => (
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <button

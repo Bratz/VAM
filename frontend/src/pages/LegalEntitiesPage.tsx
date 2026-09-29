@@ -876,7 +876,7 @@ const HierarchyTreeNode: React.FC<{
         <Badge variant="neutral" size="sm">{entity.functionalCurrency}</Badge>
         
         {limitAmount > 0 ? (
-          <div className="text-right min-w-[140px]">
+          <div className="text-right min-w-[8.75rem]">
             <div className="flex items-center justify-end gap-2">
               {(isBreached || isNearLimit) && (
                 <AlertTriangle className={cn('w-4 h-4', isBreached ? 'text-error-500 dark:text-error-300' : 'text-warning-500 dark:text-warning-300')} />
@@ -896,7 +896,7 @@ const HierarchyTreeNode: React.FC<{
             )}
           </div>
         ) : (
-          <div className="text-right min-w-[100px]">
+          <div className="text-right min-w-[6.25rem]">
             <span className="caption">No limit</span>
           </div>
         )}

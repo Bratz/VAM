@@ -339,7 +339,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             {notes && (
               <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500 dark:text-neutral-400">Notes</span>
-                <span className="font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[200px]">{notes}</span>
+                <span className="font-medium text-primary-900 dark:text-neutral-50 truncate max-w-[12.5rem]">{notes}</span>
               </div>
             )}
             <div className="flex justify-between text-body-sm">
