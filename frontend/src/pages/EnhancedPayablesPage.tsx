@@ -245,12 +245,17 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
     }
   }, [treasuryEntities, payingEntityId]);
 
+  // Keyed on WHICH payables are selected, not how many. The preview is priced from
+  // payablesList.map(p => p.id), so keying on .length left the amounts, fees and IHB loan
+  // projection showing the previous selection whenever the set changed at the same count.
+  const payableIdsKey = payablesList.map(p => p.id).join(',');
+
   useEffect(() => {
     if (payablesList.length > 0 && payingEntityId && isOpen) {
       loadPreview();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPreview closes over payablesList/entitiesList, which are re-derived on every render; depending on it would refetch the preview on every render.
-  }, [payablesList.length, payingEntityId, isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPreview closes over payablesList/entitiesList, which are re-derived on every render; depending on it would refetch the preview on every render. payableIdsKey stands in for the payables themselves.
+  }, [payableIdsKey, payingEntityId, isOpen]);
 
   const loadPreview = async () => {
     if (!payablesList.length || !payingEntityId) return;
