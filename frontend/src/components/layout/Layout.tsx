@@ -376,7 +376,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ currentPage }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const { isTreasury } = useUser();
   const { resolvedMode, toggleMode } = useTheme();
   const pageActions = useRegisteredPageHeaderActions();
@@ -423,8 +422,14 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
               1280-1440px with the header visibly half-empty). flex-1 lets it
               claim the parent's slack; the min-w-[6rem] floor still keeps
               `truncate` working for long titles without the title ever
-              fully disappearing when space is genuinely tight. */}
-          <div className="items-center gap-1.5 flex-1 min-w-[6rem] flex">
+              fully disappearing when space is genuinely tight.
+
+              Raised from 6rem: at 6rem an action-heavy page (the Simulator,
+              with a scenario picker and three buttons) left the h1 62px, which
+              clipped even a one-word title. PageHeader renders nothing in the
+              body, so this is the only place the page's name appears and a
+              clipped one has nowhere else to be read. */}
+          <div className="items-center gap-1.5 flex-1 min-w-[9rem] flex">
             {/* No flex-1 here (only on the wrapper div) — the wrapper
                 growing gives the title room to render at full width with
                 the help button sitting right after the visible text; if h1
@@ -497,14 +502,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
           <div className="block">
             <EntityPicker compact showCorporate={false} showRoleBadge={false} />
           </div>
-
-          {/* Mobile Search Button */}
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2.5 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800/50"
-          >
-            <Search className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-          </button>
 
           {/* F5: Theme toggle */}
           <button
@@ -643,32 +640,6 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
         </div>
       </div>
 
-      {/* Page actions on phones: the right cluster has no room for them, and hiding them
-          left pages like Programs with no way to create, export or refresh. */}
-      {pageActions && (
-        <div className="flex-wrap items-center justify-end gap-2 px-4 pb-2 hidden">
-          {pageActions}
-        </div>
-      )}
-
-      {/* Mobile Search Overlay */}
-      {showSearch && (
-        <div className="absolute inset-x-0 top-full bg-surface-card border-b border-edge p-4 animate-slide-down hidden">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input
-              type="text"
-              placeholder="Search..."
-              autoFocus
-              className={cn(
-                'w-full h-11 pl-10 pr-4 rounded-lg border border-edge',
-                'bg-surface-page text-body placeholder:text-neutral-400',
-                'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10'
-              )}
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 };

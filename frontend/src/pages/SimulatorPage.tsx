@@ -917,6 +917,13 @@ const SimulatorPage: React.FC = () => {
   usePageHeaderActions(
     () => (
       <>
+        {/* Capped: the options read "<name> · SCN-20260929-001", which sized
+            this select to 286px of the 636px the header cluster was asking
+            for -- enough to push the whole right-hand group 68px past the
+            viewport at 1280 and put a scrollbar under the app. The cluster is
+            shrink-0 by design (so buttons don't clip), so the width has to be
+            given up here. Nothing is lost: the selected scenario's full name,
+            reference and status are all on the ScenarioHeader card below. */}
         <Select
           value={selectedScenarioId}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -924,6 +931,7 @@ const SimulatorPage: React.FC = () => {
           }
           options={scenarioOptions}
           selectSize="sm"
+          className="max-w-[11rem]"
           disabled={!selectedCorporateId || loadingScenarios}
           aria-label="Scenario"
         />
@@ -977,7 +985,7 @@ const SimulatorPage: React.FC = () => {
   return (
     <Page>
       <PageHeader
-        title="Structure simulator"
+        title="Simulator"
         description={
           <div className="flex items-center gap-2 flex-wrap">
             <SandboxBadge />

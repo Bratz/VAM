@@ -67,8 +67,13 @@ export const ScenarioHeader: React.FC<ScenarioHeaderProps> = ({
   return (
     <Card padding="sm" className="bg-primary-50/40 dark:bg-primary-800/30">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        {/* Identity */}
-        <div className="min-w-0 flex-1">
+        {/* Identity. The floor is load-bearing: the controls opposite are
+            shrink-0, so without it this block is the only thing that can give
+            and the name input collapses (measured at 63px -- 8 characters of
+            "Untitled scenario"). With it, the controls wrap to their own row
+            when the header is too narrow for both, which is what the
+            flex-wrap on the parent was there for. */}
+        <div className="flex-1 min-w-[20rem]">
           <div className="flex items-center gap-2 flex-wrap">
             <input
               type="text"
@@ -77,7 +82,7 @@ export const ScenarioHeader: React.FC<ScenarioHeaderProps> = ({
               aria-label="Scenario name"
               placeholder="Untitled scenario"
               className={cn(
-                'section-title bg-transparent min-w-0 flex-1',
+                'section-title bg-transparent flex-1 min-w-[10rem]',
                 'border-0 border-b border-transparent hover:border-neutral-300',
                 'dark:hover:border-primary-700 focus:border-primary-500',
                 'focus:outline-none focus-visible:ring-0 px-0.5 py-0.5 rounded-none',

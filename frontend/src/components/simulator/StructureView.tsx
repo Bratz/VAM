@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FlaskConical, GitBranch, Layers } from 'lucide-react';
+import { Boxes, FlaskConical, GitBranch, Layers } from 'lucide-react';
 import { Card, Button } from '../ui';
 import { Modal } from '../ui/enhanced';
 import { cn } from '../../utils';
@@ -162,12 +162,22 @@ export const StructureView: React.FC<StructureViewProps> = ({
         </div>
 
         {shadows.length === 0 ? (
-          <div className="flex flex-col items-center text-center gap-2 py-12">
+          <div className="flex flex-col items-center text-center gap-3 py-12">
             <FlaskConical className="w-6 h-6 text-neutral-400" aria-hidden />
             <p className="body-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
               Add a Physical Account from the inventory to begin designing the
               structure.
             </p>
+            {onInventoryDrawerOpenChange && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Boxes className="w-4 h-4" />}
+                onClick={() => onInventoryDrawerOpenChange(true)}
+              >
+                Open inventory
+              </Button>
+            )}
           </div>
         ) : (
           <div className="mt-4 space-y-4">
