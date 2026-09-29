@@ -46,7 +46,6 @@ interface CollectionAccount {
   iban: string;
   bankName: string;
   currency: string;
-  isDefault: boolean;
   accountType: 'PHYSICAL' | 'VIRTUAL';
 }
 
@@ -1349,7 +1348,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           iban: va.iban || '',
           bankName: 'Bank',
           currency: va.currencyCode || 'AED',
-          isDefault: va.isDefault || false,
           accountType: va.vaType || 'VIRTUAL'
         })));
       } catch (error) {
@@ -1413,7 +1411,11 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     );
     if (stillValid) return;
 
-    const defaultAccount = accounts.find(a => a.isDefault && a.currency === formData.currency);
+    // The default is the first account in the invoice currency, in the order the accounts
+    // endpoint returns them. There is no per-account default flag to honour: virtual accounts
+    // carry no isDefault field on the API or in the database, so the previous
+    // `a.isDefault && ...` could never match and no invoice ever got a collection account.
+    const defaultAccount = accounts.find(a => a.currency === formData.currency);
     setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount?.id ?? '' }));
     setSelectedAccount(defaultAccount ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on currency/account changes only. formData.collectionAccountId is read to see whether the current pick is still valid and is written here, so depending on it would re-apply the default the moment the user clears the field.
@@ -1869,7 +1871,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="text-caption text-neutral-500 dark:text-neutral-400 font-mono">{account.iban}</p>
                       <div className="flex items-center gap-2 mt-1 justify-end">
                         <span className="label-cased">{account.currency}</span>
-                        {account.isDefault && <span className="px-2 py-0.5 bg-info-100 text-info-700 text-caption font-medium rounded-md dark:bg-info-500/20 dark:text-info-300">Default</span>}
                       </div>
                     </div>
                   </button>
