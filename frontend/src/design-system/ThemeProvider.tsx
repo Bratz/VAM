@@ -12,7 +12,7 @@ import React, {
   useMemo,
 } from 'react';
 import { ThemeContext } from './useTheme';
-import type { Breakpoint, ColorScheme, ThemeContextValue, ThemeMode } from './useTheme';
+import type { ColorScheme, ThemeContextValue, ThemeMode } from './useTheme';
 
 // ==================== Types ====================
 
@@ -22,16 +22,6 @@ interface ThemeProviderProps {
   defaultColorScheme?: ColorScheme;
   storageKey?: string;
 }
-
-// ==================== Breakpoint Values ====================
-
-const breakpointValues: Record<Breakpoint, number> = {
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536,
-};
 
 // ==================== Provider ====================
 
@@ -55,7 +45,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
   });
 
   const [systemPreference, setSystemPreference] = useState<'light' | 'dark'>('light');
-  const [breakpoint, setBreakpoint] = useState<Breakpoint>('lg');
 
   // Determine system preference
   useEffect(() => {
@@ -100,31 +89,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, [resolvedMode, colorScheme]);
 
-  // Handle breakpoint changes
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const updateBreakpoint = () => {
-      const width = window.innerWidth;
-      
-      if (width < breakpointValues.sm) {
-        setBreakpoint('sm');
-      } else if (width < breakpointValues.md) {
-        setBreakpoint('md');
-      } else if (width < breakpointValues.lg) {
-        setBreakpoint('lg');
-      } else if (width < breakpointValues.xl) {
-        setBreakpoint('xl');
-      } else {
-        setBreakpoint('2xl');
-      }
-    };
-
-    updateBreakpoint();
-    window.addEventListener('resize', updateBreakpoint);
-    return () => window.removeEventListener('resize', updateBreakpoint);
-  }, []);
-
   // Setters with localStorage persistence
   const setMode = useCallback((newMode: ThemeMode) => {
     setModeState(newMode);
@@ -144,11 +108,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     setMode(resolvedMode === 'light' ? 'dark' : 'light');
   }, [resolvedMode, setMode]);
 
-  // Responsive helpers
-  const isMobile = breakpoint === 'sm';
-  const isTablet = breakpoint === 'md';
-  const isDesktop = ['lg', 'xl', '2xl'].includes(breakpoint);
-
   const value = useMemo<ThemeContextValue>(
     () => ({
       mode,
@@ -157,10 +116,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setMode,
       setColorScheme,
       toggleMode,
-      breakpoint,
-      isMobile,
-      isTablet,
-      isDesktop,
     }),
     [
       mode,
@@ -169,10 +124,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
       setMode,
       setColorScheme,
       toggleMode,
-      breakpoint,
-      isMobile,
-      isTablet,
-      isDesktop,
     ]
   );
 

@@ -10,7 +10,6 @@
  *
  * The shape is intentionally narrow:
  *   - {@link navSections}    — the desktop sidebar's section + item structure
- *   - {@link mobileNavItems} — the 5-slot mobile bottom-nav belt
  *   - {@link pageTitles}     — page id → page H1 title
  *   - {@link sectionForPage} — helper for the header breadcrumb pill
  *   - {@link sectionTitleForPage} — helper for sidebar auto-expand
@@ -23,7 +22,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Home, MoreHorizontal, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -186,14 +185,6 @@ export const navSections: NavSection[] = [
  * Reports tab. Statements moves to the "More" overflow (still accessible
  * from the desktop sidebar Overview).
  */
-export const mobileNavItems: NavItem[] = [
-  { icon: <Home className="w-5 h-5" />, label: 'Home', href: 'dashboard' },
-  { icon: <Building2 className="w-5 h-5" />, label: 'Accounts', href: 'accounts' },
-  { icon: <Droplets className="w-5 h-5" />, label: 'Liquidity', href: 'multi-bank-liquidity' },
-  { icon: <Send className="w-5 h-5" />, label: 'Transfers', href: 'transfers' },
-  { icon: <MoreHorizontal className="w-5 h-5" />, label: 'More', href: 'more' },
-];
-
 // ----------------------------------------------------------------------------
 // Page titles — keyed by page id, value shown in the header H1
 // ----------------------------------------------------------------------------

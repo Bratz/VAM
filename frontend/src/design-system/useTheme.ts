@@ -20,13 +20,7 @@ export interface ThemeContextValue {
   setMode: (mode: ThemeMode) => void;
   setColorScheme: (scheme: ColorScheme) => void;
   toggleMode: () => void;
-  breakpoint: Breakpoint;
-  isMobile: boolean;
-  isTablet: boolean;
-  isDesktop: boolean;
 }
-
-export type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 // ==================== Context ====================
 
@@ -43,36 +37,6 @@ export function useTheme(): ThemeContextValue {
 }
 
 // ==================== Additional Hooks ====================
-
-/**
- * Hook to check if a specific breakpoint is active
- */
-export function useBreakpoint(targetBreakpoint: Breakpoint): boolean {
-  const { breakpoint } = useTheme();
-  const breakpointOrder: Breakpoint[] = ['sm', 'md', 'lg', 'xl', '2xl'];
-  const currentIndex = breakpointOrder.indexOf(breakpoint);
-  const targetIndex = breakpointOrder.indexOf(targetBreakpoint);
-  return currentIndex >= targetIndex;
-}
-
-/**
- * Hook for responsive values
- */
-export function useResponsiveValue<T>(values: Partial<Record<Breakpoint, T>>): T | undefined {
-  const { breakpoint } = useTheme();
-  const breakpointOrder: Breakpoint[] = ['sm', 'md', 'lg', 'xl', '2xl'];
-  const currentIndex = breakpointOrder.indexOf(breakpoint);
-
-  // Find the closest defined value at or below current breakpoint
-  for (let i = currentIndex; i >= 0; i--) {
-    const bp = breakpointOrder[i];
-    if (values[bp] !== undefined) {
-      return values[bp];
-    }
-  }
-
-  return undefined;
-}
 
 /**
  * Hook for media query matching

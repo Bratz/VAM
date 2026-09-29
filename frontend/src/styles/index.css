@@ -72,7 +72,12 @@
      * 14–16px sans body causes character collision and reading fatigue
      * over long sessions — treasury users live in this app all day. */
     letter-spacing: 0;
-    overflow-x: hidden;
+    /* Desktop-only application. The layout is not designed below laptop width, so the page
+       keeps its width and scrolls sideways instead of reflowing into a phone layout that no
+       longer exists. overflow-x must be auto rather than hidden for that: hidden would clip
+       the right-hand side of the app in a narrow window instead of letting the user reach it. */
+    min-width: 1024px;
+    overflow-x: auto;
     /* Atmospheric background — layered radial accents on off-white.
        Drives section theming via --section-accent (F4 + Phase 7 navigation
        config). Phase 8 Design System Unification dropped the 56px hairline
@@ -914,73 +919,6 @@
     @apply w-10 h-1 bg-neutral-300 rounded-full mx-auto my-3;
   }
 
-  /* ========== FLOATING ACTION BUTTON (Mobile) ========== */
-  .fab {
-    @apply fixed bottom-6 right-6 w-14 h-14 rounded-full;
-    @apply bg-primary-600 text-white flex items-center justify-center;
-    box-shadow: var(--shadow-xl);
-    transition: transform var(--duration-fast) var(--ease-out-back),
-                box-shadow var(--duration-fast);
-    z-index: var(--z-fixed);
-  }
-
-  .fab:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-2xl);
-  }
-
-  .fab:active {
-    transform: scale(0.95);
-  }
-
-  @media (min-width: 1024px) {
-    .fab {
-      @apply hidden;
-    }
-  }
-
-  /* ========== BOTTOM NAVIGATION (Mobile) ========== */
-  .bottom-nav {
-    @apply fixed inset-x-0 bottom-0 bg-white border-t border-neutral-200;
-    @apply flex items-center justify-around;
-    padding-bottom: var(--safe-area-inset-bottom);
-    z-index: var(--z-fixed);
-    box-shadow: 0 -4px 20px rgba(70, 73, 76, 0.08);
-  }
-
-  .bottom-nav-item {
-    @apply flex flex-col items-center justify-center py-2 px-4 min-w-[64px];
-    @apply text-neutral-500 transition-colors;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .bottom-nav-item-active {
-    @apply text-primary-600;
-  }
-
-  .bottom-nav-icon {
-    @apply w-6 h-6 mb-0.5;
-  }
-
-  .bottom-nav-label {
-    @apply text-caption font-medium;
-  }
-
-  @media (min-width: 1024px) {
-    .bottom-nav {
-      @apply hidden;
-    }
-  }
-
-  /* ========== PULL TO REFRESH INDICATOR ========== */
-  .pull-to-refresh {
-    @apply flex items-center justify-center py-4 text-neutral-500;
-    transition: transform var(--duration-normal);
-  }
-
-  .pull-to-refresh-spinner {
-    @apply w-6 h-6 animate-spin;
-  }
 }
 
 /* ============================================================================
@@ -1011,19 +949,6 @@
     background: transparent;
   }
 
-  /* ========== HORIZONTAL SCROLL AFFORDANCE ========== */
-  /* For overflow-x:auto containers (wide tables) that give no visual hint
-     there's more content off-screen below the `lg` breakpoint, where a
-     mobile browser's scrollbar is usually invisible at rest. A static
-     mask (not scroll-position-aware — no JS listener) fading both edges;
-     mask-image affects alpha only, so it works over any background color
-     without hardcoding light/dark fill colors. */
-  @media (max-width: 1023px) {
-    .scroll-fade-x {
-      mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
-      -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
-    }
-  }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: #d4d4d4;
@@ -1366,72 +1291,6 @@
 .stagger-children > *:nth-child(7) { animation-delay: 300ms; }
 .stagger-children > *:nth-child(8) { animation-delay: 350ms; }
 
-/* ============================================================================
-   RESPONSIVE DESIGN - Desktop & Mobile Optimization
-   ============================================================================ */
-
-/* Desktop-specific enhancements */
-@media (min-width: 1024px) {
-  /* Larger touch targets not needed on desktop */
-  .desktop-compact {
-    @apply py-2 px-3;
-  }
-
-  /* Enable hover effects only on desktop */
-  .desktop-hover:hover {
-    @apply bg-primary-50;
-  }
-
-  /* Wider containers on desktop */
-  .container-desktop {
-    @apply max-w-7xl mx-auto px-8;
-  }
-}
-
-/* Tablet optimization */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .tablet-grid {
-    @apply grid-cols-2;
-  }
-
-  .tablet-stack {
-    @apply flex-col;
-  }
-}
-
-/* Mobile-specific optimizations */
-@media (max-width: 767px) {
-  /* Larger touch targets on mobile */
-  .mobile-touch {
-    min-height: 44px;
-    @apply py-3;
-  }
-
-  /* Full-width buttons on mobile */
-  .mobile-full {
-    @apply w-full;
-  }
-
-  /* Stack elements on mobile */
-  .mobile-stack {
-    @apply flex-col space-x-0 space-y-3;
-  }
-
-  /* Hide less important elements on mobile */
-  .mobile-hide {
-    @apply hidden;
-  }
-
-  /* Simplified padding on mobile */
-  .mobile-compact {
-    @apply p-4;
-  }
-
-  /* Full-bleed cards on mobile */
-  .mobile-bleed {
-    @apply -mx-4 rounded-none;
-  }
-}
 
 /* Touch device optimizations */
 @media (pointer: coarse) {

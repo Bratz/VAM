@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Menu, X, ChevronDown, LogOut, User, HelpCircle, RefreshCw, Plus, Settings, Layers, ArrowLeftRight, FileText, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Bell, Search, Menu, X, ChevronDown, LogOut, User, HelpCircle, Settings, Layers, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../../utils';
 import { Avatar } from '../ui';
 import { BRAND } from '../../branding';
@@ -15,7 +15,6 @@ import { HeaderHelpPopover } from './HeaderHelpPopover';
 // 1000+ lines of JSX. Layout is now a renderer over this config.
 import {
   navSections,
-  mobileNavItems,
   pageTitles,
   ALL_SECTION_TITLES,
   sectionTitleForPage,
@@ -692,216 +691,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
   );
 };
 
-// ============================================================================
-// Mobile Bottom Navigation - Premium Touch-Optimized
-// ============================================================================
 
-interface BottomNavProps {
-  currentPath: string;
-  onNavigate: (page: string) => void;
-  onMoreClick: () => void;
-}
-
-const BottomNav: React.FC<BottomNavProps> = ({ currentPath, onNavigate, onMoreClick }) => {
-  return (
-    <nav className={cn(
-      'fixed inset-x-0 bottom-0 z-40 lg:hidden',
-      // Was missing a dark: background entirely — stayed bg-white/95 in dark
-      // mode, rendering as a bright white bar at the bottom of an otherwise
-      // dark screen, with its dark:text-neutral-400 inactive-tab labels
-      // (added below) then landing on the wrong background and going
-      // low-contrast in the other direction.
-      'bg-white/95 dark:bg-primary-900/95 backdrop-blur-xl border-t border-neutral-200/60 dark:border-primary-800/60',
-      'shadow-[0_-4px_20px_rgba(70,73,76,0.08)]',
-      'safe-bottom'
-    )}>
-      <div className="flex items-center justify-around h-16 px-2">
-        {mobileNavItems.map((item) => {
-          const isActive = item.href === 'more' ? false : currentPath === item.href;
-          const isMore = item.href === 'more';
-
-          return (
-            <button
-              key={item.href}
-              onClick={() => isMore ? onMoreClick() : onNavigate(item.href)}
-              className={cn(
-                // Mobile active state — Phase 8 post-review (2026-05-13).
-                // Now uses the same two-signal language as the desktop
-                // sidebar (Phase 6): solid colour + 2px gold rule. The
-                // earlier version layered THREE signals (button-level
-                // background pill + icon-level background pill + dot/
-                // underline) for one state, which read as noisy and
-                // didn't speak the same language as desktop. Here:
-                //   1. Text + icon shift to primary-700 / dark:neutral-50.
-                //   2. 16×2px gold underline at the bottom edge.
-                // No background pills.
-                'relative flex flex-col items-center justify-center py-1 px-3 min-w-[64px] rounded-lg',
-                'transition-colors duration-200',
-                isActive
-                  ? 'text-primary-700 dark:text-neutral-50'
-                  // Same 4.11:1-against-dark-bg fix as the user-menu role
-                  // label above, now that this bar actually renders dark in
-                  // dark mode (its own dark:bg-primary-900/95 was missing
-                  // until this pass).
-                  : 'text-neutral-500 active:bg-neutral-100 dark:text-neutral-300'
-              )}
-            >
-              <div className="p-1.5">
-                {item.icon}
-              </div>
-              <span className={cn(
-                'text-caption font-medium mt-0.5',
-                isActive && 'text-primary-700 dark:text-neutral-50'
-              )}>
-                {item.label}
-              </span>
-              {isActive && (
-                <span
-                  aria-hidden
-                  className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-accent-500 dark:bg-accent-400 rounded-full"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-};
-
-// ============================================================================
-// Mobile More Menu (Bottom Sheet)
-// ============================================================================
-
-interface MoreMenuProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentPath: string;
-  onNavigate: (page: string) => void;
-}
-
-const MoreMenu: React.FC<MoreMenuProps> = ({ isOpen, onClose, currentPath, onNavigate }) => {
-  if (!isOpen) return null;
-
-  const quickActions = [
-    { icon: <Plus className="w-5 h-5" />, label: 'New Account', action: 'create-account' },
-    { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Transfer', action: 'transfer' },
-    { icon: <FileText className="w-5 h-5" />, label: 'Statement', action: 'statement' },
-    { icon: <RefreshCw className="w-5 h-5" />, label: 'Refresh', action: 'refresh' },
-  ];
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm z-50 animate-fade-in"
-        onClick={onClose}
-      />
-      <div className={cn(
-        'fixed inset-x-0 bottom-0 z-50 bg-surface-card rounded-t-lg',
-        'shadow-[0_-10px_40px_rgba(70,73,76,0.15)]',
-        'animate-slide-in-up safe-bottom',
-        'max-h-[85vh] overflow-hidden flex flex-col'
-      )}>
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-neutral-300 rounded-full" />
-        </div>
-
-        {/* Header */}
-        <div className="px-6 py-3 border-b border-edge-subtle">
-          <h2 className="section-title">Menu</h2>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="px-4 py-4 border-b border-edge-subtle">
-          <p className="text-caption font-semibold text-neutral-400 uppercase tracking-wider px-2 mb-3">Quick Actions</p>
-          <div className="grid grid-cols-4 gap-2">
-            {quickActions.map((action) => (
-              <button
-                key={action.action}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 active:bg-neutral-100 transition-colors"
-              >
-                <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center text-primary-600 dark:bg-primary-800/40 dark:text-primary-200">
-                  {action.icon}
-                </div>
-                <span className="text-caption font-medium text-neutral-700 dark:text-neutral-200">{action.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Navigation sections - Scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
-          {navSections.slice(1).map((section, idx) => (
-            section.title && (
-              <div key={idx} className="mb-4">
-                {/* Same fix as the desktop sidebar's section headers above:
-                    neutral-400 measured 2.20:1 in light mode and 4.11:1 in
-                    dark mode against this sheet's bg-white/dark:bg-primary-900
-                    — both below the 4.5:1 minimum for 12px text. Also drops
-                    uppercase/tracking-wider to match the desktop sidebar's
-                    section headers (density pass removed it there; this
-                    mobile "More" sheet is a separate render path that got
-                    missed at the time). */}
-                <p className="text-caption font-semibold text-neutral-500 dark:text-neutral-300 px-2 mb-2">
-                  {section.title}
-                </p>
-                <div className="space-y-0.5">
-                  {section.items.map((item) => {
-                    const isActive = currentPath === item.href;
-                    return (
-                      <button
-                        key={item.href}
-                        onClick={() => { onNavigate(item.href); onClose(); }}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-3 py-3 rounded-lg',
-                          'transition-colors active:bg-neutral-100',
-                          isActive
-                            ? 'bg-primary-50 text-primary-700 dark:bg-primary-800/40 dark:text-neutral-200'
-                            : 'text-neutral-700 hover:bg-neutral-50 dark:hover:bg-primary-800/50 dark:text-neutral-200'
-                        )}
-                      >
-                        <span className={isActive ? 'text-primary-600 dark:text-primary-200' : 'text-neutral-400'}>
-                          {item.icon}
-                        </span>
-                        <span className="flex-1 text-left text-body-sm font-medium">{item.label}</span>
-                        {item.badge && (
-                          <span className={cn(
-                            'text-caption font-semibold px-2 py-0.5 rounded-full',
-                            item.badgeColor === 'warning' ? 'bg-warning-100 text-warning-700 dark:bg-warning-500/20 dark:text-warning-300' :
-                            item.badgeColor === 'error' ? 'bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-300' :
-                            'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200'
-                          )}>
-                            {item.badge}
-                          </span>
-                        )}
-                        {item.isNew && (
-                          <span className="text-caption font-bold px-1.5 py-0 leading-4 rounded-full bg-accent-100 text-accent-700 uppercase dark:bg-accent-500/20 dark:text-accent-300">
-                            New
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )
-          ))}
-        </div>
-
-        {/* Close button */}
-        <div className="p-4 border-t border-edge-subtle">
-          <button
-            onClick={onClose}
-            className="w-full h-12 bg-surface-muted text-neutral-700 rounded-lg font-medium hover:bg-neutral-200 dark:hover:bg-primary-700 transition-colors dark:text-neutral-200"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </>
-  );
-};
 
 // ============================================================================
 // Main Layout Component
@@ -915,7 +705,6 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   // Desktop icon rail. With no saved choice it starts collapsed on screens under 1440 CSS px
   // (a 1920px display at 150% scaling is 1280), where a 240px sidebar leaves too little room.
@@ -948,7 +737,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSidebarOpen(false);
-        setMoreMenuOpen(false);
       }
     };
     window.addEventListener('keydown', handleEscape);
@@ -1012,20 +800,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
         </footer>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <BottomNav
-        currentPath={currentPage}
-        onNavigate={onNavigate}
-        onMoreClick={() => setMoreMenuOpen(true)}
-      />
-
-      {/* Mobile More Menu */}
-      <MoreMenu
-        isOpen={moreMenuOpen}
-        onClose={() => setMoreMenuOpen(false)}
-        currentPath={currentPage}
-        onNavigate={onNavigate}
-      />
     </div>
   );
 };
