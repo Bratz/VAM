@@ -552,6 +552,7 @@ export const FundsCheckModal: React.FC<FundsCheckModalProps> = ({
     if (isOpen && vaId && amount > 0) {
       performCheck();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- performCheck also closes over currency and the onApproved/onRejected callback props; depending on those would restart the funds check whenever the parent re-renders.
   }, [isOpen, vaId, amount]);
 
   const performCheck = async () => {

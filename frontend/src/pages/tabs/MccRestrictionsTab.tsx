@@ -180,13 +180,14 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
   const merchantWhitelist = parseCodes(formData.merchantWhitelist);
   const countryWhitelist = parseCodes(formData.countryWhitelist);
 
-  // Update helpers
-  const updateField = <K extends keyof CreateVaRequest>(
+  // Update helpers — memoised on the stable setFormData dispatch so the
+  // useCallbacks below can depend on it without changing identity every render.
+  const updateField = useCallback(<K extends keyof CreateVaRequest>(
     field: K,
     value: CreateVaRequest[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, [setFormData]);
 
   const addToList = useCallback((
     field: 'mccWhitelist' | 'mccBlacklist' | 'merchantWhitelist' | 'countryWhitelist',
@@ -196,7 +197,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
     if (value && !current.includes(value)) {
       updateField(field, stringifyCodes([...current, value]));
     }
-  }, []);
+  }, [updateField]);
 
   const removeFromList = useCallback((
     field: 'mccWhitelist' | 'mccBlacklist' | 'merchantWhitelist' | 'countryWhitelist',
@@ -204,7 +205,7 @@ export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
     current: string[]
   ) => {
     updateField(field, stringifyCodes(current.filter(v => v !== value)));
-  }, []);
+  }, [updateField]);
 
   // Add MCC to whitelist
   const addMccWhitelist = () => {

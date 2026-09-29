@@ -303,6 +303,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
     if (corporateA && !baseCurrency) {
       setBaseCurrency(corporateA.baseCurrency);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefills name and currency once per corporate selection; depending on the values this effect writes would re-run it on every keystroke and undo the user's own edits.
   }, [corporateA, corporateB]);
 
   // Filter corporates

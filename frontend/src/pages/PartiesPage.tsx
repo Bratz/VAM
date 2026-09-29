@@ -2189,6 +2189,7 @@ const PartiesPage: React.FC = () => {
         showToast('Failed to load corporates', 'error');
       })
       .finally(() => setCorporatesLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fetch; selectedCorporateId is read once as an "already chosen?" guard and written by this effect, so depending on it would refetch the corporate list on every switch.
   }, []);
 
   // Load legal entities when corporate changes - FIX: Use extractArray helper

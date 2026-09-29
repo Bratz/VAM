@@ -558,6 +558,7 @@ const VibanManagementPage: React.FC = () => {
     }
   }, [checkConnection, selectedProgram, selectedPool, statusFilter, selectedCorporate]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load on mount only; fetchData's identity changes with every filter, and the effect below already owns refetching on filter changes.
   useEffect(() => { fetchData(); }, []);
 
   // Refetch when filters change
@@ -565,6 +566,7 @@ const VibanManagementPage: React.FC = () => {
     if (isConnected && !loading) {
       fetchData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- filters only: `loading` is set by fetchData itself so depending on it would loop, and fetchData's identity already tracks these same filters.
   }, [selectedProgram, selectedPool, statusFilter, selectedCorporate]);
 
   // Toolbar actions live in the Layout header, not in the page body.
@@ -599,6 +601,7 @@ const VibanManagementPage: React.FC = () => {
         setSelectedProgram(null);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the corporate changes; `programs` is a fresh array on every fetch and `selectedProgram` is what this effect clears, so either would re-run it spuriously.
   }, [selectedCorporate]);
 
   // ============================================================================

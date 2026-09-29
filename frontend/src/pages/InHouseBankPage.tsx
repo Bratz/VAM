@@ -493,6 +493,30 @@ const InHouseBankPage: React.FC = () => {
     loadCorporatesAndPrograms();
   }, []);
 
+  const loadData = useCallback(async () => {
+    if (!selectedCorporateId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [entitiesRes, currentAccountsRes, ratesRes] = await Promise.all([
+        ihbUnifiedApi.getEntitiesByCorporate(selectedCorporateId),
+        ihbUnifiedApi.getCurrentAccountsByCorporate(selectedCorporateId).catch(() => ({ data: [] })),
+        ihbUnifiedApi.getTreasuryRates(selectedCorporateId).catch(() => null),
+      ]);
+
+      setEntities(entitiesRes?.data || []);
+      setCurrentAccounts(currentAccountsRes?.data || []);
+      setTreasuryRates(ratesRes?.data || null);
+    } catch (err) {
+      console.error('Failed to load IHB data:', err);
+      setError('Failed to load IHB data. The unified API may not be deployed yet.');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCorporateId]);
+
   // Load data when corporate changes
   useEffect(() => {
     if (selectedCorporateId) {
@@ -503,7 +527,7 @@ const InHouseBankPage: React.FC = () => {
       setCurrentAccounts([]);
       setTreasuryRates(null);
     }
-  }, [selectedCorporateId]);
+  }, [selectedCorporateId, loadData]);
 
   const loadCorporatesAndPrograms = async () => {
     setLoadingSelectors(true);
@@ -539,30 +563,6 @@ const InHouseBankPage: React.FC = () => {
       setLoadingSelectors(false);
     }
   };
-
-  const loadData = useCallback(async () => {
-    if (!selectedCorporateId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const [entitiesRes, currentAccountsRes, ratesRes] = await Promise.all([
-        ihbUnifiedApi.getEntitiesByCorporate(selectedCorporateId),
-        ihbUnifiedApi.getCurrentAccountsByCorporate(selectedCorporateId).catch(() => ({ data: [] })),
-        ihbUnifiedApi.getTreasuryRates(selectedCorporateId).catch(() => null),
-      ]);
-
-      setEntities(entitiesRes?.data || []);
-      setCurrentAccounts(currentAccountsRes?.data || []);
-      setTreasuryRates(ratesRes?.data || null);
-    } catch (err) {
-      console.error('Failed to load IHB data:', err);
-      setError('Failed to load IHB data. The unified API may not be deployed yet.');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedCorporateId]);
 
   // IHB toolbar
   usePageHeaderActions(

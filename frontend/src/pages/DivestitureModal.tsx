@@ -148,6 +148,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
 
   useEffect(() => {
     if (selectedAggregation && !newCorporateName) setNewCorporateName(`${selectedAggregation.name} (Divested)`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefills the name once per aggregation selection; depending on newCorporateName would re-run on every keystroke and re-fill the field the moment the user clears it.
   }, [selectedAggregation]);
 
   const handleToggle = (id: string) => {

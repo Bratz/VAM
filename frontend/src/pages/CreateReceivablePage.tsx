@@ -265,6 +265,7 @@ const LineItemRow: React.FC<{
 
   useEffect(() => {
     onChange(index, 'lineTotal', lineTotal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires only when the computed components change; onChange (updateLineItem) is recreated every parent render, so depending on it would write the line total on every render and loop. index/lineTotal are read from the current render at fire time.
   }, [subtotal, discount, taxAmount]);
 
   return (
@@ -1406,6 +1407,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount.id }));
       setSelectedAccount(defaultAccount);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill only; formData.collectionAccountId is the "user hasn't picked yet" guard and is written here, so depending on it would re-apply the default the moment the user clears the field.
   }, [formData.currency, accounts]);
 
   // Filter customers

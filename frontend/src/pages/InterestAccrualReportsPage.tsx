@@ -216,19 +216,6 @@ const InterestAccrualReportsPage: React.FC = () => {
   const [selectedAccrual, setSelectedAccrual] = useState<InterestAccrual | null>(null);
 
   useEffect(() => { loadCorporates(); }, []);
-  useEffect(() => { if (selectedCorporateId) loadData(); }, [selectedCorporateId, filterType, filterStatus, dateFrom, dateTo]);
-
-  const loadCorporates = async () => {
-    try {
-      const response = await corporatesApi.getAll();
-      const data = response?.data || response;
-      const corporateList = Array.isArray(data) ? data : [];
-      setCorporates(corporateList);
-      if (corporateList.length > 0) setSelectedCorporateId(corporateList[0].id);
-    } catch (err) {
-      setError('Failed to load corporates');
-    }
-  };
 
   const loadData = useCallback(async () => {
     if (!selectedCorporateId) return;
@@ -259,6 +246,20 @@ const InterestAccrualReportsPage: React.FC = () => {
       setLoading(false);
     }
   }, [selectedCorporateId, filterType, filterStatus, dateFrom, dateTo]);
+
+  useEffect(() => { if (selectedCorporateId) loadData(); }, [selectedCorporateId, loadData]);
+
+  const loadCorporates = async () => {
+    try {
+      const response = await corporatesApi.getAll();
+      const data = response?.data || response;
+      const corporateList = Array.isArray(data) ? data : [];
+      setCorporates(corporateList);
+      if (corporateList.length > 0) setSelectedCorporateId(corporateList[0].id);
+    } catch (err) {
+      setError('Failed to load corporates');
+    }
+  };
 
   const handleRunAccrual = async () => {
     setRunning(true);

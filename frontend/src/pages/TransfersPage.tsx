@@ -354,6 +354,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     // Debounce the API call
     const timeoutId = setTimeout(fetchFeePreview, 500);
     return () => clearTimeout(timeoutId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the account ids on purpose: the objects get new identities on every account-list refresh, which would re-fire this debounced preview call without the quote having changed.
   }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName]);
 
   // Get transfer type display info
@@ -937,43 +938,43 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const loadDetails = async () => {
+      if (!transaction?.id) return;
+      setLoading(true);
+      try {
+        // Load transaction detail (includes relatedTransactions for accounting entries view)
+        const detailRes = await transactionsApi.getById(transaction.id);
+        if (detailRes.data) {
+          setTransactionDetail(detailRes.data);
+        }
+
+        // Load ISO message if applicable (DEBIT or POBO_DEBIT)
+        // Note: This endpoint may not exist yet - the XML is generated on-demand
+        if (transaction.movementType === 'DEBIT' || transaction.movementType === 'POBO_DEBIT') {
+          try {
+            const isoRes = await transactionsApi.getIsoMessage(transaction.id);
+            if (isoRes.data) {
+              setIsoMessage(isoRes.data);
+            }
+          } catch (err) {
+            // ISO message endpoint may not exist yet - show placeholder
+            console.log('ISO message not available');
+            setIsoMessage(null);
+          }
+        } else {
+          setIsoMessage(null);
+        }
+      } catch (error) {
+        console.error('Failed to load transaction details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isOpen && transaction?.id) {
       loadDetails();
     }
-  }, [isOpen, transaction?.id]);
-
-  const loadDetails = async () => {
-    if (!transaction?.id) return;
-    setLoading(true);
-    try {
-      // Load transaction detail (includes relatedTransactions for accounting entries view)
-      const detailRes = await transactionsApi.getById(transaction.id);
-      if (detailRes.data) {
-        setTransactionDetail(detailRes.data);
-      }
-
-      // Load ISO message if applicable (DEBIT or POBO_DEBIT)
-      // Note: This endpoint may not exist yet - the XML is generated on-demand
-      if (transaction.movementType === 'DEBIT' || transaction.movementType === 'POBO_DEBIT') {
-        try {
-          const isoRes = await transactionsApi.getIsoMessage(transaction.id);
-          if (isoRes.data) {
-            setIsoMessage(isoRes.data);
-          }
-        } catch (err) {
-          // ISO message endpoint may not exist yet - show placeholder
-          console.log('ISO message not available');
-          setIsoMessage(null);
-        }
-      } else {
-        setIsoMessage(null);
-      }
-    } catch (error) {
-      console.error('Failed to load transaction details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, transaction?.id, transaction?.movementType]);
 
   const copyXmlToClipboard = () => {
     if (isoMessage?.xml) {
@@ -1796,6 +1797,19 @@ export default function TransfersPage() {
 
   // Load legal entities when corporate changes
   useEffect(() => {
+    const loadLegalEntities = async () => {
+      if (!selectedCorporateId) return;
+      try {
+        const response = await legalEntityApi.getByCorporate(selectedCorporateId);
+        if (response.data) {
+          setLegalEntities(Array.isArray(response.data) ? response.data : []);
+        }
+      } catch (error) {
+        console.error('Failed to load legal entities:', error);
+        setLegalEntities([]);
+      }
+    };
+
     if (selectedCorporateId) {
       loadLegalEntities();
     } else {
@@ -1803,19 +1817,6 @@ export default function TransfersPage() {
       setSelectedLegalEntityId('');
     }
   }, [selectedCorporateId]);
-
-  const loadLegalEntities = async () => {
-    if (!selectedCorporateId) return;
-    try {
-      const response = await legalEntityApi.getByCorporate(selectedCorporateId);
-      if (response.data) {
-        setLegalEntities(Array.isArray(response.data) ? response.data : []);
-      }
-    } catch (error) {
-      console.error('Failed to load legal entities:', error);
-      setLegalEntities([]);
-    }
-  };
 
   // Reset POBO flag when source account changes to an entity that doesn't support POBO
   // (i.e., Treasury Center or non-IHB participant)
@@ -1833,10 +1834,49 @@ export default function TransfersPage() {
     if (!isIhbParticipant) {
       setFormData(prev => ({ ...prev, isPobo: false, behalfOfEntity: '', behalfOfVaId: '' }));
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reacts to account/entity changes only; formData.isPobo is what this effect clears, and the toggle is already hidden for non-IHB entities (shouldShowPoboToggle), so re-running on it would only risk wiping the behalf-of fields mid-entry.
   }, [formData.fromVaId, legalEntities, allAccounts]);
 
   // Load beneficiaries when corporate changes (for outward payments)
   useEffect(() => {
+    const loadBeneficiaries = async () => {
+      if (!selectedCorporateId) return;
+      try {
+        const response = await partiesApi.getAll({
+          corporateId: selectedCorporateId,
+          role: 'VENDOR',
+          pageSize: 100
+        });
+
+        // Handle different response structures:
+        // Backend returns PartyListResponse directly (not wrapped in ApiResponse)
+        const partiesList = response?.parties || response?.data?.parties || [];
+
+        if (partiesList.length > 0) {
+          // Get bank accounts for each party
+          const partiesWithAccounts: Beneficiary[] = [];
+          for (const party of partiesList) {
+            try {
+              const detailRes = await partiesApi.getDetail(party.id);
+              const bankAccounts = detailRes?.bankAccounts || detailRes?.data?.bankAccounts || [];
+              partiesWithAccounts.push({
+                party,
+                bankAccounts
+              });
+            } catch (err) {
+              partiesWithAccounts.push({ party, bankAccounts: [] });
+            }
+          }
+          setBeneficiaries(partiesWithAccounts);
+        } else {
+          setBeneficiaries([]);
+        }
+      } catch (error) {
+        console.error('Failed to load beneficiaries:', error);
+        setBeneficiaries([]);
+      }
+    };
+
     if (selectedCorporateId && transferType === 'outward') {
       loadBeneficiaries();
     }
@@ -1844,85 +1884,46 @@ export default function TransfersPage() {
 
   // Load payers when corporate changes (for inward payments)
   useEffect(() => {
+    const loadPayers = async () => {
+      if (!selectedCorporateId) return;
+      try {
+        // For inward payments, payers are typically CUSTOMER role parties
+        const response = await partiesApi.getAll({
+          corporateId: selectedCorporateId,
+          role: 'CUSTOMER',
+          pageSize: 100
+        });
+
+        const partiesList = response?.parties || response?.data?.parties || [];
+
+        if (partiesList.length > 0) {
+          const partiesWithAccounts: Beneficiary[] = [];
+          for (const party of partiesList) {
+            try {
+              const detailRes = await partiesApi.getDetail(party.id);
+              const bankAccounts = detailRes?.bankAccounts || detailRes?.data?.bankAccounts || [];
+              partiesWithAccounts.push({
+                party,
+                bankAccounts
+              });
+            } catch (err) {
+              partiesWithAccounts.push({ party, bankAccounts: [] });
+            }
+          }
+          setPayers(partiesWithAccounts);
+        } else {
+          setPayers([]);
+        }
+      } catch (error) {
+        console.error('Failed to load payers:', error);
+        setPayers([]);
+      }
+    };
+
     if (selectedCorporateId && transferType === 'inward') {
       loadPayers();
     }
   }, [selectedCorporateId, transferType]);
-
-  const loadBeneficiaries = async () => {
-    if (!selectedCorporateId) return;
-    try {
-      const response = await partiesApi.getAll({
-        corporateId: selectedCorporateId,
-        role: 'VENDOR',
-        pageSize: 100
-      });
-
-      // Handle different response structures:
-      // Backend returns PartyListResponse directly (not wrapped in ApiResponse)
-      const partiesList = response?.parties || response?.data?.parties || [];
-
-      if (partiesList.length > 0) {
-        // Get bank accounts for each party
-        const partiesWithAccounts: Beneficiary[] = [];
-        for (const party of partiesList) {
-          try {
-            const detailRes = await partiesApi.getDetail(party.id);
-            const bankAccounts = detailRes?.bankAccounts || detailRes?.data?.bankAccounts || [];
-            partiesWithAccounts.push({
-              party,
-              bankAccounts
-            });
-          } catch (err) {
-            partiesWithAccounts.push({ party, bankAccounts: [] });
-          }
-        }
-        setBeneficiaries(partiesWithAccounts);
-      } else {
-        setBeneficiaries([]);
-      }
-    } catch (error) {
-      console.error('Failed to load beneficiaries:', error);
-      setBeneficiaries([]);
-    }
-  };
-
-  // Load payers (CUSTOMER role parties for inward payments)
-  const loadPayers = async () => {
-    if (!selectedCorporateId) return;
-    try {
-      // For inward payments, payers are typically CUSTOMER role parties
-      const response = await partiesApi.getAll({
-        corporateId: selectedCorporateId,
-        role: 'CUSTOMER',
-        pageSize: 100
-      });
-
-      const partiesList = response?.parties || response?.data?.parties || [];
-
-      if (partiesList.length > 0) {
-        const partiesWithAccounts: Beneficiary[] = [];
-        for (const party of partiesList) {
-          try {
-            const detailRes = await partiesApi.getDetail(party.id);
-            const bankAccounts = detailRes?.bankAccounts || detailRes?.data?.bankAccounts || [];
-            partiesWithAccounts.push({
-              party,
-              bankAccounts
-            });
-          } catch (err) {
-            partiesWithAccounts.push({ party, bankAccounts: [] });
-          }
-        }
-        setPayers(partiesWithAccounts);
-      } else {
-        setPayers([]);
-      }
-    } catch (error) {
-      console.error('Failed to load payers:', error);
-      setPayers([]);
-    }
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);

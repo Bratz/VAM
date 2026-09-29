@@ -69,6 +69,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     loadCorporates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fetch; currentCorporateId is read once as an "already chosen?" guard and written by this effect, so depending on it would refetch the corporate list on every switch.
   }, []);
 
   // Load entities when corporate changes
@@ -109,6 +110,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     loadEntities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch on corporate change only; currentEntityId is read as an "is the selection still valid?" guard and written here, so depending on it would refetch the entity list every time the user switches entity.
   }, [currentCorporateId]);
 
   const switchCorporate = useCallback((corporateId: string) => {

@@ -361,6 +361,7 @@ const CreateAggregationModal: React.FC<CreateAggregationModalProps> = ({
       const autoCode = formData.name.toUpperCase().replace(/[^A-Z0-9\s]/g, '').split(' ').map(w => w.substring(0, 3)).join('-').substring(0, 15);
       setFormData(prev => ({ ...prev, code: `AGG-${autoCode}` }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- derives a code from the name only while the code is still empty; formData.code is both the guard and this effect's write, so depending on it would regenerate the code the instant the user clears or edits it.
   }, [formData.name]);
 
   const handleSubmit = async () => {
@@ -1819,6 +1820,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
     fetchBreakdown();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the breakdown depends only on which node is selected and its category; node is a fresh tree object on every hierarchy refresh and its other fields (name, level) are used for logging, so depending on the whole object would refetch on every unrelated tree change.
   }, [node?.id, node?.accountCategory]);
 
   if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-neutral-400" /></div>;

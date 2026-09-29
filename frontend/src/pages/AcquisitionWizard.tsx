@@ -376,6 +376,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
     if (selectedTarget && !newAggregationName) {
       setNewAggregationName(`Acquired - ${selectedTarget.name}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- prefills the name once per target selection; depending on newAggregationName would re-run on every keystroke and re-fill the field the moment the user clears it.
   }, [selectedTarget]);
 
   // Validate when moving to step 3
@@ -383,6 +384,7 @@ export const AcquisitionWizard: React.FC<AcquisitionWizardProps> = ({
     if (step === 3 && selectedTarget && !validation) {
       validateAcquisition();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- validates once on entering step 3; validateAcquisition is re-created every render (adding it would loop) and validation is written by this effect.
   }, [step, selectedTarget]);
 
   const validateAcquisition = async () => {

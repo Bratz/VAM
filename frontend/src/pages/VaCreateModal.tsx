@@ -602,6 +602,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
       setFilteredPrograms([]);
       setSelectedProgramId('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reloads the program list on corporate change only; selectedProgramId is read to drop a now-invalid selection and is written here, so depending on it would refetch the list every time the user picks a program.
   }, [selectedCorporateId]);
 
   // Load hierarchy level configs when program changes

@@ -119,14 +119,15 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
   const { navigate } = useNavigation();
   // The program's bank accounts (their shadows): home bank and any others it runs on.
   const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; physicalAccountNumber?: string; bankName?: string; currencyCode: string; bankBalance?: number; linkedPhysicalAccountId?: string }>>([]);
+  const programId = program?.id;
   useEffect(() => {
     setBankAccounts([]);
-    if (!program) return;
-    fetch(`/api/v1/treasury/shadow-accounts/program/${program.id}`)
+    if (!programId) return;
+    fetch(`/api/v1/treasury/shadow-accounts/program/${programId}`)
       .then(res => res.json())
       .then(data => { if (data.success) setBankAccounts(data.data || []); })
       .catch(console.error);
-  }, [program?.id]);
+  }, [programId]);
 
   if (!program) return null;
 

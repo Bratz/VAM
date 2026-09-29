@@ -249,6 +249,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
     if (payablesList.length > 0 && payingEntityId && isOpen) {
       loadPreview();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPreview closes over payablesList/entitiesList, which are re-derived on every render; depending on it would refetch the preview on every render.
   }, [payablesList.length, payingEntityId, isOpen]);
 
   const loadPreview = async () => {

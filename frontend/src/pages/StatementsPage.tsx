@@ -1205,17 +1205,7 @@ const StatementsPage: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  // Fetch hierarchy when account is selected
-  useEffect(() => {
-    if (selectedAccount && isAggregationAccount) {
-      fetchHierarchy();
-    } else {
-      setHierarchy(null);
-      setAggregatedBalance(null);
-    }
-  }, [selectedAccount, isAggregationAccount]);
-
-  const fetchHierarchy = async () => {
+  const fetchHierarchy = useCallback(async () => {
     if (!selectedAccount) return;
     try {
       const [hierRes, balRes] = await Promise.all([
@@ -1227,7 +1217,17 @@ const StatementsPage: React.FC = () => {
     } catch (err) {
       console.error('Failed to fetch hierarchy:', err);
     }
-  };
+  }, [selectedAccount]);
+
+  // Fetch hierarchy when account is selected
+  useEffect(() => {
+    if (selectedAccount && isAggregationAccount) {
+      fetchHierarchy();
+    } else {
+      setHierarchy(null);
+      setAggregatedBalance(null);
+    }
+  }, [selectedAccount, isAggregationAccount, fetchHierarchy]);
 
   // Fetch statement based on mode
   const fetchStatement = async () => {

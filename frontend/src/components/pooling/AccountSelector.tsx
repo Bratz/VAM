@@ -29,6 +29,7 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
 
   // Memoize excludeAccountIds to prevent infinite loops from array reference changes
   const excludeIdsKey = excludeAccountIds.join(',');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the joined ids on purpose: callers pass a fresh array literal each render, so depending on excludeAccountIds itself would break the memo it exists to provide.
   const stableExcludeIds = useMemo(() => excludeAccountIds, [excludeIdsKey]);
 
   // Track fetch dependencies to prevent duplicate/infinite calls

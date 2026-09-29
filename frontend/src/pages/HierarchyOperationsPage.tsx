@@ -591,7 +591,7 @@ const HierarchyOperationsPage: React.FC = () => {
     } finally { 
       setHierarchyLoading(false); 
     }
-  }, [selectedCorporateId, selectedProgramId]);
+  }, [selectedCorporateId]);
 
   useEffect(() => { 
     loadCorporateData(); 

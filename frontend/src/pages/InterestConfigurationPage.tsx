@@ -401,14 +401,49 @@ const InterestConfigurationPage: React.FC = () => {
       setPrograms([]);
       setSelectedProgramId('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadPrograms also reads selectedProgramId (only to auto-select a default); depending on it would refetch the program list every time the user picks a program.
   }, [selectedCorporateId]);
+
+  const loadData = useCallback(async () => {
+    if (!selectedCorporateId) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const [configsRes, statsRes] = await Promise.all([
+        interestConfigurationApi.getActiveByCorporate(selectedCorporateId),
+        interestConfigurationApi.getStatistics(selectedCorporateId),
+      ]);
+      
+      const configsData = configsRes?.data || configsRes || [];
+      const statsData = statsRes?.data || statsRes || null;
+      
+      // Filter by program if selected
+      let filteredConfigs = Array.isArray(configsData) ? configsData : [];
+      if (selectedProgramId) {
+        filteredConfigs = filteredConfigs.filter(c => 
+          c.targetId === selectedProgramId || c.targetType === 'CORPORATE'
+        );
+      }
+      
+      setConfigs(filteredConfigs);
+      setStatistics(statsData);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError('Failed to load interest configurations.');
+      setConfigs([]);
+      setStatistics(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCorporateId, selectedProgramId]);
 
   // Load configs when corporate/program changes
   useEffect(() => {
     if (selectedCorporateId) {
       loadData();
     }
-  }, [selectedCorporateId, selectedProgramId]);
+  }, [selectedCorporateId, loadData]);
 
   const loadCorporates = async () => {
     try {
@@ -472,40 +507,6 @@ const InterestConfigurationPage: React.FC = () => {
       setLoadingPrograms(false);
     }
   };
-
-  const loadData = useCallback(async () => {
-    if (!selectedCorporateId) return;
-    
-    setLoading(true);
-    setError(null);
-    try {
-      const [configsRes, statsRes] = await Promise.all([
-        interestConfigurationApi.getActiveByCorporate(selectedCorporateId),
-        interestConfigurationApi.getStatistics(selectedCorporateId),
-      ]);
-      
-      const configsData = configsRes?.data || configsRes || [];
-      const statsData = statsRes?.data || statsRes || null;
-      
-      // Filter by program if selected
-      let filteredConfigs = Array.isArray(configsData) ? configsData : [];
-      if (selectedProgramId) {
-        filteredConfigs = filteredConfigs.filter(c => 
-          c.targetId === selectedProgramId || c.targetType === 'CORPORATE'
-        );
-      }
-      
-      setConfigs(filteredConfigs);
-      setStatistics(statsData);
-    } catch (err) {
-      console.error('Failed to load data:', err);
-      setError('Failed to load interest configurations.');
-      setConfigs([]);
-      setStatistics(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedCorporateId, selectedProgramId]);
 
   // Filter configs
   const filteredConfigs = configs.filter(config => {

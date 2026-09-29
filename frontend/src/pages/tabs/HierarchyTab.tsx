@@ -202,13 +202,14 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Update field helper
-  const updateField = <K extends keyof CreateVaRequest>(
+  // Update field helper — memoised on the stable setFormData dispatch so the
+  // useCallbacks below can depend on it without changing identity every render.
+  const updateField = useCallback(<K extends keyof CreateVaRequest>(
     field: K,
     value: CreateVaRequest[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, [setFormData]);
 
   // Toggle expand/collapse
   const toggleExpand = useCallback((id: string) => {
@@ -246,7 +247,7 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
   // Select node handler
   const handleSelectNode = useCallback((node: HierarchyNode) => {
     updateField('hierarchyNodeId', node.id);
-  }, []);
+  }, [updateField]);
 
   // Find selected node info
   const findNode = (nodes: HierarchyNode[], id: string): HierarchyNode | null => {

@@ -968,74 +968,7 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (isOpen && exception) {
-      loadSuggestedTargets();
-      setSelectedVa(null);
-      setNotes('');
-      setSearchQuery('');
-      setHierarchySearch('');
-      setError(null);
-      setActiveTab('suggested');
-      setValidationErrors([]);
-      setValidationWarnings([]);
-      setShowConfirmation(false);
-    }
-  }, [isOpen, exception]);
-
-  // Debounced search for Search tab
-  useEffect(() => {
-    if (activeTab !== 'search' || searchQuery.length < 2) {
-      if (searchQuery.length < 2) setSearchResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        setSearching(true);
-        const res = await allocationApi.searchTargetVas(searchQuery, exception?.programId);
-        if (res.success) {
-          setSearchResults(res.data || []);
-        }
-      } catch (err) {
-        console.error('Search failed:', err);
-      } finally {
-        setSearching(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, exception?.programId, activeTab]);
-
-  // Load hierarchy when Browse tab is selected (Task 3.3.1)
-  useEffect(() => {
-    if (activeTab === 'hierarchy' && !hierarchy && exception?.programId) {
-      loadHierarchy();
-    }
-  }, [activeTab, hierarchy, exception?.programId]);
-
-  // Task 3.3.2: Validate when target VA changes
-  useEffect(() => {
-    if (selectedVa && exception) {
-      validateSelection();
-    } else {
-      setValidationErrors([]);
-      setValidationWarnings([]);
-    }
-  }, [selectedVa, exception]);
-
-  // Toast helper
-  const addToast = useCallback((type: ToastType, title: string, message: string, duration?: number) => {
-    const id = `toast-${Date.now()}`;
-    setToasts(prev => [...prev, { id, type, title, message, duration }]);
-  }, []);
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  const loadSuggestedTargets = async () => {
+  const loadSuggestedTargets = useCallback(async () => {
     if (!exception) return;
     try {
       setSearching(true);
@@ -1048,10 +981,10 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
     } finally {
       setSearching(false);
     }
-  };
+  }, [exception]);
 
   // Load hierarchy tree (Task 3.3.1)
-  const loadHierarchy = async () => {
+  const loadHierarchy = useCallback(async () => {
     if (!exception?.programId) return;
     
     try {
@@ -1069,10 +1002,10 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
     } finally {
       setHierarchyLoading(false);
     }
-  };
+  }, [exception?.programId, exception?.currencyCode]);
 
   // Task 3.3.2: Validate selection
-  const validateSelection = async () => {
+  const validateSelection = useCallback(async () => {
     if (!exception || !selectedVa) return;
 
     setIsValidating(true);
@@ -1146,7 +1079,74 @@ export const AllocationModal: React.FC<AllocationModalProps> = ({
       setValidationWarnings(warnings);
       setIsValidating(false);
     }
-  };
+  }, [exception, selectedVa]);
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen && exception) {
+      loadSuggestedTargets();
+      setSelectedVa(null);
+      setNotes('');
+      setSearchQuery('');
+      setHierarchySearch('');
+      setError(null);
+      setActiveTab('suggested');
+      setValidationErrors([]);
+      setValidationWarnings([]);
+      setShowConfirmation(false);
+    }
+  }, [isOpen, exception, loadSuggestedTargets]);
+
+  // Debounced search for Search tab
+  useEffect(() => {
+    if (activeTab !== 'search' || searchQuery.length < 2) {
+      if (searchQuery.length < 2) setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const res = await allocationApi.searchTargetVas(searchQuery, exception?.programId);
+        if (res.success) {
+          setSearchResults(res.data || []);
+        }
+      } catch (err) {
+        console.error('Search failed:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, exception?.programId, activeTab]);
+
+  // Load hierarchy when Browse tab is selected (Task 3.3.1)
+  useEffect(() => {
+    if (activeTab === 'hierarchy' && !hierarchy && exception?.programId) {
+      loadHierarchy();
+    }
+  }, [activeTab, hierarchy, exception?.programId, loadHierarchy]);
+
+  // Task 3.3.2: Validate when target VA changes
+  useEffect(() => {
+    if (selectedVa && exception) {
+      validateSelection();
+    } else {
+      setValidationErrors([]);
+      setValidationWarnings([]);
+    }
+  }, [selectedVa, exception, validateSelection]);
+
+  // Toast helper
+  const addToast = useCallback((type: ToastType, title: string, message: string, duration?: number) => {
+    const id = `toast-${Date.now()}`;
+    setToasts(prev => [...prev, { id, type, title, message, duration }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedIds);
