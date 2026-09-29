@@ -1151,7 +1151,15 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatusIconBadge tone="primary" icon={BarChart3} />
                   <h3 className="section-title">Corporate Position Summary</h3>
                 </div>
-                <StatStrip className="mb-6">
+                {/* Two columns, not the auto-derived three. This strip sits in a
+                    col-span-2 panel, not across the page: 568px wide, so three
+                    columns give each tile 179px -- 141px of content once the
+                    tile's own padding is off. A compacted currency figure runs
+                    to about 156px ("AED -396.00"), so the three-up version
+                    clipped. Note which values clip: TileAmount abbreviates the
+                    big ones ("AED 1.2B" fits easily), so it was the SMALL
+                    figures that got cut. Three across would need ~613px. */}
+                <StatStrip columns={2} className="mb-6">
                   <StatTile tone="danger" label="Total Payables" value={<TileAmount value={positionSummary.totalOutstandingPayables} currency={positionSummary.currency} />} />
                   <StatTile tone="success" label="Total Receivables" value={<TileAmount value={positionSummary.totalOutstandingReceivables} currency={positionSummary.currency} />} />
                   <StatTile tone="primary" label="Net Position" value={<TileAmount value={positionSummary.netPosition} currency={positionSummary.currency} />} />
