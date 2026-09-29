@@ -52,6 +52,16 @@
 @layer base {
   html {
     @apply antialiased;
+    /* Global density knob. Every size in the type scale and all of Tailwind's
+     * spacing are rem-based, so this one declaration scales text, padding and
+     * gaps together -- 15/16 = 93.75%, about one notch down from the browser
+     * default. It exists because the desks here run Windows at 150% scaling
+     * (a 1920 display reports 1280 CSS px), where the 16px-rooted scale reads
+     * oversized and people were zooming the browser out to compensate.
+     * Arbitrary px values (w-[200px] table columns, h-[500px] charts) do NOT
+     * scale with this -- prefer rem/Tailwind spacing over px-in-brackets so
+     * new work stays on the knob. */
+    font-size: 15px;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
