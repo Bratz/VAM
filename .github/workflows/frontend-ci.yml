@@ -65,6 +65,19 @@ jobs:
         id: lint
         continue-on-error: true
 
+      - name: Model checks (captured, non-blocking)
+        # scenarioModel's removeShadow cascade: deleting a shadow has to take
+        # the rules and pools that referenced it, or the scenario is left
+        # holding dangling localIds. That breaks silently — the tree still
+        # renders, the numbers are just wrong — so it is worth a gate. Plain
+        # node + assert over esbuild; no test runner in this project.
+        run: |
+          set +e
+          npm run model:check > model-check.log 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        id: modelcheck
+        continue-on-error: true
+
       - name: Upload results for this commit
         uses: actions/upload-artifact@v5
         with:
@@ -79,12 +92,13 @@ jobs:
           path: |
             frontend/tsc.log
             frontend/eslint.json
+            frontend/model-check.log
           retention-days: 14
 
-      - name: Fail the job if either check actually failed
+      - name: Fail the job if any check actually failed
         run: |
-          if [ "${{ steps.typecheck.outputs.exit_code }}" != "0" ] || [ "${{ steps.lint.outputs.exit_code }}" != "0" ]; then
-            echo "type-check or lint failed — see tsc.log / eslint.json artifact"
+          if [ "${{ steps.typecheck.outputs.exit_code }}" != "0" ]             || [ "${{ steps.lint.outputs.exit_code }}" != "0" ]             || [ "${{ steps.modelcheck.outputs.exit_code }}" != "0" ]; then
+            echo "type-check, lint or model check failed — see tsc.log / eslint.json / model-check.log artifact"
             exit 1
           fi
 

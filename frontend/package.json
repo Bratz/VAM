@@ -12,7 +12,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "storybook:check": "node scripts/storybook-check.mjs"
+    "storybook:check": "node scripts/storybook-check.mjs",
+    "model:check": "node scripts/scenario-model-check.mjs"
   },
   "dependencies": {
     "@fontsource/geist": "^5.3.0",
