@@ -17,6 +17,9 @@ export interface ShadowVaNodeProps {
   rulesFrom: SimulatedRule[];
   /** localId → proposed VA name, for the rule edge's target. */
   resolveName: (localId: string) => string;
+  /** Forwarded to each rule edge; omit both for a read-only tree. */
+  onEditRule?: (rule: SimulatedRule) => void;
+  onDeleteRule?: (rule: SimulatedRule) => void;
   className?: string;
 }
 
@@ -24,6 +27,8 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
   shadow,
   rulesFrom,
   resolveName,
+  onEditRule,
+  onDeleteRule,
   className,
 }) => {
   const isChild = shadow.role === 'CHILD';
@@ -74,6 +79,8 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
                   key={r.localId}
                   rule={r}
                   targetName={resolveName(r.targetLocalId)}
+                  onEdit={onEditRule}
+                  onDelete={onDeleteRule}
                 />
               ))}
             </div>

@@ -106,6 +106,8 @@ const SimulatorPage: React.FC = () => {
     useState<SimulatorPhysicalAccount | null>(null);
   const [shadowDrawerOpen, setShadowDrawerOpen] = useState(false);
   const [ruleDrawerOpen, setRuleDrawerOpen] = useState(false);
+  /** Non-null while the rule drawer is editing rather than adding. */
+  const [editingRule, setEditingRule] = useState<SimulatedRule | null>(null);
   const [poolDrawerOpen, setPoolDrawerOpen] = useState(false);
 
   const [loadingCorporates, setLoadingCorporates] = useState(false);
@@ -886,10 +888,31 @@ const SimulatorPage: React.FC = () => {
     toast.success(`Added "${shadow.proposedVaName}"`);
   }, []);
 
-  const handleCreateRule = useCallback((rule: SimulatedRule) => {
-    setDraftRules((prev) => [...prev, rule]);
+  // One handler for both: the drawer submits under the original localId when
+  // editing, so an existing rule is replaced in place and a new one appended.
+  const handleSubmitRule = useCallback((rule: SimulatedRule) => {
+    let replaced = false;
+    setDraftRules((prev) => {
+      const next = prev.map((r) => {
+        if (r.localId !== rule.localId) return r;
+        replaced = true;
+        return rule;
+      });
+      return replaced ? next : [...prev, rule];
+    });
     setRuleDrawerOpen(false);
-    toast.success(`Added rule "${rule.ruleName}"`);
+    setEditingRule(null);
+    toast.success(`${replaced ? 'Updated' : 'Added'} rule "${rule.ruleName}"`);
+  }, []);
+
+  const handleEditRule = useCallback((rule: SimulatedRule) => {
+    setEditingRule(rule);
+    setRuleDrawerOpen(true);
+  }, []);
+
+  const handleDeleteRule = useCallback((rule: SimulatedRule) => {
+    setDraftRules((prev) => prev.filter((r) => r.localId !== rule.localId));
+    toast.success(`Removed rule "${rule.ruleName}"`);
   }, []);
 
   const handleCreatePool = useCallback((pool: SimulatedPool) => {
@@ -1093,7 +1116,12 @@ const SimulatorPage: React.FC = () => {
                 scenario={workingScenario}
                 corporateId={selectedCorporateId}
                 onAddPhysical={handleAddPhysical}
-                onAddRule={() => setRuleDrawerOpen(true)}
+                onAddRule={() => {
+                  setEditingRule(null);
+                  setRuleDrawerOpen(true);
+                }}
+                onEditRule={handleEditRule}
+                onDeleteRule={handleDeleteRule}
                 onAddPool={() => setPoolDrawerOpen(true)}
                 onInventoryLoaded={setInventoryAccounts}
                 score={score}
@@ -1135,8 +1163,12 @@ const SimulatorPage: React.FC = () => {
       <AddRuleDrawer
         open={ruleDrawerOpen}
         shadows={draftShadows}
-        onClose={() => setRuleDrawerOpen(false)}
-        onCreate={handleCreateRule}
+        initialRule={editingRule}
+        onClose={() => {
+          setRuleDrawerOpen(false);
+          setEditingRule(null);
+        }}
+        onCreate={handleSubmitRule}
       />
 
       <AddPoolDrawer

@@ -25,7 +25,14 @@ export interface AddRuleDrawerProps {
   open: boolean;
   shadows: SimulatedShadow[];
   onClose: () => void;
+  /** Receives the new rule, or the edited one carrying its original localId. */
   onCreate: (rule: SimulatedRule) => void;
+  /**
+   * Edit an existing rule instead of adding one. The form opens prefilled and
+   * submits under the same `localId`, so the caller replaces rather than
+   * appends. Null/undefined = add mode.
+   */
+  initialRule?: SimulatedRule | null;
 }
 
 const SWEEP_TYPES: Array<{ value: SweepType; label: string }> = [
@@ -47,7 +54,9 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
   shadows,
   onClose,
   onCreate,
+  initialRule = null,
 }) => {
+  const isEdit = initialRule != null;
   const [ruleName, setRuleName] = useState('Sweep rule');
   const [sweepType, setSweepType] = useState<SweepType>('ZERO_BALANCE');
   const [frequency, setFrequency] = useState<SweepFrequency>('DAILY');
@@ -60,19 +69,22 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
   const [percentage, setPercentage] = useState('');
 
   useEffect(() => {
-    if (open) {
-      setRuleName('Sweep rule');
-      setSweepType('ZERO_BALANCE');
-      setFrequency('DAILY');
-      setExecutionTime('');
-      setSourceIds([]);
-      setTargetId('');
-      setTargetAmount('');
-      setThresholdMin('');
-      setThresholdMax('');
-      setPercentage('');
-    }
-  }, [open]);
+    if (!open) return;
+    const r = initialRule;
+    setRuleName(r?.ruleName ?? 'Sweep rule');
+    setSweepType(r?.sweepType ?? 'ZERO_BALANCE');
+    setFrequency(r?.frequency ?? 'DAILY');
+    setExecutionTime(r?.executionTime ?? '');
+    setSourceIds(r?.sourceLocalIds ?? []);
+    setTargetId(r?.targetLocalId ?? '');
+    setTargetAmount(r?.targetAmount != null ? String(r.targetAmount) : '');
+    setThresholdMin(r?.thresholdMin != null ? String(r.thresholdMin) : '');
+    setThresholdMax(r?.thresholdMax != null ? String(r.thresholdMax) : '');
+    setPercentage(r?.percentage != null ? String(r.percentage) : '');
+    // initialRule is read to seed the form; depending on it would reset the
+    // user's edits whenever the parent re-rendered with a fresh object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seeds once per open, keyed on the rule's identity.
+  }, [open, initialRule?.localId]);
 
   const byLocalId = useMemo(
     () => new Map(shadows.map((s) => [s.localId, s])),
@@ -111,7 +123,8 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
   const handleCreate = () => {
     if (!canCreate) return;
     const base: SimulatedRule = {
-      localId: newLocalId('rule'),
+      // Editing keeps the id, so rules referenced elsewhere stay the same rule.
+      localId: initialRule?.localId ?? newLocalId('rule'),
       ruleName: ruleName.trim(),
       sweepType,
       frequency,
@@ -144,7 +157,7 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title="Add sweep rule"
+      title={isEdit ? 'Edit sweep rule' : 'Add sweep rule'}
       subtitle="Routing is derived automatically from the source / target banks"
       size="lg"
       footer={
@@ -158,7 +171,7 @@ export const AddRuleDrawer: React.FC<AddRuleDrawerProps> = ({
             onClick={handleCreate}
             disabled={!canCreate}
           >
-            Add rule
+            {isEdit ? 'Save rule' : 'Add rule'}
           </Button>
         </div>
       }

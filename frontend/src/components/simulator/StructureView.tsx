@@ -11,6 +11,7 @@ import { ScorePanel } from './ScorePanel';
 import { groupShadowsByBank } from '../../utils/simulator/inventoryGrouping';
 import type {
   ScoreResult,
+  SimulatedRule,
   SimulatorPhysicalAccount,
   SimulatorScenario,
 } from './types';
@@ -33,6 +34,9 @@ export interface StructureViewProps {
   onAddPhysical?: (account: SimulatorPhysicalAccount) => void;
   /** Opens AddRuleDrawer (enabled once ≥2 shadows exist). */
   onAddRule?: () => void;
+  /** Reopens AddRuleDrawer prefilled with this rule. */
+  onEditRule?: (rule: SimulatedRule) => void;
+  onDeleteRule?: (rule: SimulatedRule) => void;
   /** Opens AddPoolDrawer (enabled once ≥2 home-bank shadows exist). */
   onAddPool?: () => void;
   /** Lifts loaded inventory accounts up for orphan validation. */
@@ -50,6 +54,8 @@ export const StructureView: React.FC<StructureViewProps> = ({
   corporateId,
   onAddPhysical,
   onAddRule,
+  onEditRule,
+  onDeleteRule,
   onAddPool,
   onInventoryLoaded,
   score = null,
@@ -187,6 +193,8 @@ export const StructureView: React.FC<StructureViewProps> = ({
                   <ShadowVaNode
                     key={sh.localId}
                     shadow={sh}
+                    onEditRule={onEditRule}
+                    onDeleteRule={onDeleteRule}
                     rulesFrom={rulesBySource.get(sh.localId) ?? []}
                     resolveName={(id) => nameByLocalId.get(id) ?? '—'}
                   />
