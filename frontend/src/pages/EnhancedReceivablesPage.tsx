@@ -748,18 +748,34 @@ const EnhancedReceivablesPage: React.FC = () => {
       }
       
       setInvoices(mappedInvoices);
-      
+
+      // An invoice is overdue when money is still owed on it and its due date has passed.
+      // Derived here rather than read off the response: ReceivablesDto does declare isOverdue
+      // and daysOverdue, but the only place the backend ever sets them is a hardcoded demo
+      // list, so a real invoice never carries them -- and ReceivableStatusPhase3 has no
+      // OVERDUE member to test against either. Both overdue figures below used to be
+      // `.filter(_i => false)`, so they were always zero.
+      //
+      // Compared as ISO date strings against the local date. dueDate is date-only, so
+      // `new Date(dueDate) < new Date()` would count an invoice due today as overdue for
+      // anyone east of UTC.
+      const now = new Date();
+      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const settled = ['PAID', 'CANCELLED', 'WRITTEN_OFF', 'NETTED'];
+      const isOverdue = (i: InvoicePhase3) =>
+        i.outstandingAmount > 0 && !!i.dueDate && i.dueDate < todayIso && !settled.includes(i.status);
+
       // Calculate stats
       setStats({
         totalReceivables: mappedInvoices.reduce((s, i) => s + i.outstandingAmount, 0),
         openInvoices: mappedInvoices.filter(i => ['OPEN', 'PARTIAL'].includes(i.status)).reduce((s, i) => s + i.outstandingAmount, 0),
         partialPaid: mappedInvoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.paidAmount, 0),
-        overdueAmount: mappedInvoices.filter(_i => false).reduce((s, i) => s + i.outstandingAmount, 0),
+        overdueAmount: mappedInvoices.filter(isOverdue).reduce((s, i) => s + i.outstandingAmount, 0),
         collectedThisMonth: mappedInvoices.filter(i => i.status === 'PAID').reduce((s, i) => s + i.paidAmount, 0),
         invoiceCount: mappedInvoices.length,
         openCount: mappedInvoices.filter(i => i.status === 'OPEN').length,
         partialCount: mappedInvoices.filter(i => i.status === 'PARTIAL').length,
-        overdueCount: mappedInvoices.filter(_i => false).length,
+        overdueCount: mappedInvoices.filter(isOverdue).length,
         paidCount: mappedInvoices.filter(i => i.status === 'PAID').length,
         averageDaysOutstanding: 25,
         coboPendingCount: mappedInvoices.filter(i => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL').length,
