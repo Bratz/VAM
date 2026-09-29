@@ -3,6 +3,7 @@ package com.bank.vam.service.receivables;
 import com.bank.vam.dto.receivables.ReceivablesDto.CreateInvoiceRequest;
 import com.bank.vam.dto.receivables.ReceivablesDto.InvoiceResponse;
 import com.bank.vam.dto.receivables.ReceivablesDto.PublicInvoiceResponse;
+import com.bank.vam.dto.viban.VibanDto.VibanCreateRequest;
 import com.bank.vam.dto.viban.VibanDto.VibanResponse;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.VirtualAccount;
@@ -88,7 +89,7 @@ class ReceivablesServiceTest {
         stubSaveAssignsId();
 
         UUID realVibanId = UUID.randomUUID();
-        when(vibanService.createInvoiceViban(eq(PROGRAM_ID), eq(TARGET_VA_ID), any(), any(), any()))
+        when(vibanService.createViban(eq(PROGRAM_ID), any(VibanCreateRequest.class)))
                 .thenReturn(VibanResponse.builder().id(realVibanId).viban("AE-REAL-VIBAN-123").build());
 
         InvoiceResponse response = service.createInvoice(null, baseRequest()
@@ -99,12 +100,21 @@ class ReceivablesServiceTest {
         assertEquals("AE-REAL-VIBAN-123", response.getViban());
         assertEquals(realVibanId, response.getVibanId());
 
-        // createInvoiceViban's 3rd arg must be the receivable's own real id (a UUID string) --
+        // createViban(programId, request), not the createInvoiceViban(...) helper: that helper's
+        // fixed parameter list has no room for customerName, which is why every invoice-created
+        // VIBAN used to show a blank customer in the VIBANs tab.
+        ArgumentCaptor<VibanCreateRequest> vibanRequest = ArgumentCaptor.forClass(VibanCreateRequest.class);
+        verify(vibanService).createViban(eq(PROGRAM_ID), vibanRequest.capture());
+        VibanCreateRequest sent = vibanRequest.getValue();
+
+        assertEquals(TARGET_VA_ID, sent.getVirtualAccountId());
+        assertEquals(BigDecimal.valueOf(500), sent.getExpectedAmount());
+        // referenceId must be the receivable's own real id (a UUID string) --
         // ReconciliationService.attemptDirectMatch() parses it back as one.
-        ArgumentCaptor<String> invoiceIdArg = ArgumentCaptor.forClass(String.class);
-        verify(vibanService).createInvoiceViban(eq(PROGRAM_ID), eq(TARGET_VA_ID), invoiceIdArg.capture(), eq(BigDecimal.valueOf(500)), any());
-        assertDoesNotThrow(() -> UUID.fromString(invoiceIdArg.getValue()));
-        assertEquals(response.getId().toString(), invoiceIdArg.getValue());
+        assertDoesNotThrow(() -> UUID.fromString(sent.getReferenceId()));
+        assertEquals(response.getId().toString(), sent.getReferenceId());
+        // The whole reason this call moved off the helper:
+        assertEquals("Acme Corp", sent.getCustomerName());
     }
 
     @Test
@@ -113,7 +123,7 @@ class ReceivablesServiceTest {
         CreateInvoiceRequest request = baseRequest().createViban(true).build();
 
         assertThrows(BusinessException.class, () -> service.createInvoice(null, request));
-        verify(vibanService, never()).createInvoiceViban(any(), any(), any(), any(), any());
+        verify(vibanService, never()).createViban(any(), any());
     }
 
     @Test
@@ -124,7 +134,7 @@ class ReceivablesServiceTest {
 
         assertNull(response.getViban());
         assertNull(response.getVibanId());
-        verify(vibanService, never()).createInvoiceViban(any(), any(), any(), any(), any());
+        verify(vibanService, never()).createViban(any(), any());
     }
 
     @Test
