@@ -22,6 +22,7 @@ import type {
 import {
   interestYield,
   interestBaskets,
+  poolBasketKind,
 } from './scoreFormulas/interestYield';
 import { debtAvoided } from './scoreFormulas/debtAvoided';
 import { bankFees } from './scoreFormulas/bankFees';
@@ -161,6 +162,16 @@ export function computeScore(input: ScoreInputs): ScoreResult {
 
   // R2 — proposed interest-yield split by basket (FX→base for disclosure).
   const ib = interestBaskets(input);
+  // Name which pool the basket is: a scenario can show "0 pools" while its
+  // whole interest basket sits in `pool`, because the membership is LIVE, not
+  // proposed. Labelling that bare "Pool" reads as a contradiction.
+  const POOL_BASKET_LABEL = {
+    proposed: 'Proposed pool',
+    live: 'Live pool',
+    mixed: 'Pool (proposed + live)',
+    none: 'Pool',
+  } as const;
+  const poolLabel = POOL_BASKET_LABEL[poolBasketKind(input)];
   const interestBasketsBase = {
     external: round2(toBase(ib.external, ctx)),
     pool: round2(toBase(ib.pool, ctx)),
@@ -234,7 +245,7 @@ export function computeScore(input: ScoreInputs): ScoreResult {
   assumptions.push(
     {
       label: 'Interest yield baskets',
-      value: `proposed = ${c.baseCurrency} ${Math.round(interestBasketsBase.external).toLocaleString()} External/standalone + ${c.baseCurrency} ${Math.round(interestBasketsBase.pool).toLocaleString()} Pool · pool rate = annual % (engine-truth: NotionalPoolService interestRate÷36500) · Internal & IHB baskets deferred (proposed shadows have no live VA dual-config / IHB position)`,
+      value: `proposed = ${c.baseCurrency} ${Math.round(interestBasketsBase.external).toLocaleString()} External/standalone + ${c.baseCurrency} ${Math.round(interestBasketsBase.pool).toLocaleString()} ${poolLabel} · pool rate = annual % (engine-truth: NotionalPoolService interestRate÷36500) · Internal & IHB baskets deferred (proposed shadows have no live VA dual-config / IHB position)`,
     },
     {
       label: 'Source quality',

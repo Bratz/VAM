@@ -36,6 +36,14 @@ import {
 } from './shared';
 
 type Basket = 'pool' | 'external';
+/**
+ * Which kind of pool put a contribution in the `pool` basket. Both a PROPOSED
+ * pool and an already-live one land there (see proposedRate), which reads as a
+ * contradiction on a scenario showing "0 pools" — its whole interest basket is
+ * labelled "Pool" while the structure has none, because the membership is live.
+ * Tracked so the disclosure can name which it is.
+ */
+export type PoolKind = 'proposed' | 'live';
 
 /**
  * Residual balance RETAINED after the sweep rule physically moves its part
@@ -106,14 +114,22 @@ function proposedRate(
   localId: string,
   acc: SimulatorPhysicalAccount,
   pbs: Map<string, SimulatedPool>,
-): { ratePct: number; basket: Basket } {
+): { ratePct: number; basket: Basket; poolKind?: PoolKind } {
   const proposed = pbs.get(localId);
   if (proposed) {
-    return { ratePct: Math.max(0, proposed.poolRatePct ?? 0), basket: 'pool' };
+    return {
+      ratePct: Math.max(0, proposed.poolRatePct ?? 0),
+      basket: 'pool',
+      poolKind: 'proposed',
+    };
   }
   const live = input.pooledByPhys?.get(acc.id);
   if (live) {
-    return { ratePct: Math.max(0, live.interestRate ?? 0), basket: 'pool' };
+    return {
+      ratePct: Math.max(0, live.interestRate ?? 0),
+      basket: 'pool',
+      poolKind: 'live',
+    };
   }
   return { ratePct: depositRatePct(acc), basket: 'external' };
 }
@@ -124,13 +140,13 @@ function proposedRate(
  */
 function proposedContributions(
   input: ScoreInputs,
-): Array<{ ccy: string; amount: number; basket: Basket }> {
+): Array<{ ccy: string; amount: number; basket: Basket; poolKind?: PoolKind }> {
   const { proposedShadows, proposedRules, accountsById } = input;
   const pbs = poolByShadow(input);
   const ruleOf = firstSweepRuleBySource(proposedRules);
   const { childrenOf } = concentrationTopology(proposedRules);
   const byLocalId = new Map(proposedShadows.map((s) => [s.localId, s]));
-  const out: Array<{ ccy: string; amount: number; basket: Basket }> = [];
+  const out: Array<{ ccy: string; amount: number; basket: Basket; poolKind?: PoolKind }> = [];
 
   for (const shadow of proposedShadows) {
     const acc = accountOf(shadow, accountsById);
@@ -144,13 +160,13 @@ function proposedContributions(
       // a non-pool swept shadow contributes 0 (ZBA — unchanged).
       if (pbs.has(shadow.localId)) {
         const residual = residualAfterSweep(bal, sweptRule);
-        const { ratePct, basket } = proposedRate(
+        const { ratePct, basket, poolKind } = proposedRate(
           input,
           shadow.localId,
           acc,
           pbs,
         );
-        out.push({ ccy, amount: residual * (ratePct / 100), basket });
+        out.push({ ccy, amount: residual * (ratePct / 100), basket, poolKind });
       }
       continue;
     }
@@ -169,13 +185,13 @@ function proposedContributions(
         ? cBal - residualAfterSweep(cBal, ruleOf.get(childId))
         : cBal;
     }
-    const { ratePct, basket } = proposedRate(
+    const { ratePct, basket, poolKind } = proposedRate(
       input,
       shadow.localId,
       acc,
       pbs,
     );
-    out.push({ ccy, amount: concentrated * (ratePct / 100), basket });
+    out.push({ ccy, amount: concentrated * (ratePct / 100), basket, poolKind });
   }
   return out;
 }
@@ -219,4 +235,27 @@ export function interestBaskets(input: ScoreInputs): {
     addAmount(c.basket === 'pool' ? pool : external, c.ccy, c.amount);
   }
   return { external, pool };
+}
+
+/**
+ * What the `pool` basket is actually made of, so the disclosure can say so
+ * rather than the bare "Pool" — which on a scenario with no proposed pools
+ * reads as a contradiction. Only contributions carrying a non-zero amount
+ * count: a zero-amount member tells the reader nothing and would otherwise
+ * turn an all-live basket into "mixed".
+ */
+export function poolBasketKind(
+  input: ScoreInputs,
+): 'proposed' | 'live' | 'mixed' | 'none' {
+  let proposed = false;
+  let live = false;
+  for (const c of proposedContributions(input)) {
+    if (c.basket !== 'pool' || c.amount === 0) continue;
+    if (c.poolKind === 'proposed') proposed = true;
+    if (c.poolKind === 'live') live = true;
+  }
+  if (proposed && live) return 'mixed';
+  if (proposed) return 'proposed';
+  if (live) return 'live';
+  return 'none';
 }

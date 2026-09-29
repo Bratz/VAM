@@ -18,6 +18,16 @@ import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+async function load(entry, name) {
+  const out = await build({
+    entryPoints: [entry],
+    bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent',
+  });
+  const f = join(mkdtempSync(join(tmpdir(), 'sim-check-')), name);
+  writeFileSync(f, out.outputFiles[0].text);
+  return import(pathToFileURL(f).href);
+}
+
 const bundled = await build({
   entryPoints: ['src/utils/simulator/scenarioModel.ts'],
   bundle: true,
@@ -112,4 +122,61 @@ check('leaves untouched collections identical', () => {
   assert.equal(r.rules[0], rules[0], 'an unaffected rule is not needlessly copied');
 });
 
-console.log(`\n${checks} checks passed`);
+// ---------------------------------------------------------------------------
+// poolBasketKind (scoreFormulas/interestYield.ts)
+//
+// Both a PROPOSED pool and an already-LIVE one put a contribution in the same
+// `pool` basket, so a scenario showing "0 pools" can still report its whole
+// interest basket as pooled. The disclosure names which, and this pins that
+// down — getting it wrong puts a misleading label on a real figure.
+// ---------------------------------------------------------------------------
+const { poolBasketKind } = await load('src/utils/simulator/scoreFormulas/interestYield.ts', 'interestYield.mjs');
+
+const acct = (id, bal = 1_000_000, rate = 4) => [id, {
+  id, accountNumber: id, accountName: id, currencyCode: 'AED',
+  currentBalance: bal, interestRate: rate, bankCode: 'B', bankName: 'B', dataSource: 'CORE_BANKING',
+}];
+const inputs = ({ shadows, rules = [], pools = [], live = [] }) => ({
+  proposedShadows: shadows,
+  proposedRules: rules,
+  proposedPools: pools,
+  accountsById: new Map(shadows.map((s) => acct(s.physicalAccountId))),
+  chargeConfigs: [],
+  pooledByPhys: new Map(live.map((id) => [id, { interestRate: 3.5, poolReference: 'NP-0001', poolCurrency: 'AED' }])),
+});
+const sh = (localId, role = 'HEADER') => shadow(localId, { role, physicalAccountId: `pa-${localId}` });
+
+check('poolBasketKind: none when nothing is pooled', () => {
+  assert.equal(poolBasketKind(inputs({ shadows: [sh('a')] })), 'none');
+});
+
+check('poolBasketKind: live when the membership is live, with no proposed pool', () => {
+  assert.equal(poolBasketKind(inputs({ shadows: [sh('a')], live: ['pa-a'] })), 'live');
+});
+
+check('poolBasketKind: proposed when a proposed pool covers the member', () => {
+  const shadows = [sh('a'), sh('b')];
+  assert.equal(
+    poolBasketKind(inputs({ shadows, pools: [pool('p1', ['a', 'b'])] })),
+    'proposed',
+  );
+});
+
+check('poolBasketKind: proposed wins over live for the same member', () => {
+  const shadows = [sh('a'), sh('b')];
+  assert.equal(
+    poolBasketKind(inputs({ shadows, pools: [pool('p1', ['a', 'b'])], live: ['pa-a', 'pa-b'] })),
+    'proposed',
+  );
+});
+
+check('poolBasketKind: mixed when one member is proposed-pooled and another live', () => {
+  const shadows = [sh('a'), sh('b'), sh('c')];
+  assert.equal(
+    poolBasketKind(inputs({ shadows, pools: [pool('p1', ['a', 'b'])], live: ['pa-c'] })),
+    'mixed',
+  );
+});
+
+console.log(`
+${checks} checks passed`);
