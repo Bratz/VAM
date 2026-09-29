@@ -676,14 +676,16 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) => {
-  // Icon rail. With no saved choice it starts collapsed on screens under 1440 CSS px
-  // (a 1920px display at 150% scaling is 1280), where a 240px sidebar leaves too little room.
+  // Icon rail — opt-in, never automatic. This used to default to collapsed under
+  // 1440 CSS px, which meant the common desk (a 1920 display at 150% scaling is
+  // 1280) opened to unlabelled icons and read as "the menu is missing". The
+  // 240px sidebar fits fine at 1024; whoever wants the rail can toggle it, and
+  // the choice persists.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
-      const saved = localStorage.getItem('sidebar:collapsed');
-      if (saved === '1' || saved === '0') return saved === '1';
-    } catch { /* storage unavailable: fall through to the width default */ }
-    return window.innerWidth < 1440;
+      return localStorage.getItem('sidebar:collapsed') === '1';
+    } catch { /* storage unavailable: start expanded */ }
+    return false;
   });
   const toggleSidebarCollapsed = () => {
     setSidebarCollapsed((prev) => {
