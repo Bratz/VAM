@@ -1400,14 +1400,23 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     setFormData(prev => ({ ...prev, dueDate }));
   }, [formData.invoiceDate, formData.paymentTerms]);
 
-  // Set default account
+  // Set the default collection account for the invoice currency.
+  //
+  // This has to survive a currency change, not just first load. availableAccounts below is
+  // filtered to formData.currency, so an account picked under the old currency disappears from
+  // the dropdown while staying selected underneath -- the user sees a blank picker and submits
+  // targetVaId pointing at an account in the wrong currency. Selecting a customer sets the
+  // currency from that customer, so this is an ordinary path, not an edge case.
   useEffect(() => {
+    const stillValid = accounts.some(
+      a => a.id === formData.collectionAccountId && a.currency === formData.currency
+    );
+    if (stillValid) return;
+
     const defaultAccount = accounts.find(a => a.isDefault && a.currency === formData.currency);
-    if (defaultAccount && !formData.collectionAccountId) {
-      setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount.id }));
-      setSelectedAccount(defaultAccount);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- prefill only; formData.collectionAccountId is the "user hasn't picked yet" guard and is written here, so depending on it would re-apply the default the moment the user clears the field.
+    setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount?.id ?? '' }));
+    setSelectedAccount(defaultAccount ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on currency/account changes only. formData.collectionAccountId is read to see whether the current pick is still valid and is written here, so depending on it would re-apply the default the moment the user clears the field.
   }, [formData.currency, accounts]);
 
   // Filter customers
