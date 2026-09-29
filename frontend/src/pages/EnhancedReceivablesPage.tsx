@@ -826,6 +826,19 @@ const EnhancedReceivablesPage: React.FC = () => {
     const outstanding = (i: InvoicePhase3) => i.outstandingAmount;
     const paid = (i: InvoicePhase3) => i.paidAmount;
 
+    // Mean age of the invoices that still have money owed, from invoice date to today.
+    // Was hardcoded to 25 and read by nothing; it is a duration rather than a money figure,
+    // so no conversion applies. Invoices with no invoice date are left out of the average
+    // rather than counted as zero days old, and an empty book reports 0 rather than NaN.
+    const unsettled = invoices.filter(
+      (i) => i.outstandingAmount > 0 && !settled.includes(i.status) && !!i.invoiceDate
+    );
+    const daysSince = (iso: string) =>
+      Math.max(0, Math.floor((now.getTime() - new Date(`${iso}T00:00:00`).getTime()) / 86400000));
+    const averageDaysOutstanding = unsettled.length
+      ? Math.round(unsettled.reduce((total, i) => total + daysSince(i.invoiceDate), 0) / unsettled.length)
+      : 0;
+
     const open = invoices.filter((i) => ['OPEN', 'PARTIAL'].includes(i.status));
     const partial = invoices.filter((i) => i.status === 'PARTIAL');
     const paidInvoices = invoices.filter((i) => i.status === 'PAID');
@@ -846,7 +859,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       partialCount: partial.length,
       overdueCount: overdue.length,
       paidCount: paidInvoices.length,
-      averageDaysOutstanding: 25,
+      averageDaysOutstanding,
       coboPendingCount: coboPending.length,
       coboPendingAmount: sum(coboPending, outstanding),
       intercompanyCount: intercompany.length,
@@ -1176,7 +1189,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           <StatsCard
             title="Total Receivables"
             value={formatCurrency(stats.totalReceivables, reportingCurrency)}
-            subtitle={`${stats.invoiceCount} invoices`}
+            subtitle={`${stats.invoiceCount} invoices · unpaid avg ${stats.averageDaysOutstanding}d old`}
             icon={<FileText className="w-5 h-5" />}
             color="indigo"
             delay={0.15}
