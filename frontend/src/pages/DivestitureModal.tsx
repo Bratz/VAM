@@ -20,7 +20,7 @@ import {
 import { cn } from '../utils';
 import { Modal } from '../components/ui/enhanced';
 import {
-  hierarchyOperationsApi, HierarchyNode, MoveLimitPolicy, DivestitureRequest, MergeOperationResult,
+  hierarchyOperationsApi, HierarchyNode, DivestitureRequest, MergeOperationResult,
 } from '../services/hierarchyOperationsApi';
 
 import { Checkbox } from '../components/ui';
@@ -30,13 +30,6 @@ interface DivestitureModalProps {
   onSuccess: (result: MergeOperationResult) => void;
   corporateId: string;
   corporateName?: string;
-}
-
-interface MovePolicyOption {
-  policy: MoveLimitPolicy;
-  name: string;
-  description: string;
-  requiresApproval: boolean;
 }
 
 const Badge: React.FC<{ variant?: 'default' | 'success' | 'warning' | 'error' | 'info' | 'orange'; children: React.ReactNode }> = ({ variant = 'default', children }) => {
@@ -104,12 +97,10 @@ const AggregationNode: React.FC<AggregationNodeProps> = ({ node, selectedId, onS
 
 export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onClose, onSuccess, corporateId, corporateName }) => {
   const [hierarchy, setHierarchy] = useState<HierarchyNode | null>(null);
-  const [policies, setPolicies] = useState<MovePolicyOption[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedAggregation, setSelectedAggregation] = useState<HierarchyNode | null>(null);
   const [newCorporateName, setNewCorporateName] = useState('');
   const [newCorporateCode, setNewCorporateCode] = useState('');
-  const [selectedPolicy, setSelectedPolicy] = useState<MoveLimitPolicy>('TRANSFER_WITH_VA');
   const [confirmApproval, setConfirmApproval] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -118,10 +109,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [hierarchyRes, policiesRes] = await Promise.all([
-        hierarchyOperationsApi.getHierarchy(corporateId),
-        hierarchyOperationsApi.getMovePolicies(),
-      ]);
+      const hierarchyRes = await hierarchyOperationsApi.getHierarchy(corporateId);
       if (hierarchyRes.success && hierarchyRes.data) {
         setHierarchy(hierarchyRes.data);
         const ids = new Set<string>();
@@ -129,7 +117,6 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
         hierarchyRes.data.children?.forEach((child) => ids.add(child.id));
         setExpandedIds(ids);
       }
-      if (policiesRes.success && policiesRes.data) setPolicies(policiesRes.data);
     } catch (err) { setError('Failed to load data'); }
     finally { setLoading(false); }
   }, [corporateId]);
@@ -138,7 +125,7 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
     if (isOpen) loadData();
     else {
       setSelectedAggregation(null); setNewCorporateName(''); setNewCorporateCode('');
-      setSelectedPolicy('TRANSFER_WITH_VA'); setConfirmApproval(false); setError(null);
+      setConfirmApproval(false); setError(null);
     }
   }, [isOpen, loadData]);
 
@@ -257,12 +244,11 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
                       <input type="text" value={newCorporateCode} onChange={(e) => setNewCorporateCode(e.target.value.toUpperCase())} placeholder="e.g., DIV-2024" className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm font-mono focus:outline-none focus:ring-2 focus:ring-warning-500" />
                     </div>
 
-                    <div>
-                      <label className="field-label block mb-2">Limit Transfer Policy</label>
-                      <select value={selectedPolicy} onChange={(e) => setSelectedPolicy(e.target.value as MoveLimitPolicy)} className="w-full px-4 py-2.5 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-warning-500">
-                        {policies.map((policy) => (<option key={policy.policy} value={policy.policy}>{policy.name}</option>))}
-                      </select>
-                      <p className="caption mt-1">{policies.find((p) => p.policy === selectedPolicy)?.description}</p>
+                    <div className="p-3 rounded-lg bg-surface-page border border-edge">
+                      <p className="caption">
+                        Credit limits are not transferred by a divestiture. The spun-off accounts keep
+                        their balances; any limit the new corporate needs is set up separately afterwards.
+                      </p>
                     </div>
 
                     {/* Preview */}
