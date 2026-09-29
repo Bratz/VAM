@@ -186,7 +186,9 @@ export const EntityAllocationModal: React.FC<EntityAllocationModalProps> = ({
       setApprovedBy('Treasury');
     }
     setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // entity, existingLimit, existingEntityCurrencies and groupLimits are all read here to seed
+    // the form, and the objects are fresh on every parent render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seeds the form once per open; depending on what it seeds from would overwrite the user's typing.
   }, [isOpen, existingLimit?.id, entity?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -229,7 +229,6 @@ const SimulatorPage: React.FC = () => {
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get('view');
     if (v === 'diff' || v === 'structure' || v === 'compare') setView(v);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

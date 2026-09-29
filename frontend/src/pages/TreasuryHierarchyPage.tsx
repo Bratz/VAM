@@ -3503,7 +3503,9 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       if (!fresh) setSelectedNodeDetail(null);
       return fresh;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // findNodeById and loadNodeDetail are recreated every render, and selectedCorporateId is read
+    // only to decide whether a re-fetch is warranted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the tree is replaced, the only time the selection needs re-reading.
   }, [hierarchy]);
 
   const handleSelectNode = (node: ExtendedHierarchyNode) => {

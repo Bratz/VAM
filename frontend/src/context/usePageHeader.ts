@@ -27,7 +27,9 @@ export function usePageHeaderActions(
     if (!ctx) return;
     ctx.setActions(render());
     return () => ctx.setActions(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // ctx and render are deliberately outside it: the caller decides when its header should be
+    // re-registered, and render is a fresh closure on each of the caller's renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps is the caller's own list, which the rule cannot check statically.
   }, deps);
 }
 
@@ -51,7 +53,9 @@ export function usePageHeaderTitle(
       ctx.setTitle(null);
       ctx.setDescription(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // title and description are the values this effect publishes, so depending on them would
+    // re-publish on every render that recomputes them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- as above, deps belongs to the caller.
   }, deps);
 }
 

@@ -233,12 +233,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
     const past = convertDay(dateKey);
     if (!past) return null;
     return ((consolidated.total - past) / past) * 100;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // convertDay is recreated on every render and closes over rateState, which is already a
+    // dependency here, so the result changes exactly when rateState does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depending on convertDay itself would recompute this every render.
   }, [sortedDates, period, rateState, consolidated.total]);
 
   const sparklineData = useMemo(
     () => sortedDates.slice(-30).map((d) => ({ date: d, value: convertDay(d) ?? 0 })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- as above: convertDay is new each render, and only rateState changes what it returns.
     [sortedDates, rateState],
   );
 

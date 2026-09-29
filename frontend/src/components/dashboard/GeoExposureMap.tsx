@@ -96,7 +96,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
     // numericToAmount is derived fresh each render from byCountry/ALPHA2_TO_NUMERIC;
     // keying off byCountry (stable across re-renders unless bankShares changes)
     // avoids rebuilding the projection every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see the note above: keyed on byCountry so the projection is not rebuilt every render.
   }, [zoomToFit, hasData, byCountry]);
 
   return (

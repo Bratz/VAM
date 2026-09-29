@@ -767,7 +767,9 @@ const GroupLimitModal: React.FC<{
       setApprovedBy('CFO');
     }
     setError(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // existingLimit and existingCurrencies are read here to seed the form, so depending on them
+  // would overwrite the user's own edits as soon as the parent re-rendered.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- seeds the form once per open, keyed on the record id.
   }, [isOpen, existingLimit?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -884,7 +886,9 @@ const VaLimitsModal: React.FC<{
 
   useEffect(() => {
     if (isOpen && entity) { loadVas(); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // loadVas is recreated every render and `entity` is keyed by id here, so depending on either
+  // would refetch on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reloads when the modal opens or the entity/currency changes.
   }, [isOpen, entity?.id, currency]);
 
   const loadVas = async () => {

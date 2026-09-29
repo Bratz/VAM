@@ -589,8 +589,10 @@ const VibanManagementPage: React.FC = () => {
     if (!selectedCorporate && corporates.length > 0) {
       setSelectedCorporate(corporates[0].id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corporates.length]); // Only trigger when corporates length changes, not on selectedCorporate
+  // selectedCorporate is what this effect writes, so depending on it would re-pick the default
+  // the moment the user chose another.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- picks a default corporate once the list arrives.
+  }, [corporates.length]);
 
   // Reset program selection when corporate changes
   useEffect(() => {
@@ -1424,7 +1426,9 @@ const AssignForm: React.FC<{
         setPartyId('');
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // partyId is what this effect clears and partiesArray is re-derived every render, so depending
+  // on either would re-run it on the user's own selection.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- clears the party only when the VA or its corporate changes.
   }, [vaId, selectedVA?.corporateId]);
 
   return (
@@ -1655,7 +1659,8 @@ const BulkAssignForm: React.FC<{
         setPartyAssignments(partyAssignments.map(() => ({ partyId: '' })));
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // partyAssignments is what this effect rewrites, so depending on it would loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- same shape as the reset above.
   }, [selectedVA, selectedVADetails?.corporateId]);
 
   // Update party assignments array when count changes

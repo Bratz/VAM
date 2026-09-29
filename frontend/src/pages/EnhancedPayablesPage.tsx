@@ -1086,7 +1086,9 @@ const EnhancedPayablesPage: React.FC = () => {
     payablesApiPhase2.getById(id)
       .then((p) => (params.action === 'APPROVE' ? handleApprove(p) : handlePayNow(p)))
       .catch(() => toast.error('Could not open that payment'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // params.action is read at that moment; depending on it would reopen the modal if the deep
+    // link's action changed for the same payable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one shot per payableId, enforced by the deepLinkHandled ref.
   }, [params?.payableId]);
 
   const handleConfirmPayNow = async () => {
