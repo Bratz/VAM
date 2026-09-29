@@ -88,7 +88,10 @@ public class HierarchyOperationsDto {
     public static class MergerRequest {
         private UUID corporateAId;
         private UUID corporateBId;
+        /** Either this, or newCorporateName to have the corporate created for you. */
         private UUID newCorporateId;
+        private String newCorporateName;
+        private String newCorporateCode;
         private String newBaseCurrency;
         private String corporateAName;
         private String corporateACode;
@@ -105,7 +108,10 @@ public class HierarchyOperationsDto {
     public static class DivestitureRequest {
         private UUID sourceCorporateId;
         private UUID aggregationId;
+        /** Either this, or newCorporateName to have the corporate created for you. */
         private UUID newCorporateId;
+        private String newCorporateName;
+        private String newCorporateCode;
         private String newBaseCurrency;
         private String approvedBy;
     }

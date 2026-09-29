@@ -480,6 +480,8 @@ public class CorporateHierarchyOperationsController {
                 .corporateAId(request.getCorporateAId())
                 .corporateBId(request.getCorporateBId())
                 .newCorporateId(request.getNewCorporateId())
+                .newCorporateName(request.getNewCorporateName())
+                .newCorporateCode(request.getNewCorporateCode())
                 .newBaseCurrency(request.getNewBaseCurrency())
                 .corporateAName(request.getCorporateAName())
                 .corporateACode(request.getCorporateACode())
@@ -503,9 +505,12 @@ public class CorporateHierarchyOperationsController {
     public ResponseEntity<ApiResponse<MergeOperationResponse>> divestAggregation(
             @Valid @RequestBody DivestitureRequest request) {
         
-        if (request.getAggregationId() == null || request.getNewCorporateId() == null) {
+        boolean namesTheTarget = request.getNewCorporateId() != null
+            || (request.getNewCorporateName() != null && !request.getNewCorporateName().isBlank());
+        if (request.getAggregationId() == null || !namesTheTarget) {
             return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Aggregation ID and new corporate ID are required"));
+                .body(ApiResponse.error(
+                    "Aggregation ID and either a new corporate ID or a new corporate name are required"));
         }
         
         log.info("API: Divestiture - source={}, agg={}, newCorp={}",
@@ -518,6 +523,8 @@ public class CorporateHierarchyOperationsController {
                 .sourceCorporateId(request.getSourceCorporateId())
                 .aggregationId(request.getAggregationId())
                 .newCorporateId(request.getNewCorporateId())
+                .newCorporateName(request.getNewCorporateName())
+                .newCorporateCode(request.getNewCorporateCode())
                 .newBaseCurrency(request.getNewBaseCurrency())
                 .approvedBy(approvedBy)
                 .build();

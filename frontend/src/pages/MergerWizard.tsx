@@ -330,7 +330,14 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
         corporateBId: corporateB.id,
         newCorporateName,
         newCorporateCode: newCorporateCode || undefined,
-        baseCurrency,
+        // newBaseCurrency, not baseCurrency: the backend never read the latter, so the merged
+        // ROOT was built with a null currency.
+        newBaseCurrency: baseCurrency,
+        // Without these the merged ROOT falls back to the hardcoded "CORP-A"/"CORP-B" labels.
+        corporateAName: corporateA.name,
+        corporateACode: corporateA.code,
+        corporateBName: corporateB.name,
+        corporateBCode: corporateB.code,
         limitPolicy: selectedPolicy,
         approvedBy: 'current-user',
       };

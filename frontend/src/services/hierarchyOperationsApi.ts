@@ -126,13 +126,15 @@ export interface AcquisitionRequest {
 export interface MergerRequest {
   corporateAId: string;
   corporateBId: string;
-  newCorporateId: string;
-  newCorporateName: string;
-  newBaseCurrency: string;
-  corporateAName: string;
-  corporateACode: string;
-  corporateBName: string;
-  corporateBCode: string;
+  /** Supply an existing corporate's id, OR a name to have one created inside the merge transaction. */
+  newCorporateId?: string;
+  newCorporateName?: string;
+  newCorporateCode?: string;
+  newBaseCurrency?: string;
+  corporateAName?: string;
+  corporateACode?: string;
+  corporateBName?: string;
+  corporateBCode?: string;
   limitPolicy: MergeLimitPolicy;
   approvedBy: string;
   boardApprovalRef?: string;
@@ -141,9 +143,11 @@ export interface MergerRequest {
 export interface DivestitureRequest {
   sourceCorporateId: string;
   aggregationId: string;
-  newCorporateId: string;
-  newCorporateName: string;
-  newBaseCurrency: string;
+  /** Supply an existing corporate's id, OR a name to have one created inside the divest transaction. */
+  newCorporateId?: string;
+  newCorporateName?: string;
+  newCorporateCode?: string;
+  newBaseCurrency?: string;
   approvedBy: string;
   effectiveDate?: string;
 }

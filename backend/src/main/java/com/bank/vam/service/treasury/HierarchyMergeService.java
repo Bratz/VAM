@@ -5,6 +5,8 @@ import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.entity.Corporate;
+import com.bank.vam.repository.CorporateRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.service.treasury.HierarchyOperationDtos.AcquisitionValidationResult;
 import com.bank.vam.service.treasury.HierarchyOperationDtos.MergeLimitPolicy;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 public class HierarchyMergeService {
 
     private final VirtualAccountRepository vaRepository;
+    private final CorporateRepository corporateRepository;
     private final HierarchyVaService hierarchyVaService;
     private final LimitTransferService limitTransferService;
 
@@ -158,6 +161,41 @@ public class HierarchyMergeService {
     /**
      * Merge two corporates - both ROOTs become AGGREGATIONs under new ROOT.
      */
+    /**
+     * A merger and a divestiture both land their result on a corporate that does not exist yet.
+     * The caller can either name an existing one (newCorporateId) or ask for a new one by name.
+     *
+     * <p>Creating it here rather than in the caller is deliberate: both callers are
+     * {@code @Transactional}, so a failure anywhere later in the operation rolls the new corporate
+     * back with it. Creating it from the browser first would leave an orphan behind on every
+     * failure, and corporates have no delete endpoint to clean one up with.
+     *
+     * <p>virtual_accounts.corporate_id carries no foreign key, so an id for a corporate that does
+     * not exist would be accepted silently and leave a whole VA subtree pointing at nothing.
+     */
+    private UUID resolveNewCorporate(UUID newCorporateId, String name, String code) {
+        if (newCorporateId != null) {
+            return newCorporateId;
+        }
+        if (name == null || name.isBlank()) {
+            throw new BusinessException(
+                "Either newCorporateId or newCorporateName is required for the resulting corporate");
+        }
+        String corporateCode = (code == null || code.isBlank())
+            ? "CORP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+            : code.trim();
+        corporateRepository.findByCorporateId(corporateCode).ifPresent(existing -> {
+            throw new BusinessException("Corporate code already in use: " + corporateCode);
+        });
+        Corporate created = corporateRepository.save(Corporate.builder()
+            .corporateId(corporateCode)
+            .legalName(name.trim())
+            .status(Corporate.CorporateStatus.ACTIVE)
+            .build());
+        log.info("Created corporate {} ({}) for this operation", created.getCorporateId(), created.getId());
+        return created.getId();
+    }
+
     @Transactional
     public MergeResult mergeCorporates(MergerRequest request) {
         log.info("╔════════════════════════════════════════════════════════════════════════════════╗");
@@ -168,7 +206,8 @@ public class HierarchyMergeService {
 
         UUID corporateAId = request.getCorporateAId();
         UUID corporateBId = request.getCorporateBId();
-        UUID newCorporateId = request.getNewCorporateId();
+        UUID newCorporateId = resolveNewCorporate(
+            request.getNewCorporateId(), request.getNewCorporateName(), request.getNewCorporateCode());
         String newBaseCurrency = request.getNewBaseCurrency();
         MergeLimitPolicy limitPolicy = request.getLimitPolicy();
         String approvedBy = request.getApprovedBy();
@@ -287,7 +326,8 @@ public class HierarchyMergeService {
         log.info("╚════════════════════════════════════════════════════════════════════════════════╝");
 
         UUID aggregationId = request.getAggregationId();
-        UUID newCorporateId = request.getNewCorporateId();
+        UUID newCorporateId = resolveNewCorporate(
+            request.getNewCorporateId(), request.getNewCorporateName(), request.getNewCorporateCode());
         UUID sourceCorporateId = request.getSourceCorporateId();
         String newBaseCurrency = request.getNewBaseCurrency();
         String approvedBy = request.getApprovedBy();
@@ -555,7 +595,10 @@ public class HierarchyMergeService {
     public static class MergerRequest {
         private UUID corporateAId;
         private UUID corporateBId;
+        /** Either this, or newCorporateName to have one created inside the transaction. */
         private UUID newCorporateId;
+        private String newCorporateName;
+        private String newCorporateCode;
         private String newBaseCurrency;
         private String corporateAName;
         private String corporateACode;
@@ -570,7 +613,10 @@ public class HierarchyMergeService {
     public static class DivestitureRequest {
         private UUID sourceCorporateId;
         private UUID aggregationId;
+        /** Either this, or newCorporateName to have one created inside the transaction. */
         private UUID newCorporateId;
+        private String newCorporateName;
+        private String newCorporateCode;
         private String newBaseCurrency;
         private String approvedBy;
     }

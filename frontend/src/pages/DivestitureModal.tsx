@@ -172,7 +172,10 @@ export const DivestitureModal: React.FC<DivestitureModalProps> = ({ isOpen, onCl
       const request: DivestitureRequest = {
         sourceCorporateId: corporateId, aggregationId: selectedAggregation.id,
         newCorporateName, newCorporateCode: newCorporateCode || undefined,
-        limitPolicy: selectedPolicy, approvedBy: 'current-user',
+        newBaseCurrency: selectedAggregation.currencyCode,
+        // No limitPolicy: /divest has no such field, so the picker below has never had any
+        // effect. Sending it was silently dropped by Jackson.
+        approvedBy: 'current-user',
       };
       const result = await hierarchyOperationsApi.divestAggregation(request);
       if (result.success && result.data) { onSuccess(result.data); onClose(); }
