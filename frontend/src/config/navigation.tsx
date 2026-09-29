@@ -129,16 +129,6 @@ export const navSections: NavSection[] = [
       { icon: <Landmark className="w-5 h-5" />, label: 'In-House Bank', href: 'ihb' },
       { icon: <GitMerge className="w-5 h-5" />, label: 'Netting Cycles', href: 'netting-enhanced', badge: 2 },
       { icon: <Handshake className="w-5 h-5" />, label: 'Intercompany Dashboard', href: 'intercompany' },
-      { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rates', href: 'fx-rates' },
-    ]
-  },
-  // Credit & Interest — was split (Credit Limits lived under Treasury). Consolidated.
-  {
-    title: 'Credit & Interest',
-    items: [
-      { icon: <CreditCard className="w-5 h-5" />, label: 'Credit Limits', href: 'credit-limits' },
-      { icon: <Percent className="w-5 h-5" />, label: 'Interest Configuration', href: 'interest-config' },
-      { icon: <TrendingUp className="w-5 h-5" />, label: 'Interest Accruals', href: 'interest-accruals' },
     ]
   },
   // Insights — home for AI features. Copilot is also a floating FAB on every
@@ -165,9 +155,18 @@ export const navSections: NavSection[] = [
       { icon: <Store className="w-5 h-5" />, label: 'Seller Collections', href: 'seller-collections' },
     ]
   },
+  // Administration — the rates, limits and terms the rest of the app runs on,
+  // then the plumbing. Credit & Interest was its own top-level section and FX
+  // Rates sat under Liquidity Management; both are things you configure once
+  // and consult occasionally, not daily-flow tools, so they live here now.
+  // Ordered set-up first, Settings last.
   {
     title: 'Administration',
     items: [
+      { icon: <CreditCard className="w-5 h-5" />, label: 'Credit Limits', href: 'credit-limits' },
+      { icon: <Percent className="w-5 h-5" />, label: 'Interest Configuration', href: 'interest-config' },
+      { icon: <TrendingUp className="w-5 h-5" />, label: 'Interest Accruals', href: 'interest-accruals' },
+      { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rates', href: 'fx-rates' },
       { icon: <Receipt className="w-5 h-5" />, label: 'Tax & Charges', href: 'tax-charges' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Integrations', href: 'integrations' },
       { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: 'settings' },
@@ -231,7 +230,8 @@ export const pageTitles: Record<string, string> = {
   'intercompany': 'Intercompany Dashboard',
   'intercompany-settlement': 'Intercompany Settlement',
   'fx-rates': 'FX Rate Management',
-  // Credit & Interest
+  // Credit & Interest — the section is gone; these sit under Administration
+  // now, alongside FX Rates above.
   'credit-limits': 'Credit Limits',
   'interest-config': 'Interest Configuration',
   'interest-accruals': 'Interest Accruals',
