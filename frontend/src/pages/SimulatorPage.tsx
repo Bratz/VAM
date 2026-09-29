@@ -14,7 +14,6 @@ import {
   ScopeSelector,
   type ScopeCorporate,
 } from '../components/layout/ScopeSelector';
-import { usePageHeaderActions } from '../context/usePageHeader';
 import {
   corporatesApi,
   fxRateApi,
@@ -914,68 +913,6 @@ const SimulatorPage: React.FC = () => {
     [scenarios],
   );
 
-  usePageHeaderActions(
-    () => (
-      <>
-        {/* Capped: the options read "<name> · SCN-20260929-001", which sized
-            this select to 286px of the 636px the header cluster was asking
-            for -- enough to push the whole right-hand group 68px past the
-            viewport at 1280 and put a scrollbar under the app. The cluster is
-            shrink-0 by design (so buttons don't clip), so the width has to be
-            given up here. Nothing is lost: the selected scenario's full name,
-            reference and status are all on the ScenarioHeader card below. */}
-        <Select
-          value={selectedScenarioId}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-            setSelectedScenarioId(e.target.value)
-          }
-          options={scenarioOptions}
-          selectSize="sm"
-          className="max-w-[11rem]"
-          disabled={!selectedCorporateId || loadingScenarios}
-          aria-label="Scenario"
-        />
-        {currentScenario && (
-          <Button
-            variant="secondary"
-            size="sm"
-            leftIcon={<Building2 className="w-4 h-4" />}
-            onClick={() => setInventoryDrawerOpen(true)}
-          >
-            Inventory
-          </Button>
-        )}
-        {currentScenario && (
-          <Button
-            variant="ghost"
-            size="sm"
-            leftIcon={<Archive className="w-4 h-4" />}
-            onClick={handleArchive}
-          >
-            Archive
-          </Button>
-        )}
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={handleCreate}
-          disabled={!selectedCorporateId}
-        >
-          New scenario
-        </Button>
-      </>
-    ),
-    [
-      selectedScenarioId,
-      scenarioOptions,
-      selectedCorporateId,
-      loadingScenarios,
-      currentScenario,
-      handleArchive,
-      handleCreate,
-    ],
-  );
 
   // ---- render -------------------------------------------------------------
 
@@ -1013,6 +950,67 @@ const SimulatorPage: React.FC = () => {
         loading={loadingCorporates}
       />
 
+      {/* Scenario toolbar. This lived in the app header until it crowded the
+          page title out and left the empty state below duplicating its own
+          "New scenario". Scenario choice and lifecycle are page content, so
+          they sit with the scope row that selects the corporate. */}
+      {selectedCorporateId && (
+        <Card padding="sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <label htmlFor="simulator-scenario" className="label shrink-0">
+              Scenario
+            </label>
+            {/* Sized on a wrapper, not via Select's className: that prop lands
+                on the inner <select>, while the component's own wrapper stays
+                full-width and would take the whole flex line to itself,
+                pushing the label and the buttons onto rows of their own. */}
+            <div className="flex-1 min-w-[18rem] max-w-[30rem]">
+              <Select
+                id="simulator-scenario"
+                value={selectedScenarioId}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedScenarioId(e.target.value)
+                }
+                options={scenarioOptions}
+                selectSize="sm"
+                disabled={loadingScenarios}
+                aria-label="Scenario"
+              />
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              {currentScenario && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Archive className="w-4 h-4" />}
+                  onClick={handleArchive}
+                >
+                  Archive
+                </Button>
+              )}
+              {currentScenario && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<Building2 className="w-4 h-4" />}
+                  onClick={() => setInventoryDrawerOpen(true)}
+                >
+                  Inventory
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={handleCreate}
+              >
+                New scenario
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {!selectedCorporateId ? (
         <Card padding="lg">
           <p className="body-sm text-neutral-500 dark:text-neutral-400 text-center">
@@ -1034,18 +1032,10 @@ const SimulatorPage: React.FC = () => {
               <p className="section-title">No scenario selected</p>
               <p className="body-sm text-neutral-500 dark:text-neutral-400 mt-1">
                 {scenarios.filter((s) => s.status !== 'ARCHIVED').length === 0
-                  ? 'This corporate has no scenarios yet.'
-                  : 'Pick a scenario from the toolbar, or start a new one.'}
+                  ? 'This corporate has no scenarios yet — start one above.'
+                  : 'Pick a scenario from the toolbar above, or start a new one.'}
               </p>
             </div>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={handleCreate}
-            >
-              New scenario
-            </Button>
           </div>
         </Card>
       ) : (
