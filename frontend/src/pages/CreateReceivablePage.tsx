@@ -1338,9 +1338,26 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
       }
 
       try {
-        // Load collection accounts (virtual accounts)
-        const accountsResponse = await virtualAccountsApi.getAll(0, 50, effectiveCorporateId);
-        const accountsList = accountsResponse?.data || [];
+        // Load the accounts a customer can actually be asked to pay into.
+        //
+        // The endpoint returns every virtual account for the corporate, and most of them are not
+        // somewhere an invoice is collected: currency mirrors and aggregations are rollup nodes
+        // holding no money of their own, physical mirrors are shadows of real bank accounts,
+        // and settlement and exception accounts belong to the platform. On this environment only
+        // 27 of 214 accounts are operational, which is how the default collection account came to
+        // be a currency mirror.
+        //
+        // The backend's own AccountCategory groups TRANSACTION / COLLECTION / DISBURSEMENT as the
+        // operational leaves. DISBURSEMENT is money going out, so a receivable collects on the
+        // other two.
+        //
+        // Page size raised from 50 to 200 because filtering a 50-row page of mostly structural
+        // accounts can leave almost nothing to choose from.
+        const RECEIVABLE_CATEGORIES = ['COLLECTION', 'TRANSACTION'];
+        const accountsResponse = await virtualAccountsApi.getAll(0, 200, effectiveCorporateId);
+        const accountsList = (accountsResponse?.data || []).filter(
+          (va: any) => RECEIVABLE_CATEGORIES.includes(va.accountCategory) && va.status === 'ACTIVE'
+        );
         setAccounts(accountsList.map((va: any) => ({
           id: va.id,
           accountName: va.vaName || 'Collection Account',
