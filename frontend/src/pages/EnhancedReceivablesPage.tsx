@@ -36,6 +36,8 @@ import {
   type LegalEntity,
 } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
+import { useReportingRates } from '../hooks/useReportingRates';
+import { useMarket } from '../context/useMarket';
 
 // ============================================================================
 // TYPES
@@ -572,7 +574,11 @@ const EnhancedReceivablesPage: React.FC = () => {
   // Data state
   const [invoices, setInvoices] = useState<InvoicePhase3[]>([]);
   const [vibans, setVibans] = useState<VibanRecord[]>([]);
-  const [stats, setStats] = useState<ReceivablesStats | null>(null);
+  // stats is derived, not stored: it is a pure function of the invoices and the FX
+  // rates, and keeping it in state is how it came to be computed in one place and
+  // read in another.
+  const { profile } = useMarket();
+  const reportingCurrency = profile.defaultCurrency || 'AED';
   
   // UI state
   const [loading, setLoading] = useState(true);
@@ -700,9 +706,11 @@ const EnhancedReceivablesPage: React.FC = () => {
             customerVaNumber: inv.viban || inv.customerVaNumber || '',
             invoiceDate: inv.invoiceDate || inv.issueDate || inv.createdAt || '',
             dueDate: inv.dueDate || '',
-            invoiceAmount: inv.amount || inv.grossAmount || inv.netAmount || 0,
+            invoiceAmount: inv.amount ?? inv.grossAmount ?? inv.netAmount ?? 0,
             paidAmount: inv.paidAmount || 0,
-            outstandingAmount: inv.outstandingAmount || inv.amount || 0,
+            // ?? not ||: a settled invoice has outstandingAmount 0, and `||` fell through
+            // to the full invoice amount, adding every paid invoice back into the totals.
+            outstandingAmount: inv.outstandingAmount ?? inv.amount ?? 0,
             currencyCode: inv.currencyCode || 'AED',
             status: inv.status || 'OPEN',
             description: inv.description || '',
@@ -749,44 +757,6 @@ const EnhancedReceivablesPage: React.FC = () => {
       
       setInvoices(mappedInvoices);
 
-      // An invoice is overdue when money is still owed on it and its due date has passed.
-      // Derived here rather than read off the response: ReceivablesDto does declare isOverdue
-      // and daysOverdue, but the only place the backend ever sets them is a hardcoded demo
-      // list, so a real invoice never carries them -- and ReceivableStatusPhase3 has no
-      // OVERDUE member to test against either. Both overdue figures below used to be
-      // `.filter(_i => false)`, so they were always zero.
-      //
-      // Compared as ISO date strings against the local date. dueDate is date-only, so
-      // `new Date(dueDate) < new Date()` would count an invoice due today as overdue for
-      // anyone east of UTC.
-      const now = new Date();
-      const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const settled = ['PAID', 'CANCELLED', 'WRITTEN_OFF', 'NETTED'];
-      const isOverdue = (i: InvoicePhase3) =>
-        i.outstandingAmount > 0 && !!i.dueDate && i.dueDate < todayIso && !settled.includes(i.status);
-
-      // Calculate stats
-      setStats({
-        totalReceivables: mappedInvoices.reduce((s, i) => s + i.outstandingAmount, 0),
-        openInvoices: mappedInvoices.filter(i => ['OPEN', 'PARTIAL'].includes(i.status)).reduce((s, i) => s + i.outstandingAmount, 0),
-        partialPaid: mappedInvoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.paidAmount, 0),
-        overdueAmount: mappedInvoices.filter(isOverdue).reduce((s, i) => s + i.outstandingAmount, 0),
-        collectedThisMonth: mappedInvoices.filter(i => i.status === 'PAID').reduce((s, i) => s + i.paidAmount, 0),
-        invoiceCount: mappedInvoices.length,
-        openCount: mappedInvoices.filter(i => i.status === 'OPEN').length,
-        partialCount: mappedInvoices.filter(i => i.status === 'PARTIAL').length,
-        overdueCount: mappedInvoices.filter(isOverdue).length,
-        paidCount: mappedInvoices.filter(i => i.status === 'PAID').length,
-        averageDaysOutstanding: 25,
-        coboPendingCount: mappedInvoices.filter(i => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL').length,
-        coboPendingAmount: mappedInvoices.filter(i => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL').reduce((s, i) => s + i.outstandingAmount, 0),
-        intercompanyCount: mappedInvoices.filter(i => i.isIntercompany).length,
-        intercompanyAmount: mappedInvoices.filter(i => i.isIntercompany).reduce((s, i) => s + i.outstandingAmount, 0),
-        nettingEligibleCount: mappedInvoices.filter(i => i.nettingEligible).length,
-        nettingEligibleAmount: mappedInvoices.filter(i => i.nettingEligible).reduce((s, i) => s + i.outstandingAmount, 0),
-        nettingIncludedCount: mappedInvoices.filter(i => i.nettingStatus === 'INCLUDED' || i.nettingStatus === 'PENDING').length,
-        nettingIncludedAmount: mappedInvoices.filter(i => i.nettingStatus === 'INCLUDED' || i.nettingStatus === 'PENDING').reduce((s, i) => s + i.outstandingAmount, 0),
-      });
 
       // Fetch VIBANs
       const vibanResponse = await receivablesApi.getPaymentVibans(selectedCorporateId || undefined);
@@ -818,6 +788,76 @@ const EnhancedReceivablesPage: React.FC = () => {
   }, [fetchData]);
 
   // Filtered invoices based on search
+  // Unique currencies across the loaded invoices, and one rate each into the reporting
+  // currency. Memoised because useReportingRates keys its fetch on this array's identity.
+  const invoiceCurrencies = useMemo(
+    () => Array.from(new Set(invoices.map((i) => i.currencyCode).filter(Boolean))),
+    [invoices]
+  );
+  const { rates, excluded: unconvertedCurrencies } = useReportingRates(invoiceCurrencies, reportingCurrency);
+
+  // Every amount below is converted before it is summed. These used to be raw .reduce()
+  // calls straight across the invoice list, so a total added AED to GBP and the tile
+  // labelled the result with whatever formatCurrency defaulted to -- on this environment's
+  // data, AED 7,987,147 + GBP 2,026,231 shown as one GBP figure.
+  //
+  // An invoice whose currency has no rate is left out of the amounts rather than folded in
+  // at 1:1, and its currency is named under the tiles. Counts stay over every invoice: a
+  // count needs no conversion, and hiding rows from it would misreport the book.
+  const stats = useMemo<ReceivablesStats | null>(() => {
+    if (loading) return null;
+
+    // An invoice is overdue when money is still owed on it and its due date has passed.
+    // ReceivablesDto declares isOverdue/daysOverdue but only ever sets them in a hardcoded
+    // demo list, and ReceivableStatusPhase3 has no OVERDUE member, so it is derived here.
+    // ISO strings against the local date: dueDate is date-only, so new Date(dueDate) < new
+    // Date() would call an invoice due today overdue for anyone east of UTC.
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const settled = ['PAID', 'CANCELLED', 'WRITTEN_OFF', 'NETTED'];
+    const isOverdue = (i: InvoicePhase3) =>
+      i.outstandingAmount > 0 && !!i.dueDate && i.dueDate < todayIso && !settled.includes(i.status);
+
+    const sum = (list: InvoicePhase3[], pick: (i: InvoicePhase3) => number) =>
+      list.reduce((total, i) => {
+        const rate = rates.get(i.currencyCode);
+        return rate === undefined ? total : total + pick(i) * rate;
+      }, 0);
+    const outstanding = (i: InvoicePhase3) => i.outstandingAmount;
+    const paid = (i: InvoicePhase3) => i.paidAmount;
+
+    const open = invoices.filter((i) => ['OPEN', 'PARTIAL'].includes(i.status));
+    const partial = invoices.filter((i) => i.status === 'PARTIAL');
+    const paidInvoices = invoices.filter((i) => i.status === 'PAID');
+    const overdue = invoices.filter(isOverdue);
+    const coboPending = invoices.filter((i) => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL');
+    const intercompany = invoices.filter((i) => i.isIntercompany);
+    const nettingEligible = invoices.filter((i) => i.nettingEligible);
+    const nettingIncluded = invoices.filter((i) => i.nettingStatus === 'INCLUDED' || i.nettingStatus === 'PENDING');
+
+    return {
+      totalReceivables: sum(invoices, outstanding),
+      openInvoices: sum(open, outstanding),
+      partialPaid: sum(partial, paid),
+      overdueAmount: sum(overdue, outstanding),
+      collectedThisMonth: sum(paidInvoices, paid),
+      invoiceCount: invoices.length,
+      openCount: invoices.filter((i) => i.status === 'OPEN').length,
+      partialCount: partial.length,
+      overdueCount: overdue.length,
+      paidCount: paidInvoices.length,
+      averageDaysOutstanding: 25,
+      coboPendingCount: coboPending.length,
+      coboPendingAmount: sum(coboPending, outstanding),
+      intercompanyCount: intercompany.length,
+      intercompanyAmount: sum(intercompany, outstanding),
+      nettingEligibleCount: nettingEligible.length,
+      nettingEligibleAmount: sum(nettingEligible, outstanding),
+      nettingIncludedCount: nettingIncluded.length,
+      nettingIncludedAmount: sum(nettingIncluded, outstanding),
+    };
+  }, [invoices, rates, loading]);
+
   const filteredInvoices = useMemo(() => {
     if (!searchQuery) return invoices;
     const query = searchQuery.toLowerCase();
@@ -1135,7 +1175,7 @@ const EnhancedReceivablesPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-4">
           <StatsCard
             title="Total Receivables"
-            value={formatCurrency(stats.totalReceivables)}
+            value={formatCurrency(stats.totalReceivables, reportingCurrency)}
             subtitle={`${stats.invoiceCount} invoices`}
             icon={<FileText className="w-5 h-5" />}
             color="indigo"
@@ -1143,7 +1183,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Open / Partial"
-            value={formatCurrency(stats.openInvoices)}
+            value={formatCurrency(stats.openInvoices, reportingCurrency)}
             subtitle={`${stats.openCount + stats.partialCount} invoices`}
             icon={<Clock className="w-5 h-5" />}
             color="blue"
@@ -1151,7 +1191,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Overdue"
-            value={formatCurrency(stats.overdueAmount)}
+            value={formatCurrency(stats.overdueAmount, reportingCurrency)}
             subtitle={`${stats.overdueCount} invoices`}
             icon={<AlertTriangle className="w-5 h-5" />}
             color="rose"
@@ -1159,7 +1199,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="COBO Pending"
-            value={formatCurrency(stats.coboPendingAmount || 0)}
+            value={formatCurrency(stats.coboPendingAmount || 0, reportingCurrency)}
             subtitle={`${stats.coboPendingCount || 0} awaiting treasury`}
             icon={<ArrowDownLeft className="w-5 h-5" />}
             color="amber"
@@ -1167,7 +1207,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="Intercompany"
-            value={formatCurrency(stats.intercompanyAmount || 0)}
+            value={formatCurrency(stats.intercompanyAmount || 0, reportingCurrency)}
             subtitle={`${stats.intercompanyCount || 0} IC invoices`}
             icon={<Building2 className="w-5 h-5" />}
             color="purple"
@@ -1175,13 +1215,19 @@ const EnhancedReceivablesPage: React.FC = () => {
           />
           <StatsCard
             title="In Netting"
-            value={formatCurrency(stats.nettingIncludedAmount || 0)}
+            value={formatCurrency(stats.nettingIncludedAmount || 0, reportingCurrency)}
             subtitle={`${stats.nettingIncludedCount || 0} in cycle`}
             icon={<GitMerge className="w-5 h-5" />}
             color="emerald"
             delay={0.4}
           />
         </div>
+      )}
+      {stats && unconvertedCurrencies.length > 0 && (
+        <p className="caption mt-2">
+          Amounts are shown in {reportingCurrency} and leave out invoices in{' '}
+          {unconvertedCurrencies.join(', ')} — no rate was available today. Counts include them.
+        </p>
       )}
 
       {/* Error Display */}

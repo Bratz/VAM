@@ -8,7 +8,7 @@ import {
 import { Card, StatusIconBadge, DataTable } from '../ui';
 import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { CountryExposureMap } from './CountryExposureMap';
-import { ReportingRates } from './useReportingRates';
+import { ReportingRates } from '../../hooks/useReportingRates';
 import { FreshnessPill } from './FreshnessPill';
 import { FilterChips } from './FilterChips';
 import { FilterKey } from './types';

@@ -21,7 +21,7 @@ import { ByEntityView } from '../components/multiBank/ByEntityView';
 import { ByCountryView } from '../components/multiBank/ByCountryView';
 import { TrendView } from '../components/multiBank/TrendView';
 import { ViewSwitcher } from '../components/multiBank/ViewSwitcher';
-import { useReportingRates } from '../components/multiBank/useReportingRates';
+import { useReportingRates } from '../hooks/useReportingRates';
 import { ViewKey, parseView } from '../components/multiBank/types';
 
 // ============================================================================

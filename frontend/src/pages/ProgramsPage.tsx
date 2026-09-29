@@ -5,7 +5,7 @@ import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import toast from 'react-hot-toast';
 import { useMarket } from '../context/useMarket';
-import { useReportingRates } from '../components/multiBank/useReportingRates';
+import { useReportingRates } from '../hooks/useReportingRates';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
 import { usePageHeaderActions } from '../context/usePageHeader';

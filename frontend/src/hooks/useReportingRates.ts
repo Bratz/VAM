@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { fxRateApi } from '../../services/api';
+import { fxRateApi } from '../services/api';
 
 // ============================================================================
-// Multi-Bank Liquidity — shared reporting-currency rate map.
+// Shared reporting-currency rate map.
 //
 // One rate per unique currency code (fxRateApi.convert(1, code, reportingCurrency))
 // instead of a convert() call per figure — every consolidated/converted number
 // on the page (Overview's hero, the value-weighted bank distribution, the
-// By Country map's bubble sizes) multiplies locally against this map rather
+// By Country map's bubble sizes, the receivables stat tiles) multiplies locally rather
 // than each re-fetching its own conversions. A code equal to `reportingCurrency`
 // short-circuits to rate 1 with no network call.
 // ============================================================================

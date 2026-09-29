@@ -18,7 +18,7 @@ import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
 import { BankSplitBar, BankShare } from './BankSplitBar';
 import { HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './bankSplitColours';
-import { ReportingRates } from './useReportingRates';
+import { ReportingRates } from '../../hooks/useReportingRates';
 import { FilterKey, ViewKey } from './types';
 
 // ============================================================================
