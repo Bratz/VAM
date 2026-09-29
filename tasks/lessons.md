@@ -208,3 +208,29 @@ glued `bg-surface-cardborder`.
 - After any scripted edit, grep the added lines for glued tokens (`[A-Za-z]className=`, `[a-z)]&&`).
 - Idempotency checks of the form "new already in file" break when `new` contains `old`; restore
   from git instead of re-running.
+
+## A CI check piped into `tee` never fails the job (2026-09-29)
+Frontend CI's storybook job ran `npm run storybook:check | tee storybook-check.log`. GitHub runs
+step scripts under `bash -e` with **no `pipefail`**, so the pipeline exits with `tee`'s status --
+always 0. Every render failure and every strict-mode contrast failure passed silently, for as long
+as the step had existed, while the job's own comment said "Render failures fail the job". Confirmed
+rather than assumed: `false | tee out.log` exits 0 under `set -e`, and 1 once `pipefail` is on.
+- A `run:` step that pipes the thing being checked needs `set -o pipefail`, or must read
+  `${PIPESTATUS[0]}` **on the very next line** -- anything else overwrites it.
+- Prefer redirecting to the log and reading `$?` (what the type-check/lint/test steps already do);
+  reach for `tee` only when the output genuinely needs to stream live.
+- The tell was that the step had never once been observed failing. A check with no failures in its
+  history is not necessarily a clean codebase -- verify it *can* go red before believing it.
+
+## Every `continue-on-error` step needs a gate that reads its exit code (2026-09-29)
+This repo's CI deliberately runs checks soft (`continue-on-error: true`) so all of them report and
+their artifacts always upload, then fails the job in one step at the end. That shape is right, but
+it means a step is only a gate if a later step actually reads its `exit_code` output -- add a new
+soft step and forget the gate, and it reports without ever blocking anything.
+- Audit with: for each step with `continue-on-error`, assert it writes `exit_code=` **and** that
+  `steps.<id>.outputs.exit_code` appears in a non-soft step's `run`.
+- As of this audit all five (backend `test`; frontend `typecheck`, `lint`, `modelcheck`,
+  `storybookcheck`) satisfy both. `deploy-oci.yml` has no piped or soft steps.
+- Backend CI had failed 8 times and Frontend CI 11 times in their last 40 runs, so those gates are
+  demonstrably live -- which is exactly why the storybook one stood out.
+
