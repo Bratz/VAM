@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Send, StopCircle } from 'lucide-react';
-import { useCopilot } from '../CopilotProvider';
+import { useCopilot } from '../useCopilot';
 
 /**
  * Bottom-of-drawer textarea + send button.

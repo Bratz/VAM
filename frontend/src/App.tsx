@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { TrendingUp, Building2, CreditCard, Users, Wallet } from 'lucide-react';
 import Layout from './components/layout/Layout';
@@ -10,6 +10,7 @@ import { CopilotProvider } from './ai/copilot/CopilotProvider';
 import { CopilotLauncher } from './ai/copilot/CopilotLauncher';
 import { CopilotDrawer } from './ai/copilot/CopilotDrawer';
 import { PageHeaderProvider } from './context/PageHeaderContext';
+import { NavigationContext, NavigationContextType } from './hooks/useNavigation';
 
 // ============================================================================
 // CORE PAGES
@@ -206,28 +207,6 @@ export type PageType =
 
   // File Ingest Pipeline
   | 'file-ingest';
-
-// ============================================================================
-// NAVIGATION CONTEXT
-// ============================================================================
-
-export interface NavigationContextType {
-  currentPage: PageType;
-  navigate: (page: PageType, params?: Record<string, string>) => void;
-  goBack: () => void;
-  params: Record<string, string>;
-  selectedProgramId: string | null;
-}
-
-const NavigationContext = createContext<NavigationContextType | null>(null);
-
-export const useNavigation = () => {
-  const context = useContext(NavigationContext);
-  if (!context) {
-    throw new Error('useNavigation must be used within NavigationProvider');
-  }
-  return context;
-};
 
 // ============================================================================
 // BAAS PLACEHOLDER PAGES

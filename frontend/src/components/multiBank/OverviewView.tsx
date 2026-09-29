@@ -16,7 +16,8 @@ import { CurrencyPicker } from '../ui/CurrencyPicker';
 import { StatStrip } from '../layout/StatStrip';
 import { MetricCard } from './MetricCard';
 import { formatPct } from './format';
-import { BankSplitBar, BankShare, HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './BankSplitBar';
+import { BankSplitBar, BankShare } from './BankSplitBar';
+import { HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './bankSplitColours';
 import { ReportingRates } from './useReportingRates';
 import { FilterKey, ViewKey } from './types';
 

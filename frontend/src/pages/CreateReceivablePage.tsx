@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, DollarSign, ArrowDownLeft, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
-import { useNavigation } from '../App';
+import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';

@@ -5,7 +5,7 @@ import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { TileAmount } from '../components/TileAmount';
 import { useNotionalPooling } from '../hooks';
 import { NotionalPool, corporatesApi, programsApi } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';

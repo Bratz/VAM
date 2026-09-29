@@ -1,44 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { corporatesApi, legalEntityApi } from '../services/api';
+import { UserContext, UserContextType, UserEntity } from './useUser';
 
-export interface UserEntity {
-  id: string;
-  entityCode: string;
-  entityName: string;
-  entityType: 'HOLDING' | 'SUBSIDIARY' | 'BRANCH' | 'TREASURY_CENTER' | 'DIVISION';
-  isTreasuryCenter: boolean;
-  canLend: boolean;
-  canBorrow: boolean;
-  ihbEnabled: boolean;
-  corporateId: string;
-}
-
-export interface UserContextType {
-  // Current selections
-  currentCorporateId: string | null;
-  currentEntityId: string | null;
-  currentEntity: UserEntity | null;
-
-  // Available options
-  corporates: Array<{ id: string; name: string; code: string }>;
-  entities: UserEntity[];
-
-  // Actions
-  switchCorporate: (corporateId: string) => void;
-  switchEntity: (entityId: string) => void;
-
-  // Persona helpers
-  isTreasury: boolean;
-  isSubsidiary: boolean;
-  canApproveRecharges: boolean;
-  canManageNetting: boolean;
-  canManageIhb: boolean;
-
-  // Loading state
-  isLoading: boolean;
-}
-
-const UserContext = createContext<UserContextType | null>(null);
+/**
+ * UserProvider — owns the current corporate/entity selection.
+ *
+ * The context object, its types and the `useUser` hook live in `./useUser`.
+ */
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentCorporateId, setCurrentCorporateId] = useState<string | null>(
@@ -152,13 +120,3 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
-
-export const useUser = (): UserContextType => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-};
-
-export default UserContext;

@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Sparkles, X, MessageSquarePlus } from 'lucide-react';
-import { useCopilot } from './CopilotProvider';
+import { useCopilot } from './useCopilot';
 import { MessageList } from './components/MessageList';
 import { Composer } from './components/Composer';
 

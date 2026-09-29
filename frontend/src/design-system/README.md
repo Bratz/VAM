@@ -41,7 +41,7 @@ function App() {
 ### 3. Use Design Tokens
 
 ```tsx
-import { useTheme, useDesignTokens } from './design-system/ThemeProvider';
+import { useTheme, useDesignTokens } from './design-system/useTheme';
 import { getToken, getButtonVariant } from './design-system';
 
 function MyComponent() {
@@ -275,7 +275,7 @@ const lgModal = getModalSize('lg');
 ### Using the Theme Hook
 
 ```tsx
-import { useTheme } from './design-system/ThemeProvider';
+import { useTheme } from './design-system/useTheme';
 
 function ThemeToggle() {
   const { mode, resolvedMode, setMode, toggleMode } = useTheme();
@@ -293,7 +293,7 @@ function ThemeToggle() {
 ### Responsive Breakpoints
 
 ```tsx
-import { useTheme, useBreakpoint, useResponsiveValue } from './design-system/ThemeProvider';
+import { useTheme, useBreakpoint, useResponsiveValue } from './design-system/useTheme';
 
 function ResponsiveComponent() {
   const { breakpoint, isMobile, isTablet, isDesktop } = useTheme();
@@ -316,7 +316,7 @@ function ResponsiveComponent() {
 ### Reduced Motion
 
 ```tsx
-import { usePrefersReducedMotion } from './design-system/ThemeProvider';
+import { usePrefersReducedMotion } from './design-system/useTheme';
 
 function AnimatedComponent() {
   const reducedMotion = usePrefersReducedMotion();

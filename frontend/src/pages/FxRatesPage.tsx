@@ -20,7 +20,7 @@ import { StatStrip } from '../components/layout/StatStrip';
 import { cn, formatDate, formatFxRate, relativeTime } from '../utils';
 // Import from existing api.ts
 import { fxRateApi, FxRate, ApiResponse } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import toast from 'react-hot-toast';
 
 // ============================================================================

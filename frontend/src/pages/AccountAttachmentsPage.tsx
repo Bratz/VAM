@@ -15,7 +15,7 @@ import {
   AccountAttachmentStatistics,
   BalanceHierarchyNode,
 } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';

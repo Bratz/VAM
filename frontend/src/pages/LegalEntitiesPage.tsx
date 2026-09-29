@@ -4,7 +4,7 @@ import { Building2, ChevronRight, ChevronDown, Globe, Users, Briefcase, Crown, P
 import { Card, Button, Badge, StatTile, StatusIconBadge, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { formatCurrency, formatCompactCurrency, cn } from '../utils';
 import {
   EntityAllocationModal,

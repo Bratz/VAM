@@ -1,4 +1,4 @@
-import { useUser, UserEntity } from '../context/UserContext';
+import { useUser, UserEntity } from '../context/useUser';
 
 export interface EntityPickerState {
   // Current selections

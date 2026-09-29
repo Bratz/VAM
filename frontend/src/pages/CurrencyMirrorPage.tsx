@@ -17,7 +17,7 @@ import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
 import { 
   currencyMirrorApi, 

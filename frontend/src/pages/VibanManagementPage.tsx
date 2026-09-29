@@ -5,7 +5,7 @@ import { Modal, Tabs, Alert } from '../components/ui/enhanced';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { vibanApi, programsApi, corporatesApi, virtualAccountsApi, partiesApi } from '../services/api';
 import type { BulkVibanAssignItem, BulkVibanAssignResponse } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';

@@ -6,7 +6,7 @@ import { Modal, Tabs, Alert } from '../../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../../utils';
 import { HIERARCHY_TEMPLATES } from '../../config/templateHierarchy';
 import type { ProgramConfigStep } from './ProgramFormModal';
-import { useNavigation } from '../../App';
+import { useNavigation } from '../../hooks/useNavigation';
 
 import { fetchApi, CHARGES_API_BASE, WalletChargesResponse, Program, ProgramDetail, SettlementVa, VibanPool, programApi, treasuryApi, vibanPoolApi, vibanStrategyConfig, statusConfig } from './shared';
 

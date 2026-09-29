@@ -21,7 +21,7 @@ import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, cn } from '../utils';
-import { useNavigation } from '../App';
+import { useNavigation } from '../hooks/useNavigation';
 import { 
   corporatesApi, 
   programsApi, 

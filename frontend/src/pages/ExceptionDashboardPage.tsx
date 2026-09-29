@@ -23,7 +23,7 @@ import { Card, Button, Badge, EmptyState , StatusIconBadge, Drawer, StatTile } f
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { formatCurrency, cn } from '../utils';
 import { AllocationModal } from '../components/treasury/AllocationModal';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { ScopeSelector, ScopeCorporate, ScopeProgram } from '../components/layout/ScopeSelector';
 import {
   exceptionApi,

@@ -91,19 +91,4 @@ export const SubsidiaryOnly: React.FC<SubsidiaryOnlyProps> = ({
   return <>{fallback}</>;
 };
 
-/**
- * Hook to check if current user has a specific permission.
- * Use when you need conditional logic instead of rendering.
- *
- * @example
- * const canApprove = useHasPermission('canApproveNettingCycle');
- * if (canApprove) {
- *   // do something
- * }
- */
-export const useHasPermission = (permission: keyof ReturnType<typeof usePermissions>): boolean => {
-  const permissions = usePermissions();
-  return !!permissions[permission];
-};
-
 export default PermissionGate;

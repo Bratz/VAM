@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
-import { useUser } from '../../context/UserContext';
+import { useUser } from '../../context/useUser';
 
 interface PermissionGateProps {
   children: React.ReactNode;

@@ -31,7 +31,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
 import { formatRelativeTime, cn } from '../utils';
-import { getConnectorIcon } from '../components/ConnectorIcons';
+import { getConnectorIcon } from '../components/connectorIconMap';
 
 // ============================================================================
 // TYPES

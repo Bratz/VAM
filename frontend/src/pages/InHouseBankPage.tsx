@@ -6,7 +6,7 @@ import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
 import { corporatesApi, programsApi } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { StatStrip } from '../components/layout/StatStrip';

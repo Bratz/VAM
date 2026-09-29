@@ -7,7 +7,7 @@ import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { Modal } from '../components/ui/enhanced';
-import { useMarket } from '../context/MarketContext';
+import { useMarket } from '../context/useMarket';
 import { VaVibanModal } from '../components/viban/VaVibanModal';
 import { formatCurrency, cn } from '../utils';
 import {
@@ -35,7 +35,7 @@ import {
   CreateAggregationRequest,
   CreateTransactionVaRequest,
 } from '../services/api';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { HierarchyInitializationModal } from './HierarchyInitializationModal';
 import { HierarchyLevelConfigModal } from '../components/HierarchyLevelConfigModal';
 import type { HierarchyLevelConfig } from '../components/HierarchyLevelConfigModal';

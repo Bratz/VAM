@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useMarket } from '../../context/MarketContext';
+import { useMarket } from '../../context/useMarket';
 import { cn } from '../../utils';
 
 /**

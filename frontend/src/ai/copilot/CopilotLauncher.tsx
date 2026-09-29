@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
-import { useCopilot } from './CopilotProvider';
+import { useCopilot } from './useCopilot';
 
 /**
  * Floating action button that opens the Copilot drawer.

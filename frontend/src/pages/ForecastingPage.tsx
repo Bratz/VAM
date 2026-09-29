@@ -51,8 +51,8 @@ import { Card, Button, Skeleton, Badge, Drawer, StatTile, StatusIconBadge } from
 import { StatStrip } from '../components/layout/StatStrip';
 import { TileAmount } from '../components/TileAmount';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
-import { useUser } from '../context/UserContext';
-import { useTheme } from '../design-system/ThemeProvider';
+import { useUser } from '../context/useUser';
+import { useTheme } from '../design-system/useTheme';
 import {
   forecastApi,
   ForecastSummary,

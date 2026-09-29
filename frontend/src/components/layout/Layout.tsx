@@ -4,10 +4,10 @@ import { cn } from '../../utils';
 import { Avatar } from '../ui';
 import { BRAND } from '../../branding';
 import { EntityPicker } from '../permissions/EntityPicker';
-import { useUser } from '../../context/UserContext';
-import { useTheme } from '../../design-system/ThemeProvider';
-import { useCopilot } from '../../ai/copilot/CopilotProvider';
-import { useRegisteredPageHeaderActions, useRegisteredPageHeader } from '../../context/PageHeaderContext';
+import { useUser } from '../../context/useUser';
+import { useTheme } from '../../design-system/useTheme';
+import { useCopilot } from '../../ai/copilot/useCopilot';
+import { useRegisteredPageHeaderActions, useRegisteredPageHeader } from '../../context/usePageHeader';
 import { HeaderHelpPopover } from './HeaderHelpPopover';
 // Phase 7 Design System Unification: IA (navigation structure + page titles +
 // mobile bottom-nav) moved out of this file into a dedicated config module

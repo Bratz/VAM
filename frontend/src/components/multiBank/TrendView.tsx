@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { formatCurrency } from '../../utils';
 import { multiBankLiquidityApi, TrendPoint } from '../../services/api';
-import { useTheme } from '../../design-system/ThemeProvider';
+import { useTheme } from '../../design-system/useTheme';
 import { Card } from '../ui';
 
 // ============================================================================

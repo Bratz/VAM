@@ -17,7 +17,7 @@ import {
   EntityAllocationModal,
   EntityLimitAllocationData,
 } from '../components/credit/EntityAllocationModal';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { formatCurrency } from '../utils';
 import { Amount } from '../components/Amount';
 

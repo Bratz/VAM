@@ -38,7 +38,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 
 // ============================================================================
 // TYPES

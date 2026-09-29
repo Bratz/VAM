@@ -4,7 +4,7 @@ import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Br
 import { Card, Badge, Button, DataTable, StatusIconBadge, Checkbox, Toggle } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal, ProgressBar } from '../components/ui/enhanced';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { formatCurrency, cn } from '../utils';
 
 // Import API and types from main api.ts

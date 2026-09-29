@@ -13,7 +13,7 @@ import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import {
   shadowAccountApi as sharedShadowAccountApi,
   accountAttachmentApi,

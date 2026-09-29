@@ -14,7 +14,7 @@ import {
   ScopeSelector,
   type ScopeCorporate,
 } from '../components/layout/ScopeSelector';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import {
   corporatesApi,
   fxRateApi,

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
 import { geoCentroid } from 'd3-geo';
 import { WORLD_COUNTRIES, ALPHA2_TO_NUMERIC, largestRing } from '../dashboard/worldGeo';
-import { useTheme } from '../../design-system/ThemeProvider';
+import { useTheme } from '../../design-system/useTheme';
 import { formatCurrency } from '../../utils';
 
 // ============================================================================

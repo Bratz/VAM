@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn, formatCurrency } from '../../utils';
 import { formatPct } from './format';
+import { HOME_BANK_COLOUR, EXTERNAL_BANK_RAMP } from './bankSplitColours';
 
 // ============================================================================
 // Multi-Bank Liquidity — bank-split horizontal bar.
@@ -33,20 +34,6 @@ interface BankSplitBarProps {
   /** Total to divide by. Defaults to sum of `bankShares[*].amount`. */
   total?: number;
 }
-
-// Neutral gray ramp slots so multiple external banks each get a distinct
-// shade without borrowing the `info` status family. Exported so every
-// bank/currency distribution visual on this page (Overview's distribution
-// bar included) draws from the same ramp instead of a copy that can drift.
-export const HOME_BANK_COLOUR = 'bg-accent-500 dark:bg-accent-400';
-export const EXTERNAL_BANK_RAMP = [
-  'bg-primary-400 dark:bg-primary-500',
-  'bg-primary-600 dark:bg-primary-300',
-  'bg-neutral-400 dark:bg-neutral-500',
-  'bg-primary-300 dark:bg-primary-600',
-  'bg-neutral-500 dark:bg-neutral-400',
-  'bg-primary-500 dark:bg-primary-400',
-];
 
 export const BankSplitBar: React.FC<BankSplitBarProps> = ({ bankShares, total }) => {
   const computedTotal = total ?? bankShares.reduce((a, b) => a + (b.amount || 0), 0);

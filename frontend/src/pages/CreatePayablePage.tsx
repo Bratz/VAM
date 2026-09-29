@@ -10,7 +10,7 @@ import { Card, Button, Badge, StatusIconBadge, Toggle, RadioGroup } from '../com
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { payablesApiPhase2, legalEntityApi, partiesApi, corporatesApi, virtualAccountsApi } from '../services/api';
-import { useNavigation } from '../App';
+import { useNavigation } from '../hooks/useNavigation';
 import { formatCurrency } from '../utils';
 
 // ============================================================================

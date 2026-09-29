@@ -10,10 +10,10 @@ import { StatStrip } from '../components/layout/StatStrip';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { formatCompactCurrency, formatCurrency, cn } from '../utils';
-import { useUser } from '../context/UserContext';
-import { useNavigation } from '../App';
+import { useUser } from '../context/useUser';
+import { useNavigation } from '../hooks/useNavigation';
 import { TreasuryOnly } from '../components/permissions';
 
 // ============================================================================

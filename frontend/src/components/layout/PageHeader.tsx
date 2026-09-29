@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePageHeaderActions, usePageHeaderTitle } from '../../context/PageHeaderContext';
+import { usePageHeaderActions, usePageHeaderTitle } from '../../context/usePageHeader';
 
 /**
  * Registers a page's title + description + actions with the Aperture Layout

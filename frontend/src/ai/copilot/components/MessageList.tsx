@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useCopilot } from '../CopilotProvider';
+import { useCopilot } from '../useCopilot';
 import { AssistantMessage } from './AssistantMessage';
 import { UserMessage } from './UserMessage';
 import { SuggestedPrompts } from './SuggestedPrompts';

@@ -1,4 +1,4 @@
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser';
 
 export const usePermissions = () => {
   const { isTreasury, isSubsidiary, canApproveRecharges, canManageNetting, canManageIhb, currentEntity } = useUser();

@@ -9,8 +9,8 @@ import {
   corporatesApi,
   Corporate,
 } from '../services/api';
-import { useMarket } from '../context/MarketContext';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { useMarket } from '../context/useMarket';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';

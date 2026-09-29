@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Folder, Building2, GitMerge, GitBranch, ChevronRight, ChevronDown, Check, Clock, AlertTriangle, Loader2, RefreshCw, Eye, History, BookOpen, X, Globe, Wallet, Coins, Scale, CheckCircle, XCircle, ArrowUpDown, Settings, MoreHorizontal } from 'lucide-react';
 import { Button as SharedButton, StatusIconBadge } from '../components/ui';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { cn } from '../utils';
 import {
   hierarchyOperationsApi,

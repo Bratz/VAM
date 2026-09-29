@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, AlertTriangle, ListChecks, Banknote, Activity, BellRing, Sparkles } from 'lucide-react';
-import { useDefaultCurrency } from '../../../context/MarketContext';
-import { useCopilot } from '../CopilotProvider';
+import { useDefaultCurrency } from '../../../context/useMarket';
+import { useCopilot } from '../useCopilot';
 
 /**
  * Six starter prompts shown when the conversation is empty.

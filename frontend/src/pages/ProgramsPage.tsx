@@ -4,11 +4,11 @@ import { Card, Badge, Button, Input, Select, StatusIconBadge, DataTable } from '
 import { HeroMetricCard } from '../components/ui/HeroMetricCard';
 import { Modal } from '../components/ui/enhanced';
 import toast from 'react-hot-toast';
-import { useMarket } from '../context/MarketContext';
+import { useMarket } from '../context/useMarket';
 import { useReportingRates } from '../components/multiBank/useReportingRates';
 import { TileAmount } from '../components/TileAmount';
 import { formatCurrency, cn } from '../utils';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';

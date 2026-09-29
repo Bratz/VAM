@@ -35,7 +35,7 @@ import {
   type Program,
   type LegalEntity,
 } from '../services/api';
-import { useNavigation } from '../App';
+import { useNavigation } from '../hooks/useNavigation';
 
 // ============================================================================
 // TYPES

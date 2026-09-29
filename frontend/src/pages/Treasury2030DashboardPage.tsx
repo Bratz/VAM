@@ -2,23 +2,24 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, ArrowRight, Plus, AlertTriangle, ArrowLeftRight, Repeat, Sparkles, ChevronDown, ChevronRight, Download, Loader2, Landmark } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell, LabelList } from 'recharts';
 import { Page } from '../components/layout/Page';
-import { useNavigation } from '../App';
+import { useNavigation } from '../hooks/useNavigation';
 import { PageHeader } from '../components/layout/PageHeader';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
 import { Card, Button } from '../components/ui';
 import { FreshnessPill } from '../components/multiBank/FreshnessPill';
 import { BankSplitBar, BankShare } from '../components/multiBank/BankSplitBar';
-import { EntityHierarchyTreemap, FlatBreakdownTreemap, sumBalance } from '../components/dashboard/EntityHierarchyTreemap';
+import { EntityHierarchyTreemap, FlatBreakdownTreemap } from '../components/dashboard/EntityHierarchyTreemap';
+import { sumBalance } from '../components/dashboard/treemapUtils';
 import { GeoExposureMap } from '../components/dashboard/GeoExposureMap';
 import { IntercompanyPositionChart } from '../components/dashboard/IntercompanyPositionChart';
 import { CashFlowForecastChart, CashFlowWeek } from '../components/dashboard/CashFlowForecastChart';
 import { cn, formatCurrency, formatAmountForTile } from '../utils';
 import { Amount } from '../components/Amount';
 import { PositionStrip } from '../components/PositionStrip';
-import { usePageHeaderActions } from '../context/PageHeaderContext';
+import { usePageHeaderActions } from '../context/usePageHeader';
 import { useEligibleCampaign } from '../hooks/useEligibleCampaign';
 import { CampaignBanner } from '../components/CampaignBanner';
-import { useTheme } from '../design-system/ThemeProvider';
+import { useTheme } from '../design-system/useTheme';
 import {
   multiBankLiquidityApi,
   MultiBankLiquiditySummary,
@@ -41,7 +42,7 @@ import {
   forecastApi,
 } from '../services/api';
 import { cockpitApi } from '../services/cockpitApi';
-import { useCopilot } from '../ai/copilot/CopilotProvider';
+import { useCopilot } from '../ai/copilot/useCopilot';
 import type { AttentionItem, AttentionSeverity } from '../types/cockpit';
 
 // ============================================================================
