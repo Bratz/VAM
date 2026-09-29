@@ -39,6 +39,18 @@ export interface NavItem {
   href: string;
   badge?: number;
   isNew?: boolean;
+  /**
+   * Extra terms the sidebar search should match, beyond `label`. For an entry
+   * that stands in for several things — the Intercompany Dashboard covers POBO
+   * and COBO — so searching the old name still finds its new home.
+   */
+  keywords?: string[];
+  /**
+   * Other page ids this entry represents. Those pages have no menu entry of
+   * their own, but are still routable (deep links, `?page=`), and this keeps
+   * them highlighting this item and auto-expanding its section.
+   */
+  covers?: string[];
   /** Renders muted + non-clickable + a "Soon" pill — for roadmap features not yet built. */
   isComingSoon?: boolean;
   badgeColor?: 'default' | 'warning' | 'error' | 'success';
@@ -111,8 +123,6 @@ export const navSections: NavSection[] = [
       { icon: <Send className="w-5 h-5" />, label: 'Transfers', href: 'transfers' },
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Receivables (AR)', href: 'receivables', badge: 2 },
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Payables (AP)', href: 'payables', badge: 1 },
-      { icon: <CreditCard className="w-5 h-5" />, label: 'POBO Payments', href: 'intercompany-pobo' },
-      { icon: <Wallet className="w-5 h-5" />, label: 'COBO Collections', href: 'intercompany-cobo' },
       { icon: <Upload className="w-5 h-5" />, label: 'File Ingest Pipeline', href: 'file-ingest' },
       { icon: <AlertTriangle className="w-5 h-5" />, label: 'Exceptions', href: 'exceptions', badge: 12, badgeColor: 'warning' },
     ]
@@ -128,7 +138,18 @@ export const navSections: NavSection[] = [
       { icon: <CircleDot className="w-5 h-5" />, label: 'Notional Pooling', href: 'notional-pooling' },
       { icon: <Landmark className="w-5 h-5" />, label: 'In-House Bank', href: 'ihb' },
       { icon: <GitMerge className="w-5 h-5" />, label: 'Netting Cycles', href: 'netting-enhanced', badge: 2 },
-      { icon: <Handshake className="w-5 h-5" />, label: 'Intercompany Dashboard', href: 'intercompany' },
+      // POBO Payments and COBO Collections were separate entries under Payments
+      // & Collections, but all three opened THIS page — IntercompanyDashboardPage
+      // renders the pobo/cobo/settlement tabs from the same component. Three menu
+      // items for one page; folded into this one. The sub-routes still work as
+      // deep links, and `covers` keeps them highlighting here.
+      {
+        icon: <Handshake className="w-5 h-5" />,
+        label: 'Intercompany Dashboard',
+        href: 'intercompany',
+        keywords: ['POBO', 'COBO', 'on behalf of', 'settlement', 'recharges', 'entity pairs'],
+        covers: ['intercompany-pobo', 'intercompany-cobo', 'intercompany-settlement'],
+      },
     ]
   },
   // Insights — home for AI features. Copilot is also a floating FAB on every
@@ -275,5 +296,7 @@ export function sectionForPage(page: string): string | null {
 
 /** Returns the section title (if any) that contains the given page id. */
 export function sectionTitleForPage(page: string): string | undefined {
-  return navSections.find(s => s.items.some(i => i.href === page))?.title;
+  return navSections.find(
+    s => s.items.some(i => i.href === page || i.covers?.includes(page)),
+  )?.title;
 }

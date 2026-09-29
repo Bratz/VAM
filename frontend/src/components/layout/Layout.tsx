@@ -109,7 +109,9 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, o
     ? visibleSections.map(section => ({
         ...section,
         items: section.items.filter(item =>
-          item.label.toLowerCase().includes(searchQuery.toLowerCase())
+          [item.label, ...(item.keywords ?? [])].some((term) =>
+            term.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
         )
       })).filter(section => section.items.length > 0)
     : visibleSections;
@@ -251,7 +253,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, o
                 collapsed && 'h-auto opacity-100'
               )}>
                 {section.items.map((item) => {
-                  const isActive = currentPath === item.href;
+                  const isActive = currentPath === item.href || !!item.covers?.includes(currentPath);
                   const isComingSoon = !!item.isComingSoon;
                   return (
                     <button
