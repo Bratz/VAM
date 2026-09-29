@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pause, Play, Trash2, Building2, Clock, Pencil } from 'lucide-react';
 import { Card, Button, Badge } from '../ui';
-import { formatCompactCurrency, formatRelativeTime } from '../../utils';
+import { formatRelativeTime } from '../../utils';
+import { TileAmount } from '../TileAmount';
 import { SweepRule } from '../../services/api';
 import { SWEEP_TYPES } from './constants';
 
@@ -69,9 +70,17 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, onToggle, onDelete, on
             <p className="text-neutral-500 dark:text-neutral-400">Frequency</p>
             <p className="font-medium">{rule.frequency}</p>
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-neutral-500 dark:text-neutral-400">Total Swept</p>
-            <p className="font-medium">{formatCompactCurrency(rule.totalSwept || 0, rule.currencyCode || 'AED')}</p>
+            {/* <TileAmount/>, not formatCompactCurrency: that name is a
+                full-precision wrapper now (see utils/index.ts), so a real
+                figure rendered "EUR 1,209,232,259.66" -- 106px of text in a
+                72px column of this 3-up grid, spilling over the neighbouring
+                cell. This is a summary card, not a figure anyone reconciles
+                from, and TileAmount keeps the exact number in a tooltip. */}
+            <p className="font-medium">
+              <TileAmount value={rule.totalSwept || 0} currency={rule.currencyCode || 'AED'} />
+            </p>
           </div>
         </div>
 
