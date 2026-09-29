@@ -141,11 +141,6 @@ const getCurrencyStyle = (currency: string) => {
 
 const getCurrencyIcon = (currency: string): LucideIcon => CURRENCY_ICONS[currency] || Coins;
 
-const CurrencyIcon: React.FC<{ currency: string; className?: string }> = ({ currency, className }) => {
-  const Icon = CURRENCY_ICONS[currency] || Coins;
-  return <Icon className={className} />;
-};
-
 /** A mirror's rate is stale once it's more than an hour old. Shared by the
     per-card badge and the page-level "Stale Rates" stat. */
 const isStaleRate = (fxRateAt: string | null | undefined): boolean => {

@@ -241,8 +241,6 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
   accountId,
   onSelectAccount,
   onGenerateStatement,
-  showBaseCurrency = false,
-  baseCurrency = 'AED',
   className,
 }) => {
   // State
@@ -327,7 +325,7 @@ export const VAHierarchyViewer: React.FC<VAHierarchyViewerProps> = ({
 
     const calculateTotals = (node: VAHierarchyNode): { count: number; balance: number } => {
       let count = 1;
-      let balance = node.currentBalance;
+      const balance = node.currentBalance;
 
       if (node.children) {
         node.children.forEach((child) => {

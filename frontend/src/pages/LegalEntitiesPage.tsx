@@ -404,7 +404,7 @@ interface EntityFormModalProps {
   onSave: (data: LegalEntityFormData, entityId?: string) => Promise<void>;
 }
 
-const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, entity, entities, corporateId, onSave }) => {
+const EntityFormModal: React.FC<EntityFormModalProps> = ({ isOpen, onClose, entity, entities, onSave }) => {
   const [formData, setFormData] = useState<LegalEntityFormData>(INITIAL_FORM_DATA);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof LegalEntityFormData, string>>>({});

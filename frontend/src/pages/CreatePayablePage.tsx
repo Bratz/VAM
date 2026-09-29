@@ -194,12 +194,6 @@ const CHARGE_TYPES = [
   { value: 'CUSTOM', label: 'Custom Charge', icon: Receipt },
 ];
 
-const IC_TREATMENTS = [
-  { value: 'IC_RECEIVABLE', label: 'Create intercompany receivable', recommended: true, description: 'Auto-creates IC receivable for settlement' },
-  { value: 'DIRECT_CHARGE', label: 'Direct charge to subsidiary', description: 'Charge directly to cost center' },
-  { value: 'NETTING', label: 'Settlement via netting cycle', description: 'Include in next netting run' },
-];
-
 const TAB_CONFIG: { id: TabId; label: string; icon: React.ElementType; description: string }[] = [
   { id: 'tax', label: 'Tax & Charges', icon: Calculator, description: 'VAT, withholding, additional fees' },
   { id: 'pobo', label: 'POBO', icon: ArrowLeftRight, description: 'Pay on behalf of subsidiary' },
@@ -655,7 +649,7 @@ const InvoiceLookup: React.FC<{
 // TAB COMPONENTS (Simplified versions)
 // ============================================================================
 
-const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: keyof PayableFormData, value: any) => void; subtotal: number; }> = ({ formData, updateField, subtotal }) => {
+const TaxChargesTab: React.FC<{ formData: PayableFormData; updateField: (field: keyof PayableFormData, value: any) => void; subtotal: number; }> = ({ formData, updateField }) => {
   const addCharge = (type: string) => {
     const charge: AdditionalCharge = { id: generateId(), type, description: CHARGE_TYPES.find(c => c.value === type)?.label || type, calculationType: 'FIXED', value: 0, amount: 0 };
     updateField('additionalCharges', [...formData.additionalCharges, charge]);
@@ -888,7 +882,7 @@ const SummarySidebar: React.FC<{
   grandTotal: number;
   loading: boolean;
   canSubmit: boolean;
-}> = ({ formData, totalAmount, totalTax, totalCharges, grandTotal, loading, canSubmit }) => {
+}> = ({ formData, totalAmount, totalTax, totalCharges, grandTotal, canSubmit }) => {
   const daysUntilDue = formData.dueDate ? Math.ceil((new Date(formData.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
   
   return (
@@ -938,8 +932,6 @@ const SummarySidebar: React.FC<{
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-
-type PageType = 'payables' | 'payables-create' | 'payables-edit' | string;
 
 interface CreatePayablePageProps {
   payableId?: string;

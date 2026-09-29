@@ -19,7 +19,6 @@ import {
   currencyMirrorApi,
   CurrencyMirror,
   CurrencyBreakdown,
-  LevelInfo,
   hierarchyVaApi,
   HierarchyStatusResponse,
   InitializationResponse,
@@ -1236,159 +1235,6 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
 );
 
 // ============================================================================
-// CURRENCY BREAKDOWN POPOVER COMPONENT (v5.7.1: Level-based breakdown)
-// ============================================================================
-
-interface CurrencyBreakdownPopoverProps {
-  nodeId: string;
-  corporateId: string;
-  programId?: string;  // Added for program-based API
-  baseCurrency: string;
-  onClose: () => void;
-}
-
-const CurrencyBreakdownPopover: React.FC<CurrencyBreakdownPopoverProps> = ({
-  nodeId: _nodeId, corporateId, programId, baseCurrency, onClose
-}) => {
-  const [breakdown, setBreakdown] = useState<CurrencyBreakdown[]>([]);
-  const [levels, setLevels] = useState<LevelInfo[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<number>(0); // Default to ROOT (0)
-  const [loading, setLoading] = useState(true);
-  const [loadingLevels, setLoadingLevels] = useState(true);
-
-  // Load available levels
-  useEffect(() => {
-    const loadLevels = async () => {
-      if (!programId) {
-        setLoadingLevels(false);
-        return;
-      }
-      try {
-        const res = await currencyMirrorApi.getLevelsByProgram(programId);
-        if (res.success && res.data) {
-          setLevels(res.data);
-          // Default to ROOT level (0) if available
-          if (res.data.length > 0) {
-            const rootLevel = res.data.find(l => l.level === 0);
-            if (rootLevel) {
-              setSelectedLevel(0);
-            } else {
-              setSelectedLevel(res.data[0].level);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load levels:', err);
-      } finally {
-        setLoadingLevels(false);
-      }
-    };
-    loadLevels();
-  }, [programId]);
-
-  // Load breakdown for selected level
-  useEffect(() => {
-    const loadBreakdown = async () => {
-      setLoading(true);
-      try {
-        let res;
-        if (programId) {
-          // Use level-based API for program (defaults to ROOT level 0)
-          res = await currencyMirrorApi.getBreakdownListByProgram(programId, selectedLevel);
-        } else {
-          res = await currencyMirrorApi.getBreakdownList(corporateId);
-        }
-        if (res.success && res.data) {
-          setBreakdown(res.data);
-        }
-      } catch (err) {
-        console.error('Failed to load currency breakdown:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (!loadingLevels) {
-      loadBreakdown();
-    }
-  }, [corporateId, programId, selectedLevel, loadingLevels]);
-
-  if (loading || loadingLevels) {
-    return (
-      <div className="absolute right-0 top-full mt-2 w-72 bg-surface-card rounded-lg shadow-xl border border-edge p-4 z-50">
-        <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-cyan-600 dark:text-cyan-300" />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="absolute right-0 top-full mt-2 w-80 bg-surface-card rounded-lg shadow-xl border border-edge z-50" onClick={(e) => e.stopPropagation()}>
-      <div className="px-4 py-3 border-b border-edge-subtle flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Coins className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
-          <span className="body-strong font-semibold">Currency Breakdown</span>
-        </div>
-        <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
-          <span className="text-body-lg">&times;</span>
-        </button>
-      </div>
-
-      {/* Level Selector - only show if multiple levels available */}
-      {levels.length > 1 && (
-        <div className="px-4 py-2 border-b border-edge-subtle bg-surface-page">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-            <select
-              value={selectedLevel}
-              onChange={(e) => setSelectedLevel(Number(e.target.value))}
-              className="flex-1 text-caption bg-surface-card border border-edge rounded-md px-2 py-1 focus:ring-1 focus:ring-cyan-500"
-            >
-              {levels.map((lvl) => (
-                <option key={lvl.level} value={lvl.level}>
-                  {lvl.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-
-      <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
-        {breakdown.length === 0 ? (
-          <p className="body-sm text-center py-4">No currency mirrors found at this level</p>
-        ) : (
-          breakdown.map((cb) => (
-            <div key={cb.currency} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
-              <div className="flex items-center gap-2">
-                <Badge variant="neutral" size="sm">{cb.currency}</Badge>
-                <span className="text-body-sm font-medium">{formatCurrency(cb.originalBalance, cb.currency)}</span>
-              </div>
-              <div className="text-right">
-                <p className="caption">
-                  {cb.currency === baseCurrency ? 'Base' : `@ ${cb.fxRate?.toFixed(4)}`}
-                </p>
-                <p className="text-body-sm font-medium text-cyan-600 dark:text-cyan-300">
-                  {formatCurrency(cb.convertedBalance, baseCurrency)}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      <div className="px-4 py-2 border-t border-edge-subtle bg-surface-page rounded-b-lg">
-        <div className="flex items-center justify-between">
-          <span className="caption">Total in {baseCurrency}</span>
-          <span className="text-body-sm font-bold text-cyan-700 dark:text-cyan-300">
-            {formatCurrency(breakdown.reduce((sum, cb) => sum + (cb.convertedBalance || 0), 0), baseCurrency)}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ============================================================================
 // IHB DETAIL SECTION COMPONENT (ENHANCED)
 // ============================================================================
 
@@ -1909,7 +1755,7 @@ interface DetailPanelProps {
 }
 
 const DetailPanel: React.FC<DetailPanelProps> = ({
-  node, detail, loading, reportingCurrency, programId, onCreateViban, onViewExceptions: _onViewExceptions, onRecalculateMirror,
+  node, detail, loading, reportingCurrency, onCreateViban, onViewExceptions: _onViewExceptions, onRecalculateMirror,
   onAssignEntity, onConfigureIhb, treasuryRates
 }) => {
   // v5.7.1: Currency breakdown state for AGGREGATION/ROOT nodes

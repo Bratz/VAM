@@ -79,7 +79,7 @@ const cashApi = {
   },
 
   // Get recent operations
-  getOperations: async (filters: any): Promise<{ content: CashOperation[]; totalElements: number }> => {
+  getOperations: async (_filters: any): Promise<{ content: CashOperation[]; totalElements: number }> => {
     // Demo data
     return {
       content: demoOperations,
@@ -380,7 +380,7 @@ const BaaSCashOperationsPage: React.FC = () => {
   const [showCashInModal, setShowCashInModal] = useState(false);
   const [showCashOutModal, setShowCashOutModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showBulkLoadModal, setShowBulkLoadModal] = useState(false);
+  const [, setShowBulkLoadModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOperation, setSelectedOperation] = useState<CashOperation | null>(null);
 
@@ -449,7 +449,7 @@ const BaaSCashOperationsPage: React.FC = () => {
   const showError = (msg: string) => { setError(msg); };
 
   // Wallet lookup
-  const handleWalletLookup = async (reference: string, formType: 'cashIn' | 'cashOut' | 'transfer') => {
+  const handleWalletLookup = async (reference: string, _formType: 'cashIn' | 'cashOut' | 'transfer') => {
     if (!reference || reference.length < 10) return;
     setLookupLoading(true);
     try {

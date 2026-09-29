@@ -45,12 +45,6 @@ const safePercent = (numerator: number | undefined | null, denominator: number |
   return isNaN(pct) || !isFinite(pct) ? 0 : Math.min(pct, 100);
 };
 
-const formatDate = (date: Date | string | null | undefined): string => {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toISOString().split('T')[0];
-};
-
 // ============================================================================
 // CURRENCY CONFIG
 // ============================================================================
@@ -175,15 +169,6 @@ const entityTypeConfig: Record<EntityType, { label: string; icon: React.ElementT
   SPV: { label: 'SPV', icon: FlaskConical, color: 'text-error-700 dark:text-error-300', bgColor: 'bg-error-50 dark:bg-error-500/10' },
   TREASURY_CENTER: { label: 'Treasury', icon: Landmark, color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
 };
-
-const limitTypeOptions: { value: LimitType; label: string; description: string }[] = [
-  { value: 'OVERDRAFT', label: 'Overdraft', description: 'Standard overdraft facility' },
-  { value: 'INTRADAY', label: 'Intraday', description: 'Daylight borrowing - cleared by EOD' },
-  { value: 'AGGREGATE', label: 'Aggregate', description: 'Combined limit across all types' },
-  { value: 'TRANSACTION', label: 'Per-Transaction', description: 'Maximum per single transaction' },
-  { value: 'DAILY', label: 'Daily Cap', description: 'Maximum daily cumulative usage' },
-  { value: 'MONTHLY', label: 'Monthly Cap', description: 'Maximum monthly cumulative usage' },
-];
 
 // ============================================================================
 // API SERVICE - Enhanced for Multi-Currency
@@ -753,7 +738,7 @@ const GroupLimitModal: React.FC<{
   existingCurrencies: string[];
   corporateId: string;
   onSave: (data: { limitName: string; amount: number; currency: string; hardLimit: boolean; approvedBy: string }) => Promise<void>;
-}> = ({ isOpen, onClose, existingLimit, existingCurrencies, corporateId, onSave }) => {
+}> = ({ isOpen, onClose, existingLimit, existingCurrencies, onSave }) => {
   const [limitName, setLimitName] = useState('');
   const [amount, setAmount] = useState<number>(0);
   const [currency, setCurrency] = useState('AED');
@@ -1063,7 +1048,7 @@ const CreditLimitsPage: React.FC = () => {
   const [groupLimits, setGroupLimits] = useState<InternalLimitResponse[]>([]);
   const [entityLimitsMap, setEntityLimitsMap] = useState<Record<string, Record<string, InternalLimitResponse>>>({});
   const [externalCeilings, setExternalCeilings] = useState<Record<string, number>>({});
-  const [currencyTotals, setCurrencyTotals] = useState<Record<string, CurrencyLimitTotals>>({});
+  const [, setCurrencyTotals] = useState<Record<string, CurrencyLimitTotals>>({});
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   // UI

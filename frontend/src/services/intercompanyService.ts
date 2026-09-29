@@ -39,7 +39,7 @@ export { intercompanyApi };
 
 // Stub for vibanIntegrationApi
 export const vibanIntegrationApi = {
-  generateViban: async (entityId: string, purpose: string): Promise<ApiResponse<VibanGenerationResult>> => {
+  generateViban: async (_entityId: string, _purpose: string): Promise<ApiResponse<VibanGenerationResult>> => {
     console.warn('[vibanIntegrationApi] Using stub - not implemented');
     return {
       success: false,
@@ -48,7 +48,7 @@ export const vibanIntegrationApi = {
     };
   },
 
-  getVibans: async (entityId: string): Promise<ApiResponse<any[]>> => {
+  getVibans: async (_entityId: string): Promise<ApiResponse<any[]>> => {
     console.warn('[vibanIntegrationApi] Using stub - not implemented');
     return { success: true, data: [] };
   },
@@ -56,7 +56,7 @@ export const vibanIntegrationApi = {
 
 // Stub for ihbIntegrationApi
 export const ihbIntegrationApi = {
-  getEntityPosition: async (entityId: string): Promise<ApiResponse<any>> => {
+  getEntityPosition: async (_entityId: string): Promise<ApiResponse<any>> => {
     console.warn('[ihbIntegrationApi] Using stub - not implemented');
     return {
       success: true,

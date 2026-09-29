@@ -117,7 +117,6 @@ export function DataTable<T>({
   bulkActions,
 }: DataTableProps<T>) {
   const [localSearch, setLocalSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
 
   // Width of the table's container, so columns can be dropped by what actually fits (the
   // sidebar collapsing changes this without the viewport changing, so breakpoints can't do it).

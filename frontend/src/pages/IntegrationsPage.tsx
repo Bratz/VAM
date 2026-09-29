@@ -1293,8 +1293,6 @@ const IntegrationsPage: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const connectedIds = new Set(connections.map(c => c.connectorId));
-
   const filteredConnectors = mockConnectors.filter(c => {
     const matchesCategory = filterCategory === 'all' || c.category === filterCategory;
     const matchesSearch = !searchTerm || 

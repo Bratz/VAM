@@ -316,15 +316,6 @@ const hierarchyApi = {
 // HELPER FUNCTIONS
 // ============================================================================
 
-const getDataSourceLabel = (source: string) => {
-  const labels: Record<string, string> = {
-    'CORE_BANKING': 'Core Banking', 'OPEN_BANKING_PSD2': 'Open Banking (PSD2)',
-    'OPEN_BANKING_UAE': 'Open Banking (UAE)', 'OPEN_BANKING_UK': 'Open Banking (UK)',
-    'SWIFT_MT940': 'SWIFT MT940', 'TARABUT': 'Tarabut Gateway', 'LEAN': 'Lean Technologies',
-  };
-  return labels[source] || source;
-};
-
 const formatAccountNumber = (acc: PhysicalAccount) => acc.iban ? acc.iban.replace(/(.{4})/g, '$1 ').trim() : acc.accountNumber;
 
 const getCategoryIcon = (category: string) => {

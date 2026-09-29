@@ -94,7 +94,7 @@ export async function streamChat(opts: ChatStreamOptions): Promise<void> {
   const decoder = new TextDecoder();
   let buffer = '';
 
-  while (true) {
+  for (;;) {   // eslint's no-constant-condition flags `while (true)`; same loop, no rule to loosen
     const { value, done } = await reader.read();
     if (done) break;
     buffer += decoder.decode(value, { stream: true });

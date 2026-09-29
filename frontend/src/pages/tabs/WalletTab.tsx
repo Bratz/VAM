@@ -71,7 +71,6 @@ const EXPIRY_ACTIONS = [
 export const WalletTab: React.FC<WalletTabProps> = ({
   formData,
   setFormData,
-  errors,
   program,
 }) => {
   // Update field helper

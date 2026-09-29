@@ -16,8 +16,6 @@ import {
   OperationHistoryEntry,
   OperationRules,
   MoveOperationResult,
-  HierarchyInitResult,
-  AccountCategory,
 } from '../services/hierarchyOperationsApi';
 import { programsApi as programsApiService } from '../services/api';
 import axios from 'axios';
@@ -434,7 +432,7 @@ const HierarchyOperationsPage: React.FC = () => {
   const [programs, setPrograms] = useState<ProgramOption[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState('');
   const [selectedProgramId, setSelectedProgramId] = useState('');
-  const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
+  const [, setLegalEntities] = useState<LegalEntity[]>([]);
   const [loadingCorporates, setLoadingCorporates] = useState(true);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
 

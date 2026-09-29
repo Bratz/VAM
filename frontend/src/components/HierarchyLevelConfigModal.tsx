@@ -129,7 +129,6 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
     }
   };
 
-  const dimensionInfo = DIMENSION_TYPES.find(d => d.value === level.dimensionType);
   const hasSuggestedValues = SUGGESTED_VALUES[level.dimensionType];
 
   return (
@@ -310,7 +309,6 @@ const LevelEditor: React.FC<LevelEditorProps> = ({
 export const HierarchyLevelConfigModal: React.FC<HierarchyLevelConfigModalProps> = ({
   isOpen,
   onClose,
-  programId,
   programName,
   initialLevels,
   onSave,

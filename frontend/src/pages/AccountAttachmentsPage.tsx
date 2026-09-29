@@ -362,7 +362,7 @@ const AccountAttachmentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<RelationshipType | ''>('');
   const [filterStatus, setFilterStatus] = useState<AttachmentStatus | ''>('');
-  const [statistics, setStatistics] = useState<AccountAttachmentStatistics | null>(null);
+  const [statistics] = useState<AccountAttachmentStatistics | null>(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);

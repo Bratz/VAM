@@ -463,15 +463,7 @@ interface ExpandableEntryRowProps {
 
 const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency, index }) => {
   const [expanded, setExpanded] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
   const isCredit = entry.creditDebit === 'CRDT';
-
-  const handleCopy = async (value: string, field: string) => {
-    await copyToClipboard(value);
-    setCopied(field);
-    toast.success('Copied to clipboard');
-    setTimeout(() => setCopied(null), 2000);
-  };
 
   const details = entry.entryDetails;
 
@@ -873,7 +865,6 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
   onClose,
   accountId,
   vaNumber,
-  accountName,
   currency,
   fromDate,
   toDate,

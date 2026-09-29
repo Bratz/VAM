@@ -511,12 +511,6 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
     submit: 'Submit',
   };
 
-  const actionColors: Record<string, 'success' | 'error' | 'primary'> = {
-    approve: 'success',
-    reject: 'error',
-    submit: 'primary',
-  };
-
   const handleConfirm = async () => {
     await onConfirm(payable.id, action, action === 'reject' ? reason : notes);
     onClose();
@@ -1072,12 +1066,6 @@ const EnhancedPayablesPage: React.FC = () => {
     navigate('payables-edit', { id: payable.id });
   };
 
-  const handleSchedule = (payable: PayablePhase2) => {
-    // For now, just navigate to edit page with schedule mode
-    // Could also implement a schedule modal later
-    navigate('payables-edit', { id: payable.id, mode: 'schedule' });
-  };
-
   const handlePayNow = (payable: PayablePhase2) => {
     setPayNowTarget(payable);
   };
@@ -1168,8 +1156,6 @@ const EnhancedPayablesPage: React.FC = () => {
       netting: stats?.nettingIncludedCount || payablesList.filter(p => p.nettingStatus === 'INCLUDED').length,
     };
   }, [payables, stats]);
-
-  const selectedPayables = filteredPayables.filter(p => selectedIds.has(p.id));
 
   return (
     <Page>

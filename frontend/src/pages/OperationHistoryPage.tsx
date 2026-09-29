@@ -358,8 +358,6 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
     setFilters({ operationType: 'ALL', status: 'ALL', dateFrom: '', dateTo: '', searchQuery: '' });
   };
 
-  const selectedCorporate = corporates.find((c) => c.id === selectedCorporateId);
-
   return (
     <div className="space-y-6">
       {/* Header */}

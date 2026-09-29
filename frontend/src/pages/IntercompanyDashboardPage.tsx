@@ -14,7 +14,6 @@ import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { formatCompactCurrency, formatCurrency, cn } from '../utils';
 import { useUser } from '../context/UserContext';
 import { useNavigation } from '../App';
-import { usePermissions } from '../hooks/usePermissions';
 import { TreasuryOnly } from '../components/permissions';
 
 // ============================================================================
@@ -306,7 +305,7 @@ interface PoboCoboModalProps {
   onSuccess: () => void;
 }
 
-const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, entities, corporateId, onSuccess }) => {
+const PoboCoboModal: React.FC<PoboCoboModalProps> = ({ isOpen, onClose, mode, entities, onSuccess }) => {
   const [step, setStep] = useState<'form' | 'preview' | 'result'>('form');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PoboPreview | null>(null);
@@ -791,7 +790,6 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
   // User context and permissions
   const { currentEntity } = useUser();
   const { navigate } = useNavigation();
-  const { canApprovePOBORecharge, canRejectPOBORecharge } = usePermissions();
   const approverName = currentEntity?.entityCode || currentEntity?.entityName || 'System';
 
   const [loading, setLoading] = useState(true);
@@ -819,7 +817,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
   // Modal states
   const [showPoboModal, setShowPoboModal] = useState(false);
   const [showCoboModal, setShowCoboModal] = useState(false);
-  const [selectedPair, setSelectedPair] = useState<EntityPairSummary | null>(null);
+  const [, setSelectedPair] = useState<EntityPairSummary | null>(null);
 
   // Determine selected entity role for filtering
   const selectedEntity = legalEntities.find(e => e.id === selectedEntityId);
@@ -1451,7 +1449,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <StatusIconBadge tone="success" icon={CheckCircle} size="xl" className="mx-auto mb-4" />
                   <p className="text-neutral-500 font-medium dark:text-neutral-400">All intercompany positions are settled</p>
                 </div>
-              ) : entityPairs.filter(p => p.pendingTransactions > 0).map((pair, i) => (
+              ) : entityPairs.filter(p => p.pendingTransactions > 0).map((pair, _i) => (
                 <div key={`${pair.entity1Id}-${pair.entity2Id}`} className="p-4 hover:bg-primary-50/30 dark:hover:bg-primary-800/50 transition-colors group">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">

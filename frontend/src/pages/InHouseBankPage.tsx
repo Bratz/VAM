@@ -5,7 +5,7 @@ import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { TileAmount } from '../components/TileAmount';
-import api, { corporatesApi, programsApi } from '../services/api';
+import { corporatesApi, programsApi } from '../services/api';
 import { usePageHeaderActions } from '../context/PageHeaderContext';
 import { Page } from '../components/layout/Page';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
@@ -22,9 +22,6 @@ interface ApiResponse<T> {
   data: T; 
   message?: string; 
 }
-
-// Use the existing apiClient from services/api.ts
-const apiClient = api;
 
 // ============================================================================
 // TYPES - Aligned with Backend DTOs
@@ -246,15 +243,6 @@ const ihbUnifiedApi = {
 // ============================================================================
 // CORPORATE & PROGRAM SELECTOR BAR
 // ============================================================================
-
-const programTypeConfig: Record<string, { label: string; color: string }> = {
-  COLLECTION: { label: 'Collection', color: 'text-success-600 dark:text-success-300' },
-  WALLET: { label: 'Wallet', color: 'text-primary-600 dark:text-primary-200' },
-  IHB: { label: 'In-House Bank', color: 'text-cat-2 dark:text-cat-2-fg' },
-  PAYABLES: { label: 'Payables', color: 'text-warning-600 dark:text-warning-300' },
-  VIBAN: { label: 'VIBAN', color: 'text-info-600 dark:text-info-300' },
-  ESCROW: { label: 'Escrow', color: 'text-cat-3 dark:text-cat-3-fg' },
-};
 
 // Picker now uses the shared `<ScopeSelector mode="corporate-program">`
 // primitive from components/layout/. The inline `SelectorBar` (Desktop +
@@ -482,7 +470,6 @@ const InHouseBankPage: React.FC = () => {
   const [showPositionModal, setShowPositionModal] = useState(false);
   const [showCurrentAccountModal, setShowCurrentAccountModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<IhbEntity | null>(null);
-  const [selectedCurrentAccount, setSelectedCurrentAccount] = useState<IhbCurrentAccount | null>(null);
   const [, setEntityPosition] = useState<any>(null);
   const [loadingPosition, setLoadingPosition] = useState(false);
 

@@ -78,8 +78,6 @@ const CARD_PROGRAM_TYPES = [
 export const CardProgramTab: React.FC<CardProgramTabProps> = ({
   formData,
   setFormData,
-  errors,
-  program,
 }) => {
   // Update field helper
   const updateField = <K extends keyof CreateVaRequest>(

@@ -35,15 +35,6 @@ interface HierarchyBalance {
   status?: string;
 }
 
-interface AggregationSummary {
-  corporateId: string;
-  baseCurrency: string;
-  totalBalanceBase: number;
-  totalAccounts: number;
-  currencyCount: number;
-  lastAggregatedAt: string;
-}
-
 interface Corporate {
   id: string;
   corporateId: string;
@@ -263,7 +254,7 @@ const CurrencyBreakdownChart: React.FC<CurrencyBreakdownProps> = ({ position }) 
 const BalanceAggregationPage: React.FC = () => {
   const [hierarchy, setHierarchy] = useState<HierarchyBalance | null>(null);
   const [multiCurrencyPosition, setMultiCurrencyPosition] = useState<MultiCurrencyPosition | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [baseCurrency, setBaseCurrency] = useState('AED');

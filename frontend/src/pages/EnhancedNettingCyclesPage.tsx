@@ -260,7 +260,7 @@ interface CycleDetailModalProps {
 
 const CycleDetailModal: React.FC<CycleDetailModalProps> = ({ isOpen, onClose, cycle, onPopulate, isProcessing }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'entries' | 'positions' | 'settlement'>('overview');
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [entries, setEntries] = useState<NettingEntry[]>([]);
   const [positions, setPositions] = useState<NettingPosition[]>([]);
   const [settlements, setSettlements] = useState<SettlementInstruction[]>([]);
@@ -815,7 +815,7 @@ const CycleCard: React.FC<CycleCardProps> = ({
 const EnhancedNettingCyclesPage: React.FC = () => {
   // User context and permissions
   const { currentEntity } = useUser();
-  const { canCreateNettingCycle, canApproveNettingCycle, canSettleNettingCycle, isTreasury } = usePermissions();
+  const { canApproveNettingCycle, canSettleNettingCycle, isTreasury } = usePermissions();
   const approverName = currentEntity?.entityCode || currentEntity?.entityName || 'System';
 
   const [cycles, setCycles] = useState<NettingCycle[]>([]);

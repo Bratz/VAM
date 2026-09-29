@@ -167,8 +167,6 @@ const CodeTagList: React.FC<CodeTagListProps> = ({
 export const MccRestrictionsTab: React.FC<MccRestrictionsTabProps> = ({
   formData,
   setFormData,
-  errors,
-  program,
 }) => {
   // Input states
   const [mccInput, setMccInput] = useState('');

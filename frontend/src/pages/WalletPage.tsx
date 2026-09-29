@@ -13,12 +13,6 @@ import { Page } from '../components/layout/Page';
 const API_BASE = '/api/v1/wallets';
 const PARTY_API_BASE = '/api/v1/parties';
 
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
-}
-
 const fetchApi = async <T,>(endpoint: string, options?: RequestInit, base = API_BASE): Promise<T> => {
   const { headers: optHeaders, ...restOptions } = options || {};
   const response = await fetch(`${base}${endpoint}`, {
@@ -433,14 +427,6 @@ const kycStatusConfig: Record<string, { label: string; color: string; icon: Reac
   REJECTED: { label: 'Rejected', color: 'error', icon: <XCircle className="w-3 h-3" /> },
   EXPIRED: { label: 'Expired', color: 'error', icon: <XCircle className="w-3 h-3" /> },
   NOT_STARTED: { label: 'Not Started', color: 'neutral', icon: <Clock className="w-3 h-3" /> },
-};
-
-const partyTypeConfig: Record<string, { label: string; icon: LucideIcon; color: string; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
-  INDIVIDUAL: { label: 'Individual', icon: User, color: 'text-info-600 dark:text-info-300', tone: 'info' },
-  CORPORATE: { label: 'Corporate', icon: Building2, color: 'text-cat-2 dark:text-cat-2-fg', tone: 'cat-2' },
-  EMPLOYEE: { label: 'Employee', icon: Users, color: 'text-success-600 dark:text-success-300', tone: 'success' },
-  VENDOR: { label: 'Vendor', icon: Building2, color: 'text-warning-600 dark:text-warning-300', tone: 'warning' },
-  CUSTOMER: { label: 'Customer', icon: UserCheck, color: 'text-cat-3 dark:text-cat-3-fg', tone: 'cat-3' },
 };
 
 // ============================================================================
@@ -863,7 +849,7 @@ const WalletPage: React.FC = () => {
   const [wallets, setWallets] = useState<WalletAccount[]>([]);
   const [totalWallets, setTotalWallets] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [, setTotalPages] = useState(1);
   
   // Modal state
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -876,7 +862,6 @@ const WalletPage: React.FC = () => {
   const [showKycVerifyModal, setShowKycVerifyModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   
-  const [selectedProgram, setSelectedProgram] = useState<WalletProgram | null>(null);
   const [selectedWallet, setSelectedWallet] = useState<WalletAccount | null>(null);
   const [walletDetail, setWalletDetail] = useState<WalletAccountDetail | null>(null);
   
@@ -896,8 +881,8 @@ const WalletPage: React.FC = () => {
     autoTriggerKyc: false,
   });
   const [selectedParty, setSelectedParty] = useState<Party | null>(null);
-  const [selectedHierarchyNode, setSelectedHierarchyNode] = useState<HierarchyNode | null>(null);
-  const [partyMode, setPartyMode] = useState<'existing' | 'new'>('existing');
+  const [, setSelectedHierarchyNode] = useState<HierarchyNode | null>(null);
+  const [, setPartyMode] = useState<'existing' | 'new'>('existing');
   
   // Other form states
   const [editWalletForm, setEditWalletForm] = useState<UpdateWalletRequest>({});

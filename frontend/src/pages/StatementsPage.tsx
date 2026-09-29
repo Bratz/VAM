@@ -1173,7 +1173,7 @@ const StatementsPage: React.FC = () => {
   // Enhanced UI state for new components
   const [showEnhancedDownloadPanel, setShowEnhancedDownloadPanel] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [previewSummary, setPreviewSummary] = useState<StatementSummary | null>(null);
+  const [, setPreviewSummary] = useState<StatementSummary | null>(null);
   const [historySearch, setHistorySearch] = useState('');
   const [historyFormatFilter, setHistoryFormatFilter] = useState<ISO20022StatementFormat | ''>('');
 

@@ -765,8 +765,8 @@ const TaxChargesTab: React.FC<{
 // This pre-submission tab just says so instead of faking a preview.
 const PaymentLinkTab: React.FC = () => (
   <div className="flex items-center gap-3 p-4 bg-surface-page rounded-lg border border-edge">
-    <div className="p-2 bg-indigo-100 rounded-lg dark:bg-indigo-500/20">
-      <Link2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
+    <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
+      <Link2 className="w-5 h-5 text-info-600 dark:text-info-300" />
     </div>
     <div>
       <p className="body-strong">Payment Link & QR Code</p>
@@ -1209,8 +1209,6 @@ const RemindersTab: React.FC<{
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-
-type PageType = 'receivables' | 'receivables-create' | 'receivables-edit' | string;
 
 interface CreateReceivablePageProps {
   receivableId?: string;

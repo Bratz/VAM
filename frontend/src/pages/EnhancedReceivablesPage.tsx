@@ -580,7 +580,7 @@ const EnhancedReceivablesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history'>('invoices');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [processing, setProcessing] = useState(false);
+  const [, setProcessing] = useState(false);
   
   // COBO Modal state
   const [showCoboModal, setShowCoboModal] = useState(false);
@@ -754,12 +754,12 @@ const EnhancedReceivablesPage: React.FC = () => {
         totalReceivables: mappedInvoices.reduce((s, i) => s + i.outstandingAmount, 0),
         openInvoices: mappedInvoices.filter(i => ['OPEN', 'PARTIAL'].includes(i.status)).reduce((s, i) => s + i.outstandingAmount, 0),
         partialPaid: mappedInvoices.filter(i => i.status === 'PARTIAL').reduce((s, i) => s + i.paidAmount, 0),
-        overdueAmount: mappedInvoices.filter(i => false).reduce((s, i) => s + i.outstandingAmount, 0),
+        overdueAmount: mappedInvoices.filter(_i => false).reduce((s, i) => s + i.outstandingAmount, 0),
         collectedThisMonth: mappedInvoices.filter(i => i.status === 'PAID').reduce((s, i) => s + i.paidAmount, 0),
         invoiceCount: mappedInvoices.length,
         openCount: mappedInvoices.filter(i => i.status === 'OPEN').length,
         partialCount: mappedInvoices.filter(i => i.status === 'PARTIAL').length,
-        overdueCount: mappedInvoices.filter(i => false).length,
+        overdueCount: mappedInvoices.filter(_i => false).length,
         paidCount: mappedInvoices.filter(i => i.status === 'PAID').length,
         averageDaysOutstanding: 25,
         coboPendingCount: mappedInvoices.filter(i => i.coboRequestStatus === 'PENDING_TREASURY_APPROVAL').length,
