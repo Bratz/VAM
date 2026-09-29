@@ -103,8 +103,9 @@ jobs:
           fi
 
   # Storybook is the design-system specimen: every story must build and render, in light and dark.
-  # Render failures fail the job. WCAG contrast findings are reported (report-only) until the
-  # baseline is clean; set STORYBOOK_A11Y_STRICT=1 to make them fail too.
+  # Render failures fail the job — genuinely so since the PIPESTATUS fix below; before it the
+  # result was piped into tee and the job passed regardless. WCAG contrast findings are
+  # reported (report-only) until the baseline is clean; set STORYBOOK_A11Y_STRICT=1 to fail on them.
   storybook:
     runs-on: ubuntu-latest
     defaults:
@@ -127,8 +128,19 @@ jobs:
       - name: Install Chromium for the render check
         run: npx playwright install --with-deps chromium
 
-      - name: Render + contrast check (every story, light and dark)
-        run: npm run storybook:check | tee storybook-check.log
+      - name: Render + contrast check (captured, non-blocking)
+        # `| tee` used to swallow the result: steps run under `bash -e` with no
+        # pipefail, so the pipeline exited with tee's status (always 0) and a
+        # render failure passed the job — despite the comment above saying
+        # otherwise. PIPESTATUS[0] is the real code, and it has to be read on
+        # the very next line before anything else overwrites it. tee stays so
+        # the output still streams live during a slow render pass.
+        run: |
+          set +e
+          npm run storybook:check 2>&1 | tee storybook-check.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        id: storybookcheck
+        continue-on-error: true
 
       - name: Upload check log
         if: always()
@@ -137,3 +149,10 @@ jobs:
           name: storybook-check-${{ github.event.pull_request.head.sha || github.sha }}
           path: frontend/storybook-check.log
           retention-days: 14
+
+      - name: Fail the job if the render check actually failed
+        run: |
+          if [ "${{ steps.storybookcheck.outputs.exit_code }}" != "0" ]; then
+            echo "storybook render/contrast check failed — see storybook-check.log artifact"
+            exit 1
+          fi
