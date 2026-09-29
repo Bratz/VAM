@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, Menu, X, ChevronDown, LogOut, User, HelpCircle, Settings, Layers, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Bell, Search, ChevronDown, LogOut, User, HelpCircle, Settings, Layers, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '../../utils';
 import { Avatar } from '../ui';
 import { BRAND } from '../../branding';
@@ -33,16 +33,14 @@ import { featureFlags } from '../../utils/featureFlags';
 // ============================================================================
 
 interface SidebarProps {
-  isOpen: boolean;
   currentPath: string;
   onNavigate: (page: string) => void;
-  onClose: () => void;
-  /** Desktop-only icon rail. Below lg the sidebar is a drawer and ignores this. */
+  /** Icon rail: narrows the sidebar to 64px, keeping icons and dropping labels. */
   collapsed: boolean;
   onToggleCollapse: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onClose, collapsed, onToggleCollapse }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, onToggleCollapse }) => {
   // Sections start collapsed on open. The useEffect below pops the active
   // section back open so the user sees a highlighted active item in context.
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
@@ -73,11 +71,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
     if (item.isComingSoon) return;
     if (item.href === '__copilot__') {
       openCopilot();
-      onClose();
       return;
     }
     onNavigate(item.href);
-    onClose();
   };
 
   const toggleSection = (title: string) => {
@@ -120,14 +116,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
 
   return (
     <>
-      {/* Backdrop for mobile */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm z-40 animate-fade-in hidden"
-          onClick={onClose}
-        />
-      )}
-
       <aside className={cn(
         'fixed top-0 left-0 h-full w-60 z-50 flex flex-col',
         collapsed && 'w-16',
@@ -137,9 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         // Premium shadow
         'shadow-2xl dark:shadow-none',
         // Animation
-        'transform transition-[transform,width] duration-300 ease-out',
-        'translate-x-0',
-        isOpen ? 'translate-x-0' : '-translate-x-full'
+        'transition-[width] duration-300 ease-out'
       )}>
         {/* Logo Header - Premium */}
         <div className={cn(
@@ -180,12 +166,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800"
-          >
-            <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-          </button>
           <button
             onClick={onToggleCollapse}
             className={cn(
@@ -231,7 +211,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 <button
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
-                    collapsed && 'hidden',
                     'flex items-center justify-between w-full px-3 py-1.5 mt-2',
                     // neutral-400/dark:neutral-500 measured at 2.20:1 (light)
                     // and 1.45:1 (dark) against the sidebar background — both
@@ -241,7 +220,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                     // relative-luminance formula against the actual
                     // rendered backgrounds).
                     'text-caption font-semibold text-neutral-500 dark:text-neutral-300',
-                    'hover:text-neutral-600 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50'
+                    'hover:text-neutral-600 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50',
+                    collapsed && 'hidden'
                   )}
                 >
                   <span>{section.title}</span>
@@ -271,7 +251,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       title={isComingSoon ? 'Coming soon' : collapsed ? item.label : undefined}
                       className={cn(
                         'relative',
-                        collapsed && 'justify-center px-0 gap-0',
                         // Phase 6 Design System Unification: active state calmed
                         // down from "gradient + colored shadow + dark-only left
                         // rule" to "solid navy fill + 2px gold left rule" in
@@ -285,7 +264,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                           ? 'border-transparent text-neutral-400 cursor-not-allowed opacity-60'
                           : isActive
                           ? 'border-accent-500 dark:border-accent-400 bg-primary-800 dark:bg-primary-700/80 text-white'
-                          : 'border-transparent text-neutral-600 hover:bg-neutral-100 hover:text-primary-900 dark:text-neutral-300 dark:hover:bg-primary-800/60 dark:hover:text-neutral-50'
+                          : 'border-transparent text-neutral-600 hover:bg-neutral-100 hover:text-primary-900 dark:text-neutral-300 dark:hover:bg-primary-800/60 dark:hover:text-neutral-50',
+                        collapsed && 'justify-center px-0 gap-0'
                       )}
                     >
                       <span className={cn(
@@ -315,9 +295,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
-                          collapsed && 'hidden',
                           'text-caption font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
-                          getBadgeStyle(isActive, item.badgeColor)
+                          getBadgeStyle(isActive, item.badgeColor),
+                          collapsed && 'hidden'
                         )}>
                           {item.badge}
                         </span>
@@ -380,11 +360,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
 // ============================================================================
 
 interface HeaderProps {
-  onMenuClick: () => void;
   currentPage: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -418,13 +397,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
             flex-1 title below (which sits inside it) has real room to grow
             into instead of truncating while the header is visibly half-empty. */}
         <div className="flex items-center gap-4 min-w-0 flex-1">
-          <button
-            onClick={onMenuClick}
-            className="p-2.5 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800/50"
-          >
-            <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-          </button>
-
           {/* Page title — Desktop. F2: Fraunces display + gold underline
               accent. Sourced from whatever the current page registered via
               <PageHeader>/usePageHeaderTitle; falls back to the generic
@@ -704,9 +676,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigate }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Desktop icon rail. With no saved choice it starts collapsed on screens under 1440 CSS px
+  // Icon rail. With no saved choice it starts collapsed on screens under 1440 CSS px
   // (a 1920px display at 150% scaling is 1280), where a 240px sidebar leaves too little room.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
@@ -727,22 +697,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
     document.documentElement.dataset.sidebar = sidebarCollapsed ? 'collapsed' : 'expanded';
   }, [sidebarCollapsed]);
 
-  // Close sidebar on route change
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [currentPage]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSidebarOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, []);
-
   return (
     // App shell — Phase 8 post-review (2026-05-13). The content-area
     // gradient (`from-neutral-50 via-white to-neutral-50/80`) was redundant
@@ -750,12 +704,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
     // in favour of a transparent shell that lets the body's two radial
     // gradients carry through. One less layer in the paint budget.
     <div className="min-h-screen bg-transparent">
-      {/* Desktop Sidebar */}
       <Sidebar
-        isOpen={sidebarOpen}
         currentPath={currentPage}
         onNavigate={onNavigate}
-        onClose={() => setSidebarOpen(false)}
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapsed}
       />
@@ -763,15 +714,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
       {/* Main Content Area */}
       <div className={cn(
         'min-h-screen flex flex-col',
-        sidebarCollapsed ? 'pl-16' : 'pl-60', // Sidebar width on desktop
-        'transition-[padding] duration-300',
-        'pb-0' // Bottom nav padding on mobile
+        sidebarCollapsed ? 'pl-16' : 'pl-60', // clears the fixed sidebar
+        'transition-[padding] duration-300'
       )}>
-        {/* Header */}
-        <Header
-          onMenuClick={() => setSidebarOpen(true)}
-          currentPage={currentPage}
-        />
+        <Header currentPage={currentPage} />
 
         {/* App shell padding + page-enter animation only. Content max-width
             and vertical rhythm are owned by the <Page> primitive (see

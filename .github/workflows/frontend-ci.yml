@@ -31,9 +31,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: "npm"
@@ -66,7 +66,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload results for this commit
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           # Not github.sha: for a pull_request-triggered run, github.sha is a
           # synthetic merge commit, not the branch's real head commit — the
@@ -97,9 +97,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: "npm"
@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload check log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: storybook-check-${{ github.event.pull_request.head.sha || github.sha }}
           path: frontend/storybook-check.log
