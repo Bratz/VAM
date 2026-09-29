@@ -29,11 +29,19 @@ export interface AddShadowDrawerProps {
   existingShadows: SimulatedShadow[];
   onClose: () => void;
   onCreate: (shadow: SimulatedShadow) => void;
+  /**
+   * Edit an existing shadow instead of adding one. Only the name, role, parent
+   * and notes are editable — the snapshot fields are frozen at add time by
+   * design, so they (and the physicalAccountId and localId) are carried over
+   * untouched. Null/undefined = add mode.
+   */
+  initialShadow?: SimulatedShadow | null;
 }
 
 export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
   open,
   physicalAccount,
+  initialShadow = null,
   existingShadows,
   onClose,
   onCreate,
@@ -43,39 +51,80 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
   const [parentLocalId, setParentLocalId] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Reset the form whenever a new Physical Account is brought into the drawer.
+  const isEdit = initialShadow != null;
+
+  // Seed the form: from the shadow when editing, otherwise from the Physical
+  // Account just brought into the drawer.
   useEffect(() => {
-    if (open && physicalAccount) {
+    if (!open) return;
+    if (initialShadow) {
+      setName(initialShadow.proposedVaName);
+      setRole(initialShadow.role);
+      setParentLocalId(initialShadow.parentLocalId ?? '');
+      setNotes(initialShadow.notes ?? '');
+      return;
+    }
+    if (physicalAccount) {
       setName(`${physicalAccount.accountName} — Shadow`);
       setRole(existingShadows.length === 0 ? 'HEADER' : 'CHILD');
       setParentLocalId('');
       setNotes('');
     }
-  }, [open, physicalAccount, existingShadows.length]);
+  }, [open, physicalAccount, initialShadow, existingShadows.length]);
 
-  if (!physicalAccount) return null;
-  const pa = physicalAccount;
+  if (!physicalAccount && !initialShadow) return null;
+
+  // Editing has no live Physical Account to hand — the shadow's frozen snapshot
+  // is the record of what it mirrors, so the context strip reads from whichever
+  // is available.
+  const context = physicalAccount
+    ? {
+        bankName: physicalAccount.bankName,
+        bankCode: physicalAccount.bankCode,
+        accountNumber: physicalAccount.accountNumber,
+        balance: formatCurrency(physicalAccount.currentBalance, physicalAccount.currencyCode),
+        dataSource: physicalAccount.dataSource,
+      }
+    : {
+        bankName: initialShadow!.snapshotBankName,
+        bankCode: initialShadow!.snapshotBankCode,
+        accountNumber: undefined,
+        balance: undefined,
+        dataSource: initialShadow!.snapshotDataSource,
+      };
 
   const parentOptions = [
     { value: '', label: 'No parent (top of group)' },
-    ...existingShadows.map((s) => ({
-      value: s.localId,
-      label: `${s.proposedVaName} (${s.role === 'HEADER' ? 'Header' : 'Child'})`,
-    })),
+    ...existingShadows
+      // a shadow cannot be its own parent
+      .filter((s) => s.localId !== initialShadow?.localId)
+      .map((s) => ({
+        value: s.localId,
+        label: `${s.proposedVaName} (${s.role === 'HEADER' ? 'Header' : 'Child'})`,
+      })),
   ];
 
   const canCreate = name.trim().length > 0;
 
   const handleCreate = () => {
     if (!canCreate) return;
-    const shadow: SimulatedShadow = {
-      localId: newLocalId('sh'),
-      physicalAccountId: pa.id,
+    const edits = {
       proposedVaName: name.trim(),
       role,
       parentLocalId:
         role === 'CHILD' && parentLocalId ? parentLocalId : undefined,
       notes: notes.trim() || undefined,
+    };
+    if (initialShadow) {
+      // Snapshot fields and identity carry over untouched.
+      onCreate({ ...initialShadow, ...edits });
+      return;
+    }
+    const pa = physicalAccount!;
+    onCreate({
+      localId: newLocalId('sh'),
+      physicalAccountId: pa.id,
+      ...edits,
       snapshotBankCode: pa.bankCode,
       snapshotBankName: pa.bankName,
       snapshotBankRelationship: classifyRelationship(pa),
@@ -85,15 +134,14 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
       snapshotConsentExpiresAt: pa.consentExpiresAt,
       snapshotInterestRate: pa.interestRate,
       snapshotOverdraftLimit: pa.overdraftLimit,
-    };
-    onCreate(shadow);
+    });
   };
 
   return (
     <Modal
       isOpen={open}
       onClose={onClose}
-      title="Add Shadow VA"
+      title={isEdit ? 'Edit Shadow VA' : 'Add Shadow VA'}
       subtitle="A simulated mirror over a live Physical Account"
       size="md"
       footer={
@@ -107,7 +155,7 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
             onClick={handleCreate}
             disabled={!canCreate}
           >
-            Add shadow
+            {isEdit ? 'Save shadow' : 'Add shadow'}
           </Button>
         </div>
       }
@@ -120,17 +168,21 @@ export const AddShadowDrawer: React.FC<AddShadowDrawerProps> = ({
               className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0"
               aria-hidden
             />
-            <span className="section-title truncate">{pa.bankName}</span>
-            <span className="code text-neutral-400">{pa.bankCode}</span>
+            <span className="section-title truncate">{context.bankName}</span>
+            <span className="code text-neutral-400">{context.bankCode}</span>
           </div>
           <div className="mt-1 flex items-center gap-2 flex-wrap body-sm text-neutral-500 dark:text-neutral-400">
-            <span className="code">{pa.accountNumber}</span>
-            <span aria-hidden>·</span>
-            <span>{formatCurrency(pa.currentBalance, pa.currencyCode)}</span>
-            {pa.dataSource && (
+            {context.accountNumber && <span className="code">{context.accountNumber}</span>}
+            {context.balance && (
               <>
                 <span aria-hidden>·</span>
-                <span>{pa.dataSource}</span>
+                <span>{context.balance}</span>
+              </>
+            )}
+            {context.dataSource && (
+              <>
+                <span aria-hidden>·</span>
+                <span>{context.dataSource}</span>
               </>
             )}
           </div>

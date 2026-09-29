@@ -374,3 +374,73 @@ export function validateScenario(
 
   return { ok: !issues.some((i) => i.level === 'error'), issues };
 }
+
+// ----------------------------------------------------------------------------
+// Removal with cascade
+// ----------------------------------------------------------------------------
+
+export interface ShadowRemoval {
+  shadows: SimulatedShadow[];
+  rules: SimulatedRule[];
+  pools: SimulatedPool[];
+  /** Rules dropped because the shadow was their target, or their last source. */
+  removedRules: SimulatedRule[];
+  /** Pools dropped because removing the member left them under two. */
+  removedPools: SimulatedPool[];
+  /** Child shadows whose parent ref was cleared. */
+  detachedChildren: number;
+}
+
+/**
+ * Remove a shadow and everything that can no longer stand without it.
+ *
+ * Three things reference a shadow's localId: a rule's sources/target, a pool's
+ * members, and another shadow's parentLocalId. Deleting the shadow alone would
+ * leave those dangling — `validateScenario` catches that (RULE_UNRESOLVED_REF),
+ * but only after the fact, leaving the user to hunt down rules they didn't
+ * knowingly break. So the dependants come too, and the caller reports what went.
+ *
+ * A rule dies when its target is removed or its last source is; it survives on a
+ * reduced source set. A pool dies below the two members that make it a pool.
+ * A child pointing at the removed shadow is kept and detached, not deleted —
+ * losing a parent is not a reason to lose the account.
+ */
+export function removeShadow(
+  shadows: SimulatedShadow[],
+  rules: SimulatedRule[],
+  pools: SimulatedPool[],
+  localId: string,
+): ShadowRemoval {
+  let detachedChildren = 0;
+  const nextShadows = shadows
+    .filter((s) => s.localId !== localId)
+    .map((s) => {
+      if (s.parentLocalId !== localId) return s;
+      detachedChildren++;
+      return { ...s, parentLocalId: undefined };
+    });
+
+  const removedRules: SimulatedRule[] = [];
+  const nextRules: SimulatedRule[] = [];
+  for (const r of rules) {
+    const sources = (r.sourceLocalIds ?? []).filter((id) => id !== localId);
+    if (r.targetLocalId === localId || sources.length === 0) {
+      removedRules.push(r);
+      continue;
+    }
+    nextRules.push(sources.length === (r.sourceLocalIds ?? []).length ? r : { ...r, sourceLocalIds: sources });
+  }
+
+  const removedPools: SimulatedPool[] = [];
+  const nextPools: SimulatedPool[] = [];
+  for (const p of pools) {
+    const members = (p.memberLocalIds ?? []).filter((id) => id !== localId);
+    if (members.length < 2) {
+      removedPools.push(p);
+      continue;
+    }
+    nextPools.push(members.length === (p.memberLocalIds ?? []).length ? p : { ...p, memberLocalIds: members });
+  }
+
+  return { shadows: nextShadows, rules: nextRules, pools: nextPools, removedRules, removedPools, detachedChildren };
+}

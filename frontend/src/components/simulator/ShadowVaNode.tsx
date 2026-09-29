@@ -1,6 +1,6 @@
 import React from 'react';
-import { CornerDownRight } from 'lucide-react';
-import { Badge } from '../ui';
+import { CornerDownRight, Pencil, Trash2 } from 'lucide-react';
+import { Badge, Button } from '../ui';
 import { cn } from '../../utils';
 import { SweepRuleEdge } from './SweepRuleEdge';
 import type { SimulatedRule, SimulatedShadow } from './types';
@@ -20,6 +20,9 @@ export interface ShadowVaNodeProps {
   /** Forwarded to each rule edge; omit both for a read-only tree. */
   onEditRule?: (rule: SimulatedRule) => void;
   onDeleteRule?: (rule: SimulatedRule) => void;
+  /** This shadow's own controls; omit both for a read-only tree. */
+  onEdit?: (shadow: SimulatedShadow) => void;
+  onDelete?: (shadow: SimulatedShadow) => void;
   className?: string;
 }
 
@@ -29,6 +32,8 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
   resolveName,
   onEditRule,
   onDeleteRule,
+  onEdit,
+  onDelete,
   className,
 }) => {
   const isChild = shadow.role === 'CHILD';
@@ -41,7 +46,7 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
         className,
       )}
     >
-      <div className="flex items-start gap-2">
+      <div className="group flex items-start gap-2">
         {isChild && (
           <CornerDownRight
             className="w-4 h-4 mt-0.5 shrink-0 text-neutral-400"
@@ -56,6 +61,33 @@ export const ShadowVaNode: React.FC<ShadowVaNodeProps> = ({
             <span className="font-medium text-primary-900 dark:text-neutral-50 truncate">
               {shadow.proposedVaName || 'Unnamed shadow'}
             </span>
+        {/* Same hover/focus-revealed pattern as the rule edge. */}
+        {(onEdit || onDelete) && (
+          <span className="ml-auto flex items-center gap-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => onEdit(shadow)}
+                title={`Edit "${shadow.proposedVaName || 'shadow'}"`}
+                aria-label={`Edit shadow ${shadow.proposedVaName || 'shadow'}`}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => onDelete(shadow)}
+                title={`Remove "${shadow.proposedVaName || 'shadow'}"`}
+                aria-label={`Remove shadow ${shadow.proposedVaName || 'shadow'}`}
+              >
+                <Trash2 className="w-3.5 h-3.5 text-error-500 dark:text-error-300" />
+              </Button>
+            )}
+          </span>
+        )}
           </div>
           <div className="mt-0.5 flex items-center gap-2 flex-wrap body-sm text-neutral-500 dark:text-neutral-400">
             <span className="code">{shadow.snapshotCurrencyCode || '—'}</span>

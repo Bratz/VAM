@@ -45,6 +45,7 @@ import type {
 import {
   hashScenario,
   normaliseScenario,
+  removeShadow,
   validateScenario,
 } from '../utils/simulator/scenarioModel';
 import {
@@ -106,8 +107,10 @@ const SimulatorPage: React.FC = () => {
     useState<SimulatorPhysicalAccount | null>(null);
   const [shadowDrawerOpen, setShadowDrawerOpen] = useState(false);
   const [ruleDrawerOpen, setRuleDrawerOpen] = useState(false);
-  /** Non-null while the rule drawer is editing rather than adding. */
+  /** Non-null while the matching drawer is editing rather than adding. */
   const [editingRule, setEditingRule] = useState<SimulatedRule | null>(null);
+  const [editingShadow, setEditingShadow] = useState<SimulatedShadow | null>(null);
+  const [editingPool, setEditingPool] = useState<SimulatedPool | null>(null);
   const [poolDrawerOpen, setPoolDrawerOpen] = useState(false);
 
   const [loadingCorporates, setLoadingCorporates] = useState(false);
@@ -881,12 +884,59 @@ const SimulatorPage: React.FC = () => {
     setShadowDrawerOpen(true);
   }, []);
 
-  const handleCreateShadow = useCallback((shadow: SimulatedShadow) => {
-    setDraftShadows((prev) => [...prev, shadow]);
+  // Replace-or-append, as with rules: the drawer submits under the original
+  // localId when editing.
+  const handleSubmitShadow = useCallback((shadow: SimulatedShadow) => {
+    let replaced = false;
+    setDraftShadows((prev) => {
+      const next = prev.map((s) => {
+        if (s.localId !== shadow.localId) return s;
+        replaced = true;
+        return shadow;
+      });
+      return replaced ? next : [...prev, shadow];
+    });
     setShadowDrawerOpen(false);
     setPendingPhysical(null);
-    toast.success(`Added "${shadow.proposedVaName}"`);
+    setEditingShadow(null);
+    toast.success(`${replaced ? 'Updated' : 'Added'} "${shadow.proposedVaName}"`);
   }, []);
+
+  const handleEditShadow = useCallback((shadow: SimulatedShadow) => {
+    setEditingShadow(shadow);
+    setShadowDrawerOpen(true);
+  }, []);
+
+  // A shadow is referenced by rules, pools and other shadows' parentLocalId, so
+  // this cascades (see removeShadow) rather than leaving dangling ids behind.
+  // Whatever else went is named in the toast — silently dropping someone's rule
+  // is worse than the delete they asked for.
+  const handleDeleteShadow = useCallback(
+    (shadow: SimulatedShadow) => {
+      // Reads all three collections at once, so it works off the rendered
+      // values rather than nesting setState updaters (which would run the
+      // cascade — and its toast — twice under StrictMode).
+      const r = removeShadow(draftShadows, draftRules, draftPools, shadow.localId);
+      setDraftShadows(r.shadows);
+      setDraftRules(r.rules);
+      setDraftPools(r.pools);
+
+      const also: string[] = [];
+      if (r.removedRules.length) {
+        also.push(`${r.removedRules.length} rule${r.removedRules.length === 1 ? '' : 's'}`);
+      }
+      if (r.removedPools.length) {
+        also.push(`${r.removedPools.length} pool${r.removedPools.length === 1 ? '' : 's'}`);
+      }
+      if (r.detachedChildren) {
+        also.push(`${r.detachedChildren} child${r.detachedChildren === 1 ? '' : 'ren'} detached`);
+      }
+      toast.success(
+        `Removed "${shadow.proposedVaName}"${also.length ? ` · also ${also.join(', ')}` : ''}`,
+      );
+    },
+    [draftShadows, draftRules, draftPools],
+  );
 
   // One handler for both: the drawer submits under the original localId when
   // editing, so an existing rule is replaced in place and a new one appended.
@@ -915,10 +965,30 @@ const SimulatorPage: React.FC = () => {
     toast.success(`Removed rule "${rule.ruleName}"`);
   }, []);
 
-  const handleCreatePool = useCallback((pool: SimulatedPool) => {
-    setDraftPools((prev) => [...prev, pool]);
+  const handleSubmitPool = useCallback((pool: SimulatedPool) => {
+    let replaced = false;
+    setDraftPools((prev) => {
+      const next = prev.map((p) => {
+        if (p.localId !== pool.localId) return p;
+        replaced = true;
+        return pool;
+      });
+      return replaced ? next : [...prev, pool];
+    });
     setPoolDrawerOpen(false);
-    toast.success(`Added pool "${pool.poolName}"`);
+    setEditingPool(null);
+    toast.success(`${replaced ? 'Updated' : 'Added'} pool "${pool.poolName}"`);
+  }, []);
+
+  const handleEditPool = useCallback((pool: SimulatedPool) => {
+    setEditingPool(pool);
+    setPoolDrawerOpen(true);
+  }, []);
+
+  // Nothing references a pool, so this one needs no cascade.
+  const handleDeletePool = useCallback((pool: SimulatedPool) => {
+    setDraftPools((prev) => prev.filter((p) => p.localId !== pool.localId));
+    toast.success(`Removed pool "${pool.poolName}"`);
   }, []);
 
   // ---- toolbar ------------------------------------------------------------
@@ -1122,7 +1192,14 @@ const SimulatorPage: React.FC = () => {
                 }}
                 onEditRule={handleEditRule}
                 onDeleteRule={handleDeleteRule}
-                onAddPool={() => setPoolDrawerOpen(true)}
+                onEditShadow={handleEditShadow}
+                onDeleteShadow={handleDeleteShadow}
+                onEditPool={handleEditPool}
+                onDeletePool={handleDeletePool}
+                onAddPool={() => {
+                  setEditingPool(null);
+                  setPoolDrawerOpen(true);
+                }}
                 onInventoryLoaded={setInventoryAccounts}
                 score={score}
                 scoring={scoring}
@@ -1153,11 +1230,13 @@ const SimulatorPage: React.FC = () => {
         open={shadowDrawerOpen}
         physicalAccount={pendingPhysical}
         existingShadows={draftShadows}
+        initialShadow={editingShadow}
         onClose={() => {
           setShadowDrawerOpen(false);
           setPendingPhysical(null);
+          setEditingShadow(null);
         }}
-        onCreate={handleCreateShadow}
+        onCreate={handleSubmitShadow}
       />
 
       <AddRuleDrawer
@@ -1174,8 +1253,12 @@ const SimulatorPage: React.FC = () => {
       <AddPoolDrawer
         open={poolDrawerOpen}
         shadows={draftShadows}
-        onClose={() => setPoolDrawerOpen(false)}
-        onCreate={handleCreatePool}
+        initialPool={editingPool}
+        onClose={() => {
+          setPoolDrawerOpen(false);
+          setEditingPool(null);
+        }}
+        onCreate={handleSubmitPool}
       />
 
       {currentScenario && (

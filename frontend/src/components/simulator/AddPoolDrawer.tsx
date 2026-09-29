@@ -23,6 +23,8 @@ export interface AddPoolDrawerProps {
   shadows: SimulatedShadow[];
   onClose: () => void;
   onCreate: (pool: SimulatedPool) => void;
+  /** Edit an existing pool instead of adding one; keeps its localId. */
+  initialPool?: SimulatedPool | null;
 }
 
 const CALC_METHODS: Array<{ value: string; label: string }> = [
@@ -36,20 +38,25 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
   shadows,
   onClose,
   onCreate,
+  initialPool = null,
 }) => {
+  const isEdit = initialPool != null;
   const [poolName, setPoolName] = useState('Notional pool');
   const [poolRatePct, setPoolRatePct] = useState('');
   const [calcMethod, setCalcMethod] = useState('DAILY_BALANCE');
   const [memberIds, setMemberIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (open) {
-      setPoolName('Notional pool');
-      setPoolRatePct('');
-      setCalcMethod('DAILY_BALANCE');
-      setMemberIds([]);
-    }
-  }, [open]);
+    if (!open) return;
+    const p = initialPool;
+    setPoolName(p?.poolName ?? 'Notional pool');
+    setPoolRatePct(p?.poolRatePct != null ? String(p.poolRatePct) : '');
+    setCalcMethod(p?.interestCalcMethod ?? 'DAILY_BALANCE');
+    setMemberIds(p?.memberLocalIds ?? []);
+    // initialPool seeds the form; depending on the object itself would reset
+    // the user's edits on every parent render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seeds once per open, keyed on the pool's identity.
+  }, [open, initialPool?.localId]);
 
   // Home-bank only — mirrors the live assertPoolEligible guard.
   const eligible = useMemo(
@@ -88,7 +95,8 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
   const handleCreate = () => {
     if (!canCreate) return;
     onCreate({
-      localId: newLocalId('pool'),
+      // Editing keeps the id, so the pool stays the same pool.
+      localId: initialPool?.localId ?? newLocalId('pool'),
       poolName: poolName.trim(),
       poolCurrency,
       poolRatePct: rateNum,
@@ -101,7 +109,7 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title="Add notional pool"
+      title={isEdit ? 'Edit notional pool' : 'Add notional pool'}
       subtitle="Home-bank accounts notionally offset balances — no cash moves"
       size="lg"
       footer={
@@ -115,7 +123,7 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
             onClick={handleCreate}
             disabled={!canCreate}
           >
-            Add pool
+            {isEdit ? 'Save pool' : 'Add pool'}
           </Button>
         </div>
       }
