@@ -30,7 +30,7 @@ export const DiffSummaryStrip: React.FC<DiffSummaryStripProps> = ({
 }) => (
   <div
     className={cn(
-      'grid grid-cols-2 lg:grid-cols-4 gap-3',
+      'grid gap-3 grid-cols-4',
       className,
     )}
   >

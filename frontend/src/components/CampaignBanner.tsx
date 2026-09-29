@@ -57,8 +57,8 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
       // hairline system rather than belonging to it.
       <div
         className={cn(
-          'flex flex-col lg:flex-row lg:items-center lg:min-h-11 gap-2 lg:gap-3',
-          'border-b border-edge pb-2 lg:pb-0'
+          'flex flex-row items-center min-h-11 gap-3',
+          'border-b border-edge pb-0'
         )}
       >
         <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -72,7 +72,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
             {campaign.ctaLabel}
           </button>
         </div>
-        <div className="lg:ml-auto">{dismissButton}</div>
+        <div className="ml-auto">{dismissButton}</div>
       </div>
     );
   }
@@ -89,9 +89,9 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
         // Reproduced live: "...no cash movement required." bled out below
         // the dark banner. min-h keeps the common case at 66px and grows
         // for wrapped copy instead of losing it.
-        'flex flex-col lg:flex-row lg:items-center lg:justify-between lg:min-h-[66px] gap-3',
+        'flex gap-3 flex-row items-center justify-between min-h-[66px]',
         // bg-primary-800 = banner slate (#4c5c68) per the palette spec.
-        'rounded-lg bg-primary-800 text-white px-4 py-3 lg:py-0'
+        'rounded-lg bg-primary-800 text-white px-4 py-0'
       )}
     >
       <div className="flex items-start gap-3 min-w-0">
@@ -104,7 +104,7 @@ export const CampaignBanner: React.FC<CampaignBannerProps> = ({
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <Button variant="accent" size="sm" fullWidth className="lg:w-auto" onClick={onCtaClick}>
+        <Button variant="accent" size="sm" fullWidth className="w-auto" onClick={onCtaClick}>
           {campaign.ctaLabel}
         </Button>
         <button

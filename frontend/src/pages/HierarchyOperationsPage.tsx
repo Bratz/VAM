@@ -820,15 +820,15 @@ const HierarchyOperationsPage: React.FC = () => {
           {/* Quick Actions */}
           <Card padding="lg">
             <h2 className="section-title mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid gap-4 grid-cols-5">
               {quickActions.map((action) => (<QuickActionCard key={action.id} action={action} />))}
             </div>
           </Card>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 grid-cols-3">
             {/* Hierarchy Tree */}
-            <div className="lg:col-span-2">
+            <div className="col-span-2">
               <Card padding="none">
                 <div className="flex items-center justify-between p-4 border-b border-edge">
                   <h2 className="font-semibold text-primary-900 dark:text-neutral-50">Current Hierarchy</h2>

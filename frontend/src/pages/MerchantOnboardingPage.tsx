@@ -77,7 +77,7 @@ const MerchantOnboardingPage: React.FC = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+      <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.1s' }}>
         <Card hover>
           <div className="p-4">
             <StatusIconBadge tone="primary" icon={Store} />

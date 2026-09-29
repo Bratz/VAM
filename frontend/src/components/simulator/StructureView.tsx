@@ -111,7 +111,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-6',
+        'grid gap-6 grid-cols-[1.55fr_1fr]',
         className,
       )}
     >

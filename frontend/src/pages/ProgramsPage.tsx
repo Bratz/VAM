@@ -329,7 +329,7 @@ const ProgramsPage: React.FC = () => {
     () => (
       <>
         <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport} disabled={sortedPrograms.length === 0}>
-          <span className="hidden sm:inline">Export</span>
+          <span className="inline">Export</span>
         </Button>
         <Button variant="outline" leftIcon={<RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />} onClick={loadData} disabled={loading}>
           Refresh
@@ -401,7 +401,7 @@ const ProgramsPage: React.FC = () => {
 
       {/* Search and Filters */}
       <Card padding="md">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex gap-4 flex-row">
           <div className="flex-1">
             <Input inputSize="sm" leftIcon={<Search className="w-4 h-4" />} aria-label="Search programs" placeholder="Search programs..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>

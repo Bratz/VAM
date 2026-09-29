@@ -446,7 +446,7 @@ const CreditFacilitiesPage: React.FC = () => {
 
       {/* Facilities Grid */}
       {filteredFacilities.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.4s' }}>
           {filteredFacilities.map((facility, index) => (
             <div key={facility.id} className="animate-fade-in" style={{ animationDelay: `${0.45 + index * 0.03}s` }}>
               <FacilityCard

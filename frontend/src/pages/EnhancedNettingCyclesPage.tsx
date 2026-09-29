@@ -1030,7 +1030,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
           </TreasuryOnly>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-3">
           {filteredCycles.map((cycle, i) => (
             <div key={cycle.id} className="animate-fade-in" style={{ animationDelay: `${0.45 + i * 0.05}s` }}>
               <CycleCard

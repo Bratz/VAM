@@ -236,7 +236,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
         <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
           Basic Information
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <div>
             <label className="form-label">Beneficiary Name *</label>
             <Input
@@ -261,7 +261,7 @@ const CreateBeneficiaryForm: React.FC<CreateBeneficiaryFormProps> = ({
         <h4 className="text-body-sm font-semibold text-primary-900 uppercase tracking-wide dark:text-neutral-50">
           Bank Details
         </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <div>
             <label className="form-label">Bank Name</label>
             <Input
@@ -423,7 +423,7 @@ const BeneficiariesPage: React.FC = () => {
         <div className="flex items-center justify-end">
           <Skeleton className="h-10 w-36" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid gap-4 grid-cols-3">
           {[0, 1, 2].map((i) => (
             <StatCard key={i} title="" value="" icon={null} iconBg="" iconColor="" loading delay={i * 0.05} />
           ))}
@@ -460,7 +460,7 @@ const BeneficiariesPage: React.FC = () => {
           leftIcon={<RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />}
           onClick={fetchData}
         >
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="inline">Refresh</span>
         </Button>
         <Button
           leftIcon={<Plus className="w-4 h-4" />}
@@ -471,7 +471,7 @@ const BeneficiariesPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid gap-4 grid-cols-3">
         <StatCard
           title="Total Beneficiaries"
           value={stats?.total || beneficiaries.length || 0}

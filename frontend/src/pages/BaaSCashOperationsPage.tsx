@@ -630,7 +630,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid gap-4 grid-cols-4">
           <StatCard
             label="Today's Cash In"
             value={formatCurrency(stats.todayCashIn)}
@@ -669,7 +669,7 @@ const BaaSCashOperationsPage: React.FC = () => {
       )}
 
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid gap-4 grid-cols-4">
         <button
           onClick={() => setShowCashInModal(true)}
           className="p-4 bg-success-50 dark:bg-success-500/10 hover:bg-success-100 border border-success-200 rounded-lg transition-all hover:shadow-md text-left animate-fade-in dark:hover:bg-success-500/20 dark:border-success-500/30"
@@ -716,7 +716,7 @@ const BaaSCashOperationsPage: React.FC = () => {
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
           {/* Filters */}
           <div className="p-4 border-b border-edge">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex gap-4 flex-row">
               <div className="flex-1">
                 <Input
                   placeholder="Search by wallet, holder, or reference..."
@@ -918,7 +918,7 @@ const BaaSCashOperationsPage: React.FC = () => {
 
       {/* Bulk Operations Tab */}
       {activeTab === 'bulk' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid gap-6 grid-cols-2">
           <Card className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="flex items-center gap-3 mb-4">
               <StatusIconBadge tone="primary" icon={Upload} />

@@ -83,7 +83,7 @@ function DoDont() {
   const Good = good;
   const box = 'rounded-lg border border-edge bg-surface-card p-4 space-y-3';
   return (
-    <section className="grid md:grid-cols-2 gap-4">
+    <section className="grid gap-4 grid-cols-2">
       <div className={box}>
         <h3 className="section-title">Do</h3>
         <ul className="body-sm space-y-2">
@@ -102,7 +102,7 @@ function DoDont() {
           <li>Hand-built icon tiles - use <code className="code">StatusIconBadge</code> (tone, subtle, solid, inverse, spin, xs-xl)</li>
         </ul>
       </div>
-      <div className={`${box} md:col-span-2`}>
+      <div className={`${box} col-span-2`}>
         <h3 className="section-title">Allowed exceptions</h3>
         <ul className="body-sm space-y-2">
           <li>Brand marks: the sidebar logo and the Copilot avatar / launcher.</li>

@@ -90,7 +90,7 @@ export const HeroMetricCard: React.FC<HeroMetricCardProps> = ({
           <MetricBlock metric={primary} dominant />
           {secondary && (
             <>
-              <div className="hidden sm:block w-px self-stretch bg-neutral-200/60 dark:bg-primary-700/60" />
+              <div className="w-px self-stretch bg-neutral-200/60 block dark:bg-primary-700/60" />
               <MetricBlock metric={secondary} />
             </>
           )}
@@ -126,7 +126,7 @@ const MetricBlock: React.FC<{ metric: HeroMetric; dominant?: boolean }> = ({
       <p
         className={cn(
           'stat-value leading-none flex items-baseline flex-wrap',
-          dominant ? 'text-stat sm:text-display' : 'text-heading-md sm:text-heading-lg'
+          dominant ? 'text-display' : 'text-heading-lg'
         )}
       >
         <span>{metric.value}</span>

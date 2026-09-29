@@ -1516,7 +1516,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                   <p className="text-body-sm text-neutral-400 mt-1 dark:text-neutral-400">Intercompany VAs will appear here when created</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                <div className="grid gap-4 p-4 grid-cols-3">
                   {intercompanyVas.map((va: any) => (
                     <div key={va.id} className="p-4 rounded-lg border border-edge hover:border-info-300 hover:shadow-sm transition-all bg-surface-card">
                       <div className="flex items-start justify-between mb-3">
@@ -1760,7 +1760,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
       {/* Entities Tab */}
       {activeTab === 'entities' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-3">
           {entitiesWithPositions.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
               <StatusIconBadge tone="neutral" icon={Building2} size="xl" className="mx-auto mb-4" />
@@ -1822,7 +1822,7 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
 
       {/* Entity Pairs Tab */}
       {activeTab === 'pairs' && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-2">
           {entityPairs.length === 0 ? (
             <Card className="col-span-full text-center py-12 animate-fade-in">
               <StatusIconBadge tone="neutral" icon={ArrowLeftRight} size="xl" className="mx-auto mb-4" />

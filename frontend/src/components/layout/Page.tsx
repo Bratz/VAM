@@ -18,7 +18,7 @@ import { cn } from '../../utils';
  *    (e.g. EntityBalanceTreePage's force-directed graph)
  *
  * The `<main>` element in Layout.tsx already applies horizontal padding
- * (`p-4 lg:p-8`) AND the `animate-page-enter` animation. Page does NOT add
+ * (`p-8`) AND the `animate-page-enter` animation. Page does NOT add
  * another layer of padding or the animation — those live on the shell.
  * Do not pass `px-*` to Page.
  */

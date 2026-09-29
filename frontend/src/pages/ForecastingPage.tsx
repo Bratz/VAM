@@ -852,7 +852,7 @@ const EmptyState: React.FC<{ onRun: () => void; running: boolean }> = ({ onRun, 
 
 const LoadingState: React.FC = () => (
   <>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid gap-4 grid-cols-3">
       {[1, 2, 3].map((i) => (
         <Skeleton key={i} className="h-32 rounded-lg" />
       ))}

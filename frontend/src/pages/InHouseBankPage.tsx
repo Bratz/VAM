@@ -836,7 +836,7 @@ const InHouseBankPage: React.FC = () => {
 
           {/* Entities Tab */}
           {activeTab === 'entities' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4 grid-cols-3">
               {entities.map(entity => (
                 <EntityCard
                   key={entity.id}
@@ -865,7 +865,7 @@ const InHouseBankPage: React.FC = () => {
                 </Button>
               </div>
               {currentAccounts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid gap-4 grid-cols-3">
                   {currentAccounts.map(account => (
                     <Card key={account.accountId} hover className="border-cat-2/10 dark:border-cat-2/30">
                       <div className="p-4">

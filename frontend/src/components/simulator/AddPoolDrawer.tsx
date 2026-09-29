@@ -128,7 +128,7 @@ export const AddPoolDrawer: React.FC<AddPoolDrawerProps> = ({
           inputSize="sm"
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid gap-3 grid-cols-2">
           <Input
             label="Pool rate (% / yr)"
             type="number"

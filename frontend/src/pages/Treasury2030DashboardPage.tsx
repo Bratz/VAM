@@ -527,7 +527,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       {/* Tab strip + corporate scope merged into one 44px row (density pass) —
           tabs deep-link into existing routes (not global chrome) on the left;
           scope selector + summary on the right. min-h, not a fixed h: with
-          lg:flex-wrap still on, selecting a corporate adds an active-chip +
+          flex-wrap on, selecting a corporate adds an active-chip +
           "Clear" button to the scope side, and at ~1280-1440px that pushes
           the row's two children (tabs ~639px + scope ~640px) past the
           available width, wrapping the scope selector onto a second line.
@@ -538,7 +538,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
           "OFFER" tag. min-h-11 keeps the common single-line case at the
           same 44px while letting a wrapped second line push the banner down
           instead of overlapping it. */}
-      <div className="lg:min-h-11 flex flex-col lg:flex-row lg:flex-wrap lg:items-center justify-between gap-3 py-2 lg:py-0 border-b border-edge -mt-1">
+      <div className="flex justify-between gap-3 border-b border-edge -mt-1 min-h-11 flex-row flex-wrap items-center py-0">
         <div className="flex items-center gap-1">
           {TABS.map((t, i) => {
             const active = i === 0;
@@ -1058,7 +1058,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
               hide-when-empty matches Brex's "surface exceptions, hide
               non-events" principle generalized to non-events generally,
               rather than giving a usually-empty section its own card. */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+          <div className="grid gap-4 items-start grid-cols-2">
           <Card padding="none" className="overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-4 pt-3 pb-2 border-b border-edge-subtle">
               <p className="section-title">Sweeps &amp; pooling</p>

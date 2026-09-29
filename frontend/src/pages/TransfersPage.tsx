@@ -2324,7 +2324,7 @@ export default function TransfersPage() {
         className="bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 border-primary-100/50 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900"
       >
         {/* Desktop Layout */}
-        <div className="hidden sm:flex flex-wrap items-center gap-4">
+        <div className="flex-wrap items-center gap-4 flex">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="primary" icon={Building2} />
             <div className="flex flex-col">
@@ -2422,7 +2422,7 @@ export default function TransfersPage() {
         </div>
 
         {/* Mobile Layout */}
-        <div className="sm:hidden space-y-3">
+        <div className="space-y-3 hidden">
           <Select
             value={selectedCorporateId}
             onChange={(e) => {
@@ -2467,7 +2467,7 @@ export default function TransfersPage() {
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid gap-4 grid-cols-4">
         <StatCard
           title="Today's Transfers"
           value={todayTransfers.length.toString()}
@@ -2526,9 +2526,9 @@ export default function TransfersPage() {
 
       {/* New Transfer Tab */}
       {activeTab === 'new' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-3">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 col-span-2">
             {/* Transfer Type Selection */}
             <Card className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
               <h3 className="section-title mb-4">Select Transfer Type</h3>

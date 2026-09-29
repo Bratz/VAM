@@ -1151,13 +1151,13 @@ const WalletPage: React.FC = () => {
       {/* Quick Actions */}
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         <Button variant="outline" size="sm" leftIcon={loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} onClick={fetchData} disabled={loading}>
-          <span className="hidden sm:inline">{loading ? 'Loading...' : 'Refresh'}</span>
+          <span className="inline">{loading ? 'Loading...' : 'Refresh'}</span>
         </Button>
         <Button variant="outline" size="sm" leftIcon={<Upload className="w-4 h-4" />} onClick={() => setShowBulkLoadModal(true)}>
-          <span className="hidden sm:inline">Bulk Load</span>
+          <span className="inline">Bulk Load</span>
         </Button>
         <Button variant="outline" size="sm" leftIcon={<ExternalLink className="w-4 h-4" />} onClick={navigateToProgramsPage}>
-          <span className="hidden sm:inline">Programs</span>
+          <span className="inline">Programs</span>
         </Button>
         <Button size="sm" leftIcon={<CreditCard className="w-4 h-4" />} onClick={() => setShowIssueModal(true)}>
           Issue Wallet
@@ -1166,7 +1166,7 @@ const WalletPage: React.FC = () => {
 
       {/* Partner Filter */}
       <Card padding="sm" className="bg-gradient-to-r from-primary-50/50 via-white to-primary-50/50 border-primary-100/50 animate-fade-in dark:from-primary-900 dark:via-primary-900 dark:to-primary-900" style={{ animationDelay: '0.1s' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex gap-4 flex-row items-center">
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="primary" icon={Building2} size="sm" rounded="lg" />
             <span className="font-medium text-primary-800 dark:text-neutral-100">Partner View</span>
@@ -1191,7 +1191,7 @@ const WalletPage: React.FC = () => {
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid gap-4 grid-cols-4">
             <StatCard label="Total Float" value={formatCurrency(stats?.totalBalance ?? 0)} subValue={`Available: ${formatCurrency(stats?.totalAvailableBalance ?? stats?.totalBalance ?? 0)}`} icon={<Wallet className="w-5 h-5 text-primary-700 dark:text-neutral-200" />} iconBg="bg-primary-100 dark:bg-primary-700" loading={loading} delay="0.2s" />
             <StatCard label="Active Wallets" value={stats?.activeWallets?.toLocaleString() || '0'} subValue={`${stats?.suspendedWallets || 0} suspended`} icon={<CreditCard className="w-5 h-5 text-success-600 dark:text-success-300" />} iconBg="bg-success-50 dark:bg-success-500/10" loading={loading} delay="0.25s" />
             <StatCard label="Daily Volume" value={formatCurrency(stats?.dailyVolume || 0)} subValue={`${stats?.todayTransactions?.toLocaleString() || 0} transactions`} icon={<Activity className="w-5 h-5 text-info-600 dark:text-info-300" />} iconBg="bg-info-50 dark:bg-info-500/10" loading={loading} delay="0.3s" />
@@ -1199,7 +1199,7 @@ const WalletPage: React.FC = () => {
           </div>
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <h3 className="text-body-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid gap-4 grid-cols-4">
               <button onClick={() => setShowIssueModal(true)} className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-edge hover:border-primary-300 hover:bg-primary-50 dark:bg-primary-800/40 transition-all group dark:hover:bg-primary-800/40">
                 <StatusIconBadge tone="primary" icon={CreditCard} rounded="lg" className="group-hover:bg-primary-200 transition-colors" />
                 <span className="field-label">Issue Wallet</span>
@@ -1228,7 +1228,7 @@ const WalletPage: React.FC = () => {
             <p className="text-neutral-600 dark:text-neutral-300">Programs are managed in the Programs page.</p>
             <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />} onClick={navigateToProgramsPage}>Go to Programs</Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid gap-6 grid-cols-2">
             {programs.map(p => <ProgramCard key={p.id} program={p} onClick={() => { setSelectedPartnerId(p.id); setActiveTab('wallets'); }} />)}
             {!programs.length && <div className="col-span-2"><EmptyState icon={<Settings className="w-8 h-8" />} title="No programs" action={<Button onClick={navigateToProgramsPage}>Go to Programs</Button>} /></div>}
           </div>
@@ -1240,7 +1240,7 @@ const WalletPage: React.FC = () => {
         <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
           {/* Filters */}
           <div className="p-4 border-b border-edge-subtle">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-3 flex-row">
               <div className="flex-1">
                 <Input placeholder="Search by name, mobile or wallet ref..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} leftIcon={<Search className="w-4 h-4" />} />
               </div>
@@ -1257,7 +1257,7 @@ const WalletPage: React.FC = () => {
                   <option value="pending">Pending</option>
                 </select>
                 <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-                  <span className="hidden sm:inline">Export</span>
+                  <span className="inline">Export</span>
                 </Button>
               </div>
             </div>

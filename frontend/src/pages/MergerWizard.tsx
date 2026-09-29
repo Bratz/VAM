@@ -96,7 +96,7 @@ const StepIndicator: React.FC<{
           </div>
           <span
             className={cn(
-              'text-body-sm font-medium hidden sm:block',
+              'text-body-sm font-medium block',
               i + 1 === currentStep ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
             )}
           >
@@ -428,7 +428,7 @@ export const MergerWizard: React.FC<MergerWizardProps> = ({ isOpen, onClose, onS
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid gap-6 grid-cols-2">
                       {/* Corporate A */}
                       <div>
                         <label className="field-label block mb-2">

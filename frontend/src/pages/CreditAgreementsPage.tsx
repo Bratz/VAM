@@ -350,7 +350,7 @@ const CreditAgreementsPage: React.FC = () => {
       </div>
 
       {filteredAgreements.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.2s' }}>
           {filteredAgreements.map(agreement => (
             <AgreementCard key={agreement.id} agreement={agreement}
               onView={() => { setSelectedAgreement(agreement); setShowDetailModal(true); }}

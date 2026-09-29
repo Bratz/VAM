@@ -243,7 +243,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
       {/* Form */}
       <div className={cn(
         'grid gap-4',
-        compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+        compact ? 'grid-cols-1' : 'grid-cols-4'
       )}>
         {/* From Date */}
         <div>
@@ -389,7 +389,7 @@ export const StatementDownloadPanel: React.FC<StatementDownloadPanelProps> = ({
             <Info className="w-4 h-4 text-info-600 dark:text-info-300" />
             <span className="body-strong">Statement Preview</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid gap-3 grid-cols-4">
             <div className="bg-surface-page rounded-lg p-3">
               <p className="caption mb-1">Opening Balance</p>
               <p className="text-body-sm font-bold text-primary-900 dark:text-neutral-50">

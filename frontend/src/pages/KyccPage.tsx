@@ -294,7 +294,7 @@ const KyccPage: React.FC = () => {
         <div className="flex items-center justify-end">
           <Skeleton className="h-10 w-24" />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid gap-4 grid-cols-5">
           {[0, 1, 2, 3, 4].map((i) => (
             <StatCard
               key={i}
@@ -334,12 +334,12 @@ const KyccPage: React.FC = () => {
           leftIcon={<RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />}
           onClick={fetchData}
         >
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="inline">Refresh</span>
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid gap-4 grid-cols-5">
         <StatCard
           title="Total Applications"
           value={stats?.totalParties || 0}

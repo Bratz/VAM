@@ -530,7 +530,7 @@ const ISO20022TransactionRow: React.FC<ISO20022TransactionRowProps> = ({ entry, 
       {expanded && (
         <tr className="animate-fade-in">
           <td colSpan={8} className="px-4 py-3 bg-surface-page border-b border-edge">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 ml-10">
+            <div className="grid gap-4 ml-10 grid-cols-4">
               {/* Transaction References */}
               <div className="bg-surface-card rounded-lg border border-edge p-3">
                 <h5 className="label text-neutral-700 mb-2 flex items-center gap-1.5 dark:text-neutral-200">
@@ -1386,7 +1386,7 @@ const StatementsPage: React.FC = () => {
             leftIcon={<Download className="w-4 h-4" />}
             onClick={() => setShowEnhancedDownloadPanel(!showEnhancedDownloadPanel)}
           >
-            <span className="hidden sm:inline">{showEnhancedDownloadPanel ? 'Hide' : 'Show'} Download Panel</span>
+            <span className="inline">{showEnhancedDownloadPanel ? 'Hide' : 'Show'} Download Panel</span>
           </Button>
         )}
         {isAggregationAccount && (
@@ -1396,7 +1396,7 @@ const StatementsPage: React.FC = () => {
             leftIcon={<Network className="w-4 h-4" />}
             onClick={() => setShowHierarchy(!showHierarchy)}
           >
-            <span className="hidden sm:inline">{showHierarchy ? 'Hide' : 'Show'} Hierarchy</span>
+            <span className="inline">{showHierarchy ? 'Hide' : 'Show'} Hierarchy</span>
           </Button>
         )}
         <Button
@@ -1405,7 +1405,7 @@ const StatementsPage: React.FC = () => {
           leftIcon={<RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />}
           onClick={fetchInitialData}
         >
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="inline">Refresh</span>
         </Button>
       </div>
     ),
@@ -1416,7 +1416,7 @@ const StatementsPage: React.FC = () => {
   if (loading) {
     return (
       <Page>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex gap-4 flex-row items-center justify-between">
           <div>
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-4 w-64" />
@@ -1427,7 +1427,7 @@ const StatementsPage: React.FC = () => {
         <Card>
           <div className="p-6 space-y-4">
             <Skeleton className="h-5 w-32" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid gap-4 grid-cols-4">
               <Skeleton className="h-10" />
               <Skeleton className="h-10" />
               <Skeleton className="h-10" />
@@ -1614,7 +1614,7 @@ const StatementsPage: React.FC = () => {
             we eliminated in the cockpit + picker work. The icon medallion
             already carries the visual weight; the band only needs a soft
             primary tint to mark it as the section identity. */}
-        <div className="p-4 sm:p-6 bg-primary-50/40 border-b border-edge-subtle dark:bg-primary-800/30">
+        <div className="bg-primary-50/40 border-b border-edge-subtle p-6 dark:bg-primary-800/30">
           <div className="flex items-center gap-3">
             <StatusIconBadge tone="primary" icon={FileText} />
             <div>
@@ -1624,7 +1624,7 @@ const StatementsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="space-y-4 p-6">
           {/* Statement Mode Selection */}
           <div className="flex flex-wrap gap-2 pb-4 border-b border-edge-subtle">
             {modeOptions.map((mode) => (
@@ -1646,7 +1646,7 @@ const StatementsPage: React.FC = () => {
           </div>
 
           {/* Desktop Grid */}
-          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="gap-4 grid grid-cols-5">
             <div>
               <label className="field-label block mb-1.5">
                 Account
@@ -1697,7 +1697,7 @@ const StatementsPage: React.FC = () => {
           </div>
 
           {/* Mobile Stack */}
-          <div className="sm:hidden space-y-4">
+          <div className="space-y-4 hidden">
             <div>
               <label className="field-label block mb-1.5">
                 Account
@@ -1767,8 +1767,8 @@ const StatementsPage: React.FC = () => {
       {statement && (
         <Card padding="none" className="animate-fade-in overflow-hidden">
           {/* Statement Header — flat tonal band (was a gradient). */}
-          <div className="p-4 sm:p-6 border-b border-edge bg-neutral-50/60 dark:bg-primary-950">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="border-b border-edge bg-neutral-50/60 p-6 dark:bg-primary-950">
+            <div className="flex gap-4 flex-row items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="section-title">
@@ -1840,9 +1840,9 @@ const StatementsPage: React.FC = () => {
               icon={<FileCode className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               collapsible
               defaultOpen={false}
-              className="mx-4 mt-4 sm:mx-6"
+              className="mt-4 mx-6"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid gap-3 grid-cols-4">
                 <InfoRow label="Message ID" value={statement.groupHeader.messageId} copyable icon={<Hash className="w-3 h-3" />} />
                 <InfoRow label="Creation Date/Time" value={formatDateTime(statement.groupHeader.creationDateTime)} icon={<Clock className="w-3 h-3" />} />
                 {statement.groupHeader.messagePagination && (
@@ -1862,9 +1862,9 @@ const StatementsPage: React.FC = () => {
               icon={<FileText className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               collapsible
               defaultOpen={false}
-              className="mx-4 mt-4 sm:mx-6"
+              className="mt-4 mx-6"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid gap-3 grid-cols-4">
                 <InfoRow label="Statement ID" value={statement.statementId} copyable icon={<Hash className="w-3 h-3" />} />
                 <InfoRow label="Electronic Seq No" value={statement.electronicSeqNumber} />
                 <InfoRow label="Legal Seq No" value={statement.legalSeqNumber} />
@@ -1885,9 +1885,9 @@ const StatementsPage: React.FC = () => {
               icon={<Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               collapsible
               defaultOpen={false}
-              className="mx-4 mt-4 sm:mx-6"
+              className="mt-4 mx-6"
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid gap-3 grid-cols-4">
                 <InfoRow label="Account ID" value={statement.account.id} copyable icon={<Hash className="w-3 h-3" />} />
                 <InfoRow label="IBAN" value={statement.account.iban} copyable />
                 <InfoRow label="Account Name" value={statement.account.name} />
@@ -1905,7 +1905,7 @@ const StatementsPage: React.FC = () => {
             <SectionCard
               title="Notification Info"
               icon={<Bell className="w-4 h-4 text-warning-600 dark:text-warning-300" />}
-              className="mx-4 mt-4 sm:mx-6"
+              className="mt-4 mx-6"
               badge={
                 <Badge
                   variant={statement.notificationInfo.notificationType === 'CREDIT' ? 'success' : 'error'}
@@ -1915,7 +1915,7 @@ const StatementsPage: React.FC = () => {
                 </Badge>
               }
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid gap-3 grid-cols-4">
                 <InfoRow label="Notification ID" value={statement.notificationInfo.notificationId} copyable />
                 <InfoRow label="Type" value={statement.notificationInfo.notificationType} />
                 <InfoRow label="Priority" value={statement.notificationInfo.priority} />
@@ -1928,12 +1928,12 @@ const StatementsPage: React.FC = () => {
 
           {/* Balances Section (ISO20022 Balance Types) */}
           {statement.balances && statement.balances.length > 0 && (
-            <div className="px-4 py-4 sm:px-6 border-b border-edge">
+            <div className="py-4 border-b border-edge px-6">
               <h4 className="section-title mb-3 flex items-center gap-2">
                 <Banknote className="w-4 h-4" />
                 Balances
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid gap-3 grid-cols-5">
                 {statement.balances.map((balance, idx) => (
                   <BalanceCard
                     key={`${balance.type}-${idx}`}
@@ -1950,8 +1950,8 @@ const StatementsPage: React.FC = () => {
 
           {/* Summary Stats (Fallback for legacy format) */}
           {!statement.balances?.length && (
-            <div className="p-4 sm:p-6 bg-surface-page border-b border-edge">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-surface-page border-b border-edge p-6">
+              <div className="grid gap-4 grid-cols-4">
                 <StatCard
                   label="Opening Balance"
                   value={formatCurrency(
@@ -1993,12 +1993,12 @@ const StatementsPage: React.FC = () => {
             <SectionCard
               title="Transaction Summary"
               icon={<Receipt className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
-              className="mx-4 mt-4 sm:mx-6"
+              className="mt-4 mx-6"
             >
               {/* Transaction-summary tiles — `.stat-value-sm` carries the
                   Phase 9 display tier (Fraunces serif + tabular-nums) for
                   every figure. Tone overlays only set the colour. */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid gap-4 grid-cols-4">
                 <div className="text-center p-3 bg-surface-page rounded-lg">
                   <p className="stat-value-sm">{statement.totalEntries || (statement.entries?.length || 0)}</p>
                   <p className="caption">Total Entries</p>
@@ -2030,12 +2030,12 @@ const StatementsPage: React.FC = () => {
 
           {/* Aggregated Child Summary (for aggregated statements) */}
           {statementMode === 'aggregated' && statement.childStatements && statement.childStatements.length > 0 && (
-            <div className="p-4 sm:p-6 border-b border-edge">
+            <div className="border-b border-edge p-6">
               <h4 className="section-title mb-3 flex items-center gap-2">
                 <Layers className="w-4 h-4" />
                 Child Account Summary
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid gap-3 grid-cols-3">
                 {statement.childStatements.map((child) => (
                   <div key={child.vaId} className="p-3 bg-surface-page rounded-lg">
                     <p className="body-sm text-primary-900 truncate dark:text-neutral-50">{child.vaName}</p>
@@ -2052,7 +2052,7 @@ const StatementsPage: React.FC = () => {
           )}
 
           {/* Entry List Header */}
-          <div className="px-4 py-3 sm:px-6 border-b border-edge bg-surface-page">
+          <div className="py-3 border-b border-edge bg-surface-page px-6">
             <div className="flex items-center justify-between">
               <h4 className="section-title flex items-center gap-2">
                 Entry List
@@ -2060,7 +2060,7 @@ const StatementsPage: React.FC = () => {
                   {statement.entries?.length || statement.transactions?.length || 0} entries
                 </Badge>
               </h4>
-              <p className="caption hidden sm:block">
+              <p className="caption block">
                 Click on any entry to expand details
               </p>
             </div>
@@ -2071,7 +2071,7 @@ const StatementsPage: React.FC = () => {
             (statement.transactions && statement.transactions.length > 0)) ? (
             <>
               {/* Desktop Table */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto block">
                 {/* eslint-disable-next-line no-restricted-syntax -- expandable rows with a colSpan detail row */}
                 <table className="data-table">
                   <thead className="data-table-header">
@@ -2109,7 +2109,7 @@ const StatementsPage: React.FC = () => {
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden">
+              <div className="hidden">
                 {statement.entries?.map((entry, idx) => (
                   <TransactionMobileCard
                     key={entry.entryReference || idx}
@@ -2144,19 +2144,19 @@ const StatementsPage: React.FC = () => {
 
       {/* Statement History */}
       <Card padding="none">
-        <div className="p-4 sm:p-6 border-b border-edge">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="border-b border-edge p-6">
+          <div className="flex justify-between gap-4 flex-row items-center">
             <div className="flex items-center gap-3">
               <StatusIconBadge tone="neutral" icon={Clock} size="sm" rounded="lg" />
               <h3 className="section-title">Statement History</h3>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 flex-row">
               <Input
                 placeholder="Search..."
                 value={historySearch}
                 onChange={(e) => setHistorySearch(e.target.value)}
                 leftIcon={<Search className="w-4 h-4" />}
-                className="sm:w-48"
+                className="w-48"
               />
               <Select
                 value={historyFormatFilter}
@@ -2169,7 +2169,7 @@ const StatementsPage: React.FC = () => {
                   { value: 'CAMT053', label: 'CAMT.053' },
                   { value: 'MT940', label: 'MT940' },
                 ]}
-                className="sm:w-36"
+                className="w-36"
               />
             </div>
           </div>
@@ -2179,7 +2179,7 @@ const StatementsPage: React.FC = () => {
           <>
             <DataTable
               hairline
-              className="p-4 lg:p-0"
+              className="p-0"
               data={filteredHistory as any[]}
               keyExtractor={(stmt: any) => stmt.id}
               columns={[

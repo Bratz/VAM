@@ -735,7 +735,7 @@ const CurrencyMirrorPage: React.FC = () => {
 
       {/* Currency Cards Grid */}
       {breakdowns.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-4" style={{ animationDelay: '0.25s' }}>
           {breakdowns.map((breakdown, index) => (
             <div key={breakdown.currency} className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
               <CurrencyCard

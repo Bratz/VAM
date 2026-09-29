@@ -416,7 +416,7 @@ const EscrowPage: React.FC = () => {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+      <div className="grid gap-4 animate-fade-in grid-cols-4" style={{ animationDelay: '0.15s' }}>
         {loading && !stats ? (
           <>
             <Skeleton className="h-24" />
@@ -473,7 +473,7 @@ const EscrowPage: React.FC = () => {
         </div>
 
         <div className="p-4 border-b border-edge">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex gap-4 flex-row">
             <div className="flex-1">
               <Input
                 placeholder="Search contracts..."
@@ -669,7 +669,7 @@ const EscrowPage: React.FC = () => {
         }
       >
         <form
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+          className="grid gap-4 grid-cols-2"
           onSubmit={(e) => { e.preventDefault(); void handleCreate(); }}
         >
           <Select
@@ -750,7 +750,7 @@ const EscrowPage: React.FC = () => {
             error={formErrors.expiryDate}
             onChange={(e) => setField('expiryDate', e.target.value)}
           />
-          <div className="sm:col-span-2">
+          <div className="col-span-2">
             <label className="field-label" htmlFor="escrow-release-conditions">Release conditions</label>
             <textarea
               id="escrow-release-conditions"

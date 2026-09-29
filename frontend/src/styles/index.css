@@ -1100,23 +1100,6 @@
     transform: scale(0.98);
   }
 
-  /* ========== RESPONSIVE HIDE/SHOW ========== */
-  .mobile-only {
-    @apply block lg:hidden;
-  }
-
-  .desktop-only {
-    @apply hidden lg:block;
-  }
-
-  .tablet-up {
-    @apply hidden md:block;
-  }
-
-  .mobile-tablet {
-    @apply block md:hidden;
-  }
-
   /* ========== ASPECT RATIOS ========== */
   .aspect-card {
     aspect-ratio: 16 / 9;

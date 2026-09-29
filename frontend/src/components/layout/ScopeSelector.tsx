@@ -162,7 +162,7 @@ const entityLabelText = (e: ScopeLegalEntity): string =>
 
 // Vertical divider styled for both themes.
 const Divider: React.FC = () => (
-  <div className="hidden sm:block h-10 w-px bg-primary-200 dark:bg-primary-700" aria-hidden />
+  <div className="h-10 w-px bg-primary-200 block dark:bg-primary-700" aria-hidden />
 );
 
 // ----------------------------------------------------------------------------
@@ -393,7 +393,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
           leftIcon={<RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />}
           aria-label="Refresh"
         >
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="inline">Refresh</span>
         </Button>
       )}
 

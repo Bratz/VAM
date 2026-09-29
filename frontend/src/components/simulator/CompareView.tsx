@@ -82,7 +82,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch',
+        'grid gap-4 items-stretch grid-cols-3',
         className,
       )}
     >

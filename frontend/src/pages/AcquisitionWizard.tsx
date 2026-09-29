@@ -115,7 +115,7 @@ const StepIndicator: React.FC<{
             </div>
             <span
               className={cn(
-                'text-body-sm font-medium hidden sm:block transition-colors',
+                'text-body-sm font-medium transition-colors block',
                 isCurrent ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-500 dark:text-neutral-400'
               )}
             >

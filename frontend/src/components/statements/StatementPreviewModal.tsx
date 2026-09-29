@@ -397,7 +397,7 @@ const TransactionSummaryCard: React.FC<TransactionSummaryProps> = ({ summary, to
       title="Transaction Summary"
       icon={<Receipt className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
     >
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid gap-4 grid-cols-4">
         <div className="text-center p-3 bg-surface-page rounded-lg">
           <p className="stat-value-sm">{totalEntries}</p>
           <p className="caption">Total Entries</p>
@@ -520,7 +520,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         </div>
 
         {/* Booking Date */}
-        <div className="hidden sm:block text-right shrink-0">
+        <div className="text-right shrink-0 block">
           <p className="text-body-sm text-primary-900 dark:text-neutral-50">{formatDate(entry.bookingDate)}</p>
           {entry.valueDate !== entry.bookingDate && (
             <p className="caption">Val: {formatDate(entry.valueDate)}</p>
@@ -528,7 +528,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
         </div>
 
         {/* Status */}
-        <div className="hidden md:block shrink-0">
+        <div className="shrink-0 block">
           <StatusBadge status={entry.status} />
         </div>
 
@@ -551,7 +551,7 @@ const ExpandableEntryRow: React.FC<ExpandableEntryRowProps> = ({ entry, currency
       {/* Expanded Details */}
       {expanded && (
         <div className="px-4 pb-4 ml-14 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid gap-4 grid-cols-3">
             {/* Transaction References */}
             <div className="bg-surface-card rounded-lg border border-edge p-3">
               <h5 className="text-caption font-semibold text-neutral-700 dark:text-neutral-200 mb-2 flex items-center gap-1.5">
@@ -1022,7 +1022,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
         {/* Loading State */}
         {loading && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-4 grid-cols-2">
               <Skeleton className="h-32 rounded-lg" />
               <Skeleton className="h-32 rounded-lg" />
             </div>
@@ -1047,7 +1047,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 collapsible
                 defaultOpen={false}
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid gap-4 grid-cols-4">
                   <InfoRow label="Message ID" value={groupHeader.messageId} copyable icon={<Hash className="w-3 h-3" />} />
                   <InfoRow label="Creation Date/Time" value={formatDateTime(groupHeader.creationDateTime)} icon={<Clock className="w-3 h-3" />} />
                   {groupHeader.messagePagination && (
@@ -1074,7 +1074,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                   </Badge>
                 }
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid gap-4 grid-cols-4">
                   <InfoRow label="Notification ID" value={notificationInfo.notificationId} copyable />
                   <InfoRow label="Type" value={notificationInfo.notificationType} />
                   <InfoRow label="Priority" value={notificationInfo.priority} />
@@ -1090,7 +1090,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
               title="Statement Header"
               icon={<FileText className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
             >
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid gap-4 grid-cols-4">
                 <InfoRow label="Statement ID" value={statement.statementId} copyable icon={<Hash className="w-3 h-3" />} />
                 <InfoRow label="Electronic Seq No" value={statement.electronicSeqNumber} />
                 <InfoRow label="Legal Seq No" value={statement.legalSeqNumber} />
@@ -1109,7 +1109,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 title="Account Information"
                 icon={<Building2 className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid gap-4 grid-cols-4">
                   <InfoRow label="Account ID" value={account.id} copyable icon={<Hash className="w-3 h-3" />} />
                   <InfoRow label="VA Number" value={account.vaNumber} copyable />
                   <InfoRow label="VIBAN" value={account.viban} copyable />
@@ -1133,7 +1133,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                 title="Balances"
                 icon={<Banknote className="w-4 h-4 text-primary-600 dark:text-primary-200" />}
               >
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="grid gap-4 grid-cols-5">
                   {balances.map((balance, idx) => (
                     <BalanceCard
                       key={`${balance.type}-${idx}`}
@@ -1154,7 +1154,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             )}
 
             {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-3 flex-row">
               {/* Search */}
               <div className="flex-1">
                 <Input
@@ -1226,7 +1226,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             </div>
 
             {/* Entries Table (Desktop) */}
-            <div className="hidden md:block border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden block">
               <div className="max-h-[500px] overflow-y-auto">
                 {/* Table Header */}
                 <div className="bg-surface-page px-4 py-3 border-b border-edge sticky top-0 z-10">
@@ -1234,8 +1234,8 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
                     <div className="w-8"></div>
                     <div className="w-9"></div>
                     <div className="flex-1">Entry Reference / Description</div>
-                    <div className="w-24 text-right hidden sm:block">Date</div>
-                    <div className="w-20 hidden md:block">Status</div>
+                    <div className="w-24 text-right block">Date</div>
+                    <div className="w-20 block">Status</div>
                     <div className="w-28 text-right">Amount</div>
                   </div>
                 </div>
@@ -1261,7 +1261,7 @@ export const StatementPreviewModal: React.FC<StatementPreviewModalProps> = ({
             </div>
 
             {/* Entries Cards (Mobile) */}
-            <div className="md:hidden border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden hidden">
               <div className="max-h-[500px] overflow-y-auto">
                 {filteredEntries.map((entry, idx) => (
                   <EntryMobileCard

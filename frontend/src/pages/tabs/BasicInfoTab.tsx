@@ -81,7 +81,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
       )}
 
       {/* Core Fields - Row 1 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid gap-4 grid-cols-2">
         <FormField 
           label="Account Name" 
           required 
@@ -111,7 +111,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
       </div>
 
       {/* Core Fields - Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid gap-4 grid-cols-2">
         <FormField 
           label="Corporate" 
           required 
@@ -152,7 +152,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
       </div>
 
       {/* Core Fields - Row 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid gap-4 grid-cols-2">
         <FormField 
           label="Currency" 
           required 
@@ -191,7 +191,7 @@ export const BasicInfoTab: React.FC<BasicInfoTabProps> = ({
       <div className="border-t border-neutral-200 pt-6">
         <h4 className="body-strong mb-4">Additional Information</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="External Reference" 
             hint="Your internal reference ID (e.g., ERP system ID)"

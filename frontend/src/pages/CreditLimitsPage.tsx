@@ -523,7 +523,7 @@ const StatsCards: React.FC<{
   const utilizationPercent = safePercent(totalUtilized, totalGroupLimit);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       <div className="bg-surface-card rounded-lg p-4 shadow-sm border border-edge-subtle hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1">

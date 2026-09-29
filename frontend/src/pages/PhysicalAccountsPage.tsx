@@ -889,7 +889,7 @@ const AttachToEntityModal: React.FC<AttachToEntityModalProps> = ({ isOpen, onClo
 
         <div>
           <label className="field-label block mb-2">Relationship Type <span className="text-error-500 dark:text-error-300">*</span></label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid gap-2 grid-cols-3">
             {Object.entries(RELATIONSHIP_TYPE_CONFIG).map(([type, config]) => {
               const TypeIcon = config.icon;
               const isSelected = formData.relationshipType === type;
@@ -1327,10 +1327,10 @@ const PhysicalAccountsPage: React.FC = () => {
     () => (
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" leftIcon={<RefreshCw className={cn("w-4 h-4", syncing && "animate-spin")} />} onClick={handleSyncAll} disabled={syncing}>
-          <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync All'}</span>
+          <span className="inline">{syncing ? 'Syncing...' : 'Sync All'}</span>
         </Button>
         <Button variant="outline" size="sm" leftIcon={<Link2 className="w-4 h-4" />} onClick={() => setShowExternalModal(true)}>
-          <span className="hidden sm:inline">Link External</span>
+          <span className="inline">Link External</span>
         </Button>
         <Button size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreateModal(true)}>
           Add Account
@@ -1472,14 +1472,14 @@ const PhysicalAccountsPage: React.FC = () => {
       {bankSummaries.length > 0 && (
         <div className="space-y-3">
           <h2 className="section-title">Banks Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid gap-4 grid-cols-3">
             {bankSummaries.slice(0, 6).map(bank => <BankCard key={bank.bankCode} bank={bank} isSelected={bankFilter === bank.bankCode} onClick={() => { setBankFilter(bank.bankCode === bankFilter ? 'ALL' : bank.bankCode); setPage(0); }} />)}
           </div>
         </div>
       )}
 
       <Card>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex gap-4 flex-row">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input type="text" placeholder="Search accounts..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} className="w-full pl-10 pr-4 py-2 border border-edge-strong rounded-lg" />

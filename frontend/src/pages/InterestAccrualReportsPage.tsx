@@ -375,7 +375,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       )}
 
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-5" style={{ animationDelay: '0.15s' }}>
           <StatTile layout="row" tone="danger" valueTone="neutral" label="Loan Interest" value={formatCurrency(summary.totalLoanInterestAccrued, summary.currency)} sub={`${summary.loanAccrualCount} accruals`} icon={<CreditCard className="w-5 h-5" />} />
           <StatTile layout="row" tone="success" valueTone="neutral" label="Deposit Interest" value={formatCurrency(summary.totalDepositInterestAccrued, summary.currency)} sub={`${summary.depositAccrualCount} accruals`} icon={<PiggyBank className="w-5 h-5" />} />
           <StatTile layout="row" tone="success" valueTone="neutral" label="VA Credit" value={formatCurrency(summary.totalVaCreditInterest, summary.currency)} sub={`${summary.vaCreditAccrualCount} accruals`} icon={<TrendingUp className="w-5 h-5" />} />

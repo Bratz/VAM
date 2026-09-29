@@ -351,7 +351,7 @@ const CashConcentrationPage: React.FC = () => {
         filteredRules.length === 0 ? (
           <EmptyState onCreateRule={() => setShowCreateModal(true)} />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.3s' }}>
             {filteredRules.map((rule) => (
               <RuleCard
                 key={rule.id}

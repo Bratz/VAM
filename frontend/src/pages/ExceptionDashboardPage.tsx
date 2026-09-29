@@ -447,7 +447,7 @@ const ExceptionDashboardPage: React.FC = () => {
 
       {/* Summary Stats */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid gap-4 grid-cols-4">
           <SummaryCard title="Open Exceptions" count={summary.openCount} amount={summary.openAmount} icon={Clock} color="warning" detail={summary.agedOver30Days ? `${summary.agedOver30Days} aged >30 days` : undefined} onClick={() => handleStatusFilter('OPEN')} isActive={filters.status === 'OPEN'} delay={0.1} />
           <SummaryCard title="In Progress" count={summary.inProgressCount} amount={summary.inProgressAmount} icon={RefreshCw} color="info" onClick={() => handleStatusFilter('IN_PROGRESS')} isActive={filters.status === 'IN_PROGRESS'} delay={0.15} />
           <SummaryCard title="Resolved" count={summary.resolvedCount} amount={summary.resolvedAmount} icon={CheckCircle} color="success" detail={summary.todayResolved ? `${summary.todayResolved} resolved today` : undefined} onClick={() => handleStatusFilter('RESOLVED')} isActive={filters.status === 'RESOLVED'} delay={0.2} />

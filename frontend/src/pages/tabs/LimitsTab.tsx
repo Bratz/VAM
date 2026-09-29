@@ -106,7 +106,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
       </div>
 
       {/* Spending Limits Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid gap-4 grid-cols-3">
         <FormField 
           label="Per Transaction Limit" 
           hint={`Maximum per single transaction in ${currency}`}
@@ -234,7 +234,7 @@ export const LimitsTab: React.FC<LimitsTabProps> = ({
           <h4 className="body-strong">Topup Limits</h4>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="Daily Topup Limit" 
             hint={`Maximum daily topup amount in ${currency}`}

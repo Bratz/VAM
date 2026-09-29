@@ -88,7 +88,7 @@ const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
           >
             {currentStep > step.id ? <Check className="w-4 h-4" /> : step.id}
           </div>
-          <div className="hidden sm:block">
+          <div className="block">
             <p
               className={cn(
                 'text-body-sm font-medium',

@@ -1615,7 +1615,7 @@ const EntityBalanceTreePage: React.FC = () => {
       </div>
 
       {/* Stats Grid - Dashboard-style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-4 gap-6">
         <StatCard
           title="Total Balance"
           value={formatCurrency(totals.balance, reportingCurrency)}

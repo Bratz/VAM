@@ -194,7 +194,7 @@ export function DataTable<T>({
   // whole table on every parent re-render -- losing focus, scroll and hover state (e.g. focus
   // could not return to a row's button after a dialog closed).
   const DesktopTable = () => (
-    <div className="hidden lg:block overflow-hidden">
+    <div className="overflow-hidden block">
       <div className={cn(
         'overflow-x-auto',
         stickyHeader && 'max-h-[600px]'
@@ -355,7 +355,7 @@ export function DataTable<T>({
     const detailColumns = columns.filter(c => !c.mobileLabel && !c.mobileValue && !c.mobileHidden);
 
     return (
-      <div className="lg:hidden space-y-3">
+      <div className="space-y-3 hidden">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-surface-card rounded-lg border border-edge p-4">
@@ -492,7 +492,7 @@ export function DataTable<T>({
     }
 
     return (
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+      <div className="flex items-center justify-between gap-4 mt-6 flex-row">
         <p className="body-sm">
           Showing <span className="font-medium text-primary-900 dark:text-neutral-50">{startIndex}</span> to{' '}
           <span className="font-medium text-primary-900 dark:text-neutral-50">{endIndex}</span> of{' '}
@@ -505,7 +505,7 @@ export function DataTable<T>({
             size="sm"
             disabled={currentPage === 1}
             onClick={() => onPageChange?.(1)}
-            className="hidden sm:flex"
+            className="flex"
           >
             <ChevronsLeft className="w-4 h-4" />
           </Button>
@@ -554,7 +554,7 @@ export function DataTable<T>({
             size="sm"
             disabled={currentPage === totalPages}
             onClick={() => onPageChange?.(totalPages)}
-            className="hidden sm:flex"
+            className="flex"
           >
             <ChevronsRight className="w-4 h-4" />
           </Button>
@@ -567,10 +567,10 @@ export function DataTable<T>({
     <div className={cn('w-full', className)}>
       {/* Toolbar */}
       {(searchable || actions || hasSelection) && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+        <div className="flex justify-between gap-3 mb-4 flex-row items-center">
           <div className="flex items-center gap-3">
             {searchable && (
-              <div className="relative flex-1 sm:flex-none sm:w-72">
+              <div className="relative flex-none w-72">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input
                   type="text"

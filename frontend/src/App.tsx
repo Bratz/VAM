@@ -216,7 +216,7 @@ const BaaSDashboardPage: React.FC = () => (
   <div className="space-y-6 animate-page-enter">
     {/* Stats Grid — Phase 12 Task E: hand-rolled tiles replaced by the shared
         <StatTile> (components/ui/StatTile). */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {[
         { label: 'Active Partners', value: '12', sub: '↑ 2 this month', tone: 'primary' },
         { label: 'Total Wallets', value: '17,250', sub: '↑ 1,250 this month', tone: 'success' },
@@ -277,7 +277,7 @@ const BaaSPartnersPage: React.FC = () => (
       <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">+ Onboard Partner</button>
     </div>
     {/* Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {[
         { label: 'Total Partners', value: '12', tone: 'primary' },
         { label: 'Active', value: '10', tone: 'success' },
@@ -316,7 +316,7 @@ const BaaSCardsPage: React.FC = () => (
       <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">+ Issue Card</button>
     </div>
     {/* Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {[
         { label: 'Total Cards', value: '5,420', tone: 'primary' },
         { label: 'Active', value: '4,850', tone: 'success' },
@@ -351,7 +351,7 @@ const BaaSCardsPage: React.FC = () => (
 const BaaSSettlementsPage: React.FC = () => (
   <div className="space-y-6 animate-page-enter">
     {/* Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {[
         { label: 'Pending Settlements', value: '8', tone: 'warning' },
         { label: 'Settled Today', value: '12', tone: 'success' },
@@ -386,7 +386,7 @@ const BaaSSettlementsPage: React.FC = () => (
 const BaaSTransactionsPage: React.FC = () => (
   <div className="space-y-6 animate-page-enter">
     {/* Stats */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {[
         { label: 'Today\'s Volume', value: '4,520', tone: 'primary' },
         { label: 'Successful', value: '4,480', tone: 'success' },

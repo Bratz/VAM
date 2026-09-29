@@ -401,7 +401,7 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats, loading }) => {
                 <p className="text-caption font-medium text-neutral-500 truncate dark:text-neutral-400">{card.label}</p>
                 <p className={cn(
                   "font-bold text-primary-900 truncate dark:text-neutral-50",
-                  card.isBalance ? "text-body sm:text-body-lg" : "text-heading-sm sm:text-heading-md"
+                  card.isBalance ? "text-body-lg" : "text-heading-md"
                 )}>
                   {card.value}
                 </p>
@@ -1688,7 +1688,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
       <Card padding="none">
         {/* Toolbar */}
         <div className="p-4 border-b border-edge">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex gap-4 flex-row">
             {/* Search */}
             <div className="flex-1">
               <Input
@@ -1768,7 +1768,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 {/* Desktop Table View */}
                 <DataTable
                   hairline
-                  className="p-4 lg:p-0"
+                  className="p-0"
                   data={accounts}
                   columns={buildAccountColumns(setSelectedAccount, setEditAccount, handleStatusChange)}
                   keyExtractor={(a) => a.id}
@@ -1779,8 +1779,8 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                 />
 
                 {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t border-edge">
-                  <p className="body-sm order-2 sm:order-1">
+                <div className="flex items-center justify-between gap-4 px-4 py-4 border-t border-edge flex-row">
+                  <p className="body-sm order-1">
                     Showing{' '}
                     <span className="font-medium text-primary-900 dark:text-neutral-50">
                       {Math.min(currentPage * pageSize + 1, totalElements)}
@@ -1793,7 +1793,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                     <span className="font-medium text-primary-900 dark:text-neutral-50">{totalElements}</span>
                     {' '}accounts
                   </p>
-                  <div className="flex items-center gap-1 order-1 sm:order-2">
+                  <div className="flex items-center gap-1 order-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -1802,7 +1802,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
-                    <div className="hidden sm:flex items-center gap-1">
+                    <div className="items-center gap-1 flex">
                       {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                         const p = currentPage < 3 ? i : currentPage - 2 + i;
                         if (p >= totalPages) return null;
@@ -1818,7 +1818,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
                         );
                       })}
                     </div>
-                    <span className="sm:hidden body-sm px-2">
+                    <span className="body-sm px-2 hidden">
                       {currentPage + 1} / {totalPages}
                     </span>
                     <Button

@@ -37,7 +37,7 @@ export const Playground: Story = {};
 export const Tones: Story = {
   decorators: [(Story) => <div className="max-w-none"><Story /></div>],
   render: () => (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid gap-4 grid-cols-4">
       {TONES.map((t) => (
         <StatTile key={t} tone={t} label={t} value="GBP 84,120.00" icon={<Info className="w-5 h-5" />} />
       ))}

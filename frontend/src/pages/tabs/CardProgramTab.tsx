@@ -114,7 +114,7 @@ export const CardProgramTab: React.FC<CardProgramTabProps> = ({
         </FormField>
 
         {/* Card Program Type Cards */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="mt-4 grid gap-3 grid-cols-3">
           {CARD_PROGRAM_TYPES.map((type) => (
             <button
               key={type.value}

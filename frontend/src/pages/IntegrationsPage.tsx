@@ -724,7 +724,7 @@ const SetupWizardModal: React.FC<{
                 step < idx + 1 && "text-neutral-400"
               )}>
                 {step > idx + 1 ? <Check className="w-3 h-3" /> : <span>{idx + 1}</span>}
-                <span className="hidden sm:inline">{label}</span>
+                <span className="inline">{label}</span>
               </div>
               {idx < 3 && <div className={cn("flex-1 h-px", step > idx + 1 ? "bg-neutral-900" : "bg-neutral-200 dark:bg-primary-800")} />}
             </React.Fragment>
@@ -1408,7 +1408,7 @@ const IntegrationsPage: React.FC = () => {
       <Page maxWidth="default" className="py-8">
         {/* Active Connections */}
         {activeTab === 'connections' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid gap-4 grid-cols-2">
             {connections.map(connection => (
               <ConnectionCard
                 key={connection.id}
@@ -1466,7 +1466,7 @@ const IntegrationsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4 grid-cols-3">
               {filteredConnectors.map(connector => (
                 <ConnectorCard
                   key={connector.id}

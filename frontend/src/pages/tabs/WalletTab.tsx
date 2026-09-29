@@ -98,7 +98,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
           <h4 className="body-strong">Wallet Configuration</h4>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="Wallet Type"
             hint="Determines the account behavior and features"
@@ -139,7 +139,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="KYC Level" 
             hint="Higher levels enable higher limits"
@@ -172,7 +172,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
         </div>
 
         {/* KYC Level Cards */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="mt-4 grid gap-2 grid-cols-4">
           {KYC_LEVELS.map((level) => (
             <button
               key={level.value}
@@ -198,7 +198,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
           <h4 className="body-strong">Value Type</h4>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="Value Type"
             hint="The type of value stored in this account"
@@ -241,7 +241,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
             <h4 className="body-strong">Loyalty Configuration</h4>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid gap-4 grid-cols-2">
             <FormField 
               label="Loyalty Tier"
               hint="Member tier for benefits and earn rates"
@@ -293,7 +293,7 @@ export const WalletTab: React.FC<WalletTabProps> = ({
           <h4 className="body-strong">Balance Expiry</h4>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-4 grid-cols-2">
           <FormField 
             label="Balance Expiry Date" 
             hint="When the balance in this account expires"

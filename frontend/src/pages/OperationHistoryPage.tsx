@@ -361,7 +361,7 @@ const OperationHistoryPage: React.FC<OperationHistoryPageProps> = ({ corporateId
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex gap-4 flex-row items-center justify-between">
         <div className="flex items-center gap-4">
           {onBack && (
             <button onClick={onBack} className="p-2 hover:bg-neutral-100 rounded-lg dark:hover:bg-primary-800">

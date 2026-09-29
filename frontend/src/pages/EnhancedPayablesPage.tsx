@@ -194,7 +194,7 @@ const PayablesStatsSection: React.FC<StatsProps> = ({ stats, loading }) => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-6 gap-4">
+    <div className="grid gap-4 grid-cols-3 2xl:grid-cols-6">
       {statItems.map((item, idx) => {
         const Icon = item.icon;
         return (

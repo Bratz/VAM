@@ -37,7 +37,7 @@ interface Program {
 // LOADING & ERROR COMPONENTS
 // ============================================================================
 const LoadingSpinner: React.FC = () => (
-  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+  <div className="grid gap-4 animate-fade-in grid-cols-4">
     {[1, 2, 3, 4].map(i => (
       <Card key={i} padding="sm">
         <div className="flex items-center gap-3">
@@ -337,7 +337,7 @@ const NotionalPoolingPage: React.FC = () => {
       {filteredPools.length === 0 ? (
         <EmptyState onCreatePool={() => setShowCreateModal(true)} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 animate-fade-in" style={{ animationDelay: '0.45s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.45s' }}>
           {filteredPools.map((pool) => (
             <PoolCard
               key={pool.id}

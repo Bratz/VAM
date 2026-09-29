@@ -7,21 +7,13 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    // Desktop-only application. sm/md/lg all resolve to 0px so the value that used to apply
-    // at >=1024 now applies at every width: Tailwind emits base, then sm, then md, then lg,
-    // so the last one specified for a utility still wins, which is exactly the desktop value.
+    // Desktop-only application: there are no phone or tablet breakpoints. sm/md/lg are not
+    // defined at all, so a stray `md:foo` in future markup generates no CSS rather than
+    // quietly reintroducing a 768px layout nobody designed for.
     //
-    // Done here rather than by deleting the prefixes from the markup because 179 of the 258
-    // breakpoint groups in src/ have sm: or md: as their highest tier -- deleting those would
-    // drop the desktop layout, not the phone one.
-    //
-    // xl and 2xl keep their real widths: "desktop" spans a 1280 laptop to a 2560 monitor, and
-    // the wider grids at those sizes are wanted. There are no max-* variants in the codebase,
-    // so nothing inverts under this collapse.
+    // xl and 2xl remain, because "desktop" spans a 1280 laptop to a 2560 monitor and the
+    // wider grids there are wanted.
     screens: {
-      sm: '0px',
-      md: '0px',
-      lg: '0px',
       xl: '1280px',
       '2xl': '1536px',
     },

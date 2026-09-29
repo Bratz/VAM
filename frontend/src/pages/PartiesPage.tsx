@@ -2399,7 +2399,7 @@ const PartiesPage: React.FC = () => {
                 but the dark backgrounds are dialled back so they don't dominate the row.
               · Grid is 6-up on lg (3 role tabs + 3 capability filters) — was 7-up
                 with an empty trailing slot that left the row looking misaligned. */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid gap-3 grid-cols-6">
             {roleTabs.map((tab, idx) => {
               const Icon = tab.icon;
               const isActive = roleFilter === tab.id;
@@ -2482,7 +2482,7 @@ const PartiesPage: React.FC = () => {
               the end of this row — it now sits in the Layout header next to
               Export / Add Party, so search + KYC filter get the full row. */}
           <Card>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex gap-4 flex-row">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                 <input type="text" placeholder="Search by name, code, or tax ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />

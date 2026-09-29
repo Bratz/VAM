@@ -123,28 +123,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
       {/* Backdrop for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          className="fixed inset-0 bg-primary-950/40 backdrop-blur-sm z-40 animate-fade-in hidden"
           onClick={onClose}
         />
       )}
 
       <aside className={cn(
         'fixed top-0 left-0 h-full w-60 z-50 flex flex-col',
-        collapsed && 'lg:w-16',
+        collapsed && 'w-16',
         // Premium glass effect — flips to elevated navy panel in dark mode
         'bg-white/95 backdrop-blur-xl border-r border-neutral-200/60',
         'dark:bg-primary-900/95 dark:border-primary-800/60',
         // Premium shadow
-        'shadow-xl lg:shadow-2xl dark:shadow-none',
+        'shadow-2xl dark:shadow-none',
         // Animation
         'transform transition-[transform,width] duration-300 ease-out',
-        'lg:translate-x-0',
+        'translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo Header - Premium */}
         <div className={cn(
           'h-20 flex items-center justify-between px-6 border-b border-neutral-200/60 dark:border-primary-800/60',
-          collapsed && 'lg:px-0 lg:justify-center'
+          collapsed && 'px-0 justify-center'
         )}>
           <div className="flex items-center gap-3">
             {/* Logo tile — Phase 8 post-review (2026-05-13). The previous
@@ -158,14 +158,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             <div
               className={cn(
                 'w-11 h-11 bg-primary-900 dark:bg-primary-800 rounded-lg flex items-center justify-center ring-1 ring-accent-500/60 dark:ring-accent-400/60',
-                collapsed && 'lg:cursor-pointer'
+                collapsed && 'cursor-pointer'
               )}
               onClick={collapsed ? onToggleCollapse : undefined}
               title={collapsed ? 'Expand sidebar' : undefined}
             >
               <Layers className="w-5 h-5 text-white" />
             </div>
-            <div className={cn(collapsed && 'lg:hidden')}>
+            <div className={cn(collapsed && 'hidden')}>
               {/* Brand wordmark in Fraunces — ties the sidebar to the serif accent used on page titles.
                   Pulled from src/branding.ts so a rebrand is a single-file change. */}
               <h1
@@ -182,7 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"
+            className="p-2 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800"
           >
             <X className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
           </button>
@@ -190,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             onClick={onToggleCollapse}
             className={cn(
               'hidden p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors',
-              !collapsed && 'lg:inline-flex'
+              !collapsed && 'inline-flex'
             )}
             title="Collapse sidebar"
             aria-label="Collapse sidebar"
@@ -200,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         </div>
 
         {/* Search */}
-        <div className={cn('px-4 py-4', collapsed && 'lg:hidden')}>
+        <div className={cn('px-4 py-4', collapsed && 'hidden')}>
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
@@ -221,17 +221,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
         </div>
 
         {/* Navigation - Scrollable */}
-        <nav className={cn('flex-1 overflow-y-auto px-3 pb-4 scrollbar-thin', collapsed && 'lg:px-2 lg:pt-3')}>
+        <nav className={cn('flex-1 overflow-y-auto px-3 pb-4 scrollbar-thin', collapsed && 'px-2 pt-3')}>
           {filteredSections.map((section, sectionIdx) => (
             <div key={sectionIdx} className="mb-2">
               {collapsed && sectionIdx > 0 && (
-                <div className="hidden lg:block h-px mx-2 mb-2 bg-neutral-200/70 dark:bg-primary-800/70" aria-hidden />
+                <div className="h-px mx-2 mb-2 bg-neutral-200/70 block dark:bg-primary-800/70" aria-hidden />
               )}
               {section.title && (
                 <button
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
-                    collapsed && 'lg:hidden',
+                    collapsed && 'hidden',
                     'flex items-center justify-between w-full px-3 py-1.5 mt-2',
                     // neutral-400/dark:neutral-500 measured at 2.20:1 (light)
                     // and 1.45:1 (dark) against the sidebar background — both
@@ -258,7 +258,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                 // surface regardless of which sections the user has closed.
                 section.title && collapsedSections.has(section.title) && !searchQuery && 'h-0 opacity-0',
                 // Icon rail shows every item's icon; section folding only applies to the full sidebar.
-                collapsed && 'lg:h-auto lg:opacity-100'
+                collapsed && 'h-auto opacity-100'
               )}>
                 {section.items.map((item) => {
                   const isActive = currentPath === item.href;
@@ -271,7 +271,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       title={isComingSoon ? 'Coming soon' : collapsed ? item.label : undefined}
                       className={cn(
                         'relative',
-                        collapsed && 'lg:justify-center lg:px-0 lg:gap-0',
+                        collapsed && 'justify-center px-0 gap-0',
                         // Phase 6 Design System Unification: active state calmed
                         // down from "gradient + colored shadow + dark-only left
                         // rule" to "solid navy fill + 2px gold left rule" in
@@ -298,10 +298,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                       )}>
                         {item.icon}
                       </span>
-                      <span className={cn('flex-1 text-left truncate', collapsed && 'lg:hidden')}>{item.label}</span>
+                      <span className={cn('flex-1 text-left truncate', collapsed && 'hidden')}>{item.label}</span>
                       {item.isNew && !isComingSoon && (
                         <span className={cn(
-                          collapsed && 'lg:hidden',
+                          collapsed && 'hidden',
                           'text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide',
                           isActive ? 'bg-white/25 text-white' : 'bg-accent-100 text-accent-700 dark:bg-accent-500/20 dark:text-accent-300'
                         )}>
@@ -309,13 +309,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         </span>
                       )}
                       {isComingSoon && (
-                        <span className={cn(collapsed && 'lg:hidden', 'text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400')}>
+                        <span className={cn(collapsed && 'hidden', 'text-caption font-bold px-1.5 py-0 leading-4 rounded-full uppercase tracking-wide bg-neutral-100 text-neutral-500 dark:bg-primary-800/60 dark:text-neutral-400')}>
                           Soon
                         </span>
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
-                          collapsed && 'lg:hidden',
+                          collapsed && 'hidden',
                           'text-caption font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
                           getBadgeStyle(isActive, item.badgeColor)
                         )}>
@@ -323,7 +323,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
                         </span>
                       )}
                       {collapsed && item.badge && !isComingSoon && (
-                        <span className="hidden lg:block absolute top-1 right-2 w-2 h-2 rounded-full bg-accent-500" aria-hidden />
+                        <span className="absolute top-1 right-2 w-2 h-2 rounded-full bg-accent-500 block" aria-hidden />
                       )}
                     </button>
                   );
@@ -338,7 +338,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             Tooltip on the icon explains the destination; clicking still goes to docs. */}
         <div className={cn(
           'px-4 py-3 border-t border-neutral-200/60 dark:border-primary-800/60 flex items-center justify-between gap-2',
-          collapsed && 'lg:flex-col lg:px-2 lg:justify-center'
+          collapsed && 'flex-col px-2 justify-center'
         )}>
           <button
             type="button"
@@ -351,7 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
             )}
           >
             <HelpCircle className="w-4 h-4" />
-            <span className={cn(collapsed && 'lg:hidden')}>Docs</span>
+            <span className={cn(collapsed && 'hidden')}>Docs</span>
           </button>
           {collapsed && (
             <button
@@ -359,14 +359,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, currentPath, onNavigate, onCl
               onClick={onToggleCollapse}
               title="Expand sidebar"
               aria-label="Expand sidebar"
-              className="hidden lg:inline-flex p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-primary-800/60 transition-colors"
+              className="p-2 rounded-lg text-neutral-500 transition-colors inline-flex hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-primary-800/60"
             >
               <PanelLeftOpen className="w-4 h-4" />
             </button>
           )}
           {/* Same neutral-400/dark:neutral-500 contrast failure as the
               section headers above (2.20:1 light, 1.45:1 dark) — same fix. */}
-          <span className={cn('text-caption text-neutral-500 dark:text-neutral-300 uppercase tracking-wider', collapsed && 'lg:hidden')}>
+          <span className={cn('text-caption text-neutral-500 dark:text-neutral-300 uppercase tracking-wider', collapsed && 'hidden')}>
             {BRAND.name} v1.0
           </span>
         </div>
@@ -410,7 +410,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
       {/* Fixed h-14 (56px) — the in-page title block that used to push this
           taller is gone (PageHeader now registers into this header instead
           of rendering its own <h1>), so a single-line title always fits. */}
-      <div className="flex items-center h-14 px-4 lg:px-8">
+      <div className="flex items-center h-14 px-8">
         {/* Left side. No justify-between on the row above: that only pushes
             this div and "Right side" apart by their own min-content widths,
             leaving the gap between them as dead space the title can't reach.
@@ -420,7 +420,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
+            className="p-2.5 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800/50"
           >
             <Menu className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -442,7 +442,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               claim the parent's slack; the min-w-[96px] floor still keeps
               `truncate` working for long titles without the title ever
               fully disappearing when space is genuinely tight. */}
-          <div className="hidden sm:flex items-center gap-1.5 flex-1 min-w-[96px]">
+          <div className="items-center gap-1.5 flex-1 min-w-[96px] flex">
             {/* No flex-1 here (only on the wrapper div) — the wrapper
                 growing gives the title room to render at full width with
                 the help button sitting right after the visible text; if h1
@@ -471,7 +471,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               smaller loss (the sidebar's own "Search menu..." still covers
               it) than an intermittently overlapping header. Pages with no
               header actions keep the original lg breakpoint, unaffected. */}
-          <div className={cn('hidden items-center ml-4 min-w-0 flex-shrink', pageActions ? '2xl:flex' : 'lg:flex')}>
+          <div className={cn('hidden items-center ml-4 min-w-0 flex-shrink', pageActions ? '2xl:flex' : 'flex')}>
             <div className="relative min-w-0 w-full">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
@@ -503,7 +503,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               whitespace-nowrap so buttons like "Refresh all (3 stale)" stop
               wrapping/clipping in the now-shorter 56px header. */}
           {pageActions && (
-            <div className="hidden md:flex items-center gap-2 mr-2 shrink-0 whitespace-nowrap">
+            <div className="items-center gap-2 mr-2 shrink-0 whitespace-nowrap flex">
               {pageActions}
             </div>
           )}
@@ -512,14 +512,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               Slimmed down per UI audit: corporate dropdown hidden (most pages
               carry their own corporate selector), role pill hidden (role is
               already in the user chip below). Just the entity dropdown. */}
-          <div className="hidden lg:block">
+          <div className="block">
             <EntityPicker compact showCorporate={false} showRoleBadge={false} />
           </div>
 
           {/* Mobile Search Button */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="lg:hidden p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
+            className="p-2.5 rounded-lg transition-colors hidden hover:bg-neutral-100 dark:hover:bg-primary-800/50"
           >
             <Search className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
@@ -594,7 +594,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
           </div>
 
           {/* Divider */}
-          <div className="hidden md:block w-px h-8 bg-neutral-200 dark:bg-primary-800 mx-2" />
+          <div className="w-px h-8 bg-neutral-200 mx-2 block dark:bg-primary-800" />
 
           {/* User Menu */}
           <div className="relative">
@@ -603,7 +603,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
               className="flex items-center gap-3 p-2 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
             >
               <Avatar name="John Doe" size="sm" />
-              <div className="hidden md:block text-left">
+              <div className="text-left block">
                 <p className="body-strong">John Doe</p>
                 {/* Role only — the entity code is now shown in the EntityPicker
                     above, so the (MNC-HOLDING) suffix here was redundant. */}
@@ -618,7 +618,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
                   {isTreasury ? 'Treasury' : 'Subsidiary'}
                 </p>
               </div>
-              <ChevronDown className="w-4 h-4 text-neutral-400 hidden md:block" />
+              <ChevronDown className="w-4 h-4 text-neutral-400 block" />
             </button>
 
             {showUserMenu && (
@@ -664,14 +664,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, currentPage }) => {
       {/* Page actions on phones: the right cluster has no room for them, and hiding them
           left pages like Programs with no way to create, export or refresh. */}
       {pageActions && (
-        <div className="md:hidden flex flex-wrap items-center justify-end gap-2 px-4 pb-2">
+        <div className="flex-wrap items-center justify-end gap-2 px-4 pb-2 hidden">
           {pageActions}
         </div>
       )}
 
       {/* Mobile Search Overlay */}
       {showSearch && (
-        <div className="lg:hidden absolute inset-x-0 top-full bg-surface-card border-b border-edge p-4 animate-slide-down">
+        <div className="absolute inset-x-0 top-full bg-surface-card border-b border-edge p-4 animate-slide-down hidden">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
@@ -763,9 +763,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
       {/* Main Content Area */}
       <div className={cn(
         'min-h-screen flex flex-col',
-        sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-60', // Sidebar width on desktop
+        sidebarCollapsed ? 'pl-16' : 'pl-60', // Sidebar width on desktop
         'transition-[padding] duration-300',
-        'pb-20 lg:pb-0' // Bottom nav padding on mobile
+        'pb-0' // Bottom nav padding on mobile
       )}>
         {/* Header */}
         <Header
@@ -780,12 +780,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
             a Phase 10 smell and should be migrated when the page is next
             touched. Keeping `animate-page-enter` on <main> means every page
             gets the enter animation even before migrating to <Page>. */}
-        <main className="flex-1 p-4 lg:px-6 lg:py-5 animate-page-enter">
+        <main className="flex-1 p-4 animate-page-enter px-6 py-5">
           {children}
         </main>
 
         {/* Footer - Desktop only */}
-        <footer className="hidden lg:block border-t border-neutral-200/60 bg-white/80 backdrop-blur-sm py-4 px-8">
+        <footer className="border-t border-neutral-200/60 bg-white/80 backdrop-blur-sm py-4 px-8 block">
           <div className="flex items-center justify-between caption">
             <span>© {BRAND.copyrightYear} {BRAND.name}. All rights reserved.</span>
             <div className="flex items-center gap-4">

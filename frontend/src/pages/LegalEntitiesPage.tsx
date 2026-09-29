@@ -763,7 +763,7 @@ const StatsCards: React.FC<{ stats: EntityStats; loading: boolean }> = ({ stats,
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid gap-4 grid-cols-3">
       {statItems.map((stat, idx) => (
         <StatTile
           key={stat.label}
@@ -1396,9 +1396,9 @@ const LegalEntitiesPage: React.FC = () => {
       <StatsCards stats={stats} loading={loading} />
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 grid-cols-3">
         {/* Hierarchy Tree */}
-        <div className="lg:col-span-2">
+        <div className="col-span-2">
           <Card padding="none" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center justify-between p-4 border-b border-edge">
               <div className="flex items-center gap-3">

@@ -4009,7 +4009,7 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
             </div>
           </div>
           {/* Shadow Account Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+          <div className="grid gap-3 mt-3 grid-cols-3">
             {shadowAccounts.map((shadow) => (
               <div key={shadow.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
                 <div className="flex items-center justify-between">
@@ -4032,9 +4032,9 @@ const TreasuryHierarchyPage: React.FC<{ onNavigate?: (page: string) => void }> =
       )}
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 grid-cols-3">
         {/* Hierarchy Tree */}
-        <div className="lg:col-span-2">
+        <div className="col-span-2">
           <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">
             <div className="flex items-center justify-between p-4 border-b border-edge">
               <h2 className="section-title">Virtual Account Hierarchy</h2>

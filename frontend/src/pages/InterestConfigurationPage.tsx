@@ -701,7 +701,7 @@ const InterestConfigurationPage: React.FC = () => {
 
       {/* Statistics */}
       {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-5" style={{ animationDelay: '0.15s' }}>
           <StatCard
             title="Total Configurations"
             value={statistics.totalConfigs || 0}
@@ -794,7 +794,7 @@ const InterestConfigurationPage: React.FC = () => {
 
       {/* Configurations Grid */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.25s' }}>
+        <div className="grid gap-4 animate-fade-in grid-cols-3" style={{ animationDelay: '0.25s' }}>
           {filteredConfigs.map((config, index) => (
             <div key={config.id} className="animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.03}s` }}>
               <ConfigCard

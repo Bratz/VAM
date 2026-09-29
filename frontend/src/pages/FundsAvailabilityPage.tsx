@@ -461,8 +461,8 @@ export const FundsCheckWidget: React.FC<FundsCheckWidgetProps> = ({
             <h3 className="section-title">Funds Availability Check</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2">
+          <div className="grid gap-4 grid-cols-4">
+            <div className="col-span-2">
               <label className="block label mb-1">Virtual Account ID</label>
               <Input
                 placeholder="Enter VA ID or VA Number"

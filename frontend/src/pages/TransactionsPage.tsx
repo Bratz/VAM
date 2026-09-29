@@ -353,7 +353,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
 
         {/* Details Tab Content */}
         {activeTab === 'details' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 grid-cols-2">
             <div className="bg-surface-page rounded-lg p-4">
               <p className="caption mb-1.5">Virtual Account</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.vaName}</p>
@@ -382,7 +382,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
               <p className="caption mb-1.5">Balance After</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{formatCurrency(transaction.balanceAfter, transaction.currencyCode)}</p>
             </div>
-            <div className="sm:col-span-2 bg-surface-page rounded-lg p-4">
+            <div className="bg-surface-page rounded-lg p-4 col-span-2">
               <p className="caption mb-1.5">Description</p>
               <p className="font-medium text-neutral-900 dark:text-neutral-50">{transaction.description || '-'}</p>
             </div>
@@ -582,7 +582,7 @@ const TransactionDetails: React.FC<TransactionDetailsProps> = ({ transaction, on
         )}
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge flex-row">
           {transaction.status === 'COMPLETED' && onReverse && (
             <Button
               variant="outline"
@@ -739,7 +739,7 @@ const NewTransactionModal: React.FC<NewTransactionModalProps> = ({ isOpen, onClo
         />
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge flex-row">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="primary" loading={loading} leftIcon={<Send className="w-4 h-4" />}>
             Submit
@@ -1393,7 +1393,7 @@ const SimulateCollectionModal: React.FC<SimulateCollectionModalProps> = ({ isOpe
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-edge">
+        <div className="flex justify-end gap-3 pt-4 border-t border-edge flex-row">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
           <Button
             type="submit"
@@ -1858,7 +1858,7 @@ const TransactionsPage: React.FC = () => {
         <Button
           variant="outline"
           leftIcon={<Calendar className="w-4 h-4" />}
-          className="hidden sm:inline-flex"
+          className="inline-flex"
         >
           Date Range
         </Button>
@@ -1866,7 +1866,7 @@ const TransactionsPage: React.FC = () => {
           variant="outline"
           leftIcon={<ArrowDownLeft className="w-4 h-4" />}
           onClick={() => setShowCollectionModal(true)}
-          className="hidden md:inline-flex"
+          className="inline-flex"
         >
           Simulate Collection
         </Button>
@@ -1889,7 +1889,7 @@ const TransactionsPage: React.FC = () => {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <StatTile
           layout="row"
           tone="success"
@@ -1954,7 +1954,7 @@ const TransactionsPage: React.FC = () => {
 
         {/* Search & Filters */}
         <div className="p-4 border-b border-edge">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3 flex-row">
             <div className="flex-1">
               <Input
                 placeholder="Search by reference, counterparty, or account..."
@@ -1977,7 +1977,7 @@ const TransactionsPage: React.FC = () => {
                   title="Business View - Groups related fund movements into one transaction"
                 >
                   <Layers className="w-4 h-4" />
-                  <span className="hidden sm:inline">Business</span>
+                  <span className="inline">Business</span>
                 </button>
                 <button
                   className={cn(
@@ -1990,7 +1990,7 @@ const TransactionsPage: React.FC = () => {
                   title="Ledger View - Shows all individual entries"
                 >
                   <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">Ledger</span>
+                  <span className="inline">Ledger</span>
                 </button>
               </div>
               <Button
@@ -2000,7 +2000,7 @@ const TransactionsPage: React.FC = () => {
                 disabled={loading}
                 className="shrink-0"
               >
-                <span className="hidden sm:inline">Refresh</span>
+                <span className="inline">Refresh</span>
               </Button>
             </div>
           </div>
@@ -2018,7 +2018,7 @@ const TransactionsPage: React.FC = () => {
         )}
 
         {/* Table */}
-        <div className="p-4 lg:p-6">
+        <div className="p-6">
           {viewMode === 'grouped' ? (
             <DataTable
               data={groupedTransactions}

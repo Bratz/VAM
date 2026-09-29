@@ -56,7 +56,7 @@ export const CopilotDrawer: React.FC = () => {
             >
               <Dialog.Panel
                 className={[
-                  'pointer-events-auto w-screen sm:max-w-[420px]',
+                  'pointer-events-auto w-screen max-w-[420px]',
                   'h-full flex flex-col',
                   'bg-white dark:bg-primary-950',
                   'shadow-2xl shadow-primary-900/30',

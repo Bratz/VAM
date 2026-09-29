@@ -765,7 +765,7 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
                   )}
                 </div>
                 <span className={cn(
-                  "text-body-sm font-medium hidden sm:inline",
+                  "text-body-sm font-medium inline",
                   currentStep >= step.id ? "text-primary-900 dark:text-neutral-50" : "text-neutral-400"
                 )}>
                   {step.title}
