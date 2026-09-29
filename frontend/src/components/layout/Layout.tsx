@@ -212,15 +212,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, o
                   onClick={() => toggleSection(section.title!)}
                   className={cn(
                     'flex items-center justify-between w-full px-3 py-1.5 mt-2',
-                    // neutral-400/dark:neutral-500 measured at 2.20:1 (light)
-                    // and 1.45:1 (dark) against the sidebar background — both
-                    // fail WCAG's 4.5:1 minimum for 12px text by a wide
-                    // margin. neutral-500/dark:neutral-300 measure 6.24:1 and
-                    // 5.18:1 respectively (computed via the W3C
-                    // relative-luminance formula against the actual
-                    // rendered backgrounds).
-                    'text-caption font-semibold text-neutral-500 dark:text-neutral-300',
-                    'hover:text-neutral-600 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50',
+                    // `.label` (the design system's eyebrow: caption size,
+                    // semibold, uppercase, 0.05em tracking) rather than a
+                    // bespoke copy of it. A section heading was previously
+                    // SMALLER than the nav items under it with no uppercase or
+                    // tracking to mark it as a heading, so it read as a
+                    // de-emphasised sibling instead of the group's parent.
+                    // Casing and tracking carry the hierarchy, so the size
+                    // stays where it is.
+                    //
+                    // Contrast: neutral-400/dark:neutral-500 measured 2.20:1
+                    // (light) and 1.45:1 (dark) against the sidebar background,
+                    // both failing WCAG's 4.5:1 for text this size. This was
+                    // neutral-500/dark:neutral-300 at 6.24:1 and 5.18:1
+                    // (W3C relative-luminance formula, against the actual
+                    // rendered backgrounds); `.label` is neutral-600 in light
+                    // mode, which is darker still, and the same neutral-300 in
+                    // dark mode -- so both stay above the minimum.
+                    'label',
+                    'hover:text-neutral-700 dark:hover:text-neutral-50 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50',
                     collapsed && 'hidden'
                   )}
                 >
@@ -295,7 +305,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, o
                       )}
                       {item.badge && !isComingSoon && (
                         <span className={cn(
-                          'text-caption font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full',
+                          'text-caption font-bold min-w-[1.25rem] h-5 flex items-center justify-center rounded-full',
                           getBadgeStyle(isActive, item.badgeColor),
                           collapsed && 'hidden'
                         )}>
@@ -402,7 +412,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
               <PageHeader>/usePageHeaderTitle; falls back to the generic
               per-route title for pages not yet migrated. whitespace-nowrap
               so long titles don't wrap the header to two rows. */}
-          {/* flex-1 min-w-[96px] not min-w-0 — with several page-registered
+          {/* flex-1 min-w-[6rem] not min-w-0 — with several page-registered
               header actions + the search bar + EntityPicker all
               shrink-resistant, the title was the only flexible element left
               and could collapse to a true 0px width (confirmed live at
@@ -411,10 +421,10 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
               real header space because it never grew past its own
               min-content width (confirmed live: titles truncated at
               1280-1440px with the header visibly half-empty). flex-1 lets it
-              claim the parent's slack; the min-w-[96px] floor still keeps
+              claim the parent's slack; the min-w-[6rem] floor still keeps
               `truncate` working for long titles without the title ever
               fully disappearing when space is genuinely tight. */}
-          <div className="items-center gap-1.5 flex-1 min-w-[96px] flex">
+          <div className="items-center gap-1.5 flex-1 min-w-[6rem] flex">
             {/* No flex-1 here (only on the wrapper div) — the wrapper
                 growing gives the title room to render at full width with
                 the help button sitting right after the visible text; if h1
@@ -450,7 +460,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
                 type="text"
                 placeholder="Search accounts, transactions..."
                 className={cn(
-                  'w-full min-w-[140px] max-w-[320px] h-10 pl-10 pr-12 rounded-lg border border-edge',
+                  'w-full min-w-[8.75rem] max-w-[20rem] h-10 pl-10 pr-12 rounded-lg border border-edge',
                   'bg-neutral-50/80 dark:bg-primary-950/50 text-body-sm placeholder:text-neutral-400',
                   'focus:outline-none focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-500/10',
                   'transition-all duration-200'

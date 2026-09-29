@@ -157,7 +157,7 @@ const PayablesFilterBar: React.FC<FilterBarProps> = ({
       rightSlot={(
         <div className="flex items-center gap-2">
           <StatusIconBadge tone="success" icon={Building2} size="sm" />
-          <div className="min-w-[200px]">
+          <div className="min-w-[12.5rem]">
             <label className="label">Entity</label>
             <Select
               value={selectedEntityId}

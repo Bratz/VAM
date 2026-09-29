@@ -83,7 +83,7 @@ export const ClickableFilter: Story = {
 export const SixTileStripNarrow: Story = {
   decorators: [(Story) => <div className="max-w-none"><Story /></div>],
   render: () => (
-    <div className="w-[640px] max-w-full">
+    <div className="w-[40rem] max-w-full">
       <StatStrip columns={6}>
         <StatTile tone="primary" label="Balance" value="GBP 2,481,930.15" icon={<Wallet className="w-5 h-5" />} />
         <StatTile tone="success" label="Inflows" value="GBP 912,004.00" icon={<TrendingUp className="w-5 h-5" />} />

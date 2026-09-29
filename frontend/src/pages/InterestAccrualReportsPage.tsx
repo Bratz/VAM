@@ -341,7 +341,7 @@ const InterestAccrualReportsPage: React.FC = () => {
             <StatusIconBadge tone="primary" icon={Building2} />
             <div className="flex flex-col">
               <span className="label">Corporate</span>
-              <Select value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)} className="min-w-[240px]">
+              <Select value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)} className="min-w-[15rem]">
                 {corporates.map(corp => (
                   <option key={corp.id} value={corp.id}>{corp.legalName || corp.tradeName || corp.corporateId}</option>
                 ))}
@@ -387,7 +387,7 @@ const InterestAccrualReportsPage: React.FC = () => {
       {/* Filters */}
       <Card className="p-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[12.5rem]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <Input placeholder="Search by reference, entity..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />

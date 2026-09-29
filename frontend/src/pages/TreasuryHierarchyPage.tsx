@@ -1521,7 +1521,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 // internal ellipsis ("MN…") reads as truncation, unlike a
                 // hard container clip ("M").
                 badges.push({ key: 'entity', label: node.owningEntity.entityCode, el: (
-                  <Badge key="entity" variant="neutral" size="sm" className="text-neutral-600 dark:text-neutral-300 bg-surface-page shrink min-w-[40px]">
+                  <Badge key="entity" variant="neutral" size="sm" className="text-neutral-600 dark:text-neutral-300 bg-surface-page shrink min-w-[2.5rem]">
                     <span className="truncate">{node.owningEntity.entityCode}</span>
                   </Badge>
                 )});

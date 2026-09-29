@@ -604,7 +604,7 @@ const AccountAttachmentsPage: React.FC = () => {
       {/* Filters */}
       <Card padding="sm" className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px] relative">
+          <div className="flex-1 min-w-[12.5rem] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
           </div>

@@ -195,7 +195,7 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
           {showUnmapped && (
             <div
               onMouseLeave={() => setShowUnmapped(false)}
-              className="absolute z-10 left-0 top-full mt-1 min-w-[220px] rounded-lg px-3.5 py-2.5 text-body-sm"
+              className="absolute z-10 left-0 top-full mt-1 min-w-[13.75rem] rounded-lg px-3.5 py-2.5 text-body-sm"
               style={{ backgroundColor: tooltipBg, color: tooltipText, boxShadow: tooltipShadow }}
             >
               <p className="font-semibold mb-1">Not shown on map</p>

@@ -577,7 +577,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="min-w-[220px]">
+          <div className="min-w-[13.75rem]">
             <ScopeSelector
               mode="corporate-only"
               bare

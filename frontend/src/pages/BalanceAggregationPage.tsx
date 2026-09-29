@@ -524,7 +524,7 @@ const BalanceAggregationPage: React.FC = () => {
           {/* Corporate Selector */}
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="primary" icon={Building2} />
-            <div className="min-w-[220px]">
+            <div className="min-w-[13.75rem]">
               <label className="text-caption font-medium text-primary-700 uppercase tracking-wider dark:text-neutral-200">Corporate</label>
               <select
                 value={selectedCorporateId}
@@ -545,7 +545,7 @@ const BalanceAggregationPage: React.FC = () => {
           {/* Program Selector */}
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="info" icon={Layers} />
-            <div className="min-w-[220px]">
+            <div className="min-w-[13.75rem]">
               <label className="text-caption font-medium text-info-700 uppercase tracking-wider dark:text-info-300">Program</label>
               <select
                 value={selectedProgramId}

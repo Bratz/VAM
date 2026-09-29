@@ -203,7 +203,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
     corporateField = (
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="primary" icon={Building2} size="sm" />
-        <div className="min-w-[220px]">
+        <div className="min-w-[13.75rem]">
           {!bare && <label className="label">Corporate</label>}
           <Select
             value={props.selectedCorporateId}
@@ -240,7 +240,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
     childField = (
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="info" icon={Briefcase} size="sm" />
-        <div className="min-w-[200px]">
+        <div className="min-w-[12.5rem]">
           <label className="label">Program</label>
           <Select
             value={props.selectedProgramId}
@@ -283,7 +283,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = (props) => {
     childField = (
       <div className="flex items-center gap-2">
         <StatusIconBadge tone="accent" icon={Users} size="sm" />
-        <div className="min-w-[220px]">
+        <div className="min-w-[13.75rem]">
           <label className="label">{props.entityLabel ?? 'Entity'}</label>
           <Select
             value={props.selectedEntityId}

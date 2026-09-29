@@ -151,7 +151,7 @@ export const ScopePicker: React.FC<ScopePickerProps> = ({ mode, contextId, onRes
                 ? <ChevronDown className="w-4 h-4 text-neutral-400" />
                 : <ChevronRight className="w-4 h-4 text-neutral-400" />}
             </button>
-          ) : <span className="w-[18px]" />}
+          ) : <span className="w-[1.125rem]" />}
           {mode === 'legalEntity'
             ? <Building2 className="w-4 h-4 text-primary-500 shrink-0" />
             : depth === 0

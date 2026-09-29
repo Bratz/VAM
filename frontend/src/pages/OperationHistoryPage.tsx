@@ -188,7 +188,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
   return (
     <Card padding="sm" className="mb-6">
       <div className="flex flex-wrap items-end gap-4">
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-[12.5rem]">
           <label className="block label-cased mb-1">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -202,7 +202,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           </div>
         </div>
 
-        <div className="w-[180px]">
+        <div className="w-[11.25rem]">
           <label className="block label-cased mb-1">Operation Type</label>
           <select
             value={filters.operationType}
@@ -215,7 +215,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           </select>
         </div>
 
-        <div className="w-[140px]">
+        <div className="w-[8.75rem]">
           <label className="block label-cased mb-1">Status</label>
           <select
             value={filters.status}
@@ -228,7 +228,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           </select>
         </div>
 
-        <div className="w-[140px]">
+        <div className="w-[8.75rem]">
           <label className="block label-cased mb-1">From Date</label>
           <input
             type="date"
@@ -238,7 +238,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onChange, onReset })
           />
         </div>
 
-        <div className="w-[140px]">
+        <div className="w-[8.75rem]">
           <label className="block label-cased mb-1">To Date</label>
           <input
             type="date"

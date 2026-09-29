@@ -1239,7 +1239,7 @@ const CreditLimitsPage: React.FC = () => {
       {/* Refresh + Export migrated to Aperture Layout header. Corporate
           selector stays here as a filter input. */}
       <div className="flex items-center justify-end animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <select className="px-3 py-2 border border-edge-strong rounded-lg min-w-[200px] bg-surface-card text-body-sm font-medium" value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)}>
+          <select className="px-3 py-2 border border-edge-strong rounded-lg min-w-[12.5rem] bg-surface-card text-body-sm font-medium" value={selectedCorporateId} onChange={(e) => setSelectedCorporateId(e.target.value)}>
             <option value="">Select Corporate...</option>
             {corporates.map(c => <option key={c.id} value={c.id}>{c.legalName}</option>)}
           </select>

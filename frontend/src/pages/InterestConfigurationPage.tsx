@@ -289,7 +289,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
           <div className="p-2 bg-primary-100 rounded-lg dark:bg-primary-700">
             <Building2 className="w-5 h-5 text-primary-700 dark:text-neutral-200" />
           </div>
-          <div className="min-w-[200px]">
+          <div className="min-w-[12.5rem]">
             <label className="text-caption font-medium text-primary-700 uppercase tracking-wide dark:text-neutral-200">Corporate</label>
             <select
               value={selectedCorporateId}
@@ -314,7 +314,7 @@ const CorporateProgramFilterBar: React.FC<CorporateProgramFilterBarProps> = ({
           <div className="p-2 bg-info-100 rounded-lg dark:bg-info-500/20">
             <Layers className="w-5 h-5 text-info-700 dark:text-info-300" />
           </div>
-          <div className="min-w-[250px]">
+          <div className="min-w-[15.625rem]">
             <label className="text-caption font-medium text-info-700 uppercase tracking-wide dark:text-info-300">Program</label>
             <select
               value={selectedProgramId}
@@ -738,7 +738,7 @@ const InterestConfigurationPage: React.FC = () => {
       {/* Filters */}
       <Card className="p-4 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[12.5rem]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
@@ -753,7 +753,7 @@ const InterestConfigurationPage: React.FC = () => {
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as any)}
-            className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-medium bg-surface-card min-w-[140px]"
+            className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-medium bg-surface-card min-w-[8.75rem]"
           >
             <option value="ALL">All Types</option>
             {CONFIG_TYPES.map(type => (
@@ -763,7 +763,7 @@ const InterestConfigurationPage: React.FC = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-medium bg-surface-card min-w-[140px]"
+            className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm font-medium bg-surface-card min-w-[8.75rem]"
           >
             <option value="ALL">All Statuses</option>
             {CONFIG_STATUSES.map(status => (

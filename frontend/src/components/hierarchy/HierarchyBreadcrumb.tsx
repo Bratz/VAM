@@ -103,7 +103,7 @@ export const HierarchyBreadcrumb: React.FC<HierarchyBreadcrumbProps> = ({
               )}
               <span className={cn(
                 textSize,
-                'font-medium truncate max-w-[100px]',
+                'font-medium truncate max-w-[6.25rem]',
                 isLast ? 'text-primary-900 dark:text-neutral-50' : 'text-neutral-600 dark:text-neutral-300'
               )}>
                 {segment.name || segment.code}

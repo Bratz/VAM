@@ -2344,7 +2344,7 @@ export default function TransfersPage() {
                   })),
                 ]}
                 disabled={loading}
-                className="min-w-[200px]"
+                className="min-w-[12.5rem]"
               />
             </div>
           </div>
@@ -2366,7 +2366,7 @@ export default function TransfersPage() {
                   })),
                 ]}
                 disabled={loading || !selectedCorporateId}
-                className="min-w-[200px]"
+                className="min-w-[12.5rem]"
               />
             </div>
           </div>
@@ -2388,7 +2388,7 @@ export default function TransfersPage() {
                   })),
                 ]}
                 disabled={loading}
-                className="min-w-[220px]"
+                className="min-w-[13.75rem]"
               />
             </div>
           </div>

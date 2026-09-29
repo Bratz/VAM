@@ -1336,7 +1336,7 @@ const LegalEntitiesPage: React.FC = () => {
             <div className="flex flex-col">
               <span className="caption">Corporate</span>
               <select
-                className="px-3 py-1.5 border border-edge rounded-lg text-body-sm bg-surface-card min-w-[240px] focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="px-3 py-1.5 border border-edge rounded-lg text-body-sm bg-surface-card min-w-[15rem] focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 value={selectedCorporateId}
                 onChange={(e) => setSelectedCorporateId(e.target.value)}
               >
@@ -1420,7 +1420,7 @@ const LegalEntitiesPage: React.FC = () => {
 
             {/* Search & Filters */}
             <div className="px-4 py-3 border-b border-edge flex flex-wrap gap-4">
-              <div className="flex-1 relative min-w-[200px]">
+              <div className="flex-1 relative min-w-[12.5rem]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input 
                   type="text" 

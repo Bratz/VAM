@@ -70,7 +70,7 @@ export const EntityPicker: React.FC<EntityPickerProps> = ({
         // major contributor to header elements overflowing/overlapping at
         // 1440px. The dropdown's own open options list still shows full
         // text; only the closed-state display truncates.
-        <div className="relative max-w-[180px]">
+        <div className="relative max-w-[11.25rem]">
           <select
             value={currentEntityId || ''}
             onChange={(e) => switchEntity(e.target.value)}

@@ -212,7 +212,7 @@ const CorporateSelector: React.FC<{
     value={value || ''}
     onChange={(e) => onChange(e.target.value || undefined)}
     disabled={loading}
-    className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[200px]"
+    className="px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent min-w-[12.5rem]"
   >
     {loading ? (
       <option value="">Loading corporates...</option>
@@ -2487,7 +2487,7 @@ const PartiesPage: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                 <input type="text" placeholder="Search by name, code, or tax ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-edge-strong rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
               </div>
-              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value as any)} className="px-4 py-2.5 border border-edge-strong rounded-lg min-w-[180px]">
+              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value as any)} className="px-4 py-2.5 border border-edge-strong rounded-lg min-w-[11.25rem]">
                 <option value="ALL">All KYC Status</option>
                 <option value="VERIFIED">Verified</option>
                 <option value="PENDING">Pending</option>
