@@ -54,3 +54,8 @@ storybook-static
 
 # Recorded demo videos (scripts/record-*.mjs) — regenerate, do not commit
 frontend/demo/
+
+# Local analysis scratch. Holds work derived from confidential material (e.g. vendor
+# reference guides), so this must stay a rule rather than a habit — it was excluded only
+# by nobody happening to run `git add -A`.
+.claude-scratch/
