@@ -125,8 +125,33 @@ jobs:
       - name: Build Storybook
         run: npm run build-storybook -- -o storybook-static
 
+      # Downloading Chromium is the only network-dependent step in this workflow and the only
+      # one with real variance: measured across eight consecutive runs it took 25, 26, 26, 28,
+      # 98, 112, 177 and 425 seconds. The 425s run is the reason this cache exists -- not the
+      # time itself, but that an unreachable CDN or apt mirror turns a green build red for
+      # reasons unrelated to the code. Everything else here is already cached.
+      #
+      # Keyed on the resolved Playwright version rather than the lockfile, so an unrelated
+      # dependency bump does not throw the browser away. Browsers live in ~/.cache/ms-playwright;
+      # the OS libraries --with-deps installs do not, hence install-deps on a cache hit.
+      - name: Resolve Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}
+
       - name: Install Chromium for the render check
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium system deps (browser came from cache)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Render + contrast check (captured, non-blocking)
         # `| tee` used to swallow the result: steps run under `bash -e` with no
