@@ -92,7 +92,7 @@ public class ReceivableInvoiceProcessor implements DomainProcessor {
                 staged.setReason(null);
             } catch (Exception e) {
                 staged.setStatus(RowStatus.FAILED);
-                staged.setReason(e.getMessage());
+                staged.setReason(DomainProcessor.failureReason(e));
             }
             repository.save(staged);
         }

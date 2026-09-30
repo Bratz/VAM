@@ -66,7 +66,7 @@ public class PayablesProcessor implements DomainProcessor {
             try {
                 processOne(staged, row);
             } catch (Exception e) {
-                fail(staged, e.getMessage());
+                fail(staged, DomainProcessor.failureReason(e));
             }
             repository.save(staged);
         }

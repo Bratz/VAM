@@ -15,7 +15,10 @@ import com.bank.vam.service.receivables.ReconciliationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.NoTransactionException;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -231,11 +234,49 @@ public class Iso20022InwardPaymentService {
 
         } catch (BusinessException e) {
             log.warn("ISO 20022 inward payment failed: {}", e.getMessage());
+            rethrowIfTransactionDoomed(e);
             return buildErrorResponse(request, startTime, "RJCT", e.getMessage());
         } catch (Exception e) {
             log.error("ISO 20022 inward payment error: ", e);
+            rethrowIfTransactionDoomed(e);
             return buildErrorResponse(request, startTime, "TECH", "Technical error: " + e.getMessage());
         }
+    }
+
+    /**
+     * Swallowing an exception here does not un-doom the transaction. This method is
+     * {@code @Transactional} and calls two proxied {@code @Transactional} collaborators --
+     * {@code TransactionService.processCollection} and
+     * {@code ReconciliationService.attemptAutoReconcile}. When one of those throws, its own
+     * interceptor marks the shared physical transaction rollback-only on the way out. Returning a
+     * tidy failure response after that is a lie: this method's own commit then fails with
+     * UnexpectedRollbackException, the caller sees "Transaction silently rolled back because it
+     * has been marked as rollback-only", and the real cause survives only in the log above.
+     *
+     * <p>Confirmed live: every row of ingest job KAN-31 failed with exactly that text, so the
+     * file-ingest UI showed three identical meaningless reasons for whatever actually went wrong.
+     *
+     * <p>So when the transaction is already doomed, rethrow and let the real exception be what the
+     * caller sees. A failure that never touched an inner proxy -- validateRequest rejecting the
+     * payload, an unknown creditor account -- leaves the transaction clean and still returns the
+     * structured RJCT/TECH response the REST controller renders, unchanged.
+     */
+    private void rethrowIfTransactionDoomed(Exception cause) {
+        TransactionStatus status;
+        try {
+            status = TransactionAspectSupport.currentTransactionStatus();
+        } catch (NoTransactionException noTransaction) {
+            return; // called outside a transaction (tests, direct instantiation): response is committable
+        }
+        if (!status.isRollbackOnly()) {
+            return;
+        }
+        log.error("Inward payment transaction is rollback-only; rethrowing the real cause instead of"
+                + " returning a response that cannot commit");
+        if (cause instanceof RuntimeException runtime) {
+            throw runtime;
+        }
+        throw new IllegalStateException(cause.getMessage(), cause);
     }
 
     // ========================================================================
