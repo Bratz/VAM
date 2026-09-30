@@ -1,134 +1,151 @@
-# Settlement VA as a flag on an ordinary VA
+# Settlement accounts: the mark, its placement rules, and the missing half of routing
 
-Design agreed 2026-09-30. Written against the code, not intent.
+Rewritten 2026-09-30 against the domain rules and the code. Supersedes the first draft, which
+validated a flag against a routing chain that turns out to implement half the rule.
 
-## Why
+## The rules this has to satisfy
 
-Today a settlement VA is its own creation flow (`POST /treasury/settlement-vas`),
-and the result is that "a settlement VA exists" and "a settlement VA is reachable"
-drifted apart. The live sweep found 50 credit-capable accounts across 13 programs
-that would park to exception, from three causes:
+A settlement account is a **transaction account carrying a settlement mark**. It is not a separate
+kind of account: it still takes postings, and one of its jobs is to receive the physical account's
+prices as transactions. Whether the mark may be set at all is a property of the account type
+category, i.e. configuration rather than a fixed list in code.
 
-1. **Missing** — 8 programs have no SETTLEMENT-category VA at all.
-2. **Wrong marker** — `SETTLEMENT-EUR-TEST-WAL-L2-5962`, `-TEST-IHB-L2-5710`,
-   `-TEST-MUL-L2-6328` are named SETTLEMENT but carry `accountCategory:
-   TRANSACTION` and no `specialType`. The path lookup filters on category, so
-   they are invisible to the resolver.
-3. **Unreachable placement** — a settlement VA parented in a sibling branch, or a
-   root-level `CURRENCY_MIRROR` target that only a *parentless* settlement VA
-   could serve. Proven live: `SETTLEMENT-TESTESCROWNEW-AED` was created
-   successfully, looked correct, and resolved nothing.
+Settlement routing has **two directions, for two different purposes**:
 
-All three are the same underlying problem: nothing validates placement at the
-moment the VA is marked as settlement.
+| | contra leg of customer-internal results | results of non-transaction accounts |
+|---|---|---|
+| direction | **upward** | **downward** |
+| from an aggregation account | start at that account | start at that account |
+| from a currency account | start at its **mother** | start at its **mother** |
+| tie-break | nearest same-currency match | nearest same-currency match |
+| nothing found | exception transaction | exception account |
 
-## The model
+The rule that makes those cohere: **a transaction account settles on itself.** Aggregation and
+currency accounts cannot hold their own transactions — their balance is the sum of the transaction
+accounts beneath them — so their results have to settle somewhere else, and that is what the
+downward search is for.
 
-A settlement VA is an ordinary VA that carries the settlement marker. Creation is
-the normal VA flow with the flag set; the flag is what triggers hierarchy
-validation, on both edges:
+Placement: a marked account may not sit under an aggregation account that already has a marked
+sibling in the same currency.
 
-- **Setting the flag** validates the placement rules for this hierarchy.
-- **Clearing the flag** validates that the accounts currently served by this VA
-  are still served by some other settlement VA meeting the conditions.
+Removal, and this is the part that matters for a flag you can clear — the condition is **directional
+and per purpose**:
 
-## Non-negotiable: one walk, not two
+- marked account used for customer-internal prices: releasable only if another same-currency
+  settlement account exists at the **same or a higher** level;
+- marked account used for results of non-transaction accounts: only if one exists at the **same or
+  a lower** level.
 
-The validator MUST call the same path walk `SettlementVaResolverService` uses to
-resolve (STEP 1 sibling → STEP 2 traverse up → STEP 3 parentless top level).
-A re-implemented rules check is how cause 3 above happened in the first place: a
-placement that satisfies a plausible-looking rule but that the real resolver never
-finds. The validation question is literally *"after this change, does every
-credit-capable account in the program still resolve?"* — answered by running the
-resolver, not by restating its rules.
+An account can therefore be free for one purpose and still required for the other. The same shape
+governs closing: blocked while the account is relied on as a settlement account, unless another at
+the same or a higher level carries the same role.
 
-## Rules
+## Where we stand
 
-Setting the flag:
+1. **Settlement is a category for us, not a mark.** `AccountCategory.SETTLEMENT` *replaces*
+   `TRANSACTION`, so our settlement VAs are not transaction VAs — `isTransactionVa()` covers
+   TRANSACTION, COLLECTION and DISBURSEMENT only. That one choice cascades:
+   `AccountCategory.isSystemCreated()` blocks SETTLEMENT on the generic create
+   (`VirtualAccountService:392`), which is why a separate `POST /treasury/settlement-vas` exists,
+   which is the side door that produced settlement VAs nothing could route to.
 
-- `hierarchyLevel` / parent node level ≤ 6 (existing rule in
-  `HierarchyService.createSettlementVa` — no settlement VA at L7).
-- No other ACTIVE settlement VA under the same parent in the same currency
-  (existing dedupe rule).
-- The VA's category must be one that may become settlement. Structural
-  categories — ROOT, AGGREGATION, CURRENCY_MIRROR, PHYSICAL_MIRROR,
-  EXTERNAL_MIRROR, EXCEPTION — may not. These are containers; Tieto 4.8.2.5 says
-  a container cannot hold results of its own.
-- Both markers are set together: `accountCategory = SETTLEMENT` AND
-  `specialType = SETTLEMENT`. Setting one without the other is exactly the
-  cause-2 defect.
-- **Coverage check**: at least one credit-capable account in the program must
-  newly resolve to it. A settlement VA that serves nothing is accepted only with
-  an explicit override, and is reported as such — otherwise we keep minting
-  `SETTLEMENT-TESTESCROWNEW-AED`.
+2. **Only the upward search is wired.** `SettlementVaResolverService.resolveSettlementVaWithResult`
+   walks upward and then falls back to a program-level *parentless* settlement VA.
+   `findSettlementVaBelow` is implemented and is called from exactly one place,
+   `FeePostingService:105` — never from the main chain.
 
-Clearing the flag:
+3. **That parentless fallback is ours, not the domain's.** The correct fallback is the exception
+   account. This matters concretely: the root-level currency mirrors (`M-ROOT-GBP`, `M-EUR-*`) are
+   currency accounts, so they should resolve **downward from their mother**. They are currently
+   unresolvable, and a parentless settlement VA — which the create endpoint cannot actually produce
+   despite its comment claiming otherwise — is the wrong fix for them.
 
-- Compute the set of accounts that resolve to this VA today.
-- Re-run resolution for each with this VA excluded.
-- Any account that becomes unresolved blocks the change, and the response names
-  them. This is a money-routing config: unresolved means the next payment parks
-  to exception with no warning, which is the failure this whole thread started
-  from.
+4. Depth cap of 10 in `SettlementVaResolverService.java:358`, against programs that permit deeper
+   hierarchies (`Program.java:107-118`).
 
-## Changes
+## Sequence
 
-### Backend
+The ordering is the main correction to the first draft: **routing before the flag.** Validating a
+mark against today's chain would check the upward condition and silently skip the downward one, so
+clearing a mark could pass a check that never looked where it needed to.
 
-1. `VirtualAccountDto.UpdateRequest` — the category is immutable today
-   (`CreateRequest` has `accountCategory`, `UpdateRequest` does not). Rather than
-   making the whole category mutable — which would allow re-categorising a ROOT
-   into a TRANSACTION — add two explicit transitions:
-   `POST /virtual-accounts/{id}/settlement` and
-   `DELETE /virtual-accounts/{id}/settlement`.
-2. `SettlementPlacementService` (new, beside the resolver so it shares the walk):
-   - `PlacementVerdict validateCanBecomeSettlement(VirtualAccount va)`
-   - `PlacementVerdict validateCanClearSettlement(VirtualAccount va)`
-   - verdict carries: allowed, reasons, accounts gained, accounts stranded.
-3. `VirtualAccountService` — apply both markers together on set, clear both on
-   unset, run the verdict first, `@Transactional`.
-4. Same verdict served read-only as `GET /virtual-accounts/{id}/settlement/preview`
-   and, for a not-yet-created VA, `POST /virtual-accounts/settlement/preview`
-   taking the placement — so the UI shows the outcome before submit rather than
-   after a failed write.
-5. `CreateRequest` path honours the flag through the same validator, so the API
-   and the modal cannot diverge.
+### 1. Implement the downward search (no model change, fixes a measured gap)
 
-### Frontend
+Route non-transaction accounts through `findSettlementVaBelow` in the main chain, starting from the
+account itself for an aggregation account and from the mother for a currency account, nearest match
+wins, exception account when nothing is found. Drop the parentless STEP 3 in the same change, or
+keep it behind an explicit comment saying it is a local extension — it currently masks the absence
+of the downward search by failing differently.
 
-6. `VaCreateModal.tsx` — `accountCategory: 'TRANSACTION'` is hardcoded at :708.
-   Add a "Settlement account" toggle; when on, call the preview endpoint with the
-   chosen `placementSel` and render what it will cover, or why it is refused,
-   before the submit button enables. The placement picker
-   (`HierarchyTreePicker`) already exists and is what the rule needs.
-7. Account detail — the same toggle on an existing VA, with the removal impact
-   list when turning it off.
-8. `ProgramDetailModal.tsx:343` — the settlement panel is read-only and its empty
-   state claims "Settlement VAs are created when hierarchy nodes are added",
-   which is false: TEST-ESCROW-NEW had a 5-level hierarchy and zero settlement
-   VAs. Correct the text and link to the create flow.
+Raise or remove the depth cap so it cannot be hit before a program's real depth.
 
-### Data (separate, once the above exists)
+### 2. Make settlement a mark
 
-9. The 3 mis-marked EUR VAs: set both markers via the new transition, which will
-   validate placement rather than assume it.
-10. The 8 programs with none, and the root-mirror class that needs a parentless
-    settlement VA — note the create endpoint cannot currently produce one. Its
-    no-`parentNodeId` branch is commented as building "a parentless, purely-virtual
-    SETTLEMENT VA" but observably parents it (that is how
-    `SETTLEMENT-TESTESCROWNEW-AED` ended up under `M-AED-25650B9E`). Fix or drop
-    that branch as part of step 1.
+Category returns to `TRANSACTION`; a separate boolean carries the mark.
+
+**This is not a return to the field we just collapsed.** `specialType` was removed because it
+*duplicated* `accountCategory` — both answered "what is this account", and they drifted apart. The
+mark answers a different question: the category says what the account *is*, the mark says what role
+it *also* plays. Neither is derivable from the other, which is exactly why the settlement mark can
+be a field and `specialType` could not.
+
+Gate the mark on the account type category rather than a hardcoded refusal list, so the permission
+is data.
+
+Migration: 25 VAs currently carry `accountCategory = SETTLEMENT` and would move to
+`TRANSACTION` + mark. Every settlement lookup keys on the category today, so this is the
+change with real blast radius and wants its own commit and its own before/after sweep.
+
+### 3. The flag, with both-direction validation
+
+Two explicit transitions rather than a writable category, so the create guard stays exactly as it
+is and the only route to becoming a settlement account is the one that validates:
+
+- `POST /virtual-accounts/{id}/settlement` — checks the account type category permits the mark, and
+  that no marked sibling in the same currency already sits under the same aggregation.
+- `DELETE /virtual-accounts/{id}/settlement` — evaluates **both** release conditions, reports each
+  separately, and blocks while either fails, naming the accounts that would be stranded. For money
+  routing, block rather than warn: unresolved means the next payment parks to exception with no
+  signal, which is the failure that started this work.
+- `GET /virtual-accounts/{id}/settlement/preview` and a placement-shaped preview for an
+  unsaved account, so the UI states the verdict before submit rather than after a failed write.
+
+The validator must **run the resolver**, not restate its rules. A re-implemented rules check is how
+a settlement VA came to exist that satisfied every plausible rule and that the resolver never found.
+The question at mark-time is "after this change, does every account still resolve?", answered by
+executing both searches.
+
+Note that once the model is right, the "must serve at least one account" guard from the first draft
+is no longer needed: marking an account already in the hierarchy cannot be unreachable when both
+searches exist. Keep it as a warning at most. The orphan it was designed to prevent was an artefact
+of creating a new account through a side door with no placement validation — step 2 removes the
+side door.
+
+### 4. Screens
+
+`VaCreateModal.tsx` hardcodes `accountCategory: 'TRANSACTION'` at :708 and already picks a
+placement through `HierarchyTreePicker` — the mark is a toggle beside it, calling the preview and
+rendering what it will serve, or why it is refused, before submit enables.
+
+Account detail gets the same toggle with the release-impact list when turning it off.
+
+`ProgramDetailModal.tsx:343` lists settlement VAs read-only and its empty state claims they "are
+created when hierarchy nodes are added", which is false — TEST-ESCROW-NEW had a five-level
+hierarchy and none. Correct the text and link to the create flow.
 
 ## Verification
 
-- Unit: the verdict for each rule, and the clear-flag stranding check, against a
-  built hierarchy fixture. No framework beyond the JUnit/Mockito already in use.
-- Live: flag a VA in TEST-IHB-NEW (currently 4 unresolved, 0 settlement VAs),
-  confirm the sweep count for that program drops to 0; then attempt to clear it
-  and confirm the block names the 4 accounts.
-- Re-run the full 20-program sweep before and after; the numbers are the test.
+- Unit tests per rule: sibling uniqueness, category permission, and both release conditions against
+  a built hierarchy fixture. JUnit/Mockito, already in use.
+- The sweep is the integration test. Re-run it before and after each step. Current reading is 44
+  unresolved across 13 programs, but that number applies the upward chain to every credit-capable
+  account — it measures conformance to today's code, not to the rules above. Step 1 should change
+  what it counts as much as how many, so recalibrate the sweep to the two directions as part of it.
+- Live: mark an account in TEST-IHB-NEW (4 unresolved, no settlement VAs), confirm its count drops;
+  then attempt to clear the mark and confirm the block names the affected accounts.
 
 ## Open
 
-- Whether the coverage check blocks or warns by default. Written as "warn +
-  explicit override" above; blocking is defensible and I would rather be told.
+- Whether step 2 is worth its blast radius, or whether we keep `AccountCategory.SETTLEMENT` and
+  accept that our settlement accounts are not transaction accounts. Step 1 stands on its own and
+  does not depend on this.
