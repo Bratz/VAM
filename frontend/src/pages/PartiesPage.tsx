@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Search, Download, RefreshCw, Plus, Building2, User, Users, Landmark, Briefcase, Eye, MoreHorizontal, CheckCircle, XCircle, AlertTriangle, Clock, Shield, CreditCard, Mail, MapPin, Banknote, X, Loader2, Link2, Repeat, Wallet, ArrowRightLeft, TrendingUp, Globe, DollarSign, Settings, Save, Pencil } from 'lucide-react';
@@ -60,13 +61,22 @@ const extractArray = <T,>(response: ApiResponse<T[] | { content: T[] } | { corpo
 };
 
 /**
- * Show toast notification (could be replaced with actual toast library)
+ * Show a toast notification.
+ *
+ * This used to be a console.log and nothing else, with a comment saying a real toast library
+ * belonged here. That made all 22 call sites on this page invisible to users -- every "party
+ * created", "role updated" and failure message went to the browser console instead of the
+ * screen. react-hot-toast is already a dependency and <Toaster /> is already mounted in App,
+ * so this just uses it, the same way VaCreateModal and AddMemberModal do.
  */
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-  // Simple implementation - in production, use a toast library like react-hot-toast
-  console.log(`[${type.toUpperCase()}]`, message);
-  // For now, we'll use a simple approach. In real implementation:
-  // toast[type](message);
+  if (type === 'success') {
+    toast.success(message);
+  } else if (type === 'error') {
+    toast.error(message);
+  } else {
+    toast(message);
+  }
 };
 
 // ============================================================================

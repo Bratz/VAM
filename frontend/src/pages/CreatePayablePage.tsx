@@ -1276,9 +1276,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
           description: formData.description,
           notes: formData.internalNotes || undefined,
         };
-        console.log('Updating payable', payableId, updateRequest);
-        const result = await payablesApiPhase2.update(payableId, updateRequest);
-        console.log('Payable updated successfully:', result);
+        await payablesApiPhase2.update(payableId, updateRequest);
         navigation.navigate('payables');
         return;
       }
@@ -1309,9 +1307,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
         virtualAccountId: formData.sourceVirtualAccountId || undefined, // Source VA for payment execution
       };
 
-      console.log('Submitting payable to API:', request);
-      const result = await payablesApiPhase2.create(request);
-      console.log('Payable created successfully:', result);
+      await payablesApiPhase2.create(request);
       navigation.navigate('payables');
     } catch (err: any) {
       console.error('Submit failed:', err);

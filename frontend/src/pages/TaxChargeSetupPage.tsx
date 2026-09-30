@@ -452,7 +452,13 @@ const TaxChargesSetupPage: React.FC = () => {
       <PageHeader
         title="Tax & Charges Setup"
         description={<>Configure tax rates, jurisdictions, and fee schedules{useMockData && <Badge variant="warning" size="sm" className="ml-2">Demo Mode</Badge>}</>}
-        actions={<><Button variant="outline" onClick={() => console.log('Export configs')}><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={() => console.log('Import configs')}><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></>}
+        actions={<><Button variant="outline" onClick={
+          // eslint-disable-next-line no-console -- placeholder: export of tax/charge configs is not implemented, this control is a stub
+          () => console.log('Export configs')
+        }><Download className="w-4 h-4 mr-1" />Export</Button><Button variant="outline" onClick={
+          // eslint-disable-next-line no-console -- placeholder: import of tax/charge configs is not implemented, this control is a stub
+          () => console.log('Import configs')
+        }><Upload className="w-4 h-4 mr-1" />Import</Button><Button variant="outline" onClick={fetchData} disabled={loading}><RefreshCw className={cn('w-4 h-4 mr-1', loading && 'animate-spin')} />Refresh</Button><Button onClick={() => { if (activeTab === 'taxes') { setEditingTax(undefined); setShowTaxModal(true); } else if (activeTab === 'charges') { setEditingCharge(undefined); setShowChargeModal(true); } }}><Plus className="w-4 h-4 mr-1" />{activeTab === 'taxes' ? 'Add Tax Config' : activeTab === 'charges' ? 'Add Charge' : 'Add Jurisdiction'}</Button></>}
       />
       <div className="grid gap-4 grid-cols-4"><StatCard label="Active Tax Configs" value={stats.activeTaxConfigs} icon={Receipt} color="text-blue-600 dark:text-blue-300" tone="info" loading={loading} /><StatCard label="Active Charges" value={stats.activeChargeConfigs} icon={DollarSign} color="text-green-600 dark:text-green-300" tone="success" loading={loading} /><StatCard label="Jurisdictions" value={stats.jurisdictions} icon={Globe} color="text-cat-2 dark:text-cat-2-fg" tone="cat-2" loading={loading} /><StatCard label="Withholding Taxes" value={stats.withholdingTaxes} icon={Shield} color="text-warning-600 dark:text-warning-300" tone="warning" loading={loading} /></div>
       <div className="bg-surface-card rounded-lg shadow-sm border border-edge-subtle">

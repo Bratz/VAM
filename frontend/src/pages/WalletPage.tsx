@@ -1003,7 +1003,6 @@ const WalletPage: React.FC = () => {
         autoTriggerKyc: issueForm.autoTriggerKyc,
       };
 
-      console.log('Issuing wallet with request:', request);
       await walletsApi.issueWallet(request);
       showSuccess('Wallet issued successfully!');
       setShowIssueModal(false);

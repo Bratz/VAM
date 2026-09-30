@@ -860,11 +860,6 @@ const EnhancedNettingCyclesPage: React.FC = () => {
             data.includePending || false
           );
           if (populateResponse.success) {
-            console.log(`Populated cycle with ${populateResponse.data.totalAdded} entries:`,
-              `${populateResponse.data.payablesAdded} payables,`,
-              `${populateResponse.data.receivablesAdded} receivables,`,
-              `${populateResponse.data.poboRechargesAdded || 0} POBO recharges,`,
-              `${populateResponse.data.coboRechargesAdded || 0} COBO recharges`);
             // Refresh to get the updated cycle with entries
             await fetchCycles();
             return;
@@ -911,14 +906,7 @@ const EnhancedNettingCyclesPage: React.FC = () => {
   const handlePopulate = async (cycleId: string) => {
     setProcessingCycleId(cycleId);
     try {
-      const response = await nettingApi.populateCycle(cycleId, undefined, false);
-      if (response.success) {
-        console.log(`Populated cycle with ${response.data.totalAdded} entries:`,
-          `${response.data.payablesAdded} payables,`,
-          `${response.data.receivablesAdded} receivables,`,
-          `${response.data.poboRechargesAdded || 0} POBO recharges,`,
-          `${response.data.coboRechargesAdded || 0} COBO recharges`);
-      }
+      await nettingApi.populateCycle(cycleId, undefined, false);
       await fetchCycles();
     } finally {
       setProcessingCycleId(null);

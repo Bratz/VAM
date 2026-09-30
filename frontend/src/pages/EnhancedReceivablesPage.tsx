@@ -663,7 +663,6 @@ const EnhancedReceivablesPage: React.FC = () => {
 
   // Fetch invoices and VIBANs
   const fetchData = useCallback(async () => {
-    console.log('fetchData called - selectedCorporateId:', selectedCorporateId, 'selectedEntityId:', selectedEntityId);
     setLoading(true);
     setError(null);
 
@@ -688,7 +687,6 @@ const EnhancedReceivablesPage: React.FC = () => {
           // payablesApiPhase2.search()/getStats() in services/api.ts).
           headers['X-No-Entity-Scope'] = '1';
         }
-        console.log('Fetching invoices with headers:', headers);
 
         const invoicesResponse = await apiClient.get<ApiResponse<any[]>>('/receivables/invoices', {
           headers,
@@ -697,7 +695,6 @@ const EnhancedReceivablesPage: React.FC = () => {
         
         if (invoicesResponse.data?.success && invoicesResponse.data?.data) {
           const invoiceData = Array.isArray(invoicesResponse.data.data) ? invoicesResponse.data.data : [];
-          console.log('Received invoice data:', invoiceData);
           mappedInvoices = invoiceData.map((inv: any) => ({
             id: inv.id,
             invoiceNumber: inv.invoiceNumber || inv.receivableNumber || inv.externalReference || '',
@@ -1059,8 +1056,6 @@ const EnhancedReceivablesPage: React.FC = () => {
     if (selectedEntityId) {
       params.legalEntityId = selectedEntityId;
     }
-    console.log('handleCreateInvoice - navigating with params:', params);
-    console.log('selectedCorporateId:', selectedCorporateId, 'selectedEntityId:', selectedEntityId);
     navigate('receivables-create', Object.keys(params).length > 0 ? params : undefined);
   };
 

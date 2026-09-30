@@ -223,9 +223,7 @@ const ProgramsPage: React.FC = () => {
     if (savedProgram && hierarchyLevelConfigs && hierarchyLevelConfigs.length > 0) {
       try {
         const levelRes = await hierarchyLevelApi.saveLevelConfigs(savedProgram.id, hierarchyLevelConfigs);
-        if (levelRes.success) {
-          console.log('Hierarchy level configs saved successfully');
-        } else {
+        if (!levelRes.success) {
           console.warn('Failed to save hierarchy level configs:', levelRes.message);
           // Don't throw - program was created successfully, level config is secondary
         }

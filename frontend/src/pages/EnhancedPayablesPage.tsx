@@ -1181,7 +1181,6 @@ const EnhancedPayablesPage: React.FC = () => {
           if (selectedEntityId) {
             params.legalEntityId = selectedEntityId;
           }
-          console.log('Navigate to payables-create with params:', params);
           navigate('payables-create', Object.keys(params).length > 0 ? params : undefined);
         }}>
           New Payable

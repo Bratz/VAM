@@ -831,14 +831,6 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
   const [error, setError] = useState<string | null>(null);
   const [treasuryRates, setTreasuryRates] = useState<TreasuryRates | null>(null);
 
-  // Debug: Log parentNode when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      console.log('[CreateIhbCurrentAccountModal] Modal opened, parentNode:', parentNode);
-      console.log('[CreateIhbCurrentAccountModal] Modal opened, parentNode?.id:', parentNode?.id);
-    }
-  }, [isOpen, parentNode]);
-
   // Load treasury rates when modal opens and auto-fill rates
   useEffect(() => {
     const loadTreasuryRates = async () => {
@@ -922,9 +914,6 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
 
     try {
       // Debug: Log parentNode to verify it's being passed correctly
-      console.log('[CreateIhbCurrentAccountModal] parentNode:', parentNode);
-      console.log('[CreateIhbCurrentAccountModal] parentNode?.id:', parentNode?.id);
-      console.log('[CreateIhbCurrentAccountModal] programId:', programId);
 
       // Build request for IHB Current Account creation
       const request = {
@@ -942,7 +931,6 @@ const CreateIhbCurrentAccountModal: React.FC<CreateIhbCurrentAccountModalProps> 
         vaName: formData.vaName || undefined,
       };
 
-      console.log('[CreateIhbCurrentAccountModal] Submitting request:', request);
 
       const response = await ihbUnifiedApi.createCurrentAccount(request);
 
@@ -1775,11 +1763,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
       // Validate required data - need node with valid ID
       if (!node || !node.id || !uuidRegex.test(node.id)) {
-        console.log('[DetailPanel] Skipping breakdown fetch - missing node or invalid ID:', {
-          hasNode: !!node,
-          nodeId: node?.id,
-          isValidUUID: node?.id ? uuidRegex.test(node.id) : false
-        });
         setCurrencyBreakdown([]);
         return;
       }
@@ -1791,12 +1774,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         return;
       }
 
-      console.log('[DetailPanel] Fetching currency breakdown for specific node:', {
-        nodeId: node.id,
-        nodeName: node.name,
-        nodeLevel: node.level ?? 0,
-        accountCategory: node.accountCategory
-      });
 
       setBreakdownLoading(true);
       try {

@@ -37,7 +37,6 @@ export const useSweeping = () => {
   const fetchHistory = useCallback(async () => {
     try {
       const response = await sweepingApi.getHistory();
-      console.log('[Sweeping] History response:', response);
       
       // Backend returns: ApiResponse<Page<ExecutionResponse>>
       // Structure: { success, data: { content: [...], totalElements, ... } }
@@ -99,7 +98,6 @@ export const useSweeping = () => {
     try {
       // Use execute method (matches backend endpoint /sweeping/execute)
       const response = await sweepingApi.execute(ruleIds);
-      console.log('[Sweeping] Execute response:', response);
       
       if (response?.success) {
         // Refresh data after execution

@@ -1758,7 +1758,14 @@ const IntercompanyDashboardPage: React.FC<IntercompanyDashboardPageProps> = ({ d
                     </td>
                   </tr>
                 ) : transactions.map(tx => (
-                  <TransactionRow key={tx.id} transaction={tx} onView={() => console.log('View:', tx.id)} />
+                  <TransactionRow
+                    key={tx.id}
+                    transaction={tx}
+                    onView={
+                      // eslint-disable-next-line no-console -- placeholder: per-transaction detail view is not implemented
+                      () => console.log('View:', tx.id)
+                    }
+                  />
                 ))}
               </tbody>
             </table>

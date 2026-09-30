@@ -958,7 +958,6 @@ const TransferDetailModal: React.FC<TransferDetailModalProps> = ({ isOpen, onClo
             }
           } catch (err) {
             // ISO message endpoint may not exist yet - show placeholder
-            console.log('ISO message not available');
             setIsoMessage(null);
           }
         } else {

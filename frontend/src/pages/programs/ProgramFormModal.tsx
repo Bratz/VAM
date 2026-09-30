@@ -523,12 +523,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
     const resolvedCorporateId = formData.corporateId || defaultCorporateId;
 
     // Debug logging
-    console.log('handleSubmit - corporateId resolution:', {
-      'formData.corporateId': formData.corporateId,
-      'defaultCorporateId': defaultCorporateId,
-      'resolvedCorporateId': resolvedCorporateId,
-      'isEdit': isEdit
-    });
 
     // Validate corporate ID for new programs
     if (!isEdit && !resolvedCorporateId) {
@@ -591,12 +585,6 @@ export const ProgramFormModal: React.FC<ProgramFormModalProps> = ({ isOpen, prog
       };
 
       // Debug: log the cleanedData being sent (stringified to see undefined values)
-      console.log('handleSubmit - cleanedData (JSON):', JSON.stringify(cleanedData, null, 2));
-      console.log('handleSubmit - key fields:', {
-        corporateId: cleanedData.corporateId,
-        shadowAccountIds: cleanedData.shadowAccountIds,
-        programCode: cleanedData.programCode,
-      });
 
       const saved = await onSave(cleanedData);
       const programId = program?.id ?? saved?.id;

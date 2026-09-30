@@ -663,27 +663,23 @@ const HierarchyOperationsPage: React.FC = () => {
   };
 
   // ====== MODAL SUCCESS HANDLERS ======
-  const handleMoveSuccess = (result: MoveOperationResult) => {
-    console.log('Move operation successful:', result);
+  const handleMoveSuccess = (_result: MoveOperationResult) => {
     loadCorporateData();
     setShowMoveModal(false);
     setPreSelectedVaId(undefined);
   };
 
-  const handleAcquisitionSuccess = (result: any) => {
-    console.log('Acquisition successful:', result);
+  const handleAcquisitionSuccess = (_result: any) => {
     loadCorporateData();
     setShowAcquisitionWizard(false);
   };
 
-  const handleMergerSuccess = (result: any) => {
-    console.log('Merger successful:', result);
+  const handleMergerSuccess = (_result: any) => {
     loadCorporateData();
     setShowMergerWizard(false);
   };
 
-  const handleDivestitureSuccess = (result: any) => {
-    console.log('Divestiture successful:', result);
+  const handleDivestitureSuccess = (_result: any) => {
     loadCorporateData();
     setShowDivestitureModal(false);
   };
@@ -899,7 +895,14 @@ const HierarchyOperationsPage: React.FC = () => {
                     </div>
                   ) : (
                     history.slice(0, 5).map((op) => (
-                      <OperationHistoryItem key={op.id} operation={op} onViewDetails={(id) => console.log('View details:', id)} />
+                      <OperationHistoryItem
+                        key={op.id}
+                        operation={op}
+                        onViewDetails={
+                          // eslint-disable-next-line no-console -- placeholder: operation detail view is not implemented (GET /history is itself a stub)
+                          (id) => console.log('View details:', id)
+                        }
+                      />
                     ))
                   )}
                 </div>

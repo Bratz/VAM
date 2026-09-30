@@ -1222,15 +1222,12 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const corporateIdFromParams = navigation.params?.corporateId;
 
   // Debug: log navigation params
-  console.log('CreateReceivablePage navigation.params:', navigation.params);
   const legalEntityIdFromParams = navigation.params?.legalEntityId;
 
   // Use provided values or fall back to demo defaults
   const effectiveCorporateId = corporateIdFromParams || '550e8400-e29b-41d4-a716-446655440000';
   const effectiveLegalEntityId = legalEntityIdFromParams || null;
 
-  console.log('CreateReceivablePage: corporateId from params:', corporateIdFromParams, 'effective:', effectiveCorporateId);
-  console.log('CreateReceivablePage: legalEntityId from params:', legalEntityIdFromParams, 'effective:', effectiveLegalEntityId);
 
   // Form state
   const [formData, setFormData] = useState<ReceivableFormData>({
@@ -1301,7 +1298,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   useEffect(() => {
     const loadData = async () => {
       setDataLoading(true);
-      console.log('Loading data for corporateId:', effectiveCorporateId, 'legalEntityId:', effectiveLegalEntityId);
 
       // Load corporate details
       try {
@@ -1478,10 +1474,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   };
 
   const handleSubmit = async (isDraft: boolean = false) => {
-    console.log('handleSubmit called, isDraft:', isDraft);
     setErrors({}); // Clear previous errors
     if (!isDraft && !validate()) {
-      console.log('Validation failed');
       return;
     }
     setLoading(true);
@@ -1497,22 +1491,18 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         // Use entity passed from parent page
         const selectedEntity = entities.find(e => e.id === owningEntityId);
         owningEntityCode = selectedEntity?.code;
-        console.log('Using owningEntityId from params:', owningEntityId, 'code:', owningEntityCode);
       } else if (formData.coboEnabled && formData.behalfEntityId) {
         // COBO: owning entity is the subsidiary on whose behalf we're collecting
         const behalfEntity = entities.find(e => e.id === formData.behalfEntityId);
         owningEntityId = formData.behalfEntityId;
         owningEntityCode = behalfEntity?.code;
-        console.log('Using owningEntityId from COBO behalfEntity:', owningEntityId);
       } else if (entities.length > 0) {
         // Non-COBO: use the first available entity (typically HQ)
         const defaultEntity = entities.find(e => e.type === 'HEADQUARTERS') || entities[0];
         owningEntityId = defaultEntity.id;
         owningEntityCode = defaultEntity.code;
-        console.log('Using default owningEntityId:', owningEntityId);
       }
 
-      console.log('Final owning entity:', { owningEntityId, owningEntityCode, coboEnabled: formData.coboEnabled });
 
       // Build the request payload matching CreateInvoiceRequest DTO
       const createRequest = {
@@ -1553,13 +1543,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         })) : undefined,
       };
 
-      console.log('Creating receivable with request:', JSON.stringify(createRequest, null, 2));
-      console.log('corporateId:', createRequest.corporateId, 'owningEntityId:', createRequest.owningEntityId, 'owningEntityCode:', createRequest.owningEntityCode);
 
       // Call the backend API with corporateId header (also sent in body for redundancy)
       const response = await receivablesApi.create(createRequest, effectiveCorporateId);
 
-      console.log('Receivable created:', response);
       const created = response.data;
       if (!isDraft && created?.paymentLink) {
         // Show the real link + QR before leaving -- a draft has nothing confirmed to show yet.

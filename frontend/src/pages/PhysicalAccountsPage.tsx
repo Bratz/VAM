@@ -523,7 +523,6 @@ const LinkToHierarchyModal: React.FC<LinkToHierarchyModalProps> = ({
         legalEntityId: account.legalEntityId || account.entityId || undefined,
       };
       
-      console.log('Creating shadow account with payload:', payload);
       
       const response = await shadowAccountApi.create(payload);
       

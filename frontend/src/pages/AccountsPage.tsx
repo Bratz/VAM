@@ -1500,13 +1500,11 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
       // Programs are already extracted by the api helper
       if (programsRes.success && programsRes.data) {
         setPrograms(Array.isArray(programsRes.data) ? programsRes.data : []);
-        console.log('Loaded programs:', programsRes.data);
       }
       
       // Corporates are already extracted and mapped by the api helper
       if (corporatesRes.success && corporatesRes.data) {
         setCorporates(Array.isArray(corporatesRes.data) ? corporatesRes.data : []);
-        console.log('Loaded corporates:', corporatesRes.data);
       }
       
       if (accountsRes.success && accountsRes.data) {

@@ -250,13 +250,11 @@ const vibanPoolApi = {
       const response = await fetch('/api/v1/vibans/stats');
       if (response.ok) {
         const data = await response.json();
-        console.log('Stats API response:', data);
         if (data?.success && data?.data) {
           return { success: true, data: data.data };
         }
       }
     } catch (error) {
-      console.log('Stats endpoint not available, calculating from pools');
     }
     
     // Fallback: Calculate stats from pools data
@@ -284,7 +282,6 @@ const vibanPoolApi = {
   getPrograms: async (): Promise<ApiResponse<Program[]>> => {
     try {
       const response: any = await programsApi.getAll();
-      console.log('Raw programs API response:', JSON.stringify(response, null, 2));
 
       // Backend returns: { success: true, data: { programs: [...], totalCount: N, ... } }
       // After axios .then(r => r.data), we get: { success: true, data: { programs: [...] } }
@@ -314,7 +311,6 @@ const vibanPoolApi = {
         }
       }
 
-      console.log('Extracted programs:', programs.length, programs.map((p: Program) => p.programCode));
       return {
         success: true,
         data: programs
@@ -498,7 +494,6 @@ const VibanManagementPage: React.FC = () => {
       const virtualAccountsData = Array.isArray(virtualAccountsRes?.data) ? virtualAccountsRes.data : [];
 
       // Debug: Log raw parties response
-      console.log('Raw parties response:', partiesRes);
 
       // Extract parties - try multiple possible structures
       let partiesData: Party[] = [];
@@ -514,14 +509,6 @@ const VibanManagementPage: React.FC = () => {
         }
       }
 
-      console.log('Fetched data:', {
-        pools: poolsData.length,
-        vibans: vibansData.length,
-        programs: programsData.length,
-        corporates: corporatesData.length,
-        virtualAccounts: virtualAccountsData.length,
-        parties: partiesData.length
-      });
 
       // Enrich pools with calculated fields
       const enrichedPools = poolsData.map(pool => ({

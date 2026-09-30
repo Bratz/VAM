@@ -88,8 +88,30 @@ module.exports = {
     ],
     '@typescript-eslint/no-explicit-any': 'off',
     'no-empty': ['warn', { allowEmptyCatch: true }],
+
+    // console.warn and console.error stay: they are how this app surfaces a failed fetch or a
+    // degraded fallback, and there are ~280 legitimate uses across pages, hooks and services.
+    // console.log/info do not — every one found when this rule went in was a debug leftover,
+    // including two that logged request payloads and auth headers to the browser console.
+    // A genuinely deliberate console call needs `// eslint-disable-next-line no-console --
+    // <reason>`, the same convention no-restricted-syntax uses below.
+    'no-console': ['error', { allow: ['warn', 'error'] }],
   },
   overrides: [
+    /* -----------------------------------------------------------------
+     * Service layer: console output that is the feature, not a leftover
+     * ----------------------------------------------------------------- */
+    {
+      // auditLog is the V1 audit sink. Its console.info IS the record — the backend has no
+      // /audit/* controller yet, so this line is where an audited action is written down.
+      // Scoped to the one file rather than all of src/services so a stray debug log in an API
+      // client still fails; every console.log found in services when this rule went in was
+      // debug output, two of them printing request payloads and auth headers.
+      files: ['src/utils/auditLog.ts'],
+      rules: {
+        'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
+      },
+    },
     /* -----------------------------------------------------------------
      * Pages + UI components: enforce the design-system colour vocabulary
      * ----------------------------------------------------------------- */

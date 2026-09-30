@@ -483,7 +483,6 @@ const InterestConfigurationPage: React.FC = () => {
         programsData = response;
       }
       
-      console.log('[InterestConfig] Programs loaded:', programsData);
 
       const programList: ProgramOption[] = programsData.map((p: any) => ({
         id: p.id,

@@ -1630,12 +1630,10 @@ export const receivablesApi = {
     apiClient.get<ApiResponse<any[]>>('/receivables', { params: { page, size, corporateId, status } }).then(r => r.data),
   getById: (id: string) => apiClient.get<ApiResponse<any>>(`/receivables/${id}`).then(r => r.data),
   create: (data: any, corporateId?: string) => {
-    console.log('receivablesApi.create called with corporateId:', corporateId);
     const headers: Record<string, string> = {};
     if (corporateId) {
       headers['X-Corporate-Id'] = corporateId;
     }
-    console.log('Request headers:', headers);
     return apiClient.post<ApiResponse<any>>('/receivables/invoices', data, { headers }).then(r => r.data);
   },
   recordPayment: (id: string, data: any) => apiClient.post<ApiResponse<any>>(`/receivables/${id}/record-payment`, data).then(r => r.data),
@@ -2874,7 +2872,6 @@ export const payablesApiPhase2 = {
   create: async (data: CreatePayableRequest): Promise<PayablePhase2> => {
     const headers: Record<string, string> = {};
     if (data.corporateId) headers['X-Corporate-Id'] = data.corporateId;
-    console.log('payablesApiPhase2.create - sending request:', data);
     const response = await apiClient.post<ApiResponse<PayablePhase2>>('/payables', data, { headers });
     return extractPayableData(response.data);
   },

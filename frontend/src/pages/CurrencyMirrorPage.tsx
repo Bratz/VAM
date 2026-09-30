@@ -845,7 +845,10 @@ const CurrencyMirrorPage: React.FC = () => {
                 <FxRateRow
                   key={rate.id}
                   rate={rate}
-                  onEdit={() => console.log('Edit:', rate.id)}
+                  onEdit={
+                    // eslint-disable-next-line no-console -- placeholder: editing an FX rate is not implemented, the row's edit control is a stub
+                    () => console.log('Edit:', rate.id)
+                  }
                 />
               ))
             ) : (
