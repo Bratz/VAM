@@ -24,7 +24,12 @@ import { join } from 'node:path';
 const BASE = process.env.DEMO_BASE_URL ?? 'http://localhost:3000';
 const OUT_DIR = 'demo';
 const OUT_NAME = 'receivable-qr-demo.webm';
-const SIZE = { width: 1000, height: 640 };
+// The viewport stays wide and the VIDEO is what shrinks: Playwright scales the
+// page into recordVideo.size. Filming at an 800px viewport instead would force
+// a horizontal scrollbar and clip the layout — `body` carries min-width:1024px
+// (styles/index.css), the desktop-only floor. Same 1.538 aspect either way.
+const VIEWPORT = { width: 1280, height: 832 };
+const VIDEO_SIZE = { width: 800, height: 520 };
 
 const CUSTOMER = 'Gulf Freight Services';
 const AMOUNT = '4850';
@@ -33,9 +38,10 @@ const COLLECTION_ACCOUNT = 'Main Operating Account';
 
 // Beat pacing. Playwright clicks faster than anyone can read, so every step is
 // held deliberately — the highlight is what the viewer is meant to follow.
-const HOLD = 900;   // how long an element stays lit
-const BEAT = 700;   // pause after an action lands
-const READ = 2200;  // pause on something worth actually reading
+// Trimmed once: the first cut ran ~25s/1.7MB and was slower than it needed to be.
+const HOLD = 620;   // how long an element stays lit
+const BEAT = 420;   // pause after an action lands
+const READ = 1350;  // pause on something worth actually reading
 
 const log = (msg) => console.log(`  ${msg}`);
 
@@ -83,8 +89,8 @@ mkdirSync(OUT_DIR, { recursive: true });
 
 const browser = await chromium.launch({ headless: !process.argv.includes('--headed') });
 const context = await browser.newContext({
-  viewport: SIZE,
-  recordVideo: { dir: OUT_DIR, size: SIZE },
+  viewport: VIEWPORT,
+  recordVideo: { dir: OUT_DIR, size: VIDEO_SIZE },
   deviceScaleFactor: 1,          // keep the file small; retina doubles it for nothing
 });
 const page = await context.newPage();
@@ -169,7 +175,6 @@ try {
   if (!ibanText.startsWith('AE')) {
     log(`     ! not an AE IBAN — backend is probably on the UK profile`);
   }
-  await page.waitForTimeout(READ);
   await spotlight(page, iban, READ);
   await page.waitForTimeout(READ);
 
