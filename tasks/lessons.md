@@ -264,3 +264,34 @@ could reach them. Every EUR collection in three programs parked to exception ins
   14 writes had to go. JPQL cannot reference a derived property, so repository predicates move first.
 - The generalisable tell: a helper like `isSettlementVa()` that ORs two fields together is not
   convenience, it is a defect report. Something already knew they disagreed.
+
+## A property of an account is not a kind of account (2026-09-30)
+Three separate defects in one thread, all the same cause: something orthogonal to what an account
+*is* got encoded into `AccountCategory` (or into a field duplicating it). The symptoms looked
+unrelated, which is why it took three findings to see it.
+- **`specialType`** duplicated `accountCategory` -- both answered "what is this account". They
+  drifted: three VAs read SETTLEMENT on one field and TRANSACTION on the other, the settlement
+  screen filtered on the first and the payment resolver on the second, so they looked configured
+  while no payment could reach them. Fixed by deriving one from the other.
+- **`AccountCategory.SETTLEMENT`** encodes a *role* an account plays, replacing the category that
+  says what it is. Consequence: a settlement VA is not a transaction VA, `isSystemCreated()` has to
+  block it on the generic create, which forced a separate creation endpoint, which is the side door
+  that produced settlement VAs no payment could route to. Still open.
+- **`AccountCategory.PHYSICAL_MIRROR`** encodes *being a shadow of a physical account*, which is
+  orthogonal to whether the account is a container. Cost here was a false positive rather than a
+  bug: it looked like ~87% of fee debits were mis-routed, and they were not. A shadow may be an
+  aggregation account or a transaction account; ours are all leaves holding their own balances, so
+  they settle on themselves and the existing behaviour was right.
+
+The check, when a new `AccountCategory` value is proposed: **is this a kind of account, or a
+property of one?** If an account could sensibly be this *and* something else at the same time, it
+is a property -- give it its own field, or derive it. Two tells that it went wrong:
+- a helper that ORs two fields together (`isSettlementVa()` was `specialType == SETTLEMENT ||
+  accountCategory == SETTLEMENT`). That is not convenience; something already knew they disagreed.
+- a category that has to be special-cased out of the generic create path. If it cannot be created
+  the normal way, it is probably a flag on a normal thing.
+
+Corollary, learned the same day: before "fixing" one of these, check what the data actually looks
+like. Two of the three conclusions above were wrong on first pass and only the live data settled
+them -- 13 of 28 settlement VAs being parentless killed a plan to remove the parentless fallback,
+and 28 of 28 shadows being childless killed a plan to treat them as containers.
