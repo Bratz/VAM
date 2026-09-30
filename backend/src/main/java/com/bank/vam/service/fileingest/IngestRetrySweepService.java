@@ -8,8 +8,6 @@ import com.bank.vam.repository.fileingest.FormatSignatureRepository;
 import com.bank.vam.repository.fileingest.IngestJobRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -21,8 +19,8 @@ import java.util.Optional;
 /**
  * Resumes a job left in AWAITING_TRANSFORM once the separate file-ingest-agent-service worker has
  * done its job — this app never calls that worker directly, so this sweep is the only thing that
- * notices its work finished. Mirrors BalanceRefreshService's "find stuck/pending items and retry"
- * shape exactly (same @Scheduled(fixedRateString=...) + @Async style, same scan-and-tally logging).
+ * notices its work finished. Keeps BalanceRefreshService's "find stuck/pending items and retry"
+ * shape (same scan-and-tally logging), but is scheduled separately — see the method note.
  */
 @Service
 public class IngestRetrySweepService {
@@ -49,8 +47,13 @@ public class IngestRetrySweepService {
         this.staleAfter = Duration.ofMinutes(properties.getStaleAfterMinutes());
     }
 
-    @Scheduled(fixedRateString = "#{${vam.fileingest.retry-cadence-minutes:2} * 60 * 1000}")
-    @Async("taskExecutor")
+    /**
+     * Driven by {@link com.bank.vam.config.IngestSweepSchedulingConfig}, not by {@code @Scheduled}.
+     * {@code @Scheduled} only fires when {@code @EnableScheduling} is present, and that is gated on
+     * {@code vam.scheduling.enabled} — which parks treasury automation. This sweep is not treasury
+     * automation: it is how a job whose transform is ready gets resumed, so parking it strands
+     * user uploads in AWAITING_TRANSFORM silently. Runs on its own single daemon thread.
+     */
     public void resumeAwaitingTransformJobs() {
         List<IngestJob> waiting = ingestJobRepository.findByStage(IngestStage.AWAITING_TRANSFORM);
         int attempted = 0;

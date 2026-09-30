@@ -23,6 +23,15 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * the application class itself), which is harmless but meant there was no single place to
  * gate. Both were removed in favour of this class.
  */
+/**
+ * Master switch for treasury automation — balance/aggregation refresh, interest accrual,
+ * limit resets, VIBAN cooling release, FX cache. All periodic housekeeping, all safe to park.
+ *
+ * <p>Deliberately NOT covering the file-ingest resume sweep: that is a step in a user-facing
+ * pipeline rather than housekeeping, so it schedules itself in
+ * {@link IngestSweepSchedulingConfig}. Anything added here should be housekeeping too — if
+ * switching it off would leave a user's work half-finished, it does not belong under this flag.
+ */
 @Configuration
 @ConditionalOnProperty(name = "vam.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 @EnableScheduling
