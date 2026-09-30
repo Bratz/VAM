@@ -97,7 +97,8 @@ Corporate Digital Banking platform built on a Virtual Account Management core. F
 ### Layout
 - `backend/` — Spring Boot service (`com.bank.vam`)
 - `frontend/` — Vite React app
-- `database/migrations/` — Flyway SQL (V2-V15, auto-applied on startup)
+- `backend/src/main/resources/db/migration/` — Flyway SQL, **the copy that actually runs** (`classpath:db/migration`)
+- `database/migrations/` — hand-maintained duplicate of the above; kept in sync, never executed on its own
 - `database/seed/` — seed data scripts
 - `docs/` — architecture references
 - `vam-enhanced/` — parallel/enhanced variant of the same project (treat as alternate copy; verify before editing both)
@@ -129,9 +130,21 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 ```
 Flyway is enabled (`spring.flyway.enabled: true` in `application.yml`) and
-auto-applies everything under `database/migrations/` on every app startup —
-a new migration file just needs a restart to take effect on any environment,
-no more manual `psql`. It's baselined at V13 (`baseline-on-migrate: true`,
+auto-applies migrations on every app startup — a new migration file just needs
+a restart to take effect on any environment, no more manual `psql`.
+
+> **Put new migrations in `backend/src/main/resources/db/migration/`.**
+> `spring.flyway.locations` is not set, so Flyway uses its default,
+> `classpath:db/migration` — that directory and no other. `database/migrations/`
+> at the repo root holds a byte-identical copy kept in step by hand; nothing
+> copies one into the other, and a file that exists only there is never
+> executed. Add new migrations to both to keep them in sync, but the classpath
+> copy is the one that runs. This bites silently: a migration in the root
+> directory alone deploys green and does nothing (it cost a deploy cycle on
+> V26). A green "Deploy to OCI VM" is not evidence a migration applied —
+> check the data, or `SELECT * FROM flyway_schema_history ORDER BY installed_rank DESC`.
+
+It's baselined at V13 (`baseline-on-migrate: true`,
 `baseline-version: "13"`) since V2-V13 aren't safe to replay against a
 schema that already has their effects (built historically by ddl-auto +
 hand-run psql); only V14 onward genuinely execute. Ordinary entity-mapped
@@ -209,7 +222,7 @@ docker-compose logs -f backend
 
 ## Notes & Gotchas
 - Server context path is `/api` — frontend talks to `http://localhost:8080/api` (Vite proxy in `vite.config.ts`).
-- Flyway is enabled (`spring.flyway.enabled: true`, baselined at V13) and auto-applies `database/migrations/*.sql` on every startup — see "How to Start the Application" above. A new migration must not redefine a column/table an `@Entity` also maps; that stays on `hibernate.ddl-auto: update`.
+- Flyway is enabled (`spring.flyway.enabled: true`, baselined at V13) and auto-applies `backend/src/main/resources/db/migration/*.sql` on every startup — **not** `database/migrations/*.sql`, which is a hand-kept duplicate that never runs on its own. See "How to Start the Application" above. A new migration must not redefine a column/table an `@Entity` also maps; that stays on `hibernate.ddl-auto: update`.
 - If you change `application.yml` profiles, mirror env vars in `.env` / `docker-compose.yml`.
 - Two parallel project trees exist (`./` and `./vam-enhanced/`). Before editing, confirm which tree the user means — don't blindly edit both.
 - Redis is optional in dev; comment out the Redis block in `application.yml` if not running it.

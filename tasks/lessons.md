@@ -234,3 +234,33 @@ soft step and forget the gate, and it reports without ever blocking anything.
 - Backend CI had failed 8 times and Frontend CI 11 times in their last 40 runs, so those gates are
   demonstrably live -- which is exactly why the storybook one stood out.
 
+
+## A green deploy is not evidence a migration ran (2026-09-30)
+V26 was written into `database/migrations/` because CLAUDE.md said Flyway "auto-applies everything
+under `database/migrations/` on every app startup". It does not. `spring.flyway.locations` is unset,
+so Flyway uses its default `classpath:db/migration` -- i.e. `backend/src/main/resources/db/migration/`.
+The repo keeps a byte-identical copy in both places, synced by hand, with no build step between them.
+The migration deployed green and changed nothing.
+- **New migrations go in `backend/src/main/resources/db/migration/`.** Copy to `database/migrations/`
+  to keep the pair in sync, but only the classpath one executes.
+- A duplicated source tree with no generator is the actual defect. Same shape as `vam-enhanced/`:
+  when two directories must agree and nothing enforces it, assume they have already diverged, and
+  check which one the runtime reads rather than which one the docs name.
+- Diagnose "deployed but no effect" by first proving the *code* is live, then the data. Here the
+  settlement panel for TEST-IHB-NEW had gone empty, which proved the previous commit's code had
+  shipped -- so a green deploy with unchanged data could only mean Flyway never saw the file.
+  Verify with `SELECT * FROM flyway_schema_history ORDER BY installed_rank DESC`, not the job status.
+- Project docs are a claim, not a fact. This one had been wrong long enough to read as authoritative.
+  When a doc names a path that controls behaviour, confirm it against config before relying on it.
+
+## Two fields encoding one fact will drift (2026-09-30)
+`VirtualAccount` carried both `specialType` and `accountCategory` saying the same thing. Three live
+VAs had `specialType=SETTLEMENT` with `accountCategory=TRANSACTION`; the settlement screen filtered
+on the first and the payment resolver on the second, so they looked configured while no payment
+could reach them. Every EUR collection in three programs parked to exception instead of posting.
+- The fix that holds is removing the second field (derive it), not adding a rule that writes both.
+- Derive rather than delete when the redundant field is widely read: every `getSpecialType()` caller
+  kept working unchanged, the JSON stayed byte-identical, and no frontend edit was needed. Only the
+  14 writes had to go. JPQL cannot reference a derived property, so repository predicates move first.
+- The generalisable tell: a helper like `isSettlementVa()` that ORs two fields together is not
+  convenience, it is a defect report. Something already knew they disagreed.
