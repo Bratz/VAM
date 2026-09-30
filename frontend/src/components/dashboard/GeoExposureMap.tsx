@@ -66,7 +66,6 @@ export const GeoExposureMap: React.FC<GeoExposureMapProps> = ({
   // indicator below covers the end-user side of this; this warning is for
   // whoever's watching the console when a genuinely new country shows up.)
   if (unmapped.size > 0) {
-    // eslint-disable-next-line no-console
     console.warn(`GeoExposureMap: no ISO numeric mapping for country code(s): ${[...unmapped.keys()].join(', ')} — add to ALPHA2_TO_NUMERIC.`);
   }
 

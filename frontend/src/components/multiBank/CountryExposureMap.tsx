@@ -57,7 +57,6 @@ export const CountryExposureMap: React.FC<CountryExposureMapProps> = ({ countryT
   }, [countryTotals]);
 
   if (unmapped.size > 0) {
-    // eslint-disable-next-line no-console
     console.warn(`CountryExposureMap: no ISO numeric mapping for country code(s): ${[...unmapped.keys()].join(', ')} — add to ALPHA2_TO_NUMERIC.`);
   }
 

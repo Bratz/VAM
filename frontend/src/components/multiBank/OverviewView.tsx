@@ -575,7 +575,6 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                         existing `.code` utility uses the same mono +
                         primary text recipe but at xs size; we want sm here
                         so the code line-aligns with the right-side stat. */}
-                    {/* eslint-disable-next-line no-restricted-syntax */}
                     <span className="font-mono text-body-sm font-medium text-primary-900 dark:text-neutral-50">{c.currencyCode}</span>
                     <span className="body-sm text-neutral-500 dark:text-neutral-400">
                       {c.shadowCount} mirror{c.shadowCount === 1 ? '' : 's'} · {c.bankShares.length} bank{c.bankShares.length === 1 ? '' : 's'}

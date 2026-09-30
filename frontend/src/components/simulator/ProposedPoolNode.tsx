@@ -51,7 +51,6 @@ export const ProposedPoolNode: React.FC<ProposedPoolNodeProps> = ({
               <span className="section-title truncate">
                 {pool.poolName}
               </span>
-              {/* eslint-disable-next-line no-restricted-syntax -- status pill chip recipe; intentionally mirrors PhysicalAccountNode's bank-relationship pill (no typography utility exists for chip tags) */}
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-caption font-medium bg-info-100 text-info-800 dark:bg-info-500/20 dark:text-info-300">
                 Notional pool
               </span>

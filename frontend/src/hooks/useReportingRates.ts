@@ -48,7 +48,6 @@ export function useReportingRates(currencyCodes: string[], reportingCurrency: st
     // currencyCodes is expected to be a stable reference across renders where
     // the underlying set hasn't changed (callers memoize it), same contract
     // as the effect this was extracted from.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see the note above: callers memoize currencyCodes, so the fetch keys on its identity.
   }, [currencyCodes, reportingCurrency, enabled]);
 
   return state;

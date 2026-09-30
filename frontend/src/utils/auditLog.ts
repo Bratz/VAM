@@ -72,7 +72,6 @@ export const auditLog = {
 
     // V1: telemetry-style console line. The cockpit's audit preview block
     // shows what _will_ be recorded, but the actual record happens here.
-    // eslint-disable-next-line no-console
     console.info('[audit]', auditId, fullEntry);
 
     // Backend POST is gated off until the audit pipeline actually exists.
@@ -85,11 +84,9 @@ export const auditLog = {
         void apiClient
           .post('/audit/v1/record', { auditId, ...fullEntry })
           .catch((err: unknown) => {
-            // eslint-disable-next-line no-console
             console.warn('[audit] backend record failed (non-blocking):', err);
           });
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.warn('[audit] dispatch failed (non-blocking):', err);
       }
     }

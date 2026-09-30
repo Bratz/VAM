@@ -55,12 +55,14 @@ jobs:
         continue-on-error: true
 
       - name: Lint (captured as JSON, non-blocking)
-        # --max-warnings 0 matches this repo's own `npm run lint` script —
-        # without it, a file with only warnings (no errors) exits 0 on its
-        # own merits, same as the project's real "clean lint" bar.
+        # Flags must match `npm run lint` in frontend/package.json, or CI is a
+        # weaker gate than the command developers run. It was: this step had
+        # --max-warnings 0 but not --report-unused-disable-directives, so CI
+        # reported clean while npm run lint reported 15 errors. If the script
+        # changes, change this line with it.
         run: |
           set +e
-          npx eslint . --ext ts,tsx --max-warnings 0 --format json --output-file eslint.json
+          npx eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --format json --output-file eslint.json
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         id: lint
         continue-on-error: true

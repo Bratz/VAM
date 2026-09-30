@@ -1428,7 +1428,6 @@ const TransactionsPage: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [showNewModal, setShowNewModal] = useState(false);
   const [showCollectionModal, setShowCollectionModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [filters, _setFilters] = useState({
     status: '',
     channel: '',

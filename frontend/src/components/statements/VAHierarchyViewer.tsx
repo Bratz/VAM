@@ -14,7 +14,6 @@ import { ChevronRight, ChevronDown, Layers, CreditCard, ArrowDownRight, ArrowUpR
 import type { LucideIcon } from 'lucide-react';
 
 // Suppress unused variable warnings for props that are passed but may not be used in all code paths
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Card, Button, Badge, Skeleton, StatusIconBadge } from '../ui';
 import { cn, formatCurrency } from '../../utils';
 import { statementsApi } from '../../services/api';

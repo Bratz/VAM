@@ -150,7 +150,6 @@ async function produceFundingShortfalls(_entityId?: string): Promise<AttentionIt
         };
       });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn('[cockpit] produceFundingShortfalls failed:', err);
     return [];
   }
@@ -192,7 +191,6 @@ async function produceSweepFailures(_entityId?: string): Promise<AttentionItem[]
         };
       });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn('[cockpit] produceSweepFailures failed:', err);
     return [];
   }
@@ -229,7 +227,6 @@ async function produceStuckTransactions(_entityId?: string): Promise<AttentionIt
         };
       });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn('[cockpit] produceStuckTransactions failed:', err);
     return [];
   }
@@ -278,7 +275,6 @@ async function produceStaleBalances(_entityId?: string): Promise<AttentionItem[]
     }
     return out;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn('[cockpit] produceStaleBalances failed:', err);
     return [];
   }
@@ -355,7 +351,6 @@ async function producePendingApprovals(_entityId?: string): Promise<AttentionIte
     }
     return out;
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn('[cockpit] producePendingApprovals failed:', err);
     return [];
   }
