@@ -51,3 +51,6 @@ Thumbs.db
 
 *storybook.log
 storybook-static
+
+# Recorded demo videos (scripts/record-*.mjs) — regenerate, do not commit
+frontend/demo/
