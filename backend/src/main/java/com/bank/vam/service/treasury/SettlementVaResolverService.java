@@ -3,7 +3,6 @@ package com.bank.vam.service.treasury;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.AccountType;
-import com.bank.vam.entity.VirtualAccount.VaSpecialType;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.entity.Program;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
@@ -899,7 +898,7 @@ public class SettlementVaResolverService {
      *
      * Search order:
      * 1. By AccountCategory.SETTLEMENT + programId + currency (primary)
-     * 2. By VaSpecialType.SETTLEMENT + programId + currency (fallback for legacy)
+     * (specialType is derived from accountCategory, so there is no second search order)
      */
     public Optional<VirtualAccount> findSettlementVa(UUID programId, String currencyCode) {
         // Primary: Find by AccountCategory.SETTLEMENT (catches ALL Settlement VAs regardless of naming)
@@ -911,22 +910,10 @@ public class SettlementVaResolverService {
 
         if (byCategory.isPresent()) {
             log.debug("Found Settlement VA by AccountCategory: {}", byCategory.get().getVaNumber());
-            return byCategory;
         }
-
-        // Fallback: Find by VaSpecialType.SETTLEMENT (for legacy VAs that might not have correct category)
-        Optional<VirtualAccount> bySpecialType = vaRepository.findByProgramIdAndSpecialType(programId, VaSpecialType.SETTLEMENT)
-            .stream()
-            .filter(va -> currencyCode.equals(va.getCurrencyCode()))
-            .filter(va -> va.getStatus() == VaStatus.ACTIVE)
-            .findFirst();
-
-        if (bySpecialType.isPresent()) {
-            log.debug("Found Settlement VA by SpecialType: {}", bySpecialType.get().getVaNumber());
-            return bySpecialType;
-        }
-
-        return Optional.empty();
+        // The old VaSpecialType fallback is gone: specialType is derived from accountCategory now,
+        // so it could only ever return what the lookup above already found.
+        return byCategory;
     }
 
     /**
@@ -951,22 +938,10 @@ public class SettlementVaResolverService {
 
         if (byCategory.isPresent()) {
             log.debug("Found Exception VA by AccountCategory: {}", byCategory.get().getVaNumber());
-            return byCategory;
         }
-
-        // Fallback: Find by VaSpecialType.EXCEPTION (for legacy)
-        Optional<VirtualAccount> bySpecialType = vaRepository.findByProgramIdAndSpecialType(programId, VaSpecialType.EXCEPTION)
-            .stream()
-            .filter(va -> currencyCode.equals(va.getCurrencyCode()))
-            .filter(va -> va.getStatus() == VaStatus.ACTIVE)
-            .findFirst();
-
-        if (bySpecialType.isPresent()) {
-            log.debug("Found Exception VA by SpecialType: {}", bySpecialType.get().getVaNumber());
-            return bySpecialType;
-        }
-
-        return Optional.empty();
+        // Same as findSettlementVa: the VaSpecialType fallback cannot add anything now that
+        // specialType is derived from accountCategory.
+        return byCategory;
     }
 
     /**
@@ -1108,7 +1083,6 @@ public class SettlementVaResolverService {
             // Classification - PURE VIRTUAL
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.SETTLEMENT)
-            .specialType(VaSpecialType.SETTLEMENT)
             
             // Hierarchy
             .parentAccountId(parentAccountId)
@@ -1174,7 +1148,6 @@ public class SettlementVaResolverService {
             // Classification - PURE VIRTUAL
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.EXCEPTION)
-            .specialType(VaSpecialType.EXCEPTION)
             
             // Hierarchy - at program level (no parent)
             .parentAccountId(null)

@@ -1043,7 +1043,6 @@ public class HierarchyVaService {
             .physicalAccountId(physicalAccountId)
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.EXCEPTION)
-            .specialType(VaSpecialType.EXCEPTION)
             .parentAccountId(root.getId())
             .hierarchyLevel(level)
             .hierarchyPathVa(hierarchyPath)

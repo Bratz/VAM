@@ -4,7 +4,6 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.CollectionChannel;
-import com.bank.vam.entity.VirtualAccount.VaSpecialType;
 import com.bank.vam.entity.VirtualAccount.ValueType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +39,7 @@ import java.util.UUID;
  * NEW v5.1.0:
  * - Settlement VA auto-creation support queries
  * - Exception VA auto-creation support queries
- * - Enhanced lookup by program, currency, specialType, status
+ * - Enhanced lookup by program, currency, accountCategory, status
  */
 @Repository
 public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, UUID> {
@@ -100,7 +99,6 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     
     List<VirtualAccount> findByProgramIdAndAccountCategory(UUID programId, AccountCategory accountCategory);
     
-    List<VirtualAccount> findByProgramIdAndSpecialType(UUID programId, VaSpecialType specialType);
     
     boolean existsByProgramId(UUID programId);
     
@@ -359,23 +357,6 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     // ========================================================================
 
     /**
-     * Find by program, currency, special type, and status.
-     * Primary lookup for Settlement and Exception VA resolution.
-     * Uses LIMIT 1 to handle cases where duplicates exist.
-     */
-    @Query("SELECT va FROM VirtualAccount va WHERE " +
-           "(va.programId = :programId OR (:programId IS NULL AND va.programId IS NULL)) " +
-           "AND va.currencyCode = :currencyCode " +
-           "AND va.specialType = :specialType " +
-           "AND va.status = :status ORDER BY va.createdAt ASC LIMIT 1")
-    Optional<VirtualAccount> findByProgramIdAndCurrencyCodeAndSpecialTypeAndStatus(
-        @Param("programId") UUID programId,
-        @Param("currencyCode") String currencyCode,
-        @Param("specialType") VaSpecialType specialType,
-        @Param("status") VaStatus status
-    );
-
-    /**
      * Find by program, currency, account category, and status.
      * Alternative lookup for Settlement and Exception VAs.
      * Uses LIMIT 1 to handle cases where duplicates exist.
@@ -396,7 +377,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
      * Find all Settlement VAs for a program.
      */
     @Query("SELECT va FROM VirtualAccount va WHERE va.programId = :programId " +
-           "AND (va.specialType = 'SETTLEMENT' OR va.accountCategory = 'SETTLEMENT') " +
+           "AND va.accountCategory = 'SETTLEMENT' " +
            "AND va.status = 'ACTIVE'")
     List<VirtualAccount> findAllSettlementVasByProgramId(@Param("programId") UUID programId);
 
@@ -404,7 +385,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
      * Find all Exception VAs for a program.
      */
     @Query("SELECT va FROM VirtualAccount va WHERE va.programId = :programId " +
-           "AND (va.specialType = 'EXCEPTION' OR va.accountCategory = 'EXCEPTION') " +
+           "AND va.accountCategory = 'EXCEPTION' " +
            "AND va.status = 'ACTIVE'")
     List<VirtualAccount> findAllExceptionVasByProgramId(@Param("programId") UUID programId);
 
@@ -414,7 +395,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT COUNT(va) > 0 FROM VirtualAccount va WHERE " +
            "(va.programId = :programId OR (:programId IS NULL AND va.programId IS NULL)) " +
            "AND va.currencyCode = :currencyCode " +
-           "AND (va.specialType = 'SETTLEMENT' OR va.accountCategory = 'SETTLEMENT') " +
+           "AND va.accountCategory = 'SETTLEMENT' " +
            "AND va.status = 'ACTIVE'")
     boolean existsSettlementVaByProgramAndCurrency(
         @Param("programId") UUID programId,
@@ -427,7 +408,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT COUNT(va) > 0 FROM VirtualAccount va WHERE " +
            "(va.programId = :programId OR (:programId IS NULL AND va.programId IS NULL)) " +
            "AND va.currencyCode = :currencyCode " +
-           "AND (va.specialType = 'EXCEPTION' OR va.accountCategory = 'EXCEPTION') " +
+           "AND va.accountCategory = 'EXCEPTION' " +
            "AND va.status = 'ACTIVE'")
     boolean existsExceptionVaByProgramAndCurrency(
         @Param("programId") UUID programId,
@@ -440,7 +421,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
      */
     @Query("SELECT va FROM VirtualAccount va WHERE va.corporateId = :corporateId " +
            "AND va.currencyCode = :currencyCode " +
-           "AND (va.specialType = 'SETTLEMENT' OR va.accountCategory = 'SETTLEMENT') " +
+           "AND va.accountCategory = 'SETTLEMENT' " +
            "AND va.status = 'ACTIVE' ORDER BY va.createdAt ASC LIMIT 1")
     Optional<VirtualAccount> findSettlementVaByCorporateAndCurrency(
         @Param("corporateId") UUID corporateId,
@@ -453,7 +434,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
      */
     @Query("SELECT va FROM VirtualAccount va WHERE va.corporateId = :corporateId " +
            "AND va.currencyCode = :currencyCode " +
-           "AND (va.specialType = 'EXCEPTION' OR va.accountCategory = 'EXCEPTION') " +
+           "AND va.accountCategory = 'EXCEPTION' " +
            "AND va.status = 'ACTIVE' ORDER BY va.createdAt ASC LIMIT 1")
     Optional<VirtualAccount> findExceptionVaByCorporateAndCurrency(
         @Param("corporateId") UUID corporateId,
@@ -617,7 +598,7 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT v FROM VirtualAccount v WHERE v.programId = :programId AND v.accountCategory = 'SETTLEMENT' AND v.currencyCode = :currency ORDER BY v.createdAt ASC LIMIT 1")
     Optional<VirtualAccount> findSettlementVaByCurrency(@Param("programId") UUID programId, @Param("currency") String currency);
     
-    @Query("SELECT v FROM VirtualAccount v WHERE v.hierarchyNodeId = :nodeId AND v.specialType = 'SETTLEMENT' ORDER BY v.createdAt ASC LIMIT 1")
+    @Query("SELECT v FROM VirtualAccount v WHERE v.hierarchyNodeId = :nodeId AND v.accountCategory = 'SETTLEMENT' ORDER BY v.createdAt ASC LIMIT 1")
     Optional<VirtualAccount> findSettlementVaByHierarchyNode(@Param("nodeId") UUID nodeId);
 
     // Exception VA - by corporate (LIMIT 1 to handle duplicates)
@@ -631,10 +612,10 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     @Query("SELECT COUNT(v) > 0 FROM VirtualAccount v WHERE v.programId = :programId AND v.accountCategory = 'EXCEPTION' AND v.currencyCode = :currency")
     boolean existsExceptionVaByCurrency(@Param("programId") UUID programId, @Param("currency") String currency);
     
-    @Query("SELECT COUNT(v) > 0 FROM VirtualAccount v WHERE v.programId = :programId AND v.currencyCode = :currency AND v.specialType = 'EXCEPTION'")
+    @Query("SELECT COUNT(v) > 0 FROM VirtualAccount v WHERE v.programId = :programId AND v.currencyCode = :currency AND v.accountCategory = 'EXCEPTION'")
     boolean existsExceptionVa(@Param("programId") UUID programId, @Param("currency") String currency);
 
-    @Query("SELECT v FROM VirtualAccount v WHERE v.programId = :programId AND v.currencyCode = :currency AND v.specialType = 'SETTLEMENT' " +
+    @Query("SELECT v FROM VirtualAccount v WHERE v.programId = :programId AND v.currencyCode = :currency AND v.accountCategory = 'SETTLEMENT' " +
            "AND v.hierarchyNodeId IN (SELECT n.id FROM HierarchyNode n WHERE n.parentId = :parentId) ORDER BY v.createdAt ASC LIMIT 1")
     Optional<VirtualAccount> findSiblingSettlementVa(@Param("programId") UUID programId, @Param("currency") String currency, @Param("parentId") UUID parentId);
 

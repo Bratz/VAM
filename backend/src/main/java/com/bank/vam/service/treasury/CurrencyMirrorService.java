@@ -246,7 +246,6 @@ public class CurrencyMirrorService {
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.EXCEPTION)
             .parentAccountId(rootMirror.getId())
-            .specialType(VaSpecialType.EXCEPTION)
             .baseCurrency(program.getCurrencyCode())
             .currentBalance(BigDecimal.ZERO)
             .availableBalance(BigDecimal.ZERO)

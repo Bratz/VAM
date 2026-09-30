@@ -873,12 +873,28 @@ public class VirtualAccount extends BaseEntity {
     private String blockReason;
 
     /**
-     * Special type for internal treasury VAs.
+     * Special type for internal treasury VAs -- DERIVED from {@link #accountCategory}, not stored.
+     *
+     * <p>It used to be a persisted column that had to be kept in step with the category by hand,
+     * and it drifted: three VAs went live with {@code specialType=SETTLEMENT} but
+     * {@code accountCategory=TRANSACTION}. Because the settlement screen filtered on specialType
+     * and the payment resolver filtered on accountCategory, those VAs appeared correctly
+     * configured in the UI while no payment could ever find them. One more went the other way.
+     *
+     * <p>specialType never encoded anything accountCategory does not already say, so it is now
+     * computed. The two can no longer disagree. The {@code special_type} column is left in place
+     * (nullable, defaulted) and simply stops being written.
      */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "special_type", length = 20)
-    @Builder.Default
-    private VaSpecialType specialType = VaSpecialType.REGULAR;
+    public VaSpecialType getSpecialType() {
+        if (accountCategory == null) {
+            return VaSpecialType.REGULAR;
+        }
+        return switch (accountCategory) {
+            case SETTLEMENT -> VaSpecialType.SETTLEMENT;
+            case EXCEPTION -> VaSpecialType.EXCEPTION;
+            default -> VaSpecialType.REGULAR;
+        };
+    }
 
     // ========================================================================
     // PUBLISH STATUS (Phase 1: Published/Unpublished VA)
@@ -1706,27 +1722,26 @@ public class VirtualAccount extends BaseEntity {
         this.kycVerifiedAt = LocalDateTime.now();
     }
 
-    // Settlement/Exception VA helpers
+    // Settlement/Exception VA helpers. These used to OR the two markers together to paper over
+    // their disagreement; specialType is derived now, so the category alone is the answer.
     public boolean isSettlementVa() {
-        return specialType == VaSpecialType.SETTLEMENT || 
-               accountCategory == AccountCategory.SETTLEMENT;
+        return accountCategory == AccountCategory.SETTLEMENT;
     }
 
     public boolean isExceptionVa() {
-        return specialType == VaSpecialType.EXCEPTION ||
-               accountCategory == AccountCategory.EXCEPTION;
+        return accountCategory == AccountCategory.EXCEPTION;
     }
 
     public boolean isSystemVa() {
-        return (specialType != null && specialType != VaSpecialType.REGULAR) ||
-               accountCategory == AccountCategory.SETTLEMENT ||
+        return accountCategory == AccountCategory.SETTLEMENT ||
                accountCategory == AccountCategory.EXCEPTION ||
                accountCategory == AccountCategory.SUSPENSE;
     }
 
     public boolean isRegularVa() {
-        return (specialType == null || specialType == VaSpecialType.REGULAR) &&
-               (accountCategory == null || accountCategory == AccountCategory.TRANSACTION);
+        // The old specialType half of this test is implied: a null or TRANSACTION category
+        // derives to REGULAR, so the category check alone is the same predicate.
+        return accountCategory == null || accountCategory == AccountCategory.TRANSACTION;
     }
 
     // ========================================================================

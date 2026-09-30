@@ -870,7 +870,6 @@ public class HierarchyService {
                 .kycLevel(0)
                 .kycVerified(false)
                 .status(VirtualAccount.VaStatus.ACTIVE)
-                .specialType(VirtualAccount.VaSpecialType.REGULAR)
                 .valueType(VirtualAccount.ValueType.FIAT)
                 .build();
 
@@ -1262,7 +1261,6 @@ public class HierarchyService {
             .currencyCode(currency)
             .accountType(VirtualAccount.AccountType.VIRTUAL)
             .accountCategory(VirtualAccount.AccountCategory.EXCEPTION)
-            .specialType(VirtualAccount.VaSpecialType.EXCEPTION)
             .hierarchyNodeId(parentNode.getId())
             .hierarchyPath(parentNode.getMaterializedPath() + "/EXCEPTION-" + currency)
             .hierarchyPathVa("/EXCEPTION-" + currency)
@@ -1376,7 +1374,6 @@ public class HierarchyService {
                 ? parentVa.getPhysicalAccountId() : program.getPhysicalAccountId())
             .currencyCode(currency)
             .accountCategory(VirtualAccount.AccountCategory.SETTLEMENT)   // so settlement lookups find it
-            .specialType(VirtualAccount.VaSpecialType.SETTLEMENT)
             .parentAccountId(parentVa != null ? parentVa.getId() : null)
             .hierarchyLevel(parentVa != null && parentVa.getHierarchyLevel() != null
                 ? parentVa.getHierarchyLevel() + 1 : settlementNode.getLevelNumber())

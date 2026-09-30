@@ -9,7 +9,6 @@ import com.bank.vam.entity.Transaction.MovementType;
 import com.bank.vam.entity.Transaction.TransactionStatus;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
-import com.bank.vam.entity.VirtualAccount.VaSpecialType;
 import com.bank.vam.entity.party.Party;
 import com.bank.vam.entity.treasury.ExceptionTransaction;
 import com.bank.vam.exception.BusinessException;
@@ -538,7 +537,6 @@ public class WalletService {
                 .currentBalance(netInitialBalance)
                 .availableBalance(netInitialBalance)
                 .status(VaStatus.ACTIVE)
-                .specialType(VaSpecialType.REGULAR) // Wallets are regular VAs
                 // Wallet-specific fields
                 .walletType(walletType)
                 .holderPartyId(request.getPartyId())

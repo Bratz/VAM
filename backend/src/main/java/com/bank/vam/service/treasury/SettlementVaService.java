@@ -146,7 +146,6 @@ public class SettlementVaService {
             // Classification
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.SETTLEMENT)
-            .specialType(VaSpecialType.SETTLEMENT)
             // Hierarchy
             .parentAccountId(parentVaId)
             .hierarchyLevel(hierarchyLevel)
@@ -332,7 +331,6 @@ public class SettlementVaService {
             // Classification
             .accountType(AccountType.VIRTUAL)
             .accountCategory(AccountCategory.SETTLEMENT)
-            .specialType(VaSpecialType.SETTLEMENT)
             // Hierarchy - Same parent as sibling transactional VA
             .parentAccountId(parentId)
             .hierarchyLevel(hierarchyLevel)
