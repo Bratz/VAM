@@ -2298,4 +2298,97 @@ public class IhbUnifiedService {
             VirtualAccount.AccountCategory.INTERCOMPANY) + 1;
         return String.format("IHB-%s-%s-%04d", entity.getEntityCode(), currency, sequence);
     }
+
+    // ========================================================================
+    // IC PAYABLE BACKFILL
+    // ========================================================================
+
+    /**
+     * Creates the IC Payable VA for any IHB participant that has an IHB Current Account but no
+     * {@code icPayableVaId}.
+     *
+     * <p>IC Payable VAs are only ever created by {@link #createIhbCurrentAccount}, as the COBO
+     * counterpart to the IC Receivable created beside it. A participant onboarded before that step
+     * existed therefore has an IC Receivable and no IC Payable, and nothing re-runs onboarding for
+     * an existing participant -- so COBO has no account tracking Treasury's obligation to that
+     * subsidiary. Found live: one of the two participants was in exactly that state.
+     *
+     * <p>Calls {@link #ensureIcPayableVa} rather than inserting a row, so the result is identical
+     * to what onboarding would have produced -- parent, owner, mirrorsVaId, hierarchy node and all.
+     * That method is idempotent (it checks the link, then the naming convention), which is also why
+     * this is safe to run on every startup and a no-op once satisfied.
+     *
+     * <p>Conservative on purpose: a participant whose Treasury Settlement VA cannot be derived is
+     * logged and skipped rather than guessed at, because creating an intercompany account in the
+     * wrong place is worse than leaving the gap visible.
+     *
+     * @return how many IC Payable VAs were created
+     */
+    @Transactional
+    public int backfillMissingIcPayableVas() {
+        List<VirtualAccount> ihbCurrentAccounts =
+            virtualAccountRepository.findByMirrorAccountType(VirtualAccount.MirrorAccountType.IHB_CURRENT);
+        int created = 0;
+        int skipped = 0;
+
+        for (VirtualAccount ihbCurrentAccount : ihbCurrentAccounts) {
+            if (ihbCurrentAccount.getIcPayableVaId() != null) {
+                continue;
+            }
+            String label = ihbCurrentAccount.getVaNumber();
+
+            LegalEntity participant = ihbCurrentAccount.getOwningEntityId() == null ? null
+                : legalEntityRepository.findById(ihbCurrentAccount.getOwningEntityId()).orElse(null);
+            LegalEntity treasury = getTreasuryForAccount(ihbCurrentAccount);
+            VirtualAccount treasurySettlementVa = resolveTreasurySettlementVaFor(ihbCurrentAccount);
+
+            if (participant == null || treasury == null || treasurySettlementVa == null) {
+                log.warn("IC Payable backfill: skipping {} -- participant={}, treasury={}, treasurySettlementVa={}",
+                    label, participant != null, treasury != null, treasurySettlementVa != null);
+                skipped++;
+                continue;
+            }
+
+            try {
+                VirtualAccount icPayableVa = ensureIcPayableVa(
+                    ihbCurrentAccount, participant, treasury, treasurySettlementVa, ihbCurrentAccount.getProgramId());
+                log.info("IC Payable backfill: {} now has {}", label, icPayableVa.getVaNumber());
+                created++;
+            } catch (Exception e) {
+                // One participant's failure must not abandon the rest.
+                log.error("IC Payable backfill: failed for {}", label, e);
+                skipped++;
+            }
+        }
+
+        if (created > 0 || skipped > 0) {
+            log.info("IC Payable backfill: created={}, skipped={}, of {} IHB current account(s)",
+                created, skipped, ihbCurrentAccounts.size());
+        }
+        return created;
+    }
+
+    /**
+     * The Treasury Settlement VA an IC account for this participant belongs under. Taken from the
+     * existing IC Receivable's parent, which {@link #ensureIcReceivableVa} set to exactly that,
+     * so the pair lands in the same place. Falls back to the account's own treasury pool link.
+     */
+    private VirtualAccount resolveTreasurySettlementVaFor(VirtualAccount ihbCurrentAccount) {
+        if (ihbCurrentAccount.getIcReceivableVaId() != null) {
+            VirtualAccount icReceivable =
+                virtualAccountRepository.findById(ihbCurrentAccount.getIcReceivableVaId()).orElse(null);
+            if (icReceivable != null && icReceivable.getParentAccountId() != null) {
+                VirtualAccount parent =
+                    virtualAccountRepository.findById(icReceivable.getParentAccountId()).orElse(null);
+                if (parent != null
+                    && parent.getMirrorAccountType() == VirtualAccount.MirrorAccountType.TREASURY_SETTLEMENT) {
+                    return parent;
+                }
+            }
+        }
+        if (ihbCurrentAccount.getTreasuryPoolVaId() != null) {
+            return virtualAccountRepository.findById(ihbCurrentAccount.getTreasuryPoolVaId()).orElse(null);
+        }
+        return null;
+    }
 }

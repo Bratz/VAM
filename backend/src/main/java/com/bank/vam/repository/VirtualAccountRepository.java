@@ -98,6 +98,9 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     List<VirtualAccount> findByProgramIdAndStatus(UUID programId, VaStatus status);
     
     List<VirtualAccount> findByProgramIdAndAccountCategory(UUID programId, AccountCategory accountCategory);
+
+    /** Accounts playing a specific mirror role (IHB current, treasury settlement, IC payable...). */
+    List<VirtualAccount> findByMirrorAccountType(VirtualAccount.MirrorAccountType mirrorAccountType);
     
     
     boolean existsByProgramId(UUID programId);
