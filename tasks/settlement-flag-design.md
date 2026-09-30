@@ -167,6 +167,27 @@ hierarchy and none. Correct the text and link to the create flow.
 - Live: mark an account in TEST-IHB-NEW (4 unresolved, no settlement VAs), confirm its count drops;
   then attempt to clear the mark and confirm the block names the affected accounts.
 
+## Settled: shadow accounts are not containers
+
+Being a shadow of a physical account is **orthogonal** to being a container. A shadow may be an
+aggregation account or a transaction account, and only the aggregation kind is barred from holding
+its own postings. A shadow transaction account settles on itself like any other.
+
+Every `PHYSICAL_MIRROR` in the estate is a leaf with its own balance — 28 of 28, no children at
+all — which is the transaction kind. So debiting one directly for a fee is correct, and adding
+`PHYSICAL_MIRROR` to the container set would be wrong: it would reroute roughly 87% of all fee
+debits away from accounts entitled to hold the posting. **No change.** The earlier suspicion that
+this was a latent defect does not survive contact with the rules or the data.
+
+The residue is a modelling one. We encode shadow-ness as a *category*, so a shadow aggregation
+account cannot be expressed at all. Nothing needs one today. If that changes, the fix is splitting
+"is a shadow" from "is a container" — not amending the container set, which would catch every
+shadow including the 28 that are correctly transaction accounts.
+
+This is the same shape as the settlement question in step 2, and the same answer: a property that
+is orthogonal to category should not be encoded as a category. Worth noting that we have now found
+it twice.
+
 ## Open
 
 - Whether step 2 is worth its blast radius, or whether we keep `AccountCategory.SETTLEMENT` and

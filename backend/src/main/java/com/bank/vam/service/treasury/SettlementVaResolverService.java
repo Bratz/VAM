@@ -96,9 +96,18 @@ public class SettlementVaResolverService {
      * Categories that cannot hold results of their own: their balance is the sum of the
      * transaction accounts beneath them, so a result charged to one settles below it instead.
      *
-     * <p>PHYSICAL_MIRROR is deliberately absent. Shadow accounts are structural, but ours do carry
-     * their own postings (the CBS leg of a collection lands on one), so adding it here would
-     * reroute live money. Worth settling separately rather than as a side effect of this change.
+     * <p>PHYSICAL_MIRROR is deliberately absent, and this is settled rather than pending. Being a
+     * shadow of a physical account is orthogonal to being a container: a shadow may be either an
+     * aggregation account or a transaction account, and only the aggregation kind cannot hold its
+     * own postings. Every PHYSICAL_MIRROR here is a leaf with its own balance -- no children at
+     * all -- which is the transaction kind, and a transaction account settles on itself. It is
+     * also where roughly 87% of fee debits land, so listing it here would reroute the busiest
+     * money path in the system away from accounts that are entitled to hold the posting.
+     *
+     * <p>The residual divergence is that we model shadow-ness as a <em>category</em>, so we cannot
+     * represent a shadow aggregation account at all. If one is ever needed -- a shadow with
+     * transaction accounts beneath it -- this set is not the place to patch it; the category would
+     * have to split into "is a shadow" and "is a container" first.
      */
     private static final Set<AccountCategory> CONTAINER_CATEGORIES = EnumSet.of(
         AccountCategory.ROOT, AccountCategory.AGGREGATION, AccountCategory.CURRENCY_MIRROR);
