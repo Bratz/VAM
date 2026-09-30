@@ -95,19 +95,13 @@ public class FeePostingService {
     // FULL FEE POSTING (DEBIT SOURCE BALANCE + CREDIT SETTLEMENT BALANCE)
     // ========================================================================
 
-    private static final java.util.Set<VirtualAccount.AccountCategory> CONTAINERS = java.util.EnumSet.of(
-        VirtualAccount.AccountCategory.ROOT, VirtualAccount.AccountCategory.AGGREGATION,
-        VirtualAccount.AccountCategory.CURRENCY_MIRROR);
-
-    /** The account that pays a result: itself, or for a container the nearest settlement VA below it (else its Exception VA). */
+    /**
+     * The account that pays a result: itself, or for a container the nearest settlement VA below it
+     * (else its Exception VA). The rule now lives on SettlementVaResolverService so paths other
+     * than fees can reach it; behaviour here is unchanged.
+     */
     private VirtualAccount payingAccount(VirtualAccount charged) {
-        if (charged.getAccountCategory() == null || !CONTAINERS.contains(charged.getAccountCategory())) return charged;
-        return settlementVaResolver.findSettlementVaBelow(charged, charged.getCurrencyCode())
-            .orElseGet(() -> {
-                log.warn("No settlement VA below container {} ({}): its fee goes to the Exception VA",
-                    charged.getVaNumber(), charged.getCurrencyCode());
-                return settlementVaResolver.resolveOrCreateExceptionVa(charged);
-            });
+        return settlementVaResolver.settlementAccountForResultOn(charged);
     }
 
     /**

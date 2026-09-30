@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +88,20 @@ public class SettlementVaResolverService {
     // Naming conventions
     private static final String SETTLEMENT_VA_PREFIX = "SETTLEMENT";
     private static final String EXCEPTION_VA_PREFIX = "EXCEPTION";
+
+    /** Program.maxHierarchyDepth's absolute ceiling. Both searches bound themselves by this. */
+    private static final int MAX_HIERARCHY_DEPTH = 50;
+
+    /**
+     * Categories that cannot hold results of their own: their balance is the sum of the
+     * transaction accounts beneath them, so a result charged to one settles below it instead.
+     *
+     * <p>PHYSICAL_MIRROR is deliberately absent. Shadow accounts are structural, but ours do carry
+     * their own postings (the CBS leg of a collection lands on one), so adding it here would
+     * reroute live money. Worth settling separately rather than as a side effect of this change.
+     */
+    private static final Set<AccountCategory> CONTAINER_CATEGORIES = EnumSet.of(
+        AccountCategory.ROOT, AccountCategory.AGGREGATION, AccountCategory.CURRENCY_MIRROR);
 
     // ========================================================================
     // RESULT WRAPPER (v5.2.0)
@@ -344,10 +359,16 @@ public class SettlementVaResolverService {
      */
     private Optional<VirtualAccount> traverseHierarchyForSettlementVa(VirtualAccount startVa, String currency) {
         UUID currentParentId = startVa.getParentAccountId();
-        int maxDepth = 10; // Prevent infinite loops
+        // The cap used to be 10, below the 20 a program defaults to and well below the 50 it may
+        // reach (Program.maxHierarchyDepth), so a deep hierarchy stopped searching early and fell
+        // through to the program-level lookup or an exception -- silently, since giving up and
+        // genuinely finding nothing look identical from here. Cycles are handled by `seen` rather
+        // than by the cap, so the cap only has to be >= the deepest legal hierarchy.
+        Set<UUID> seen = new HashSet<>();
+        int maxDepth = MAX_HIERARCHY_DEPTH;
         int depth = 0;
 
-        while (currentParentId != null && depth < maxDepth) {
+        while (currentParentId != null && depth < maxDepth && seen.add(currentParentId)) {
             depth++;
 
             // Check for Settlement VA at this level (as sibling of current parent)
@@ -403,6 +424,33 @@ public class SettlementVaResolverService {
     }
 
     /**
+     * Which account actually bears a result (fee, charge, interest) charged to {@code charged}.
+     *
+     * <p>A transaction account settles on itself. A container cannot -- its balance is the sum of
+     * the transaction accounts beneath it -- so the result goes to the nearest settlement VA below
+     * it in the same currency, and to its exception VA when there is none. That is the downward
+     * counterpart to the upward search {@link #resolveSettlementVaWithResult} does for a contra
+     * leg; the two answer different questions and must not be chained into one another.
+     *
+     * <p>Lifted here from a private helper in FeePostingService. The rule was correct but lived in
+     * one caller, so it applied to fees and to nothing else -- the next path that posts a result to
+     * a container (internal-interest contra, netting) would have had to rediscover it. Fee posting
+     * behaviour is unchanged; this is the same logic with one home.
+     */
+    public VirtualAccount settlementAccountForResultOn(VirtualAccount charged) {
+        AccountCategory category = charged.getAccountCategory();
+        if (category == null || !CONTAINER_CATEGORIES.contains(category)) {
+            return charged;
+        }
+        return findSettlementVaBelow(charged, charged.getCurrencyCode())
+            .orElseGet(() -> {
+                log.warn("No settlement VA below container {} ({}): its result goes to the Exception VA",
+                    charged.getVaNumber(), charged.getCurrencyCode());
+                return resolveOrCreateExceptionVa(charged);
+            });
+    }
+
+    /**
      * Where a result on the program's real bank account settles (bank charges, bank interest): the
      * program's top-level settlement VA, else the nearest one below its top-level accounts.
      */
@@ -418,7 +466,7 @@ public class SettlementVaResolverService {
     private Optional<VirtualAccount> searchDown(List<UUID> parents, String currency) {
         Set<UUID> seen = new HashSet<>(parents);
         List<UUID> level = parents;
-        for (int depth = 0; !level.isEmpty() && depth < 20; depth++) {
+        for (int depth = 0; !level.isEmpty() && depth < MAX_HIERARCHY_DEPTH; depth++) {
             List<UUID> next = new ArrayList<>();
             for (UUID parentId : level) {
                 Optional<VirtualAccount> here = findSettlementVaByParent(parentId, currency);

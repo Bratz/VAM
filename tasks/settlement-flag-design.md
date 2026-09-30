@@ -54,11 +54,16 @@ the same or a higher level carries the same role.
    `findSettlementVaBelow` is implemented and is called from exactly one place,
    `FeePostingService:105` — never from the main chain.
 
-3. **That parentless fallback is ours, not the domain's.** The correct fallback is the exception
-   account. This matters concretely: the root-level currency mirrors (`M-ROOT-GBP`, `M-EUR-*`) are
-   currency accounts, so they should resolve **downward from their mother**. They are currently
-   unresolvable, and a parentless settlement VA — which the create endpoint cannot actually produce
-   despite its comment claiming otherwise — is the wrong fix for them.
+3. **The parentless fallback is ours, not the domain's — but it is load-bearing.** 13 of 28 live
+   settlement VAs are parentless, and they are what make the five `TRES-*` programs resolve. Treat
+   it as a deliberate local extension, not as something to remove. Note also that the create
+   endpoint cannot actually produce a parentless settlement VA despite its comment claiming it
+   does, so that path can only be reached by VAs created some other way.
+
+   Separately: a container's own *result* settles downward, but a contra leg for a movement
+   resolves upward and falls back to exception. The root-level currency mirrors show as unresolved
+   in the sweep because the sweep asks the upward question, and exception is the correct answer to
+   it — that is not by itself a defect.
 
 4. Depth cap of 10 in `SettlementVaResolverService.java:358`, against programs that permit deeper
    hierarchies (`Program.java:107-118`).
@@ -69,15 +74,33 @@ The ordering is the main correction to the first draft: **routing before the fla
 mark against today's chain would check the upward condition and silently skip the downward one, so
 clearing a mark could pass a check that never looked where it needed to.
 
-### 1. Implement the downward search (no model change, fixes a measured gap)
+### 1. The downward search — done, and smaller than this draft assumed
 
-Route non-transaction accounts through `findSettlementVaBelow` in the main chain, starting from the
-account itself for an aggregation account and from the mother for a currency account, nearest match
-wins, exception account when nothing is found. Drop the parentless STEP 3 in the same change, or
-keep it behind an explicit comment saying it is a local extension — it currently masks the absence
-of the downward search by failing differently.
+Tracing the callers corrected two claims that were in the first version of this step.
 
-Raise or remove the depth cap so it cannot be hit before a program's real depth.
+**The downward rule was already implemented and already applied.** `findSettlementVaBelow` is
+correct — breadth-first so the nearest wins, starting from the mother for a currency mirror — and
+every fee entry point (`postFee`, `postFeePair`, `postFeePairToTarget`, and `postCalculatedCharge`
+via `postFee`) routed through it. No live path was missing it. What was wrong is that the rule lived
+as a private helper inside `FeePostingService`, so it applied to fees and nothing else, and the next
+path to post a result to a container would have had to rediscover it. It now lives on
+`SettlementVaResolverService.settlementAccountForResultOn`, with tests. Fee behaviour is unchanged.
+
+**Do not route the main chain through the downward search.** Every caller of
+`resolveSettlementVaWithResult` — transfers, payments, collections, fee contra — is resolving a
+contra leg, which is the upward question. Chaining "try downward if upward fails" onto it would
+answer a different question with the wrong account, and posting to exception when nothing is found
+upward is the specified behaviour, not a failure.
+
+**Do not drop the parentless fallback.** 13 of 28 live settlement VAs have no parent, including
+every one in the five `TRES-*` programs, which are the programs that currently resolve cleanly. It
+is an extension beyond the reference rules, but it is load-bearing; removing it would break working
+programs. Keep it, commented as a local extension.
+
+Depth caps raised from 10 (upward) and 20 (downward) to 50, the ceiling
+`Program.maxHierarchyDepth` permits — the upward cap sat below the 20 a program defaults to, so a
+deep hierarchy stopped searching early and that is indistinguishable from finding nothing. Cycle
+safety now comes from a visited set rather than from the cap.
 
 ### 2. Make settlement a mark
 
