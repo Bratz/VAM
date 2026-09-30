@@ -156,6 +156,7 @@ function buildIssueSteps(job: IngestJobResponse, timeline: TimelineEventResponse
   // it failed should read as stopped, not still-pulsing (confirmed visually: without this, the
   // step that failed kept showing the same amber "working on it" animation as a live job).
   const activeStatus: IssueStepStatus = job.stage === 'BLOCKED' ? 'blocked' : 'active';
+  const processOutcome = jobOutcome(job);
 
   return [
     {
@@ -182,9 +183,25 @@ function buildIssueSteps(job: IngestJobResponse, timeline: TimelineEventResponse
     },
     {
       key: 'process',
+      // Reads the outcome, not the stage. This step used to go green and say "Complete" on
+      // stage === 'DONE' alone, which it does even when every single row failed.
       title: 'File gets staged and processed',
-      subtitle: job.stage === 'DONE' ? 'Complete' : engineeringDone ? 'Posting your transactions…' : undefined,
-      status: processingDone ? 'done' : engineeringDone ? activeStatus : 'pending',
+      subtitle:
+        job.stage === 'DONE'
+          ? processOutcome.kind === 'done'
+            ? 'Complete'
+            : processOutcome.label
+          : engineeringDone
+            ? 'Posting your transactions…'
+            : undefined,
+      status:
+        job.stage === 'DONE' && processOutcome.kind !== 'done'
+          ? 'blocked'
+          : processingDone
+            ? 'done'
+            : engineeringDone
+              ? activeStatus
+              : 'pending',
       timestamp: staged?.occurredAt,
     },
   ];
@@ -268,16 +285,33 @@ function hasRows(stage: IngestStage): boolean {
   return stage === 'STAGED' || stage === 'PROCESSING' || stage === 'DONE';
 }
 
-/** Parses IngestOrchestrator's own DONE-summary string ("%d processed, %d quarantined, %d
- * failed (of %d total).") into a scorecard instead of adding a dedicated summary endpoint —
- * the numbers already exist, just inside prose. */
-function parseDoneSummary(events: TimelineEventResponse[]): { processed: number; quarantined: number; failed: number; total: number } | null {
-  const done = events.find((e) => e.stage === 'DONE');
-  const match = done?.detail?.match(/(\d+) processed, (\d+) quarantined, (\d+) failed \(of (\d+) total\)/);
-  if (!match) return null;
-  const [, processed, quarantined, failed, total] = match;
-  return { processed: Number(processed), quarantined: Number(quarantined), failed: Number(failed), total: Number(total) };
+type JobOutcome =
+  | { kind: 'done'; variant: 'success'; label: string }
+  | { kind: 'partial'; variant: 'warning'; label: string }
+  | { kind: 'nothing'; variant: 'error'; label: string }
+  | { kind: 'blocked'; variant: 'error'; label: string }
+  | { kind: 'running'; variant: 'info'; label: string };
+
+/**
+ * What actually happened, which the stage alone cannot say. DONE means the pipeline ran to
+ * completion, not that anything posted — a file whose every row failed reached DONE and was
+ * rendered with a green tick and the word "Complete", directly above a scorecard reading
+ * 0 processed / 3 failed. The counts now come from the job, so both agree.
+ */
+function jobOutcome(job: IngestJobResponse): JobOutcome {
+  if (job.stage === 'BLOCKED') return { kind: 'blocked', variant: 'error', label: 'Blocked' };
+  if (job.stage !== 'DONE') return { kind: 'running', variant: 'info', label: STAGE_LABELS[job.stage] };
+
+  const { total, processed, failed, quarantined } = job.rows ?? { total: 0, processed: 0, failed: 0, quarantined: 0 };
+  // A job with no rows at all is a pipeline that ran on an empty file; nothing failed, so "Done".
+  if (total === 0) return { kind: 'done', variant: 'success', label: 'Done' };
+  if (processed === 0) return { kind: 'nothing', variant: 'error', label: 'Nothing posted' };
+  if (failed + quarantined > 0) {
+    return { kind: 'partial', variant: 'warning', label: `${processed} of ${total} posted` };
+  }
+  return { kind: 'done', variant: 'success', label: 'Done' };
 }
+
 
 const FileIngestUploadPage: React.FC = () => {
   const [domain, setDomain] = useState<IngestDomain>('RECEIVABLES');
@@ -408,12 +442,20 @@ const FileIngestUploadPage: React.FC = () => {
     : 0;
 
   const isLive = !!job && job.stage !== 'DONE' && job.stage !== 'BLOCKED';
-  const doneSummary = useMemo(() => (job?.stage === 'DONE' ? parseDoneSummary(timeline) : null), [job?.stage, timeline]);
+  // Counts come from the job itself now. They used to be scraped out of the DONE timeline
+  // event's prose, which worked but meant the badge and the scorecard could disagree -- the
+  // badge read the stage, the scorecard read the numbers. One source, so they cannot.
+  const doneSummary = useMemo(
+    () => (job?.stage === 'DONE' && job.rows ? job.rows : null),
+    [job?.stage, job?.rows],
+  );
 
   // A ticket was filed -> render the ClearTax-style "Issue Status" timeline instead of the plain
   // Stepper (a known-shape upload never files a ticket, so it keeps the simpler Stepper).
   const hasTicket = !!job?.jiraTicketKey;
   const issueSteps = useMemo(() => (job && hasTicket ? buildIssueSteps(job, timeline) : []), [job, hasTicket, timeline]);
+  // One outcome for the badge, the stepper and the milestone, so they cannot disagree.
+  const outcome = useMemo(() => (job ? jobOutcome(job) : null), [job]);
 
   useEffect(() => {
     if (!isLive || !hasTicket) return;
@@ -446,6 +488,11 @@ const FileIngestUploadPage: React.FC = () => {
         description="Upload a payables/receivables/payment file in any format — an analysis agent profiles it, a coding agent builds a transform for shapes it hasn't seen before, and the result is reconciled, staged and processed automatically."
       />
 
+      {/* Hidden while a job is open. The dropzone and the history list were already gated, but
+          this card was not, so reading a past job showed the domain and corporate pickers and
+          "stays editable until you upload" stacked above an "Upload another file" button --
+          two routes to the same action, and a form implying an upload was in progress. */}
+      {!job && (
       <Card>
         <CardHeader title="New Upload" subtitle="Every field below stays editable until you upload." />
         <div className="space-y-4">
@@ -523,6 +570,7 @@ const FileIngestUploadPage: React.FC = () => {
           )}
         </div>
       </Card>
+      )}
 
       {/* Summary confirmation panel — same pattern as CreateReceivablePage's review sidebar
           (key/value recap, a divider, then a warning-or-success readiness banner) adapted to
@@ -615,13 +663,10 @@ const FileIngestUploadPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                {pastJob.stage === 'DONE' ? (
-                  <Badge variant="success" size="sm">Done</Badge>
-                ) : pastJob.stage === 'BLOCKED' ? (
-                  <Badge variant="error" size="sm">Blocked</Badge>
-                ) : (
-                  <Badge variant="info" size="sm">{STAGE_LABELS[pastJob.stage]}</Badge>
-                )}
+                {(() => {
+                  const outcome = jobOutcome(pastJob);
+                  return <Badge variant={outcome.variant} size="sm">{outcome.label}</Badge>;
+                })()}
               </button>
             ))}
           </div>
@@ -635,13 +680,18 @@ const FileIngestUploadPage: React.FC = () => {
               title={job.originalFilename}
               subtitle={`${job.domain} · ${job.customerId}${job.jiraTicketKey ? ` · ${job.jiraTicketKey}` : ''}`}
               action={
-                job.stage === 'DONE' ? (
-                  <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Done</Badge>
-                ) : job.stage === 'BLOCKED' ? (
-                  <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Blocked</Badge>
-                ) : (
-                  <Badge variant="info" dot className="animate-pulse-soft">{STAGE_LABELS[job.stage]}</Badge>
-                )
+                (() => {
+                  if (!outcome) return null;
+                  if (outcome.kind === 'done') {
+                    return <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>{outcome.label}</Badge>;
+                  }
+                  if (outcome.kind === 'running') {
+                    return <Badge variant="info" dot className="animate-pulse-soft">{outcome.label}</Badge>;
+                  }
+                  return (
+                    <Badge variant={outcome.variant} icon={<AlertTriangle className="w-3 h-3" />}>{outcome.label}</Badge>
+                  );
+                })()
               }
             />
             {job.stage === 'BLOCKED' && job.blockedReason && (
@@ -657,8 +707,14 @@ const FileIngestUploadPage: React.FC = () => {
                 <Stepper
                   steps={steps.map((s) => ({
                     id: s,
-                    title: STAGE_LABELS[s],
-                    description: STAGE_DESCRIPTIONS[s],
+                    // The DONE step is relabelled from the outcome. STAGE_LABELS/DESCRIPTIONS
+                    // give it "Done"/"Complete" unconditionally, which it showed even when the
+                    // scorecard immediately below read 0 processed and 2 failed.
+                    title: s === 'DONE' && outcome ? outcome.label : STAGE_LABELS[s],
+                    description:
+                      s === 'DONE' && outcome && outcome.kind !== 'done'
+                        ? `${job.rows?.failed ?? 0} failed of ${job.rows?.total ?? 0}`
+                        : STAGE_DESCRIPTIONS[s],
                     icon: STAGE_ICONS[s],
                   }))}
                   currentStep={currentStepIndex}

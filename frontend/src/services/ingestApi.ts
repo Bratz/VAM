@@ -31,6 +31,16 @@ export type IngestStage =
   | 'DONE'
   | 'BLOCKED';
 
+/** Row outcome for a job. `stage` alone cannot say whether the upload worked — DONE means the
+ *  pipeline ran, not that anything posted, so a file where every row failed reaches the same
+ *  terminal stage as one where every row succeeded. These counts are what tells them apart. */
+export interface IngestRowCounts {
+  total: number;
+  processed: number;
+  quarantined: number;
+  failed: number;
+}
+
 export interface IngestJobResponse {
   id: string;
   customerId: string;
@@ -41,6 +51,7 @@ export interface IngestJobResponse {
   blockedReason: string | null;
   createdAt: string;
   updatedAt: string;
+  rows: IngestRowCounts;
 }
 
 export interface TimelineEventResponse {
