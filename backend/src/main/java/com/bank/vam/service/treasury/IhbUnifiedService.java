@@ -774,9 +774,11 @@ public class IhbUnifiedService {
         }
 
         BigDecimal amount = request.getAmount();
-        va.setCurrentBalance(va.getCurrentBalance().add(amount));
-        va.setAvailableBalance(va.getIhbAvailableBalance());
-        va.setLastActivityDate(LocalDate.now());
+        // credit() keeps availableBalance in step with cash, like every non-IHB path. It used to
+        // set availableBalance = getIhbAvailableBalance() (cash + effectiveCreditLimit), which put
+        // the borrowing facility into the column every other consumer reads as money -- that is
+        // how a ZERO_BALANCE sweep came to move 1,000,000.96 out of an account holding 0.96.
+        va.credit(amount);
         virtualAccountRepository.save(va);
 
         log.info("Deposited {} to IHB account {}, new balance: {}",
@@ -806,9 +808,11 @@ public class IhbUnifiedService {
                 ", Requested: " + amount);
         }
 
-        va.setCurrentBalance(va.getCurrentBalance().subtract(amount));
-        va.setAvailableBalance(va.getIhbAvailableBalance());
-        va.setLastActivityDate(LocalDate.now());
+        // The facility is still drawable here -- canWithdrawIhb() above consulted cash + limit,
+        // which is the point of an in-house bank. What changed is that drawing it no longer writes
+        // the limit back into availableBalance; the overdraft shows as a negative cash balance and
+        // the remaining headroom stays in effectiveCreditLimit, where only this gate reads it.
+        va.debit(amount);
         virtualAccountRepository.save(va);
 
         log.info("Withdrew {} from IHB account {}, new balance: {}",
@@ -850,13 +854,8 @@ public class IhbUnifiedService {
         // Execute transfer
         String correlationId = UUID.randomUUID().toString();
 
-        fromVa.setCurrentBalance(fromVa.getCurrentBalance().subtract(amount));
-        fromVa.setAvailableBalance(fromVa.getIhbAvailableBalance());
-        fromVa.setLastActivityDate(LocalDate.now());
-
-        toVa.setCurrentBalance(toVa.getCurrentBalance().add(amount));
-        toVa.setAvailableBalance(toVa.getIhbAvailableBalance());
-        toVa.setLastActivityDate(LocalDate.now());
+        fromVa.debit(amount);
+        toVa.credit(amount);
 
         virtualAccountRepository.save(fromVa);
         virtualAccountRepository.save(toVa);
@@ -971,6 +970,9 @@ public class IhbUnifiedService {
             .participantEntityName(entity != null ? entity.getEntityName() : null)
             // Balances
             .currentBalance(va.getCurrentBalance() != null ? va.getCurrentBalance() : BigDecimal.ZERO)
+            // Deliberately cash + facility here, unlike the persisted availableBalance column:
+            // on an IHB screen "available" means what the participant may actually draw, which
+            // includes its borrowing line. Derived for the response only, never written back.
             .availableBalance(va.getIhbAvailableBalance())
             .positionType(va.getIhbPositionType())
             // Credit/Overdraft
@@ -1122,8 +1124,12 @@ public class IhbUnifiedService {
         }
 
         // Apply net interest to balance
-        va.setCurrentBalance(va.getCurrentBalance().add(netInterest));
-        va.setAvailableBalance(va.getIhbAvailableBalance());
+        // Signed: netInterest is negative for a participant that owes debit interest.
+        if (netInterest.signum() >= 0) {
+            va.credit(netInterest);
+        } else {
+            va.debit(netInterest.negate());
+        }
 
         // Reset accrued interest
         va.resetAccruedInterest();

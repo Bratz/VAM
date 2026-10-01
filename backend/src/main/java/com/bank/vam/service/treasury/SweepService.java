@@ -265,6 +265,7 @@ public class SweepService {
         VirtualAccount targetVa = virtualAccountRepository.findById(request.getTargetAccountId())
                 .orElseThrow(() -> new BusinessException("Target account not found: " + request.getTargetAccountId()));
         hasShadowLeg |= assertShadowLegEligible(targetVa, request.getTargetAccountNumber(), rule.getRail());
+        assertCanHoldSweptCash(targetVa, request.getTargetAccountNumber());
         // No assertPooledOrMirrored() on the target: a dedicated Treasury pool/root
         // account is routinely the ONLY VA on its own physical account by design —
         // that's the destination the concentration exists to fill, not a stand-in for
@@ -619,6 +620,22 @@ public class SweepService {
                 execution.setSweepAmount(BigDecimal.ZERO);
                 execution.setStatus(SweepExecution.ExecutionStatus.SKIPPED);
                 execution.setErrorMessage("Source VA deleted (ID: " + source.getAccountId() + ") - orphaned source removed from rule");
+                return executionRepository.save(execution);
+            }
+
+            // An existing rule may already point at a container: creation only started rejecting
+            // that in this change, and "IHB Sweep: MNC Dubai Branch -> Treasury (AED)" is live
+            // with an AGGREGATION target. Fail the execution rather than move money somewhere no
+            // position calculation will ever count it.
+            if (targetVa != null && targetVa.getAccountCategory() != null
+                    && CANNOT_RECEIVE_SWEPT_CASH.contains(targetVa.getAccountCategory())) {
+                execution.setSweepAmount(BigDecimal.ZERO);
+                execution.setBalanceAfter(sourceVa.getCurrentBalance());
+                execution.setStatus(SweepExecution.ExecutionStatus.FAILED);
+                execution.setErrorMessage("Target " + targetVa.getVaNumber() + " is a "
+                    + targetVa.getAccountCategory() + " container and cannot hold swept cash");
+                log.error("Sweep blocked for rule '{}': target {} is a {} container",
+                    rule.getRuleName(), targetVa.getVaNumber(), targetVa.getAccountCategory());
                 return executionRepository.save(execution);
             }
 
@@ -1239,6 +1256,37 @@ public class SweepService {
      * win. max(ZERO) stops an already-overdrawn participant sweeping, which would mean borrowing
      * more to fund the header.
      */
+    /**
+     * Containers that cannot hold a sweep's cash. ROOT, AGGREGATION and CURRENCY_MIRROR exist to
+     * restate what sits beneath them; the position logic excludes them everywhere precisely because
+     * their balance is "not real standalone money".
+     */
+    private static final java.util.Set<VirtualAccount.AccountCategory> CANNOT_RECEIVE_SWEPT_CASH =
+        java.util.EnumSet.of(VirtualAccount.AccountCategory.ROOT,
+                             VirtualAccount.AccountCategory.AGGREGATION,
+                             VirtualAccount.AccountCategory.CURRENCY_MIRROR);
+
+    /**
+     * A sweep's target must be an account that can actually hold the money.
+     *
+     * <p>Found live: "IHB Sweep: MNC Dubai Branch -> Treasury (AED)" targeted
+     * FINALI-L6-AGG-U-8117, an AGGREGATION. The sweep debited a real account and credited a
+     * container, and because every position calculation excludes containers, the debit counted and
+     * the credit did not -- 1,000,000.96 left the firm's reported position entirely. Rule creation
+     * validated that the target existed and was shadow-eligible, but never that it was somewhere
+     * money could live.
+     */
+    private void assertCanHoldSweptCash(VirtualAccount targetVa, String accountNumber) {
+        if (targetVa.getAccountCategory() != null
+                && CANNOT_RECEIVE_SWEPT_CASH.contains(targetVa.getAccountCategory())) {
+            throw new BusinessException(
+                "Sweep target " + (accountNumber != null ? accountNumber : targetVa.getVaNumber())
+                + " is a " + targetVa.getAccountCategory() + " container, which aggregates the accounts"
+                + " beneath it rather than holding a balance of its own. Target a transaction or"
+                + " settlement account instead.");
+        }
+    }
+
     static BigDecimal sweepableCash(VirtualAccount sourceVa) {
         BigDecimal cash = sourceVa.getCurrentBalance() != null ? sourceVa.getCurrentBalance() : BigDecimal.ZERO;
         BigDecimal available = sourceVa.getEffectiveAvailableBalance() != null
