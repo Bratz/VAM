@@ -657,9 +657,20 @@ public class IhbUnifiedService {
 
         // 4. Fall back to entity's default settlement VA (may be different currency)
         if (entity.hasSettlementVa()) {
-            log.warn("No {} VA found for entity {}, using default settlement VA (may be different currency)",
-                currency, entity.getEntityCode());
-            return entity.getSettlementVaId();
+            // hasSettlementVa() only reports that the column is set. Step 2 above confirms the
+            // account still exists before trusting it; this branch did not, so a pointer left behind
+            // by a deleted account was handed back as a usable VA id. Every one of the four active
+            // legal entities was in that state -- their settlement_va_id referenced accounts removed
+            // when the IHB setup was rebuilt -- so this returned a dangling id for any currency that
+            // missed steps 1-3.
+            if (virtualAccountRepository.existsById(entity.getSettlementVaId())) {
+                log.warn("No {} VA found for entity {}, using default settlement VA (may be different currency)",
+                    currency, entity.getEntityCode());
+                return entity.getSettlementVaId();
+            }
+            log.warn("Entity {} is configured with settlement VA {} but that account no longer exists; "
+                    + "ignoring it rather than returning an id nothing can resolve",
+                entity.getEntityCode(), entity.getSettlementVaId());
         }
 
         log.warn("No VA found for entity {} with currency {}", entity.getEntityCode(), currency);
