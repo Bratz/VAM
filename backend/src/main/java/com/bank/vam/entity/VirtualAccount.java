@@ -140,9 +140,19 @@ public class VirtualAccount extends BaseEntity {
     // ========================================================================
 
     /**
-     * Committed outflow - funds committed to IHB deposits awaiting settlement.
-     * This amount is "spoken for" and reduces available balance.
-     * Reset to zero after EOD settlement.
+     * VESTIGIAL. Was "funds committed to IHB deposits awaiting settlement", reducing available
+     * balance until an EOD settlement reset it.
+     *
+     * <p>Nothing reads or writes this field, or committedInflow, any more. They belonged to the
+     * IhbLoan/IhbDeposit instruments retired in 9950ceb, and that mechanism never released what it
+     * committed: SweepService called commitOutflow() on every execution and no code path anywhere
+     * ever called releaseCommittedOutflow() or settleOutflow(). The balance grew monotonically, one
+     * sweep at a time, to 27.9 billion across 10 accounts -- 7.5 billion on the worst -- while also
+     * permanently reducing availableBalance on each pass, since commitOutflow() subtracted from it.
+     *
+     * <p>V27 zeroes the residue. The columns are kept rather than dropped so the repair is
+     * reversible, but nothing should start using them again: hold()/releaseHold() already express
+     * reservations against heldBalance, which is at least reported.
      */
     @Column(name = "committed_outflow", precision = 18, scale = 2)
     @Builder.Default
@@ -1544,36 +1554,12 @@ public class VirtualAccount extends BaseEntity {
     // ========================================================================
 
     /**
-     * Commit an outflow (IHB deposit creation).
-     * Reduces available balance but not current balance.
-     * Funds are "spoken for" until EOD settlement.
-     */
-    public void commitOutflow(BigDecimal amount) {
-        if (this.committedOutflow == null) this.committedOutflow = BigDecimal.ZERO;
-        this.committedOutflow = this.committedOutflow.add(amount);
-        this.availableBalance = this.availableBalance.subtract(amount);
-    }
-
-    /**
      * Commit an inflow (IHB loan disbursement to this account).
      * Expected incoming funds from Treasury.
      */
     public void commitInflow(BigDecimal amount) {
         if (this.committedInflow == null) this.committedInflow = BigDecimal.ZERO;
         this.committedInflow = this.committedInflow.add(amount);
-    }
-
-    /**
-     * Release committed outflow (position cancelled or rejected).
-     * Restores available balance.
-     */
-    public void releaseCommittedOutflow(BigDecimal amount) {
-        if (this.committedOutflow == null) this.committedOutflow = BigDecimal.ZERO;
-        this.committedOutflow = this.committedOutflow.subtract(amount);
-        if (this.committedOutflow.compareTo(BigDecimal.ZERO) < 0) {
-            this.committedOutflow = BigDecimal.ZERO;
-        }
-        this.availableBalance = this.availableBalance.add(amount);
     }
 
     /**
@@ -1585,20 +1571,6 @@ public class VirtualAccount extends BaseEntity {
         if (this.committedInflow.compareTo(BigDecimal.ZERO) < 0) {
             this.committedInflow = BigDecimal.ZERO;
         }
-    }
-
-    /**
-     * Settle committed outflow (EOD settlement - actual fund movement).
-     * Debits current balance and clears committed outflow.
-     */
-    public void settleOutflow(BigDecimal amount) {
-        if (this.committedOutflow == null) this.committedOutflow = BigDecimal.ZERO;
-        this.currentBalance = this.currentBalance.subtract(amount);
-        this.committedOutflow = this.committedOutflow.subtract(amount);
-        if (this.committedOutflow.compareTo(BigDecimal.ZERO) < 0) {
-            this.committedOutflow = BigDecimal.ZERO;
-        }
-        this.lastActivityDate = LocalDate.now();
     }
 
     /**
@@ -1617,43 +1589,26 @@ public class VirtualAccount extends BaseEntity {
     }
 
     /**
-     * Clear all committed balances (after full settlement).
-     */
-    public void clearCommittedBalances() {
-        this.committedOutflow = BigDecimal.ZERO;
-        this.committedInflow = BigDecimal.ZERO;
-    }
-
-    /**
      * Get the effective available balance (accounting for holds and committed outflows).
      * This is what's truly available for new transactions.
      */
     public BigDecimal getEffectiveAvailableBalance() {
         BigDecimal available = this.availableBalance != null ? this.availableBalance : BigDecimal.ZERO;
-        // Note: committedOutflow is already subtracted when commitOutflow() is called
-        // So availableBalance already reflects committed outflows
+        // This used to say availableBalance already reflects committed outflows "because
+        // commitOutflow() subtracts them". Nothing has called commitOutflow() since the
+        // IhbLoan/IhbDeposit retirement, so that is no longer true and the committed* fields are
+        // vestigial -- see their declaration. availableBalance is maintained by credit()/debit()
+        // and hold()/releaseHold() alone.
         return available;
     }
 
     /**
-     * Get total committed amounts (outflow + inflow for reporting).
-     */
-    public BigDecimal getTotalCommitted() {
-        BigDecimal outflow = this.committedOutflow != null ? this.committedOutflow : BigDecimal.ZERO;
-        BigDecimal inflow = this.committedInflow != null ? this.committedInflow : BigDecimal.ZERO;
-        return outflow.add(inflow);
-    }
-
-    /**
-     * Check if there are any pending commitments.
-     */
-    public boolean hasCommitments() {
-        return getTotalCommitted().compareTo(BigDecimal.ZERO) > 0;
-    }
-
-    /**
-     * Check if outflow amount can be committed (sufficient available balance).
-     * This enforces hard block on insufficient balance.
+     * Whether this account has the available balance to fund an outflow.
+     *
+     * <p>Named for a commit/reserve lifecycle that no longer exists: it does not consult
+     * committedOutflow and never did. It is a plain available-balance check, and SweepService is
+     * its only caller. Kept under the old name rather than renamed in the same change that fixed
+     * the sweep it guards.
      */
     public boolean canCommitOutflow(BigDecimal amount) {
         return getEffectiveAvailableBalance().compareTo(amount) >= 0;
