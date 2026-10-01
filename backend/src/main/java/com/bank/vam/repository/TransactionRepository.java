@@ -86,6 +86,19 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByMovementType(Transaction.MovementType movementType);
 
     /**
+     * Sweeps that moved more than the source account held, leaving it overdrawn.
+     *
+     * <p>The signature of the credit-facility defect: availableBalance carried the participant's
+     * borrowing line, so a ZERO_BALANCE sweep sized itself off cash + facility and debited an
+     * account that did not have it. Finds them by shape rather than by id, so the repair covers any
+     * sibling occurrence and not just the one that was noticed.
+     */
+    @Query("SELECT t FROM Transaction t WHERE t.movementType = com.bank.vam.entity.Transaction$MovementType.SWEEP_OUT "
+            + "AND t.balanceAfter < 0 AND t.amount > t.balanceBefore "
+            + "ORDER BY t.transactionDate ASC")
+    List<Transaction> findOverdrawingSweeps();
+
+    /**
      * Count transactions by movement type.
      */
     long countByMovementType(Transaction.MovementType movementType);
@@ -184,6 +197,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
      * Find by correlation ID (endToEndId in ISO 20022) - returns single transaction
      */
     Optional<Transaction> findByCorrelationId(String correlationId);
+
+    /**
+     * Whether any movement carries this correlation id.
+     *
+     * <p>findByCorrelationId returns Optional and therefore throws when a correlation spans more
+     * than one row -- which every double-entry pair does. Use this for "has this already been
+     * posted" checks.
+     */
+    boolean existsByCorrelationId(String correlationId);
 
     /**
      * Find by VA ID and date range with pagination

@@ -25,6 +25,33 @@ import java.util.UUID;
 public class SweepController {
 
     private final SweepService sweepService;
+    private final com.bank.vam.service.treasury.OverdrawingSweepReversalService overdrawingSweepReversalService;
+
+    /**
+     * Reverses sweeps that moved more than the source account held, posting a compensating pair.
+     *
+     * <p>Deliberately an endpoint rather than a startup runner. It was a runner first, and the
+     * reversal was silently clobbered: BalanceAggregationServiceEnhanced.scheduledAggregation runs
+     * on a fixedRate that fires at context start, loads accounts, sets only aggregatedBalance, and
+     * saves the whole entity -- writing back the currentBalance it read before the repair committed.
+     * BaseEntity has @Version commented out, so nothing detected the lost update. Proven: with
+     * scheduling disabled the same repair persists on both sides; with it enabled the target reverts.
+     *
+     * <p>Making it an explicit call means a correction of this size is run when someone is watching
+     * and can confirm it stuck, instead of racing a scheduler at boot. Re-running is safe: a sweep
+     * whose reversal already exists, or whose accounts have since moved, is skipped.
+     */
+    @PostMapping("/reverse-overdrawing")
+    @Operation(summary = "Reverse sweeps that overdrew their source account",
+               description = "Posts a compensating REVERSAL pair for any sweep that moved more than "
+                   + "the source held. Idempotent; verify balances afterwards, as a concurrent "
+                   + "scheduled aggregation can clobber a balance write.")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> reverseOverdrawingSweeps() {
+        int reversed = overdrawingSweepReversalService.reverseOverdrawingSweeps();
+        return ResponseEntity.ok(ApiResponse.success(Map.of("reversed", reversed),
+                reversed == 0 ? "No overdrawing sweeps to reverse" : "Reversed " + reversed + " sweep(s)"));
+    }
+
 
     // ========================================================================
     // RULE ENDPOINTS
