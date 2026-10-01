@@ -772,18 +772,26 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     //                        the dashboard's Currency breakdown/By country
     //                        widgets (MultiBankLiquidityViewService) —
     //                        counting them here too would double-show them.
-    // Same exclusion set BalanceStructureService.recomputeRollup() applies
-    // when building the "By entity" tree / hero figure, so all these views
-    // agree on what counts as real, once-counted money.
+    //   INTERCOMPANY       - an internal claim between group companies, not
+    //                        cash the group holds. The tree reports it
+    //                        separately as intercompanyReceivable/Payable,
+    //                        and consolidatedBalance excludes it; counting it
+    //                        here made the By-corporate tile disagree with the
+    //                        summary by exactly the IC total.
+    // This is THE definition of a position: the same set
+    // BalanceStructureService's consolidatedBalance uses, and the one
+    // EntityHierarchyTreemap.currencyComposition filters to on the frontend.
+    // Change one and change all three, or the dashboard shows a corporate
+    // three different totals again.
     @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) FROM VirtualAccount v " +
            "WHERE v.corporateId = :corporateId " +
-           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR') " +
+           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR', 'INTERCOMPANY') " +
            "GROUP BY v.currencyCode")
     List<Object[]> sumBalanceByCorporateGroupedByCurrency(@Param("corporateId") UUID corporateId);
 
     @Query("SELECT v.currencyCode, COALESCE(SUM(v.currentBalance), 0) FROM VirtualAccount v " +
            "WHERE v.programId = :programId " +
-           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR') " +
+           "AND v.accountCategory NOT IN ('ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR', 'INTERCOMPANY') " +
            "GROUP BY v.currencyCode")
     List<Object[]> sumBalanceByProgramGroupedByCurrency(@Param("programId") UUID programId);
 

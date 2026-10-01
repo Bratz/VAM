@@ -87,17 +87,23 @@ function realChildren(node: BalanceHierarchyNode): BalanceHierarchyNode[] {
 // always be summed without FX conversion, and post-fix (BalanceStructureService.
 // recomputeRollup) every container node's own localBalance is already
 // zero, so there's nothing to double-count by including them unfiltered.
+// Categories that are not a position. Containers restate what is beneath them,
+// shadows are the bank's own balance (shown by the Currency/By-country widgets),
+// and an intercompany claim is internal — the tree reports it separately as
+// intercompanyReceivable/Payable. Same set as the backend's
+// sumBalanceByCorporateGroupedByCurrency and consolidatedBalance; this header
+// used to count shadows and IC, which is why a corporate read AED 12,157,782
+// here and AED 657,203 in the summary for the same accounts.
+const NOT_A_POSITION = new Set(['ROOT', 'AGGREGATION', 'CURRENCY_MIRROR', 'PHYSICAL_MIRROR', 'INTERCOMPANY']);
+
 function currencyComposition(node: BalanceHierarchyNode): { currency: string; amount: number }[] {
   const totals = new Map<string, number>();
   const walk = (n: BalanceHierarchyNode) => {
     if (isCurrencyMirror(n)) return;
-    if (n.localBalance) {
-      // IC Payable is Treasury's liability to a subsidiary (COBO) — it must
-      // subtract, the same real money an IC Receivable (POBO) correctly
-      // adds, just viewed from the other side. See recomputeRollup() in
-      // BalanceStructureService for the backend half of this same fix.
-      const signed = n.mirrorAccountType === 'IC_PAYABLE' ? -n.localBalance : n.localBalance;
-      totals.set(n.currencyCode, (totals.get(n.currencyCode) ?? 0) + signed);
+    // Skip the node's own balance but keep walking: a container holds real
+    // accounts beneath it, and those still count.
+    if (n.localBalance && !NOT_A_POSITION.has(n.accountCategory ?? '')) {
+      totals.set(n.currencyCode, (totals.get(n.currencyCode) ?? 0) + n.localBalance);
     }
     (n.children ?? []).forEach(walk);
   };
