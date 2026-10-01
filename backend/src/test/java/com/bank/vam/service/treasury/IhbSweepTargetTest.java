@@ -26,6 +26,7 @@ class IhbSweepTargetTest {
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
     private final com.bank.vam.repository.treasury.SweepRuleRepository rules = mock(com.bank.vam.repository.treasury.SweepRuleRepository.class);
     private final IhbUnifiedService service = new IhbUnifiedService(entities, vas,
+        mock(com.bank.vam.repository.TransactionRepository.class),
         mock(FeePostingService.class), rules,
         mock(com.bank.vam.repository.credit.InterestConfigurationRepository.class), mock(com.bank.vam.service.tax.TaxService.class),
         new com.bank.vam.config.MarketProfileProperties(), mock(HierarchyNodeRepository.class),

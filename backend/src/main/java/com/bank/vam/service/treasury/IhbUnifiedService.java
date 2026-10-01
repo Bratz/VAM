@@ -4,6 +4,7 @@ import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.dto.treasury.IhbDto;
 import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.Program;
+import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.credit.InterestConfiguration;
 import com.bank.vam.entity.hierarchy.HierarchyNode;
@@ -14,6 +15,7 @@ import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.ProgramRepository;
+import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.credit.InterestConfigurationRepository;
 import com.bank.vam.repository.hierarchy.HierarchyNodeRepository;
@@ -49,6 +51,7 @@ public class IhbUnifiedService {
 
     private final LegalEntityRepository legalEntityRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final TransactionRepository transactionRepository;
     private final FeePostingService feePostingService;
     // ENHANCED: For IHB→Sweep integration
     private final SweepRuleRepository sweepRuleRepository;
@@ -778,8 +781,11 @@ public class IhbUnifiedService {
         // set availableBalance = getIhbAvailableBalance() (cash + effectiveCreditLimit), which put
         // the borrowing facility into the column every other consumer reads as money -- that is
         // how a ZERO_BALANCE sweep came to move 1,000,000.96 out of an account holding 0.96.
+        BigDecimal balanceBefore = va.getCurrentBalance();
         va.credit(amount);
         virtualAccountRepository.save(va);
+        ledger(va, Transaction.MovementType.CREDIT, amount, balanceBefore, null, null, "IHB",
+            "Deposit to IHB current account");
 
         log.info("Deposited {} to IHB account {}, new balance: {}",
             amount, va.getVaNumber(), va.getCurrentBalance());
@@ -812,8 +818,12 @@ public class IhbUnifiedService {
         // which is the point of an in-house bank. What changed is that drawing it no longer writes
         // the limit back into availableBalance; the overdraft shows as a negative cash balance and
         // the remaining headroom stays in effectiveCreditLimit, where only this gate reads it.
+        BigDecimal balanceBefore = va.getCurrentBalance();
         va.debit(amount);
         virtualAccountRepository.save(va);
+        ledger(va, Transaction.MovementType.DEBIT, amount, balanceBefore, null, null, "IHB",
+            "Withdrawal from IHB current account"
+                + (va.getCurrentBalance().signum() < 0 ? " (drawn on facility)" : ""));
 
         log.info("Withdrew {} from IHB account {}, new balance: {}",
             amount, va.getVaNumber(), va.getCurrentBalance());
@@ -854,11 +864,21 @@ public class IhbUnifiedService {
         // Execute transfer
         String correlationId = UUID.randomUUID().toString();
 
+        BigDecimal fromBefore = fromVa.getCurrentBalance();
+        BigDecimal toBefore = toVa.getCurrentBalance();
         fromVa.debit(amount);
         toVa.credit(amount);
 
         virtualAccountRepository.save(fromVa);
         virtualAccountRepository.save(toVa);
+
+        // Both legs carry the correlationId this method already generated and returns -- until now
+        // nothing was written that bore it, so the id the caller got back matched no ledger row.
+        String transferNote = "IHB transfer " + fromVa.getVaNumber() + " -> " + toVa.getVaNumber();
+        ledger(fromVa, Transaction.MovementType.TRANSFER_OUT, amount, fromBefore, toVa.getId(),
+            correlationId, "IHB", transferNote);
+        ledger(toVa, Transaction.MovementType.TRANSFER_IN, amount, toBefore, fromVa.getId(),
+            correlationId, "IHB", transferNote);
 
         log.info("IHB transfer {} {} from {} to {}",
             amount, fromVa.getCurrencyCode(), fromVa.getVaNumber(), toVa.getVaNumber());
@@ -1125,6 +1145,7 @@ public class IhbUnifiedService {
 
         // Apply net interest to balance
         // Signed: netInterest is negative for a participant that owes debit interest.
+        BigDecimal balanceBefore = va.getCurrentBalance();
         if (netInterest.signum() >= 0) {
             va.credit(netInterest);
         } else {
@@ -1134,6 +1155,17 @@ public class IhbUnifiedService {
         // Reset accrued interest
         va.resetAccruedInterest();
         virtualAccountRepository.save(va);
+
+        // One INTEREST row whichever way the net went: the amount is the absolute movement and the
+        // direction is already in balanceBefore -> balanceAfter. Gross and WHT stay in the result
+        // DTO rather than being split across rows, because a single posting moved the balance once.
+        if (netInterest.signum() != 0) {
+            ledger(va, Transaction.MovementType.INTEREST, netInterest.abs(), balanceBefore, null, null,
+                "IHB_INTEREST",
+                (netInterest.signum() > 0 ? "Credit" : "Debit") + " interest posted"
+                    + " (gross credit " + creditGross + ", gross debit " + debitGross
+                    + (whtApplied ? ", WHT " + creditWht.add(debitWht) : "") + ")");
+        }
 
         log.info("Posted interest to IHB account {}: gross credit={}, gross debit={}, " +
                 "WHT credit={}, WHT debit={}, net={}, crossBorder={}, treaty={}",
@@ -2396,5 +2428,43 @@ public class IhbUnifiedService {
             return virtualAccountRepository.findById(ihbCurrentAccount.getTreasuryPoolVaId()).orElse(null);
         }
         return null;
+    }
+
+    /**
+     * Writes the ledger row for a balance movement on an IHB account.
+     *
+     * <p>Every balance change in this service used to happen without one. The balance moved, a log
+     * line was written, and nothing in the ledger explained it -- so a statement could not be
+     * reconciled against the account it described. It showed up as an IHB-only drift: of nine
+     * accounts carrying a balance, the only two whose stored balance disagreed with their last
+     * {@code balanceAfter} were the two IHB current accounts, off by exactly one day of interest
+     * each (-1.10 on an overdrawn account, +0.01 on one in credit).
+     *
+     * <p>Call this with the balance read *before* the mutation; it is the caller's job to mutate
+     * and save the account, because only the caller knows whether the movement is one leg of a
+     * correlated pair.
+     */
+    private Transaction ledger(VirtualAccount va, Transaction.MovementType type, BigDecimal amount,
+                               BigDecimal balanceBefore, UUID counterpartyVaId, String correlationId,
+                               String channel, String description) {
+        return transactionRepository.save(Transaction.builder()
+            .referenceNumber(Transaction.generateReference(type))
+            .movementType(type)
+            .corporateId(va.getCorporateId())
+            .vaId(va.getId())
+            .physicalAccountId(va.getPhysicalAccountId())
+            .programId(va.getProgramId())
+            .amount(amount)
+            .currencyCode(va.getCurrencyCode())
+            .balanceBefore(balanceBefore)
+            .balanceAfter(va.getCurrentBalance())
+            .counterpartyVaId(counterpartyVaId)
+            .correlationId(correlationId)
+            .description(description)
+            .status(Transaction.TransactionStatus.COMPLETED)
+            .transactionDate(LocalDateTime.now())
+            .valueDate(LocalDate.now())
+            .channel(channel)
+            .build());
     }
 }
