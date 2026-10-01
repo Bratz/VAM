@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -40,6 +41,14 @@ import org.hibernate.type.SqlTypes;
  * - LegalEntity (1) -> VirtualAccount (N) [Ownership]
  */
 @Entity
+// Only changed columns are written on an update. Hibernate's default is a full-row UPDATE: every
+// column is rewritten from in-memory state, so a stale field nobody touched still overwrites what
+// the database holds -- on this entity that silently destroys money. Observed: a repair set an
+// aggregation's currentBalance to 0 and committed; scheduledAggregation, which had loaded the row
+// earlier and only ever sets aggregatedBalance, saved it 0.7s later and put 1,000,000.96 back.
+// BaseEntity has @Version commented out, so nothing detected it. Any concurrent writer is exposed,
+// not just that job, which is why this is on the entity rather than narrowing one service's save.
+@DynamicUpdate
 @Table(name = "virtual_accounts", indexes = {
     @Index(name = "idx_va_corporate", columnList = "corporate_id"),
     @Index(name = "idx_va_program", columnList = "program_id"),

@@ -306,3 +306,32 @@ Corollary, learned the same day: before "fixing" one of these, check what the da
 like. Two of the four conclusions above were wrong on first pass and only the live data settled
 them -- 13 of 28 settlement VAs being parentless killed a plan to remove the parentless fallback,
 and 28 of 28 shadows being childless killed a plan to treat them as containers.
+
+## A full-row UPDATE lets any save clobber a column it never touched (2026-10-01)
+
+A committed balance correction was reverted 0.7s later by the scheduled aggregation job -- a job
+that reads `aggregatedBalance` and writes `aggregatedBalance`, and has no business touching cash at
+all. It had loaded the row before the correction committed and saved it afterwards. Hibernate's
+default `UPDATE` lists *every* column, rewriting each from the entity's in-memory state, so its
+stale `currentBalance` went back to the database. `@Version` is commented out in `BaseEntity`, so
+nothing detected the conflict.
+
+What made it hard to see: both writers were correct in isolation, and each one's own log line was
+truthful. The revert was only visible by comparing `updated_at` on the row against the ledger row's
+timestamp. Diagnosed by controlled comparison -- the same repair, run once with
+`VAM_SCHEDULING_ENABLED=false` and once without.
+
+The fix is `@DynamicUpdate` on the entity, not a narrower save in the offending service: the SQL
+logs showed 227 `virtual_accounts` updates in a single aggregation pass, 226 of which changed only
+`fx_rate_at`. Every one of those was a full-row rewrite, so the job offered 226 chances per cycle to
+destroy a concurrent payment, and fixing one caller would have left the others. Proof the fix lands
+is in the generated SQL, not in a passing test: with the annotation the statement reads
+`update virtual_accounts set aggregated_balance=?, updated_at=? where id=?`, so the clobber is
+impossible by construction rather than merely unlikely.
+
+Generalisation: **on any entity where a column is owned by one writer and read by others, the
+default full-row UPDATE is a lost-update bug waiting for a concurrent save.** Balances, counters and
+status fields all qualify. Enable `logging.level.org.hibernate.SQL=DEBUG` and read the column list
+before assuming a save is narrow -- `save()` on an entity whose fields you did not set is not a
+no-op for those fields. (`format_sql` is on, so the statement is on the lines *after* the logger
+prefix; grepping for `update virtual_accounts set` on one line finds nothing.)
