@@ -622,24 +622,41 @@ public class SweepService {
                 return executionRepository.save(execution);
             }
 
-            // Use AVAILABLE balance (accounts for existing commitments)
+            // Sweep the account's own CASH, never its borrowing line.
+            //
+            // availableBalance is not cash on an IHB participant: IhbUnifiedService persists
+            // getIhbAvailableBalance() into it, which is currentBalance + effectiveCreditLimit.
+            // Sizing a sweep off that swept the facility itself — live, a ZERO_BALANCE rule moved
+            // 1,000,000.96 out of an account holding 0.96 and left it at -1,000,000, because
+            // available read 1,000,000.96 and canCommitOutflow then checked the amount against
+            // that same inflated figure and passed. Nothing was wrong with calculateSweepAmount
+            // or the guard; both were handed a number that was not money.
+            //
+            // The min() keeps availableBalance's real job — holds and committed outflows still
+            // reduce what can be swept — while the facility can no longer inflate it. max(ZERO)
+            // means an already-overdrawn participant sweeps nothing rather than borrowing more.
+            //
+            // Cash concentration moving borrowed money is wrong on its own terms, not just
+            // arithmetically: it draws on the facility to fund the header and then charges debit
+            // interest on the drawdown.
             BigDecimal availableBalance = sourceVa.getEffectiveAvailableBalance();
+            BigDecimal sweepableCash = sweepableCash(sourceVa);
             execution.setBalanceBefore(sourceVa.getCurrentBalance());
 
-            log.debug("Sweep check for {} ({}): current={}, available={}",
+            log.debug("Sweep check for {} ({}): current={}, available={}, sweepable cash={}",
                 source.getAccountNumber(), source.getEntityCode(),
-                sourceVa.getCurrentBalance(), availableBalance);
+                sourceVa.getCurrentBalance(), availableBalance, sweepableCash);
 
-            // Calculate sweep amount based on available balance
-            BigDecimal sweepAmount = calculateSweepAmount(rule, availableBalance);
+            // Calculate sweep amount from cash, not from cash + credit limit
+            BigDecimal sweepAmount = calculateSweepAmount(rule, sweepableCash);
 
             if (sweepAmount.compareTo(BigDecimal.ZERO) <= 0) {
                 execution.setSweepAmount(BigDecimal.ZERO);
                 execution.setBalanceAfter(sourceVa.getCurrentBalance());
                 execution.setStatus(SweepExecution.ExecutionStatus.SKIPPED);
                 execution.setErrorMessage("No funds to sweep or below threshold");
-                log.debug("Sweep skipped for {} - available: {}, calculated: {}",
-                    source.getAccountNumber(), availableBalance, sweepAmount);
+                log.debug("Sweep skipped for {} - sweepable cash: {}, calculated: {}",
+                    source.getAccountNumber(), sweepableCash, sweepAmount);
             } else {
                 // HARD BLOCK: Verify sufficient available balance
                 if (!sourceVa.canCommitOutflow(sweepAmount)) {
@@ -1207,6 +1224,26 @@ public class SweepService {
     private BigDecimal calculateSweepFee(BigDecimal sweepAmount) {
         BigDecimal fee = sweepAmount.multiply(SWEEP_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
         return fee.max(SWEEP_FEE_MIN).min(SWEEP_FEE_MAX);
+    }
+
+    /**
+     * How much of this account is actually sweepable: its own cash, never its borrowing line.
+     *
+     * <p>Extracted so the rule is testable on its own — it is the whole fix for a live incident
+     * where a sweep moved 1,000,000.96 out of an account holding 0.96.
+     *
+     * <p>{@code availableBalance} is not cash on an IHB participant: IhbUnifiedService persists
+     * {@code getIhbAvailableBalance()} (currentBalance + effectiveCreditLimit) into that column.
+     * Taking the min with currentBalance strips the facility back out while preserving the column's
+     * real job, since holds and committed outflows push availableBalance BELOW cash and must still
+     * win. max(ZERO) stops an already-overdrawn participant sweeping, which would mean borrowing
+     * more to fund the header.
+     */
+    static BigDecimal sweepableCash(VirtualAccount sourceVa) {
+        BigDecimal cash = sourceVa.getCurrentBalance() != null ? sourceVa.getCurrentBalance() : BigDecimal.ZERO;
+        BigDecimal available = sourceVa.getEffectiveAvailableBalance() != null
+            ? sourceVa.getEffectiveAvailableBalance() : BigDecimal.ZERO;
+        return cash.min(available).max(BigDecimal.ZERO);
     }
 
     private BigDecimal calculateSweepAmount(SweepRule rule, BigDecimal balance) {
