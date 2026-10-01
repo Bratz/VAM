@@ -328,6 +328,22 @@ export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
   // visible once you're a level in.
   const currentComposition = currentNode ? currencyComposition(currentNode) : [];
 
+  // Branches with a negative consolidated position. A treemap sizes boxes by
+  // area, so it cannot draw one — sumBalance clamps it to 0 and treemapData
+  // then filters it out. Dropping it silently is what made this widget
+  // misleading: Test Multinational Corp rendered as one dominant 1,635,021 box
+  // while its header said 654,413.63, because a -984,592.57 branch that
+  // accounts for the whole difference was simply not there. Still not drawable,
+  // so it is disclosed instead — same approach as GeoExposureMap's
+  // "N countries not shown".
+  const hiddenNegatives = useMemo(() => {
+    if (!currentNode) return [];
+    return realChildren(currentNode)
+      .filter((c) => c.consolidatedBalance < 0)
+      .map((c) => ({ id: c.id, name: c.name, balance: c.consolidatedBalance }))
+      .sort((a, b) => a.balance - b.balance);
+  }, [currentNode]);
+
   return (
     <div>
       {(path.length > 1 || currentComposition.length > 1) && (
@@ -355,6 +371,17 @@ export const EntityHierarchyTreemap: React.FC<EntityHierarchyTreemapProps> = ({
             </span>
           )}
         </div>
+      )}
+      {hiddenNegatives.length > 0 && (
+        <p className="caption mb-2 text-warning-700 dark:text-warning-300">
+          {hiddenNegatives.length === 1
+            ? `${hiddenNegatives[0].name} is not shown — a negative position of ${formatCurrency(hiddenNegatives[0].balance, currency)} cannot be drawn as an area.`
+            : `${hiddenNegatives.length} branches are not shown — negative positions totalling ${formatCurrency(
+                hiddenNegatives.reduce((sum, b) => sum + b.balance, 0),
+                currency,
+              )} cannot be drawn as areas.`}{' '}
+          The boxes below therefore add up to more than the total above.
+        </p>
       )}
       <FlatBreakdownTreemap
         data={treemapData}
