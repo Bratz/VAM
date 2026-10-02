@@ -69,3 +69,21 @@ uc05.161-33-9-182.sslip.io {
 		format console
 	}
 }
+
+# APPEND this block to vam-portal/deploy/oci/Caddyfile — purely additive, never edit the existing
+# site blocks. Add it only once liq-api is running (a block with no upstream answers 502 and makes
+# Caddy request a certificate, and Let's Encrypt rate-limits per hostname per week).
+# Apply without downtime for the siblings:
+#   sudo docker compose --profile mcp --profile defectfix --profile fileingest exec caddy caddy reload --config /etc/caddy/Caddyfile
+# (run in vam-portal/deploy/oci; caddy is profile-scoped there, so without the flags compose can't see it)
+# Revert = delete this block and reload.
+
+liq.161-33-9-182.sslip.io {
+	handle /api/* {
+		reverse_proxy liq-api:8070
+	}
+	log {
+		output stdout
+		format console
+	}
+}
