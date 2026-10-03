@@ -87,3 +87,13 @@ liq.161-33-9-182.sslip.io {
 		format console
 	}
 }
+
+extn.161-33-9-182.sslip.io {
+	handle /g/* {
+		reverse_proxy extn-api:8061
+	}
+	log {
+		output stdout
+		format console
+	}
+}
