@@ -4,6 +4,11 @@ import com.bank.vam.config.MarketProfileProperties;
 import com.bank.vam.dto.payables.PayablesDto.RecordPaymentRequest;
 import com.bank.vam.entity.payables.Payable;
 import com.bank.vam.entity.payables.Payable.PayableStatus;
+import com.bank.vam.entity.Transaction;
+import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.entity.treasury.PaymentRequest;
+import com.bank.vam.dto.payables.PayablesDto.PaymentExecutionRequest;
+import org.mockito.ArgumentCaptor;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
@@ -105,5 +110,51 @@ class PayablesServiceTest {
 
         assertEquals(BigDecimal.valueOf(400), response.getPaidAmount());
         assertEquals("PARTIAL", response.getStatus());
+    }
+
+    /**
+     * A payment request must not be left SUBMITTED once the money has moved.
+     *
+     * <p>executePayment set the request to SUBMITTED *after* creating the debit transaction and then
+     * never touched it again, so SUBMITTED was the terminal state for every payment request ever made
+     * -- all three rows in the live database read SUBMITTED, with transactionRef and completedAt null,
+     * while each of their payables was PAID in full. markCompleted, markProcessing and markRejected on
+     * the entity had no callers at all.
+     */
+    @Test
+    void executePaymentLeavesTheRequestCompletedNotSubmitted() {
+        stubSave();
+        Payable p = payable(PayableStatus.APPROVED);
+        UUID sourceVaId = UUID.randomUUID();
+        p.setVirtualAccountId(sourceVaId);
+        when(payableRepository.findById(PAYABLE_ID)).thenReturn(Optional.of(p));
+
+        VirtualAccount sourceVa = VirtualAccount.builder()
+                .vaNumber("VA-SRC-1").currencyCode("AED")
+                .currentBalance(BigDecimal.valueOf(5000))
+                .availableBalance(BigDecimal.valueOf(5000))
+                .heldBalance(BigDecimal.ZERO)
+                .build();
+        sourceVa.setId(sourceVaId);
+        when(virtualAccountRepository.findById(sourceVaId)).thenReturn(Optional.of(sourceVa));
+
+        when(paymentRequestRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        Transaction debit = Transaction.builder().referenceNumber("PMT-TEST-1").build();
+        debit.setId(UUID.randomUUID());
+        when(transactionService.makePayment(any())).thenReturn(debit);
+
+        service.executePayment(PaymentExecutionRequest.builder()
+                .payableId(PAYABLE_ID)
+                .executedBy("tester")
+                .build());
+
+        ArgumentCaptor<PaymentRequest> saved = ArgumentCaptor.forClass(PaymentRequest.class);
+        verify(paymentRequestRepository, atLeastOnce()).save(saved.capture());
+        PaymentRequest last = saved.getAllValues().get(saved.getAllValues().size() - 1);
+
+        assertEquals(PaymentRequest.PaymentRequestStatus.COMPLETED, last.getStatus());
+        // markCompleted also fills the two fields that were null on every live row
+        assertEquals("PMT-TEST-1", last.getTransactionRef());
+        assertNotNull(last.getCompletedAt());
     }
 }

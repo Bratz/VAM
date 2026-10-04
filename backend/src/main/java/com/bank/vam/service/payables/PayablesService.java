@@ -746,6 +746,14 @@ public class PayablesService {
         payable.setUpdatedBy(request.getExecutedBy());
         payableRepository.save(payable);
 
+        // The money moved before the request was even marked SUBMITTED above, and the payable is now
+        // settled, so the request is finished. Without this it stayed SUBMITTED for ever: every
+        // payment_requests row in the database read SUBMITTED, and markCompleted/markProcessing/
+        // markRejected on the entity had no callers at all. markCompleted also records the
+        // transaction reference and completedAt, which were left null on every row.
+        savedPaymentRequest.markCompleted(debitTxn.getReferenceNumber());
+        paymentRequestRepository.save(savedPaymentRequest);
+
         // Reload source VA to get updated balance
         sourceVa = virtualAccountRepository.findById(sourceVa.getId()).orElse(sourceVa);
 
