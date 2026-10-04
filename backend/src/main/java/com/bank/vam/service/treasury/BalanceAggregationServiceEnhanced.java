@@ -305,6 +305,7 @@ public class BalanceAggregationServiceEnhanced {
             mirror.setBalanceInBase(newMirrorBalance);
         }
 
+        pinMirrorCashToZero(mirror);
         vaRepository.save(mirror);
         
         log.debug("Updated CURRENCY_MIRROR {} at parent level: {} {} (delta: {})", 
@@ -520,7 +521,9 @@ public class BalanceAggregationServiceEnhanced {
      * @param mirror The Currency Mirror VA to recalculate
      * @param timestamp Current timestamp
      */
-    private void recalculateCurrencyMirror(VirtualAccount mirror, LocalDateTime timestamp) {
+    // Package-private rather than private so CurrencyMirrorHoldsNoCashTest can drive it directly,
+    // the same way SweepService.sweepableCash is reachable from its own test.
+    void recalculateCurrencyMirror(VirtualAccount mirror, LocalDateTime timestamp) {
         UUID parentId = mirror.getParentAccountId();
         String currency = mirror.getCurrencyCode();
 
@@ -600,6 +603,7 @@ public class BalanceAggregationServiceEnhanced {
             mirror.setBalanceInBase(mirrorBalance);
         }
 
+        pinMirrorCashToZero(mirror);
         vaRepository.save(mirror);
 
         log.info("Recalculated CURRENCY_MIRROR {}: mirrorBalance={} {}, balanceInBase={} (from {} operational siblings)",
@@ -1064,5 +1068,31 @@ public class BalanceAggregationServiceEnhanced {
         private BigDecimal fxRate;
         private LocalDateTime fxRateAt;
         private BigDecimal convertedBalance;
+    }
+
+    /**
+     * A currency mirror holds no cash of its own, so its cash columns stay at zero.
+     *
+     * <p>Its balance is a derived view of the same-currency transaction accounts beside it, and that
+     * figure lives in {@code mirrorBalance}. {@code currentBalance} on a mirror is a second encoding
+     * of the same fact, and it drifted: the recompute writes mirrorBalance, fxRate, fxRateAt and
+     * balanceInBase and has never written currentBalance, so whatever an older path left there simply
+     * stayed. Locally that was 231,381.00 of cash on 15 of 46 mirrors against a true mirrorBalance of
+     * 20,368.76.
+     *
+     * <p>It is not cosmetic, because plenty of balance queries have no category filter --
+     * {@code sumBalanceByParent}, {@code sumBalanceByParentAndCurrency} and the whole-table totals
+     * among them. A mirror is a child of its aggregation, so summing an aggregation's children counted
+     * the mirror's cash on top of the very transaction accounts it mirrors. Even a mirror whose
+     * currentBalance agreed with its mirrorBalance was double counted that way.
+     *
+     * <p>Pinned here rather than only repaired by migration because this runs on every aggregation
+     * cycle, so any future write that puts cash on a mirror is undone on the next pass instead of
+     * waiting for someone to notice. Nothing reads the value: the sibling sum filters to operational
+     * categories and nested propagation reads mirrorBalance.
+     */
+    private void pinMirrorCashToZero(VirtualAccount mirror) {
+        mirror.setCurrentBalance(BigDecimal.ZERO);
+        mirror.setAvailableBalance(BigDecimal.ZERO);
     }
 }
