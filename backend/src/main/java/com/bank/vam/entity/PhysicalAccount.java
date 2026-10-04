@@ -1,5 +1,6 @@
 package com.bank.vam.entity;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -90,6 +91,22 @@ public class PhysicalAccount extends BaseEntity {
     @Column(name = "bank_name")
     private String bankName;
 
+    /**
+     * The bank's SWIFT/BIC, and only that: it is what the home-bank check compares.
+     *
+     * <p>ShadowAccountService copies this into {@code VirtualAccount.bankSwift} when a shadow is
+     * created, and {@code HomeBankProperties.matches()} is an exact, case-insensitive equality against
+     * {@code VAM_HOME_BANK_BIC}. A value that is not a BIC therefore cannot match any configuration,
+     * and the account is silently ineligible to back a program rather than failing visibly. PA-GBP-002
+     * held the string "HSBC" and was unusable under every market profile, including the UK one where
+     * HSBC was the home bank it should have matched.
+     *
+     * <p>Shape only, and case-insensitive because the comparison is: six letters, two alphanumerics,
+     * and an optional three-character branch code. Null is allowed -- an account whose BIC is not known
+     * yet is simply never the home bank.
+     */
+    @Pattern(regexp = "^[A-Za-z]{6}[A-Za-z0-9]{2}([A-Za-z0-9]{3})?$",
+             message = "bankCode must be a SWIFT/BIC of 8 or 11 characters, not a bank name")
     @Column(name = "bank_code", length = 20)
     private String bankCode; // SWIFT/BIC
 
