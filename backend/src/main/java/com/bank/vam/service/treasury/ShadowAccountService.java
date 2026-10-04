@@ -309,6 +309,14 @@ public class ShadowAccountService {
     }
 
     /** Out of any program's hierarchy. */
+    /**
+     * Oldest first, then by number, both null-safe: rows created in the same instant still order the
+     * same way, which is the whole point -- the queries this breaks ties for have no ORDER BY.
+     */
+    private static final Comparator<VirtualAccount> STABLE_ORDER = Comparator
+        .comparing(VirtualAccount::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))
+        .thenComparing(VirtualAccount::getVaNumber, Comparator.nullsLast(Comparator.naturalOrder()));
+
     private VirtualAccount unassigned(VirtualAccount shadow) {
         shadow.setProgramId(null);
         shadow.setParentAccountId(null);
@@ -414,7 +422,8 @@ public class ShadowAccountService {
             throw new BusinessException("Bank account " + shadow.getBankAccountNumber() + " is in "
                 + shadow.getCurrencyCode() + ", the program is in " + program.getCurrencyCode());
         }
-        attachToParent(shadow.getId(), findOrCreateDefaultAggregation(program).getId());
+        attachToParent(shadow.getId(),
+            findOrCreateDefaultAggregation(program, shadow.getCurrencyCode()).getId());
     }
 
     /** The program's own scaffolding: it copies the backing account but holds no customer money. */
@@ -482,8 +491,11 @@ public class ShadowAccountService {
         
         UUID corporateId = program.getCorporateId();
         
-        // Find or create an AGGREGATION under ROOT for this program
-        VirtualAccount parentVa = findOrCreateDefaultAggregation(program);
+        // Find or create an AGGREGATION under ROOT for this program, in the bank account's own
+        // currency -- not the program's, which can differ.
+        String shadowCurrency = paRepository.findById(physicalAccountId)
+            .map(PhysicalAccount::getCurrencyCode).orElse(null);
+        VirtualAccount parentVa = findOrCreateDefaultAggregation(program, shadowCurrency);
         
         return createShadowAccount(physicalAccountId, parentVa.getId(), corporateId, programId);
     }
@@ -491,13 +503,30 @@ public class ShadowAccountService {
     /**
      * Find or create a default AGGREGATION node for shadow attachment.
      */
-    private VirtualAccount findOrCreateDefaultAggregation(Program program) {
+    /**
+     * Where a shadow hangs: the aggregation under the program's root that matches its currency.
+     *
+     * <p>This used to return {@code aggregations.get(0)} from an unordered query, with the comment
+     * "or could select by some criteria". Two faults in one line. The pick was not deterministic,
+     * because neither this query nor the root's has an ORDER BY, so the same call could return a
+     * different parent on a different day or a different database. And it ignored currency: FINAL
+     * IHB's root has three aggregation children, in USD, GBP and AED, so attaching an AED bank
+     * account had roughly a two-in-three chance of landing it under a USD or GBP container.
+     *
+     * <p>Currency first, then oldest, then number. The currency match is the real intent -- a shadow
+     * belongs in the subtree of the money it holds -- and the rest only decides between equals so
+     * that repeated calls agree.
+     */
+    VirtualAccount findOrCreateDefaultAggregation(Program program, String currency) {
         UUID corporateId = program.getCorporateId();
+        String wanted = currency != null ? currency : program.getCurrencyCode();
         
         // The program's own ROOT: findRootAccount(corporateId) returns the corporate's oldest,
-        // i.e. some other program's once the corporate has more than one.
+        // i.e. some other program's once the corporate has more than one. Ordered for the same reason
+        // as the aggregations below -- a program carrying two roots must still resolve the same one
+        // every time. (FINAL IHB carried three until the two that were never roots were retired.)
         VirtualAccount root = vaRepository.findByProgramIdAndAccountCategory(program.getId(), AccountCategory.ROOT)
-            .stream().findFirst().orElse(null);
+            .stream().min(STABLE_ORDER).orElse(null);
         if (root == null) {
             throw new BusinessException("ROOT VA not found. Initialize hierarchy first for program: " + 
                 program.getProgramCode());
@@ -508,8 +537,12 @@ public class ShadowAccountService {
             root.getId(), AccountCategory.AGGREGATION);
         
         if (!aggregations.isEmpty()) {
-            // Return first aggregation (or could select by some criteria)
-            return aggregations.get(0);
+            return aggregations.stream()
+                .filter(a -> wanted != null && wanted.equals(a.getCurrencyCode()))
+                .min(STABLE_ORDER)
+                // No container in that currency: fall back to a stable choice rather than an arbitrary
+                // one, so the placement is at least reproducible and reviewable.
+                .orElseGet(() -> aggregations.stream().min(STABLE_ORDER).orElseThrow());
         }
         
         // Create default AGGREGATION
@@ -521,7 +554,7 @@ public class ShadowAccountService {
             root.getId(),
             corporateId,
             program.getId(),
-            program.getCurrencyCode(),
+            wanted,
             null, // owningEntityId
             null  // owningEntityCode
         );
