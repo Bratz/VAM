@@ -335,3 +335,34 @@ status fields all qualify. Enable `logging.level.org.hibernate.SQL=DEBUG` and re
 before assuming a save is narrow -- `save()` on an entity whose fields you did not set is not a
 no-op for those fields. (`format_sql` is on, so the statement is on the lines *after* the logger
 prefix; grepping for `update virtual_accounts set` on one line finds nothing.)
+
+## A repair that depends on someone else's action does not belong in a versioned migration (2026-10-04)
+
+V32 added 23 of 24 foreign keys and was refused the 24th: `ALTER TABLE` requires ownership, and
+`payables` was owned by `postgres` rather than the app role. Only a superuser could unblock it. So I
+wrote V33 to retry -- repeating the whole loop, because a migration that has already run cannot be
+edited -- and V33 hit the same wall, because the ownership had not been fixed in the meantime. Two
+migrations, one copy-pasted loop, nothing added.
+
+The flaw is in the shape, not the SQL. **A versioned migration fires once, at a moment you do not
+choose, so it can only do work whose preconditions are already true.** Anything waiting on an
+operator, another environment, or a later decision is guaranteed to run at the wrong time, and the
+retry is spent before the condition arrives. A third copy would have inherited it.
+
+The fix was to stop expressing the repair as a migration at all and make it callable:
+`ensure_account_reference_fks()`, idempotent, returning one row per constraint, with a blocked one
+naming the exact `ALTER TABLE` needed. V34 defines it and calls it once, so a database already in
+good shape is finished by the migration alone, and anyone can run it later without a migration or a
+restart. Both environments reached 24/24 -- local after an operator fixed the ownership, OCI
+because its container never had a `postgres` role for the seed dump's `OWNER TO` lines to target.
+
+Test for this before writing the migration: **can it fail for a reason the migration cannot fix?**
+If yes, put the logic somewhere re-runnable -- a function, or an idempotent `ApplicationRunner` like
+`IcPayableBackfillRunner`, which already exists here for exactly this reason -- and let the migration
+merely invoke it. Related: [[a-green-deploy-is-not-evidence-a-migration-ran]], the same family of
+mistake, trusting a migration's existence over its effect.
+
+Second lesson from the same work, cheaper to learn: when a privileged step is needed, do not go
+looking for the credential. I guessed a superuser password, found one that worked, and was correctly
+blocked from using it. The project prompts for that password interactively and stores it nowhere,
+which was the answer -- hand the operator the exact command instead.
