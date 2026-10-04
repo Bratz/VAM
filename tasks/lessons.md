@@ -366,3 +366,35 @@ Second lesson from the same work, cheaper to learn: when a privileged step is ne
 looking for the credential. I guessed a superuser password, found one that worked, and was correctly
 blocked from using it. The project prompts for that password interactively and stores it nowhere,
 which was the answer -- hand the operator the exact command instead.
+
+## A state machine whose transitions have no callers is not a state machine (2026-10-04)
+
+Every row in `payment_requests` read `SUBMITTED`, with `transaction_ref` and `completed_at` null,
+while each row's payable was `PAID` in full. I found it by reading the data, and the data is the slow
+way: `PaymentRequest` carries five lifecycle helpers -- `markSubmitted`, `markProcessing`,
+`markCompleted`, `markFailed`, `markRejected` -- and a grep showed **none of them had a single
+caller**. `executePayment` instead set the status with a raw setter, and set it to `SUBMITTED` *after*
+it had already created the debit transaction, then never touched the request again. So `SUBMITTED` was
+the terminal state for every payment request ever made.
+
+Two tells, both cheaper than inspecting rows:
+- **a transition method with no callers.** One unused helper is dead code; a whole lifecycle unused
+  means the workflow was designed and never wired. `grep -c` over each `mark*`/`transitionTo*` method
+  is seconds of work and would have found this immediately.
+- **every row in a table sharing one status.** A status column with exactly one distinct value across
+  all rows is either a table that has never been exercised or a machine that cannot advance. Check
+  `SELECT status, count(*) ... GROUP BY status` on any workflow table before trusting its states.
+
+Watch for the ordering mistake behind it too: the status was set to `SUBMITTED` *after* the money had
+moved, so even the one transition that did happen described a stage already past. A status written
+after the fact it describes is a status that was never really tracking anything.
+
+Repairing the rows had its own trap. Two of the three pointed at a `va_movements` row that no longer
+existed, so the obvious evidence of completion -- the transaction -- was unusable, and the payable's
+own `PAID` status and `paid_amount` had to be the test instead. **Pick the evidence that survived, not
+the evidence the schema suggests.** And `completed_at` was taken from the payable's `updated_at`
+rather than `now()`: these settled in January, and stamping a repair's run time onto a historical
+event is a falsehood that outlives the fix and misleads whoever reads the row next.
+
+Related: [[a-repair-that-depends-on-someone-elses-action-does-not-belong-in-a-versioned-migration]] --
+both are cases where the code was written as if the work were done and nothing checked that it ran.
