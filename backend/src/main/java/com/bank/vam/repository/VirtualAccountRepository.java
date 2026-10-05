@@ -326,6 +326,16 @@ public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, 
     
     List<VirtualAccount> findByParentAccountIdAndAccountCategory(UUID parentAccountId, AccountCategory accountCategory);
 
+    // Settlement accounts are found by their mark, not by a category. They are ordinary TRANSACTION
+    // accounts now -- the category stopped answering "is this a settlement account" when the role moved
+    // onto its own field, so a query filtering accountCategory = 'SETTLEMENT' returns nothing and fails
+    // silently rather than loudly. These three replace exactly that filter.
+    List<VirtualAccount> findByCorporateIdAndSettlementMarkTrue(UUID corporateId);
+
+    List<VirtualAccount> findByProgramIdAndSettlementMarkTrue(UUID programId);
+
+    List<VirtualAccount> findByParentAccountIdAndSettlementMarkTrue(UUID parentAccountId);
+
     long countByParentAccountId(UUID parentAccountId);
     
     boolean existsByParentAccountId(UUID parentAccountId);

@@ -415,7 +415,7 @@ public class SettlementVaResolverService {
     /** The program's top-level settlement VA (no parent): the top of every account's path. */
     public Optional<VirtualAccount> findTopLevelSettlementVa(UUID programId, String currency) {
         if (programId == null || currency == null) return Optional.empty();
-        return vaRepository.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT).stream()
+        return vaRepository.findByProgramIdAndSettlementMarkTrue(programId).stream()
             .filter(va -> va.getParentAccountId() == null)
             .filter(va -> currency.equals(va.getCurrencyCode()) && va.getStatus() == VaStatus.ACTIVE)
             .findFirst();
@@ -490,7 +490,7 @@ public class SettlementVaResolverService {
     }
 
     public Optional<VirtualAccount> findSettlementVaByParent(UUID parentVaId, String currency) {
-        return vaRepository.findByParentAccountIdAndAccountCategory(parentVaId, AccountCategory.SETTLEMENT)
+        return vaRepository.findByParentAccountIdAndSettlementMarkTrue(parentVaId)
             .stream()
             .filter(va -> currency.equals(va.getCurrencyCode()))
             .filter(va -> va.getStatus() == VaStatus.ACTIVE)
@@ -951,15 +951,15 @@ public class SettlementVaResolverService {
      * Find existing Settlement VA for program and currency.
      *
      * REFACTORED v5.1.1: Simplified to use AccountCategory only.
-     * Naming conventions are fragile - AccountCategory.SETTLEMENT is the canonical identifier.
+     * Naming conventions are fragile - the settlement mark is the canonical identifier.
      *
      * Search order:
-     * 1. By AccountCategory.SETTLEMENT + programId + currency (primary)
+     * 1. By settlement mark + programId + currency (primary)
      * (specialType is derived from accountCategory, so there is no second search order)
      */
     public Optional<VirtualAccount> findSettlementVa(UUID programId, String currencyCode) {
-        // Primary: Find by AccountCategory.SETTLEMENT (catches ALL Settlement VAs regardless of naming)
-        Optional<VirtualAccount> byCategory = vaRepository.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT)
+        // Primary: find by the settlement mark (catches ALL settlement VAs regardless of naming)
+        Optional<VirtualAccount> byCategory = vaRepository.findByProgramIdAndSettlementMarkTrue(programId)
             .stream()
             .filter(va -> currencyCode.equals(va.getCurrencyCode()))
             .filter(va -> va.getStatus() == VaStatus.ACTIVE)
@@ -1019,7 +1019,7 @@ public class SettlementVaResolverService {
             return Optional.empty();
         }
 
-        return vaRepository.findByParentAccountIdAndAccountCategory(parentVaId, AccountCategory.SETTLEMENT)
+        return vaRepository.findByParentAccountIdAndSettlementMarkTrue(parentVaId)
             .stream()
             .filter(va -> currency.equals(va.getCurrencyCode()))
             .filter(va -> va.getStatus() == VaStatus.ACTIVE)
@@ -1139,7 +1139,8 @@ public class SettlementVaResolverService {
             
             // Classification - PURE VIRTUAL
             .accountType(AccountType.VIRTUAL)
-            .accountCategory(AccountCategory.SETTLEMENT)
+            .accountCategory(AccountCategory.TRANSACTION)
+            .settlementMark(true)
             
             // Hierarchy
             .parentAccountId(parentAccountId)

@@ -102,7 +102,8 @@ class SettlementVaResolverServiceTest {
 
         VirtualAccount settlementVa = resolver.provisionSettlementVa(programId, "GBP");
 
-        assertThat(settlementVa.getAccountCategory()).isEqualTo(VirtualAccount.AccountCategory.SETTLEMENT);
+        assertThat(settlementVa.getAccountCategory()).isEqualTo(VirtualAccount.AccountCategory.TRANSACTION);
+        assertThat(settlementVa.isSettlementVa()).isTrue();
         assertThat(settlementVa.getParentAccountId()).isNull();
         assertThat(settlementVa.getProgramId()).isEqualTo(programId);
         assertThat(settlementVa.getCorporateId()).isEqualTo(corporateId);

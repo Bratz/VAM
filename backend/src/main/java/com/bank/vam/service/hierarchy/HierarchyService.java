@@ -1373,7 +1373,8 @@ public class HierarchyService {
             .physicalAccountId(parentVa != null && parentVa.getPhysicalAccountId() != null
                 ? parentVa.getPhysicalAccountId() : program.getPhysicalAccountId())
             .currencyCode(currency)
-            .accountCategory(VirtualAccount.AccountCategory.SETTLEMENT)   // so settlement lookups find it
+            .accountCategory(VirtualAccount.AccountCategory.TRANSACTION)
+            .settlementMark(true)   // the mark is what settlement lookups find
             .parentAccountId(parentVa != null ? parentVa.getId() : null)
             .hierarchyLevel(parentVa != null && parentVa.getHierarchyLevel() != null
                 ? parentVa.getHierarchyLevel() + 1 : settlementNode.getLevelNumber())
@@ -1407,8 +1408,8 @@ public class HierarchyService {
             .flatMap(virtualAccountRepository::findById)
             .filter(va -> va.getStatus() == VirtualAccount.VaStatus.ACTIVE);
         if (viaNode.isPresent() || parentNode.getVirtualAccountId() == null) return viaNode;
-        return virtualAccountRepository.findByParentAccountIdAndAccountCategory(
-                parentNode.getVirtualAccountId(), VirtualAccount.AccountCategory.SETTLEMENT).stream()
+        return virtualAccountRepository.findByParentAccountIdAndSettlementMarkTrue(
+                parentNode.getVirtualAccountId()).stream()
             .filter(va -> currency.equals(va.getCurrencyCode()) && va.getStatus() == VirtualAccount.VaStatus.ACTIVE)
             .findFirst();
     }

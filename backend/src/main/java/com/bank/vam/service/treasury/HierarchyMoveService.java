@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * - Self-contained settlement resolution logic
  *
  * FIXED v5.1.1:
- * - Uses AccountCategory.SETTLEMENT instead of naming conventions (SETTLE- vs SETTLEMENT-)
+ * - Uses the settlement mark instead of naming conventions (SETTLE- vs SETTLEMENT-)
  * - Reuses existing Settlement VAs at destination instead of creating duplicates
  * - Closes orphaned Settlement VAs at source location when no siblings remain
  * - Transfers balances from orphaned Settlement VAs before closing
@@ -318,7 +318,7 @@ public class HierarchyMoveService {
             errors.add("ROOT cannot be moved. Use acquisition/merger operations.");
         } else if (category == AccountCategory.CURRENCY_MIRROR) {
             errors.add("CURRENCY_MIRROR is system-managed and cannot be moved.");
-        } else if (category == AccountCategory.SETTLEMENT) {
+        } else if (va.isSettlementVa()) {
             errors.add("SETTLEMENT VA cannot be moved independently. Move its parent AGGREGATION.");
         } else if (category == AccountCategory.EXCEPTION) {
             errors.add("EXCEPTION VA cannot be moved.");
@@ -479,14 +479,14 @@ public class HierarchyMoveService {
 
     /**
      * Find any Settlement VA under a parent for a specific currency.
-     * Uses AccountCategory.SETTLEMENT - the canonical identifier.
+     * Uses the settlement mark - the canonical identifier.
      *
      * @since v5.1.0
      */
     private Optional<VirtualAccount> findAnySettlementVaUnderParent(UUID parentId, String currency) {
         // Get ALL Settlement VAs under this parent by AccountCategory (not naming convention)
-        List<VirtualAccount> settlements = vaRepository.findByParentAccountIdAndAccountCategory(
-            parentId, AccountCategory.SETTLEMENT);
+        List<VirtualAccount> settlements = vaRepository.findByParentAccountIdAndSettlementMarkTrue(
+            parentId);
 
         // Find one that matches the currency and is ACTIVE
         return settlements.stream()

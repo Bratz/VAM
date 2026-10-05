@@ -458,7 +458,13 @@ public class ShadowAccountService {
             program.getId(), shadow.getLinkedPhysicalAccountId());
         // Customer accounts booked on this bank account would be left on cash another program
         // could then claim, so they block the removal.
-        if (booked.stream().anyMatch(va -> !STRUCTURAL.contains(va.getAccountCategory()))) {
+        // isSettlementVa() is tested alongside the set because a marked settlement account's category
+        // is TRANSACTION now, and dropping out of STRUCTURAL would quietly change what counts as
+        // customer money hanging under a shadow. Behaviour preserved deliberately: whether a settlement
+        // account holding real money should ever have counted as scaffolding is a separate question
+        // from moving the mark off the category.
+        if (booked.stream().anyMatch(va -> !STRUCTURAL.contains(va.getAccountCategory())
+                && !va.isSettlementVa())) {
             throw new BusinessException("Accounts in " + program.getProgramCode() + " are booked on bank account "
                 + shadow.getBankAccountNumber() + "; it cannot be removed from the program");
         }

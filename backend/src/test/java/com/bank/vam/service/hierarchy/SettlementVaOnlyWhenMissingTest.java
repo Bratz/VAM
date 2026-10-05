@@ -45,7 +45,7 @@ class SettlementVaOnlyWhenMissingTest {
         existing.setId(UUID.randomUUID());
         existing.setCurrencyCode("EUR");
         existing.setStatus(VirtualAccount.VaStatus.ACTIVE);
-        when(vas.findByParentAccountIdAndAccountCategory(parent.getVirtualAccountId(), VirtualAccount.AccountCategory.SETTLEMENT))
+        when(vas.findByParentAccountIdAndSettlementMarkTrue(parent.getVirtualAccountId()))
             .thenReturn(List.of(existing));
 
         assertThat(service.createSettlementVa(programId, parent.getId(), "EUR", null)).isSameAs(existing);
@@ -83,13 +83,21 @@ class SettlementVaOnlyWhenMissingTest {
         assertThat(created.getHierarchyLevel()).isEqualTo(3);
         assertThat(created.getHierarchyPathVa()).startsWith("/ROOT/EMEA/SETTLEMENT-EUR-");
         assertThat(created.getOwningEntityCode()).isEqualTo("ACME-UK");
-        assertThat(created.getAccountCategory()).isEqualTo(VirtualAccount.AccountCategory.SETTLEMENT);
+        // A settlement account is a marked transaction account now, so both halves are asserted:
+        // the category it is, and the role it additionally carries.
+        assertThat(created.getAccountCategory()).isEqualTo(VirtualAccount.AccountCategory.TRANSACTION);
+        assertThat(created.isSettlementVa()).isTrue();
     }
 
     @Test
     void systemCategoriesAreNotForTheGenericCreate() {
-        assertThat(VirtualAccount.AccountCategory.SETTLEMENT.isSystemCreated()).isTrue();
         assertThat(VirtualAccount.AccountCategory.EXCEPTION.isSystemCreated()).isTrue();
+        assertThat(VirtualAccount.AccountCategory.CURRENCY_MIRROR.isSystemCreated()).isTrue();
+        assertThat(VirtualAccount.AccountCategory.ROOT.isSystemCreated()).isTrue();
         assertThat(VirtualAccount.AccountCategory.TRANSACTION.isSystemCreated()).isFalse();
+        // SETTLEMENT deliberately is not system-created any more. A settlement account is an ordinary
+        // transaction account that has been marked, so the generic create path followed by the mark is
+        // the supported route in -- the side door this guard closed no longer exists.
+        assertThat(VirtualAccount.AccountCategory.SETTLEMENT.isSystemCreated()).isFalse();
     }
 }

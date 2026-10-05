@@ -36,7 +36,8 @@ class SettlementRoutingTest {
 
     private VirtualAccount va(AccountCategory category, UUID parentId) {
         VirtualAccount v = VirtualAccount.builder().vaNumber(category + "-" + UUID.randomUUID())
-            .accountCategory(category).parentAccountId(parentId).programId(programId)
+            .accountCategory(category == AccountCategory.SETTLEMENT ? AccountCategory.TRANSACTION : category)
+            .settlementMark(category == AccountCategory.SETTLEMENT).parentAccountId(parentId).programId(programId)
             .corporateId(UUID.randomUUID()).currencyCode("EUR").status(VirtualAccount.VaStatus.ACTIVE)
             .currentBalance(BigDecimal.ZERO).build();
         v.setId(UUID.randomUUID());
@@ -52,7 +53,7 @@ class SettlementRoutingTest {
         VirtualAccount deSettlement = va(AccountCategory.SETTLEMENT, de.getId());   // other branch
         when(vas.findById(root.getId())).thenReturn(Optional.of(root));
         when(vas.findById(uk.getId())).thenReturn(Optional.of(uk));
-        when(vas.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT)).thenReturn(List.of(deSettlement));
+        when(vas.findByProgramIdAndSettlementMarkTrue(programId)).thenReturn(List.of(deSettlement));
         when(vas.findSettlementVa(any(), any())).thenReturn(Optional.of(deSettlement));      // corporate-wide
         when(vas.save(any(VirtualAccount.class))).thenAnswer(i -> { VirtualAccount v = i.getArgument(0); if (v.getId() == null) v.setId(UUID.randomUUID()); return v; });
         when(exceptions.save(any(ExceptionTransaction.class))).thenAnswer(i -> i.getArgument(0));
@@ -69,7 +70,7 @@ class SettlementRoutingTest {
         VirtualAccount ukOps = va(AccountCategory.TRANSACTION, root.getId());
         VirtualAccount top = va(AccountCategory.SETTLEMENT, null);
         when(vas.findById(root.getId())).thenReturn(Optional.of(root));
-        when(vas.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT)).thenReturn(List.of(top));
+        when(vas.findByProgramIdAndSettlementMarkTrue(programId)).thenReturn(List.of(top));
 
         var result = resolver.resolveSettlementVaWithResult(ukOps, BigDecimal.TEN, null);
 
@@ -86,8 +87,8 @@ class SettlementRoutingTest {
         VirtualAccount deeperSettlement = va(AccountCategory.SETTLEMENT, deeper.getId());
         when(vas.findByParentAccountId(emea.getId())).thenReturn(List.of(uk));
         when(vas.findByParentAccountId(uk.getId())).thenReturn(List.of(ukSettlement, deeper));
-        when(vas.findByParentAccountIdAndAccountCategory(uk.getId(), AccountCategory.SETTLEMENT)).thenReturn(List.of(ukSettlement));
-        when(vas.findByParentAccountIdAndAccountCategory(deeper.getId(), AccountCategory.SETTLEMENT)).thenReturn(List.of(deeperSettlement));
+        when(vas.findByParentAccountIdAndSettlementMarkTrue(uk.getId())).thenReturn(List.of(ukSettlement));
+        when(vas.findByParentAccountIdAndSettlementMarkTrue(deeper.getId())).thenReturn(List.of(deeperSettlement));
 
         assertThat(resolver.findSettlementVaBelow(emea, "EUR")).contains(ukSettlement);   // closest level wins
     }
@@ -96,7 +97,7 @@ class SettlementRoutingTest {
     void bankChargesPostToTheProgramsSettlementVaOncePerStatementLine() {
         VirtualAccount top = va(AccountCategory.SETTLEMENT, null);
         top.setCurrentBalance(new BigDecimal("1000"));
-        when(vas.findByProgramIdAndAccountCategory(programId, AccountCategory.SETTLEMENT)).thenReturn(List.of(top));
+        when(vas.findByProgramIdAndSettlementMarkTrue(programId)).thenReturn(List.of(top));
         TransactionRepository txns = mock(TransactionRepository.class);
         when(txns.save(any(Transaction.class))).thenAnswer(i -> { Transaction t = i.getArgument(0); t.setId(UUID.randomUUID()); return t; });
         ReconciliationService reconciliation = new ReconciliationService(null, null, null, null,

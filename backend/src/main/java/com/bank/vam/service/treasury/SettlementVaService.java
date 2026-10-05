@@ -145,7 +145,8 @@ public class SettlementVaService {
             .physicalAccountId(parentVa.getPhysicalAccountId())
             // Classification
             .accountType(AccountType.VIRTUAL)
-            .accountCategory(AccountCategory.SETTLEMENT)
+            .accountCategory(AccountCategory.TRANSACTION)
+            .settlementMark(true)
             // Hierarchy
             .parentAccountId(parentVaId)
             .hierarchyLevel(hierarchyLevel)
@@ -192,8 +193,8 @@ public class SettlementVaService {
      * (SETTLE-xxx, SETTLEMENT-xxx, etc.) to prevent duplicate creation.
      */
     public Optional<VirtualAccount> findSettlementVaUnderParent(UUID parentVaId, String currency) {
-        List<VirtualAccount> settlements = vaRepository.findByParentAccountIdAndAccountCategory(
-            parentVaId, AccountCategory.SETTLEMENT);
+        List<VirtualAccount> settlements = vaRepository.findByParentAccountIdAndSettlementMarkTrue(
+            parentVaId);
 
         return settlements.stream()
             .filter(va -> currency.equals(va.getCurrencyCode()))
@@ -205,7 +206,7 @@ public class SettlementVaService {
      * Find all Settlement VAs for a corporate.
      */
     public List<VirtualAccount> findAllSettlementVas(UUID corporateId) {
-        return vaRepository.findByCorporateIdAndAccountCategory(corporateId, AccountCategory.SETTLEMENT);
+        return vaRepository.findByCorporateIdAndSettlementMarkTrue(corporateId);
     }
 
     /**
@@ -330,7 +331,8 @@ public class SettlementVaService {
             .physicalAccountId(siblingVa.getPhysicalAccountId())
             // Classification
             .accountType(AccountType.VIRTUAL)
-            .accountCategory(AccountCategory.SETTLEMENT)
+            .accountCategory(AccountCategory.TRANSACTION)
+            .settlementMark(true)
             // Hierarchy - Same parent as sibling transactional VA
             .parentAccountId(parentId)
             .hierarchyLevel(hierarchyLevel)

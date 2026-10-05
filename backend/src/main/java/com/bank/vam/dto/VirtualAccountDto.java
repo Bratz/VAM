@@ -803,6 +803,17 @@ public class VirtualAccountDto {
         private String accountType;
         private UUID parentAccountId;
 
+        /**
+         * Whether this account also serves as a settlement destination.
+         *
+         * <p>Separate from {@code accountCategory} on purpose. Settlement used to be a category value,
+         * which made a settlement account something other than a transaction account; it is a mark on
+         * an ordinary transaction account now, so {@code accountCategory} reads TRANSACTION and this is
+         * the only field that answers the question. A caller that still tests
+         * {@code accountCategory === 'SETTLEMENT'} will silently find nothing.
+         */
+        private Boolean settlementMark;
+
         // ====================================================================
         // AGGREGATED BALANCES (for AGGREGATION, ROOT, CURRENCY_MIRROR nodes)
         // ====================================================================

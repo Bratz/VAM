@@ -2893,6 +2893,7 @@ public class VirtualAccountService {
                 .owningEntityCode(va.getOwningEntityCode())
                 .accountCategory(va.getAccountCategory() != null ? va.getAccountCategory().name() : null)
                 .accountType(va.getAccountType() != null ? va.getAccountType().name() : null)
+                .settlementMark(va.isSettlementVa())
                 .parentAccountId(va.getParentAccountId())
                 // Aggregated balances (for hierarchy nodes)
                 .aggregatedBalance(va.getAggregatedBalance())

@@ -892,6 +892,29 @@ public class VirtualAccount extends BaseEntity {
     private String blockReason;
 
     /**
+     * Settlement mark: this account also serves as a settlement destination.
+     *
+     * <p>A role, not a kind. Settlement used to be an {@link AccountCategory} value, which made a
+     * settlement account something other than a transaction account -- so the currency mirror, which
+     * sums same-currency *transaction* siblings, skipped it. In FINAL IHB alone that left 12,024.52 of
+     * real balances outside every roll-up. The reference model is explicit that a settlement account
+     * *is* a transaction account carrying a mark, and this restores that: the category says what the
+     * account is, the mark says what it additionally does.
+     *
+     * <p>Deliberately not a repeat of {@code specialType}, which was removed for duplicating the
+     * category. That field answered the same question twice and the two drifted. This answers a
+     * different question, and neither value is derivable from the other -- which is exactly the test
+     * from tasks/lessons.md for when a property deserves its own field rather than a category value.
+     *
+     * <p>Setting and clearing it go through the two validated transitions, never a plain write: the
+     * rules are per-aggregation sibling uniqueness in a currency on the way in, and both release
+     * conditions on the way out.
+     */
+    @Column(name = "settlement_mark")
+    @Builder.Default
+    private Boolean settlementMark = false;
+
+    /**
      * Special type for internal treasury VAs -- DERIVED from {@link #accountCategory}, not stored.
      *
      * <p>It used to be a persisted column that had to be kept in step with the category by hand,
@@ -908,8 +931,12 @@ public class VirtualAccount extends BaseEntity {
         if (accountCategory == null) {
             return VaSpecialType.REGULAR;
         }
+        // The mark is checked first: a settlement account's category is TRANSACTION now, so the
+        // category alone can no longer answer this.
+        if (Boolean.TRUE.equals(settlementMark)) {
+            return VaSpecialType.SETTLEMENT;
+        }
         return switch (accountCategory) {
-            case SETTLEMENT -> VaSpecialType.SETTLEMENT;
             case EXCEPTION -> VaSpecialType.EXCEPTION;
             default -> VaSpecialType.REGULAR;
         };
@@ -1055,7 +1082,11 @@ public class VirtualAccount extends BaseEntity {
          * would add a duplicate without looking for the existing one.
          */
         public boolean isSystemCreated() {
-            return this == SETTLEMENT || this == EXCEPTION || this == CURRENCY_MIRROR || this == ROOT;
+            // SETTLEMENT is absent deliberately. It is no longer a category an account is created as:
+            // a settlement account is an ordinary transaction account that has been marked, so the
+            // generic create path followed by the mark is the supported route, and the side door this
+            // guard existed to close is gone.
+            return this == EXCEPTION || this == CURRENCY_MIRROR || this == ROOT;
         }
     }
 
@@ -1686,10 +1717,12 @@ public class VirtualAccount extends BaseEntity {
         this.kycVerifiedAt = LocalDateTime.now();
     }
 
-    // Settlement/Exception VA helpers. These used to OR the two markers together to paper over
-    // their disagreement; specialType is derived now, so the category alone is the answer.
+    // Settlement/Exception VA helpers. These used to OR specialType and accountCategory together to
+    // paper over their disagreement; specialType is derived now. Settlement then moved out of the
+    // category entirely and onto its own mark, so this is the one place that answers the question --
+    // call it rather than testing either field.
     public boolean isSettlementVa() {
-        return accountCategory == AccountCategory.SETTLEMENT;
+        return Boolean.TRUE.equals(settlementMark);
     }
 
     public boolean isExceptionVa() {
@@ -1697,15 +1730,17 @@ public class VirtualAccount extends BaseEntity {
     }
 
     public boolean isSystemVa() {
-        return accountCategory == AccountCategory.SETTLEMENT ||
+        return isSettlementVa() ||
                accountCategory == AccountCategory.EXCEPTION ||
                accountCategory == AccountCategory.SUSPENSE;
     }
 
     public boolean isRegularVa() {
-        // The old specialType half of this test is implied: a null or TRANSACTION category
-        // derives to REGULAR, so the category check alone is the same predicate.
-        return accountCategory == null || accountCategory == AccountCategory.TRANSACTION;
+        // The category alone is no longer the whole predicate. A settlement account's category is
+        // TRANSACTION now, so without the mark check every settlement account would read as regular --
+        // which is the opposite of what it was before the role moved off the category.
+        return !isSettlementVa()
+                && (accountCategory == null || accountCategory == AccountCategory.TRANSACTION);
     }
 
     // ========================================================================

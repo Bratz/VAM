@@ -3374,8 +3374,7 @@ public class TransactionService {
                 if (txn.getMovementType() == type) {
                     // Skip Settlement VA and Shadow VA entries
                     VirtualAccount va = virtualAccountRepository.findById(txn.getVaId()).orElse(null);
-                    if (va != null &&
-                        va.getAccountCategory() != AccountCategory.SETTLEMENT &&
+                    if (va != null && !va.isSettlementVa() &&
                         va.getAccountCategory() != AccountCategory.PHYSICAL_MIRROR) {
                         return txn;
                     }
@@ -3386,8 +3385,7 @@ public class TransactionService {
         // Fallback to first non-settlement transaction
         for (Transaction txn : allLegs) {
             VirtualAccount va = virtualAccountRepository.findById(txn.getVaId()).orElse(null);
-            if (va != null &&
-                va.getAccountCategory() != AccountCategory.SETTLEMENT &&
+            if (va != null && !va.isSettlementVa() &&
                 va.getAccountCategory() != AccountCategory.PHYSICAL_MIRROR) {
                 return txn;
             }
@@ -3566,7 +3564,7 @@ public class TransactionService {
                         va != null ? va.getVaNumber() : txn.getVaId());
                     continue;
                 }
-                if (accountCategory == VirtualAccount.AccountCategory.SETTLEMENT) {
+                if (va != null && va.isSettlementVa()) {
                     log.debug("Excluding Settlement VA {} from accounting entries (internal clearing)",
                         va != null ? va.getVaNumber() : txn.getVaId());
                     continue;
@@ -3596,8 +3594,8 @@ public class TransactionService {
                 .description(txn.getDescription())
                 .processingNotes(txn.getProcessingNotes())
                 .transactionDate(txn.getTransactionDate())
-                .isInternalAccount(accountCategory == VirtualAccount.AccountCategory.PHYSICAL_MIRROR ||
-                                   accountCategory == VirtualAccount.AccountCategory.SETTLEMENT)
+                .isInternalAccount(accountCategory == VirtualAccount.AccountCategory.PHYSICAL_MIRROR
+                                   || (va != null && va.isSettlementVa()))
                 .build());
         }
 

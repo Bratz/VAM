@@ -21,9 +21,20 @@ class VirtualAccountSpecialTypeTest {
         return VirtualAccount.builder().accountCategory(category).build();
     }
 
+    /** A settlement account as it exists now: an ordinary transaction account carrying the mark. */
+    private static VirtualAccount marked() {
+        return VirtualAccount.builder()
+                .accountCategory(AccountCategory.TRANSACTION)
+                .settlementMark(true)
+                .build();
+    }
+
     @Test
-    void settlementCategoryDerivesSettlementSpecialType() {
-        assertEquals(VaSpecialType.SETTLEMENT, withCategory(AccountCategory.SETTLEMENT).getSpecialType());
+    void theSettlementMarkDerivesSettlementSpecialType() {
+        // Settlement moved off the category and onto its own mark, so the mark is what this reads.
+        assertEquals(VaSpecialType.SETTLEMENT, marked().getSpecialType());
+        // and the category alone no longer says it: a marked account's category is TRANSACTION
+        assertEquals(AccountCategory.TRANSACTION, marked().getAccountCategory());
     }
 
     @Test
@@ -34,7 +45,7 @@ class VirtualAccountSpecialTypeTest {
     @Test
     void everyOtherCategoryDerivesRegular() {
         for (AccountCategory category : AccountCategory.values()) {
-            if (category == AccountCategory.SETTLEMENT || category == AccountCategory.EXCEPTION) {
+            if (category == AccountCategory.EXCEPTION) {
                 continue;
             }
             assertEquals(VaSpecialType.REGULAR, withCategory(category).getSpecialType(),
@@ -50,7 +61,8 @@ class VirtualAccountSpecialTypeTest {
     @Test
     void theTwoMarkersCanNoLongerDisagree() {
         // This is the defect the change exists to prevent: a VA that reads as settlement on one
-        // field and not the other. There is no setter any more, so the only way in is the category.
+        // field and not the other. specialType has no setter, so it cannot be set out of step --
+        // and settlement now has exactly one home, the mark.
         for (AccountCategory category : AccountCategory.values()) {
             VirtualAccount va = withCategory(category);
             assertEquals(va.getSpecialType() == VaSpecialType.SETTLEMENT, va.isSettlementVa(),
@@ -61,11 +73,20 @@ class VirtualAccountSpecialTypeTest {
     }
 
     @Test
-    void helpersStillClassifyTheSystemCategories() {
-        assertTrue(withCategory(AccountCategory.SETTLEMENT).isSystemVa());
+    void helpersStillClassifyTheSystemAccounts() {
+        assertTrue(marked().isSystemVa(), "a marked settlement account is still a system VA");
         assertTrue(withCategory(AccountCategory.SUSPENSE).isSystemVa());
         assertFalse(withCategory(AccountCategory.TRANSACTION).isSystemVa());
         assertTrue(withCategory(AccountCategory.TRANSACTION).isRegularVa());
-        assertFalse(withCategory(AccountCategory.SETTLEMENT).isRegularVa());
+        assertFalse(marked().isRegularVa());
+        // The category on its own carries no settlement meaning any more.
+        assertFalse(withCategory(AccountCategory.SETTLEMENT).isSettlementVa(),
+                "the bare category must not read as settlement -- the mark is the only source");
+    }
+
+    @Test
+    void anUnmarkedTransactionAccountIsNotSettlement() {
+        assertFalse(withCategory(AccountCategory.TRANSACTION).isSettlementVa());
+        assertEquals(VaSpecialType.REGULAR, withCategory(AccountCategory.TRANSACTION).getSpecialType());
     }
 }

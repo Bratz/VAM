@@ -51,7 +51,9 @@ class SettlementResultAccountTest {
     private static VirtualAccount va(String number, AccountCategory category, UUID parent) {
         VirtualAccount account = VirtualAccount.builder()
                 .vaNumber(number)
-                .accountCategory(category)
+                .accountCategory(category == AccountCategory.SETTLEMENT
+                        ? AccountCategory.TRANSACTION : category)
+                .settlementMark(category == AccountCategory.SETTLEMENT)
                 .parentAccountId(parent)
                 .currencyCode("AED")
                 .programId(UUID.randomUUID())
@@ -77,7 +79,7 @@ class SettlementResultAccountTest {
     void anAggregationSettlesOnTheSettlementVaBelowIt() {
         VirtualAccount agg = va("AGG-1", AccountCategory.AGGREGATION, UUID.randomUUID());
         VirtualAccount below = va("SETTLE-1", AccountCategory.SETTLEMENT, agg.getId());
-        when(vaRepository.findByParentAccountIdAndAccountCategory(agg.getId(), AccountCategory.SETTLEMENT))
+        when(vaRepository.findByParentAccountIdAndSettlementMarkTrue(agg.getId()))
                 .thenReturn(List.of(below));
 
         assertThat(resolver().settlementAccountForResultOn(agg)).isSameAs(below);
@@ -90,7 +92,7 @@ class SettlementResultAccountTest {
         VirtualAccount below = va("SETTLE-2", AccountCategory.SETTLEMENT, motherId);
         // Only the mother has a settlement child. Searching from the mirror itself finds nothing,
         // so this passing is what proves the start point is the mother.
-        when(vaRepository.findByParentAccountIdAndAccountCategory(motherId, AccountCategory.SETTLEMENT))
+        when(vaRepository.findByParentAccountIdAndSettlementMarkTrue(motherId))
                 .thenReturn(List.of(below));
 
         assertThat(resolver().settlementAccountForResultOn(mirror)).isSameAs(below);
@@ -102,9 +104,9 @@ class SettlementResultAccountTest {
         VirtualAccount child = va("AGG-2", AccountCategory.AGGREGATION, root.getId());
         VirtualAccount near = va("SETTLE-NEAR", AccountCategory.SETTLEMENT, root.getId());
         VirtualAccount deep = va("SETTLE-DEEP", AccountCategory.SETTLEMENT, child.getId());
-        when(vaRepository.findByParentAccountIdAndAccountCategory(root.getId(), AccountCategory.SETTLEMENT))
+        when(vaRepository.findByParentAccountIdAndSettlementMarkTrue(root.getId()))
                 .thenReturn(List.of(near));
-        when(vaRepository.findByParentAccountIdAndAccountCategory(child.getId(), AccountCategory.SETTLEMENT))
+        when(vaRepository.findByParentAccountIdAndSettlementMarkTrue(child.getId()))
                 .thenReturn(List.of(deep));
         when(vaRepository.findByParentAccountId(root.getId())).thenReturn(List.of(child, near));
 
@@ -130,7 +132,7 @@ class SettlementResultAccountTest {
         UUID grandparentId = UUID.randomUUID();
         VirtualAccount agg = va("AGG-4", AccountCategory.AGGREGATION, grandparentId);
         VirtualAccount above = va("SETTLE-ABOVE", AccountCategory.SETTLEMENT, grandparentId);
-        when(vaRepository.findByParentAccountIdAndAccountCategory(grandparentId, AccountCategory.SETTLEMENT))
+        when(vaRepository.findByParentAccountIdAndSettlementMarkTrue(grandparentId))
                 .thenReturn(List.of(above));
 
         VirtualAccount borne = resolver().settlementAccountForResultOn(agg);

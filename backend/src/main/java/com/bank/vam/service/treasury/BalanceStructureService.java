@@ -351,6 +351,12 @@ public class BalanceStructureService {
             }
             return AccountCategory.TRANSACTION;
         }
+        // The mark comes first: a settlement account's stored category is TRANSACTION now, so this
+        // view would otherwise stop distinguishing it. Derived at read time, so unlike the
+        // special_type column it replaced, it cannot drift from the mark it reports.
+        if (va.isSettlementVa()) {
+            return AccountCategory.SETTLEMENT;
+        }
         return switch (va.getAccountCategory()) {
             case ROOT -> AccountCategory.ROOT;
             case AGGREGATION -> AccountCategory.AGGREGATION;

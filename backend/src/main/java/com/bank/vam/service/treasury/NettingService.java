@@ -1108,7 +1108,7 @@ public class NettingService {
 
             // Priority 2: Main operating/settlement VA
             Optional<VirtualAccount> operatingVa = entityVas.stream()
-                .filter(va -> VirtualAccount.AccountCategory.SETTLEMENT == va.getAccountCategory() ||
+                .filter(va -> va.isSettlementVa() ||
                              VirtualAccount.AccountCategory.TRANSACTION == va.getAccountCategory())
                 .findFirst();
             if (operatingVa.isPresent()) {
@@ -1133,7 +1133,7 @@ public class NettingService {
 
             // Priority 2: Settlement VA
             Optional<VirtualAccount> settlementVa = entityVas.stream()
-                .filter(va -> VirtualAccount.AccountCategory.SETTLEMENT == va.getAccountCategory())
+                .filter(VirtualAccount::isSettlementVa)
                 .findFirst();
             if (settlementVa.isPresent()) {
                 return settlementVa.get();
