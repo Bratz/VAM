@@ -1604,6 +1604,30 @@ public class VirtualAccountController {
     }
 
     /**
+     * The same verdict for an account that does not exist yet, so the create screen can enable or
+     * explain the toggle before anything is written.
+     */
+    @GetMapping("/settlement/preview-placement")
+    @Operation(summary = "Preview the settlement mark for a placement",
+               description = "Whether a new operational account at this parent and currency could carry "
+                           + "the mark. Changes nothing.")
+    public ResponseEntity<ApiResponse<com.bank.vam.service.treasury.SettlementMarkService.MarkVerdict>>
+            previewSettlementPlacement(@RequestParam(required = false) UUID parentVaId,
+                                       @RequestParam(required = false) UUID parentNodeId,
+                                       @RequestParam(required = false) String currencyCode) {
+        // A create screen picks a hierarchy node, not an account, so accept either and resolve here --
+        // the caller should not have to know that the sibling rule is about accounts.
+        UUID effectiveParent = parentVaId;
+        if (effectiveParent == null && parentNodeId != null) {
+            effectiveParent = hierarchyNodeRepository.findById(parentNodeId)
+                .map(node -> node.getVirtualAccountId())
+                .orElse(null);
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+            settlementMarkService.previewPlacement(effectiveParent, currencyCode)));
+    }
+
+    /**
      * What each transition would do, so a screen can state the verdict before submit rather than after
      * a failed write. Applies nothing.
      */

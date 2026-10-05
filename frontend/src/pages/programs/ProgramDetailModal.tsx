@@ -376,8 +376,16 @@ export const ProgramDetailModal: React.FC<ProgramDetailModalProps> = ({ program,
                     ) : (
                       <Card padding="sm" className="text-center py-12">
                         <FolderTree className="w-8 h-8 text-neutral-300 mx-auto mb-3 dark:text-neutral-400" />
-                        <p className="text-neutral-500 mb-2 dark:text-neutral-400">No Settlement VAs created yet</p>
-                        <p className="caption">Settlement VAs are created when hierarchy nodes are added</p>
+                        <p className="text-neutral-500 mb-2 dark:text-neutral-400">No settlement accounts yet</p>
+                        {/* The old text claimed these appear when hierarchy nodes are added. They do
+                            not: TEST-ESCROW-NEW had a five-level hierarchy and none, which is how
+                            payments came to park in the exception account with nothing explaining why.
+                            A settlement account is an ordinary transaction account that someone marks. */}
+                        <p className="caption">
+                          A settlement account is a transaction account with the settlement mark set.
+                          Create one from Accounts, or mark an existing account, and results that
+                          cannot settle on their own account will settle there.
+                        </p>
                       </Card>
                     )}
 

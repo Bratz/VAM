@@ -15,7 +15,7 @@ import type { LucideIcon } from 'lucide-react';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigation } from '../hooks/useNavigation';
-import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil } from 'lucide-react';
+import { Search, Plus, Filter, Download, Eye, X, ChevronLeft, ChevronRight, Building2, RefreshCw, Loader2, CreditCard, CheckCircle, PauseCircle, Clock, Ban, Play, ArrowUpRight, ArrowDownRight, Layers, Hash, Banknote, GitBranch, Coins, ChevronRight as ChevronRightIcon, FolderTree, AlertTriangle, FileText, Activity, Copy, MoreHorizontal, XCircle, Shield, Briefcase, Pencil, Landmark } from 'lucide-react';
 import { Card, Button, Badge, Input, EmptyState, Skeleton, Drawer, StatusIconBadge, DataTable } from '../components/ui';
 import type { Column } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
@@ -46,6 +46,14 @@ type DetailTab = 'overview' | 'statements' | 'activity';
 
 interface VirtualAccount {
   id: string;
+  /**
+   * Whether this account also serves as a settlement destination.
+   *
+   * Not part of accountCategory. Settlement used to be a category value, which made a settlement
+   * account something other than a transaction account; it is a mark on an ordinary transaction
+   * account now, so accountCategory reads TRANSACTION and this is the only field that says otherwise.
+   */
+  settlementMark?: boolean;
   vaNumber: string;
   viban?: string;
   vaName: string;
@@ -224,6 +232,12 @@ const api = {
       fetchApi<VirtualAccount[]>(`/virtual-accounts/search?query=${encodeURIComponent(query)}&page=${page}&size=${size}`),
     updateStatus: (id: string, status: VaStatus, reason?: string) => 
       fetchApi<VirtualAccount>(`/virtual-accounts/${id}/status?status=${status}${reason ? `&reason=${encodeURIComponent(reason)}` : ''}`, { method: 'PATCH' }),
+    // Two validated transitions rather than a category write. Clearing is refused while anything still
+    // depends on the mark, and the refusal names what would be stranded in each search direction.
+    markAsSettlement: (id: string) =>
+      fetchApi<VirtualAccount>(`/virtual-accounts/${id}/settlement`, { method: 'POST', body: '{}' }),
+    clearSettlementMark: (id: string) =>
+      fetchApi<VirtualAccount>(`/virtual-accounts/${id}/settlement`, { method: 'DELETE' }),
     getStats: (corporateId?: string, programId?: string) => {
       let url = '/virtual-accounts/stats';
       const params = [];
@@ -854,9 +868,11 @@ interface AccountDetailPanelProps {
   onClose: () => void;
   onEdit: (a: VirtualAccount) => void;
   onStatusChange: (id: string, status: VaStatus, reason?: string) => void;
+  /** Set or clear the settlement mark; the page owns the refresh. */
+  onSettlementMarkChange: (id: string, mark: boolean) => void;
 }
 
-const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClose, onEdit, onStatusChange }) => {
+const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClose, onEdit, onStatusChange, onSettlementMarkChange }) => {
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const [statement, setStatement] = useState<Statement | null>(null);
   const [stmtLoading, setStmtLoading] = useState(false);
@@ -942,9 +958,27 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
           </Button>
         )}
       </div>
-      <Button onClick={() => onEdit(account)}>
-        <Pencil className="w-4 h-4 mr-1" /> Edit Account
-      </Button>
+      <div className="flex gap-2">
+        {/* The settlement mark is a role on a transaction account, so it belongs with the account's own
+            actions rather than behind a category edit. Only an operational account can carry it, and
+            clearing is refused while anything still depends on it -- the server names what would be
+            stranded, in both search directions. */}
+        {(account.accountCategory === 'TRANSACTION'
+          || account.accountCategory === 'COLLECTION'
+          || account.accountCategory === 'DISBURSEMENT') && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onSettlementMarkChange(account.id, !account.settlementMark)}
+          >
+            <Landmark className="w-4 h-4 mr-1" />
+            {account.settlementMark ? 'Clear settlement mark' : 'Mark as settlement'}
+          </Button>
+        )}
+        <Button onClick={() => onEdit(account)}>
+          <Pencil className="w-4 h-4 mr-1" /> Edit Account
+        </Button>
+      </div>
     </div>
   );
 
@@ -1580,6 +1614,26 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
     toast.success('Account created successfully');
   };
 
+  const handleSettlementMarkChange = async (id: string, mark: boolean) => {
+    try {
+      const res = mark
+        ? await api.virtualAccounts.markAsSettlement(id)
+        : await api.virtualAccounts.clearSettlementMark(id);
+      if (res.success && res.data) {
+        setAccounts(p => p.map(a => (a.id === id ? res.data : a)));
+        if (selectedAccount?.id === id) setSelectedAccount(res.data);
+        toast.success(mark ? 'Settlement mark set' : 'Settlement mark cleared');
+      } else {
+        // The server's reason is the useful part: it names which accounts would be left with nowhere
+        // to settle, and in which direction. Long, so give it room rather than truncating it.
+        toast.error(res.message || 'Could not change the settlement mark', { duration: 8000 });
+      }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || 'Could not change the settlement mark',
+        { duration: 8000 });
+    }
+  };
+
   const handleStatusChange = async (id: string, status: VaStatus, reason?: string) => {
     try {
       const res = await api.virtualAccounts.updateStatus(id, status, reason);
@@ -1891,6 +1945,7 @@ const VirtualAccountsPage: React.FC<VirtualAccountsPageProps> = ({ onNavigate: _
           onClose={() => setSelectedAccount(null)}
           onEdit={(a) => { setSelectedAccount(null); setEditAccount(a); }}
           onStatusChange={handleStatusChange}
+          onSettlementMarkChange={handleSettlementMarkChange}
         />
       )}
 

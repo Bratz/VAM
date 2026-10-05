@@ -249,6 +249,37 @@ public class SettlementMarkService {
         }
     }
 
+    /**
+     * Whether an account that does not exist yet could carry the mark at a chosen placement.
+     *
+     * <p>A create screen needs the verdict before submit, but {@link #preview(UUID)} needs an id. The
+     * only rule that can refuse a brand-new operational account is sibling uniqueness, because the
+     * category is known to be permitted and nothing depends on it yet -- so this answers exactly that,
+     * for a parent and a currency, and reads nothing else.
+     */
+    @Transactional(readOnly = true)
+    public MarkVerdict previewPlacement(UUID parentVaId, String currencyCode) {
+        List<String> blockers = new ArrayList<>();
+        if (parentVaId != null && currencyCode != null) {
+            vaRepository.findByParentAccountIdAndSettlementMarkTrue(parentVaId).stream()
+                .filter(sibling -> currencyCode.equals(sibling.getCurrencyCode()))
+                .findFirst()
+                .ifPresent(clash -> blockers.add(clash.getVaNumber()
+                    + " already carries the mark for " + clash.getCurrencyCode()
+                    + " under the same parent"));
+        }
+        return MarkVerdict.builder()
+            .vaId(null)
+            .vaNumber(null)
+            .currentlyMarked(false)
+            .canSet(blockers.isEmpty())
+            .canClear(false)
+            .setBlockers(blockers)
+            .clearBlockers(List.of())
+            .strandedIfCleared(List.of())
+            .build();
+    }
+
     // ------------------------------------------------------------------------
 
     private VirtualAccount load(UUID vaId) {

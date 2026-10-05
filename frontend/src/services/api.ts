@@ -252,6 +252,15 @@ export interface VirtualAccount {
   status: string;
   walletType?: string;
   accountCategory?: AccountCategory;
+  /**
+   * Whether this account also serves as a settlement destination.
+   *
+   * Separate from accountCategory on purpose: settlement used to be a category value, so a settlement
+   * account was not a transaction account. It is a mark on an ordinary transaction account now, which
+   * means accountCategory reads TRANSACTION and this is the only field that answers the question.
+   * Testing accountCategory === 'SETTLEMENT' silently finds nothing.
+   */
+  settlementMark?: boolean;
   parentAccountId?: string;
   hierarchyLevel?: number;
   createdAt: string;
@@ -296,6 +305,18 @@ interface UnpublishVaRequest {
   reason: string;
 }
 
+/** The server's answer to "could this be marked, could it be cleared, and who depends on it". */
+export interface SettlementMarkVerdict {
+  vaId?: string;
+  vaNumber?: string;
+  currentlyMarked: boolean;
+  canSet: boolean;
+  canClear: boolean;
+  setBlockers: string[];
+  clearBlockers: string[];
+  strandedIfCleared: Array<{ vaId: string; vaNumber: string; currencyCode: string; direction: 'CONTRA' | 'RESULT' }>;
+}
+
 export const virtualAccountsApi = {
   getAll: (page = 0, size = 20, corporateId?: string) =>
     apiClient.get<ApiResponse<VirtualAccount[]>>('/virtual-accounts', { params: { page, size, corporateId } }).then(r => r.data),
@@ -304,6 +325,16 @@ export const virtualAccountsApi = {
   create: (data: any) => apiClient.post<ApiResponse<VirtualAccount>>('/virtual-accounts', data).then(r => r.data),
   update: (id: string, data: any) => apiClient.put<ApiResponse<VirtualAccount>>(`/virtual-accounts/${id}`, data).then(r => r.data),
   getStats: () => apiClient.get<ApiResponse<any>>('/virtual-accounts/stats').then(r => r.data),
+
+  // Settlement mark: two validated transitions and a preview, not a writable category. The server
+  // runs the resolver over the hypothetical state, so a refusal names the accounts that would be left
+  // with nowhere to settle rather than just saying no.
+  markAsSettlement: (id: string) =>
+    apiClient.post<ApiResponse<VirtualAccount>>(`/virtual-accounts/${id}/settlement`, {}).then(r => r.data),
+  clearSettlementMark: (id: string) =>
+    apiClient.delete<ApiResponse<VirtualAccount>>(`/virtual-accounts/${id}/settlement`).then(r => r.data),
+  previewSettlementMark: (id: string) =>
+    apiClient.get<ApiResponse<SettlementMarkVerdict>>(`/virtual-accounts/${id}/settlement/preview`).then(r => r.data),
 
   // Phase 1: Publish/Unpublish methods (Published VA = Has VIBAN for external payments)
   publish: (id: string, request?: PublishVaRequest) =>

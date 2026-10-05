@@ -18,8 +18,8 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { CreditCard, ChevronRight, CheckCircle, Loader2, Building2, GitBranch, Layers, XCircle } from 'lucide-react';
-import { Button, Badge, Input, StatusIconBadge } from '../components/ui';
+import { CreditCard, ChevronRight, CheckCircle, Loader2, Building2, GitBranch, Layers, XCircle, Landmark } from 'lucide-react';
+import { Button, Badge, Input, StatusIconBadge, Checkbox } from '../components/ui';
 import { PurposeSelect, CurrencyFieldWithMirrorHint, CreationSideEffectsNote } from '../components/va/createShared';
 import { HierarchyTreePicker, PlacementSelection } from '../components/va/HierarchyTreePicker';
 import { Modal, Alert } from '../components/ui/enhanced';
@@ -90,6 +90,12 @@ export interface VaResponse {
   status: string;
   parentAccountId?: string;
   hierarchyPathVa?: string;
+}
+
+/** What POST/DELETE /virtual-accounts/{id}/settlement would do, from the preview endpoints. */
+export interface SettlementMarkVerdict {
+  canSet: boolean;
+  setBlockers: string[];
 }
 
 export interface VaCreateModalProps {
@@ -386,6 +392,10 @@ interface VaDetailsStepProps {
   onOwningEntityChange: (id: string) => void;
   /** Resolved dimension values, in level order — the placement preview. */
   placement: string[];
+  settlementMark: boolean;
+  onSettlementMarkChange: (on: boolean) => void;
+  /** Null while the placement or currency has not been resolved yet. */
+  markVerdict: SettlementMarkVerdict | null;
   errors: Record<string, string>;
 }
 
@@ -403,6 +413,9 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
   owningEntityId,
   onOwningEntityChange,
   placement,
+  settlementMark,
+  onSettlementMarkChange,
+  markVerdict,
   errors,
 }) => {
   return (
@@ -474,6 +487,26 @@ const VaDetailsStep: React.FC<VaDetailsStepProps> = ({
         <PurposeSelect value={accountPurpose} onChange={onPurposeChange} />
       </div>
 
+      {/* Settlement mark — a role on this transaction account, not a different kind of account.
+          The verdict comes from the server for the chosen placement, because the rule is about
+          siblings: one settlement account per currency under a parent, no more. */}
+      <Checkbox
+        variant="card"
+        checked={settlementMark}
+        disabled={markVerdict ? !markVerdict.canSet : false}
+        onChange={onSettlementMarkChange}
+        label={
+          <span className="flex items-center gap-1.5">
+            <Landmark className="h-3.5 w-3.5" aria-hidden="true" />
+            Settlement account
+          </span>
+        }
+        description="Results and contra legs that cannot settle on their own account will settle here."
+        error={markVerdict && !markVerdict.canSet
+          ? `Not available at this placement: ${markVerdict.setBlockers.join('; ')}`
+          : undefined}
+      />
+
       {/* External Reference */}
       <div>
         <label className="field-label block mb-1">
@@ -524,6 +557,13 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
   // Hierarchy dimension values: { "L1": "AED", "L2": "NORTH", ... }
   const [placementSel, setPlacementSel] = useState<PlacementSelection | null>(null);
 
+  // Settlement mark: asked for here, applied after the account exists. The verdict is the server's,
+  // fetched for the chosen placement so the toggle is refused before submit rather than after a
+  // failed write.
+  const [settlementMark, setSettlementMark] = useState(false);
+  const [markVerdict, setMarkVerdict] = useState<SettlementMarkVerdict | null>(null);
+
+
   // VA Details — currency + owning entity mirror the hierarchy-tree create
   // modal (Path 2): foreign-currency VAs are supported end-to-end (backend
   // auto-creates currency mirrors), so the currency is a choice, not a lock.
@@ -540,6 +580,28 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
     const filteredArray = Array.isArray(filteredPrograms) ? filteredPrograms : [];
     return programsArray.find(p => p.id === selectedProgramId) || filteredArray.find(p => p.id === selectedProgramId);
   }, [programs, filteredPrograms, selectedProgramId]);
+
+  // A new branch has no parent account yet, so nothing can clash and the mark is always available.
+  // An existing node does, and the server resolves it to the account the sibling rule is about.
+  useEffect(() => {
+    const currency = currencyCode || selectedProgram?.currencyCode || '';
+    if (!placementSel || !currency) { setMarkVerdict(null); return; }
+    if (!placementSel.parentNodeId) {
+      setMarkVerdict({ canSet: true, setBlockers: [] });
+      return;
+    }
+    let cancelled = false;
+    fetchApi<SettlementMarkVerdict>(
+      `/virtual-accounts/settlement/preview-placement?parentNodeId=${placementSel.parentNodeId}`
+      + `&currencyCode=${encodeURIComponent(currency)}`
+    ).then((verdict) => {
+      if (cancelled || !verdict) return;
+      setMarkVerdict(verdict);
+      // Clear a toggle the placement has just made impossible, so submit cannot carry a stale yes.
+      if (!verdict.canSet) setSettlementMark(false);
+    });
+    return () => { cancelled = true; };
+  }, [placementSel, currencyCode, selectedProgram?.currencyCode]);
 
   // Reset on open
   useEffect(() => {
@@ -716,7 +778,24 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
         : await postApi<VaResponse>('/virtual-accounts/with-dimensions', { ...common, hierarchyDimensions: placementSel?.dimensionValues });
 
       if (result.success && result.data) {
-        toast.success(`Created Transaction VA: ${result.data.vaNumber}`);
+        // The mark is a second call on purpose: it is a transition with its own validation, not a
+        // field on create. The account is already real if this is refused, so say so plainly rather
+        // than implying the whole create failed.
+        let markApplied = true;
+        if (settlementMark) {
+          const marked = await postApi<VaResponse>(
+            `/virtual-accounts/${result.data.id}/settlement`, {});
+          markApplied = marked.success;
+          if (!markApplied) {
+            toast.error(`Created ${result.data.vaNumber}, but the settlement mark was refused: `
+              + (marked.message || 'unknown reason'));
+          }
+        }
+        if (markApplied) {
+          toast.success(settlementMark
+            ? `Created settlement account: ${result.data.vaNumber}`
+            : `Created Transaction VA: ${result.data.vaNumber}`);
+        }
         onSuccess(result.data);
         onClose();
       } else {
@@ -846,6 +925,9 @@ export const VaCreateModal: React.FC<VaCreateModalProps> = ({
               owningEntityId={owningEntityId}
               onOwningEntityChange={setOwningEntityId}
               placement={placementSel?.pathLabels || []}
+              settlementMark={settlementMark}
+              onSettlementMarkChange={setSettlementMark}
+              markVerdict={markVerdict}
               errors={errors}
             />
           )}
