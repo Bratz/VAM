@@ -72,6 +72,7 @@ public class VirtualAccountController {
     private final ProgramRepository programRepository;
     private final HierarchyNodeRepository hierarchyNodeRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final com.bank.vam.service.treasury.SettlementMarkService settlementMarkService;
 
     // ========================================================================
     // LIST & SEARCH ENDPOINTS (Enhanced with Response DTOs)
@@ -1557,5 +1558,61 @@ public class VirtualAccountController {
 
         // Optional: Whether to inherit program defaults
         private Boolean inheritProgramDefaults;
+    }
+
+    // ========================================================================
+    // SETTLEMENT MARK
+    // ========================================================================
+
+    /**
+     * Two transitions and a preview, rather than a writable category.
+     *
+     * <p>A settlement account is an ordinary transaction account carrying a mark, so this is the route
+     * in: create the account normally, then mark it. The category itself stays read-only -- opening it
+     * up would make every pair of categories a legal move, each with its own structural invariant, and
+     * a wrong category is how money came to be stranded in accounts no total could see.
+     *
+     * <p>Both transitions validate by running the resolver over the hypothetical state, not by
+     * restating its rules, and refusals are blocking: an account left unable to resolve parks its next
+     * payment to the exception account with no signal.
+     */
+    @PostMapping("/{id}/settlement")
+    @Operation(summary = "Mark a virtual account as a settlement account",
+               description = "Requires an operational category and no marked sibling in the same "
+                           + "currency under the same parent.")
+    public ResponseEntity<ApiResponse<VirtualAccountDto.Response>> markAsSettlement(@PathVariable UUID id) {
+        log.info("POST /api/v1/virtual-accounts/{}/settlement", id);
+        VirtualAccount marked = settlementMarkService.set(id);
+        return ResponseEntity.ok(ApiResponse.success(
+            virtualAccountService.getByIdWithDetails(marked.getId()),
+            "Settlement mark set on " + marked.getVaNumber()));
+    }
+
+    /**
+     * Clears the mark, or refuses and says which accounts would be stranded and in which direction.
+     */
+    @DeleteMapping("/{id}/settlement")
+    @Operation(summary = "Clear the settlement mark",
+               description = "Refused while any account would be left with nowhere to settle. The two "
+                           + "release conditions are evaluated and reported separately.")
+    public ResponseEntity<ApiResponse<VirtualAccountDto.Response>> clearSettlementMark(@PathVariable UUID id) {
+        log.info("DELETE /api/v1/virtual-accounts/{}/settlement", id);
+        VirtualAccount cleared = settlementMarkService.clear(id);
+        return ResponseEntity.ok(ApiResponse.success(
+            virtualAccountService.getByIdWithDetails(cleared.getId()),
+            "Settlement mark cleared on " + cleared.getVaNumber()));
+    }
+
+    /**
+     * What each transition would do, so a screen can state the verdict before submit rather than after
+     * a failed write. Applies nothing.
+     */
+    @GetMapping("/{id}/settlement/preview")
+    @Operation(summary = "Preview setting or clearing the settlement mark",
+               description = "Returns whether each transition is allowed, why not, and which accounts "
+                           + "would stop resolving if the mark were cleared. Changes nothing.")
+    public ResponseEntity<ApiResponse<com.bank.vam.service.treasury.SettlementMarkService.MarkVerdict>>
+            previewSettlementMark(@PathVariable UUID id) {
+        return ResponseEntity.ok(ApiResponse.success(settlementMarkService.preview(id)));
     }
 }

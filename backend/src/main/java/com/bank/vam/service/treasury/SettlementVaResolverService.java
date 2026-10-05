@@ -109,7 +109,9 @@ public class SettlementVaResolverService {
      * transaction accounts beneath it -- this set is not the place to patch it; the category would
      * have to split into "is a shadow" and "is a container" first.
      */
-    private static final Set<AccountCategory> CONTAINER_CATEGORIES = EnumSet.of(
+    // Package-private so SettlementMarkService can ask "which accounts settle downward" from the one
+    // definition rather than keeping a second copy that would drift from this one.
+    static final Set<AccountCategory> CONTAINER_CATEGORIES = EnumSet.of(
         AccountCategory.ROOT, AccountCategory.AGGREGATION, AccountCategory.CURRENCY_MIRROR);
 
     // ========================================================================
