@@ -97,3 +97,27 @@ extn.161-33-9-182.sslip.io {
 		format console
 	}
 }
+
+iiagent.161-33-9-182.sslip.io {
+	reverse_proxy iiagent-api:9001
+	log {
+		output stdout
+		format console
+	}
+}
+
+iiagent-mcp.161-33-9-182.sslip.io {
+	reverse_proxy iiagent-mcp:8082
+	log {
+		output stdout
+		format console
+	}
+}
+
+iiagent-sse.161-33-9-182.sslip.io {
+	reverse_proxy iiagent-mcp:8084
+	log {
+		output stdout
+		format console
+	}
+}
