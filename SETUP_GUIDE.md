@@ -178,7 +178,7 @@ Run these SQL commands:
 
 ```sql
 -- Create the database user
-CREATE USER vam_user WITH PASSWORD 'vam_secure_password_123';
+CREATE USER vam_user WITH PASSWORD 'vam_user123';
 
 -- Create the database
 CREATE DATABASE vam_db OWNER vam_user;
@@ -252,7 +252,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/vam_db
     username: vam_user
-    password: vam_secure_password_123
+    password: ${DB_PASSWORD:vam_user123}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -629,7 +629,7 @@ services:
     environment:
       POSTGRES_DB: vam_db
       POSTGRES_USER: vam_user
-      POSTGRES_PASSWORD: vam_secure_password_123
+      POSTGRES_PASSWORD: vam_user123
     ports:
       - "5432:5432"
     volumes:
@@ -665,7 +665,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       DATABASE_URL: jdbc:postgresql://postgres:5432/vam_db
       DATABASE_USERNAME: vam_user
-      DATABASE_PASSWORD: vam_secure_password_123
+      DATABASE_PASSWORD: vam_user123
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:

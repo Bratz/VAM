@@ -121,8 +121,16 @@ Choices: check prereqs, set up DB/backend/frontend, start all, Docker setup.
 ### Option B — Manual, three terminals
 
 **1. Database** (one-time setup as `postgres` superuser):
+
+> The password here must match what the backend authenticates with, which is
+> `spring.datasource.password` in `backend/src/main/resources/application.yml` —
+> `${DB_PASSWORD:vam_user123}`. That default is the single source of truth; this
+> file previously named a different literal, which created a `vam_user` the app
+> could not log in as and failed with `password authentication failed for user
+> "vam_user"`. Set `DB_PASSWORD` to use anything else, in both places.
+
 ```sql
-CREATE USER vam_user WITH PASSWORD 'vam_secure_password_123';
+CREATE USER vam_user WITH PASSWORD 'vam_user123';   -- or $DB_PASSWORD
 CREATE DATABASE vam_db OWNER vam_user;
 GRANT ALL PRIVILEGES ON DATABASE vam_db TO vam_user;
 \c vam_db

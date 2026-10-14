@@ -133,7 +133,7 @@ echo -- VAM Database Setup > setup_db.sql
 echo DO $$ >> setup_db.sql
 echo BEGIN >> setup_db.sql
 echo     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'vam_user') THEN >> setup_db.sql
-echo         CREATE USER vam_user WITH PASSWORD 'vam_secure_password_123'; >> setup_db.sql
+echo         CREATE USER vam_user WITH PASSWORD 'vam_user123'; >> setup_db.sql
 echo     END IF; >> setup_db.sql
 echo END >> setup_db.sql
 echo $$; >> setup_db.sql
