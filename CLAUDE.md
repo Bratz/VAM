@@ -101,7 +101,11 @@ Corporate Digital Banking platform built on a Virtual Account Management core. F
 - `database/migrations/` — hand-maintained duplicate of the above; kept in sync, never executed on its own
 - `database/seed/` — seed data scripts
 - `docs/` — architecture references
-- `vam-enhanced/` — parallel/enhanced variant of the same project (treat as alternate copy; verify before editing both)
+- `tasks/` — `todo.md`, `lessons.md`, design notes
+- `mcp-gateway/`, `file-ingest-agent-service/`, `defect-fix-service/` — sibling services, each with
+  its own pom and Dockerfile; `deploy/oci/docker-compose.yml` builds them with the repo root as
+  context, so a new top-level directory lands in every image's build context
+- `deploy/oci/` — docker-compose + Caddy for the OCI VM
 
 ---
 
@@ -232,5 +236,4 @@ docker-compose logs -f backend
 - Server context path is `/api` — frontend talks to `http://localhost:8080/api` (Vite proxy in `vite.config.ts`).
 - Flyway is enabled (`spring.flyway.enabled: true`, baselined at V13) and auto-applies `backend/src/main/resources/db/migration/*.sql` on every startup — **not** `database/migrations/*.sql`, which is a hand-kept duplicate that never runs on its own. See "How to Start the Application" above. A new migration must not redefine a column/table an `@Entity` also maps; that stays on `hibernate.ddl-auto: update`.
 - If you change `application.yml` profiles, mirror env vars in `.env` / `docker-compose.yml`.
-- Two parallel project trees exist (`./` and `./vam-enhanced/`). Before editing, confirm which tree the user means — don't blindly edit both.
 - Redis is optional in dev; comment out the Redis block in `application.yml` if not running it.

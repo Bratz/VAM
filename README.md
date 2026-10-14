@@ -148,51 +148,30 @@ Components:
 ## 📁 Project Structure
 
 ```
-vam-enhanced/
-├── database/
-│   └── schema.sql              # Enhanced PostgreSQL schema
-│
-├── backend/src/main/java/com/bank/vam/
-│   ├── model/
-│   │   ├── entity/
-│   │   │   ├── KyccRecord.java        # KYCC entity
-│   │   │   ├── EscrowContract.java    # Escrow entity
-│   │   │   ├── EscrowMilestone.java   # Milestone entity
-│   │   │   ├── WalletProgram.java     # Wallet program entity
-│   │   │   ├── WalletAccount.java     # Wallet account entity
-│   │   │   └── BancsSyncQueue.java    # Sync queue entity
-│   │   ├── dto/
-│   │   │   ├── KyccDto.java
-│   │   │   ├── EscrowDto.java
-│   │   │   └── WalletDto.java
-│   │   └── enums/
-│   │       ├── EscrowStatus.java
-│   │       ├── KyccVerificationStatus.java
-│   │       ├── SyncOperationType.java
-│   │       └── SyncStatus.java
-│   │
-│   ├── service/
-│   │   ├── KyccService.java           # KYCC business logic
-│   │   ├── EscrowService.java         # Escrow business logic
-│   │   ├── WalletService.java         # Wallet business logic
-│   │   ├── BancsHealthMonitor.java    # Health monitoring
-│   │   ├── BancsSyncQueueService.java # Queue management
-│   │   └── BancsSyncProcessor.java    # Background sync
-│   │
-│   ├── integration/
-│   │   └── BancsIntegrationService.java # Enhanced with fallback
-│   │
-│   ├── controller/
-│   │   ├── KyccController.java
-│   │   ├── EscrowController.java
-│   │   ├── WalletController.java
-│   │   └── BancsSyncController.java   # Admin endpoints
-│   │
-│   └── repository/
-│       └── AllRepositories.java       # JPA repositories
-│
-└── docs/
-    └── ARCHITECTURE.md
+backend/                        # Spring Boot service (com.bank.vam)
+  src/main/java/com/bank/vam/
+    entity/ repository/ service/ controller/   # the core; treasury/ and
+    iso20022/ ai/copilot/ mcp/                 # hierarchy/ hold most of it
+  src/main/resources/
+    application.yml
+    db/migration/               # Flyway SQL -- the copy that actually runs
+
+frontend/                       # Vite + React + TypeScript
+  src/pages/ components/ services/ design-system/
+
+database/
+  migrations/                   # hand-kept duplicate of db/migration; never runs alone
+  seed/                         # seed data
+  dump/                         # pre-baked dump the OCI deploy restores from
+
+mcp-gateway/                    # MCP gateway service
+file-ingest-agent-service/      # file ingest agent
+defect-fix-service/             # defect fix service
+
+deploy/oci/                     # docker-compose + Caddy for the OCI VM
+scripts/                        # operational scripts
+docs/                           # architecture references
+tasks/                          # todo.md, lessons.md, design notes
 ```
 
 ## 🚀 API Endpoints

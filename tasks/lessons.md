@@ -243,9 +243,11 @@ The repo keeps a byte-identical copy in both places, synced by hand, with no bui
 The migration deployed green and changed nothing.
 - **New migrations go in `backend/src/main/resources/db/migration/`.** Copy to `database/migrations/`
   to keep the pair in sync, but only the classpath one executes.
-- A duplicated source tree with no generator is the actual defect. Same shape as `vam-enhanced/`:
-  when two directories must agree and nothing enforces it, assume they have already diverged, and
-  check which one the runtime reads rather than which one the docs name.
+- A duplicated source tree with no generator is the actual defect. `vam-enhanced/` was the same
+  shape and has since been deleted -- it turned out to be frozen at the repo's initial commit, 368
+  commits stale, referenced by nothing. When two directories must agree and nothing enforces it,
+  assume they have already diverged, and check which one the runtime reads rather than which one
+  the docs name.
 - Diagnose "deployed but no effect" by first proving the *code* is live, then the data. Here the
   settlement panel for TEST-IHB-NEW had gone empty, which proved the previous commit's code had
   shipped -- so a green deploy with unchanged data could only mean Flyway never saw the file.
