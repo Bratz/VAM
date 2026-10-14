@@ -6,66 +6,98 @@ import { apiClient } from '../../services/api';
 /**
  * The routing step, in each state it can actually be in.
  *
- * <p>The component fetches, so the stories swap the shared axios adapter for a canned one. The
- * payloads are uc05's own shape -- snake_case, naive local times -- for the same reason the backend
- * records are: one vocabulary, and a drift shows up as a visibly empty field rather than as a
- * plausible wrong number.
+ * <p>The component fetches, so the stories swap the shared axios adapter for a canned one.
+ *
+ * <p>**The payloads are transcribed from a live uc05**, not invented: a quote for 10,000 USD to SG
+ * and one for 5,000 GBP domestic, taken from `GET /routing/quote` with route data loaded. Route ids,
+ * names, charges, the on-time estimates and their margins, the exclusion reasons and the learner's
+ * own feature names (`route:corr_usd_3`, `family:correspondent|amount`, `corridor:SG`) are all as it
+ * returned them. Earlier versions of this file used made-up values and drifted from the real service
+ * in ways that only showed up when something was finally pointed at it -- `floor` is 0.95 and the
+ * route sheet is version 6, where the invented fixtures said 0.9 and 7.
  */
 
-const ARRIVAL = '2026-10-15T11:30:00';
-const DEADLINE = '2026-10-15T17:00:00';
+const ARRIVAL = '2026-10-15T09:30:00';
+const DEADLINE = '2026-10-16T01:00:20';
 
-const why = {
+/** Real explainability terms for corr_usd_3, as the learner returned them. */
+const WHY_CORR_3 = {
   on_time: {
-    prior: 0.91,
-    estimate: 0.9412,
-    margin: 0.0233,
-    top: [['corridor_sg', 0.0182], ['amount_band_high', -0.0041]] as [string, number][],
-    rest: 0.0012,
+    prior: 0.98, estimate: 0.9829, margin: 0.0164,
+    top: [
+      ['route:corr_usd_3', 0.0315],
+      ['family:correspondent|amount', -0.0243],
+      ['route:corr_usd_3|corridor:SG', -0.0114],
+      ['corridor:SG', 0.0109],
+      ['bias', -0.0091],
+    ] as [string, number][],
+    rest: 0.0053,
   },
   deduction: {
-    prior: 22, estimate: 18, margin: 4.1,
-    top: [['charge_bearer_sha', -3.2]] as [string, number][], rest: 0.8,
+    prior: 3.0, estimate: 6.1328, margin: 1.3118,
+    top: [
+      ['family:correspondent', 2.1759],
+      ['route:corr_usd_3', 1.3215],
+      ['bias', 1.0098],
+      ['family:correspondent|amount', -0.7369],
+      ['corridor:SG', -0.5648],
+    ] as [string, number][],
+    rest: -0.0727,
   },
-  fail: { prior: 0.009, estimate: 0.0071, margin: 0.004, top: [] as [string, number][], rest: 0 },
+  fail: {
+    prior: 0.02, estimate: 0.01, margin: 0.0131,
+    top: [
+      ['route:corr_usd_3', -0.0279],
+      ['bias', 0.0109],
+      ['corridor:SG', -0.01],
+    ] as [string, number][],
+    rest: 0.001,
+  },
 };
 
-const THREE_OPTIONS = {
+/** 10,000 USD to SG, by_when +30h. Three options, five routes excluded. */
+const USD_TO_SG = {
   asked: {
-    currency: 'USD', amount: 250000, destination: 'SG',
-    at: '2026-10-14T09:30:00', by_when: DEADLINE, charge_bearer: 'SHA',
+    currency: 'USD', amount: 10000, destination: 'SG',
+    at: '2026-10-14T19:00:20', by_when: DEADLINE, charge_bearer: 'SHA',
   },
   options: [
     {
-      rank: 1, labels: ['cheapest'], route: 'batch_usd_sg', name: 'ACH via SCB Singapore',
-      kind: 'batch', charge: 12.5, parts: 1, send: '2026-10-14T18:00:00', arrival: ARRIVAL,
-      minutes_to_spare: 330, expected_deduction: 0, on_time: 0.9122, on_time_margin: 0.0311,
-      failure: 0.0094, expected_total: 12.5, proven: true, why,
+      rank: 1, labels: ['cheapest', 'surest'], route: 'corr_usd_3',
+      name: 'Correspondent USD 3', kind: 'correspondent',
+      charge: 42.0, parts: 1, send: '2026-10-15T08:00:00', arrival: ARRIVAL,
+      minutes_to_spare: 930, expected_deduction: 6.13,
+      on_time: 0.9829, on_time_margin: 0.0164, failure: 0.01,
+      expected_total: 49.03, proven: true, why: WHY_CORR_3,
     },
     {
-      rank: 2, labels: ['fastest', 'surest'], route: 'rtgs_usd', name: 'Fedwire Funds',
-      kind: 'rtgs', charge: 42.5, parts: 1, send: '2026-10-14T10:00:00',
-      arrival: '2026-10-14T14:15:00', minutes_to_spare: 1605, expected_deduction: 0,
-      on_time: 0.9841, on_time_margin: 0.0104, failure: 0.0021, expected_total: 42.5,
-      proven: true, why,
+      rank: 2, labels: ['fastest'], route: 'mto_1', name: 'Operator 1', kind: 'operator',
+      charge: 73.0, parts: 1, send: '2026-10-14T19:00:20', arrival: '2026-10-14T19:30:20',
+      minutes_to_spare: 1770, expected_deduction: 0.0,
+      on_time: 0.9605, on_time_margin: 0.0171, failure: 0.0372,
+      expected_total: 77.47, proven: true, why: WHY_CORR_3,
     },
     {
-      rank: 3, labels: [], route: 'correspondent_usd_sg', name: 'Correspondent via DBS',
-      kind: 'correspondent', charge: 31, parts: 2, send: '2026-10-14T11:00:00',
-      arrival: '2026-10-15T15:45:00', minutes_to_spare: 75, expected_deduction: 18,
-      on_time: 0.8402, on_time_margin: 0.0712, failure: 0.0183, expected_total: 49,
-      // the learner is not confident here, and the card has to say so
-      proven: false, why,
+      // the learner is not confident on this one, and the card has to say so
+      rank: 3, labels: [], route: 'corr_usd_1', name: 'Correspondent USD 1',
+      kind: 'correspondent',
+      charge: 50.0, parts: 1, send: '2026-10-15T08:00:00', arrival: '2026-10-15T10:00:00',
+      minutes_to_spare: 900, expected_deduction: 8.58,
+      on_time: 0.9609, on_time_margin: 0.0226, failure: 0.0099,
+      expected_total: 59.63, proven: false, why: WHY_CORR_3,
     },
   ],
   none: null,
   considered: 5,
   excluded: [
-    { route: 'instant_usd', name: 'RTP', reason: 'above the scheme limit for this amount' },
-    { route: 'stablecoin_usdc', name: 'USDC', reason: 'the corridor is not enabled for this corporate' },
+    { route: 'mto_3', name: 'Operator 3', reason: 'corridor not served' },
+    { route: 'card_visa_direct', name: 'Visa Direct', reason: 'beneficiary not reachable by card' },
+    { route: 'card_mc_send', name: 'Mastercard Send', reason: 'beneficiary not reachable by card' },
+    { route: 'token_usd', name: 'Tokenised-deposit network (USD)', reason: 'beneficiary not reachable by token' },
+    { route: 'stable_usdx', name: 'Stablecoin (USDX) with local off-ramp', reason: 'corridor not served' },
   ],
-  floor: 0.9,
-  sheet_version: 7,
+  floor: 0.95,
+  sheet_version: 6,
   destination_known: true,
 };
 
@@ -85,7 +117,7 @@ function withAdapter(adapter: AxiosAdapter) {
 const args = {
   fromVaId: '2f4b1c8e-0000-4000-8000-000000000001',
   currency: 'USD',
-  amount: 250000,
+  amount: 10000,
   creditorBic: 'SCBLSGSGXXX',
   chargeBearer: 'SHA',
   purposeCode: 'SUPP',
@@ -101,9 +133,9 @@ const meta: Meta<typeof PaymentRouteOptions> = {
 export default meta;
 type Story = StoryObj<typeof PaymentRouteOptions>;
 
-/** Three options with their labels, charges, arrivals and the two excluded routes. */
+/** Three options with their labels, charges and arrivals, and five routes excluded. */
 export const ThreeOptions: Story = {
-  decorators: [withAdapter(serve({ quotable: true, note: null, quote: THREE_OPTIONS }))],
+  decorators: [withAdapter(serve({ quotable: true, note: null, quote: USD_TO_SG }))],
 };
 
 /** A corridor the learner has no data of its own for: same figures, weaker evidence, said out loud. */
@@ -111,17 +143,36 @@ export const UnknownCorridor: Story = {
   decorators: [
     withAdapter(serve({
       quotable: true, note: null,
-      quote: { ...THREE_OPTIONS, destination_known: false },
+      quote: {
+        ...USD_TO_SG,
+        asked: { ...USD_TO_SG.asked, destination: 'ZW' },
+        destination_known: false,
+      },
     })),
   ],
 };
 
-/** uc05 considered the routes and offered none. Its reason is shown, not an empty list. */
+/**
+ * uc05 considered the routes and offered none. Its own words, from a 250,000 USD ask that
+ * exceeded what the routes' accounts could cover.
+ */
 export const NothingEligible: Story = {
+  args: { ...args, amount: 250000 },
   decorators: [
     withAdapter(serve({
       quotable: true, note: null,
-      quote: { ...THREE_OPTIONS, options: [], none: 'no eligible route', considered: 0 },
+      quote: {
+        ...USD_TO_SG,
+        asked: { ...USD_TO_SG.asked, amount: 250000 },
+        options: [],
+        none: 'more than its account may hold',
+        considered: 0,
+        excluded: [
+          { route: 'corr_usd_1', name: 'Correspondent USD 1', reason: 'too late for the by-when' },
+          { route: 'mto_2', name: 'Operator 2', reason: 'would need more than 5 parts' },
+          { route: 'mto_3', name: 'Operator 3', reason: 'corridor not served' },
+        ],
+      },
     })),
   ],
 };
@@ -147,17 +198,37 @@ export const RoutingUnavailable: Story = {
   ],
 };
 
-/** Domestic: no beneficiary country in the BIC, so no destination goes to uc05. */
+/**
+ * Domestic GBP: no beneficiary country in the BIC, so no destination goes to uc05 and
+ * destination_known comes back null. Instant payments take all three labels at once.
+ */
 export const Domestic: Story = {
-  args: { ...args, currency: 'GBP', creditorBic: '' },
+  args: { ...args, currency: 'GBP', amount: 5000, creditorBic: '' },
   decorators: [
     withAdapter(serve({
       quotable: true, note: null,
       quote: {
-        ...THREE_OPTIONS,
-        asked: { ...THREE_OPTIONS.asked, currency: 'GBP', destination: null },
-        destination_known: null,
+        asked: {
+          currency: 'GBP', amount: 5000, destination: null,
+          at: '2026-10-14T19:01:19', by_when: '2026-10-16T01:01:19', charge_bearer: 'SHA',
+        },
+        options: [
+          {
+            rank: 1, labels: ['cheapest', 'fastest', 'surest'], route: 'instant_gbp',
+            name: 'Instant payments (GBP)', kind: 'instant',
+            charge: 0.05, parts: 1,
+            send: '2026-10-14T19:01:19', arrival: '2026-10-14T19:01:19',
+            minutes_to_spare: 1800, expected_deduction: 0.0,
+            on_time: 0.9956, on_time_margin: 0.0089, failure: 0.0014,
+            expected_total: 0.05, proven: true, why: WHY_CORR_3,
+          },
+        ],
+        none: null,
+        considered: 2,
         excluded: [],
+        floor: 0.95,
+        sheet_version: 6,
+        destination_known: null,
       },
     })),
   ],

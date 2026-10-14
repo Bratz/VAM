@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * and a null charge reads as a free payment rather than as a bug. A rename on either side fails
  * here instead of showing someone a wrong number.
  *
- * <p>Honest about what it proves: it checks these records against uc05's source as read, not
- * against a running uc05. The first call to a live instance is still the real test.
+ * <p>The figures are transcribed from a live uc05, not invented -- `floor` 0.95, route sheet
+ * version 6, and the learner's own feature names. An earlier version of this file made them up
+ * and had both numbers wrong, which is the quieter half of the same drift this test exists to
+ * catch: a fixture nobody has checked against the real service tests only the author's memory.
  */
 class PaymentRoutingClientBindingTest {
 
@@ -81,8 +83,8 @@ class PaymentRoutingClientBindingTest {
                   "reason": "above the scheme limit for this amount"
                 }
               ],
-              "floor": 0.9,
-              "sheet_version": 7,
+              "floor": 0.95,
+              "sheet_version": 6,
               "destination_known": true
             }
             """;
@@ -96,10 +98,10 @@ class PaymentRoutingClientBindingTest {
         // naive local times: uc05 keeps the route data in local time and sends no offset
         assertThat(quote.asked().byWhen()).isEqualTo(LocalDateTime.of(2026, 10, 15, 17, 0));
         assertThat(quote.considered()).isEqualTo(4);
-        assertThat(quote.sheetVersion()).isEqualTo(7);
+        assertThat(quote.sheetVersion()).isEqualTo(6);
         assertThat(quote.destinationKnown()).isTrue();
         assertThat(quote.none()).isNull();
-        assertThat(quote.floor()).isEqualTo(0.9);
+        assertThat(quote.floor()).isEqualTo(0.95);
 
         assertThat(quote.hasOptions()).isTrue();
         var option = quote.options().get(0);
@@ -135,7 +137,7 @@ class PaymentRoutingClientBindingTest {
                            "at": "2026-10-14T09:30:00", "by_when": "2026-10-14T10:00:00",
                            "charge_bearer": "OUR"},
                  "options": [], "none": "no eligible route", "considered": 0, "excluded": [],
-                 "floor": 0.9, "sheet_version": 7, "destination_known": null}
+                 "floor": 0.95, "sheet_version": 6, "destination_known": null}
                 """;
 
         Quote quote = mapper.readValue(json, Quote.class);
@@ -151,10 +153,10 @@ class PaymentRoutingClientBindingTest {
         // uc05 is a live project; it must be able to add a field without taking VAM down.
         String json = """
                 {"asked": null, "options": [], "none": null, "considered": 0, "excluded": [],
-                 "floor": 0.9, "sheet_version": 7, "destination_known": null,
+                 "floor": 0.95, "sheet_version": 6, "destination_known": null,
                  "something_uc05_added_later": {"nested": [1, 2, 3]}}
                 """;
 
-        assertThat(mapper.readValue(json, Quote.class).sheetVersion()).isEqualTo(7);
+        assertThat(mapper.readValue(json, Quote.class).sheetVersion()).isEqualTo(6);
     }
 }

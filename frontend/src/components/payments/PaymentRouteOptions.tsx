@@ -307,7 +307,9 @@ export const PaymentRouteOptions: React.FC<Props> = ({
                     </div>
                     <div>
                       <p className="label">On time</p>
-                      <p className="body-strong">{Math.round(option.on_time * 100)}%</p>
+                      {/* floor, not round: an on_time of 0.9956 rounds to "100%", which claims a
+                          certainty the learner is not offering. Only exactly 1.0 may read as 100%. */}
+                      <p className="body-strong">{Math.floor(option.on_time * 100)}%</p>
                       <p className="caption">±{Math.round(option.on_time_margin * 100)} pts</p>
                     </div>
                     <div>
