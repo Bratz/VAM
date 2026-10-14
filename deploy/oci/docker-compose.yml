@@ -121,6 +121,22 @@ services:
       # all, so no bank account could back any of its programs.
       VAM_MARKET_PROFILE: UAE
       VAM_HOME_BANK_BIC: EBILAEADXXX
+      # Intelligent payment routing. uc05's compose attaches to THIS project's network
+      # (`networks.default.name: oci_default, external: true` in uc05-liquidity-demo's
+      # deploy/oci/docker-compose.yml), so the container is reachable by service name --
+      # no TLS, no Caddy hop, no egress. The public host uc05.161-33-9-182.sslip.io is
+      # the same service and is for people, not for this.
+      #
+      # The path ends at /api/v1 because that is where uc05 mounts its router
+      # (`app.include_router(routing, prefix="/api/v1")`); PaymentRoutingClient appends
+      # /routing/quote. Unset, routing is simply off and the payment screens fall back to
+      # choosing a channel by hand -- which is what the deployed app was doing, reporting
+      # "Routing is not configured in this environment".
+      #
+      # If uc05 is not running on this VM, leave it unset rather than pointing it
+      # somewhere hopeful: the breaker opens after 5 failed calls either way, but an unset
+      # value says so immediately and costs nothing.
+      VAM_ROUTING_BASE_URL: ${VAM_ROUTING_BASE_URL:-http://uc05-api:8060/api/v1}
       # Treasury automation, on or off (see config/SchedulingConfig).
       # `echo 'VAM_SCHEDULING_ENABLED=false' >> .env` + `up -d` parks it: no sweeps,
       # no IHB interest accrual, no limit resets, no shadow refresh, no VIBAN cooling

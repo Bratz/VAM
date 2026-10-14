@@ -317,6 +317,8 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   // Fee preview state
   const [feePreview, setFeePreview] = useState<TransferPreviewResponse | PaymentPreviewResponse | null>(null);
   const [loadingFees, setLoadingFees] = useState(false);
+  // the last quote could not be refreshed; the figures shown are the previous ones
+  const [feeStale, setFeeStale] = useState(false);
 
   // Fetch fee preview when source, destination, and amount are filled
   useEffect(() => {
@@ -344,9 +346,14 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           });
           setFeePreview(result.data || result);
         }
+        setFeeStale(false);
       } catch (error) {
         console.error('Failed to fetch fee preview:', error);
-        setFeePreview(null);
+        // Keep the last quote rather than blanking it. Nulling it here swapped a full fee
+        // breakdown for the single line "Calculating fees..." on any transient failure, and
+        // this panel is sticky inside a grid row, so the whole sidebar lurched. The figures
+        // are marked stale instead, which says the same thing without moving anything.
+        setFeeStale(true);
       } finally {
         setLoadingFees(false);
       }
@@ -587,11 +594,24 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
           <div className="bg-surface-page border border-edge rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between text-body-sm">
               <span className="text-neutral-600 font-medium dark:text-neutral-300">Fees & Total</span>
-              {loadingFees && <Loader2 className="w-3 h-3 animate-spin text-neutral-400" />}
+              {/* both markers live in the slot the spinner already occupied, so neither
+                  state changes this panel's height */}
+              {loadingFees ? (
+                <Loader2 className="w-3 h-3 animate-spin text-neutral-400" />
+              ) : feeStale ? (
+                <AlertTriangle
+                  className="w-3 h-3 text-warning-500"
+                  aria-label="Could not refresh fees; showing the last quote"
+                />
+              ) : null}
             </div>
 
             {feePreview ? (
-              <div className="space-y-2">
+              <div
+                className={`space-y-2 transition-opacity ${
+                  loadingFees || feeStale ? 'opacity-50' : ''
+                }`}
+              >
                 {/* Fee breakdown for internal transfers */}
                 {'feeBreakdown' in feePreview && feePreview.feeBreakdown && (
                   <>
