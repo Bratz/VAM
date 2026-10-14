@@ -40,7 +40,18 @@ jobs:
           script: |
             set -e
             cd ~/VAM
-            git pull origin main
+            # fetch + reset, not pull: this checkout exists only to be deployed from, so it
+            # should always *be* origin/main rather than try to reconcile with it. `git pull`
+            # merges, and a merge needs a strategy the moment the histories differ -- which
+            # they did the first time a commit was amended after being pushed. Every deploy
+            # from then on died on `fatal: Need to specify how to reconcile divergent
+            # branches`, leaving the VM silently pinned to the last commit that landed before
+            # the rewrite while CI went red in a way that looked like a build problem.
+            # This also covers anything committed by hand on the VM, which would wedge it the
+            # same way. Nothing here is worth keeping: the tree is disposable, the images are
+            # built from it, and the data lives in volumes.
+            git fetch origin main
+            git reset --hard FETCH_HEAD
             cd deploy/oci
             # Prune BEFORE building as well as after: the post-build prune below
             # only runs on success, so once the disk fills, the build fails, the
