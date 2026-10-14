@@ -168,6 +168,16 @@ public class Iso20022PaymentDto {
         // Service level
         @Builder.Default
         private String serviceLevel = "SEPA";  // SEPA, NURG, URGP
+
+        /**
+         * The route the corporate chose, when the routing step was used.
+         *
+         * <p>Only the id: the route itself, its charge and its arrival were already recorded and
+         * re-verified by PaymentRoutingService.select, and a client re-asserting them here would be
+         * a second, weaker source for the same facts. Null means the payment was not routed, which
+         * is every payment made before this existed and every one in a currency uc05 cannot quote.
+         */
+        private UUID routeSelectionId;
     }
 
     @Data

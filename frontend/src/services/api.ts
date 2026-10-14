@@ -7973,6 +7973,8 @@ export interface Iso20022OutwardPaymentRequest {
   behalfOfVaId?: string;
   instructionPriority?: 'NORM' | 'HIGH';
   serviceLevel?: 'SEPA' | 'NURG' | 'URGP';
+  /** The route chosen in the routing step, when one was. */
+  routeSelectionId?: string;
 }
 
 interface Iso20022OutwardPaymentResponse {

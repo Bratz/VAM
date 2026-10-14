@@ -398,3 +398,38 @@ event is a falsehood that outlives the fix and misleads whoever reads the row ne
 
 Related: [[a-repair-that-depends-on-someone-elses-action-does-not-belong-in-a-versioned-migration]] --
 both are cases where the code was written as if the work were done and nothing checked that it ran.
+
+---
+
+## L11 — "that would be a big lift" is a claim, and claims about the environment are cheap to check
+
+Verifying the uc05 routing integration, I decided the real uc05 was too much work to start — it needs
+its own Postgres, an alembic migration and loaded route data — so I built a stub of its one endpoint,
+wired VAM to that, and reported the result. The user asked, reasonably, "why a stub?"
+
+uc05 has a `.venv`, a `.env` and a `.claude/launch.json`. It came up in **six seconds**:
+`./.venv/Scripts/python.exe -m uvicorn uc05.api.main:app --port 8060`. The whole premise was wrong,
+and I never spent the one command it would have taken to find out.
+
+The stub was worse than slower — it was **weaker evidence shaped like strong evidence**. It answered
+with my own reading of `quote.py`, so every field matched because I had written both sides. Against
+the real service, the figures that actually came back were different in ways a stub could never have
+shown: `floor` is 0.95 not 0.9, `sheet_version` is 6 not 7, large amounts are refused with "more than
+its account may hold", and the `why` payload carries real feature names like `route:corr_usd_3` and
+`family:correspondent|amount`. A test whose fixtures I invented confirms my assumptions; only the real
+dependency can contradict them.
+
+The rule: **before standing up a fake, spend one command finding out whether the real thing runs.**
+Look for a venv, a lockfile, a `launch.json`, a compose file, a `Makefile`. "It needs a database" is a
+hypothesis — the database is often already there, already migrated, already seeded. Reach for a stub
+when the real dependency is genuinely unreachable (a third party, a paid API, a service that does not
+exist yet), not when reaching it is merely unmeasured.
+
+Same session, same shape: I reported the local Postgres password as stale and the local schema as
+behind on migrations. The password *was* stale in `CLAUDE.md`, but the schema was at V40 and current —
+I had carried an old belief forward instead of checking it. **An environment fact you learned earlier
+in a session is not a fact you still know.**
+
+Related: [[a-green-deploy-is-not-evidence-a-migration-applied]] — both are about accepting a signal
+that resembles proof in place of the proof itself.
+

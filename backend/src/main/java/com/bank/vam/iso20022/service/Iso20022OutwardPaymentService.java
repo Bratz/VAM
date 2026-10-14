@@ -7,6 +7,7 @@ import com.bank.vam.exception.BusinessException;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.util.Iso20022XmlBuilder;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.service.PaymentRoutingService;
 import com.bank.vam.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,6 +60,7 @@ import java.util.*;
 public class Iso20022OutwardPaymentService {
 
     private final TransactionService transactionService;
+    private final PaymentRoutingService paymentRoutingService;
     private final VirtualAccountRepository virtualAccountRepository;
     private final Iso20022XmlBuilder xmlBuilder;
 
@@ -118,6 +120,13 @@ public class Iso20022OutwardPaymentService {
             } else {
                 // Standard Payment - delegate to TransactionService.makePayment()
                 txn = processStandardPaymentViaTransactionService(request);
+            }
+
+            // Every path above converges here, so the route is linked in one place rather than in
+            // each of the three. The selection was recorded before the payment was submitted --
+            // the transaction id is the half that only exists now.
+            if (request.getRouteSelectionId() != null) {
+                paymentRoutingService.attachToTransaction(request.getRouteSelectionId(), txn.getId());
             }
 
             // Generate pain.001 XML

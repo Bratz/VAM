@@ -16,6 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building2, Loader2, CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Download, Plus, FileCode, ChevronRight, Globe, Trash2, Copy, TrendingUp, Wallet, CreditCard, Users, X, Briefcase, UserCheck, Search, Eye, BookOpen, FileText, Hash, Calendar, DollarSign, ArrowRightLeft } from 'lucide-react';
 import { Card, Button, Badge, Input, Select , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal, Stepper } from '../components/ui/enhanced';
+import { PaymentRouteOptions } from '../components/payments/PaymentRouteOptions';
 import { formatCurrency, formatRelativeTime, cn } from '../utils';
 import {
   transactionsApi,
@@ -1622,6 +1623,10 @@ export default function TransfersPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // The route the corporate chose, once the backend has re-quoted and accepted it. Null means the
+  // payment goes out unrouted, which is every payment before this existed and every one in a
+  // currency uc05 cannot quote.
+  const [routeSelection, setRouteSelection] = useState<{ id: string; channel: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Corporate/Program/Legal Entity selection
@@ -1931,6 +1936,7 @@ export default function TransfersPage() {
   };
 
   const resetForm = () => {
+    setRouteSelection(null);
     setFormData({
       fromVaId: '',
       toVaId: '',
@@ -2097,6 +2103,7 @@ export default function TransfersPage() {
         behalfOfEntity: formData.isPobo ? formData.behalfOfEntity : undefined,
         behalfOfVaId: formData.isPobo ? formData.behalfOfVaId : undefined,
         endToEndId: `E2E-${Date.now()}`,
+        routeSelectionId: routeSelection?.id,
       };
 
       const response = await iso20022Api.processOutwardPayment(request);
@@ -3127,6 +3134,25 @@ export default function TransfersPage() {
                   />
                 </div>
               </Card>
+            )}
+
+            {/* Routing comes after the amount, because the amount is half the question. The BIC
+                captured in step 2 supplies the destination, and that is what makes this payment
+                domestic or cross-border. */}
+            {step === 3 && transferType === 'outward' && (
+              <div className="animate-fade-in">
+                <PaymentRouteOptions
+                  fromVaId={formData.fromVaId}
+                  currency={formData.currency}
+                  amount={parseFloat(formData.amount) || 0}
+                  creditorBic={formData.creditorBic}
+                  onSelected={(id, channel, note) => {
+                    setRouteSelection({ id, channel });
+                    if (note) toast.success(note);
+                  }}
+                  onCleared={() => setRouteSelection(null)}
+                />
+              </div>
             )}
 
             {/* Navigation - simplified since submit is in sidebar */}

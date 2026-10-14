@@ -173,6 +173,28 @@ vam:
       limit-refresh-period-seconds: 60
       timeout-millis: 0
 
+  # ------------------------------------------------------------------------
+  # Intelligent payment routing (uc05)
+  # ------------------------------------------------------------------------
+  # Off unless base-url is set: an environment without uc05 behaves exactly as
+  # it did before this feature existed, and the payment screens fall back to
+  # choosing a channel by hand.
+  #
+  # base-url points at the uc05 API *including* its router prefix, e.g.
+  # http://uc05-api:8060/api/v1 -- the client appends /routing/quote. On OCI
+  # uc05 sits behind Caddy on the shared network and is never published.
+  #
+  # currencies is not a VAM preference. /routing/quote declares
+  # currency: Literal["USD","EUR","GBP"] and 422s anything else, so AED and ILS
+  # cannot be quoted today. It is configurable so the day uc05 adds a corridor
+  # this widens without a release.
+  routing:
+    base-url: ${VAM_ROUTING_BASE_URL:}
+    timeout-ms: ${VAM_ROUTING_TIMEOUT_MS:3000}
+    currencies: ${VAM_ROUTING_CURRENCIES:USD,EUR,GBP}
+    charge-tolerance: 0.05
+    arrival-tolerance-minutes: 15
+
 # ============================================================================
 # LOGGING CONFIGURATION - File + Console
 # ============================================================================
@@ -247,3 +269,19 @@ management:
     web:
       exposure:
         include: health,info
+# ============================================================================
+# RESILIENCE - uc05 routing client
+# ============================================================================
+# A quote is a convenience ahead of a payment, so the breaker is deliberately
+# impatient: a slow or down uc05 must not hold a payment screen. When it is
+# open, PaymentRoutingClient's fallback returns no options and a reason, and the
+# screen offers manual channel selection -- never an error, never a block.
+resilience4j:
+  circuitbreaker:
+    instances:
+      uc05Routing:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
