@@ -203,7 +203,12 @@ export const PaymentRouteOptions: React.FC<Props> = ({
         <div className="flex items-center gap-2">
           <RouteIcon className="w-5 h-5 text-accent-500" />
           <div>
-            <h3 className="body-strong">Payment route</h3>
+            <h3 className="body-strong flex items-center gap-2">
+              Payment route
+              {/* Inline, on a line that already exists: a re-quote must not change this card's
+                  height. See the note on the results below. */}
+              {loading && quote && <Spinner size="xs" />}
+            </h3>
             <p className="caption">
               {destination
                 ? `Cross-border to ${destination}, from the beneficiary BIC`
@@ -221,32 +226,39 @@ export const PaymentRouteOptions: React.FC<Props> = ({
         </div>
       </div>
 
-      {loading && (
+      {/* Only when there is nothing to show yet. Gating the results on !loading instead collapsed
+          this card from ~763px to ~193px on every re-quote, and since the summary beside it is
+          sticky inside a grid row sized by this column, the whole sidebar jumped ~138px up and
+          back on each keystroke in the amount field. A refresh keeps the last answer on screen
+          and says it is refreshing; it does not blank the card. */}
+      {loading && !quote && !note && (
         <div className="flex items-center gap-2 caption">
           <Spinner size="sm" />
           Looking at the routes…
         </div>
       )}
 
-      {!loading && note && <Alert variant="info">{note}</Alert>}
+      {note && <Alert variant="info">{note}</Alert>}
 
-      {!loading && !note && quote?.none && <Alert variant="warning">{quote.none}</Alert>}
+      {!note && quote?.none && <Alert variant="warning">{quote.none}</Alert>}
 
-      {!loading && refusal && (
+      {refusal && (
         <Alert variant="warning" title="The options moved while you were deciding">
           {refusal}
         </Alert>
       )}
 
-      {!loading && unknownCorridor && (
+      {unknownCorridor && (
         <Alert variant="warning">
           This corridor is not one the routing model has data of its own for. The figures below are
           judged from the route and its kind, so treat them as weaker than usual.
         </Alert>
       )}
 
-      {!loading && options.length > 0 && (
-        <div className="space-y-3">
+      {options.length > 0 && (
+        // dimmed while a re-quote is in flight: the figures on screen are the previous
+        // answer, and opacity costs no height
+        <div className={`space-y-3 transition-opacity ${loading ? 'opacity-50' : ''}`}>
           {options.map((option) => {
             const isChosen = chosen === option.route;
             const isOpen = expanded === option.route;
