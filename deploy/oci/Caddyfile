@@ -121,3 +121,13 @@ iiagent-sse.161-33-9-182.sslip.io {
 		format console
 	}
 }
+
+academy.161-33-9-182.sslip.io {
+	handle /api/* {
+		reverse_proxy sb-api:8075
+	}
+	log {
+		output stdout
+		format console
+	}
+}
