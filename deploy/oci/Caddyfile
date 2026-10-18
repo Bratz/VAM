@@ -126,8 +126,17 @@ academy.161-33-9-182.sslip.io {
 	handle /api/* {
 		reverse_proxy sb-api:8075
 	}
+	# Prospects' questions are confidential (bank-data-policy rule 7): never log them next to the client's address.
+	# Ask sends the question in a POST body; the filter also drops any `q` query value and the Referer header, which
+	# carries the page URL (a shared /?q=… link) on every API call.
 	log {
 		output stdout
-		format console
+		format filter {
+			request>uri query {
+				delete q
+			}
+			request>headers>Referer delete
+			wrap console
+		}
 	}
 }
