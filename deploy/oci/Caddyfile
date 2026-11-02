@@ -99,6 +99,8 @@ extn.161-33-9-182.sslip.io {
 }
 
 iiagent.161-33-9-182.sslip.io {
+	# Only callers inside the API container use /api/internal; nothing outside needs it.
+	respond /api/internal/* 403
 	reverse_proxy iiagent-api:9001
 	log {
 		output stdout
