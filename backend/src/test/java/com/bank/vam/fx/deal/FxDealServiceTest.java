@@ -73,11 +73,14 @@ class FxDealServiceTest {
         assertThat(d.getSellCurrency()).isEqualTo("USD");
         assertThat(d.getSellAmount()).isEqualByComparingTo("110000");
         assertThat(d.getStatus()).isEqualTo(DealStatus.ACTIVE);
-        assertThat(d.getConfirmedAt()).isNotNull();
         assertThat(d.getDealRef()).startsWith("FXD-");
+        // The bank issues the confirmation; the corporate has not affirmed it yet.
+        assertThat(d.getConfirmationStatus()).isEqualTo(ConfirmationStatus.ISSUED);
+        assertThat(d.getConfirmationIssuedAt()).isNotNull();
+        assertThat(d.getConfirmedAt()).isNull();
         verify(log).deal(any(), isNull(), eq(DealStatus.BOOKED), anyString());
-        verify(log).deal(any(), eq(DealStatus.BOOKED), eq(DealStatus.CONFIRMED), anyString());
-        verify(log).deal(any(), eq(DealStatus.CONFIRMED), eq(DealStatus.ACTIVE), anyString());
+        verify(log).note(any(), eq("CONFIRMATION_SENT"), anyString());
+        verify(log).deal(any(), eq(DealStatus.BOOKED), eq(DealStatus.ACTIVE), anyString());
     }
 
     @Test
@@ -95,12 +98,12 @@ class FxDealServiceTest {
     void aDealCannotSkipOrReverseStates() {
         FxDeal d = service.book(quote(Side.BUY, Instrument.FORWARD), bd("6000.00"), "AED");
 
-        assertThatThrownBy(() -> service.transition(d, DealStatus.CONFIRMED, "undo"))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("ACTIVE to CONFIRMED");
+        assertThatThrownBy(() -> service.transition(d, DealStatus.BOOKED, "undo"))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("ACTIVE to BOOKED");
 
         FxDeal fresh = new FxDeal();
         fresh.setStatus(DealStatus.BOOKED);
-        assertThatThrownBy(() -> service.transition(fresh, DealStatus.ACTIVE, "skip"))
+        assertThatThrownBy(() -> service.transition(fresh, DealStatus.SETTLED, "skip"))
                 .isInstanceOf(BusinessException.class);
         assertThat(fresh.getStatus()).isEqualTo(DealStatus.BOOKED);
     }
@@ -119,6 +122,21 @@ class FxDealServiceTest {
     }
 
     @Test
+    void aPartDrawnWindowOnlyHedgesWhatIsStillUndrawn() {
+        FxDeal d = service.book(quote(Side.BUY, Instrument.WINDOW), bd("6000.00"), "AED");
+        d.setDrawnAmount(bd("40000"));
+
+        List<FxExposureEntry> positions = d.hedgePositions();
+
+        // 60% of the EUR 100,000 / USD 110,000 deal is left.
+        assertThat(positions.get(0).getAmount()).isEqualByComparingTo("60000");
+        assertThat(positions.get(1).getAmount()).isEqualByComparingTo("-66000");
+
+        d.setDrawnAmount(bd("100000"));
+        assertThat(d.hedgePositions()).isEmpty();
+    }
+
+    @Test
     void theConfirmationStatesTheDealAndNeverClaimsToBeReal() {
         Corporate c = new Corporate();
         c.setLegalName("Test Multinational Corp");
@@ -130,7 +148,8 @@ class FxDealServiceTest {
         assertThat(text).contains("SIMULATED").contains(d.getDealRef()).contains("Test Multinational Corp")
                 .contains("You buy        : EUR 100,000.00").contains("You sell       : USD 110,000.00")
                 .contains("Window forward, drawable 2026-12-09 to 2027-02-09").contains("bank margin 3.00 bps")
-                .contains("forward points 20.00");
+                .contains("forward points 20.00").contains("Status         : ACTIVE")
+                .contains("confirm or dispute");
     }
 
     @Test

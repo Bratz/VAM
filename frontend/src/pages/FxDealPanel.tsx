@@ -7,17 +7,18 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Send, Check, X, Clock, FileText } from 'lucide-react';
+import { Send, Check, X, Clock, Play } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ScopeSelector } from '../components/layout/ScopeSelector';
-import { Card, CardHeader, Badge, Button, Input, Select, DataTable, Drawer } from '../components/ui';
+import { Card, CardHeader, Badge, Button, Input, Select, DataTable } from '../components/ui';
 import type { Column } from '../components/ui/DataTable';
 import { Alert, ProgressBar } from '../components/ui/enhanced';
-import { EventTimeline } from '../components/ui/EventTimeline';
+import FxDealDrawer from './FxDealDrawer';
+import { DEAL_BADGE, confirmationBadge } from './fxDealBadges';
 import { cn } from '../utils';
 import { fxMarketApi } from '../services/fxMarketApi';
 import {
-  fxDealApi, CreditLimit, Deal, DealEvent, DealStatus, Instrument, Quote, QuoteStatus, Side,
+  fxDealApi, CreditLimit, Deal, Instrument, Quote, QuoteStatus, SettlementRun, Side,
 } from '../services/fxDealApi';
 
 export interface DealPrefill {
@@ -45,13 +46,6 @@ const QUOTE_BADGE: Record<QuoteStatus, { label: string; variant: 'success' | 'wa
   EXPIRED: { label: 'Expired', variant: 'warning' },
   REJECTED: { label: 'Declined', variant: 'error' },
   CANCELLED: { label: 'Cancelled', variant: 'neutral' },
-};
-
-const DEAL_BADGE: Record<DealStatus, { label: string; variant: 'success' | 'warning' | 'neutral' | 'info' }> = {
-  BOOKED: { label: 'Booked', variant: 'neutral' },
-  CONFIRMED: { label: 'Confirmed', variant: 'neutral' },
-  ACTIVE: { label: 'Active', variant: 'success' },
-  PENDING_SETTLEMENT: { label: 'Settling', variant: 'info' },
 };
 
 const INSTRUMENTS: { value: Instrument; label: string }[] = [
@@ -83,9 +77,11 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
 
   const [deals, setDeals] = useState<Deal[]>([]);
   const [limit, setLimit] = useState<CreditLimit | null>(null);
-  const [openDeal, setOpenDeal] = useState<Deal | null>(null);
-  const [events, setEvents] = useState<DealEvent[]>([]);
-  const [confirmation, setConfirmation] = useState('');
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [asOf, setAsOf] = useState('');
+  const [runResult, setRunResult] = useState<SettlementRun | null>(null);
+  const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
 
   const quoteRef = useRef<Quote | null>(null);
   quoteRef.current = quote;
@@ -210,16 +206,16 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
     }
   };
 
-  const openDetail = async (d: Deal) => {
-    setOpenDeal(d);
-    setEvents([]);
-    setConfirmation('');
+  const onRunSettlement = async () => {
+    setRunning(true);
+    setRunError(null);
     try {
-      const [e, c] = await Promise.all([fxDealApi.events(d.id), fxDealApi.confirmation(d.id)]);
-      setEvents(e);
-      setConfirmation(c.text);
+      setRunResult(await fxDealApi.runSettlement(asOf || undefined, corporateId));
+      await refresh(corporateId);
     } catch (err) {
-      setConfirmation(errorText(err));
+      setRunError(errorText(err));
+    } finally {
+      setRunning(false);
     }
   };
 
@@ -227,6 +223,7 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
     () => (pairs.includes(pair) ? pairs : [...pairs, pair]).map((p) => ({ value: p, label: p })),
     [pairs, pair],
   );
+  const openDeal = deals.find((d) => d.id === openId) ?? null;
   const used = limit && limit.limit > 0 ? Math.min(100, (limit.used / limit.limit) * 100) : 0;
   const base = pair.slice(0, 3);
   const quoteCcy = pair.slice(4);
@@ -238,6 +235,15 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
     { key: 'sellAmount', header: 'You sell', align: 'right', dropOrder: 3, render: (_, d) => <span className="font-mono tabular-nums">{d.sellCurrency} {fmt(d.sellAmount)}</span> },
     { key: 'rate', header: 'Rate', align: 'right', dropOrder: 1, render: (_, d) => <span className="font-mono tabular-nums">{d.rate.toFixed(rateDigits(d.rate))}</span> },
     { key: 'valueDate', header: 'Value date', render: (_, d) => <span className="font-mono tabular-nums">{d.windowStart ? `${d.windowStart} to ${d.valueDate}` : d.valueDate}</span> },
+    { key: 'mtmQuote', header: 'Worth today', align: 'right', dropOrder: 4, render: (_, d) => {
+      const v = d.mtmHome ?? d.mtmQuote;
+      if (v === undefined) return <span className="text-neutral-500 dark:text-neutral-400">-</span>;
+      return <span className={cn('font-mono tabular-nums', v > 0 ? 'text-success-700 dark:text-success-300' : v < 0 ? 'text-error-700 dark:text-error-300' : '')}>{v > 0 ? '+' : ''}{fmt(v, 0)} {d.mtmHome !== undefined ? d.mtmHomeCurrency : d.mtmQuoteCurrency}</span>;
+    } },
+    { key: 'confirmationStatus', header: 'Confirmation', render: (_, d) => {
+      const c = ['SETTLED', 'CLOSED_OUT', 'ROLLED', 'CANCELLED'].includes(d.status) ? null : confirmationBadge(d);
+      return c ? <Badge variant={c.variant} size="sm">{c.label}</Badge> : <span className="text-neutral-500 dark:text-neutral-400">-</span>;
+    } },
     { key: 'status', header: 'Status', render: (_, d) => <Badge variant={DEAL_BADGE[d.status].variant} size="sm">{DEAL_BADGE[d.status].label}</Badge> },
   ];
 
@@ -361,12 +367,12 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
       </div>
 
       <Card>
-        <CardHeader title="Deals" subtitle="Select a deal for its confirmation and history." />
+        <CardHeader title="Deals" subtitle="Select a deal to read the bank's confirmation, confirm it, and manage it." />
         <DataTable<Deal>
           data={deals}
           columns={dealColumns}
           keyExtractor={(d) => d.id}
-          onRowClick={openDetail}
+          onRowClick={(d) => setOpenId(d.id)}
           compact
           hairline
           emptyTitle="No deals yet"
@@ -374,27 +380,27 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
         />
       </Card>
 
-      <Drawer
-        isOpen={!!openDeal}
-        onClose={() => setOpenDeal(null)}
-        title={openDeal?.dealRef}
-        subtitle={openDeal ? `${openDeal.side === 'BUY' ? 'Buy' : 'Sell'} ${openDeal.pair} ${openDeal.instrument.toLowerCase()}` : undefined}
-      >
-        {openDeal && (
-          <div className="space-y-5">
-            <div>
-              <h3 className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50 flex items-center gap-2 mb-2">
-                <FileText className="w-4 h-4" /> Confirmation
-              </h3>
-              <pre className="whitespace-pre-wrap font-mono text-caption bg-surface-muted rounded-md p-3 text-primary-900 dark:text-neutral-50">{confirmation || 'Loading...'}</pre>
-            </div>
-            <div>
-              <h3 className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50 mb-2">History</h3>
-              <EventTimeline entries={events} loading={!events.length} />
-            </div>
+      <Card>
+        <CardHeader
+          title="Value-date settlement"
+          subtitle="Settles every confirmed deal that is due, if the cash is there. It is a record only: no balance moves. Pick a later date to move the demo clock forward."
+        />
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-48"><Input label="Settle as of (optional)" type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} /></div>
+          <Button size="sm" variant="outline" onClick={onRunSettlement} loading={running} disabled={!corporateId} leftIcon={<Play className="w-4 h-4" />}>Run settlement</Button>
+        </div>
+        {runError && <p className="text-body-sm text-error-700 dark:text-error-300 mt-3">{runError}</p>}
+        {runResult && (
+          <div className="mt-3 text-body-sm space-y-1">
+            <p>
+              As of {runResult.asOf}: <strong>{runResult.settled}</strong> settled, <strong>{runResult.failed}</strong> failed, <strong>{runResult.blocked}</strong> blocked.
+            </p>
+            {runResult.notes.map((n, i) => <p key={i} className="text-caption text-neutral-600 dark:text-neutral-300">{n}</p>)}
           </div>
         )}
-      </Drawer>
+      </Card>
+
+      <FxDealDrawer deal={openDeal} onClose={() => setOpenId(null)} onChanged={() => { refresh(corporateId).catch(() => undefined); }} />
     </div>
   );
 };

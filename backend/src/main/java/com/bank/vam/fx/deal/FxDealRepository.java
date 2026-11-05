@@ -15,6 +15,8 @@ public interface FxDealRepository extends JpaRepository<FxDeal, UUID> {
 
     List<FxDeal> findByCorporateIdAndStatusIn(UUID corporateId, Collection<DealStatus> statuses);
 
+    List<FxDeal> findByStatusIn(Collection<DealStatus> statuses);
+
     @Query("SELECT COALESCE(SUM(d.limitCharge), 0) FROM FxDeal d "
             + "WHERE d.corporateId = :corporateId AND d.limitCurrency = :currency AND d.status IN :statuses")
     BigDecimal sumLimitCharge(@Param("corporateId") UUID corporateId, @Param("currency") String currency,

@@ -25,7 +25,7 @@ public class FxDealService {
     private final FxEvents log;
     private final CorporateRepository corporates;
 
-    /** Books the deal for an accepted quote, confirms it, and leaves it ACTIVE (forward) or awaiting settlement (spot). */
+    /** Books the deal for an accepted quote, issues its confirmation, and leaves it ACTIVE (forward) or awaiting settlement (spot). */
     FxDeal book(FxQuoteRequest q, BigDecimal limitCharge, String limitCurrency) {
         boolean buyBase = q.getSide() == Side.BUY;
         FxDeal d = new FxDeal();
@@ -54,8 +54,10 @@ public class FxDealService {
         d = deals.save(d);
 
         log.deal(d, null, DealStatus.BOOKED, "Booked from quote at " + d.getRate());
-        transition(d, DealStatus.CONFIRMED, "Trade confirmation issued");
-        d.setConfirmedAt(LocalDateTime.now());
+        // The bank's back office sends the confirmation; the deal is live meanwhile, and cannot settle until the client affirms it.
+        d.setConfirmationStatus(ConfirmationStatus.ISSUED);
+        d.setConfirmationIssuedAt(LocalDateTime.now());
+        log.note(d, "CONFIRMATION_SENT", "Back office issued the trade confirmation to the client, to check and confirm");
         transition(d, d.getInstrument() == Instrument.SPOT ? DealStatus.PENDING_SETTLEMENT : DealStatus.ACTIVE,
                 d.getInstrument() == Instrument.SPOT ? "Awaiting settlement on " + d.getValueDate()
                         : "Live until " + d.getValueDate());
@@ -108,7 +110,14 @@ public class FxDealService {
                         + ", bank margin " + d.getSpreadBps().toPlainString() + " bps",
                 "Status         : " + d.getStatus(),
                 "",
+                "Please check these details against the trade you agreed and confirm or dispute",
+                "the deal in the FX Workspace. A deal that is not confirmed cannot settle.",
+                "",
                 "Simulated desk and rates for demonstration. No settlement instructions are issued.");
+    }
+
+    public byte[] confirmationPdf(FxDeal d) {
+        return ConfirmationPdf.render(confirmation(d));
     }
 
     private static String money(BigDecimal v) {

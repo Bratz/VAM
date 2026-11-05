@@ -45,6 +45,7 @@ import {
   type Payable,
 } from './api';
 import { fxExposureApi, type PolicyBreach } from './fxMarketApi';
+import { fxDealApi, type DealAttention } from './fxDealApi';
 import {
   AttentionItem,
   AttentionSeverity,
@@ -396,6 +397,37 @@ async function produceFxExposures(_entityId?: string): Promise<AttentionItem[]> 
   }
 }
 
+/** Unconfirmed, disputed, unsettled or unfunded FX deals: each is a decision or a chase for the treasurer. */
+function fxDealItem(a: DealAttention): AttentionItem {
+  const ms = new Date(a.dueDate).getTime() - Date.now();
+  const failed = a.type === 'SETTLEMENT_FAILED';
+  return {
+    id: `fx_deal:${a.type}:${a.dealId}`,
+    severity: a.severity,
+    category: a.type === 'SETTLEMENT_FAILED' || a.type === 'FUNDING_NEEDED' ? 'funding_shortfall' : 'pending_approval',
+    headline: a.headline,
+    detail: a.detail,
+    context: { entityId: a.corporateId, entityName: a.corporateName, reference: a.dealRef },
+    timePressure: failed || ms <= 0
+      ? { kind: 'relative_past', displayText: `due ${a.dueDate}`, millisecondsSinceEvent: Math.max(0, -ms) }
+      : { kind: 'relative_future', displayText: `value ${a.dueDate}`, millisecondsToDeadline: ms },
+    actions: [{
+      label: a.type === 'CONFIRMATION_PENDING' ? 'Confirm' : a.type === 'FUNDING_NEEDED' ? 'Fund' : 'Review',
+      kind: 'navigate', actionId: 'fx-workspace', requiresConfirmation: false,
+    }],
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function produceFxDeals(_entityId?: string): Promise<AttentionItem[]> {
+  try {
+    return (await fxDealApi.attention()).map(fxDealItem);
+  } catch (err) {
+    console.warn('[cockpit] produceFxDeals failed:', err);
+    return [];
+  }
+}
+
 async function produceConcentrationRisks(_entityId?: string): Promise<AttentionItem[]> {
   // TODO V2: needs the `bank_credit_rating` reference table to know which
   // counterparty banks tip the portfolio over its concentration limit.
@@ -440,6 +472,7 @@ export const cockpitApi = {
       produceStaleBalances(entityId),
       producePendingApprovals(entityId),
       produceFxExposures(entityId),
+      produceFxDeals(entityId),
       produceConcentrationRisks(entityId),
     ]);
     const items: AttentionItem[] = [];

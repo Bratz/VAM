@@ -7,7 +7,13 @@ import { apiClient, ApiResponse } from './api';
 export type Side = 'BUY' | 'SELL';
 export type Instrument = 'SPOT' | 'FORWARD' | 'WINDOW';
 export type QuoteStatus = 'REQUESTED' | 'QUOTED' | 'ACCEPTED' | 'EXPIRED' | 'REJECTED' | 'CANCELLED';
-export type DealStatus = 'BOOKED' | 'CONFIRMED' | 'ACTIVE' | 'PENDING_SETTLEMENT';
+export type DealStatus =
+  | 'BOOKED' | 'ACTIVE' | 'PENDING_SETTLEMENT' | 'PARTIALLY_DRAWN' | 'SETTLEMENT_FAILED'
+  | 'SETTLED' | 'CLOSED_OUT' | 'ROLLED' | 'CANCELLED';
+/** The bank issues a confirmation; the corporate affirms or disputes it. An unconfirmed deal cannot settle. */
+export type ConfirmationStatus = 'ISSUED' | 'AFFIRMED' | 'DISPUTED';
+export type SettlementKind = 'MATURITY' | 'DRAWDOWN' | 'CLOSE_OUT';
+export type SettlementStatus = 'PENDING' | 'SETTLED' | 'FAILED';
 
 export interface QuoteBody {
   corporateId: string;
@@ -78,6 +84,80 @@ export interface Deal {
   purpose?: string;
   exposureRef?: string;
   createdAt: string;
+  confirmationStatus?: ConfirmationStatus;
+  confirmationIssuedAt?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
+  disputeReason?: string;
+  /** Issued more than the allowed hours ago and still unanswered. */
+  confirmationOverdue: boolean;
+  /** The deal's amount in the pair's base currency, and how much of it is drawn or still to come. */
+  baseAmount: number;
+  drawnAmount: number;
+  remainingAmount: number;
+  rolledFromId?: string;
+  closeRate?: number;
+  /** Cash difference on close-out or roll in the pair's quote currency; positive is in the corporate's favour. */
+  realisedPnl?: number;
+  settledAt?: string;
+  /** Live mark against today's market; absent when the market cannot price the deal. */
+  mtmQuote?: number;
+  mtmQuoteCurrency?: string;
+  mtmHome?: number;
+  mtmHomeCurrency?: string;
+}
+
+export interface Settlement {
+  id: string;
+  kind: SettlementKind;
+  valueDate: string;
+  buyCurrency: string;
+  buyAmount: number;
+  sellCurrency: string;
+  sellAmount: number;
+  status: SettlementStatus;
+  reason?: string;
+  settledAt?: string;
+}
+
+export interface CloseOutQuote {
+  dealRef: string;
+  pair: string;
+  remainingBase: number;
+  closeRate: number;
+  spreadBps: number;
+  realisedPnl: number;
+  pnlCurrency: string;
+  pricedDate: string;
+}
+
+export interface RollQuote {
+  closeOut: CloseOutQuote;
+  newValueDate: string;
+  newRate: number;
+  newForwardPoints: number;
+  newSpreadBps: number;
+  newCounterAmount: number;
+}
+
+export interface SettlementRun {
+  asOf: string;
+  settled: number;
+  failed: number;
+  blocked: number;
+  notes: string[];
+}
+
+export interface DealAttention {
+  type: 'CONFIRMATION_PENDING' | 'CONFIRMATION_DISPUTED' | 'SETTLEMENT_FAILED' | 'FUNDING_NEEDED';
+  severity: 'high' | 'medium';
+  corporateId: string;
+  corporateName: string;
+  dealId: string;
+  dealRef: string;
+  headline: string;
+  detail: string;
+  dueDate: string;
 }
 
 export interface DealEvent {
@@ -120,4 +200,43 @@ export const fxDealApi = {
 
   limit: (corporateId: string) =>
     apiClient.get<ApiResponse<CreditLimit>>('/fx/limits', { params: { corporateId } }).then(r => r.data.data),
+
+  // ---- confirmation ----
+  confirm: (dealId: string) =>
+    apiClient.post<ApiResponse<Deal>>(`/fx/deals/${dealId}/confirm`).then(r => r.data.data),
+
+  dispute: (dealId: string, reason: string) =>
+    apiClient.post<ApiResponse<Deal>>(`/fx/deals/${dealId}/dispute`, { reason }).then(r => r.data.data),
+
+  /** The bank's confirmation as a PDF, fetched as a blob so the download carries the session. */
+  confirmationPdf: (dealId: string) =>
+    apiClient.get<Blob>(`/fx/deals/${dealId}/confirmation.pdf`, { responseType: 'blob' }).then(r => r.data),
+
+  // ---- in-life ----
+  drawdown: (dealId: string, amount: number, valueDate: string) =>
+    apiClient.post<ApiResponse<Settlement>>(`/fx/deals/${dealId}/drawdowns`, { amount, valueDate }).then(r => r.data.data),
+
+  closeOutPreview: (dealId: string) =>
+    apiClient.get<ApiResponse<CloseOutQuote>>(`/fx/deals/${dealId}/close-out`).then(r => r.data.data),
+
+  closeOut: (dealId: string) =>
+    apiClient.post<ApiResponse<Deal>>(`/fx/deals/${dealId}/close-out`).then(r => r.data.data),
+
+  rollPreview: (dealId: string, newValueDate: string) =>
+    apiClient.get<ApiResponse<RollQuote>>(`/fx/deals/${dealId}/roll`, { params: { newValueDate } }).then(r => r.data.data),
+
+  /** Closes the deal and books its replacement; returns the replacement. */
+  roll: (dealId: string, newValueDate: string) =>
+    apiClient.post<ApiResponse<Deal>>(`/fx/deals/${dealId}/roll`, { newValueDate }).then(r => r.data.data),
+
+  settlements: (dealId: string) =>
+    apiClient.get<ApiResponse<Settlement[]>>(`/fx/deals/${dealId}/settlements`).then(r => r.data.data),
+
+  /** Settles whatever is due. asOf moves the demo clock forward; omit it for today. A record only: no balance moves. */
+  runSettlement: (asOf?: string, corporateId?: string) =>
+    apiClient.post<ApiResponse<SettlementRun>>('/fx/deals/settlement/run', null, { params: { asOf, corporateId } }).then(r => r.data.data),
+
+  /** What needs attention across deals: unconfirmed, disputed, failed to settle, or short of cash. */
+  attention: (corporateId?: string) =>
+    apiClient.get<ApiResponse<DealAttention[]>>('/fx/deals/attention', { params: corporateId ? { corporateId } : {} }).then(r => r.data.data),
 };

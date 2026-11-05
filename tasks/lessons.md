@@ -435,3 +435,42 @@ in a session is not a fact you still know.**
 Related: [[a-green-deploy-is-not-evidence-a-migration-applied]] — both are about accepting a signal
 that resembles proof in place of the proof itself.
 
+
+## A status the system sets for the other party is not that party's step (2026-11-05)
+
+Phase 3 of the corporate FX feature moved every deal to CONFIRMED at the instant it was booked, with the
+event "Trade confirmation issued". The user's question was "where is confirmation": in practice the bank's
+back office sends a confirmation (message or PDF) and the **corporate** checks it and affirms or disputes
+it. I had written the bank's half of a two-party process and recorded it as if both halves had happened.
+
+- When a lifecycle has a step that someone else performs, name who performs it before writing the state.
+  A state the system sets on the other party's behalf (confirmed, approved, accepted, acknowledged) is a
+  lie in the data, and every rule built on it (here: settlement) is unguarded.
+- Confirmation is also orthogonal to where a deal is in its life. A deal is live from execution; the
+  confirmation is a control on it. It became its own field (`confirmation_status`: ISSUED, AFFIRMED,
+  DISPUTED) rather than another deal status. Same lesson as the account-category one above: if something
+  can be true alongside several states, it is a property, not a state.
+- The tell was in my own design doc: "CONFIRMED: confirmation delivered to the corporate" described the
+  bank sending it, then named the state as if the client had answered.
+
+## Adding to an entity that already has a table: Hibernate will not widen what it already created (2026-11-05)
+
+Two bugs on one feature, both invisible to unit tests, both caught by driving the real endpoints:
+
+1. **Enum CHECK constraint.** Hibernate 6 writes `CHECK (status IN (...))` listing an `@Enumerated` column's
+   values when it creates the table, and `ddl-auto: update` never changes it. Adding new `DealStatus` values
+   to the Java enum left `fx_deal_status_check` allowing only the old four, so the first transition to
+   SETTLED failed at commit. The fix is a Flyway migration (V41) that drops and recreates the constraint,
+   written conditionally (`to_regclass(...) IS NOT NULL`) because on a fresh database Flyway runs before the
+   table exists and Hibernate then creates it correctly.
+2. **Column length.** `fx_deal_event.to_status` is `varchar(20)`; the new action code
+   `CONFIRMATION_DISPUTED` is 21 characters. `ddl-auto` does not widen a column either. Here the cheaper fix
+   was shorter codes, plus a guard that refuses an over-long code up front so the next one fails in a test.
+
+- Before adding an enum value or a longer string to an entity whose table already exists anywhere
+  (including a deployed database), check the table: `\d+ table` shows the CHECK and the lengths.
+- Mocked unit tests cannot see either; neither can a fresh database, which is why this passes in CI and
+  fails on a database that already has the table. Run one real request through the new path.
+- This is the same family as "a green deploy is not evidence a migration ran": the schema the code assumes
+  and the schema the database has are two different things, and only the second one decides.
+

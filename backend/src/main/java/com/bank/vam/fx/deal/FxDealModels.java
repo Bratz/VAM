@@ -32,19 +32,52 @@ public final class FxDealModels {
         }
     }
 
+    /**
+     * A deal as the blotter shows it. {@code mtm*} is the live mark against today's market and is absent when
+     * the market cannot price the deal. {@code remainingAmount} is what is still undrawn, in the pair's base currency.
+     */
     public record DealView(
             UUID id, String dealRef, UUID corporateId, UUID quoteRequestId, Instrument instrument, String pair,
             Side side, String buyCurrency, BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
             BigDecimal rate, BigDecimal midRate, BigDecimal forwardPoints, BigDecimal spreadBps, LocalDate tradeDate,
             LocalDate valueDate, LocalDate windowStart, DealStatus status, BigDecimal limitCharge,
-            String limitCurrency, String purpose, String exposureRef, LocalDateTime createdAt) {
+            String limitCurrency, String purpose, String exposureRef, LocalDateTime createdAt,
+            ConfirmationStatus confirmationStatus, LocalDateTime confirmationIssuedAt, LocalDateTime confirmedAt,
+            String confirmedBy, String disputeReason, boolean confirmationOverdue,
+            BigDecimal baseAmount, BigDecimal drawnAmount, BigDecimal remainingAmount, UUID rolledFromId,
+            BigDecimal closeRate, BigDecimal realisedPnl, LocalDateTime settledAt,
+            BigDecimal mtmQuote, String mtmQuoteCurrency, BigDecimal mtmHome, String mtmHomeCurrency) {
 
-        static DealView of(FxDeal d) {
+        static DealView of(FxDeal d, java.util.Optional<FxMtmService.Mark> mark, boolean overdue) {
             return new DealView(d.getId(), d.getDealRef(), d.getCorporateId(), d.getQuoteRequestId(), d.getInstrument(),
                     d.getPair(), d.getSide(), d.getBuyCurrency(), d.getBuyAmount(), d.getSellCurrency(),
                     d.getSellAmount(), d.getRate(), d.getMidRate(), d.getForwardPoints(), d.getSpreadBps(),
                     d.getTradeDate(), d.getValueDate(), d.getWindowStart(), d.getStatus(), d.getLimitCharge(),
-                    d.getLimitCurrency(), d.getPurpose(), d.getExposureRef(), d.getCreatedAt());
+                    d.getLimitCurrency(), d.getPurpose(), d.getExposureRef(), d.getCreatedAt(),
+                    d.getConfirmationStatus(), d.getConfirmationIssuedAt(), d.getConfirmedAt(), d.getConfirmedBy(),
+                    d.getDisputeReason(), overdue, d.baseAmount(), d.getDrawnAmount(), d.remainingBase(),
+                    d.getRolledFromId(), d.getCloseRate(), d.getRealisedPnl(), d.getSettledAt(),
+                    mark.map(FxMtmService.Mark::mtmQuote).orElse(null), mark.map(FxMtmService.Mark::quoteCurrency).orElse(null),
+                    mark.map(FxMtmService.Mark::mtmHome).orElse(null), mark.map(FxMtmService.Mark::homeCurrency).orElse(null));
+        }
+    }
+
+    public record SettlementView(UUID id, SettlementKind kind, LocalDate valueDate, String buyCurrency,
+                                 BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
+                                 SettlementStatus status, String reason, LocalDateTime settledAt) {
+
+        static SettlementView of(FxSettlement s) {
+            return new SettlementView(s.getId(), s.getKind(), s.getValueDate(), s.getBuyCurrency(), s.getBuyAmount(),
+                    s.getSellCurrency(), s.getSellAmount(), s.getStatus(), s.getReason(), s.getSettledAt());
+        }
+    }
+
+    public record MtmPoint(LocalDate asOf, BigDecimal rateUsed, BigDecimal mtmQuote, String quoteCurrency,
+                           BigDecimal mtmHome, String homeCurrency) {
+
+        static MtmPoint of(FxMtm m) {
+            return new MtmPoint(m.getAsOf(), m.getRateUsed(), m.getMtmQuote(), m.getQuoteCurrency(), m.getMtmHome(),
+                    m.getHomeCurrency());
         }
     }
 
@@ -52,10 +85,17 @@ public final class FxDealModels {
     public record EventView(String action, String actor, String details, LocalDateTime timestamp) {
 
         static EventView of(FxDealEvent e) {
-            String action = e.getFromStatus() == null ? e.getToStatus() : e.getFromStatus() + " to " + e.getToStatus();
-            return new EventView((e.getEntityType().equals(FxDealEvent.QUOTE) ? "Quote " : "Deal ") + action,
+            String prefix = e.getEntityType().equals(FxDealEvent.QUOTE) ? "Quote " : "Deal ";
+            String action = e.getFromStatus() == null ? humanise(e.getToStatus())
+                    : humanise(e.getFromStatus()) + " to " + humanise(e.getToStatus());
+            return new EventView(e.getFromStatus() == null && e.getToStatus().contains("_") ? action : prefix + action,
                     e.getActor(), e.getDetail(), e.getCreatedAt());
         }
+    }
+
+    private static String humanise(String code) {
+        String s = code.replace('_', ' ').toLowerCase(java.util.Locale.ROOT);
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
     public record LimitView(UUID corporateId, String currency, BigDecimal limit, BigDecimal used, BigDecimal headroom) {

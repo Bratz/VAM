@@ -1,0 +1,191 @@
+package com.bank.vam.fx.deal;
+
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * Drawdowns and value-date settlement. Settlement is a record against the deal: a settled item says the
+ * corporate held the cash to pay it, but no account balance is moved. A deal settles only once its
+ * confirmation is affirmed, and only if the cash in the currency it sells is there; otherwise it moves to
+ * SETTLEMENT_FAILED and is tried again on the next run.
+ */
+@Service
+@RequiredArgsConstructor
+public class FxSettlementService {
+
+    /** What a run did. {@code notes} says why anything was blocked or failed. */
+    public record RunResult(LocalDate asOf, int settled, int failed, int blocked, List<String> notes) {
+    }
+
+    private final FxDealRepository deals;
+    private final FxSettlementRepository settlements;
+    private final FxDealService dealService;
+    private final HeldCash cash;
+    private final FxEvents log;
+
+    /** Takes part of a window forward. It settles on its own value date, which must fall inside the window. */
+    @Transactional
+    public FxSettlement drawdown(UUID dealId, BigDecimal amount, LocalDate valueDate) {
+        FxDeal d = deals.findById(dealId).orElseThrow(() -> new ResourceNotFoundException("Deal not found: " + dealId));
+        if (d.getInstrument() != Instrument.WINDOW) {
+            throw invalid("Only a window forward can be drawn down");
+        }
+        if (d.getStatus() != DealStatus.ACTIVE && d.getStatus() != DealStatus.PARTIALLY_DRAWN) {
+            throw invalid("A deal that is " + d.getStatus() + " cannot be drawn down");
+        }
+        if (d.getConfirmationStatus() != ConfirmationStatus.AFFIRMED) {
+            throw invalid("Confirm the deal before drawing it down");
+        }
+        if (amount == null || amount.signum() <= 0 || amount.compareTo(d.remainingBase()) > 0) {
+            throw invalid("Draw between 0.01 and " + d.remainingBase().toPlainString() + " " + d.baseCurrency());
+        }
+        if (valueDate == null || valueDate.isBefore(d.getWindowStart()) || valueDate.isAfter(d.getValueDate())
+                || valueDate.isBefore(LocalDate.now()) || isWeekend(valueDate)) {
+            throw invalid("The drawdown date must be a business day inside the window, "
+                    + d.getWindowStart() + " to " + d.getValueDate() + ", and not in the past");
+        }
+
+        List<FxSettlement> earlier = new ArrayList<>(settlements.findByDealIdOrderByCreatedAtAsc(dealId)).stream()
+                .filter(s -> s.getKind() == SettlementKind.DRAWDOWN).toList();
+        boolean last = amount.compareTo(d.remainingBase()) == 0;
+        FxSettlement s = settlement(d, SettlementKind.DRAWDOWN, valueDate,
+                last ? d.getBuyAmount().subtract(sum(earlier, true)) : share(d.getBuyAmount(), amount, d.baseAmount()),
+                last ? d.getSellAmount().subtract(sum(earlier, false)) : share(d.getSellAmount(), amount, d.baseAmount()));
+        d.setDrawnAmount(d.getDrawnAmount().add(amount));
+        if (d.getStatus() == DealStatus.ACTIVE) {
+            dealService.transition(d, DealStatus.PARTIALLY_DRAWN, "First drawdown taken");
+        }
+        log.note(d, "DRAWDOWN_SCHEDULED", "Drawdown of " + d.baseCurrency() + " " + amount.toPlainString()
+                + " scheduled for " + valueDate + "; " + d.remainingBase().toPlainString() + " left in the window");
+        return settlements.save(s);
+    }
+
+    /**
+     * Settles everything due on or before {@code asOf} (today when null). Passing a later date is how the
+     * demo moves the clock forward; the simulated desk has no other way to reach a value date.
+     */
+    @Transactional
+    public RunResult run(LocalDate asOf, UUID corporateId) {
+        LocalDate day = asOf == null ? LocalDate.now() : asOf;
+        List<FxDeal> candidates = new ArrayList<>(corporateId == null ? deals.findByStatusIn(DealStatus.OPEN)
+                : deals.findByCorporateIdAndStatusIn(corporateId, DealStatus.OPEN));
+        candidates.sort(Comparator.comparing(FxDeal::getValueDate).thenComparing(FxDeal::getCreatedAt));
+
+        Map<String, BigDecimal> available = new HashMap<>();
+        int[] counts = new int[3];
+        List<String> notes = new ArrayList<>();
+
+        for (FxDeal d : candidates) {
+            if (d.getStatus() == DealStatus.BOOKED) {
+                continue;
+            }
+            for (FxSettlement s : settlements.findByDealIdAndKindAndStatus(d.getId(), SettlementKind.DRAWDOWN, SettlementStatus.PENDING)) {
+                if (!s.getValueDate().isAfter(day)) {
+                    attempt(d, s, available, counts, notes);
+                }
+            }
+            if (!d.getValueDate().isAfter(day) && d.remainingBase().signum() > 0) {
+                BigDecimal rem = d.remainingBase();
+                FxSettlement s = settlement(d, SettlementKind.MATURITY, d.getValueDate(),
+                        share(d.getBuyAmount(), rem, d.baseAmount()), share(d.getSellAmount(), rem, d.baseAmount()));
+                if (attempt(d, s, available, counts, notes)) {
+                    d.setDrawnAmount(d.baseAmount());
+                }
+            }
+            completeIfDone(d);
+        }
+        return new RunResult(day, counts[0], counts[1], counts[2], notes);
+    }
+
+    /** True when the item settled. */
+    private boolean attempt(FxDeal d, FxSettlement s, Map<String, BigDecimal> available, int[] counts, List<String> notes) {
+        if (d.getConfirmationStatus() != ConfirmationStatus.AFFIRMED) {
+            counts[2]++;
+            notes.add(d.getDealRef() + ": waiting for the client to confirm the trade (" + d.getConfirmationStatus() + ")");
+            return false;
+        }
+        String key = d.getCorporateId() + "|" + s.getSellCurrency();
+        BigDecimal held = available.computeIfAbsent(key, k -> cash.of(d.getCorporateId(), s.getSellCurrency()));
+        if (held.compareTo(s.getSellAmount()) >= 0) {
+            available.put(key, held.subtract(s.getSellAmount()));
+            s.setStatus(SettlementStatus.SETTLED);
+            s.setSettledAt(LocalDateTime.now());
+            s.setReason(null);
+            settlements.save(s);
+            counts[0]++;
+            log.note(d, "SETTLED_" + s.getKind(), s.getKind() + " settled: client buys " + s.getBuyCurrency() + " "
+                    + s.getBuyAmount().toPlainString() + ", sells " + s.getSellCurrency() + " " + s.getSellAmount().toPlainString()
+                    + " (recorded; no balance moved)");
+            return true;
+        }
+        String why = "Not enough " + s.getSellCurrency() + ": needs " + s.getSellAmount().toPlainString()
+                + ", holds " + held.toPlainString();
+        counts[1]++;
+        notes.add(d.getDealRef() + ": " + why);
+        s.setReason(why);
+        if (d.getStatus() != DealStatus.SETTLEMENT_FAILED) {
+            if (s.getKind() == SettlementKind.MATURITY) {
+                s.setStatus(SettlementStatus.FAILED);
+            }
+            settlements.save(s);
+            dealService.transition(d, DealStatus.SETTLEMENT_FAILED, why + "; will be tried again on the next run");
+        } else if (s.getId() != null) {
+            settlements.save(s);
+        }
+        return false;
+    }
+
+    /** A deal is settled once nothing is left to deliver and no drawdown is waiting. */
+    private void completeIfDone(FxDeal d) {
+        boolean open = d.getStatus() == DealStatus.ACTIVE || d.getStatus() == DealStatus.PARTIALLY_DRAWN
+                || d.getStatus() == DealStatus.PENDING_SETTLEMENT || d.getStatus() == DealStatus.SETTLEMENT_FAILED;
+        if (open && d.remainingBase().signum() == 0 && !settlements.existsByDealIdAndStatus(d.getId(), SettlementStatus.PENDING)) {
+            d.setSettledAt(LocalDateTime.now());
+            dealService.transition(d, DealStatus.SETTLED, "All legs settled");
+        }
+    }
+
+    private FxSettlement settlement(FxDeal d, SettlementKind kind, LocalDate valueDate, BigDecimal buy, BigDecimal sell) {
+        FxSettlement s = new FxSettlement();
+        s.setDealId(d.getId());
+        s.setCorporateId(d.getCorporateId());
+        s.setKind(kind);
+        s.setValueDate(valueDate);
+        s.setBuyCurrency(d.getBuyCurrency());
+        s.setBuyAmount(buy);
+        s.setSellCurrency(d.getSellCurrency());
+        s.setSellAmount(sell);
+        return s;
+    }
+
+    private static BigDecimal share(BigDecimal leg, BigDecimal part, BigDecimal whole) {
+        return leg.multiply(part).divide(whole, 2, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal sum(List<FxSettlement> items, boolean buy) {
+        return items.stream().map(s -> buy ? s.getBuyAmount() : s.getSellAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private static boolean isWeekend(LocalDate d) {
+        return d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY;
+    }
+
+    private static BusinessException invalid(String message) {
+        return new BusinessException("FX_DRAWDOWN_INVALID", message);
+    }
+}

@@ -37,6 +37,7 @@ public class FxDealController {
     private final FxQuoteService quotes;
     private final FxDealService deals;
     private final FxLimitService limits;
+    private final DealViewAssembler views;
 
     @PostMapping("/quotes")
     public ApiResponse<QuoteView> request(@Valid @RequestBody QuoteBody b) {
@@ -53,7 +54,7 @@ public class FxDealController {
     /** Accepting a quote twice returns the same deal. */
     @PostMapping("/quotes/{id}/accept")
     public ApiResponse<DealView> accept(@PathVariable UUID id) {
-        return ApiResponse.success(DealView.of(quotes.accept(id)));
+        return ApiResponse.success(views.view(quotes.accept(id)));
     }
 
     @PostMapping("/quotes/{id}/cancel")
@@ -63,7 +64,7 @@ public class FxDealController {
 
     @GetMapping("/deals")
     public ApiResponse<List<DealView>> deals(@RequestParam UUID corporateId) {
-        return ApiResponse.success(deals.list(corporateId).stream().map(DealView::of).toList());
+        return ApiResponse.success(deals.list(corporateId).stream().map(views::view).toList());
     }
 
     @GetMapping("/deals/{id}/events")

@@ -22,6 +22,9 @@ public class FxDealProperties {
     /** How long a dealer price stays firm. */
     private int quoteValiditySeconds = 30;
 
+    /** How long the corporate has to affirm a confirmation before it is flagged overdue. */
+    private int confirmationDueHours = 24;
+
     private BigDecimal minAmount = new BigDecimal("1000");
 
     /** Credit limit given to a corporate with none, in its home currency. */

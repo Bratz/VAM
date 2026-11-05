@@ -15,6 +15,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 class FxEvents {
 
+    static final int MAX_ACTION_LENGTH = 20;
+
     private final FxDealEventRepository events;
     private final AuditLogService audit;
 
@@ -24,6 +26,15 @@ class FxEvents {
 
     void deal(FxDeal d, DealStatus from, DealStatus to, String detail) {
         write(FxDealEvent.DEAL, d.getId(), d.getCorporateId(), from == null ? null : from.name(), to.name(), detail);
+    }
+
+    /** A step that is not a status change, such as a confirmation being issued, affirmed or disputed. */
+    void note(FxDeal d, String action, String detail) {
+        // The column is varchar(20) and Hibernate's ddl-auto never widens it, so a longer code would fail only at runtime.
+        if (action.length() > MAX_ACTION_LENGTH) {
+            throw new IllegalArgumentException("Event action '" + action + "' is longer than " + MAX_ACTION_LENGTH + " characters");
+        }
+        write(FxDealEvent.DEAL, d.getId(), d.getCorporateId(), null, action, detail);
     }
 
     static String actor() {
