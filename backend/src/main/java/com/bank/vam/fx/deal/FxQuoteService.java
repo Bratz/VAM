@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -102,6 +103,17 @@ public class FxQuoteService {
         FxQuoteRequest q = quotes.findById(id).orElseThrow(() -> notFound(id));
         expireIfLapsed(q);
         return q;
+    }
+
+    /**
+     * A corporate's requests in a period, newest first. Looking at them turns any that have outlived their
+     * validity into EXPIRED, the same as reading one by id, so the log never shows a firm price that is not.
+     */
+    @Transactional(noRollbackFor = BusinessException.class)
+    public List<FxQuoteRequest> search(UUID corporateId, LocalDateTime from, LocalDateTime to) {
+        List<FxQuoteRequest> found = quotes.findByCorporateIdAndCreatedAtBetweenOrderByCreatedAtDesc(corporateId, from, to);
+        found.forEach(this::expireIfLapsed);
+        return found;
     }
 
     @Transactional(noRollbackFor = BusinessException.class)

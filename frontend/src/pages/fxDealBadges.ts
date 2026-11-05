@@ -1,6 +1,6 @@
 // Badge labels and tones for deal and confirmation status, shared by the Deal tab and its drawer.
 
-import type { ConfirmationStatus, Deal, DealStatus } from '../services/fxDealApi';
+import type { ConfirmationStatus, Deal, DealStatus, QuoteStatus } from '../services/fxDealApi';
 
 export const DEAL_BADGE: Record<DealStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' | 'info' }> = {
   BOOKED: { label: 'Booked', variant: 'neutral' },
@@ -20,4 +20,13 @@ export const confirmationBadge = (d: Deal): { label: string; variant: 'success' 
   if (s === 'DISPUTED') return { label: 'Disputed', variant: 'error' };
   if (s === 'ISSUED') return d.confirmationOverdue ? { label: 'Confirmation overdue', variant: 'error' } : { label: 'Awaiting confirmation', variant: 'warning' };
   return null;
+};
+
+export const QUOTE_BADGE: Record<QuoteStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' | 'info' }> = {
+  REQUESTED: { label: 'Requested', variant: 'neutral' },
+  QUOTED: { label: 'Firm price', variant: 'info' },
+  ACCEPTED: { label: 'Accepted', variant: 'success' },
+  EXPIRED: { label: 'Expired', variant: 'warning' },
+  REJECTED: { label: 'Declined', variant: 'error' },
+  CANCELLED: { label: 'Withdrawn', variant: 'neutral' },
 };

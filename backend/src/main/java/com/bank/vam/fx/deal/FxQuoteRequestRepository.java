@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,4 +17,6 @@ public interface FxQuoteRequestRepository extends JpaRepository<FxQuoteRequest, 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT q FROM FxQuoteRequest q WHERE q.id = :id")
     Optional<FxQuoteRequest> lockById(@Param("id") UUID id);
+
+    List<FxQuoteRequest> findByCorporateIdAndCreatedAtBetweenOrderByCreatedAtDesc(UUID corporateId, LocalDateTime from, LocalDateTime to);
 }

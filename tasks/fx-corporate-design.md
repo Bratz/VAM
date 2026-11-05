@@ -224,6 +224,16 @@ Two bugs only a real run exposed, both from Hibernate's `ddl-auto: update` never
 
 Not done, by design: partial close-out and early delivery; margin and collateral; a screen for the bank back office to resolve a dispute (API only); real balance postings (settlement would then debit and credit the corporate's accounts, behind a setting); a window or part-drawn deal closes or rolls for its undrawn amount as a plain forward; per-currency holiday calendars; the quote guard and the AI layers (phases 5-6). Actor names show as "anonymousUser" in dev.
 
+### RFQ log (added after phase 4)
+
+Every request for a price was already stored (`fx_quote_request`, with a timeline per step in `fx_deal_event` and the audit log), including expired, withdrawn and declined ones, but nothing could list them: the only quote endpoints fetched one by id, and the Deal tab showed just the current quote plus the deals that came from accepted ones. Requests that never became a deal were invisible.
+
+Added: `GET /api/v1/fx/quotes?corporateId=&status=&pair=&days=&limit=` (newest first, default 30 days, up to 365, capped at 500 rows) returning the rows and a summary, and `GET /api/v1/fx/quotes/{id}/events` for one request's history. On the Deal tab an **RFQ log** panel shows the summary tiles (requests, priced, accepted, expired, declined, withdrawn, hit rate and average time to accept), filters for outcome, pair and period, a table, and a drawer with the request's details and history.
+
+Decisions: the summary covers all outcomes for the chosen pair and period, while the outcome filter only trims the rows, so the tiles stay a whole picture. **Hit rate is accepted over settled requests** (accepted, expired or withdrawn): a price still open and a request the desk declined are not counted against it, and with nothing settled it shows "-" rather than a misleading 0%. Listing turns any price that has outlived its validity into EXPIRED, the same as reading it by id, so the log never shows a firm price that is not. The requester shown is the security-context user ("anonymousUser" in dev). 3 more tests (90 FX tests in all); verified live with one request of each outcome, including filters, the restart (the log persists) and a bad status value (clear 400 instead of a 500).
+
+Not done: a "request again" action on an expired or declined row, export, and RFQ analytics beyond the summary (for example decline reasons over time or response time by pair). The data supports all three.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

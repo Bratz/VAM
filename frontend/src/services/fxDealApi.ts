@@ -58,6 +58,32 @@ export interface Quote {
   limitCharge?: number;
   limitCurrency?: string;
   dealId?: string;
+  requestedBy?: string;
+  createdAt?: string;
+}
+
+/** What happened to the requests in a period. hitRate is accepted over those settled (accepted, expired, withdrawn). */
+export interface RfqSummary {
+  requests: number;
+  priced: number;
+  accepted: number;
+  expired: number;
+  declined: number;
+  withdrawn: number;
+  open: number;
+  hitRate?: number;
+  avgSecondsToAccept?: number;
+}
+
+export interface RfqRow {
+  quote: Quote;
+  /** The deal an accepted request became. */
+  dealRef?: string;
+}
+
+export interface RfqLog {
+  summary: RfqSummary;
+  quotes: RfqRow[];
 }
 
 export interface Deal {
@@ -178,6 +204,14 @@ export interface CreditLimit {
 export const fxDealApi = {
   requestQuote: (body: QuoteBody) =>
     apiClient.post<ApiResponse<Quote>>('/fx/quotes', body).then(r => r.data.data),
+
+  /** Every request a corporate made in the last `days`, newest first; summary covers all statuses. */
+  rfqLog: (corporateId: string, filter: { status?: QuoteStatus; pair?: string; days?: number } = {}) =>
+    apiClient.get<ApiResponse<RfqLog>>('/fx/quotes', { params: { corporateId, ...filter } }).then(r => r.data.data),
+
+  /** One request's history, including those that never became a deal. */
+  quoteEvents: (id: string) =>
+    apiClient.get<ApiResponse<DealEvent[]>>(`/fx/quotes/${id}/events`).then(r => r.data.data),
 
   getQuote: (id: string) =>
     apiClient.get<ApiResponse<Quote>>(`/fx/quotes/${id}`).then(r => r.data.data),

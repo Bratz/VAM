@@ -1,9 +1,11 @@
 package com.bank.vam.fx.deal;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /** Response shapes for quotes, deals, their timeline and the credit limit. */
@@ -19,7 +21,7 @@ public final class FxDealModels {
             String exposureRef, QuoteStatus status, String statusReason, BigDecimal midRate, BigDecimal forwardPoints,
             BigDecimal spreadBps, BigDecimal clientRate, BigDecimal counterAmount, String dealer,
             LocalDateTime quotedAt, LocalDateTime validUntil, long secondsRemaining, BigDecimal limitCharge,
-            String limitCurrency, UUID dealId) {
+            String limitCurrency, UUID dealId, String requestedBy, LocalDateTime createdAt) {
 
         static QuoteView of(FxQuoteRequest q) {
             long remaining = q.getStatus() == QuoteStatus.QUOTED
@@ -28,8 +30,59 @@ public final class FxDealModels {
                     q.getSide(), q.getInstrument(), q.getAmount(), q.getValueDate(), q.getWindowStart(), q.getPurpose(),
                     q.getExposureRef(), q.getStatus(), q.getStatusReason(), q.getMidRate(), q.getForwardPoints(),
                     q.getSpreadBps(), q.getClientRate(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
-                    q.getValidUntil(), remaining, q.getLimitCharge(), q.getLimitCurrency(), q.getDealId());
+                    q.getValidUntil(), remaining, q.getLimitCharge(), q.getLimitCurrency(), q.getDealId(),
+                    q.getRequestedBy(), q.getCreatedAt());
         }
+    }
+
+    /** One line of the RFQ log: the quote request and, when it was accepted, the deal it became. */
+    public record RfqRow(QuoteView quote, String dealRef) {
+    }
+
+    /**
+     * What happened to the requests in a period. {@code priced} counts those the desk put a price on;
+     * {@code hitRate} is accepted over those whose outcome is settled (accepted, expired or withdrawn), so a
+     * price still open and able to be accepted does not count against it. {@code avgSecondsToAccept} is the
+     * time from the price to the acceptance.
+     */
+    public record RfqSummary(int requests, int priced, int accepted, int expired, int declined, int withdrawn, int open,
+                             BigDecimal hitRate, Long avgSecondsToAccept) {
+
+        static RfqSummary of(List<FxQuoteRequest> quotes) {
+            int priced = 0;
+            int accepted = 0;
+            int expired = 0;
+            int declined = 0;
+            int withdrawn = 0;
+            int open = 0;
+            long acceptSeconds = 0;
+            for (FxQuoteRequest q : quotes) {
+                if (q.getClientRate() != null) {
+                    priced++;
+                }
+                switch (q.getStatus()) {
+                    case ACCEPTED -> {
+                        accepted++;
+                        if (q.getQuotedAt() != null && q.getAcceptedAt() != null) {
+                            acceptSeconds += Math.max(0, Duration.between(q.getQuotedAt(), q.getAcceptedAt()).toSeconds());
+                        }
+                    }
+                    case EXPIRED -> expired++;
+                    case REJECTED -> declined++;
+                    case CANCELLED -> withdrawn++;
+                    case QUOTED -> open++;
+                    default -> { }
+                }
+            }
+            int decided = accepted + expired + withdrawn;
+            BigDecimal hitRate = decided == 0 ? null
+                    : BigDecimal.valueOf(accepted).divide(BigDecimal.valueOf(decided), 4, RoundingMode.HALF_UP);
+            return new RfqSummary(quotes.size(), priced, accepted, expired, declined, withdrawn, open, hitRate,
+                    accepted == 0 ? null : acceptSeconds / accepted);
+        }
+    }
+
+    public record RfqLog(RfqSummary summary, List<RfqRow> quotes) {
     }
 
     /**

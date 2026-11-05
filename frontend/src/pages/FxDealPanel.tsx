@@ -14,11 +14,12 @@ import { Card, CardHeader, Badge, Button, Input, Select, DataTable } from '../co
 import type { Column } from '../components/ui/DataTable';
 import { Alert, ProgressBar } from '../components/ui/enhanced';
 import FxDealDrawer from './FxDealDrawer';
-import { DEAL_BADGE, confirmationBadge } from './fxDealBadges';
+import FxRfqLog from './FxRfqLog';
+import { DEAL_BADGE, QUOTE_BADGE, confirmationBadge } from './fxDealBadges';
 import { cn } from '../utils';
 import { fxMarketApi } from '../services/fxMarketApi';
 import {
-  fxDealApi, CreditLimit, Deal, Instrument, Quote, QuoteStatus, SettlementRun, Side,
+  fxDealApi, CreditLimit, Deal, Instrument, Quote, SettlementRun, Side,
 } from '../services/fxDealApi';
 
 export interface DealPrefill {
@@ -37,15 +38,6 @@ const rateDigits = (n: number) => (n >= 50 ? 4 : 6);
 const errorText = (err: unknown): string => {
   const e = err as { response?: { data?: { message?: string } }; message?: string };
   return e?.response?.data?.message || e?.message || 'Request failed';
-};
-
-const QUOTE_BADGE: Record<QuoteStatus, { label: string; variant: 'success' | 'warning' | 'error' | 'neutral' | 'info' }> = {
-  REQUESTED: { label: 'Requested', variant: 'neutral' },
-  QUOTED: { label: 'Firm price', variant: 'info' },
-  ACCEPTED: { label: 'Accepted', variant: 'success' },
-  EXPIRED: { label: 'Expired', variant: 'warning' },
-  REJECTED: { label: 'Declined', variant: 'error' },
-  CANCELLED: { label: 'Cancelled', variant: 'neutral' },
 };
 
 const INSTRUMENTS: { value: Instrument; label: string }[] = [
@@ -379,6 +371,8 @@ const FxDealPanel: React.FC<{ prefill: DealPrefill | null; onPrefillUsed: () => 
           emptyDescription="Accepted prices appear here."
         />
       </Card>
+
+      <FxRfqLog corporateId={corporateId} pairs={pairs} refreshToken={`${quote?.id}|${quote?.status}|${deals.length}`} />
 
       <Card>
         <CardHeader
