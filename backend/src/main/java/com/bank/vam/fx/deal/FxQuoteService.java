@@ -4,6 +4,10 @@ import com.bank.vam.config.FxDealProperties;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.fx.ForwardPricer;
+import com.bank.vam.fx.deal.FxDealModels.QuoteView;
+import com.bank.vam.fx.deal.FxDealModels.RfqLog;
+import com.bank.vam.fx.deal.FxDealModels.RfqRow;
+import com.bank.vam.fx.deal.FxDealModels.RfqSummary;
 import com.bank.vam.fx.deal.SimulatedDealer.Price;
 import com.bank.vam.repository.CorporateRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +18,14 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Request, price, accept. The dealer prices at once; the client then has a short window to accept.
@@ -114,6 +123,36 @@ public class FxQuoteService {
         List<FxQuoteRequest> found = quotes.findByCorporateIdAndCreatedAtBetweenOrderByCreatedAtDesc(corporateId, from, to);
         found.forEach(this::expireIfLapsed);
         return found;
+    }
+
+    /**
+     * The RFQ log: a corporate's requests in the last {@code days} (1 to 365), newest first, with what became of
+     * each. The summary covers every status for the pair filter; {@code status} and {@code limit} (1 to 500)
+     * only trim the rows. Shared by the REST endpoint and the MCP tool so they cannot disagree.
+     */
+    @Transactional(noRollbackFor = BusinessException.class)
+    public RfqLog rfqLog(UUID corporateId, QuoteStatus status, String pair, int days, int limit) {
+        LocalDateTime now = LocalDateTime.now();
+        List<FxQuoteRequest> found = search(corporateId, now.minusDays(Math.min(Math.max(days, 1), 365)), now.plusMinutes(1)).stream()
+                .filter(q -> pair == null || pair.isBlank() || q.getPair().equals(pair)).toList();
+        List<FxQuoteRequest> shown = found.stream().filter(q -> status == null || q.getStatus() == status)
+                .limit(Math.min(Math.max(limit, 1), 500)).toList();
+        Map<UUID, String> refs = deals.findAllById(shown.stream().map(FxQuoteRequest::getDealId).filter(Objects::nonNull).toList())
+                .stream().collect(Collectors.toMap(FxDeal::getId, FxDeal::getDealRef));
+        return new RfqLog(RfqSummary.of(found), shown.stream().map(q -> new RfqRow(QuoteView.of(q), refs.get(q.getDealId()))).toList());
+    }
+
+    /** Blank means no filter; anything else must be a quote status, or the caller is told what is allowed. */
+    public static QuoteStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return QuoteStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("FX_REQUEST_INVALID",
+                    "Unknown status '" + status + "'; use one of " + Arrays.toString(QuoteStatus.values()));
+        }
     }
 
     @Transactional(noRollbackFor = BusinessException.class)

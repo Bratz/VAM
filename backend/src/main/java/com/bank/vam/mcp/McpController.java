@@ -51,7 +51,7 @@ public class McpController {
     // has no notifications/tools/list_changed to push, so serverInfo.version
     // is the only signal a caching client has that a previously-fetched
     // tools/list is stale (Phase 5: 7 tools -> 22 tools, masking, audit chain).
-    private static final String SERVER_VERSION = "0.2.0";
+    private static final String SERVER_VERSION = "0.3.0";
 
     private static final String SIGNED_CONTEXT_META_KEY = "com.aperture.gateway/signedContext";
 
@@ -263,8 +263,10 @@ public class McpController {
         // point at. No prompts capability — this server doesn't implement prompts/get.
         result.put("capabilities", Map.of("tools", Map.of(), "resources", Map.of()));
         result.put("instructions",
-                "Aperture treasury enquiry tools: read-only balance, pooling, sweep, and "
-                        + "audit data for the caller's entitled corporate(s). No tool here mutates state. "
+                "Aperture treasury enquiry tools: read-only balance, pooling, sweep, FX (indicative rates, "
+                        + "exposure against hedge policy, deals, price-request log) and "
+                        + "audit data for the caller's entitled corporate(s). No tool here mutates state; "
+                        + "FX dealing is not available through this connection. "
                         + "Some tools point at a ui://widget/* resource (see resources/list) for richer "
                         + "rendering on hosts that support it; all tools also return plain structuredContent.");
         result.put("ttlMs", 3_600_000);

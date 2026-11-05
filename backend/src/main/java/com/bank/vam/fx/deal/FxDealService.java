@@ -11,12 +11,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /** Books deals from accepted quotes and moves them through their states. Reads for the blotter live here too. */
 @Service
@@ -75,11 +72,6 @@ public class FxDealService {
         }
         d.setStatus(to);
         log.deal(d, from, to, detail);
-    }
-
-    /** Deal references by deal id, for labelling the accepted lines of the RFQ log. */
-    public Map<UUID, String> refs(Collection<UUID> ids) {
-        return deals.findAllById(ids).stream().collect(Collectors.toMap(FxDeal::getId, FxDeal::getDealRef));
     }
 
     public List<FxDeal> list(UUID corporateId) {

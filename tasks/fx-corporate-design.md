@@ -234,6 +234,28 @@ Decisions: the summary covers all outcomes for the chosen pair and period, while
 
 Not done: a "request again" action on an expired or declined row, export, and RFQ analytics beyond the summary (for example decline reasons over time or response time by pair). The data supports all three.
 
+## Phase 5 outcome (FX tools over MCP) - done, uncommitted
+
+Direction from the user: the FX tools should work like the existing MCP connection (Claude and other connectors calling the enquiry server), not as an in-app dealing tool. So phase 5 is four **read-only** `CopilotTool` beans in `ai/copilot/tools/read/`. The MCP pipeline already lists only non-mutating tools, so they appear on `POST /mcp` with no registration.
+
+| Tool | Scope | Returns |
+|------|-------|---------|
+| `get_fx_rates` | none (market data) | simulated spot for every pair; with `pair` its forward curve; with `pair` + `tenor` or `valueDate` one forward. Always labelled SIMULATED and not dealable. |
+| `get_fx_exposure` | corporate required | ladder by currency and bucket against hedge policy, breaches; `currency`, `breachesOnly` filters |
+| `get_fx_deals` | corporate required | deals (default open; `all` or one status; capped at 200), FX credit limit used and headroom, attention items |
+| `get_fx_rfq_log` | corporate required | the RFQ log summary and rows; `status`, `pair`, `days`, `limit` filters |
+
+Decisions:
+- **No dealing through MCP.** Requesting or accepting a price, confirming, drawing down, closing and settling stay in the portal. A connector can read the position and the market; it cannot commit the corporate to a deal. This is why the earlier `propose_fx_deal` idea was dropped: the pipeline hides mutating tools by design, and a proposal tool would be the thin end of that.
+- **Scope comes only from the context.** The argument stripper drops `corporateId` style arguments; the three corporate tools refuse with "requires a corporate scope" when the context has none (as `get_cash_forecast` does) and the entitlement guard rejects a corporate outside the caller's signed entitlement. Unscoped dev calls therefore get rates only.
+- **Shared code, not copies.** The tools call the same services as the REST controllers (`FxExposureService`, `FxDealService`, `DealViewAssembler`, `FxLimitService`, `FxDealAttentionService`, and a new `FxQuoteService.rfqLog` that the `/fx/quotes` endpoint now uses too), so the portal and the connector cannot disagree. `DealViewAssembler` became public for this. Unlike most read tools these are not marked read-only transactions: listing RFQs lazily expires lapsed prices.
+- **No masking rules needed:** the FX outputs carry no BaNCS ids; the global drop of `bancsCustomerId`/`bancsAccountId` still applies.
+- MCP server version 0.3.0; the `server/discover` instructions now mention FX and that dealing is unavailable.
+
+Verified: 7 new tests (`FxMcpToolsTest`: each tool's shape and filters, scope refusal touching no service, and the real pipeline stages keeping a caller to their corporate and rejecting an out-of-entitlement one); full backend suite 413 passing. Live with `vam.mcp.enabled=true`: `server/discover` text, `tools/list` shows the four tools, `get_fx_rates` (all, and EUR/USD 3M forward) returns data, the three scoped tools return `requires a corporate scope` when unscoped, and a tenor without a pair gives a clear error.
+
+Not verified live: the scoped path through the gateway's OAuth and signed context (needs the gateway and an account link); it is covered by the pipeline test with a constructed caller. Not done: in-app Copilot intent routing for FX questions (`IntentRouter`/`ResponseComposer`), which is optional and separate from MCP.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

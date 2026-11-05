@@ -9,12 +9,12 @@ import java.util.Optional;
 /** Builds the blotter view of a deal: its stored fields plus today's mark and whether its confirmation is overdue. */
 @Component
 @RequiredArgsConstructor
-class DealViewAssembler {
+public class DealViewAssembler {
 
     private final FxMtmService mtm;
     private final FxConfirmationService confirmations;
 
-    DealView view(FxDeal d) {
+    public DealView view(FxDeal d) {
         // Only deals still in force have a mark worth showing.
         Optional<FxMtmService.Mark> mark = DealStatus.OPEN.contains(d.getStatus()) ? mtm.mark(d) : Optional.empty();
         return DealView.of(d, mark, confirmations.overdue(d));
