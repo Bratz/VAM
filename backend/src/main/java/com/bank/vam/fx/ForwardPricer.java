@@ -42,7 +42,7 @@ public class ForwardPricer {
         this(props, rates, Clock.systemDefaultZone());
     }
 
-    ForwardPricer(FxMarketProperties props, RateProvider rates, Clock clock) {
+    public ForwardPricer(FxMarketProperties props, RateProvider rates, Clock clock) {
         this.props = props;
         this.rates = rates;
         this.clock = clock;

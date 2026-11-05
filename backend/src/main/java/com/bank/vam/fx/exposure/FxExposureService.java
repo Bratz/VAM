@@ -1,10 +1,12 @@
 package com.bank.vam.fx.exposure;
 
-import com.bank.vam.config.MarketProfileProperties;
 import com.bank.vam.entity.Corporate;
-import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.fx.HomeCurrency;
+import com.bank.vam.fx.deal.DealStatus;
+import com.bank.vam.fx.deal.FxDeal;
+import com.bank.vam.fx.deal.FxDealRepository;
 import com.bank.vam.fx.exposure.FxExposureModels.Breach;
 import com.bank.vam.fx.exposure.FxExposureModels.Bucket;
 import com.bank.vam.fx.exposure.FxExposureModels.CurrencyRow;
@@ -13,7 +15,6 @@ import com.bank.vam.fx.exposure.FxExposureModels.HedgeStatus;
 import com.bank.vam.fx.exposure.FxExposureModels.Ladder;
 import com.bank.vam.fx.exposure.FxExposureModels.UploadResult;
 import com.bank.vam.repository.CorporateRepository;
-import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.service.treasury.FxRateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,48 +28,46 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The corporate's foreign-currency exposure ladder and where it breaks hedge policy. Hedges here are
- * the ones the corporate declared by upload; deals booked through the bank join them in a later phase.
+ * The corporate's foreign-currency exposure ladder and where it breaks hedge policy. Hedges are the
+ * ones the corporate declared by upload plus its open deals with the bank.
  *
- * <p>ponytail: base currency is the oldest ROOT account's currency (market default when there is
- * none) and base-equivalents use the stored platform rates, not the simulated market. A per-corporate
- * setting is the upgrade if the derivation is ever wrong for a real corporate.
+ * <p>ponytail: base-equivalents use the stored platform rates, not the simulated market.
  */
 @Slf4j
 @Service
 public class FxExposureService {
 
     private final CorporateRepository corporates;
-    private final VirtualAccountRepository accounts;
-    private final MarketProfileProperties marketProfile;
+    private final HomeCurrency homeCurrency;
     private final ExposureSources sources;
     private final FxExposureEntryRepository entries;
     private final HedgePolicyService policy;
     private final FxRateService rates;
+    private final FxDealRepository deals;
     private final BigDecimal materialityBase;
 
-    public FxExposureService(CorporateRepository corporates, VirtualAccountRepository accounts,
-                             MarketProfileProperties marketProfile, ExposureSources sources,
+    public FxExposureService(CorporateRepository corporates, HomeCurrency homeCurrency, ExposureSources sources,
                              FxExposureEntryRepository entries, HedgePolicyService policy, FxRateService rates,
+                             FxDealRepository deals,
                              @Value("${vam.fx.exposure.materiality-base:25000}") BigDecimal materialityBase) {
         this.corporates = corporates;
-        this.accounts = accounts;
-        this.marketProfile = marketProfile;
+        this.homeCurrency = homeCurrency;
         this.sources = sources;
         this.entries = entries;
         this.policy = policy;
         this.rates = rates;
+        this.deals = deals;
         this.materialityBase = materialityBase;
     }
 
     public Ladder ladder(UUID corporateId) {
         Corporate corporate = corporates.findById(corporateId)
                 .orElseThrow(() -> new ResourceNotFoundException("Corporate not found: " + corporateId));
-        String base = baseCurrency(corporateId);
+        String base = homeCurrency.of(corporateId);
         LocalDate today = LocalDate.now();
         List<CurrencyRow> rows = ExposureCalculator.build(base, today,
                 sources.payables(corporateId, base), sources.receivables(corporateId, base),
-                sources.balances(corporateId, base), entries.findByCorporateIdOrderByValueDateAsc(corporateId),
+                sources.balances(corporateId, base), declaredAndDealt(corporateId),
                 policy.bandsFor(corporateId), ccy -> rateToBase(ccy, base), materialityBase);
         return new Ladder(corporateId, corporate.getLegalName(), base, today, rows);
     }
@@ -97,6 +96,15 @@ public class FxExposureService {
         return out;
     }
 
+    /** Hedges the corporate declared by upload, plus the open deals it has done with the bank. */
+    private List<FxExposureEntry> declaredAndDealt(UUID corporateId) {
+        List<FxExposureEntry> all = new ArrayList<>(entries.findByCorporateIdOrderByValueDateAsc(corporateId));
+        for (FxDeal d : deals.findByCorporateIdAndStatusIn(corporateId, DealStatus.OPEN)) {
+            all.addAll(d.hedgePositions());
+        }
+        return all;
+    }
+
     public List<EntryView> entriesFor(UUID corporateId) {
         return entries.findByCorporateIdOrderByValueDateAsc(corporateId).stream().map(EntryView::of).toList();
     }
@@ -123,11 +131,6 @@ public class FxExposureService {
                 b.bucket(), b.label(), b.bucket().horizonDays(), b.exposure(), b.hedged(), b.hedgeRatio(),
                 b.minRatio(), b.maxRatio(), b.status(), b.adjustToBand(), row.rateToBase(),
                 urgentUnder ? "high" : "medium");
-    }
-
-    private String baseCurrency(UUID corporateId) {
-        return accounts.findRootAccount(corporateId).map(VirtualAccount::getCurrencyCode)
-                .orElseGet(marketProfile::getDefaultCurrency);
     }
 
     private BigDecimal rateToBase(String currency, String base) {

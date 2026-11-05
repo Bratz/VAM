@@ -14,6 +14,7 @@ import { Card, CardHeader, Badge, Button, DataTable } from '../components/ui';
 import { Checkbox } from '../components/ui/Checkbox';
 import type { Column } from '../components/ui/DataTable';
 import { cn } from '../utils';
+import type { DealPrefill } from './FxDealPanel';
 import {
   fxExposureApi, ExposureBucket, ExposureEntry, ExposureLadder, HedgeStatus, PolicyBreach,
 } from '../services/fxMarketApi';
@@ -63,7 +64,12 @@ const RatioBar: React.FC<{ ratio?: number | null; min?: number | null; max?: num
   );
 };
 
-const FxExposurePanel: React.FC = () => {
+// Buckets count days from today; tenors count from the spot date two business days later. These are
+// the standard tenors whose value date lands inside each bucket (about 11, 34, 67, 96 and 186 days
+// out), so a hedge suggested for a bucket is dated where the ladder will count it.
+const BUCKET_TENOR: Record<string, string> = { D0_30: '1W', D31_60: '1M', D61_90: '2M', D91_180: '3M', D181_PLUS: '6M' };
+
+const FxExposurePanel: React.FC<{ onRequestQuote: (p: DealPrefill) => void }> = ({ onRequestQuote }) => {
   const [corporates, setCorporates] = useState<{ id: string; legalName?: string; tradeName?: string }[]>([]);
   const [corporateId, setCorporateId] = useState('');
   const [ladder, setLadder] = useState<ExposureLadder | null>(null);
@@ -165,8 +171,18 @@ const FxExposurePanel: React.FC = () => {
     },
     {
       key: 'adjustToBand', header: 'To reach policy', align: 'right', dropOrder: 1,
-      render: (_, b) => b.adjustToBand == null ? <span className="text-neutral-500 dark:text-neutral-400">-</span> : (
-        <span className="font-mono tabular-nums">{b.adjustToBand > 0 ? 'Buy' : 'Sell'} {fmt(Math.abs(b.adjustToBand))} {ccy}</span>
+      render: (_, b) => b.adjustToBand == null || !ladder ? <span className="text-neutral-500 dark:text-neutral-400">-</span> : (
+        <span className="inline-flex items-center gap-2">
+          <span className="font-mono tabular-nums">{b.adjustToBand > 0 ? 'Buy' : 'Sell'} {fmt(Math.abs(b.adjustToBand))} {ccy}</span>
+          <Button size="xs" variant="outline" onClick={() => onRequestQuote({
+            corporateId: ladder.corporateId,
+            pair: `${ccy}/${ladder.baseCurrency}`,
+            side: b.adjustToBand! > 0 ? 'BUY' : 'SELL',
+            amount: b.adjustToBand!,
+            tenor: BUCKET_TENOR[b.bucket] ?? '1M',
+            exposureRef: `${ccy}|${b.bucket}`,
+          })}>Quote</Button>
+        </span>
       ),
     },
   ];

@@ -6,13 +6,14 @@
 // app), and the board's history lives in the browser only.
 // ============================================================================
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Radio, AlertTriangle } from 'lucide-react';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardHeader, Badge, DataTable } from '../components/ui';
 import { Tabs } from '../components/ui/enhanced';
 import FxExposurePanel from './FxExposurePanel';
+import FxDealPanel, { DealPrefill } from './FxDealPanel';
 import type { Column } from '../components/ui/DataTable';
 import { cn } from '../utils';
 import { fxMarketApi, ForwardQuote, SpotTick } from '../services/fxMarketApi';
@@ -264,18 +265,24 @@ const FxMarketTab: React.FC = () => {
 const TABS = [
   { id: 'market', label: 'Market' },
   { id: 'exposure', label: 'Exposure & hedging' },
+  { id: 'deal', label: 'Deal' },
 ];
 
 const FxWorkspacePage: React.FC = () => {
   const [tab, setTab] = useState('market');
+  const [prefill, setPrefill] = useState<DealPrefill | null>(null);
+  const startQuote = useCallback((p: DealPrefill) => { setPrefill(p); setTab('deal'); }, []);
+  const clearPrefill = useCallback(() => setPrefill(null), []);
   return (
     <Page>
       <PageHeader
         title="FX Workspace"
-        description="Indicative interbank rates and forward points, and each corporate's foreign-currency exposure against its hedge policy. Rates are simulated and are mid only, not dealable prices. Quoting and dealing arrive in the next phase."
+        description="Indicative interbank rates and forward points, each corporate's foreign-currency exposure against its hedge policy, and dealing with the bank's desk. Market rates are mid only; a dealable price comes from requesting one. The desk and rates are simulated."
       />
       <Tabs tabs={TABS} activeTab={tab} onChange={setTab} />
-      {tab === 'market' ? <FxMarketTab /> : <FxExposurePanel />}
+      {tab === 'market' && <FxMarketTab />}
+      {tab === 'exposure' && <FxExposurePanel onRequestQuote={startQuote} />}
+      {tab === 'deal' && <FxDealPanel prefill={prefill} onPrefillUsed={clearPrefill} />}
     </Page>
   );
 };

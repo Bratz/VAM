@@ -187,6 +187,25 @@ Decisions and deviations:
 
 Not done in phase 2 (by design): the cash-flow forecast as an input (it is single-currency until phase 6); natural-hedge netting of cash on hand against future flows (balances are shown but never policed); editing policy bands through the API or UI (SQL for now); a "Hedge" click that opens a prefilled quote request (phase 3). The dashboard's Action queue rows are display-only for every category, so "Hedge" there is a label, not a link.
 
+## Phase 3 outcome (quote, deal, limits) - done, uncommitted
+
+Built (package `com.bank.vam.fx.deal`, config `vam.fx.deal.*`): `FxQuoteRequest`, `FxDeal`, `FxDealEvent` and `FxCreditLimit` entities; `SimulatedDealer`; `FxQuoteService` (request, accept, withdraw); `FxDealService` (booking, the state machine, confirmation text); `FxLimitService`; `FxEvents` (timeline plus audit log in one place); `FxLimitSeeder`; and `FxDealController` (`/api/v1/fx`: `quotes`, `quotes/{id}/accept|cancel`, `deals`, `deals/{id}/events|confirmation`, `limits`). Frontend: a "Deal" tab on the FX Workspace (request ticket, live price card with a server-clock countdown, accept/withdraw, credit-limit strip, deals blotter with a drawer for the confirmation and history) and a **Quote** button beside each suggested hedge on the Exposure tab that opens a prefilled ticket. 22 new unit tests (49 FX tests in all).
+
+Verified against the running backend and in the browser, including the cases mocks cannot prove: eight parallel accepts of one quote booked one deal (all eight got the same deal back); two forwards that each fit the limit alone but not together, so the second accept was refused at acceptance with the quote left QUOTED; a request far over the limit declined with the reason; withdraw then accept refused; a 32-second wait expired the quote; and a hedge booked from a breach moved GBP 0-30 days from 0% to exactly 75% (within policy). Booked deals now count as hedges in the exposure ladder.
+
+All nine corporates were seeded a default limit of 20,000,000 in their home currency (illustrative; edit `fx_credit_limit` in SQL). Test data I created was removed afterwards; the audit-log rows were left, since that log is hash-chained.
+
+Decisions and deviations:
+- **Pricing.** Client rate = forward mid (spot + points) moved against the client by a spread: a per-pair base (2-12 bps), plus 1 bp from 1M base-currency units and 3 bps from 5M, plus 0.5 bp per month to maturity. A window is priced at whichever end date is worse for the client. The quote keeps mid, points, spread and all-in rate, so the margin is explained to the client.
+- **Quote validity** 30 seconds, counted down from the server clock. A lapsed quote turns EXPIRED the first time anything reads it (no sweeper).
+- **Accepting is the control point.** It locks the quote row and the corporate's limit row, rechecks validity and the limit, then books. A repeat accept returns the same deal. The limit is also checked at request time, where an over-limit request is declined and recorded rather than errored.
+- **Credit limit.** A deal is charged notional (converted at the stored platform rate) times a factor by days to maturity: 1% to 7 days, 3% to 31, 6% to 92, 10% to 183, 15% beyond. These are illustrative, in `vam.fx.deal.pfe-bands`, not a risk policy.
+- **States.** BOOKED, CONFIRMED, then ACTIVE (forward, window) or PENDING_SETTLEMENT (spot); every other move is refused. Each transition writes a timeline event and a hash-chained audit-log row.
+- **Seeded by a startup runner**, not Flyway, for the same reason as the hedge policy (Hibernate creates the tables after Flyway runs). A corporate created later gets a limit on first use.
+- **Bug found by running it end to end:** buckets count days from today but tenors count from the spot date, so a "1M" hedge suggested for the 0-30 day bucket was dated 34 days out and landed in 31-60. Suggestions now use 1W, 1M, 2M, 3M and 6M for the five buckets (about 11, 34, 67, 96 and 186 days), which fall inside them.
+
+Not done, by design: the amount is always in the pair's base currency; spot and forwards only for the pairs the market lists (or their inverses); the dealer is a class, not an interface, until a human desk screen exists; there is no maker-checker; the dashboard Action queue still does not link to anything; quote guard (off-market check) and settlement, mark-to-market, drawdown, roll and close-out are phase 4 onward. Actor names show as "anonymousUser" in dev because the security config permits everyone.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.
