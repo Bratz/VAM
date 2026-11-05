@@ -74,6 +74,12 @@ const SECTIONS = [
     ['intercompany', 'Intercompany Dashboard'],
     ['fx-rates', 'FX Rates'],
   ]},
+  { title: 'Foreign Exchange', pages: [
+    ['fx-market', 'Market Rates'],
+    ['fx-exposure', 'Exposure & Hedging'],
+    ['fx-deals', 'FX Deals'],
+    ['fx-rfq', 'RFQ Log'],
+  ]},
   { title: 'Credit & Interest', pages: [
     ['credit-limits', 'Credit Limits'],
     ['interest-config', 'Interest Configuration'],

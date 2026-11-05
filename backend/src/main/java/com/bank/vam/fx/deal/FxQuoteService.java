@@ -96,6 +96,11 @@ public class FxQuoteService {
         q.setClientRate(price.clientRate());
         q.setCounterAmount(price.counterAmount());
         q.setDealer(SimulatedDealer.NAME);
+        q.setForwardMid(price.forwardMid());
+        q.setRateScale(price.forwardMid().scale());
+        q.setOpeningSpreadBps(price.spreadBps());
+        q.setMaxRounds(props.getNegotiationMaxRounds());
+        q.setNegotiationRounds(0);
         q.setQuotedAt(LocalDateTime.now());
         q.setValidUntil(q.getQuotedAt().plusSeconds(props.getQuoteValiditySeconds()));
         q.setLimitCharge(charge);
@@ -180,6 +185,49 @@ public class FxQuoteService {
         q.setDealId(deal.getId());
         log.quote(q, QuoteStatus.QUOTED, QuoteStatus.ACCEPTED, "Accepted as " + deal.getDealRef());
         return deal;
+    }
+
+    /**
+     * The client asks the desk for a better price on a firm quote. The desk answers at once with a new firm price
+     * (or says it is already at its best), and the validity window starts again. Only a quote that is still firm can
+     * be countered, and only a few times, so this cannot be used to keep a price alive. Locked like accept, so a
+     * counter and an accept cannot cross: whichever takes the lock first wins and the other is told the state.
+     * The credit-limit charge does not depend on the rate, so it does not change.
+     */
+    @Transactional(noRollbackFor = BusinessException.class)
+    public FxQuoteRequest counter(UUID id, BigDecimal targetRate, String note) {
+        FxQuoteRequest q = quotes.lockById(id).orElseThrow(() -> notFound(id));
+        expireIfLapsed(q);
+        if (q.getStatus() != QuoteStatus.QUOTED) {
+            throw new BusinessException("FX_QUOTE_NOT_NEGOTIABLE", "This price can no longer be negotiated: it is " + q.getStatus());
+        }
+        if (q.roundsAllowed() == 0) {
+            throw new BusinessException("FX_QUOTE_NOT_NEGOTIABLE", "This price cannot be negotiated");
+        }
+        if (q.roundsUsed() >= q.roundsAllowed()) {
+            throw new BusinessException("FX_NEGOTIATION_LIMIT", "No more rounds: accept the price or withdraw (" + q.roundsAllowed() + " allowed)");
+        }
+
+        SimulatedDealer.Counter c = dealer.counter(q.getSide(), q.getAmount(), q.getForwardMid(), q.getOpeningSpreadBps(),
+                q.getSpreadBps(), q.getClientRate(), q.getRateScale() == null ? q.getForwardMid().scale() : q.getRateScale(), targetRate);
+        boolean moved = c.clientRate().compareTo(q.getClientRate()) != 0;
+        String before = q.getClientRate().toPlainString();
+        q.setNegotiationRounds(q.roundsUsed() + 1);
+        q.setSpreadBps(c.spreadBps());
+        q.setClientRate(c.clientRate());
+        q.setCounterAmount(c.counterAmount());
+        q.setBestPrice(c.atBest());
+        q.setQuotedAt(LocalDateTime.now());
+        q.setValidUntil(q.getQuotedAt().plusSeconds(props.getQuoteValiditySeconds()));
+
+        String asked = targetRate == null ? "asked for the best price" : "asked for " + targetRate.toPlainString();
+        String answer = moved ? "desk offered " + c.clientRate().toPlainString() + " (was " + before + ", margin " + c.spreadBps().toPlainString() + " bps)"
+                : "desk held " + before + ": its best price";
+        String detail = "Round " + q.roundsUsed() + " of " + q.roundsAllowed() + ": " + asked + "; " + answer
+                + (c.atBest() && moved ? " - no further room" : "") + ", firm for " + props.getQuoteValiditySeconds() + "s"
+                + (note == null || note.isBlank() ? "" : ". Note: " + note.trim());
+        log.counter(q, detail.length() > 400 ? detail.substring(0, 397) + "..." : detail);
+        return q;
     }
 
     @Transactional(noRollbackFor = BusinessException.class)

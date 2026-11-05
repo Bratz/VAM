@@ -21,7 +21,8 @@ public final class FxDealModels {
             String exposureRef, QuoteStatus status, String statusReason, BigDecimal midRate, BigDecimal forwardPoints,
             BigDecimal spreadBps, BigDecimal clientRate, BigDecimal counterAmount, String dealer,
             LocalDateTime quotedAt, LocalDateTime validUntil, long secondsRemaining, BigDecimal limitCharge,
-            String limitCurrency, UUID dealId, String requestedBy, LocalDateTime createdAt) {
+            String limitCurrency, UUID dealId, String requestedBy, LocalDateTime createdAt,
+            int rounds, int maxRounds, boolean bestPrice) {
 
         static QuoteView of(FxQuoteRequest q) {
             long remaining = q.getStatus() == QuoteStatus.QUOTED
@@ -31,7 +32,7 @@ public final class FxDealModels {
                     q.getExposureRef(), q.getStatus(), q.getStatusReason(), q.getMidRate(), q.getForwardPoints(),
                     q.getSpreadBps(), q.getClientRate(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
                     q.getValidUntil(), remaining, q.getLimitCharge(), q.getLimitCurrency(), q.getDealId(),
-                    q.getRequestedBy(), q.getCreatedAt());
+                    q.getRequestedBy(), q.getCreatedAt(), q.roundsUsed(), q.roundsAllowed(), Boolean.TRUE.equals(q.getBestPrice()));
         }
     }
 

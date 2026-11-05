@@ -60,6 +60,10 @@ export interface Quote {
   dealId?: string;
   requestedBy?: string;
   createdAt?: string;
+  /** Times the client has asked for a better price, the most it may, and whether the desk says it is at its best. maxRounds 0 = not negotiable. */
+  rounds: number;
+  maxRounds: number;
+  bestPrice: boolean;
 }
 
 /** What happened to the requests in a period. hitRate is accepted over those settled (accepted, expired, withdrawn). */
@@ -202,6 +206,10 @@ export interface CreditLimit {
 }
 
 export const fxDealApi = {
+  /** Ask the desk for a better price. With no targetRate it is "your best price". */
+  counter: (id: string, body: { targetRate?: number; note?: string } = {}) =>
+    apiClient.post<ApiResponse<Quote>>(`/fx/quotes/${id}/counter`, body).then(r => r.data.data),
+
   requestQuote: (body: QuoteBody) =>
     apiClient.post<ApiResponse<Quote>>('/fx/quotes', body).then(r => r.data.data),
 

@@ -22,6 +22,16 @@ public class FxDealProperties {
     /** How long a dealer price stays firm. */
     private int quoteValiditySeconds = 30;
 
+    /**
+     * Negotiation: how many times a client may ask for a better price on one request, how much of its opening
+     * margin the desk will ever give up (more on larger tickets), and how much of what is left it gives per round.
+     */
+    private int negotiationMaxRounds = 3;
+    private BigDecimal concessionFraction = new BigDecimal("0.25");
+    private BigDecimal largeConcessionFraction = new BigDecimal("0.35");
+    private BigDecimal hugeConcessionFraction = new BigDecimal("0.50");
+    private BigDecimal roundGiveFraction = new BigDecimal("0.50");
+
     /** How long the corporate has to affirm a confirmation before it is flagged overdue. */
     private int confirmationDueHours = 24;
 

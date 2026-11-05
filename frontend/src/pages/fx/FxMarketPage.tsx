@@ -1,22 +1,23 @@
 // ============================================================================
-// FxWorkspacePage — phase 1 of the corporate FX feature (tasks/fx-corporate-design.md):
-// a ticking rate board and a forward curve, both from the simulated market in
-// FxMarketController. Mid rates only; the bank's spread is negotiated per deal,
-// so nothing here is a dealable price. Polled (no SSE/WebSocket exists in this
-// app), and the board's history lives in the browser only.
+// FxMarketPage ("Market Rates") — a ticking rate board and a forward curve from the simulated market in
+// FxMarketController. Mid rates only: the bank's margin is set per deal, so nothing here is a dealable price.
+// Polled (the app has no SSE/WebSocket), and the board's history lives in the browser only. From a row the
+// corporate can start a price request for that pair.
 // ============================================================================
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Radio, AlertTriangle } from 'lucide-react';
-import { Page } from '../components/layout/Page';
-import { PageHeader } from '../components/layout/PageHeader';
-import { Card, CardHeader, Badge, DataTable } from '../components/ui';
-import { Tabs } from '../components/ui/enhanced';
-import FxExposurePanel from './FxExposurePanel';
-import FxDealPanel, { DealPrefill } from './FxDealPanel';
-import type { Column } from '../components/ui/DataTable';
-import { cn } from '../utils';
-import { fxMarketApi, ForwardQuote, SpotTick } from '../services/fxMarketApi';
+import React, { useEffect, useRef, useState } from 'react';
+import { Radio, AlertTriangle, Activity, ListChecks, Send, LineChart, Copy } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Page } from '../../components/layout/Page';
+import { PageHeader } from '../../components/layout/PageHeader';
+import { StatStrip } from '../../components/layout/StatStrip';
+import { Card, CardHeader, Badge, DataTable, Input, RowActions, StatTile } from '../../components/ui';
+import type { Column } from '../../components/ui/DataTable';
+import { useUser } from '../../context/useUser';
+import { cn } from '../../utils';
+import { fxMarketApi, ForwardQuote, SpotTick } from '../../services/fxMarketApi';
+import NewDealDrawer, { TicketPrefill } from './NewDealDrawer';
+import { errorText, fmtSigned, toneFor } from './fxFormat';
 
 const SPOT_POLL_MS = 1000;
 const CURVE_POLL_MS = 5000;
@@ -24,14 +25,6 @@ const HISTORY_POINTS = 60;
 
 const digitsFor = (mid: number) => (mid >= 50 ? 3 : 5);
 const fmtRate = (n: number, extra = 0) => n.toFixed(digitsFor(n) + extra);
-const fmtSigned = (n: number, dp: number) => `${n > 0 ? '+' : ''}${n.toFixed(dp)}`;
-const toneFor = (n: number) =>
-  n > 0 ? 'text-success-700 dark:text-success-300' : n < 0 ? 'text-error-700 dark:text-error-300' : 'text-neutral-500 dark:text-neutral-400';
-
-const errorText = (err: unknown): string => {
-  const e = err as { response?: { data?: { message?: string; error?: string } }; message?: string };
-  return e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Request failed';
-};
 
 const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone }) => {
   if (values.length < 2) return <span className="inline-block w-24 h-6" />;
@@ -46,7 +39,9 @@ const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone 
   );
 };
 
-const FxMarketTab: React.FC = () => {
+const FxMarketPage: React.FC = () => {
+  const { currentCorporateId } = useUser();
+  const [ticket, setTicket] = useState<{ prefill: TicketPrefill } | null>(null);
   const [ticks, setTicks] = useState<SpotTick[]>([]);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [selected, setSelected] = useState('EUR/USD');
@@ -122,6 +117,7 @@ const FxMarketTab: React.FC = () => {
   const tick = ticks.find((t) => t.pair === selected);
   const first = curve[0];
   const asOf = ticks[0] ? new Date(ticks[0].asOf).toLocaleTimeString() : '';
+  const mover = ticks.reduce<SpotTick | null>((m, t) => (!m || Math.abs(t.changeBps) > Math.abs(m.changeBps) ? t : m), null);
 
   const boardColumns: Column<SpotTick>[] = [
     {
@@ -155,6 +151,19 @@ const FxMarketTab: React.FC = () => {
       mobileHidden: true,
       render: (_, t) => <Sparkline values={history.current[t.pair] ?? []} tone={toneFor(t.changeBps)} />,
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      width: '4rem',
+      minWidth: 64,
+      render: (_, t) => (
+        <RowActions actions={[
+          { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => setTicket({ prefill: { pair: t.pair, side: 'BUY' } }) },
+          { label: 'Forward curve', icon: <LineChart className="w-4 h-4" />, onClick: () => setSelected(t.pair) },
+          { label: 'Copy rate', icon: <Copy className="w-4 h-4" />, onClick: () => { navigator.clipboard?.writeText(fmtRate(t.mid)).then(() => toast.success('Rate copied')).catch(() => undefined); } },
+        ]} />
+      ),
+    },
   ];
 
   const curveColumns: Column<ForwardQuote>[] = [
@@ -177,21 +186,29 @@ const FxMarketTab: React.FC = () => {
   ];
 
   return (
-    <>
+    <Page>
+      <PageHeader
+        title="Market Rates"
+        description="Indicative interbank rates and forward points. Mid only: a dealable price comes from requesting one, and the bank's margin is set per deal. The rates are simulated."
+      />
+
+      <StatStrip>
+        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(ticks.length)} sub="simulated market" />
+        <StatTile tone={mover && mover.changeBps < 0 ? 'danger' : 'success'} icon={<Activity className="w-5 h-5" />} label="Biggest mover"
+          value={mover ? mover.pair : '-'} sub={mover ? `${fmtSigned(mover.changeBps, 1)} bps vs open` : 'waiting for rates'} />
+        <StatTile tone={feedError ? 'danger' : 'info'} icon={<Radio className="w-5 h-5" />} label="Feed"
+          value={feedError ? 'Unavailable' : 'Simulated'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'connecting')} />
+      </StatStrip>
+
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader
             title="Rate board"
-            subtitle="Select a pair to see its forward curve."
-            action={
-              feedError ? (
-                <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
-              ) : (
-                <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Simulated · {asOf || '…'}</Badge>
-              )
-            }
+            subtitle="Select a pair to see its forward curve, or use a row's actions to request a price."
+            action={feedError
+              ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
+              : <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Simulated</Badge>}
           />
-          {feedError && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{feedError}</p>}
           <DataTable<SpotTick>
             data={ticks}
             columns={boardColumns}
@@ -227,17 +244,7 @@ const FxMarketTab: React.FC = () => {
           )}
 
           <div className="mt-5 pt-4 border-t border-edge">
-            <label htmlFor="fx-value-date" className="block text-body-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1.5">
-              Price an exact value date
-            </label>
-            <input
-              id="fx-value-date"
-              type="date"
-              value={valueDate}
-              min={first?.spotDate}
-              onChange={(e) => setValueDate(e.target.value)}
-              className="w-full rounded-md border border-edge bg-surface-card px-3 py-2 text-body-sm text-primary-900 dark:text-neutral-50"
-            />
+            <Input label="Price an exact value date" type="date" value={valueDate} min={first?.spotDate} onChange={(e) => setValueDate(e.target.value)} />
             {customError && <p className="text-body-sm text-error-700 dark:text-error-300 mt-2">{customError}</p>}
             {custom && (
               <dl className="mt-3 grid grid-cols-3 gap-3 text-body-sm">
@@ -258,33 +265,16 @@ const FxMarketTab: React.FC = () => {
           </div>
         </Card>
       </div>
-    </>
-  );
-};
 
-const TABS = [
-  { id: 'market', label: 'Market' },
-  { id: 'exposure', label: 'Exposure & hedging' },
-  { id: 'deal', label: 'Deal' },
-];
-
-const FxWorkspacePage: React.FC = () => {
-  const [tab, setTab] = useState('market');
-  const [prefill, setPrefill] = useState<DealPrefill | null>(null);
-  const startQuote = useCallback((p: DealPrefill) => { setPrefill(p); setTab('deal'); }, []);
-  const clearPrefill = useCallback(() => setPrefill(null), []);
-  return (
-    <Page>
-      <PageHeader
-        title="FX Workspace"
-        description="Indicative interbank rates and forward points, each corporate's foreign-currency exposure against its hedge policy, and dealing with the bank's desk. Market rates are mid only; a dealable price comes from requesting one. The desk and rates are simulated."
+      <NewDealDrawer
+        isOpen={!!ticket}
+        prefill={ticket?.prefill ?? null}
+        corporateId={currentCorporateId ?? ''}
+        onClose={() => setTicket(null)}
+        onChanged={() => undefined}
       />
-      <Tabs tabs={TABS} activeTab={tab} onChange={setTab} />
-      {tab === 'market' && <FxMarketTab />}
-      {tab === 'exposure' && <FxExposurePanel onRequestQuote={startQuote} />}
-      {tab === 'deal' && <FxDealPanel prefill={prefill} onPrefillUsed={clearPrefill} />}
     </Page>
   );
 };
 
-export default FxWorkspacePage;
+export default FxMarketPage;

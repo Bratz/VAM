@@ -53,6 +53,54 @@ public class SimulatedDealer {
         return new Price(basis.spotMid(), basis.forwardPoints(), basis.forwardMid(), spread, rate, counter, basis.valueDate());
     }
 
+    /** The desk's answer to a request for a better price. {@code atBest} means it will not move further. */
+    public record Counter(BigDecimal spreadBps, BigDecimal clientRate, BigDecimal counterAmount, boolean atBest) {
+    }
+
+    /**
+     * Answers "can you do better?". The desk will never give up more than a share of the margin it opened with
+     * (its floor; more on a large ticket), and each round it gives up a share of what is left above that floor.
+     * If the client named a rate the desk goes no further than that rate, so a modest ask is met exactly and an
+     * ambitious one is met part of the way.
+     *
+     * @param rateScale  decimal places the pair is quoted to
+     * @param targetRate the rate the client asks for, or null to ask for "your best price"
+     */
+    public Counter counter(Side side, BigDecimal amount, BigDecimal forwardMid, BigDecimal openingSpread,
+                           BigDecimal currentSpread, BigDecimal currentRate, int rateScale, BigDecimal targetRate) {
+        if (targetRate != null && (targetRate.signum() <= 0 || (side == Side.BUY
+                ? targetRate.compareTo(currentRate) >= 0 : targetRate.compareTo(currentRate) <= 0))) {
+            throw new BusinessException("FX_COUNTER_INVALID", "Ask for a rate better than the current "
+                    + currentRate.toPlainString() + " (" + (side == Side.BUY ? "lower, as you are buying" : "higher, as you are selling") + ")");
+        }
+        BigDecimal floor = openingSpread.multiply(BigDecimal.ONE.subtract(concession(amount)));
+        BigDecimal room = currentSpread.subtract(floor).max(BigDecimal.ZERO);
+        BigDecimal next = currentSpread.subtract(room.multiply(props.getRoundGiveFraction()));
+        if (targetRate != null) {
+            // The spread, against the forward mid, that the client's rate would leave the bank.
+            BigDecimal asked = (side == Side.BUY ? targetRate.divide(forwardMid, 10, RoundingMode.HALF_UP).subtract(BigDecimal.ONE)
+                    : BigDecimal.ONE.subtract(targetRate.divide(forwardMid, 10, RoundingMode.HALF_UP))).movePointRight(4);
+            next = next.max(asked);
+        }
+        next = next.max(floor).min(currentSpread).setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal factor = side == Side.BUY ? BigDecimal.ONE.add(next.movePointLeft(4)) : BigDecimal.ONE.subtract(next.movePointLeft(4));
+        BigDecimal rate = forwardMid.multiply(factor).setScale(rateScale, RoundingMode.HALF_UP);
+        // Rounding the rate can leave it no better than before; then there is nothing more to give.
+        boolean better = side == Side.BUY ? rate.compareTo(currentRate) < 0 : rate.compareTo(currentRate) > 0;
+        if (!better) {
+            return new Counter(currentSpread, currentRate.setScale(rateScale, RoundingMode.HALF_UP), amount.multiply(currentRate).setScale(2, RoundingMode.HALF_UP), true);
+        }
+        boolean atBest = next.subtract(floor).compareTo(new BigDecimal("0.05")) < 0;
+        return new Counter(next, rate, amount.multiply(rate).setScale(2, RoundingMode.HALF_UP), atBest);
+    }
+
+    private BigDecimal concession(BigDecimal amount) {
+        return amount.compareTo(props.getHugeAmount()) >= 0 ? props.getHugeConcessionFraction()
+                : amount.compareTo(props.getLargeAmount()) >= 0 ? props.getLargeConcessionFraction()
+                : props.getConcessionFraction();
+    }
+
     /**
      * The client may draw on any date in the window, so the bank quotes the date that is worst for the
      * client: the highest forward rate when buying, the lowest when selling. A forward rate moves in

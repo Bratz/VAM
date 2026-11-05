@@ -89,6 +89,39 @@ public class FxQuoteRequest extends BaseEntity {
     @Column(name = "dealer", length = 30)
     private String dealer;
 
+    /**
+     * What a counter-offer needs. The forward mid and opening spread fix the desk's floor and let it re-price;
+     * the round limit is that of the moment of the request. All nullable: a quote from before negotiation
+     * existed has none and cannot be negotiated.
+     */
+    @Column(name = "forward_mid", precision = 19, scale = 8)
+    private BigDecimal forwardMid;
+
+    @Column(name = "opening_spread_bps", precision = 8, scale = 2)
+    private BigDecimal openingSpreadBps;
+
+    /** Decimal places the desk quotes this pair to; the stored forward mid is wider than that. */
+    @Column(name = "rate_scale")
+    private Integer rateScale;
+
+    @Column(name = "max_rounds")
+    private Integer maxRounds;
+
+    @Column(name = "negotiation_rounds")
+    private Integer negotiationRounds;
+
+    /** True once the desk has said this is as good as it gets. */
+    @Column(name = "best_price")
+    private Boolean bestPrice;
+
+    public int roundsUsed() {
+        return negotiationRounds == null ? 0 : negotiationRounds;
+    }
+
+    public int roundsAllowed() {
+        return forwardMid == null || openingSpreadBps == null || maxRounds == null ? 0 : maxRounds;
+    }
+
     @Column(name = "quoted_at")
     private LocalDateTime quotedAt;
 

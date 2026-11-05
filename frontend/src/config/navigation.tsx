@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical, Scale, ScrollText, Activity } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -133,7 +133,6 @@ export const navSections: NavSection[] = [
     title: 'Liquidity Management',
     items: [
       { icon: <TrendingUp className="w-5 h-5" />, label: 'Cash Forecast', href: 'forecasting', isNew: true },
-      { icon: <Coins className="w-5 h-5" />, label: 'FX Workspace', href: 'fx-workspace', isNew: true },
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Cash Concentration', href: 'sweeping' },
       { icon: <FlaskConical className="w-5 h-5" />, label: 'Simulator', href: 'simulator', isNew: true },
       { icon: <CircleDot className="w-5 h-5" />, label: 'Notional Pooling', href: 'notional-pooling' },
@@ -151,6 +150,18 @@ export const navSections: NavSection[] = [
         keywords: ['POBO', 'COBO', 'on behalf of', 'settlement', 'recharges', 'entity pairs'],
         covers: ['intercompany-pobo', 'intercompany-cobo', 'intercompany-settlement'],
       },
+    ]
+  },
+  // Foreign Exchange — rates, exposure against the hedge policy, and dealing with the bank's desk. Each is its
+  // own page, as in the other sections; "New Deal" is an action on those pages (a drawer), not a menu item.
+  // The old single FX Workspace page id still routes (here, to Deals) so existing links keep working.
+  {
+    title: 'Foreign Exchange',
+    items: [
+      { icon: <Activity className="w-5 h-5" />, label: 'Market Rates', href: 'fx-market', isNew: true, keywords: ['FX', 'forward', 'curve', 'spot', 'rates'] },
+      { icon: <Scale className="w-5 h-5" />, label: 'Exposure & Hedging', href: 'fx-exposure', keywords: ['FX', 'hedge', 'policy', 'currency risk'] },
+      { icon: <Coins className="w-5 h-5" />, label: 'FX Deals', href: 'fx-deals', covers: ['fx-workspace'], keywords: ['FX', 'forward', 'spot', 'confirmation', 'settlement', 'deal', 'dealing'] },
+      { icon: <ScrollText className="w-5 h-5" />, label: 'RFQ Log', href: 'fx-rfq', keywords: ['FX', 'quote', 'request for quote', 'price request', 'negotiation'] },
     ]
   },
   // Insights — home for AI features. Copilot is also a floating FAB on every
@@ -188,7 +199,7 @@ export const navSections: NavSection[] = [
       { icon: <CreditCard className="w-5 h-5" />, label: 'Credit Limits', href: 'credit-limits' },
       { icon: <Percent className="w-5 h-5" />, label: 'Interest Configuration', href: 'interest-config' },
       { icon: <TrendingUp className="w-5 h-5" />, label: 'Interest Accruals', href: 'interest-accruals' },
-      { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rates', href: 'fx-rates' },
+      { icon: <DollarSign className="w-5 h-5" />, label: 'FX Rate Table', href: 'fx-rates' },
       { icon: <Receipt className="w-5 h-5" />, label: 'Tax & Charges', href: 'tax-charges' },
       { icon: <Link2 className="w-5 h-5" />, label: 'Integrations', href: 'integrations' },
       { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: 'settings' },
@@ -252,7 +263,12 @@ export const pageTitles: Record<string, string> = {
   'intercompany': 'Intercompany Dashboard',
   'intercompany-settlement': 'Intercompany Settlement',
   'fx-rates': 'FX Rate Management',
-  'fx-workspace': 'FX Workspace',
+  // Foreign Exchange (fx-workspace is the retired single page; it opens Deals)
+  'fx-market': 'Market Rates',
+  'fx-exposure': 'Exposure & Hedging',
+  'fx-deals': 'FX Deals',
+  'fx-rfq': 'RFQ Log',
+  'fx-workspace': 'FX Deals',
   // Credit & Interest — the section is gone; these sit under Administration
   // now, alongside FX Rates above.
   'credit-limits': 'Credit Limits',

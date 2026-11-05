@@ -25,6 +25,10 @@ export type { StatTileProps } from './StatTile';
 export { DataTable } from './DataTable';
 export type { Column, DataTableProps } from './DataTable';
 
+// The "..." menu at the end of a table row.
+export { RowActions } from './RowActions';
+export type { RowAction } from './RowActions';
+
 // ============================================================================
 // WORLD-CLASS UI COMPONENTS - Swiss Minimalism + Premium Polish
 // ============================================================================

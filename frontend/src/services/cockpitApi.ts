@@ -383,7 +383,7 @@ function fxBreachItem(b: PolicyBreach): AttentionItem {
       displayText: `settles ${b.bucketLabel}`,
       millisecondsToDeadline: b.horizonDays * 24 * 60 * 60 * 1000,
     },
-    actions: [{ label: 'Hedge', kind: 'navigate', actionId: 'fx-workspace', requiresConfirmation: false }],
+    actions: [{ label: 'Hedge', kind: 'navigate', actionId: 'fx-exposure', requiresConfirmation: false }],
     createdAt: new Date().toISOString(),
   };
 }
@@ -413,7 +413,7 @@ function fxDealItem(a: DealAttention): AttentionItem {
       : { kind: 'relative_future', displayText: `value ${a.dueDate}`, millisecondsToDeadline: ms },
     actions: [{
       label: a.type === 'CONFIRMATION_PENDING' ? 'Confirm' : a.type === 'FUNDING_NEEDED' ? 'Fund' : 'Review',
-      kind: 'navigate', actionId: 'fx-workspace', requiresConfirmation: false,
+      kind: 'navigate', actionId: 'fx-deals', requiresConfirmation: false,
     }],
     createdAt: new Date().toISOString(),
   };

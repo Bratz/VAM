@@ -69,7 +69,10 @@ import CreditLimitsPage from './pages/CreditLimitsPage';
 import FundsAvailabilityPage from './pages/FundsAvailabilityPage';
 import BalanceAggregationPage from './pages/BalanceAggregationPage';
 import FxRatesPage from './pages/FxRatesPage';
-import FxWorkspacePage from './pages/FxWorkspacePage';
+import FxMarketPage from './pages/fx/FxMarketPage';
+import FxExposurePage from './pages/fx/FxExposurePage';
+import FxDealsPage from './pages/fx/FxDealsPage';
+import FxRfqPage from './pages/fx/FxRfqPage';
 import EntityBalanceTreePage from './pages/EntityBalanceTreePage';
 
 // ============================================================================
@@ -169,6 +172,10 @@ export type PageType =
   | 'balance-aggregation'
   | 'fx-rates'
   | 'fx-workspace'
+  | 'fx-market'
+  | 'fx-exposure'
+  | 'fx-deals'
+  | 'fx-rfq'
   | 'entity-balance-tree'
   
   // Unified VAM Design - Legal Entity & Account Attachments
@@ -434,7 +441,7 @@ const sectionFor = (page: PageType): SectionKey => {
   if (page === 'sync-admin' || page === 'integrations' || page === 'tax-charges' || page === 'settings' || page === 'operation-history') return 'admin';
   if (page.startsWith('intercompany')) return 'intercompany';
   const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
-    'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates','fx-workspace',
+    'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates','fx-workspace','fx-market','fx-exposure','fx-deals','fx-rfq',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
     'interest-accruals','exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
@@ -580,7 +587,11 @@ const App: React.FC = () => {
       case 'funds-check': return <FundsAvailabilityPage />;
       case 'balance-aggregation': return <BalanceAggregationPage />;
       case 'fx-rates': return <FxRatesPage />;
-      case 'fx-workspace': return <FxWorkspacePage />;
+      case 'fx-market': return <FxMarketPage />;
+      case 'fx-exposure': return <FxExposurePage />;
+      case 'fx-deals':
+      case 'fx-workspace': return <FxDealsPage />;
+      case 'fx-rfq': return <FxRfqPage />;
       case 'entity-balance-tree': return <EntityBalanceTreePage />;
       
       // ====================================================================

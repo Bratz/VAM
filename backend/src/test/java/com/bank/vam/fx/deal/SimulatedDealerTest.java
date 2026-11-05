@@ -94,4 +94,92 @@ class SimulatedDealerTest {
         assertThatThrownBy(() -> dealer.price("EUR/CAD", Side.BUY, Instrument.SPOT, bd("100000"), null, null))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("No market");
     }
+
+    // ---- negotiation ---------------------------------------------------------------------------------------
+
+    private SimulatedDealer.Price open(Side side, String amount) {
+        return dealer.price("EUR/USD", side, Instrument.SPOT, bd(amount), null, null);
+    }
+
+    private SimulatedDealer.Counter counter(Side side, String amount, SimulatedDealer.Price opening, BigDecimal spread, BigDecimal rate, String target) {
+        return dealer.counter(side, bd(amount), opening.forwardMid(), opening.spreadBps(), spread, rate, opening.forwardMid().scale(), target == null ? null : bd(target));
+    }
+
+    @Test
+    void askingForTheBestPriceGivesUpHalfTheRoomAboveTheFloorAndMovesTheRateTheRightWay() {
+        SimulatedDealer.Price p = open(Side.BUY, "100000"); // 3.00 bps, floor 2.25 (25% of the opening margin)
+
+        SimulatedDealer.Counter c = counter(Side.BUY, "100000", p, p.spreadBps(), p.clientRate(), null);
+
+        assertThat(c.spreadBps()).isEqualByComparingTo("2.63");
+        assertThat(c.clientRate()).isLessThan(p.clientRate()); // buying: lower is better
+        assertThat(c.counterAmount()).isEqualByComparingTo(bd("100000").multiply(c.clientRate()));
+        assertThat(c.atBest()).isFalse();
+        SimulatedDealer.Price sellOpen = open(Side.SELL, "100000");
+        SimulatedDealer.Counter sell = counter(Side.SELL, "100000", sellOpen, sellOpen.spreadBps(), sellOpen.clientRate(), null);
+        assertThat(sell.clientRate()).isGreaterThan(sellOpen.clientRate()); // selling: higher is better
+    }
+
+    @Test
+    void theDeskNeverGoesBelowItsFloorHoweverManyTimesItIsAsked() {
+        SimulatedDealer.Price p = open(Side.BUY, "100000");
+        BigDecimal spread = p.spreadBps();
+        BigDecimal rate = p.clientRate();
+        SimulatedDealer.Counter last = null;
+        for (int i = 0; i < 12; i++) {
+            last = counter(Side.BUY, "100000", p, spread, rate, null);
+            spread = last.spreadBps();
+            rate = last.clientRate();
+        }
+
+        assertThat(spread).isGreaterThanOrEqualTo(bd("2.25"));
+        assertThat(last.atBest()).isTrue();
+        // Asking again at the floor changes nothing and says so.
+        SimulatedDealer.Counter again = counter(Side.BUY, "100000", p, spread, rate, null);
+        assertThat(again.clientRate()).isEqualByComparingTo(rate);
+        assertThat(again.atBest()).isTrue();
+    }
+
+    @Test
+    void aNamedRateWithinReachIsMetExactlyAndAnAmbitiousOneIsMetPartWay() {
+        SimulatedDealer.Price p = open(Side.BUY, "100000"); // client rate 1.10033
+
+        SimulatedDealer.Counter modest = counter(Side.BUY, "100000", p, p.spreadBps(), p.clientRate(), "1.10031");
+        SimulatedDealer.Counter ambitious = counter(Side.BUY, "100000", p, p.spreadBps(), p.clientRate(), "1.10000");
+
+        assertThat(modest.clientRate()).isEqualByComparingTo("1.10031");
+        assertThat(ambitious.clientRate()).isGreaterThan(bd("1.10000")).isLessThan(p.clientRate());
+    }
+
+    @Test
+    void aRateThatIsNotBetterThanTheCurrentOneIsRefusedWithAReason() {
+        SimulatedDealer.Price p = open(Side.BUY, "100000");
+
+        assertThatThrownBy(() -> counter(Side.BUY, "100000", p, p.spreadBps(), p.clientRate(), "1.10040"))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("better than the current");
+        assertThatThrownBy(() -> counter(Side.BUY, "100000", p, p.spreadBps(), p.clientRate(), "0"))
+                .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void aLargeTicketHasMoreRoomToNegotiateThanASmallOne() {
+        SimulatedDealer.Price small = open(Side.BUY, "100000");
+        SimulatedDealer.Price huge = open(Side.BUY, "6000000");
+
+        BigDecimal smallGiven = small.spreadBps().subtract(floorAfterManyRounds("100000", small)).divide(small.spreadBps(), 3, java.math.RoundingMode.HALF_UP);
+        BigDecimal hugeGiven = huge.spreadBps().subtract(floorAfterManyRounds("6000000", huge)).divide(huge.spreadBps(), 3, java.math.RoundingMode.HALF_UP);
+
+        assertThat(hugeGiven).isGreaterThan(smallGiven);
+    }
+
+    private BigDecimal floorAfterManyRounds(String amount, SimulatedDealer.Price p) {
+        BigDecimal spread = p.spreadBps();
+        BigDecimal rate = p.clientRate();
+        for (int i = 0; i < 15; i++) {
+            SimulatedDealer.Counter c = counter(Side.BUY, amount, p, spread, rate, null);
+            spread = c.spreadBps();
+            rate = c.clientRate();
+        }
+        return spread;
+    }
 }

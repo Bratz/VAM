@@ -35,6 +35,10 @@ public class FxDealController {
                             LocalDate windowStart, String purpose, String exposureRef) {
     }
 
+    /** Ask the desk for a better price; with no {@code targetRate} it is "your best price". */
+    public record CounterBody(BigDecimal targetRate, String note) {
+    }
+
     private final FxQuoteService quotes;
     private final FxDealService deals;
     private final FxLimitService limits;
@@ -77,6 +81,11 @@ public class FxDealController {
     @PostMapping("/quotes/{id}/accept")
     public ApiResponse<DealView> accept(@PathVariable UUID id) {
         return ApiResponse.success(views.view(quotes.accept(id)));
+    }
+
+    @PostMapping("/quotes/{id}/counter")
+    public ApiResponse<QuoteView> counter(@PathVariable UUID id, @RequestBody(required = false) CounterBody b) {
+        return ApiResponse.success(QuoteView.of(quotes.counter(id, b == null ? null : b.targetRate(), b == null ? null : b.note())));
     }
 
     @PostMapping("/quotes/{id}/cancel")

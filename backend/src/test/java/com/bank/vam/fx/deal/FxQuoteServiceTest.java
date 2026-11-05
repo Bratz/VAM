@@ -18,6 +18,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -38,8 +39,9 @@ class FxQuoteServiceTest {
     private final FxDealRepository deals = mock(FxDealRepository.class);
     private final ForwardPricer forwards = mock(ForwardPricer.class);
     private final FxDealProperties props = new FxDealProperties();
+    private final FxEvents events = mock(FxEvents.class);
     private final FxQuoteService service = new FxQuoteService(
-            quotes, corporates, dealer, limitService, dealService, deals, mock(FxEvents.class), props, forwards);
+            quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards);
 
     private final FxCreditLimit limit = limit();
     private FxDeal deal;
@@ -178,5 +180,93 @@ class FxQuoteServiceTest {
         service.accept(accepted.getId());
         assertThatThrownBy(() -> service.cancel(accepted.getId()))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("ACCEPTED");
+    }
+
+    // ---- negotiation ---------------------------------------------------------------------------------------
+
+    private void deskOffers(String rate, String spread, boolean atBest) {
+        when(dealer.counter(any(), any(), any(), any(), any(), any(), anyInt(), any())).thenReturn(
+                new SimulatedDealer.Counter(bd(spread), bd(rate), bd("100000").multiply(bd(rate)), atBest));
+    }
+
+    @Test
+    void aCounterGetsANewFirmPriceCountsTheRoundAndRestartsTheClock() {
+        FxQuoteRequest q = firmQuote();
+        q.setValidUntil(LocalDateTime.now().plusSeconds(3));
+        deskOffers("1.1002", "2.60", false);
+
+        FxQuoteRequest out = service.counter(q.getId(), bd("1.1001"), "volume to come");
+
+        assertThat(out.getStatus()).isEqualTo(QuoteStatus.QUOTED);
+        assertThat(out.getClientRate()).isEqualByComparingTo("1.1002");
+        assertThat(out.getSpreadBps()).isEqualByComparingTo("2.60");
+        assertThat(out.roundsUsed()).isEqualTo(1);
+        assertThat(out.roundsAllowed()).isEqualTo(3);
+        assertThat(out.getBestPrice()).isFalse();
+        assertThat(Duration.between(out.getQuotedAt(), out.getValidUntil()).toSeconds()).isEqualTo(30);
+        // The credit charge does not depend on the rate.
+        assertThat(out.getLimitCharge()).isEqualByComparingTo("1000.00");
+        verify(events).counter(any(), org.mockito.ArgumentMatchers.contains("Round 1 of 3"));
+    }
+
+    @Test
+    void whenTheDeskCannotMoveItSaysSoAndStillUsesUpTheRound() {
+        FxQuoteRequest q = firmQuote();
+        deskOffers("1.1003", "3.00", true); // same rate as the opening price
+
+        FxQuoteRequest out = service.counter(q.getId(), null, null);
+
+        assertThat(out.getBestPrice()).isTrue();
+        assertThat(out.roundsUsed()).isEqualTo(1);
+        verify(events).counter(any(), org.mockito.ArgumentMatchers.contains("its best price"));
+    }
+
+    @Test
+    void onlyAFewRoundsAreAllowedAndThenTheClientMustAcceptOrWithdraw() {
+        FxQuoteRequest q = firmQuote();
+        deskOffers("1.1002", "2.60", false);
+        service.counter(q.getId(), null, null);
+        service.counter(q.getId(), null, null);
+        service.counter(q.getId(), null, null);
+
+        assertThatThrownBy(() -> service.counter(q.getId(), null, null))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("No more rounds");
+        assertThat(q.roundsUsed()).isEqualTo(3);
+    }
+
+    @Test
+    void aLapsedOrWithdrawnQuoteCannotBeCountered() {
+        FxQuoteRequest lapsed = firmQuote();
+        lapsed.setValidUntil(LocalDateTime.now().minusSeconds(1));
+        assertThatThrownBy(() -> service.counter(lapsed.getId(), null, null))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("EXPIRED");
+
+        FxQuoteRequest withdrawn = firmQuote();
+        service.cancel(withdrawn.getId());
+        assertThatThrownBy(() -> service.counter(withdrawn.getId(), null, null))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("CANCELLED");
+        verify(dealer, never()).counter(any(), any(), any(), any(), any(), any(), anyInt(), any());
+    }
+
+    @Test
+    void aQuoteFromBeforeNegotiationExistedCannotBeNegotiated() {
+        FxQuoteRequest q = firmQuote();
+        q.setForwardMid(null);
+
+        assertThatThrownBy(() -> service.counter(q.getId(), null, null))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("cannot be negotiated");
+    }
+
+    @Test
+    void theAcceptedPriceIsTheNegotiatedOne() {
+        FxQuoteRequest q = firmQuote();
+        deskOffers("1.1002", "2.60", false);
+        service.counter(q.getId(), null, null);
+
+        service.accept(q.getId());
+
+        org.mockito.ArgumentCaptor<FxQuoteRequest> booked = org.mockito.ArgumentCaptor.forClass(FxQuoteRequest.class);
+        verify(dealService).book(booked.capture(), any(), anyString());
+        assertThat(booked.getValue().getClientRate()).isEqualByComparingTo("1.1002");
     }
 }

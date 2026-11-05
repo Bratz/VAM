@@ -24,6 +24,11 @@ class FxEvents {
         write(FxDealEvent.QUOTE, q.getId(), q.getCorporateId(), from == null ? null : from.name(), to.name(), detail);
     }
 
+    /** A counter-offer round: the quote stays QUOTED, so this is a step, not a status change. */
+    void counter(FxQuoteRequest q, String detail) {
+        write(FxDealEvent.QUOTE, q.getId(), q.getCorporateId(), null, "COUNTER_OFFER", detail);
+    }
+
     void deal(FxDeal d, DealStatus from, DealStatus to, String detail) {
         write(FxDealEvent.DEAL, d.getId(), d.getCorporateId(), from == null ? null : from.name(), to.name(), detail);
     }

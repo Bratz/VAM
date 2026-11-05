@@ -14,9 +14,10 @@ import { Alert } from '../components/ui/enhanced';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { cn } from '../utils';
 import {
-  fxDealApi, CloseOutQuote, Deal, DealEvent, DealStatus, RollQuote, Settlement,
+  fxDealApi, CloseOutQuote, Deal, DealEvent, RollQuote, Settlement,
 } from '../services/fxDealApi';
 import { DEAL_BADGE, confirmationBadge } from './fxDealBadges';
+import { dealRules, DealAction } from './fx/fxDealRules';
 
 const fmt = (n: number, dp = 2) => n.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
 const fmtSigned = (n: number, dp = 2) => `${n > 0 ? '+' : n < 0 ? '-' : ''}${fmt(Math.abs(n), dp)}`;
@@ -29,16 +30,15 @@ const errorText = (err: unknown): string => {
   return e?.response?.data?.message || e?.message || 'Request failed';
 };
 
-const IN_FORCE: DealStatus[] = ['ACTIVE', 'PARTIALLY_DRAWN', 'SETTLEMENT_FAILED'];
-
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section className="space-y-2">
+const Section: React.FC<{ title: string; id?: string; children: React.ReactNode }> = ({ title, id, children }) => (
+  <section id={id} className="space-y-2 scroll-mt-4">
     <h3 className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50">{title}</h3>
     {children}
   </section>
 );
 
-const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged: () => void }> = ({ deal, onClose, onChanged }) => {
+/** `action` is the row-menu item that opened the drawer: it opens the matching section and scrolls to it. */
+const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; onClose: () => void; onChanged: () => void }> = ({ deal, action, onClose, onChanged }) => {
   const [text, setText] = useState('');
   const [events, setEvents] = useState<DealEvent[]>([]);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
@@ -81,11 +81,19 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
     load(id);
   }, [id, version, load]);
 
-  const run = async (action: () => Promise<unknown>, done: string) => {
+  useEffect(() => {
+    if (!id || !action) return;
+    if (action === 'dispute') setDisputing(true);
+    // The sections render once the deal is in; scroll after that paint.
+    const t = setTimeout(() => document.getElementById(`fx-deal-${action === 'dispute' ? 'confirmation' : action}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150);
+    return () => clearTimeout(t);
+  }, [id, action]);
+
+  const run = async (act: () => Promise<unknown>, done: string) => {
     setBusy(true);
     setError(null);
     try {
-      await action();
+      await act();
       toast.success(done);
       onChanged();
     } catch (err) {
@@ -117,9 +125,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
   };
 
   const conf = deal ? confirmationBadge(deal) : null;
-  const inForce = !!deal && IN_FORCE.includes(deal.status);
-  const canAct = inForce && deal.instrument !== 'SPOT' && deal.confirmationStatus !== 'DISPUTED';
-  const canDraw = canAct && deal.instrument === 'WINDOW' && deal.confirmationStatus === 'AFFIRMED' && deal.remainingAmount > 0;
+  const { inForce, canAct, canDraw } = deal ? dealRules(deal) : { inForce: false, canAct: false, canDraw: false };
   const base = deal?.pair.slice(0, 3) ?? '';
 
   return (
@@ -130,7 +136,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
       subtitle={deal ? `${deal.side === 'BUY' ? 'Buy' : 'Sell'} ${deal.pair} ${deal.instrument.toLowerCase()}` : undefined}
     >
       {deal && (
-        <div className="space-y-6">
+        <div className="p-6 space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={DEAL_BADGE[deal.status].variant}>{DEAL_BADGE[deal.status].label}</Badge>
             {conf && <Badge variant={conf.variant}>{conf.label}</Badge>}
@@ -167,7 +173,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
 
           {error && <Alert variant="error">{error}</Alert>}
 
-          <Section title="Confirmation from the bank">
+          <Section title="Confirmation from the bank" id="fx-deal-confirmation">
             <pre className="whitespace-pre-wrap font-mono text-caption bg-surface-muted rounded-md p-3 text-primary-900 dark:text-neutral-50">{text || 'Loading...'}</pre>
             <Button variant="outline" size="sm" onClick={downloadPdf} leftIcon={<Download className="w-4 h-4" />}>Download PDF</Button>
 
@@ -205,9 +211,9 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
           </Section>
 
           {canAct && (
-            <Section title="Manage this deal">
+            <Section title="Manage this deal" id="fx-deal-manage">
               {canDraw && (
-                <div className="space-y-2">
+                <div id="fx-deal-draw" className="space-y-2 scroll-mt-4">
                   <p className="text-caption text-neutral-500 dark:text-neutral-400">Draw down part of the window. It settles on the date you choose.</p>
                   <div className="grid grid-cols-2 gap-2">
                     <Input label={`Amount (${base})`} inputMode="decimal" value={drawAmount} onChange={(e) => setDrawAmount(e.target.value)} />
@@ -218,7 +224,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
                 </div>
               )}
 
-              <div className="space-y-2 pt-2">
+              <div id="fx-deal-close" className="space-y-2 pt-2 scroll-mt-4">
                 <p className="text-caption text-neutral-500 dark:text-neutral-400">
                   Close out early: the desk prices the other side now and the cash difference is recorded. The price is not held, so it is set again when you confirm.
                 </p>
@@ -238,7 +244,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; onClose: () => void; onChanged
                 )}
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div id="fx-deal-roll" className="space-y-2 pt-2 scroll-mt-4">
                 <p className="text-caption text-neutral-500 dark:text-neutral-400">Roll: close this deal and book the same amount for a later date.</p>
                 <div className="flex items-end gap-2">
                   <div className="flex-1"><Input label="New value date" type="date" value={rollDate} onChange={(e) => { setRollDate(e.target.value); setRollQuote(null); }} /></div>

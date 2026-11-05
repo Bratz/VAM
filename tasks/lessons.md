@@ -474,3 +474,20 @@ Two bugs on one feature, both invisible to unit tests, both caught by driving th
 - This is the same family as "a green deploy is not evidence a migration ran": the schema the code assumes
   and the schema the database has are two different things, and only the second one decides.
 
+
+## A new feature's UI has to match the app's page patterns, not just its tokens (2026-11-05)
+
+The FX screens passed ESLint and used the shared components, and the user still had to ask whether they
+followed the app's UI/UX standards. They did not at the level that matters to a user: FX was one menu item
+with three in-page tabs, lists had no row actions (everything sat in a drawer), and each panel carried its own
+corporate selector that disagreed with the header's (header MNC Holdings, panel TestMNC, on one screen).
+
+- A clean lint run proves the colours, type scale and primitives are right. It says nothing about navigation,
+  scope handling, list anatomy or where actions live. Those are conventions, found only by reading existing pages.
+- Before designing screens for a new area: (1) open the nav config and place the feature the way a sibling
+  feature is placed; (2) read one finished list page end to end (scope, stat strip, toolbar, Actions column,
+  header primary action) and copy its anatomy; (3) find how scope is chosen globally and use it, never add a
+  second selector; (4) look at the running app next to the new screens, not only the code.
+- A feature with several jobs gets several menu items. Tabs are for views of one job.
+- Actions belong on the row (the `...` menu) and in the header (create), with the drawer for reading detail.
+- A screen showing two different scopes at once is a defect even when each half works.
