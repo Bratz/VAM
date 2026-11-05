@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Building2, ArrowLeftRight, Users, FileText, Settings, Wallet, Layers, Link2, FolderKanban, CreditCard, Globe, AlertTriangle, GitBranch, GitMerge, Receipt, Handshake, Combine, Send, QrCode, Landmark, CircleDot, Shield, Percent, Upload, TrendingUp, ShoppingCart, Store, DollarSign, Coins, Sparkles, Droplets, Briefcase, FlaskConical } from 'lucide-react';
 
 // ----------------------------------------------------------------------------
 // Types
@@ -133,6 +133,7 @@ export const navSections: NavSection[] = [
     title: 'Liquidity Management',
     items: [
       { icon: <TrendingUp className="w-5 h-5" />, label: 'Cash Forecast', href: 'forecasting', isNew: true },
+      { icon: <Coins className="w-5 h-5" />, label: 'FX Workspace', href: 'fx-workspace', isNew: true },
       { icon: <ArrowLeftRight className="w-5 h-5" />, label: 'Cash Concentration', href: 'sweeping' },
       { icon: <FlaskConical className="w-5 h-5" />, label: 'Simulator', href: 'simulator', isNew: true },
       { icon: <CircleDot className="w-5 h-5" />, label: 'Notional Pooling', href: 'notional-pooling' },
@@ -251,6 +252,7 @@ export const pageTitles: Record<string, string> = {
   'intercompany': 'Intercompany Dashboard',
   'intercompany-settlement': 'Intercompany Settlement',
   'fx-rates': 'FX Rate Management',
+  'fx-workspace': 'FX Workspace',
   // Credit & Interest — the section is gone; these sit under Administration
   // now, alongside FX Rates above.
   'credit-limits': 'Credit Limits',
