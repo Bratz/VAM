@@ -24,7 +24,8 @@
 //                        |   stale or status=FAILED|NEVER shadows.           |
 //   pending_approval     | dashboardApi.getPendingApprovals() — no server-   | producePendingApprovals
 //                        |   side permission filter in V1.                   |
-//   fx_exposure          | STUB — needs `fx_policy_band` reference table.    | produceFxExposures
+//   fx_exposure          | fxExposureApi.breaches() — corporates whose FX     | produceFxExposures
+//                        |   hedge ratio is outside their policy band.       |
 //   concentration_risk   | STUB — needs `bank_credit_rating` reference.      | produceConcentrationRisks
 //
 // Naming note: this is intentionally `cockpitApi`, NOT `exceptionsApi` —
@@ -43,6 +44,7 @@ import {
   type Transaction,
   type Payable,
 } from './api';
+import { fxExposureApi, type PolicyBreach } from './fxMarketApi';
 import {
   AttentionItem,
   AttentionSeverity,
@@ -356,13 +358,42 @@ async function producePendingApprovals(_entityId?: string): Promise<AttentionIte
   }
 }
 
-// V2 producers — schema accepts these now; producers return [] until the
-// reference data they depend on lands.
+// V2 producers. fx_exposure is real; concentration_risk still returns [] until the
+// reference data it depends on lands.
+
+function fxBreachItem(b: PolicyBreach): AttentionItem {
+  const under = b.status === 'UNDER_HEDGED';
+  const pct = (r?: number | null) => (r == null ? '-' : `${Math.round(r * 100)}%`);
+  const amount = b.exposure.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  return {
+    id: `fx_exposure:${b.corporateId}:${b.currency}:${b.bucket}`,
+    severity: b.severity,
+    category: 'fx_exposure',
+    headline: `${under ? 'Under-hedged' : 'Over-hedged'} ${b.currency} · ${b.corporateName}`,
+    detail: `${b.bucketLabel} · net ${b.exposure > 0 ? '+' : ''}${amount} ${b.currency} · hedged ${pct(b.hedgeRatio)} vs policy ${pct(b.minRatio)}-${pct(b.maxRatio)}`,
+    context: {
+      entityId: b.corporateId,
+      entityName: b.corporateName,
+      currencyCode: b.currency,
+      nativeAmount: { value: b.exposure, currency: b.currency },
+    },
+    timePressure: {
+      kind: 'relative_future',
+      displayText: `settles ${b.bucketLabel}`,
+      millisecondsToDeadline: b.horizonDays * 24 * 60 * 60 * 1000,
+    },
+    actions: [{ label: 'Hedge', kind: 'navigate', actionId: 'fx-workspace', requiresConfirmation: false }],
+    createdAt: new Date().toISOString(),
+  };
+}
 
 async function produceFxExposures(_entityId?: string): Promise<AttentionItem[]> {
-  // TODO V2: needs the `fx_policy_band` reference table to know which
-  // exposures cross the policy band. Schema accepts the items today.
-  return [];
+  try {
+    return (await fxExposureApi.breaches()).map(fxBreachItem);
+  } catch (err) {
+    console.warn('[cockpit] produceFxExposures failed:', err);
+    return [];
+  }
 }
 
 async function produceConcentrationRisks(_entityId?: string): Promise<AttentionItem[]> {

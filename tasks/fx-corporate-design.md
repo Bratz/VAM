@@ -169,6 +169,24 @@ Deviations from the plan above, and why:
 
 Known ceilings: weekends are the only non-business days (no per-currency holiday calendars, no USD/CAD T+1); the interest rates are illustrative config, not a curve; the board history lives in the browser only. The existing `FxRatesPage` (stored rates) is untouched.
 
+## Phase 2 outcome (exposure and hedge policy) - done, uncommitted
+
+Built (package `com.bank.vam.fx.exposure`): `FxPolicyBand` and `FxExposureEntry` entities, `ExposureCalculator` (pure ladder arithmetic), `ExposureSources` (payables, receivables, bank cash), `HedgePolicyService`, `FxExposureService`, `ExposureCsvParser`, `FxExposureController` (`/api/v1/fx/exposure`: ladder, `breaches`, `entries`, `entries/upload`), and `FxPolicySeeder`. Frontend: an "Exposure & hedging" tab on the FX Workspace (ladder per currency with hedge ratio against the policy band, CSV upload and template) and the cockpit's `fx_exposure` producer now returns real breaches. 16 new unit tests (27 FX tests in all); verified against the running backend and in the browser, and the ladder matches the raw payables, receivables and balances in the database.
+
+All nine corporates were seeded (45 bands). Default policy, layered: 0-30d 75-100%, 31-60d 50-80%, 61-90d 40-70%, 91-180d 25-50%, 181d+ 0-25%. A currency-specific band row overrides the `ANY` default.
+
+Decisions and deviations:
+- **Seeding is a startup runner, not a Flyway migration.** `fx_policy_band` is an entity table, so Hibernate creates it after Flyway runs and a migration seeding it would fail on a fresh database. The runner is idempotent, and a corporate created later gets the default on first use.
+- **Sign convention.** Exposure is receivables - payables + cash + declared (positive = long). A hedge is the deal's own position (selling forward is negative). Hedge ratio = -hedged / exposure, and "to reach policy" is the signed hedge to add to reach the nearest band edge. Phase 3 deals and the phase 5-6 recommender reuse this as is.
+- **Base currency is per corporate**, derived from the oldest ROOT account's currency (market default if none), because the corporates have different home currencies. No new table; a per-corporate setting is the upgrade.
+- **Hedges come from declared uploads only** until phase 3 books deals through the bank.
+- **Excluded:** intercompany items (they net inside the corporate), items in the corporate's own base currency, drafts, rejected and settled items. Overdue and undated items count as due now.
+- **Cash comes from the shadows of physical accounts** (bank-held balances), so mirrors are not counted twice.
+- **No cross-currency totals.** Each currency shows native amounts; the stored platform rate is disclosed per currency, and a missing rate leaves the base equivalent out instead of guessing.
+- **Materiality** `vam.fx.exposure.materiality-base` (default 25,000 in base currency): smaller exposures are not flagged unless already hedged.
+
+Not done in phase 2 (by design): the cash-flow forecast as an input (it is single-currency until phase 6); natural-hedge netting of cash on hand against future flows (balances are shown but never policed); editing policy bands through the API or UI (SQL for now); a "Hedge" click that opens a prefilled quote request (phase 3). The dashboard's Action queue rows are display-only for every category, so "Hedge" there is a label, not a link.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

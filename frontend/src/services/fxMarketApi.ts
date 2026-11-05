@@ -13,7 +13,7 @@ export interface SpotTick {
 
 export interface ForwardQuote {
   pair: string;
-  tenor: string | null;
+  tenor?: string | null;
   spotDate: string;
   valueDate: string;
   days: number;
@@ -34,4 +34,102 @@ export const fxMarketApi = {
 
   forward: (pair: string, valueDate: string) =>
     apiClient.get<ApiResponse<ForwardQuote>>('/fx/market/forward', { params: { pair, valueDate } }).then(r => r.data.data),
+};
+
+// ---------------------------------------------------------------------------
+// Exposure ladder, hedge-policy breaches and declared exposures/hedges.
+// Backend: FxExposureController at /api/v1/fx/exposure. Amounts are native to
+// their currency and are never summed across currencies.
+// ---------------------------------------------------------------------------
+
+export type HedgeStatus = 'WITHIN_POLICY' | 'UNDER_HEDGED' | 'OVER_HEDGED' | 'NO_POLICY' | 'NOT_POLICED' | 'NONE';
+export type ExposureBucketId = 'ON_HAND' | 'D0_30' | 'D31_60' | 'D61_90' | 'D91_180' | 'D181_PLUS';
+
+export interface ExposureBucket {
+  bucket: ExposureBucketId;
+  label: string;
+  receivables: number;
+  payables: number;
+  balances: number;
+  declared: number;
+  /** receivables - payables + balances + declared; positive = long the currency. */
+  exposure: number;
+  /** The hedge deals' own position: selling forward is negative. */
+  hedged: number;
+  open: number;
+  hedgeRatio?: number | null;
+  minRatio?: number | null;
+  maxRatio?: number | null;
+  status: HedgeStatus;
+  /** Hedge notional to add (signed like `hedged`) to reach the nearest band edge. */
+  adjustToBand?: number | null;
+}
+
+export interface ExposureCurrencyRow {
+  currency: string;
+  /** Stored platform rate to the base currency; absent when none exists (the API omits nulls). */
+  rateToBase?: number | null;
+  buckets: ExposureBucket[];
+}
+
+export interface ExposureLadder {
+  corporateId: string;
+  corporateName: string;
+  baseCurrency: string;
+  asOf: string;
+  currencies: ExposureCurrencyRow[];
+}
+
+export interface PolicyBreach {
+  corporateId: string;
+  corporateName: string;
+  baseCurrency: string;
+  currency: string;
+  bucket: ExposureBucketId;
+  bucketLabel: string;
+  horizonDays: number;
+  exposure: number;
+  hedged: number;
+  hedgeRatio?: number | null;
+  minRatio?: number | null;
+  maxRatio?: number | null;
+  status: HedgeStatus;
+  adjustToBand?: number | null;
+  rateToBase?: number | null;
+  severity: 'high' | 'medium';
+}
+
+export interface ExposureEntry {
+  id: string;
+  kind: 'EXPOSURE' | 'HEDGE';
+  currency: string;
+  amount: number;
+  valueDate: string;
+  reference?: string | null;
+  description?: string | null;
+  source: string;
+}
+
+export const fxExposureApi = {
+  ladder: (corporateId: string) =>
+    apiClient.get<ApiResponse<ExposureLadder>>('/fx/exposure', { params: { corporateId } }).then(r => r.data.data),
+
+  /** Omit corporateId for every corporate (what the cockpit reads). */
+  breaches: (corporateId?: string) =>
+    apiClient.get<ApiResponse<PolicyBreach[]>>('/fx/exposure/breaches', { params: corporateId ? { corporateId } : {} })
+      .then(r => r.data.data),
+
+  entries: (corporateId: string) =>
+    apiClient.get<ApiResponse<ExposureEntry[]>>('/fx/exposure/entries', { params: { corporateId } }).then(r => r.data.data),
+
+  upload: (corporateId: string, file: File, replace: boolean) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient
+      .post<ApiResponse<{ imported: number; replaced: number }>>('/fx/exposure/entries/upload', form, {
+        params: { corporateId, replace },
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then(r => r.data.data);
+  },
 };

@@ -11,6 +11,8 @@ import { Radio, AlertTriangle } from 'lucide-react';
 import { Page } from '../components/layout/Page';
 import { PageHeader } from '../components/layout/PageHeader';
 import { Card, CardHeader, Badge, DataTable } from '../components/ui';
+import { Tabs } from '../components/ui/enhanced';
+import FxExposurePanel from './FxExposurePanel';
 import type { Column } from '../components/ui/DataTable';
 import { cn } from '../utils';
 import { fxMarketApi, ForwardQuote, SpotTick } from '../services/fxMarketApi';
@@ -43,7 +45,7 @@ const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone 
   );
 };
 
-const FxWorkspacePage: React.FC = () => {
+const FxMarketTab: React.FC = () => {
   const [ticks, setTicks] = useState<SpotTick[]>([]);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [selected, setSelected] = useState('EUR/USD');
@@ -174,12 +176,7 @@ const FxWorkspacePage: React.FC = () => {
   ];
 
   return (
-    <Page>
-      <PageHeader
-        title="FX Workspace"
-        description="Indicative interbank rates and forward points for the pairs a corporate treasury hedges. Simulated market data: mid rates only, not dealable prices. Quoting and dealing arrive in the next phase."
-      />
-
+    <>
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader
@@ -260,6 +257,25 @@ const FxWorkspacePage: React.FC = () => {
           </div>
         </Card>
       </div>
+    </>
+  );
+};
+
+const TABS = [
+  { id: 'market', label: 'Market' },
+  { id: 'exposure', label: 'Exposure & hedging' },
+];
+
+const FxWorkspacePage: React.FC = () => {
+  const [tab, setTab] = useState('market');
+  return (
+    <Page>
+      <PageHeader
+        title="FX Workspace"
+        description="Indicative interbank rates and forward points, and each corporate's foreign-currency exposure against its hedge policy. Rates are simulated and are mid only, not dealable prices. Quoting and dealing arrive in the next phase."
+      />
+      <Tabs tabs={TABS} activeTab={tab} onChange={setTab} />
+      {tab === 'market' ? <FxMarketTab /> : <FxExposurePanel />}
     </Page>
   );
 };
