@@ -43,7 +43,7 @@ public class FxPaymentService {
 
     /** The account is debited {@code debitAmount}; the beneficiary receives {@code instructedAmount}. */
     public record Conversion(BigDecimal instructedAmount, String instructedCurrency, BigDecimal debitAmount,
-                             String debitCurrency, BigDecimal rate, FxDeal deal, BigDecimal baseUsed, boolean bookedForIt) {
+                             String debitCurrency, BigDecimal rate, FxDeal deal, BigDecimal baseUsed) {
     }
 
     private final FxStreamService stream;
@@ -51,7 +51,6 @@ public class FxPaymentService {
     private final FxConfirmationService confirmations;
     private final FxSettlementService settlement;
     private final FxDealRepository deals;
-    private final FxDealService dealService;
 
     /**
      * Null when the payment is in the account's own currency. Otherwise books or takes the FX and says what to debit.
@@ -63,7 +62,9 @@ public class FxPaymentService {
         String accountCcy = source.getCurrencyCode();
         String ccy = currency == null || currency.isBlank() ? accountCcy : currency.trim().toUpperCase(Locale.ROOT);
         if (ccy.equals(accountCcy)) {
-            if (fx != null && !fx.none()) {
+            // "At market" is what unattended channels (bulk rows, files) send for every row: convert if needed. A
+            // price, quote or deal named for a payment that needs none is a mistake, and refused.
+            if (fx != null && !fx.none() && !fx.atMarket()) {
                 throw invalid("The payment is in the account's own currency (" + ccy + "), so there is nothing to convert");
             }
             return null;
@@ -114,7 +115,37 @@ public class FxPaymentService {
         }
         FxDeal deal = quotes.accept(q.getId(), true);
         confirmations.affirm(deal.getId());
-        return new Conversion(amount, ccy, deal.getSellAmount(), accountCcy, deal.getRate(), deal, deal.baseAmount(), true);
+        return new Conversion(amount, ccy, deal.getSellAmount(), accountCcy, deal.getRate(), deal, deal.baseAmount());
+    }
+
+    /**
+     * What the payment would debit, booking nothing: at the deal's rate, at the firm price's, else at the live price
+     * (indicative: it moves until the payment is sent). Null in the account's own currency. Refused as {@link #convert}
+     * would refuse it, so the payer sees why before sending.
+     */
+    @Transactional(readOnly = true)
+    public Conversion preview(VirtualAccount source, String currency, BigDecimal amount, Instruction fx) {
+        String accountCcy = source.getCurrencyCode();
+        String ccy = currency == null || currency.isBlank() ? accountCcy : currency.trim().toUpperCase(Locale.ROOT);
+        if (ccy.equals(accountCcy)) {
+            return null;
+        }
+        if (fx != null && fx.dealId() != null) {
+            return fromDeal(source, ccy, amount, fx.dealId());
+        }
+        if (fx != null && fx.quoteId() != null) {
+            FxQuoteRequest q = quotes.get(fx.quoteId());
+            return new Conversion(amount, ccy, q.getCounterAmount(), accountCcy, q.getClientRate(), null, null);
+        }
+        if (source.getOwningEntityId() == null) {
+            throw invalid(label(source) + " belongs to no legal entity, and an FX deal is booked for one");
+        }
+        FxStreamService.StreamPrice p = stream.price(new FxQuoteService.Command(source.getCorporateId(), source.getOwningEntityId(),
+                ccy + "/" + accountCcy, Side.BUY, Instrument.SPOT, amount, null, null, "Payment conversion", null, true));
+        if (!p.streamable()) {
+            throw new BusinessException("FX_PAYMENT_NEEDS_QUOTE", p.reason() + ": ask for a price for this payment");
+        }
+        return new Conversion(amount, ccy, p.buy().counterAmount(), accountCcy, p.buy().rate(), null, null);
     }
 
     /** After the payment's ledger legs: settles the deal (or its part) by the payment and notes the FX on it. */
@@ -125,17 +156,6 @@ public class FxPaymentService {
         payment.setInstructedCurrency(cv.instructedCurrency());
         payment.setFxRate(cv.rate());
         payment.setFxDealRef(cv.deal().getDealRef());
-    }
-
-    /**
-     * The payment failed after its FX was booked: the bank unwinds the deal booked for it (cancelled, so it no longer
-     * uses the credit limit). A deal booked earlier and only to be drawn on was not touched, so nothing is undone.
-     */
-    @Transactional
-    public void abandon(Conversion cv, String why) {
-        if (cv != null && cv.bookedForIt() && DealStatus.OPEN.contains(cv.deal().getStatus())) {
-            dealService.transition(cv.deal(), DealStatus.CANCELLED, "The payment it converted failed: " + why);
-        }
     }
 
     /** A window forward the payment date falls in, or a forward due today; the payment takes part or all of it. */
@@ -171,7 +191,7 @@ public class FxPaymentService {
             throw invalid(d.getDealRef() + " has " + d.remainingBase().toPlainString() + " " + d.baseCurrency() + " left, less than this payment needs");
         }
         BigDecimal[] legs = settlement.legsFor(d, base);
-        return new Conversion(amount, ccy, legs[1], accountCcy, d.getRate(), d, base, false);
+        return new Conversion(amount, ccy, legs[1], accountCcy, d.getRate(), d, base);
     }
 
     private static String label(VirtualAccount v) {

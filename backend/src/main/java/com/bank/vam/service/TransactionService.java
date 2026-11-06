@@ -13,6 +13,7 @@ import com.bank.vam.entity.treasury.ExceptionTransaction;
 import com.bank.vam.entity.intercompany.IntercompanyTransaction;
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.exception.SettlementVaException;
 import com.bank.vam.repository.TransactionRepository;
@@ -185,6 +186,7 @@ public class TransactionService {
     private final ObjectMapper objectMapper;
     private final IntercompanyTransactionRepository intercompanyTransactionRepository;
     private final IntercompanyRechargeRepository intercompanyRechargeRepository;
+    private final FxPaymentService fxPayments;
 
     // ========================================================================
     // CHARGE CODES (loaded from ChargeConfiguration - no hardcoded values)
@@ -734,14 +736,29 @@ public class TransactionService {
         VirtualAccount fromVa = virtualAccountRepository.findById(request.getFromVaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Source VA not found"));
 
+        // An FX payment is previewed at its debit in the account's currency; when it cannot be converted, why.
+        FxPaymentService.Conversion fx;
+        try {
+            fx = fxPayments.preview(fromVa, request.getCurrency(), request.getAmount(),
+                    new FxPaymentService.Instruction(null, request.getFxQuoteId(), request.getFxDealId(), false));
+        } catch (BusinessException e) {
+            return TransactionDto.PaymentPreviewResponse.builder()
+                .fromVaId(fromVa.getId()).fromVaNumber(fromVa.getVaNumber()).fromVaName(fromVa.getVaName())
+                .fromBalance(fromVa.getCurrentBalance()).currency(fromVa.getCurrencyCode()).channel(request.getChannel())
+                .instructedAmount(request.getAmount()).instructedCurrency(request.getCurrency())
+                .fundsAvailable(false).validationMessage(e.getMessage())
+                .build();
+        }
+        BigDecimal debit = fx == null ? request.getAmount() : fx.debitAmount();
+
         // Calculate payment fees
         TransactionDto.PaymentRequest feeRequest = TransactionDto.PaymentRequest.builder()
             .fromVaId(request.getFromVaId())
-            .amount(request.getAmount())
+            .amount(debit)
             .channel(request.getChannel())
             .build();
         BigDecimal paymentFee = calculatePaymentFee(fromVa, feeRequest);
-        BigDecimal totalDebit = request.getAmount().add(paymentFee);
+        BigDecimal totalDebit = debit.add(paymentFee);
 
         // Check funds availability
         FundsCheckResult fundsCheck = fundsAvailabilityService.checkFundsAvailability(
@@ -759,9 +776,15 @@ public class TransactionService {
             .shadowVaId(shadowVa != null ? shadowVa.getId() : null)
             .shadowVaNumber(shadowVa != null ? shadowVa.getVaNumber() : null)
             .physicalAccountNumber(shadowVa != null ? shadowVa.getBankAccountNumber() : null)
-            .amount(request.getAmount())
+            .amount(debit)
             .currency(fromVa.getCurrencyCode())
             .channel(request.getChannel())
+            .instructedAmount(fx == null ? null : fx.instructedAmount())
+            .instructedCurrency(fx == null ? null : fx.instructedCurrency())
+            .fxRate(fx == null ? null : fx.rate())
+            .fxPair(fx == null ? null : fx.deal() != null ? fx.deal().getPair() : fx.instructedCurrency() + "/" + fx.debitCurrency())
+            .fxDealRef(fx == null || fx.deal() == null ? null : fx.deal().getDealRef())
+            .fxIndicative(fx == null ? null : fx.deal() == null && request.getFxQuoteId() == null)
             .paymentFee(paymentFee)
             .totalDebit(totalDebit)
             .fundsAvailable(fundsCheck.isApproved())
@@ -801,6 +824,15 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Source VA not found"));
 
         validateVaActive(fromVa, "payment from");
+
+        // A payment in another currency is converted first (refused without FX); from here on the amount is the
+        // debit in the account's currency. Callers that converted already (ISO 20022, payables) send no currency.
+        FxPaymentService.Conversion fx = fxPayments.convert(fromVa, request.getCurrency(), request.getAmount(),
+                new FxPaymentService.Instruction(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
+                        Boolean.TRUE.equals(request.getFxAtMarket())));
+        if (fx != null) {
+            request.setAmount(fx.debitAmount());
+        }
 
         // Calculate payment fees from configuration
         BigDecimal paymentFee = calculatePaymentFee(fromVa, request);
@@ -964,6 +996,9 @@ public class TransactionService {
             fromVa.getVaNumber(), settlementVa.getVaNumber(), shadowVa.getVaNumber(),
             request.getAmount(), paymentFee);
 
+        if (fx != null) {
+            fxPayments.settle(fx, txn1, fromVa);
+        }
         return txn1;
     }
 

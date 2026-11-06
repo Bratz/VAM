@@ -300,6 +300,8 @@ interface TransferSummaryProps {
   canSubmit: boolean;
   submitting: boolean;
   onSubmit: () => void;
+  /** The FX chosen for an outward payment in another currency; the preview prices the debit with it. */
+  paymentFx?: PaymentFx | null;
 }
 
 const TransferSummary: React.FC<TransferSummaryProps> = ({
@@ -313,6 +315,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
   canSubmit,
   submitting,
   onSubmit,
+  paymentFx,
 }) => {
   const amount = transferType === 'bulk' ? bulkTotal : parseFloat(formData.amount) || 0;
 
@@ -345,6 +348,10 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             amount: amount,
             // The form has no channel selector, so outward previews are quoted on SWIFT
             channel: 'SWIFT',
+            // In another currency the debit is priced: by the deal or firm price chosen, else live
+            currency: formData.currency,
+            fxQuoteId: paymentFx?.fxQuoteId,
+            fxDealId: paymentFx?.fxDealId,
           });
           setFeePreview(result.data || result);
         }
@@ -365,7 +372,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     const timeoutId = setTimeout(fetchFeePreview, 500);
     return () => clearTimeout(timeoutId);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the account ids on purpose: the objects get new identities on every account-list refresh, which would re-fire this debounced preview call without the quote having changed.
-  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName]);
+  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName, formData.currency, paymentFx?.fxQuoteId, paymentFx?.fxDealId]);
 
   // Get transfer type display info
   const getTypeInfo = () => {
@@ -637,8 +644,32 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                   </>
                 )}
 
+                {/* FX: what the beneficiary receives, and the debit it converts to */}
+                {'instructedCurrency' in feePreview && feePreview.instructedCurrency && feePreview.fxRate != null && (
+                  <>
+                    <div className="flex justify-between text-body-sm">
+                      <span className="text-neutral-600 dark:text-neutral-300">Pays</span>
+                      <span className="text-neutral-700 font-medium dark:text-neutral-200">
+                        {formatCurrency(feePreview.instructedAmount ?? 0, feePreview.instructedCurrency)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-caption">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        {feePreview.fxDealRef ? `Deal ${feePreview.fxDealRef}` : feePreview.fxIndicative ? 'Live rate, moves until sent' : 'Firm price'}
+                      </span>
+                      <span className="text-neutral-700 tabular-nums dark:text-neutral-200">{feePreview.fxPair} {feePreview.fxRate}</span>
+                    </div>
+                    <div className="flex justify-between text-body-sm">
+                      <span className="text-neutral-600 dark:text-neutral-300">Converted</span>
+                      <span className="text-neutral-700 font-medium dark:text-neutral-200">
+                        {formatCurrency(feePreview.amount, feePreview.currency)}
+                      </span>
+                    </div>
+                  </>
+                )}
+
                 {/* Fee for outward payments */}
-                {'paymentFee' in feePreview && (
+                {'paymentFee' in feePreview && feePreview.paymentFee != null && (
                   <div className="flex justify-between text-body-sm">
                     <span className="text-neutral-600 dark:text-neutral-300">Payment Fee</span>
                     <span className="text-warning-700 font-semibold dark:text-warning-300">
@@ -651,7 +682,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                 <div className="flex justify-between text-body-sm pt-2 border-t border-edge-strong mt-2">
                   <span className="text-primary-700 font-semibold dark:text-neutral-200">Total Debit</span>
                   <span className="text-primary-700 font-bold dark:text-neutral-200">
-                    {formatCurrency(feePreview.totalDebit, feePreview.currency)}
+                    {feePreview.totalDebit != null ? formatCurrency(feePreview.totalDebit, feePreview.currency) : '—'}
                   </span>
                 </div>
 
@@ -3244,6 +3275,7 @@ export default function TransfersPage() {
               )}
               submitting={submitting}
               onSubmit={handleSubmit}
+              paymentFx={paymentFx}
             />
           </div>
         </div>

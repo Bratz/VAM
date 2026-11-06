@@ -391,6 +391,17 @@ public class TransactionDto {
          * Charge bearer: OUR, SHA, BEN
          */
         private String chargeBearer;
+
+        /**
+         * The payment's currency, when not the source account's; {@code amount} is then in it, and one of the FX fields
+         * below converts it (see FxPaymentService): a streamed price the payer saw, a firm price asked for this payment,
+         * a booked deal to draw on, or the live price. Without one, a payment in another currency is refused.
+         */
+        private String currency;
+        private UUID fxPriceId;
+        private UUID fxQuoteId;
+        private UUID fxDealId;
+        private Boolean fxAtMarket;
     }
 
     /**
@@ -513,6 +524,11 @@ public class TransactionDto {
         private BigDecimal feeAmount;
         private BigDecimal totalDebited;
         private String currencyCode;
+        /** FX payments: what the beneficiary receives, the rate, and the deal that converted it. */
+        private BigDecimal instructedAmount;
+        private String instructedCurrency;
+        private BigDecimal fxRate;
+        private String fxDealRef;
         
         // Beneficiary
         private String beneficiaryName;
@@ -1093,6 +1109,10 @@ public class TransactionDto {
         private UUID fromVaId;
         private BigDecimal amount;
         private String channel;
+        /** The payment's currency when not the account's; the debit is then priced by the deal, the firm price, or live. */
+        private String currency;
+        private UUID fxQuoteId;
+        private UUID fxDealId;
     }
 
     @Data
@@ -1115,9 +1135,19 @@ public class TransactionDto {
         private String shadowVaNumber;
         private String physicalAccountNumber;
 
+        /** In the account's currency: for an FX payment, the converted debit. */
         private BigDecimal amount;
         private String currency;
         private String channel;
+
+        // FX, when the payment is in another currency: what the beneficiary receives, and at what rate
+        private BigDecimal instructedAmount;
+        private String instructedCurrency;
+        private BigDecimal fxRate;
+        private String fxPair;
+        private String fxDealRef;
+        /** The live price, which moves until the payment is sent; false for a booked deal or a firm price. */
+        private Boolean fxIndicative;
 
         // Fees
         private BigDecimal paymentFee;

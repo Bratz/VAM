@@ -13,8 +13,11 @@ import com.bank.vam.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -66,6 +69,7 @@ public class Iso20022OutwardPaymentService {
     private final VirtualAccountRepository virtualAccountRepository;
     private final Iso20022XmlBuilder xmlBuilder;
     private final FxPaymentService fxPayments;
+    private final PlatformTransactionManager transactionManager;
 
     // ========================================================================
     // PROCESS OUTWARD PAYMENT - Delegates to TransactionService
@@ -344,75 +348,17 @@ public class Iso20022OutwardPaymentService {
                 log.info("IHB bulk payment: Owner={}, Payer={}", sourceVa.getVaNumber(), treasurySettlementVa.getVaNumber());
             }
 
-            // Process each instruction via TransactionService
+            // Each instruction in its own transaction: a row that fails (no funds, an FX price outside the streaming
+            // limits, a deal used up) rolls back alone, its FX booking with it, and the other rows still pay. In one
+            // transaction, one failed inner call marked the whole batch rollback-only.
+            final VirtualAccount payer = treasurySettlementVa;
+            TransactionTemplate rowTx = new TransactionTemplate(transactionManager);
+            rowTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
             for (PaymentInstruction instruction : request.getInstructions()) {
-                FxPaymentService.Conversion fx = null;
                 try {
-                    // A bulk file has no one to click a price: an instruction in another currency takes its own FX
-                    // fields, else the live price within the streaming limits.
-                    boolean anyFx = instruction.getFxPriceId() != null || instruction.getFxQuoteId() != null
-                            || instruction.getFxDealId() != null || instruction.getFxAtMarket() != null;
-                    fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), anyFx
-                            ? fxOf(instruction.getFxPriceId(), instruction.getFxQuoteId(), instruction.getFxDealId(), instruction.getFxAtMarket())
-                            : FxPaymentService.Instruction.AT_MARKET);
-                    BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
-                    Transaction txn;
-
-                    if (isIhbAccount) {
-                        // IHB bulk - auto-route through POBO (6-leg if configured)
-                        TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                                .ownerVaId(sourceVa.getId())              // IHB Current Account
-                                .payerVaId(treasurySettlementVa.getId())  // Treasury Settlement VA
-                                .amount(debit)
-                                .beneficiaryName(instruction.getCreditorName())
-                                .beneficiaryAccount(instruction.getCreditorAccount())
-                                .beneficiaryBankSwift(instruction.getCreditorBic())
-                                .description(instruction.getRemittanceInfo())
-                                .valueDate(request.getRequestedExecutionDate())
-                                .channel("ISO20022_BULK_IHB_POBO")
-                                .build();
-
-                        // Use 6-leg if configured, otherwise 4-leg
-                        if (sourceVa.isConfiguredFor6LegPobo()) {
-                            txn = transactionService.makeIhb6LegPoboPayment(poboRequest);
-                        } else {
-                            txn = transactionService.makePoboPayment(poboRequest);
-                        }
-                    } else if (request.isPobo() && request.getBehalfOfVaId() != null) {
-                        // Explicit POBO bulk - each instruction goes through makePoboPayment
-                        TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
-                                .ownerVaId(request.getBehalfOfVaId())
-                                .payerVaId(request.getSourceVaId())
-                                .amount(debit)
-                                .beneficiaryName(instruction.getCreditorName())
-                                .beneficiaryAccount(instruction.getCreditorAccount())
-                                .beneficiaryBankSwift(instruction.getCreditorBic())
-                                .description(instruction.getRemittanceInfo())
-                                .valueDate(request.getRequestedExecutionDate())
-                                .channel("ISO20022_BULK_POBO")
-                                .build();
-
-                        txn = transactionService.makePoboPayment(poboRequest);
-                    } else {
-                        // Standard bulk - each instruction goes through makePayment
-                        TransactionDto.PaymentRequest paymentRequest = TransactionDto.PaymentRequest.builder()
-                                .fromVaId(request.getSourceVaId())
-                                .amount(debit)
-                                .beneficiaryName(instruction.getCreditorName())
-                                .beneficiaryAccount(instruction.getCreditorAccount())
-                                .beneficiaryBankSwift(instruction.getCreditorBic())
-                                .description(instruction.getRemittanceInfo())
-                                .valueDate(request.getRequestedExecutionDate())
-                                .channel("ISO20022_BULK")
-                                .externalReference(instruction.getEndToEndId())
-                                .build();
-
-                        txn = transactionService.makePayment(paymentRequest);
-                    }
-
-                    if (fx != null) {
-                        fxPayments.settle(fx, txn, sourceVa);
-                    }
+                    Paid paid = rowTx.execute(status -> payRow(request, instruction, sourceVa, isIhbAccount, payer));
+                    Transaction txn = paid.txn();
+                    BigDecimal debit = paid.debit();
                     transactions.add(txn);
                     successCount++;
                     totalAmount = totalAmount.add(debit);
@@ -430,7 +376,6 @@ public class Iso20022OutwardPaymentService {
 
                 } catch (Exception e) {
                     log.warn("Bulk instruction failed: {} - {}", instruction.getInstructionId(), e.getMessage());
-                    fxPayments.abandon(fx, e.getMessage());
                     failedCount++;
 
                     results.add(PaymentInstructionResult.builder()
@@ -470,6 +415,81 @@ public class Iso20022OutwardPaymentService {
             log.error("ISO 20022 bulk payment error: ", e);
             throw new BusinessException("Bulk payment failed: " + e.getMessage());
         }
+    }
+
+
+    private record Paid(Transaction txn, BigDecimal debit) {
+    }
+
+    /** One bulk instruction: converted where its currency is not the account's, then paid. */
+    private Paid payRow(BulkPaymentRequest request, PaymentInstruction instruction, VirtualAccount sourceVa,
+                        boolean isIhbAccount, VirtualAccount treasurySettlementVa) {
+        // A bulk file has no one to click a price: an instruction in another currency takes its own FX
+        // fields, else the live price within the streaming limits.
+        boolean anyFx = instruction.getFxPriceId() != null || instruction.getFxQuoteId() != null
+                || instruction.getFxDealId() != null || instruction.getFxAtMarket() != null;
+        FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), anyFx
+                ? fxOf(instruction.getFxPriceId(), instruction.getFxQuoteId(), instruction.getFxDealId(), instruction.getFxAtMarket())
+                : FxPaymentService.Instruction.AT_MARKET);
+        BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
+        Transaction txn;
+
+        if (isIhbAccount) {
+            // IHB bulk - auto-route through POBO (6-leg if configured)
+            TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
+                    .ownerVaId(sourceVa.getId())              // IHB Current Account
+                    .payerVaId(treasurySettlementVa.getId())  // Treasury Settlement VA
+                    .amount(debit)
+                    .beneficiaryName(instruction.getCreditorName())
+                    .beneficiaryAccount(instruction.getCreditorAccount())
+                    .beneficiaryBankSwift(instruction.getCreditorBic())
+                    .description(instruction.getRemittanceInfo())
+                    .valueDate(request.getRequestedExecutionDate())
+                    .channel("ISO20022_BULK_IHB_POBO")
+                    .build();
+
+            // Use 6-leg if configured, otherwise 4-leg
+            if (sourceVa.isConfiguredFor6LegPobo()) {
+                txn = transactionService.makeIhb6LegPoboPayment(poboRequest);
+            } else {
+                txn = transactionService.makePoboPayment(poboRequest);
+            }
+        } else if (request.isPobo() && request.getBehalfOfVaId() != null) {
+            // Explicit POBO bulk - each instruction goes through makePoboPayment
+            TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
+                    .ownerVaId(request.getBehalfOfVaId())
+                    .payerVaId(request.getSourceVaId())
+                    .amount(debit)
+                    .beneficiaryName(instruction.getCreditorName())
+                    .beneficiaryAccount(instruction.getCreditorAccount())
+                    .beneficiaryBankSwift(instruction.getCreditorBic())
+                    .description(instruction.getRemittanceInfo())
+                    .valueDate(request.getRequestedExecutionDate())
+                    .channel("ISO20022_BULK_POBO")
+                    .build();
+
+            txn = transactionService.makePoboPayment(poboRequest);
+        } else {
+            // Standard bulk - each instruction goes through makePayment
+            TransactionDto.PaymentRequest paymentRequest = TransactionDto.PaymentRequest.builder()
+                    .fromVaId(request.getSourceVaId())
+                    .amount(debit)
+                    .beneficiaryName(instruction.getCreditorName())
+                    .beneficiaryAccount(instruction.getCreditorAccount())
+                    .beneficiaryBankSwift(instruction.getCreditorBic())
+                    .description(instruction.getRemittanceInfo())
+                    .valueDate(request.getRequestedExecutionDate())
+                    .channel("ISO20022_BULK")
+                    .externalReference(instruction.getEndToEndId())
+                    .build();
+
+            txn = transactionService.makePayment(paymentRequest);
+        }
+
+        if (fx != null) {
+            fxPayments.settle(fx, txn, sourceVa);
+        }
+        return new Paid(txn, debit);
     }
 
     // ========================================================================

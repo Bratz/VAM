@@ -33,8 +33,7 @@ class FxPaymentServiceTest {
     private final FxConfirmationService confirmations = mock(FxConfirmationService.class);
     private final FxSettlementService settlement = mock(FxSettlementService.class);
     private final FxDealRepository deals = mock(FxDealRepository.class);
-    private final FxDealService dealService = mock(FxDealService.class);
-    private final FxPaymentService payments = new FxPaymentService(stream, quotes, confirmations, settlement, deals, dealService);
+    private final FxPaymentService payments = new FxPaymentService(stream, quotes, confirmations, settlement, deals);
 
     /** A USD account of the fixture entity. */
     private static VirtualAccount usdAccount() {
@@ -54,6 +53,8 @@ class FxPaymentServiceTest {
     void aPaymentInTheAccountsCurrencyNeedsNoFxAndRefusesOne() {
         assertThat(payments.convert(usdAccount(), "usd", bd("100"), null)).isNull();
         assertThat(payments.convert(usdAccount(), null, bd("100"), null)).isNull();
+        // bulk rows and files send "at market" for every row; one in the account's currency just pays
+        assertThat(payments.convert(usdAccount(), "USD", bd("100"), FxPaymentService.Instruction.AT_MARKET)).isNull();
         assertThatThrownBy(() -> payments.convert(usdAccount(), "USD", bd("100"), price(UUID.randomUUID())))
                 .hasMessageContaining("nothing to convert");
     }
@@ -84,7 +85,6 @@ class FxPaymentServiceTest {
 
         assertThat(cv.debitAmount()).isEqualByComparingTo("1100.30");
         assertThat(cv.debitCurrency()).isEqualTo("USD");
-        assertThat(cv.bookedForIt()).isTrue();
         verify(confirmations).affirm(deal.getId());
 
         Transaction t = new Transaction();
@@ -117,7 +117,6 @@ class FxPaymentServiceTest {
 
         FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(null, null, window.getId(), false));
         assertThat(cv.debitAmount()).isEqualByComparingTo("1100.00");
-        assertThat(cv.bookedForIt()).isFalse();
 
         FxDeal forward = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(3));
         when(deals.findById(forward.getId())).thenReturn(Optional.of(forward));
@@ -132,14 +131,27 @@ class FxPaymentServiceTest {
     }
 
     @Test
-    void aFailedPaymentUnwindsTheDealBookedForItButNotADealItWasToDrawOn() {
-        FxDeal booked = DealFixtures.deal(Side.BUY, Instrument.SPOT, DealStatus.PENDING_SETTLEMENT, LocalDate.now());
-        payments.abandon(new FxPaymentService.Conversion(bd("1000"), "EUR", bd("1100"), "USD", bd("1.1"), booked, bd("1000"), true), "no funds");
-        verify(dealService).transition(eq(booked), eq(DealStatus.CANCELLED), argThat(s -> s.contains("no funds")));
+    void thePreviewPricesTheDebitLiveAndBooksNothing() {
+        FxStreamService.Leg buy = new FxStreamService.Leg(bd("1.1003"), null, null, bd("1100.30"));
+        when(stream.price(argThat(c -> c.pair().equals("EUR/USD") && c.forPayment()))).thenReturn(new FxStreamService.StreamPrice(true, null,
+                "EUR/USD", bd("1000"), Instrument.SPOT, LocalDate.now(), UUID.randomUUID(), buy, buy, 5, bd("1000000"), 31));
 
-        FxDeal window = DealFixtures.deal(Side.BUY, Instrument.WINDOW, DealStatus.ACTIVE, LocalDate.now().plusDays(20));
-        payments.abandon(new FxPaymentService.Conversion(bd("1000"), "EUR", bd("1100"), "USD", bd("1.1"), window, bd("1000"), false), "no funds");
-        verify(dealService, never()).transition(eq(window), any(), any());
-        assertThat(List.of(booked, window)).hasSize(2);
+        FxPaymentService.Conversion cv = payments.preview(usdAccount(), "EUR", bd("1000"), null);
+
+        assertThat(cv.debitAmount()).isEqualByComparingTo("1100.30");
+        assertThat(cv.rate()).isEqualByComparingTo("1.1003");
+        assertThat(cv.deal()).isNull();
+        verify(stream, never()).take(any());
+        verify(quotes, never()).request(any(), any());
+        assertThat(payments.preview(usdAccount(), "USD", bd("1000"), null)).isNull();
+    }
+
+    @Test
+    void aPreviewAboveTheStreamingLimitSaysToAskForAPrice() {
+        when(stream.price(any())).thenReturn(new FxStreamService.StreamPrice(false, "Above 1,000,000 EUR in EUR/USD the desk prices on request",
+                "EUR/USD", bd("2000000"), Instrument.SPOT, null, null, null, null, 0, bd("1000000"), 31));
+
+        assertThatThrownBy(() -> payments.preview(usdAccount(), "EUR", bd("2000000"), null))
+                .hasMessage("Above 1,000,000 EUR in EUR/USD the desk prices on request: ask for a price for this payment");
     }
 }

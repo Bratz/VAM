@@ -751,11 +751,20 @@ export interface PaymentPreviewResponse {
   shadowVaId?: string;
   shadowVaNumber?: string;
   physicalAccountNumber?: string;
+  /** In the account's currency: for an FX payment, the converted debit. */
   amount: number;
   currency: string;
   channel?: string;
+  // FX, when the payment is in another currency
+  instructedAmount?: number;
+  instructedCurrency?: string;
+  fxRate?: number;
+  fxPair?: string;
+  fxDealRef?: string;
+  fxIndicative?: boolean;
   paymentFee: number;
-  totalDebit: number;
+  /** Missing when the payment cannot be converted; validationMessage says why. */
+  totalDebit?: number;
   fundsAvailable: boolean;
   shadowVaAvailable: boolean;
   validationMessage?: string;
@@ -827,7 +836,7 @@ export const transactionsApi = {
   previewTransfer: (data: { fromVaId: string; toVaId: string; amount: number }) =>
     apiClient.post<ApiResponse<TransferPreviewResponse>>('/transactions/transfer/preview', data).then(r => r.data),
 
-  previewPayment: (data: { fromVaId: string; amount: number; channel?: string }) =>
+  previewPayment: (data: { fromVaId: string; amount: number; channel?: string; currency?: string; fxQuoteId?: string; fxDealId?: string }) =>
     apiClient.post<ApiResponse<PaymentPreviewResponse>>('/transactions/payment/preview', data).then(r => r.data),
 
   bulkTransfer: (data: BulkTransferRequest) =>

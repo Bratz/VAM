@@ -531,3 +531,8 @@ for "credit limit" because FX felt like a separate domain.
   and logged, and the app started green with nothing seeded. A startup runner that swallows per-row errors
   needs its log read after a deploy, not just the deploy's status. The home bank is `vam.home-bank.bic`;
   `getActiveHomeBankBic()` now returns it.
+
+- **A default sent for every row must be harmless on the rows that don't need it.** Bulk rows and file payables
+  without FX fields were given "convert at market", and `convert` refused any FX instruction on a payment in the
+  account's own currency, so every ordinary bulk row and file payable failed. E's live run only sent FX rows. When a
+  path adds a default for one kind of row, the live run includes a plain row of the other kind.
