@@ -73,7 +73,7 @@ class FxRfqLogTest {
         FxQuoteRequestRepository repo = mock(FxQuoteRequestRepository.class);
         FxQuoteService service = new FxQuoteService(repo, mock(CorporateRepository.class), mock(SimulatedDealer.class),
                 mock(FxLimitService.class), mock(FxDealService.class), mock(FxDealRepository.class), mock(FxEvents.class),
-                new FxDealProperties(), mock(ForwardPricer.class));
+                new FxDealProperties(), mock(ForwardPricer.class), mock(FxSettlementAccounts.class));
         FxQuoteRequest lapsed = quote(QuoteStatus.QUOTED, true, 0);
         lapsed.setValidUntil(LocalDateTime.now().minusSeconds(5));
         FxQuoteRequest firm = quote(QuoteStatus.QUOTED, true, 0);

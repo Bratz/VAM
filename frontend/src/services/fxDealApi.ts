@@ -38,6 +38,9 @@ export interface Quote {
   /** The legal entity the deal is for. */
   entityId?: string;
   entityName?: string;
+  /** Where the bought currency is credited and the sold one debited, when both could be found. */
+  buyAccountLabel?: string;
+  sellAccountLabel?: string;
   pair: string;
   baseCurrency: string;
   quoteCurrency: string;
@@ -102,6 +105,11 @@ export interface Deal {
   /** The legal entity the deal is for. */
   entityId?: string;
   entityName?: string;
+  /** The home-bank accounts the deal settles through: bought currency credited, sold currency debited. */
+  buyAccountId?: string;
+  buyAccountLabel?: string;
+  sellAccountId?: string;
+  sellAccountLabel?: string;
   instrument: Instrument;
   pair: string;
   side: Side;
@@ -156,6 +164,35 @@ export interface Settlement {
   status: SettlementStatus;
   reason?: string;
   settledAt?: string;
+  /** The accounts posted to; a close-out uses one of them. */
+  debitAccountLabel?: string;
+  creditAccountLabel?: string;
+}
+
+/** A home-bank account an entity may settle FX through. */
+export interface SettlementAccount {
+  id: string;
+  currency: string;
+  label: string;
+  bankName: string;
+  balance: number;
+}
+
+/** The account a currency settles through, or why there is none. fromInstruction false = the only eligible account. */
+export interface ResolvedAccount {
+  currency: string;
+  account?: SettlementAccount;
+  fromInstruction: boolean;
+  reason?: string;
+}
+
+/** One entity's standing settlement instruction for one currency. */
+export interface InstructionRow {
+  entityId: string;
+  entityName: string;
+  currency: string;
+  resolved: ResolvedAccount;
+  eligible: SettlementAccount[];
 }
 
 export interface CloseOutQuote {
@@ -322,7 +359,23 @@ export const fxDealApi = {
   settlements: (dealId: string) =>
     apiClient.get<ApiResponse<Settlement[]>>(`/fx/deals/${dealId}/settlements`).then(r => r.data.data),
 
-  /** Settles whatever is due. asOf moves the demo clock forward; omit it for today. A record only: no balance moves. */
+  // ---- settlement accounts ----
+  instructions: (corporateId: string) =>
+    apiClient.get<ApiResponse<InstructionRow[]>>('/fx/settlement/instructions', { params: { corporateId } }).then(r => r.data.data),
+
+  setInstruction: (corporateId: string, entityId: string, currency: string, accountId: string) =>
+    apiClient.put<ApiResponse<InstructionRow>>('/fx/settlement/instructions', { corporateId, entityId, currency, accountId }).then(r => r.data.data),
+
+  /** What an entity's deals would settle through in a currency, with the accounts it could use instead. */
+  settlementAccount: (corporateId: string, entityId: string, currency: string) =>
+    apiClient.get<ApiResponse<{ resolved: ResolvedAccount; eligible: SettlementAccount[] }>>('/fx/settlement/accounts',
+      { params: { corporateId, entityId, currency } }).then(r => r.data.data),
+
+  /** Until the day before value date, or while settlement has failed. */
+  changeDealAccounts: (dealId: string, buyAccountId?: string, sellAccountId?: string) =>
+    apiClient.put<ApiResponse<Deal>>(`/fx/deals/${dealId}/settlement-accounts`, { buyAccountId, sellAccountId }).then(r => r.data.data),
+
+  /** Settles whatever is due, posting both legs to the deal's accounts. asOf moves the demo clock forward; omit it for today. */
   runSettlement: (asOf?: string, corporateId?: string) =>
     apiClient.post<ApiResponse<SettlementRun>>('/fx/deals/settlement/run', null, { params: { asOf, corporateId } }).then(r => r.data.data),
 

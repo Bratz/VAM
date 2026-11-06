@@ -9,6 +9,9 @@ import java.util.UUID;
 final class DealFixtures {
 
     static final UUID CORP = UUID.randomUUID();
+    static final UUID ENTITY = UUID.randomUUID();
+    static final UUID EUR_ACCOUNT = UUID.randomUUID();
+    static final UUID USD_ACCOUNT = UUID.randomUUID();
 
     private DealFixtures() {
     }
@@ -31,6 +34,11 @@ final class DealFixtures {
         d.setBuyAmount(buy ? bd("100000.00") : bd("110000.00"));
         d.setSellCurrency(buy ? "USD" : "EUR");
         d.setSellAmount(buy ? bd("110000.00") : bd("100000.00"));
+        d.setEntityId(ENTITY);
+        d.setBuyAccountId(buy ? EUR_ACCOUNT : USD_ACCOUNT);
+        d.setBuyAccountLabel(d.getBuyCurrency() + " account");
+        d.setSellAccountId(buy ? USD_ACCOUNT : EUR_ACCOUNT);
+        d.setSellAccountLabel(d.getSellCurrency() + " account");
         d.setRate(bd("1.10"));
         d.setMidRate(bd("1.0997"));
         d.setSpreadBps(bd("3.00"));

@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.bank.vam.fx.deal.DealFixtures.CORP;
+import static com.bank.vam.fx.deal.DealFixtures.USD_ACCOUNT;
 import static com.bank.vam.fx.deal.DealFixtures.bd;
 import static com.bank.vam.fx.deal.DealFixtures.deal;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,8 +39,9 @@ class FxLifecycleServiceTest {
     private final FxDealService dealService = mock(FxDealService.class);
     private final FxQuoteService quoteService = mock(FxQuoteService.class);
     private final FxEvents log = mock(FxEvents.class);
+    private final FxPosting posting = mock(FxPosting.class);
     private final FxLifecycleService service =
-            new FxLifecycleService(deals, settlements, dealer, forwards, dealService, quoteService, log);
+            new FxLifecycleService(deals, settlements, dealer, forwards, dealService, quoteService, log, posting);
 
     private final List<FxSettlement> saved = new ArrayList<>();
 
@@ -115,6 +117,9 @@ class FxLifecycleServiceTest {
         assertThat(s.getBuyAmount()).isEqualByComparingTo("2000.00");
         assertThat(s.getSellAmount()).isEqualByComparingTo("0");
         assertThat(s.getStatus()).isEqualTo(SettlementStatus.SETTLED);
+        // EUR/USD pays out in USD, which this deal sells: the gain is credited to its USD account.
+        verify(posting).post(eq(USD_ACCOUNT), eq(bd("2000.00")), any(), eq(d.getDealRef()), anyString());
+        assertThat(s.getCreditAccountId()).isEqualTo(USD_ACCOUNT);
     }
 
     @Test
@@ -126,6 +131,22 @@ class FxLifecycleServiceTest {
 
         assertThat(saved.get(0).getBuyAmount()).isEqualByComparingTo("0");
         assertThat(saved.get(0).getSellAmount()).isEqualByComparingTo("2000.00");
+        verify(posting).post(eq(USD_ACCOUNT), eq(bd("-2000.00")), any(), eq(d.getDealRef()), anyString());
+        assertThat(saved.get(0).getDebitAccountId()).isEqualTo(USD_ACCOUNT);
+    }
+
+    @Test
+    void aCloseOutThatCannotBePostedStillClosesAndSaysWhy() {
+        closeAt("1.12");
+        FxDeal d = forward(Side.BUY);
+        when(posting.problem(USD_ACCOUNT, "USD")).thenReturn("the USD settlement account is no longer active; change it on the deal");
+
+        service.closeOut(d.getId());
+
+        assertThat(d.getStatus()).isEqualTo(DealStatus.CLOSED_OUT);
+        assertThat(saved.get(0).getReason()).contains("no longer active");
+        verify(posting, never()).post(any(), any(), any(), anyString(), anyString());
+        verify(dealService).transition(eq(d), eq(DealStatus.CLOSED_OUT), org.mockito.ArgumentMatchers.contains("not posted"));
     }
 
     @Test

@@ -346,6 +346,43 @@ As planned above. Notes from the build:
 - **Tests**: `FxLimitServiceTest` rewritten (12, against an in-memory store of the credit rows), quote tests for the entity and the locked re-check, roll keeps the entity; backend 436 passing. Live: 19 scripted checks against the running app and database (decline without a sub-limit, allocation over the line, spot at full notional, usage written to line, sub-limit and facility, decline over the sub-limit, forward at its risk weight, 80% alert, no cut below use, re-check at accept, expired facility, suspended line, facility listed); then the screens.
 - **Found, not fixed (pre-existing):** the Credit Facilities page uses a hard-coded corporate (`'corp-1'`, a TODO) and so lists every corporate's facilities, shows "NaN" for every facility's limit and "Standalone Facility" for every agreement name; two active EUR/AED mid rates exist (Reuters 4.0125, central bank 4.01) and the rate service resolves 4.01.
 
+## Plan: C, standing settlement instructions (SSIs) - built 2026-11-06, uncommitted
+
+**Review (2026-11-06).** FX settlement is a record only: no account is named and no balance moves; the funds check sums the corporate's cash in the sell currency across all its bank-account mirrors. The app has accounts per legal entity per currency, bank-account mirrors (shadows of real accounts, each linked to a physical account with a bank BIC), a settlement mark on transaction accounts (used for fee and price postings), external beneficiaries and debit mandates, and a single-entry posting model (one movement per account; fee postings already post a debit/credit pair). No SSI concept exists. Under the active UK profile the home bank is HBUKGB4BXXX and only two mirrors in the data are at it.
+
+**Decisions (interview).**
+
+| Question | Decision |
+|---|---|
+| What an SSI may point to | The entity's **bank-account mirrors at the home bank**, in that currency |
+| No SSI for a currency | Default to the entity's only home-bank mirror in it; none, or several, and the price request is declined with the reason |
+| Settlement | **Posts**: on value date, debit the sell-currency account and credit the buy-currency account (single-entry movements). Replaces "record only" |
+| Funds check | Corporate total in the sell currency, as now |
+| Debit account short | Post anyway; the account goes negative and a funding attention item is raised |
+| Where managed | A Settlement Instructions page under Foreign Exchange; a deal's accounts can be changed until the day before value date |
+| Demo data | For each entity holding an FX sub-limit, open home-bank accounts (physical account and mirror) in its home currency, USD, EUR and GBP where it has none, with a demo opening balance |
+
+**Build.**
+1. `FxSettlementInstruction` (new table: corporate, entity, currency, account; one per entity and currency) and a resolver: SSI, else the single home-bank mirror, else a reason.
+2. Quote: both legs' accounts resolved at the price, declined with the reason when one cannot be; the accounts carried to the deal (and a roll's replacement), shown on the ticket, the deal, the confirmation and the MCP tools.
+3. Deal: change settlement accounts until the day before value date (validated against the same rules).
+4. Settlement (maturity, drawdown, close-out difference): after the corporate-level funds check, post the debit and credit movements through the app's posting path; an account left negative raises a funding attention item.
+5. Settlement Instructions page: entities by currency, current SSI or derived default, set or change from eligible accounts.
+6. Demo seeding (runner): home-bank accounts for FX entities, as above.
+7. Tests: resolver, quote refusal, change window, posting amounts and directions, negative balance item; live run including balances before and after a settlement, and a check that only the two settlement accounts moved.
+
+### Built (2026-11-06) - uncommitted
+
+- `FxSettlementInstruction` + `FxSettlementAccounts` (resolver, eligibility = active PHYSICAL_MIRROR of the entity whose physical account's BIC starts with the home bank's 8-character BIC) + `FxSettlementController` (`GET/PUT /fx/settlement/instructions`, `GET /fx/settlement/accounts`, `PUT /fx/deals/{id}/settlement-accounts`).
+- Quote, deal and settlement carry account ids and labels; the confirmation lists the credit and debit accounts; a roll's replacement keeps the rolled deal's accounts.
+- `FxPosting` posts one leg: `applyShadowMovement` on the mirror, the same delta on the linked **physical account** (current, available, ledger), and a COMPLETED CREDIT/DEBIT movement in `va_movements` with the deal ref as correlation id. Settlement (maturity, drawdown) posts both legs; close-out posts the result in the quote currency to the deal's account in it (or records why not). Deals booked before C take their entity's accounts at settlement; an unusable account fails the deal with the reason (the account can then be changed, as SETTLEMENT_FAILED is inside the change window).
+- Why the physical account moves too: `BalanceRefreshService` copies the physical account's balance onto CORE_BANKING mirrors every 15 minutes, so moving only the mirror would be undone. **Pre-existing, not fixed:** the app's other postings to mirrors (collections, payments) move only the mirror and are reverted by that refresh.
+- Overdrawn settlement accounts raise a FUNDING_NEEDED attention item ("Account overdrawn by FX settlement: ...").
+- `FxSettlementAccountSeeder` (@Order 112) opened home-bank accounts with 5,000,000 for each FX-entity in its functional currency, USD, EUR, GBP where missing (31 accounts for 9 entities on the demo data).
+- UI: Settlement Instructions page (Foreign Exchange menu); the ticket shows where each leg settles and blocks the request with the reason; the deal drawer shows and changes the accounts (row action "Change settlement accounts..."); settlement items show the accounts posted; "record only" wording removed.
+- Tests: 121 FX unit tests green (new: posting directions/amounts, overdrawn note, unusable account, legacy deal resolution, close-out posting and its refusal path, quote accounts and refusal, change window). Live scenario 22/22 (`ssi_scenario.py` in the session scratchpad): balances on mirror and physical account, two movements, nothing else moved, ambiguity decline, SSI set and refused for a non-eligible account, change inside and outside the window, overdraft and its funding item. Test data removed afterwards.
+- Not unit-tested: the resolver's JPQL (covered by the live run).
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

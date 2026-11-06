@@ -10,14 +10,20 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.bank.vam.fx.deal.DealFixtures.CORP;
+import static com.bank.vam.fx.deal.DealFixtures.ENTITY;
+import static com.bank.vam.fx.deal.DealFixtures.EUR_ACCOUNT;
+import static com.bank.vam.fx.deal.DealFixtures.USD_ACCOUNT;
 import static com.bank.vam.fx.deal.DealFixtures.bd;
 import static com.bank.vam.fx.deal.DealFixtures.deal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -34,7 +40,10 @@ class FxSettlementServiceTest {
     private final FxDealService dealService = mock(FxDealService.class);
     private final HeldCash cash = mock(HeldCash.class);
     private final FxEvents log = mock(FxEvents.class);
-    private final FxSettlementService service = new FxSettlementService(deals, settlements, dealService, cash, log);
+    private final FxSettlementAccounts settlementAccounts = mock(FxSettlementAccounts.class);
+    private final FxPosting posting = mock(FxPosting.class);
+    private final FxSettlementService service = new FxSettlementService(deals, settlements, dealService, cash, log,
+            settlementAccounts, posting);
 
     private final List<FxSettlement> saved = new ArrayList<>();
 
@@ -82,6 +91,66 @@ class FxSettlementServiceTest {
         assertThat(d.getStatus()).isEqualTo(DealStatus.SETTLED);
         assertThat(d.remainingBase()).isEqualByComparingTo("0");
         assertThat(d.getSettledAt()).isNotNull();
+    }
+
+    @Test
+    void settlingDebitsTheSoldCurrencyAndCreditsTheBoughtOneToTheDealsAccounts() {
+        FxDeal d = due(DealStatus.ACTIVE);
+        when(cash.of(CORP, "USD")).thenReturn(bd("200000"));
+
+        service.run(DUE, null);
+
+        verify(posting).post(eq(USD_ACCOUNT), argThat(a -> a.compareTo(bd("-110000")) == 0), eq(DUE), eq(d.getDealRef()), contains("USD sold"));
+        verify(posting).post(eq(EUR_ACCOUNT), argThat(a -> a.compareTo(bd("100000")) == 0), eq(DUE), eq(d.getDealRef()), contains("EUR bought"));
+        FxSettlement s = saved.get(0);
+        assertThat(s.getDebitAccountId()).isEqualTo(USD_ACCOUNT);
+        assertThat(s.getCreditAccountId()).isEqualTo(EUR_ACCOUNT);
+        assertThat(s.getDebitAccountLabel()).isEqualTo("USD account");
+    }
+
+    @Test
+    void aDebitAccountLeftBelowZeroStillSettlesAndTheNoteSaysItIsOverdrawn() {
+        FxDeal d = due(DealStatus.ACTIVE);
+        when(cash.of(CORP, "USD")).thenReturn(bd("200000"));
+        when(posting.post(eq(USD_ACCOUNT), any(), any(), anyString(), anyString())).thenReturn(bd("-10000.00"));
+
+        service.run(DUE, null);
+
+        assertThat(d.getStatus()).isEqualTo(DealStatus.SETTLED);
+        verify(log).note(eq(d), eq("SETTLED_MATURITY"), contains("overdrawn at -10000.00"));
+    }
+
+    @Test
+    void anAccountThatCanNoLongerBePostedToFailsTheDealWithTheReasonAndPostsNothing() {
+        FxDeal d = due(DealStatus.ACTIVE);
+        when(cash.of(CORP, "USD")).thenReturn(bd("200000"));
+        when(posting.problem(USD_ACCOUNT, "USD")).thenReturn("the USD settlement account is no longer active; change it on the deal");
+
+        FxSettlementService.RunResult r = service.run(DUE, null);
+
+        assertThat(r.failed()).isEqualTo(1);
+        assertThat(r.notes().get(0)).contains("no longer active");
+        assertThat(d.getStatus()).isEqualTo(DealStatus.SETTLEMENT_FAILED);
+        verify(posting, never()).post(any(), any(), any(), anyString(), anyString());
+    }
+
+    @Test
+    void aDealBookedBeforeSettlementAccountsTakesItsEntitysAccountsOrFailsWithWhyNot() {
+        FxDeal d = due(DealStatus.ACTIVE);
+        d.setBuyAccountId(null);
+        d.setSellAccountId(null);
+        when(cash.of(CORP, "USD")).thenReturn(bd("200000"));
+        UUID eur = UUID.randomUUID();
+        when(settlementAccounts.resolve(CORP, ENTITY, "EUR")).thenReturn(new FxSettlementAccounts.Resolved("EUR",
+                new FxSettlementAccounts.Account(eur, "EUR", "GB00 EUR (Home Bank)", "Home Bank", bd("0")), false, null));
+        when(settlementAccounts.resolve(CORP, ENTITY, "USD")).thenReturn(new FxSettlementAccounts.Resolved("USD", null, false,
+                "Test Ltd has 2 USD accounts at the home bank; choose one under Settlement Instructions"));
+
+        FxSettlementService.RunResult r = service.run(DUE, null);
+
+        assertThat(r.notes().get(0)).contains("choose one under Settlement Instructions");
+        assertThat(d.getBuyAccountId()).isEqualTo(eur);
+        assertThat(d.getStatus()).isEqualTo(DealStatus.SETTLEMENT_FAILED);
     }
 
     @Test

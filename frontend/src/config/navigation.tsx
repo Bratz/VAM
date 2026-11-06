@@ -162,6 +162,7 @@ export const navSections: NavSection[] = [
       { icon: <Scale className="w-5 h-5" />, label: 'Exposure & Hedging', href: 'fx-exposure', keywords: ['FX', 'hedge', 'policy', 'currency risk'] },
       { icon: <Coins className="w-5 h-5" />, label: 'FX Deals', href: 'fx-deals', covers: ['fx-workspace'], keywords: ['FX', 'forward', 'spot', 'confirmation', 'settlement', 'deal', 'dealing'] },
       { icon: <ScrollText className="w-5 h-5" />, label: 'RFQ Log', href: 'fx-rfq', keywords: ['FX', 'quote', 'request for quote', 'price request', 'negotiation'] },
+      { icon: <Landmark className="w-5 h-5" />, label: 'Settlement Instructions', href: 'fx-settlement', keywords: ['FX', 'SSI', 'settlement', 'standing settlement instruction', 'account'] },
     ]
   },
   // Insights — home for AI features. Copilot is also a floating FAB on every
@@ -268,6 +269,7 @@ export const pageTitles: Record<string, string> = {
   'fx-exposure': 'Exposure & Hedging',
   'fx-deals': 'FX Deals',
   'fx-rfq': 'RFQ Log',
+  'fx-settlement': 'Settlement Instructions',
   'fx-workspace': 'FX Deals',
   // Credit & Interest — the section is gone; these sit under Administration
   // now, alongside FX Rates above.

@@ -15,14 +15,16 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Drawdowns and value-date settlement. Settlement is a record against the deal: a settled item says the
- * corporate held the cash to pay it, but no account balance is moved. A deal settles only once its
- * confirmation is affirmed, and only if the cash in the currency it sells is there; otherwise it moves to
- * SETTLEMENT_FAILED and is tried again on the next run.
+ * Drawdowns and value-date settlement. Settling posts both legs: the sold currency is debited from the deal's
+ * debit account and the bought currency credited to its credit account (home-bank accounts, see
+ * {@link FxSettlementAccounts}). A deal settles only once its confirmation is affirmed, its accounts are usable, and
+ * the corporate holds enough of the sold currency in total; the debit account itself may go below zero, which the
+ * funding item reports. Otherwise it moves to SETTLEMENT_FAILED and is tried again on the next run.
  */
 @Service
 @RequiredArgsConstructor
@@ -37,6 +39,8 @@ public class FxSettlementService {
     private final FxDealService dealService;
     private final HeldCash cash;
     private final FxEvents log;
+    private final FxSettlementAccounts settlementAccounts;
+    private final FxPosting posting;
 
     /** Takes part of a window forward. It settles on its own value date, which must fall inside the window. */
     @Transactional
@@ -119,22 +123,34 @@ public class FxSettlementService {
             notes.add(d.getDealRef() + ": waiting for the client to confirm the trade (" + d.getConfirmationStatus() + ")");
             return false;
         }
+        String why = accountProblem(d);
         String key = d.getCorporateId() + "|" + s.getSellCurrency();
         BigDecimal held = available.computeIfAbsent(key, k -> cash.of(d.getCorporateId(), s.getSellCurrency()));
-        if (held.compareTo(s.getSellAmount()) >= 0) {
+        if (why == null && held.compareTo(s.getSellAmount()) < 0) {
+            why = "Not enough " + s.getSellCurrency() + ": needs " + s.getSellAmount().toPlainString()
+                    + ", holds " + held.toPlainString();
+        }
+        if (why == null) {
             available.put(key, held.subtract(s.getSellAmount()));
+            String what = "FX " + s.getKind().name().toLowerCase(Locale.ROOT) + " " + d.getDealRef();
+            BigDecimal after = posting.post(d.getSellAccountId(), s.getSellAmount().negate(), s.getValueDate(), d.getDealRef(),
+                    what + ": " + s.getSellCurrency() + " sold");
+            posting.post(d.getBuyAccountId(), s.getBuyAmount(), s.getValueDate(), d.getDealRef(), what + ": " + s.getBuyCurrency() + " bought");
+            s.setDebitAccountId(d.getSellAccountId());
+            s.setDebitAccountLabel(d.getSellAccountLabel());
+            s.setCreditAccountId(d.getBuyAccountId());
+            s.setCreditAccountLabel(d.getBuyAccountLabel());
             s.setStatus(SettlementStatus.SETTLED);
             s.setSettledAt(LocalDateTime.now());
             s.setReason(null);
             settlements.save(s);
             counts[0]++;
-            log.note(d, "SETTLED_" + s.getKind(), s.getKind() + " settled: client buys " + s.getBuyCurrency() + " "
-                    + s.getBuyAmount().toPlainString() + ", sells " + s.getSellCurrency() + " " + s.getSellAmount().toPlainString()
-                    + " (recorded; no balance moved)");
+            log.note(d, "SETTLED_" + s.getKind(), s.getKind() + " settled: " + s.getSellCurrency() + " " + s.getSellAmount().toPlainString()
+                    + " debited from " + d.getSellAccountLabel() + ", " + s.getBuyCurrency() + " " + s.getBuyAmount().toPlainString()
+                    + " credited to " + d.getBuyAccountLabel()
+                    + (after != null && after.signum() < 0 ? "; the debit account is now overdrawn at " + after.toPlainString() : ""));
             return true;
         }
-        String why = "Not enough " + s.getSellCurrency() + ": needs " + s.getSellAmount().toPlainString()
-                + ", holds " + held.toPlainString();
         counts[1]++;
         notes.add(d.getDealRef() + ": " + why);
         s.setReason(why);
@@ -148,6 +164,34 @@ public class FxSettlementService {
             settlements.save(s);
         }
         return false;
+    }
+
+    /**
+     * Why the deal's accounts cannot be posted to, or null. A deal booked before settlement accounts existed takes its
+     * entity's accounts now.
+     */
+    private String accountProblem(FxDeal d) {
+        if (d.getEntityId() == null) {
+            return "the deal is not booked for an entity, so it has no settlement accounts";
+        }
+        if (d.getBuyAccountId() == null) {
+            FxSettlementAccounts.Resolved r = settlementAccounts.resolve(d.getCorporateId(), d.getEntityId(), d.getBuyCurrency());
+            if (!r.found()) {
+                return r.reason();
+            }
+            d.setBuyAccountId(r.account().id());
+            d.setBuyAccountLabel(r.account().label());
+        }
+        if (d.getSellAccountId() == null) {
+            FxSettlementAccounts.Resolved r = settlementAccounts.resolve(d.getCorporateId(), d.getEntityId(), d.getSellCurrency());
+            if (!r.found()) {
+                return r.reason();
+            }
+            d.setSellAccountId(r.account().id());
+            d.setSellAccountLabel(r.account().label());
+        }
+        String p = posting.problem(d.getSellAccountId(), d.getSellCurrency());
+        return p != null ? p : posting.problem(d.getBuyAccountId(), d.getBuyCurrency());
     }
 
     /** A deal is settled once nothing is left to deliver and no drawdown is waiting. */

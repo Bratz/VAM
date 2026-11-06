@@ -25,6 +25,7 @@ public class FxDealService {
     private final FxEvents log;
     private final CorporateRepository corporates;
     private final FxLimitService limits;
+    private final FxSettlementAccounts settlementAccounts;
 
     /** Books the deal for an accepted quote, issues its confirmation, and leaves it ACTIVE (forward) or awaiting settlement (spot). */
     FxDeal book(FxQuoteRequest q, BigDecimal limitCharge, String limitCurrency) {
@@ -35,6 +36,10 @@ public class FxDealService {
         d.setCorporateId(q.getCorporateId());
         d.setEntityId(q.getEntityId());
         d.setEntityName(q.getEntityName());
+        d.setBuyAccountId(q.getBuyAccountId());
+        d.setBuyAccountLabel(q.getBuyAccountLabel());
+        d.setSellAccountId(q.getSellAccountId());
+        d.setSellAccountLabel(q.getSellAccountLabel());
         d.setQuoteRequestId(q.getId());
         d.setInstrument(q.getInstrument());
         d.setPair(q.getPair());
@@ -79,6 +84,41 @@ public class FxDealService {
         limits.refreshUsage(d.getCorporateId());
     }
 
+    /**
+     * Changes the accounts a deal settles through. Allowed until the day before value date, or later while a failed
+     * settlement waits to be tried again. Each account must be one of the entity's home-bank accounts in that currency.
+     */
+    @org.springframework.transaction.annotation.Transactional
+    public FxDeal changeAccounts(UUID dealId, UUID buyAccountId, UUID sellAccountId) {
+        FxDeal d = get(dealId);
+        boolean open = DealStatus.OPEN.contains(d.getStatus());
+        boolean beforeValueDate = LocalDate.now().isBefore(d.getValueDate());
+        if (!open || !(beforeValueDate || d.getStatus() == DealStatus.SETTLEMENT_FAILED)) {
+            throw new BusinessException("FX_SETTLEMENT_LOCKED", "The settlement accounts of " + d.getDealRef()
+                    + " can no longer be changed: they can be until the day before value date (" + d.getValueDate() + ")");
+        }
+        if (d.getEntityId() == null) {
+            throw new BusinessException("FX_SETTLEMENT_ACCOUNT_INVALID", d.getDealRef() + " is not booked for an entity");
+        }
+        StringBuilder what = new StringBuilder();
+        if (buyAccountId != null && !buyAccountId.equals(d.getBuyAccountId())) {
+            FxSettlementAccounts.Account a = settlementAccounts.require(d.getCorporateId(), d.getEntityId(), d.getBuyCurrency(), buyAccountId);
+            what.append(d.getBuyCurrency()).append(" credit account ").append(d.getBuyAccountLabel()).append(" to ").append(a.label()).append(". ");
+            d.setBuyAccountId(a.id());
+            d.setBuyAccountLabel(a.label());
+        }
+        if (sellAccountId != null && !sellAccountId.equals(d.getSellAccountId())) {
+            FxSettlementAccounts.Account a = settlementAccounts.require(d.getCorporateId(), d.getEntityId(), d.getSellCurrency(), sellAccountId);
+            what.append(d.getSellCurrency()).append(" debit account ").append(d.getSellAccountLabel()).append(" to ").append(a.label()).append(". ");
+            d.setSellAccountId(a.id());
+            d.setSellAccountLabel(a.label());
+        }
+        if (what.length() > 0) {
+            log.note(d, "SETTLE_ACCOUNTS", "Settlement accounts changed: " + what.toString().trim());
+        }
+        return deals.save(d);
+    }
+
     public List<FxDeal> list(UUID corporateId) {
         return deals.findByCorporateIdOrderByCreatedAtDesc(corporateId);
     }
@@ -109,6 +149,8 @@ public class FxDealService {
                 "Instrument     : " + when,
                 "You buy        : " + d.getBuyCurrency() + " " + money(d.getBuyAmount()),
                 "You sell       : " + d.getSellCurrency() + " " + money(d.getSellAmount()),
+                "Credit account : " + (d.getBuyAccountLabel() == null ? "to be advised" : d.getBuyAccountLabel()),
+                "Debit account  : " + (d.getSellAccountLabel() == null ? "to be advised" : d.getSellAccountLabel()),
                 buildUp(d) + "Rate           : " + d.getRate().stripTrailingZeros().toPlainString() + " (" + d.getPair() + ")",
                 "Status         : " + d.getStatus(),
                 "",

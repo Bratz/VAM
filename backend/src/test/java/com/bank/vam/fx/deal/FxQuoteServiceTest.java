@@ -41,8 +41,9 @@ class FxQuoteServiceTest {
     private final ForwardPricer forwards = mock(ForwardPricer.class);
     private final FxDealProperties props = new FxDealProperties();
     private final FxEvents events = mock(FxEvents.class);
+    private final FxSettlementAccounts settlementAccounts = mock(FxSettlementAccounts.class);
     private final FxQuoteService service = new FxQuoteService(
-            quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards);
+            quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards, settlementAccounts);
 
     private static final UUID ENTITY = UUID.randomUUID();
     private static final FxLimitService.Usage ROOM = new FxLimitService.Usage(new BigDecimal("1000000"), BigDecimal.ZERO, new BigDecimal("1000000"));
@@ -74,6 +75,11 @@ class FxQuoteServiceTest {
                 CORP, UUID.randomUUID(), UUID.randomUUID(), "FX treasury line", "AED", null, true, null, ROOM));
         when(limitService.charge(any(), anyString(), any(), any(), any(), anyString())).thenReturn(bd("1000.00"));
         // refusal(...) answers null by default: the deal fits.
+        when(settlementAccounts.resolve(eq(CORP), eq(ENTITY), anyString())).thenAnswer(inv -> {
+            String ccy = inv.getArgument(2);
+            return new FxSettlementAccounts.Resolved(ccy, new FxSettlementAccounts.Account(UUID.randomUUID(), ccy,
+                    ccy + " account (Home Bank)", "Home Bank", bd("0")), true, null);
+        });
         when(dealService.book(any(), any(), anyString())).thenReturn(deal);
         when(deals.findById(deal.getId())).thenReturn(Optional.of(deal));
     }
@@ -110,6 +116,29 @@ class FxQuoteServiceTest {
 
         assertThat(q.getStatus()).isEqualTo(QuoteStatus.REJECTED);
         assertThat(q.getStatusReason()).startsWith("Not quoted. The FX sub-limit of Test Treasury Ltd");
+        assertThat(q.getClientRate()).isNull();
+    }
+
+    @Test
+    void aQuoteCarriesTheAccountsBothLegsSettleThrough() {
+        FxQuoteRequest q = service.request(command());
+
+        // Buying EUR/USD: EUR is credited, USD debited.
+        assertThat(q.getBuyAccountLabel()).isEqualTo("EUR account (Home Bank)");
+        assertThat(q.getSellAccountLabel()).isEqualTo("USD account (Home Bank)");
+        assertThat(q.getBuyAccountId()).isNotNull();
+    }
+
+    @Test
+    void aRequestWithNoAccountToSettleALegIsDeclinedWithTheReason() {
+        when(settlementAccounts.resolve(CORP, ENTITY, "USD")).thenReturn(new FxSettlementAccounts.Resolved("USD", null, false,
+                "Test Treasury Ltd has 2 USD accounts at the home bank; choose one under Settlement Instructions"));
+
+        FxQuoteRequest q = service.request(command());
+
+        assertThat(q.getStatus()).isEqualTo(QuoteStatus.REJECTED);
+        assertThat(q.getStatusReason()).isEqualTo(
+                "Not quoted. Test Treasury Ltd has 2 USD accounts at the home bank; choose one under Settlement Instructions.");
         assertThat(q.getClientRate()).isNull();
     }
 

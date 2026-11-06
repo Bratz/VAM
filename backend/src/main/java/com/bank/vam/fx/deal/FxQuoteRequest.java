@@ -39,6 +39,19 @@ public class FxQuoteRequest extends BaseEntity {
     @Column(name = "entity_name", length = 200)
     private String entityName;
 
+    /** The accounts the deal settles through: the bought currency is credited to one, the sold debited from the other. */
+    @Column(name = "buy_account_id")
+    private UUID buyAccountId;
+
+    @Column(name = "buy_account_label", length = 160)
+    private String buyAccountLabel;
+
+    @Column(name = "sell_account_id")
+    private UUID sellAccountId;
+
+    @Column(name = "sell_account_label", length = 160)
+    private String sellAccountLabel;
+
     @Column(name = "pair", nullable = false, length = 7)
     private String pair;
 

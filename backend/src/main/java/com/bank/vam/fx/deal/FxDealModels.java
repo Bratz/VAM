@@ -16,7 +16,7 @@ public final class FxDealModels {
 
     /** {@code secondsRemaining} comes from the server clock so the client's countdown cannot drift from the real expiry. */
     public record QuoteView(
-            UUID id, UUID corporateId, UUID entityId, String entityName, String pair, String baseCurrency, String quoteCurrency, Side side,
+            UUID id, UUID corporateId, UUID entityId, String entityName, String buyAccountLabel, String sellAccountLabel, String pair, String baseCurrency, String quoteCurrency, Side side,
             Instrument instrument, BigDecimal amount, LocalDate valueDate, LocalDate windowStart, String purpose,
             String exposureRef, QuoteStatus status, String statusReason,
             BigDecimal clientRate, BigDecimal spotRate, BigDecimal forwardPoints, BigDecimal counterAmount, String dealer,
@@ -29,7 +29,7 @@ public final class FxDealModels {
                     q.getMidRate(), q.getSpreadBps());
             long remaining = q.getStatus() == QuoteStatus.QUOTED
                     ? Math.max(0, Duration.between(LocalDateTime.now(), q.getValidUntil()).toSeconds()) : 0;
-            return new QuoteView(q.getId(), q.getCorporateId(), q.getEntityId(), q.getEntityName(), q.getPair(), q.baseCurrency(), q.quoteCurrency(),
+            return new QuoteView(q.getId(), q.getCorporateId(), q.getEntityId(), q.getEntityName(), q.getBuyAccountLabel(), q.getSellAccountLabel(), q.getPair(), q.baseCurrency(), q.quoteCurrency(),
                     q.getSide(), q.getInstrument(), q.getAmount(), q.getValueDate(), q.getWindowStart(), q.getPurpose(),
                     q.getExposureRef(), q.getStatus(), q.getStatusReason(),
                     q.getClientRate(), price.spotRate(), price.forwardPoints(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
@@ -116,7 +116,8 @@ public final class FxDealModels {
      * the market cannot price the deal. {@code remainingAmount} is what is still undrawn, in the pair's base currency.
      */
     public record DealView(
-            UUID id, String dealRef, UUID corporateId, UUID entityId, String entityName, UUID quoteRequestId, Instrument instrument, String pair,
+            UUID id, String dealRef, UUID corporateId, UUID entityId, String entityName,
+            UUID buyAccountId, String buyAccountLabel, UUID sellAccountId, String sellAccountLabel, UUID quoteRequestId, Instrument instrument, String pair,
             Side side, String buyCurrency, BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
             BigDecimal rate, BigDecimal spotRate, BigDecimal forwardPoints, LocalDate tradeDate,
             LocalDate valueDate, LocalDate windowStart, DealStatus status, BigDecimal limitCharge,
@@ -130,7 +131,8 @@ public final class FxDealModels {
         static DealView of(FxDeal d, java.util.Optional<FxMtmService.Mark> mark, boolean overdue) {
             ClientPrice price = ClientPrice.of(d.getInstrument(), d.getSide(), d.quoteCurrency(), d.getRate(),
                     d.getMidRate(), d.getSpreadBps());
-            return new DealView(d.getId(), d.getDealRef(), d.getCorporateId(), d.getEntityId(), d.getEntityName(), d.getQuoteRequestId(), d.getInstrument(),
+            return new DealView(d.getId(), d.getDealRef(), d.getCorporateId(), d.getEntityId(), d.getEntityName(),
+                    d.getBuyAccountId(), d.getBuyAccountLabel(), d.getSellAccountId(), d.getSellAccountLabel(), d.getQuoteRequestId(), d.getInstrument(),
                     d.getPair(), d.getSide(), d.getBuyCurrency(), d.getBuyAmount(), d.getSellCurrency(),
                     d.getSellAmount(), d.getRate(), price.spotRate(), price.forwardPoints(),
                     d.getTradeDate(), d.getValueDate(), d.getWindowStart(), d.getStatus(), d.getLimitCharge(),
@@ -145,11 +147,13 @@ public final class FxDealModels {
 
     public record SettlementView(UUID id, SettlementKind kind, LocalDate valueDate, String buyCurrency,
                                  BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
-                                 SettlementStatus status, String reason, LocalDateTime settledAt) {
+                                 SettlementStatus status, String reason, LocalDateTime settledAt,
+                                 String debitAccountLabel, String creditAccountLabel) {
 
         static SettlementView of(FxSettlement s) {
             return new SettlementView(s.getId(), s.getKind(), s.getValueDate(), s.getBuyCurrency(), s.getBuyAmount(),
-                    s.getSellCurrency(), s.getSellAmount(), s.getStatus(), s.getReason(), s.getSettledAt());
+                    s.getSellCurrency(), s.getSellAmount(), s.getStatus(), s.getReason(), s.getSettledAt(),
+                    s.getDebitAccountLabel(), s.getCreditAccountLabel());
         }
     }
 

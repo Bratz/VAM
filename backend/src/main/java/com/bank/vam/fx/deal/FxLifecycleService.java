@@ -17,7 +17,7 @@ import java.util.UUID;
 /**
  * Early close-out and roll of a forward. Both are priced by the desk at the moment they run and the price is
  * not held firm: the preview shows what it would cost now, and running it prices again. The cash difference is
- * recorded against the deal (no balance is moved).
+ * posted to the deal's settlement account in the pair's quote currency.
  *
  * <p>ponytail: a window or part-drawn deal closes or rolls for what is still undrawn, as a plain forward.
  * Partial close-out and early delivery are the next things to add.
@@ -46,6 +46,7 @@ public class FxLifecycleService {
     private final FxDealService dealService;
     private final FxQuoteService quoteService;
     private final FxEvents log;
+    private final FxPosting posting;
 
     /** Positive is in the corporate's favour: it closes a buy by selling higher, or a sell by buying lower. */
     static BigDecimal realisedPnl(Side original, BigDecimal remainingBase, BigDecimal contractedRate, BigDecimal closeRate) {
@@ -87,6 +88,13 @@ public class FxLifecycleService {
         }
         FxDeal replacement = quoteService.accept(q.getId());
         replacement.setRolledFromId(d.getId());
+        if (d.getBuyAccountId() != null && d.getSellAccountId() != null) {
+            // The replacement settles where the rolled deal would have, even if that was changed on the deal.
+            replacement.setBuyAccountId(d.getBuyAccountId());
+            replacement.setBuyAccountLabel(d.getBuyAccountLabel());
+            replacement.setSellAccountId(d.getSellAccountId());
+            replacement.setSellAccountLabel(d.getSellAccountLabel());
+        }
         deals.save(replacement);
         log.note(d, "ROLLED_INTO", "Replaced by " + replacement.getDealRef() + " for value " + replacement.getValueDate());
         return new RollResult(d, replacement);
@@ -141,12 +149,35 @@ public class FxLifecycleService {
         s.setSellAmount(q.realisedPnl().negate().max(BigDecimal.ZERO));
         s.setStatus(SettlementStatus.SETTLED);
         s.setSettledAt(LocalDateTime.now());
+
+        // The result is paid in the pair's quote currency, through the deal's account in that currency.
+        BigDecimal pnl = q.realisedPnl();
+        boolean viaBuy = q.pnlCurrency().equals(d.getBuyCurrency());
+        UUID account = viaBuy ? d.getBuyAccountId() : d.getSellAccountId();
+        String label = viaBuy ? d.getBuyAccountLabel() : d.getSellAccountLabel();
+        String problem = pnl.signum() == 0 ? null : posting.problem(account, q.pnlCurrency());
+        String posted;
+        if (pnl.signum() == 0) {
+            posted = "nothing to post";
+        } else if (problem != null) {
+            posted = "not posted: " + problem;
+            s.setReason(problem);
+        } else {
+            posting.post(account, pnl, s.getValueDate(), d.getDealRef(), "FX close-out " + d.getDealRef());
+            if (pnl.signum() > 0) {
+                s.setCreditAccountId(account);
+                s.setCreditAccountLabel(label);
+            } else {
+                s.setDebitAccountId(account);
+                s.setDebitAccountLabel(label);
+            }
+            posted = (pnl.signum() > 0 ? "credited to " : "debited from ") + label;
+        }
         settlements.save(s);
 
-        String result = q.realisedPnl().signum() >= 0
-                ? "client receives " + q.realisedPnl().toPlainString() : "client pays " + q.realisedPnl().negate().toPlainString();
+        String result = pnl.signum() >= 0 ? "client receives " + pnl.toPlainString() : "client pays " + pnl.negate().toPlainString();
         dealService.transition(d, to, what + " at " + q.closeRate().toPlainString() + " (" + result + " " + q.pnlCurrency()
-                + ", recorded; no balance moved)");
+                + ", " + posted + ")");
     }
 
     private static LocalDate requireDate(LocalDate d) {

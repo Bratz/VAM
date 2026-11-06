@@ -16,7 +16,7 @@ import { Alert } from '../../components/ui/enhanced';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
 import { fxMarketApi } from '../../services/fxMarketApi';
-import { fxDealApi, CreditLimit, Instrument, Quote, Side } from '../../services/fxDealApi';
+import { fxDealApi, CreditLimit, Instrument, Quote, ResolvedAccount, Side } from '../../services/fxDealApi';
 import { QUOTE_BADGE } from '../fxDealBadges';
 import { errorText, fmt, fmtRate } from './fxFormat';
 
@@ -55,6 +55,8 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
   const corporateName = corporates.find((c) => c.id === corporateId)?.name;
   const [entityId, setEntityId] = useState('');
   const [room, setRoom] = useState<CreditLimit | null>(null);
+  /** Where each leg would settle for this entity, or why it cannot. */
+  const [legs, setLegs] = useState<{ buy: ResolvedAccount; sell: ResolvedAccount } | null>(null);
 
   const [pairs, setPairs] = useState<string[]>([]);
   const [pair, setPair] = useState('EUR/USD');
@@ -128,6 +130,18 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     fxDealApi.limit(corporateId, entityId).then((r) => { if (current) setRoom(r); }).catch(() => undefined);
     return () => { current = false; };
   }, [isOpen, corporateId, entityId, quote?.status]);
+
+  useEffect(() => {
+    if (!isOpen || !corporateId || !entityId) { setLegs(null); return; }
+    const [b, q] = [pair.slice(0, 3), pair.slice(4)];
+    const [buyCcy, sellCcy] = side === 'BUY' ? [b, q] : [q, b];
+    let current = true;
+    Promise.all([fxDealApi.settlementAccount(corporateId, entityId, buyCcy), fxDealApi.settlementAccount(corporateId, entityId, sellCcy)])
+      .then(([buy, sell]) => { if (current) setLegs({ buy: buy.resolved, sell: sell.resolved }); })
+      .catch(() => { if (current) setLegs(null); });
+    return () => { current = false; };
+  }, [isOpen, corporateId, entityId, pair, side]);
+  const noAccount = legs ? (!legs.buy.account ? legs.buy.reason : !legs.sell.account ? legs.sell.reason : undefined) : undefined;
 
   // Count the validity window down locally, then ask the server what became of the quote. A counter-offer
   // changes quotedAt, so the countdown starts again even when the seconds remaining happen to be equal.
@@ -277,6 +291,14 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
             <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-1.5">
               You {side === 'BUY' ? 'buy' : 'sell'} {base} and {side === 'BUY' ? 'pay' : 'receive'} {quoteCcy}.
             </p>
+            {legs && (noAccount
+              ? <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1.5">{noAccount}.</p>
+              : (
+                <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-1.5">
+                  {legs.buy.currency} credited to {legs.buy.account?.label}.
+                  <span className="block">{legs.sell.currency} debited from {legs.sell.account?.label}.</span>
+                </p>
+              ))}
           </div>
           <Input label={`Amount (${base})`} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={firm} />
           <Select label="Instrument" value={instrument} onChange={(e) => setInstrument(e.target.value as Instrument)} options={INSTRUMENTS} disabled={firm} />
@@ -291,7 +313,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
           {formError && <p className="text-body-sm text-error-700 dark:text-error-300">{formError}</p>}
           {!firm && !bookedRef && (
             <Button onClick={onRequest} loading={requesting}
-              disabled={!corporateId || !entityId || (room !== null && (!room.usable || (room.entity !== undefined && !room.entity.usable)))}
+              disabled={!corporateId || !entityId || !!noAccount || (room !== null && (!room.usable || (room.entity !== undefined && !room.entity.usable)))}
               leftIcon={<Send className="w-4 h-4" />} fullWidth>
               {quote ? 'Request a new price' : 'Request price'}
             </Button>

@@ -11,7 +11,7 @@ export const OPEN_STATUSES: DealStatus[] = ['BOOKED', 'ACTIVE', 'PENDING_SETTLEM
 
 const FINISHED: DealStatus[] = ['SETTLED', 'CLOSED_OUT', 'ROLLED', 'CANCELLED'];
 
-export type DealAction = 'dispute' | 'draw' | 'close' | 'roll';
+export type DealAction = 'dispute' | 'draw' | 'close' | 'roll' | 'settlement';
 
 export const dealRules = (d: Deal) => {
   const inForce = IN_FORCE.includes(d.status);
@@ -22,6 +22,9 @@ export const dealRules = (d: Deal) => {
     canConfirm: d.confirmationStatus === 'ISSUED' && !FINISHED.includes(d.status),
     canAct,
     canDraw: canAct && d.instrument === 'WINDOW' && d.confirmationStatus === 'AFFIRMED' && d.remainingAmount > 0,
+    /** The settlement accounts can change until the day before value date, or while a failed settlement waits. */
+    canChangeAccounts: !!d.entityId && OPEN_STATUSES.includes(d.status)
+      && (d.status === 'SETTLEMENT_FAILED' || d.valueDate > new Date().toLocaleDateString('en-CA')),
     /** Something the corporate has to do or wait out: an unconfirmed or disputed confirmation, or a failed settlement. */
     needsAttention: !FINISHED.includes(d.status)
       && (d.confirmationStatus === 'ISSUED' || d.confirmationStatus === 'DISPUTED' || d.status === 'SETTLEMENT_FAILED'),

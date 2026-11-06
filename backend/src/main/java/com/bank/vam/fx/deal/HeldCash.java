@@ -9,7 +9,7 @@ import java.util.UUID;
 
 /**
  * Cash a corporate holds in one currency, from the shadows of its physical bank accounts (so mirrors are
- * not counted twice). Read-only: settlement here is a record, and it never reduces this figure.
+ * not counted twice). Settlement posts to those mirrors, so it moves this figure.
  */
 @Component
 class HeldCash {

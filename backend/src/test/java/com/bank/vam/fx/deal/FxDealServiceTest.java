@@ -29,7 +29,9 @@ class FxDealServiceTest {
     private final FxDealRepository deals = mock(FxDealRepository.class);
     private final FxEvents log = mock(FxEvents.class);
     private final CorporateRepository corporates = mock(CorporateRepository.class);
-    private final FxDealService service = new FxDealService(deals, mock(FxDealEventRepository.class), log, corporates, mock(FxLimitService.class));
+    private final FxSettlementAccounts settlementAccounts = mock(FxSettlementAccounts.class);
+    private final FxDealService service = new FxDealService(deals, mock(FxDealEventRepository.class), log, corporates, mock(FxLimitService.class),
+            settlementAccounts);
 
     private static BigDecimal bd(String v) {
         return new BigDecimal(v);
@@ -188,5 +190,31 @@ class FxDealServiceTest {
 
         assertThatThrownBy(() -> service.transition(d, DealStatus.BOOKED, "x")).isInstanceOf(BusinessException.class);
         verifyNoInteractions(log);
+    }
+
+    @Test
+    void settlementAccountsChangeUntilTheDayBeforeValueDateAndThenOnlyWhileSettlementHasFailed() {
+        FxDeal d = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(1));
+        org.mockito.Mockito.when(deals.findById(d.getId())).thenReturn(Optional.of(d));
+        UUID other = UUID.randomUUID();
+        org.mockito.Mockito.when(settlementAccounts.require(DealFixtures.CORP, DealFixtures.ENTITY, "USD", other))
+                .thenReturn(new FxSettlementAccounts.Account(other, "USD", "USD other (Home Bank)", "Home Bank", bd("0")));
+
+        service.changeAccounts(d.getId(), null, other);
+
+        assertThat(d.getSellAccountId()).isEqualTo(other);
+        assertThat(d.getSellAccountLabel()).isEqualTo("USD other (Home Bank)");
+        assertThat(d.getBuyAccountId()).isEqualTo(DealFixtures.EUR_ACCOUNT);
+        verify(log).note(eq(d), eq("SETTLE_ACCOUNTS"), org.mockito.ArgumentMatchers.contains("USD debit account USD account to USD other"));
+
+        d.setValueDate(LocalDate.now());
+        assertThatThrownBy(() -> service.changeAccounts(d.getId(), null, DealFixtures.USD_ACCOUNT))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("can no longer be changed");
+
+        d.setStatus(DealStatus.SETTLEMENT_FAILED);
+        org.mockito.Mockito.when(settlementAccounts.require(DealFixtures.CORP, DealFixtures.ENTITY, "USD", DealFixtures.USD_ACCOUNT))
+                .thenReturn(new FxSettlementAccounts.Account(DealFixtures.USD_ACCOUNT, "USD", "USD account", "Home Bank", bd("0")));
+        service.changeAccounts(d.getId(), null, DealFixtures.USD_ACCOUNT);
+        assertThat(d.getSellAccountId()).isEqualTo(DealFixtures.USD_ACCOUNT);
     }
 }

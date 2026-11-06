@@ -60,6 +60,19 @@ public class FxSettlement extends BaseEntity {
     @Column(name = "reason", length = 300)
     private String reason;
 
+    /** The accounts posted to: the sold currency debited, the bought currency credited (one of them for a close-out). */
+    @Column(name = "debit_account_id")
+    private UUID debitAccountId;
+
+    @Column(name = "debit_account_label", length = 160)
+    private String debitAccountLabel;
+
+    @Column(name = "credit_account_id")
+    private UUID creditAccountId;
+
+    @Column(name = "credit_account_label", length = 160)
+    private String creditAccountLabel;
+
     @Column(name = "settled_at")
     private LocalDateTime settledAt;
 }

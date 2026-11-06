@@ -3,12 +3,12 @@
 // the actions that apply to that deal (confirm, dispute, draw down, close out, roll, download the
 // confirmation); what each needs beyond a click (a reason, a date, a priced preview) happens in the deal
 // drawer, which the menu opens at the right section. Rules for what is on offer live in fxDealRules.
-// "+ New Deal" opens the price ticket. Settlement is a record only: no balance moves.
+// "+ New Deal" opens the price ticket. Settlement posts both legs to the deal's home-bank accounts.
 // ============================================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Plus, Play, RefreshCw, Download, Eye, FileText, Check, AlertTriangle, Layers, Scale, CreditCard, ShieldAlert, X, Repeat, ArrowDownToLine,
+  Plus, Play, RefreshCw, Download, Eye, FileText, Check, AlertTriangle, Layers, Scale, CreditCard, ShieldAlert, X, Repeat, ArrowDownToLine, Landmark,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
@@ -177,6 +177,7 @@ const FxDealsPage: React.FC = () => {
             { label: 'Download confirmation', icon: <Download className="w-4 h-4" />, onClick: () => downloadPdf(d) },
             { label: 'Confirm deal', icon: <Check className="w-4 h-4" />, onClick: () => setConfirming(d), hidden: !r.canConfirm, divider: true },
             { label: 'Dispute…', icon: <AlertTriangle className="w-4 h-4" />, onClick: () => setOpened({ id: d.id, action: 'dispute' }), hidden: !r.canConfirm },
+            { label: 'Change settlement accounts…', icon: <Landmark className="w-4 h-4" />, onClick: () => setOpened({ id: d.id, action: 'settlement' }), hidden: !r.canChangeAccounts },
             { label: 'Draw down…', icon: <ArrowDownToLine className="w-4 h-4" />, onClick: () => setOpened({ id: d.id, action: 'draw' }), hidden: !r.canDraw, divider: true },
             { label: 'Roll…', icon: <Repeat className="w-4 h-4" />, onClick: () => setOpened({ id: d.id, action: 'roll' }), hidden: !r.canAct },
             { label: 'Close out early…', icon: <X className="w-4 h-4" />, onClick: () => setOpened({ id: d.id, action: 'close' }), hidden: !r.canAct, danger: true, divider: true },
@@ -192,7 +193,7 @@ const FxDealsPage: React.FC = () => {
     <Page>
       <PageHeader
         title="FX Deals"
-        description="Your foreign-exchange deals with the bank. Use a row’s menu to confirm the bank’s confirmation, draw down a window, roll or close out early. Settlement is a record only: no balance moves. The desk and rates are simulated."
+        description="Your foreign-exchange deals with the bank. Use a row’s menu to confirm the bank’s confirmation, draw down a window, roll, close out early or change where it settles. On value date the sold currency is debited and the bought one credited to the deal’s accounts. The desk and rates are simulated."
         actions={
           <>
             <Button variant="outline" onClick={() => { setRunResult(null); setRunError(null); setSettleOpen(true); }} leftIcon={<Play className="w-4 h-4" />}>Run settlement</Button>
@@ -293,7 +294,7 @@ const FxDealsPage: React.FC = () => {
       >
         <div className="space-y-3">
           <p className="text-body-sm text-neutral-600 dark:text-neutral-300">
-            Settles every confirmed deal that is due, if the cash is there. It is a record only: no balance moves. Pick a later date to move the demo clock forward.
+            Settles every confirmed deal that is due, if the corporate holds the cash: the sold currency is debited and the bought one credited to the deal’s accounts. Pick a later date to move the demo clock forward.
           </p>
           <Input label="Settle as of (optional)" type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
           {runError && <p className="text-body-sm text-error-700 dark:text-error-300">{runError}</p>}

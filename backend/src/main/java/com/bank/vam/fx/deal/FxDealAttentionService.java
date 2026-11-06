@@ -30,6 +30,7 @@ public class FxDealAttentionService {
     private final FxConfirmationService confirmations;
     private final HeldCash cash;
     private final FxLimitService limits;
+    private final FxSettlementRepository settlements;
 
     /** @param corporateId one corporate, or null for all */
     public List<Item> items(UUID corporateId) {
@@ -73,6 +74,17 @@ public class FxDealAttentionService {
         // limit's id so each alert is distinct; there is no deal behind it.
         List<Corporate> scope = corporateId == null ? corporates.findAll() : corporates.findAllById(List.of(corporateId));
         for (Corporate c : scope) {
+            // Settlement debits an account even when it is short; each account left below zero needs funding.
+            java.util.Set<UUID> seen = new java.util.HashSet<>();
+            for (Object[] r : settlements.overdrawn(c.getId())) {
+                FxSettlement s = (FxSettlement) r[0];
+                if (seen.add(s.getDebitAccountId())) {
+                    out.add(new Item(Type.FUNDING_NEEDED, "high", c.getId(), c.getLegalName(), s.getDealId(), (String) r[2],
+                            "Account overdrawn by FX settlement: " + s.getDebitAccountLabel(),
+                            "The " + s.getSellCurrency() + " account stands at " + ((BigDecimal) r[1]).toPlainString() + " after "
+                                    + r[2] + " settled. Pay in to bring it back above zero.", today));
+                }
+            }
             for (FxLimitService.Alert a : limits.alerts(c.getId())) {
                 out.add(new Item(Type.LIMIT_WARNING, a.critical() ? "high" : "medium", c.getId(), c.getLegalName(),
                         a.limitId(), null, a.what() + " is " + a.percentUsed().stripTrailingZeros().toPlainString() + "% used",

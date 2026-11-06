@@ -79,6 +79,7 @@ const SECTIONS = [
     ['fx-exposure', 'Exposure & Hedging'],
     ['fx-deals', 'FX Deals'],
     ['fx-rfq', 'RFQ Log'],
+    ['fx-settlement', 'Settlement Instructions'],
   ]},
   { title: 'Credit & Interest', pages: [
     ['credit-limits', 'Credit Limits'],

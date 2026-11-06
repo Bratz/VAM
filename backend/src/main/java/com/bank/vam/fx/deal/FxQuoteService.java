@@ -53,6 +53,7 @@ public class FxQuoteService {
     private final FxEvents log;
     private final FxDealProperties props;
     private final ForwardPricer forwards;
+    private final FxSettlementAccounts settlementAccounts;
 
     @Transactional
     public FxQuoteRequest request(Command c) {
@@ -86,6 +87,19 @@ public class FxQuoteService {
         BigDecimal charge = limitService.charge(c.instrument(), q.baseCurrency(), q.getAmount(), LocalDate.now(),
                 price.pricedDate(), line.currency());
         String refusal = limitService.refusal(c.corporateId(), c.entityId(), charge);
+        if (refusal == null) {
+            // The bank must be able to post both legs: the bought currency to one account, the sold from another.
+            boolean buyBase = c.side() == Side.BUY;
+            FxSettlementAccounts.Resolved buy = settlementAccounts.resolve(c.corporateId(), c.entityId(), buyBase ? q.baseCurrency() : q.quoteCurrency());
+            FxSettlementAccounts.Resolved sell = settlementAccounts.resolve(c.corporateId(), c.entityId(), buyBase ? q.quoteCurrency() : q.baseCurrency());
+            refusal = !buy.found() ? buy.reason() + "." : !sell.found() ? sell.reason() + "." : null;
+            if (refusal == null) {
+                q.setBuyAccountId(buy.account().id());
+                q.setBuyAccountLabel(buy.account().label());
+                q.setSellAccountId(sell.account().id());
+                q.setSellAccountLabel(sell.account().label());
+            }
+        }
         if (refusal != null) {
             q.setStatus(QuoteStatus.REJECTED);
             q.setStatusReason("Not quoted. " + refusal);

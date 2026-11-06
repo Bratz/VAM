@@ -1,19 +1,20 @@
 // ============================================================================
 // FxDealDrawer — one deal after it is booked: the bank's confirmation (read it, download the PDF,
 // then confirm or dispute it), what it is worth now, and what can be done with it: draw down a
-// window, close out early, or roll. Settlement is a record against the deal; no balance moves.
+// window, close out early, roll, or change the accounts it settles through. Settlement posts both legs to those
+// home-bank accounts: the sold currency debited, the bought one credited.
 // Prices for close-out and roll are not held firm: the preview shows today's cost and the action
 // prices again when it runs, so the result can differ slightly from the preview.
 // ============================================================================
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Download, Check, X, FileText, AlertTriangle } from 'lucide-react';
-import { Badge, Button, Drawer, Input } from '../components/ui';
+import { Badge, Button, Drawer, Input, Select } from '../components/ui';
 import { Alert } from '../components/ui/enhanced';
 import { EventTimeline } from '../components/ui/EventTimeline';
 import { cn } from '../utils';
 import {
-  fxDealApi, CloseOutQuote, Deal, DealEvent, RollQuote, Settlement,
+  fxDealApi, CloseOutQuote, Deal, DealEvent, RollQuote, Settlement, SettlementAccount,
 } from '../services/fxDealApi';
 import { DEAL_BADGE, confirmationBadge } from './fxDealBadges';
 import { dealRules, DealAction } from './fx/fxDealRules';
@@ -52,6 +53,10 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
   const [closeQuote, setCloseQuote] = useState<CloseOutQuote | null>(null);
   const [rollDate, setRollDate] = useState('');
   const [rollQuote, setRollQuote] = useState<RollQuote | null>(null);
+  /** The eligible accounts per leg, once the corporate asks to change them. */
+  const [choices, setChoices] = useState<{ buy: SettlementAccount[]; sell: SettlementAccount[] } | null>(null);
+  const [buyAccount, setBuyAccount] = useState('');
+  const [sellAccount, setSellAccount] = useState('');
 
   const id = deal?.id;
   const version = `${deal?.status}|${deal?.confirmationStatus}|${deal?.remainingAmount}`;
@@ -77,6 +82,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
     setReason('');
     setCloseQuote(null);
     setRollQuote(null);
+    setChoices(null);
     load(id);
   }, [id, version, load]);
 
@@ -122,8 +128,31 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
     try { await fn(); } catch (err) { setError(errorText(err)); } finally { setBusy(false); }
   };
 
+  const startChange = useCallback(async (d: Deal) => {
+    if (!d.entityId) return;
+    setError(null);
+    try {
+      const [b, s] = await Promise.all([
+        fxDealApi.settlementAccount(d.corporateId, d.entityId, d.buyCurrency),
+        fxDealApi.settlementAccount(d.corporateId, d.entityId, d.sellCurrency),
+      ]);
+      setChoices({ buy: b.eligible, sell: s.eligible });
+      setBuyAccount(d.buyAccountId ?? b.eligible[0]?.id ?? '');
+      setSellAccount(d.sellAccountId ?? s.eligible[0]?.id ?? '');
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }, []);
+
+  // Opened from the row menu's "Change settlement accounts": show the choices straight away.
+  useEffect(() => {
+    if (action === 'settlement' && deal) startChange(deal);
+  }, [id, action]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const conf = deal ? confirmationBadge(deal) : null;
-  const { inForce, canAct, canDraw } = deal ? dealRules(deal) : { inForce: false, canAct: false, canDraw: false };
+  const { inForce, canAct, canDraw, canChangeAccounts } = deal ? dealRules(deal)
+    : { inForce: false, canAct: false, canDraw: false, canChangeAccounts: false };
+  const accountOptions = (list: SettlementAccount[]) => list.map((a) => ({ value: a.id, label: a.label }));
   const base = deal?.pair.slice(0, 3) ?? '';
 
   return (
@@ -176,6 +205,30 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
           </dl>
 
           {error && <Alert variant="error">{error}</Alert>}
+
+          <Section title="Settlement accounts" id="fx-deal-settlement">
+            <dl className="grid grid-cols-2 gap-3 text-body-sm">
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">{deal.buyCurrency} credited to</dt>
+                <dd>{deal.buyAccountLabel ?? 'To be advised'}</dd></div>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">{deal.sellCurrency} debited from</dt>
+                <dd>{deal.sellAccountLabel ?? 'To be advised'}</dd></div>
+            </dl>
+            {canChangeAccounts && !choices && (
+              <Button variant="outline" size="sm" onClick={() => startChange(deal)}>Change accounts</Button>
+            )}
+            {choices && (
+              <div className="space-y-2">
+                <Select label={`${deal.buyCurrency} credited to`} value={buyAccount} onChange={(e) => setBuyAccount(e.target.value)} options={accountOptions(choices.buy)} />
+                <Select label={`${deal.sellCurrency} debited from`} value={sellAccount} onChange={(e) => setSellAccount(e.target.value)} options={accountOptions(choices.sell)} />
+                <p className="text-caption text-neutral-500 dark:text-neutral-400">Only this deal changes. To change where all deals settle, use Settlement Instructions.</p>
+                <div className="flex gap-2">
+                  <Button size="sm" loading={busy} disabled={!buyAccount || !sellAccount}
+                    onClick={() => run(async () => { await fxDealApi.changeDealAccounts(deal.id, buyAccount, sellAccount); setChoices(null); })}>Save accounts</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setChoices(null)}>Cancel</Button>
+                </div>
+              </div>
+            )}
+          </Section>
 
           <Section title="Confirmation from the bank" id="fx-deal-confirmation">
             <pre className="whitespace-pre-wrap font-mono text-caption bg-surface-muted rounded-md p-3 text-primary-900 dark:text-neutral-50">{text || 'Loading...'}</pre>
@@ -230,7 +283,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
 
               <div id="fx-deal-close" className="space-y-2 pt-2 scroll-mt-4">
                 <p className="text-caption text-neutral-500 dark:text-neutral-400">
-                  Close out early: the desk prices the other side now and the cash difference is recorded. The price is not held, so it is set again when you confirm.
+                  Close out early: the desk prices the other side now and the cash difference is posted to the deal’s account. The price is not held, so it is set again when you confirm.
                 </p>
                 {!closeQuote ? (
                   <Button size="sm" variant="outline" loading={busy} onClick={() => preview(async () => setCloseQuote(await fxDealApi.closeOutPreview(deal.id)))}>Price a close-out</Button>
@@ -269,7 +322,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
           )}
 
           {settlements.length > 0 && (
-            <Section title="Settlement (recorded, no balance moved)">
+            <Section title="Settlement">
               <ul className="space-y-2">
                 {settlements.map((s) => (
                   <li key={s.id} className="text-body-sm border border-edge-subtle rounded-md p-2">
@@ -282,6 +335,11 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                         ? (s.buyAmount > 0 ? `Corporate receives ${s.buyCurrency} ${fmt(s.buyAmount)}` : `Corporate pays ${s.sellCurrency} ${fmt(s.sellAmount)}`)
                         : `Buy ${s.buyCurrency} ${fmt(s.buyAmount)} , sell ${s.sellCurrency} ${fmt(s.sellAmount)}`}
                     </p>
+                    {(s.debitAccountLabel || s.creditAccountLabel) && (
+                      <p className="text-caption text-neutral-600 dark:text-neutral-300 mt-1">
+                        {[s.debitAccountLabel && `Debited from ${s.debitAccountLabel}`, s.creditAccountLabel && `credited to ${s.creditAccountLabel}`].filter(Boolean).join(', ')}
+                      </p>
+                    )}
                     {s.reason && <p className="text-caption text-error-700 dark:text-error-300 mt-1">{s.reason}</p>}
                   </li>
                 ))}
@@ -293,7 +351,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
             <EventTimeline entries={events} loading={!events.length} />
           </Section>
 
-          <p className="text-caption text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Simulated desk. No real trade, settlement instruction or payment is made.</p>
+          <p className="text-caption text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Simulated desk. No real trade or payment is made; settlement moves the demo account balances.</p>
         </div>
       )}
     </Drawer>
