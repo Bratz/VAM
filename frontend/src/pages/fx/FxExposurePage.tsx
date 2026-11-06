@@ -305,7 +305,7 @@ const FxExposurePage: React.FC = () => {
           <Button size="sm" variant="secondary" onClick={downloadTemplate} leftIcon={<Download className="w-4 h-4" />}>Download template</Button>
           <p className="text-caption text-neutral-500 dark:text-neutral-400">
             Columns: kind (EXPOSURE or HEDGE), currency, amount, valueDate (YYYY-MM-DD), optional reference and description.
-            Exposure: positive = you will receive the currency, negative = you will pay it. Hedge: the deal&apos;s own position,
+            Exposure: positive = you will receive the currency, negative = you will pay it. Hedge: the deal’s own position,
             so a forward sale of EUR is negative. The whole file is rejected if any row is wrong.
           </p>
           {uploadError && <p className="text-body-sm text-error-700 dark:text-error-300">{uploadError}</p>}

@@ -108,7 +108,6 @@ const FxRfqPage: React.FC = () => {
   const withdraw = async (r: RfqRow) => {
     try {
       await fxDealApi.cancel(r.quote.id);
-      toast.success('Price withdrawn');
       refresh();
     } catch (err) {
       toast.error(errorText(err));
@@ -138,14 +137,14 @@ const FxRfqPage: React.FC = () => {
       key: 'clientRate', header: 'Price', align: 'right', dropOrder: 2,
       render: (_, r) => r.quote.clientRate === undefined
         ? <span className="text-neutral-500 dark:text-neutral-400">-</span>
-        : <span className="font-mono tabular-nums">{fmtRate(r.quote.clientRate)}{r.quote.spreadBps !== undefined && <span className="text-caption text-neutral-500 dark:text-neutral-400"> · {r.quote.spreadBps.toFixed(2)} bps</span>}</span>,
+        : <span className="font-mono tabular-nums">{fmtRate(r.quote.clientRate)}{r.quote.spreadBps !== undefined && <span className="block text-caption text-neutral-500 dark:text-neutral-400">{r.quote.spreadBps.toFixed(2)} bps margin</span>}</span>,
     },
     {
       key: 'status', header: 'Outcome',
       render: (_, r) => (
         <span>
           <Badge variant={QUOTE_BADGE[r.quote.status].variant} size="sm">{QUOTE_BADGE[r.quote.status].label}</Badge>
-          {r.quote.rounds > 0 && <span className="text-caption text-neutral-500 dark:text-neutral-400"> · negotiated {r.quote.rounds}×</span>}
+          {r.quote.rounds > 0 && <span className="block text-caption text-neutral-500 dark:text-neutral-400 mt-0.5">Negotiated {r.quote.rounds} of {r.quote.maxRounds} rounds</span>}
           {r.quote.statusReason && <span className="block text-caption text-neutral-500 dark:text-neutral-400 mt-0.5 max-w-[22rem] truncate" title={r.quote.statusReason}>{r.quote.statusReason}</span>}
         </span>
       ),
@@ -177,7 +176,7 @@ const FxRfqPage: React.FC = () => {
         <StatTile tone="success" icon={<CheckCircle className="w-5 h-5" />} label="Accepted" value={String(s?.accepted ?? 0)}
           sub={s?.avgSecondsToAccept === undefined ? undefined : `in about ${s.avgSecondsToAccept}s`} />
         <StatTile tone="warning" icon={<Clock className="w-5 h-5" />} label="Expired or withdrawn" value={String((s?.expired ?? 0) + (s?.withdrawn ?? 0))}
-          sub={`${s?.expired ?? 0} expired · ${s?.withdrawn ?? 0} withdrawn`} />
+          sub={`${s?.expired ?? 0} expired, ${s?.withdrawn ?? 0} withdrawn`} />
         <StatTile tone="danger" icon={<XCircle className="w-5 h-5" />} label="Declined" value={String(s?.declined ?? 0)} sub="by the desk" />
         <StatTile tone="info" icon={<Percent className="w-5 h-5" />} label="Hit rate" value={s?.hitRate === undefined ? '-' : `${Math.round(s.hitRate * 100)}%`} sub="accepted of settled" />
       </StatStrip>
@@ -232,7 +231,7 @@ const FxRfqPage: React.FC = () => {
                 <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Firm until</dt><dd>{when(q.validUntil)}</dd></div>
               </>)}
               {q.maxRounds > 0 && (
-                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Negotiation</dt><dd>{q.rounds} of {q.maxRounds} rounds{q.bestPrice ? ' · desk at its best' : ''}</dd></div>
+                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Negotiation</dt><dd>{q.rounds} of {q.maxRounds} rounds{q.bestPrice ? ', desk at its best' : ''}</dd></div>
               )}
               {q.purpose && <div className="col-span-2"><dt className="text-caption text-neutral-500 dark:text-neutral-400">Purpose</dt><dd>{q.purpose}</dd></div>}
               {q.exposureRef && <div className="col-span-2"><dt className="text-caption text-neutral-500 dark:text-neutral-400">Hedging exposure</dt><dd>{q.exposureRef.replace('|', ' ')}</dd></div>}

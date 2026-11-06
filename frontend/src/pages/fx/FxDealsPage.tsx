@@ -120,7 +120,6 @@ const FxDealsPage: React.FC = () => {
     setConfirmBusy(true);
     try {
       await fxDealApi.confirm(confirming.id);
-      toast.success(`${confirming.dealRef} confirmed`);
       setConfirming(null);
       refresh();
     } catch (err) {
@@ -192,7 +191,7 @@ const FxDealsPage: React.FC = () => {
     <Page>
       <PageHeader
         title="FX Deals"
-        description="Your foreign-exchange deals with the bank. Use a row's menu to confirm the bank's confirmation, draw down a window, roll or close out early. Settlement is a record only: no balance moves. The desk and rates are simulated."
+        description="Your foreign-exchange deals with the bank. Use a row’s menu to confirm the bank’s confirmation, draw down a window, roll or close out early. Settlement is a record only: no balance moves. The desk and rates are simulated."
         actions={
           <>
             <Button variant="outline" onClick={() => { setRunResult(null); setRunError(null); setSettleOpen(true); }} leftIcon={<Play className="w-4 h-4" />}>Run settlement</Button>
@@ -218,7 +217,7 @@ const FxDealsPage: React.FC = () => {
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
 
       <Card>
-        <CardHeader title="Deals" subtitle={`${shown.length} of ${deals.length}${attentionOnly ? ' · needing attention' : ''}`} />
+        <CardHeader title="Deals" subtitle={`${shown.length} of ${deals.length}${attentionOnly ? ', needing attention' : ''}`} />
         <DataTable<Deal>
           data={shown}
           columns={columns}

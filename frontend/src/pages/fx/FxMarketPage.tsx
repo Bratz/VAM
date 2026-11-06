@@ -189,22 +189,22 @@ const FxMarketPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Market Rates"
-        description="Indicative interbank rates and forward points. Mid only: a dealable price comes from requesting one, and the bank's margin is set per deal. The rates are simulated."
+        description="Indicative interbank rates and forward points. Mid only: a dealable price comes from requesting one, and the bank’s margin is set per deal. The rates are simulated."
       />
 
       <StatStrip>
-        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(ticks.length)} sub="simulated market" />
+        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(ticks.length)} sub="on the rate board" />
         <StatTile tone={mover && mover.changeBps < 0 ? 'danger' : 'success'} icon={<Activity className="w-5 h-5" />} label="Biggest mover"
           value={mover ? mover.pair : '-'} sub={mover ? `${fmtSigned(mover.changeBps, 1)} bps vs open` : 'waiting for rates'} />
         <StatTile tone={feedError ? 'danger' : 'info'} icon={<Radio className="w-5 h-5" />} label="Feed"
-          value={feedError ? 'Unavailable' : 'Simulated'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'connecting')} />
+          value={feedError ? 'Unavailable' : ticks.length ? 'Running' : 'Connecting'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'waiting for the first rates')} />
       </StatStrip>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader
             title="Rate board"
-            subtitle="Select a pair to see its forward curve, or use a row's actions to request a price."
+            subtitle="Select a pair to see its forward curve, or use a row’s actions to request a price."
             action={feedError
               ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
               : <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Simulated</Badge>}
@@ -217,14 +217,14 @@ const FxMarketPage: React.FC = () => {
             compact
             hairline
             emptyTitle="Waiting for rates"
-            emptyDescription="The simulated market has not answered yet."
+            emptyDescription="The market has not answered yet."
           />
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader
             title={`${selected} forward curve`}
-            subtitle={tick ? `Spot ${fmtRate(tick.mid)} · value ${first?.spotDate ?? '…'}` : 'Waiting for the rate board'}
+            subtitle={tick ? `Spot ${fmtRate(tick.mid)} for value ${first?.spotDate ?? '…'}` : 'Waiting for the rate board'}
           />
           {curveError && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{curveError}</p>}
           <DataTable<ForwardQuote>
@@ -239,7 +239,7 @@ const FxMarketPage: React.FC = () => {
           {first && (
             <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">
               Points follow the interest differential: {selected.slice(0, 3)} {first.baseRatePct.toFixed(2)}% against{' '}
-              {selected.slice(4)} {first.quoteRatePct.toFixed(2)}%. Illustrative rates, not a market feed.
+              {selected.slice(4)} {first.quoteRatePct.toFixed(2)}%.
             </p>
           )}
 

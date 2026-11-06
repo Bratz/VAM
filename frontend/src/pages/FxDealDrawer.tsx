@@ -8,7 +8,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Download, Check, X, FileText, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { Badge, Button, Drawer, Input } from '../components/ui';
 import { Alert } from '../components/ui/enhanced';
 import { EventTimeline } from '../components/ui/EventTimeline';
@@ -89,12 +88,11 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
     return () => clearTimeout(t);
   }, [id, action]);
 
-  const run = async (act: () => Promise<unknown>, done: string) => {
+  const run = async (act: () => Promise<unknown>) => {
     setBusy(true);
     setError(null);
     try {
       await act();
-      toast.success(done);
       onChanged();
     } catch (err) {
       setError(errorText(err));
@@ -184,14 +182,14 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                 </p>
                 {!disputing ? (
                   <div className="flex gap-2">
-                    <Button loading={busy} onClick={() => run(() => fxDealApi.confirm(deal.id), 'Deal confirmed')} leftIcon={<Check className="w-4 h-4" />}>Confirm deal</Button>
+                    <Button loading={busy} onClick={() => run(() => fxDealApi.confirm(deal.id))} leftIcon={<Check className="w-4 h-4" />}>Confirm deal</Button>
                     <Button variant="outline" onClick={() => setDisputing(true)} leftIcon={<AlertTriangle className="w-4 h-4" />}>Dispute</Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     <Input label="What does not match?" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="For example: the rate is not the one I accepted" />
                     <div className="flex gap-2">
-                      <Button variant="danger" loading={busy} disabled={!reason.trim()} onClick={() => run(() => fxDealApi.dispute(deal.id, reason), 'Dispute sent to the bank')}>Send dispute</Button>
+                      <Button variant="danger" loading={busy} disabled={!reason.trim()} onClick={() => run(() => fxDealApi.dispute(deal.id, reason))}>Send dispute</Button>
                       <Button variant="ghost" onClick={() => setDisputing(false)}>Back</Button>
                     </div>
                   </div>
@@ -220,7 +218,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                     <Input label="Settles on" type="date" value={drawDate} onChange={(e) => setDrawDate(e.target.value)} />
                   </div>
                   <Button size="sm" loading={busy} disabled={!(Number(drawAmount) > 0) || !drawDate}
-                    onClick={() => run(() => fxDealApi.drawdown(deal.id, Number(drawAmount), drawDate), 'Drawdown scheduled')}>Schedule drawdown</Button>
+                    onClick={() => run(() => fxDealApi.drawdown(deal.id, Number(drawAmount), drawDate))}>Schedule drawdown</Button>
                 </div>
               )}
 
@@ -237,7 +235,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                       <strong className={toneFor(closeQuote.realisedPnl)}>{fmtSigned(closeQuote.realisedPnl)} {closeQuote.pnlCurrency}</strong>.
                     </p>
                     <div className="flex gap-2">
-                      <Button size="sm" variant="danger" loading={busy} onClick={() => run(() => fxDealApi.closeOut(deal.id), 'Deal closed out')} leftIcon={<X className="w-4 h-4" />}>Close out now</Button>
+                      <Button size="sm" variant="danger" loading={busy} onClick={() => run(() => fxDealApi.closeOut(deal.id))} leftIcon={<X className="w-4 h-4" />}>Close out now</Button>
                       <Button size="sm" variant="ghost" onClick={() => setCloseQuote(null)}>Cancel</Button>
                     </div>
                   </div>
@@ -257,7 +255,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                       Closing now: <strong className={toneFor(rollQuote.closeOut.realisedPnl)}>{fmtSigned(rollQuote.closeOut.realisedPnl)} {rollQuote.closeOut.pnlCurrency}</strong>.
                       New forward to {rollQuote.newValueDate} at <span className="font-mono">{rollQuote.newRate.toFixed(rateDigits(rollQuote.newRate))}</span>.
                     </p>
-                    <Button size="sm" loading={busy} onClick={() => run(() => fxDealApi.roll(deal.id, rollDate), 'Deal rolled')}>Roll now</Button>
+                    <Button size="sm" loading={busy} onClick={() => run(() => fxDealApi.roll(deal.id, rollDate))}>Roll now</Button>
                   </div>
                 )}
               </div>
@@ -270,13 +268,13 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
                 {settlements.map((s) => (
                   <li key={s.id} className="text-body-sm border border-edge-subtle rounded-md p-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{s.kind === 'CLOSE_OUT' ? 'Close-out difference' : s.kind === 'DRAWDOWN' ? 'Drawdown' : 'Maturity'} · {s.valueDate}</span>
+                      <span className="font-medium">{s.kind === 'CLOSE_OUT' ? 'Close-out difference' : s.kind === 'DRAWDOWN' ? 'Drawdown' : 'Maturity'}, value {s.valueDate}</span>
                       <Badge size="sm" variant={s.status === 'SETTLED' ? 'success' : s.status === 'FAILED' ? 'error' : 'neutral'}>{s.status.toLowerCase()}</Badge>
                     </div>
                     <p className="font-mono text-caption tabular-nums mt-1">
                       {s.kind === 'CLOSE_OUT'
                         ? (s.buyAmount > 0 ? `Corporate receives ${s.buyCurrency} ${fmt(s.buyAmount)}` : `Corporate pays ${s.sellCurrency} ${fmt(s.sellAmount)}`)
-                        : `Buy ${s.buyCurrency} ${fmt(s.buyAmount)} · sell ${s.sellCurrency} ${fmt(s.sellAmount)}`}
+                        : `Buy ${s.buyCurrency} ${fmt(s.buyAmount)} , sell ${s.sellCurrency} ${fmt(s.sellAmount)}`}
                     </p>
                     {s.reason && <p className="text-caption text-error-700 dark:text-error-300 mt-1">{s.reason}</p>}
                   </li>

@@ -11,7 +11,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Check, X, Clock, MessageSquareQuote } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { Badge, Button, Drawer, Input, Select } from '../../components/ui';
 import { Alert } from '../../components/ui/enhanced';
 import { useUser } from '../../context/useUser';
@@ -174,12 +173,10 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     setQuoteError(null);
     try {
       const next = await fxDealApi.counter(quote.id, { targetRate: wanted, note: note.trim() || undefined });
-      const moved = next.clientRate !== quote.clientRate;
       setQuote(next);
       if (next.clientRate !== undefined) setPrices((p) => [...p, next.clientRate as number]);
       setTarget('');
       setNote('');
-      if (moved) toast.success('The desk improved its price'); else toast('The desk is at its best price');
       onChanged();
     } catch (err) {
       setQuoteError(errorText(err));
@@ -195,7 +192,6 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     setQuoteError(null);
     try {
       const deal = await fxDealApi.accept(quote.id);
-      toast.success(`${deal.dealRef} booked`);
       setBookedRef(deal.dealRef);
       setQuote(await fxDealApi.getQuote(quote.id));
       onChanged();

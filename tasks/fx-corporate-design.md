@@ -268,6 +268,12 @@ Verified: `tsc` and `eslint` clean; 424 backend tests; live: the negotiation API
 
 Not done: the bank-side dealer screen (a person quotes and counters by hand; still the realistic end state), per-deal Settle, role gating for deal actions, and exposing negotiation through MCP (deliberately: dealing is not available there).
 
+### Hallmark polish pass (after phase 5b)
+
+An audit of the four FX pages with Hallmark (app scope) found FX-owned issues, fixed in place without changing layout or look: meta strings joined with middle dots now use commas or their own line; success toasts for effects the screen already shows (price improved, deal booked, confirmed, withdrawn, close-out, roll) are gone and toasts remain for errors and for the clipboard copy (the only invisible effect); "simulated" is said once on Market Rates (the badge) and the feed tile no longer claims "Running" before the first rate; apostrophes in labels are typographic. Not FX's to change: uppercase tracked table heads and nav section titles (shared `DataTable` and shell) and the coin-style `StatTile`; both would be an app-wide change.
+
+Animation note: every right-side panel in the app (Accounts, Exceptions, Forecasting, the Simulator's create drawers, and FX) is the shared `Drawer` with `animate-slide-in-right`; create dialogs such as Create Sweep Rule are a centred `Modal` with `animate-scale-in`; payments is a page with `animate-page-enter` (fade and 8px rise). The app stylesheet cuts all animation to 0.01ms under `prefers-reduced-motion: reduce`, and the in-app browser pane reports that preference as on, so no panel visibly animates there; the same will hold on any machine (Azure Virtual Desktop and RDP sessions often set it) with Windows "Animation effects" off.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.
