@@ -94,8 +94,6 @@ public class FxDealService {
             case FORWARD -> "Forward, value " + d.getValueDate();
             case WINDOW -> "Window forward, drawable " + d.getWindowStart() + " to " + d.getValueDate();
         };
-        String points = d.getForwardPoints() != null && d.getForwardPoints().signum() != 0
-                ? " plus forward points " + d.getForwardPoints().toPlainString() : "";
         return String.join("\n",
                 "FX TRADE CONFIRMATION (SIMULATED - NOT A REAL TRADE)",
                 "",
@@ -106,12 +104,10 @@ public class FxDealService {
                 "You buy        : " + d.getBuyCurrency() + " " + money(d.getBuyAmount()),
                 "You sell       : " + d.getSellCurrency() + " " + money(d.getSellAmount()),
                 "Rate           : " + d.getRate().stripTrailingZeros().toPlainString() + " (" + d.getPair() + ")",
-                "Price build-up : interbank mid " + d.getMidRate().stripTrailingZeros().toPlainString() + points
-                        + ", bank margin " + d.getSpreadBps().toPlainString() + " bps",
                 "Status         : " + d.getStatus(),
                 "",
                 "Please check these details against the trade you agreed and confirm or dispute",
-                "the deal in the FX Workspace. A deal that is not confirmed cannot settle.",
+                "the deal in FX Deals. A deal that is not confirmed cannot settle.",
                 "",
                 "Simulated desk and rates for demonstration. No settlement instructions are issued.");
     }

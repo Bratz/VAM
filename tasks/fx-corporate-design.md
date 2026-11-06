@@ -274,6 +274,20 @@ An audit of the four FX pages with Hallmark (app scope) found FX-owned issues, f
 
 Animation note: every right-side panel in the app (Accounts, Exceptions, Forecasting, the Simulator's create drawers, and FX) is the shared `Drawer` with `animate-slide-in-right`; create dialogs such as Create Sweep Rule are a centred `Modal` with `animate-scale-in`; payments is a page with `animate-page-enter` (fade and 8px rise). The app stylesheet cuts all animation to 0.01ms under `prefers-reduced-motion: reduce`, and the in-app browser pane reports that preference as on, so no panel visibly animates there; the same will hold on any machine (Azure Virtual Desktop and RDP sessions often set it) with Windows "Animation effects" off.
 
+### Corporate view: no bank-internal pricing (after the polish pass) - done, uncommitted
+
+The corporate saw the bank's interbank mid, forward points and margin in the price ticket, the RFQ log (table, drawer, CSV), the trade confirmation text and PDF ("Price build-up: interbank mid ..., bank margin ... bps") and the negotiation history ("margin 2.63 bps"). Removed from every corporate-facing surface: `QuoteView`, `DealView`, `CloseOutQuote` and `RollQuote` no longer carry them, so neither the screens nor the MCP tools can show them; the confirmation states the all-in rate only; the negotiation history says what was offered. The values stay on the stored rows for the bank-side dealer screen. Market Rates keeps indicative rates and forward points (market information, labelled indicative). A guard test fails if a corporate-facing shape gains a mid, spread, points or margin field, or the confirmation mentions them.
+
+### Gaps found (2026-11-06)
+
+**Against our own design.** The plan named the cash-flow forecast as an exposure input; phase 2 built payables, receivables, balances and CSV only. "FX on payments" (rate lock on POBO and payables conversion) was a chosen job and was never built.
+
+**Against bank platforms** (public sources on Straight2Bank are thin and mostly 2011 to 2012; Citi Velocity is better documented): FX swaps; NDFs; 100+ pairs including exotics (we list 12); FX booked inside the payment flow; pre-agreed standing margins per client; exposure-file upload that hedges automatically; post-trade reports. Common on such platforms but not confirmed by a source here: limit, stop and fixing orders; rate alerts; settlement instructions per deal; maker-checker approval for dealing; booking for a subsidiary; holiday calendars per currency.
+
+### Proposed: exposure from the Cash Forecast (not built, awaiting go-ahead)
+
+Today the ladder reads open payables and receivables by due date, cash held in physical-account mirrors, and the CSV upload. The Cash Forecast already holds native-currency flows per corporate: AGING lines (the same payables and receivables, on an expected payment date), PATTERN lines (recurring flows such as payroll and rent that are in no invoice), and ML, DRIVER and MANUAL lines, each with a confidence and P10/P90. Proposal: when the corporate has a completed forecast run, take foreign-currency flows from its latest run instead of reading payables and receivables directly (AGING already carries them, so reading both would double count); show them as Committed (AGING) and Forecast (the other sources) per bucket; leave out the INTERCOMPANY_IN/OUT and FX_CONVERSION categories and dates already past; keep cash held and the CSV upload; fall back to payables and receivables when there is no run; show the run's date and flag it when stale. Seen in the data: one corporate has a completed run, dated 2026-09-19, with GBP 3.88m of PATTERN outflows that the ladder does not see today.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

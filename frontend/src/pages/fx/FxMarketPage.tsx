@@ -128,7 +128,7 @@ const FxMarketPage: React.FC = () => {
     },
     {
       key: 'mid',
-      header: 'Mid',
+      header: 'Indicative rate',
       align: 'right',
       render: (_, t) => (
         <span className={cn('font-mono tabular-nums', toneFor(lastDir.current[t.pair] ?? 0))}>{fmtRate(t.mid)}</span>
@@ -189,7 +189,7 @@ const FxMarketPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Market Rates"
-        description="Indicative interbank rates and forward points. Mid only: a dealable price comes from requesting one, and the bank’s margin is set per deal. The rates are simulated."
+        description="Indicative interbank rates and forward points. A dealable price comes from requesting one. The rates are simulated."
       />
 
       <StatStrip>

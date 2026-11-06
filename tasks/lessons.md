@@ -491,3 +491,17 @@ corporate selector that disagreed with the header's (header MNC Holdings, panel 
 - A feature with several jobs gets several menu items. Tabs are for views of one job.
 - Actions belong on the row (the `...` menu) and in the header (create), with the drawer for reading detail.
 - A screen showing two different scopes at once is a defect even when each half works.
+
+## Whose screen is it? Bank-internal pricing shown to the corporate (2026-11-06)
+
+The FX price ticket, the RFQ log, the confirmation text and PDF, and the negotiation timeline all showed the
+bank's interbank mid, forward points and margin to the corporate. A test even asserted the confirmation said
+"bank margin 3.00 bps". The design doc framed the price "so the client sees what the bank charged over the
+market", which is how a dealer thinks, not what a bank shows its client: the client sees the all-in rate.
+
+- Every screen and every API shape has an audience. Before showing a field, ask whose screen it is. A corporate
+  sees what it dealt (the all-in rate, amounts, dates, its limit use); the bank's build-up (mid, points,
+  margin, floor, P&L) stays on the stored rows for the bank's own screens.
+- Hiding a field in the UI is not enough: remove it from the response shape, the downloadable documents, the
+  event text shown in a history, the CSV export and the MCP tools, which all reach the same person.
+- Keep a guard test on the shapes (record components) and the documents, so the next field added does not leak.

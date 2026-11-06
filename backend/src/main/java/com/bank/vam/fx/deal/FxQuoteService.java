@@ -221,7 +221,7 @@ public class FxQuoteService {
         q.setValidUntil(q.getQuotedAt().plusSeconds(props.getQuoteValiditySeconds()));
 
         String asked = targetRate == null ? "asked for the best price" : "asked for " + targetRate.toPlainString();
-        String answer = moved ? "desk offered " + c.clientRate().toPlainString() + " (was " + before + ", margin " + c.spreadBps().toPlainString() + " bps)"
+        String answer = moved ? "desk offered " + c.clientRate().toPlainString() + " (was " + before + ")"
                 : "desk held " + before + ": its best price";
         String detail = "Round " + q.roundsUsed() + " of " + q.roundsAllowed() + ": " + asked + "; " + answer
                 + (c.atBest() && moved ? " - no further room" : "") + ", firm for " + props.getQuoteValiditySeconds() + "s"

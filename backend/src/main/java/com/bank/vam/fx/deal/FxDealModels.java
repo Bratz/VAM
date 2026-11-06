@@ -18,8 +18,8 @@ public final class FxDealModels {
     public record QuoteView(
             UUID id, UUID corporateId, String pair, String baseCurrency, String quoteCurrency, Side side,
             Instrument instrument, BigDecimal amount, LocalDate valueDate, LocalDate windowStart, String purpose,
-            String exposureRef, QuoteStatus status, String statusReason, BigDecimal midRate, BigDecimal forwardPoints,
-            BigDecimal spreadBps, BigDecimal clientRate, BigDecimal counterAmount, String dealer,
+            String exposureRef, QuoteStatus status, String statusReason,
+            BigDecimal clientRate, BigDecimal counterAmount, String dealer,
             LocalDateTime quotedAt, LocalDateTime validUntil, long secondsRemaining, BigDecimal limitCharge,
             String limitCurrency, UUID dealId, String requestedBy, LocalDateTime createdAt,
             int rounds, int maxRounds, boolean bestPrice) {
@@ -29,8 +29,8 @@ public final class FxDealModels {
                     ? Math.max(0, Duration.between(LocalDateTime.now(), q.getValidUntil()).toSeconds()) : 0;
             return new QuoteView(q.getId(), q.getCorporateId(), q.getPair(), q.baseCurrency(), q.quoteCurrency(),
                     q.getSide(), q.getInstrument(), q.getAmount(), q.getValueDate(), q.getWindowStart(), q.getPurpose(),
-                    q.getExposureRef(), q.getStatus(), q.getStatusReason(), q.getMidRate(), q.getForwardPoints(),
-                    q.getSpreadBps(), q.getClientRate(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
+                    q.getExposureRef(), q.getStatus(), q.getStatusReason(),
+                    q.getClientRate(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
                     q.getValidUntil(), remaining, q.getLimitCharge(), q.getLimitCurrency(), q.getDealId(),
                     q.getRequestedBy(), q.getCreatedAt(), q.roundsUsed(), q.roundsAllowed(), Boolean.TRUE.equals(q.getBestPrice()));
         }
@@ -93,7 +93,7 @@ public final class FxDealModels {
     public record DealView(
             UUID id, String dealRef, UUID corporateId, UUID quoteRequestId, Instrument instrument, String pair,
             Side side, String buyCurrency, BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
-            BigDecimal rate, BigDecimal midRate, BigDecimal forwardPoints, BigDecimal spreadBps, LocalDate tradeDate,
+            BigDecimal rate, LocalDate tradeDate,
             LocalDate valueDate, LocalDate windowStart, DealStatus status, BigDecimal limitCharge,
             String limitCurrency, String purpose, String exposureRef, LocalDateTime createdAt,
             ConfirmationStatus confirmationStatus, LocalDateTime confirmationIssuedAt, LocalDateTime confirmedAt,
@@ -105,7 +105,7 @@ public final class FxDealModels {
         static DealView of(FxDeal d, java.util.Optional<FxMtmService.Mark> mark, boolean overdue) {
             return new DealView(d.getId(), d.getDealRef(), d.getCorporateId(), d.getQuoteRequestId(), d.getInstrument(),
                     d.getPair(), d.getSide(), d.getBuyCurrency(), d.getBuyAmount(), d.getSellCurrency(),
-                    d.getSellAmount(), d.getRate(), d.getMidRate(), d.getForwardPoints(), d.getSpreadBps(),
+                    d.getSellAmount(), d.getRate(),
                     d.getTradeDate(), d.getValueDate(), d.getWindowStart(), d.getStatus(), d.getLimitCharge(),
                     d.getLimitCurrency(), d.getPurpose(), d.getExposureRef(), d.getCreatedAt(),
                     d.getConfirmationStatus(), d.getConfirmationIssuedAt(), d.getConfirmedAt(), d.getConfirmedBy(),

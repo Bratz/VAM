@@ -45,9 +45,6 @@ export interface Quote {
   exposureRef?: string;
   status: QuoteStatus;
   statusReason?: string;
-  midRate?: number;
-  forwardPoints?: number;
-  spreadBps?: number;
   clientRate?: number;
   counterAmount?: number;
   dealer?: string;
@@ -102,9 +99,6 @@ export interface Deal {
   sellCurrency: string;
   sellAmount: number;
   rate: number;
-  midRate?: number;
-  forwardPoints?: number;
-  spreadBps?: number;
   tradeDate: string;
   valueDate: string;
   windowStart?: string;

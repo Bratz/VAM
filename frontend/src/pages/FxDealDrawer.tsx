@@ -151,7 +151,7 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
             <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Value date</dt>
               <dd className="font-mono tabular-nums">{deal.windowStart ? `${deal.windowStart} to ${deal.valueDate}` : deal.valueDate}</dd></div>
             {inForce && (
-              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Worth today (mid)</dt>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Worth today (indicative)</dt>
                 <dd className={cn('font-mono tabular-nums', toneFor(deal.mtmHome ?? deal.mtmQuote ?? 0))}>
                   {deal.mtmQuote === undefined ? 'Not available'
                     : deal.mtmHome !== undefined ? `${fmtSigned(deal.mtmHome, 0)} ${deal.mtmHomeCurrency}`

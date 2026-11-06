@@ -28,12 +28,12 @@ public class FxLifecycleService {
 
     /** What closing the rest of a deal would cost at today's price. */
     public record CloseOutQuote(String dealRef, String pair, BigDecimal remainingBase, BigDecimal closeRate,
-                                BigDecimal spreadBps, BigDecimal realisedPnl, String pnlCurrency, LocalDate pricedDate) {
+                                BigDecimal realisedPnl, String pnlCurrency, LocalDate pricedDate) {
     }
 
     /** The close-out, plus the price of the new forward that replaces it. */
-    public record RollQuote(CloseOutQuote closeOut, LocalDate newValueDate, BigDecimal newRate, BigDecimal newForwardPoints,
-                            BigDecimal newSpreadBps, BigDecimal newCounterAmount) {
+    public record RollQuote(CloseOutQuote closeOut, LocalDate newValueDate, BigDecimal newRate,
+                            BigDecimal newCounterAmount) {
     }
 
     public record RollResult(FxDeal closed, FxDeal replacement) {
@@ -68,7 +68,7 @@ public class FxLifecycleService {
     public RollQuote rollPreview(UUID dealId, LocalDate newValueDate) {
         FxDeal d = closeable(dealId);
         Price next = dealer.price(d.getPair(), d.getSide(), Instrument.FORWARD, d.remainingBase(), requireDate(newValueDate), null);
-        return new RollQuote(priceClose(d), next.pricedDate(), next.clientRate(), next.forwardPoints(), next.spreadBps(),
+        return new RollQuote(priceClose(d), next.pricedDate(), next.clientRate(),
                 next.counterAmount());
     }
 
@@ -120,7 +120,7 @@ public class FxLifecycleService {
         boolean atSpot = !d.getValueDate().isAfter(forwards.spotDate());
         Price p = dealer.price(d.getPair(), opposite, atSpot ? Instrument.SPOT : Instrument.FORWARD, remaining,
                 d.getValueDate(), null);
-        return new CloseOutQuote(d.getDealRef(), d.getPair(), remaining, p.clientRate(), p.spreadBps(),
+        return new CloseOutQuote(d.getDealRef(), d.getPair(), remaining, p.clientRate(),
                 realisedPnl(d.getSide(), remaining, d.getRate(), p.clientRate()), d.quoteCurrency(), p.pricedDate());
     }
 

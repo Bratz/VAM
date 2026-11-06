@@ -115,8 +115,8 @@ const FxRfqPage: React.FC = () => {
   };
 
   const exportCsv = () => downloadCsv('fx-rfq-log.csv',
-    ['Requested', 'Pair', 'Side', 'Instrument', 'Amount', 'Price', 'Margin (bps)', 'Outcome', 'Reason', 'Rounds', 'Deal'],
-    rows.map((r) => [r.quote.createdAt, r.quote.pair, r.quote.side, r.quote.instrument, r.quote.amount, r.quote.clientRate, r.quote.spreadBps,
+    ['Requested', 'Pair', 'Side', 'Instrument', 'Amount', 'Price', 'Outcome', 'Reason', 'Rounds', 'Deal'],
+    rows.map((r) => [r.quote.createdAt, r.quote.pair, r.quote.side, r.quote.instrument, r.quote.amount, r.quote.clientRate,
       r.quote.status, r.quote.statusReason, r.quote.rounds, r.dealRef]));
 
   const s = log?.summary;
@@ -137,7 +137,7 @@ const FxRfqPage: React.FC = () => {
       key: 'clientRate', header: 'Price', align: 'right', dropOrder: 2,
       render: (_, r) => r.quote.clientRate === undefined
         ? <span className="text-neutral-500 dark:text-neutral-400">-</span>
-        : <span className="font-mono tabular-nums">{fmtRate(r.quote.clientRate)}{r.quote.spreadBps !== undefined && <span className="block text-caption text-neutral-500 dark:text-neutral-400">{r.quote.spreadBps.toFixed(2)} bps margin</span>}</span>,
+        : <span className="font-mono tabular-nums">{fmtRate(r.quote.clientRate)}</span>,
     },
     {
       key: 'status', header: 'Outcome',
@@ -226,8 +226,6 @@ const FxRfqPage: React.FC = () => {
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">By</dt><dd>{q.requestedBy ?? '-'}</dd></div>
               {q.clientRate !== undefined && (<>
                 <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">{q.status === 'ACCEPTED' ? 'Accepted price' : 'Last price'}</dt><dd className="font-mono tabular-nums">{fmtRate(q.clientRate)}</dd></div>
-                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Bank margin</dt><dd className="font-mono tabular-nums">{q.spreadBps?.toFixed(2)} bps</dd></div>
-                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Interbank mid</dt><dd className="font-mono tabular-nums">{q.midRate !== undefined && fmtRate(q.midRate)}</dd></div>
                 <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Firm until</dt><dd>{when(q.validUntil)}</dd></div>
               </>)}
               {q.maxRounds > 0 && (

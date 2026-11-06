@@ -147,9 +147,32 @@ class FxDealServiceTest {
 
         assertThat(text).contains("SIMULATED").contains(d.getDealRef()).contains("Test Multinational Corp")
                 .contains("You buy        : EUR 100,000.00").contains("You sell       : USD 110,000.00")
-                .contains("Window forward, drawable 2026-12-09 to 2027-02-09").contains("bank margin 3.00 bps")
-                .contains("forward points 20.00").contains("Status         : ACTIVE")
+                .contains("Window forward, drawable 2026-12-09 to 2027-02-09").contains("Status         : ACTIVE")
                 .contains("confirm or dispute");
+    }
+
+    /**
+     * A corporate sees the all-in rate it dealt at, never how the bank built it. The mid, the forward points and the
+     * margin stay on the stored rows for the bank's own use, so they must not be in the confirmation the corporate
+     * reads and downloads, nor in any shape the API sends to the corporate (the MCP tools send the same shapes).
+     */
+    @Test
+    void nothingTheBankKeepsToItselfReachesTheCorporate() {
+        Corporate c = new Corporate();
+        c.setLegalName("Test Multinational Corp");
+        when(corporates.findById(any())).thenReturn(Optional.of(c));
+        FxDeal d = service.book(quote(Side.BUY, Instrument.WINDOW), bd("6000.00"), "AED");
+
+        String text = service.confirmation(d).toLowerCase();
+
+        assertThat(text).doesNotContain("margin").doesNotContain("mid ").doesNotContain("bps").doesNotContain("forward points")
+                .doesNotContain("build-up");
+        java.util.List<Class<?>> corporateShapes = java.util.List.of(FxDealModels.QuoteView.class, FxDealModels.DealView.class,
+                FxLifecycleService.CloseOutQuote.class, FxLifecycleService.RollQuote.class);
+        for (Class<?> shape : corporateShapes) {
+            assertThat(java.util.Arrays.stream(shape.getRecordComponents()).map(java.lang.reflect.RecordComponent::getName))
+                    .as(shape.getSimpleName()).noneMatch(n -> n.toLowerCase().matches(".*(midrate|spread|forwardpoints|margin).*"));
+        }
     }
 
     @Test

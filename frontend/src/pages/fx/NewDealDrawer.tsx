@@ -295,19 +295,13 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
                 <p className="text-body text-primary-900 dark:text-neutral-50">
                   You buy <strong>{buyLeg[0]} {fmt(buyLeg[1])}</strong> and sell <strong>{sellLeg[0]} {fmt(sellLeg[1])}</strong>.
                 </p>
-                <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-body-sm">
+                <dl className="grid grid-cols-2 gap-3 text-body-sm">
                   <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Value date</dt>
                     <dd className="font-mono tabular-nums">{quote.windowStart ? `${quote.windowStart} to ${quote.valueDate}` : quote.valueDate}</dd></div>
-                  <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Interbank mid</dt>
-                    <dd className="font-mono tabular-nums">{quote.midRate !== undefined && fmtRate(quote.midRate)}</dd></div>
-                  <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Forward points</dt>
-                    <dd className="font-mono tabular-nums">{quote.forwardPoints?.toFixed(1)}</dd></div>
-                  <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Bank margin</dt>
-                    <dd className="font-mono tabular-nums">{quote.spreadBps?.toFixed(2)} bps</dd></div>
+                  <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">FX credit limit used</dt>
+                    <dd className="font-mono tabular-nums">{fmt(quote.limitCharge ?? 0, 0)} {quote.limitCurrency}</dd></div>
                 </dl>
-                <p className="text-caption text-neutral-500 dark:text-neutral-400">
-                  Uses {fmt(quote.limitCharge ?? 0, 0)} {quote.limitCurrency} of your FX credit limit. Simulated desk and rates.
-                </p>
+                <p className="text-caption text-neutral-500 dark:text-neutral-400">Simulated desk and rates.</p>
 
                 {quote.maxRounds > 0 && (
                   <div className="rounded-lg border border-edge-subtle bg-surface-muted p-3 space-y-3">
