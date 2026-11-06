@@ -505,3 +505,16 @@ market", which is how a dealer thinks, not what a bank shows its client: the cli
 - Hiding a field in the UI is not enough: remove it from the response shape, the downloadable documents, the
   event text shown in a history, the CSV export and the MCP tools, which all reach the same person.
 - Keep a guard test on the shapes (record components) and the documents, so the next field added does not leak.
+
+## L9 again: the FX credit limit was built beside the credit model, not in it (2026-11-06)
+
+Phase 3 created `fx_credit_limit`, one row per corporate, while the app already had credit agreements, typed
+facilities, external and internal limits, entity sub-limits, thresholds, expiry and approval. The user had to ask for
+it to be aligned. L9 (capability-first discovery) said to census the domain before adding a table; it was not done
+for "credit limit" because FX felt like a separate domain.
+
+- Before adding any limit, line, threshold or approval to a feature, grep the app for the generic concept
+  (`limit`, `facility`, `threshold`, `approval`), not just the feature's own words.
+- When a new kind of row joins a shared table, check every query on that table that filters only on corporate, target
+  or type: those are the ones that silently start counting the new rows. Capture the existing reads before the change
+  and diff them after; identical output is the proof.

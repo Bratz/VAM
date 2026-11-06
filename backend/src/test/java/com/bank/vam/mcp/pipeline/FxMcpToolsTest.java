@@ -178,9 +178,10 @@ class FxMcpToolsTest {
     private GetFxDealsTool dealsTool(FxDealService deals, FxLimitService limits) {
         FxDealAttentionService attention = mock(FxDealAttentionService.class);
         when(attention.items(any())).thenReturn(List.of());
-        when(limits.position(any(UUID.class))).thenAnswer(i ->
-                new FxLimitService.Position(i.getArgument(0), "GBP", new BigDecimal("20000000"), new BigDecimal("1500000"),
-                        new BigDecimal("18500000")));
+        when(limits.line(any(UUID.class))).thenAnswer(i -> new FxLimitService.Line(i.getArgument(0), UUID.randomUUID(),
+                UUID.randomUUID(), "FX treasury line", "GBP", null, true, null,
+                new FxLimitService.Usage(new BigDecimal("20000000"), new BigDecimal("1500000"),
+                        new BigDecimal("18500000"))));
         return new GetFxDealsTool(deals, mock(DealViewAssembler.class), limits, attention, json);
     }
 

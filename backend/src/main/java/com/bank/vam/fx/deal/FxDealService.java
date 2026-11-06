@@ -24,6 +24,7 @@ public class FxDealService {
     private final FxDealEventRepository events;
     private final FxEvents log;
     private final CorporateRepository corporates;
+    private final FxLimitService limits;
 
     /** Books the deal for an accepted quote, issues its confirmation, and leaves it ACTIVE (forward) or awaiting settlement (spot). */
     FxDeal book(FxQuoteRequest q, BigDecimal limitCharge, String limitCurrency) {
@@ -32,6 +33,8 @@ public class FxDealService {
         d.setDealRef("FXD-" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "-"
                 + UUID.randomUUID().toString().substring(0, 6).toUpperCase(Locale.ROOT));
         d.setCorporateId(q.getCorporateId());
+        d.setEntityId(q.getEntityId());
+        d.setEntityName(q.getEntityName());
         d.setQuoteRequestId(q.getId());
         d.setInstrument(q.getInstrument());
         d.setPair(q.getPair());
@@ -72,6 +75,8 @@ public class FxDealService {
         }
         d.setStatus(to);
         log.deal(d, from, to, detail);
+        // The FX line's and sub-limits' utilised amounts follow the open deals; keep them current for the credit pages.
+        limits.refreshUsage(d.getCorporateId());
     }
 
     public List<FxDeal> list(UUID corporateId) {
@@ -99,6 +104,7 @@ public class FxDealService {
                 "",
                 "Deal reference : " + d.getDealRef(),
                 "Client         : " + client,
+                "Entity         : " + (d.getEntityName() == null ? client : d.getEntityName()),
                 "Trade date     : " + d.getTradeDate(),
                 "Instrument     : " + when,
                 "You buy        : " + d.getBuyCurrency() + " " + money(d.getBuyAmount()),

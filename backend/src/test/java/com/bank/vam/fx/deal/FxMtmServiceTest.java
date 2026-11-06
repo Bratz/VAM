@@ -109,7 +109,7 @@ class FxMtmServiceTest {
         FxDeal d = deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, DUE);
         when(deals.findByStatusIn(any())).thenReturn(List.of(d));
         when(mtms.findByDealIdAndAsOf(d.getId(), SPOT)).thenReturn(Optional.empty());
-        when(limits.charge(anyString(), any(), any(), any(), anyString())).thenReturn(bd("640.00"));
+        when(limits.charge(any(), anyString(), any(), any(), any(), anyString())).thenReturn(bd("640.00"));
 
         int marked = service.snapshot(SPOT, null);
 

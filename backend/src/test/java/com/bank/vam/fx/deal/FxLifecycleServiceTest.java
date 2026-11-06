@@ -139,6 +139,7 @@ class FxLifecycleServiceTest {
         when(quoteService.request(any())).thenReturn(q);
         when(quoteService.accept(q.getId())).thenReturn(next);
 
+        old.setEntityId(UUID.randomUUID());
         FxLifecycleService.RollResult r = service.roll(old.getId(), DUE.plusMonths(3));
 
         assertThat(old.getStatus()).isEqualTo(DealStatus.ROLLED);
@@ -151,6 +152,7 @@ class FxLifecycleServiceTest {
         assertThat(cmd.getValue().amount()).isEqualByComparingTo("100000");
         assertThat(cmd.getValue().valueDate()).isEqualTo(DUE.plusMonths(3));
         assertThat(cmd.getValue().purpose()).startsWith("Roll of FXD-");
+        assertThat(cmd.getValue().entityId()).isEqualTo(old.getEntityId()); // the replacement is for the same entity
     }
 
     @Test

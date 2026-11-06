@@ -399,6 +399,19 @@ async function produceFxExposures(_entityId?: string): Promise<AttentionItem[]> 
 
 /** Unconfirmed, disputed, unsettled or unfunded FX deals: each is a decision or a chase for the treasurer. */
 function fxDealItem(a: DealAttention): AttentionItem {
+  if (a.type === 'LIMIT_WARNING') {
+    return {
+      id: `fx_limit:${a.dealId}`,
+      severity: a.severity,
+      category: 'fx_exposure',
+      headline: a.headline,
+      detail: a.detail,
+      context: { entityId: a.corporateId, entityName: a.corporateName },
+      timePressure: { kind: 'relative_past', displayText: 'now', millisecondsSinceEvent: 0 },
+      actions: [{ label: 'Review limits', kind: 'navigate', actionId: 'credit-limits', requiresConfirmation: false }],
+      createdAt: new Date().toISOString(),
+    };
+  }
   const ms = new Date(a.dueDate).getTime() - Date.now();
   const failed = a.type === 'SETTLEMENT_FAILED';
   return {

@@ -96,6 +96,8 @@ public class FxMtmService {
             refreshLimitCharge(d, asOf);
             marked++;
         }
+        // The charges shrink as deals near maturity: write the new usage to the FX line and sub-limits.
+        open.stream().map(FxDeal::getCorporateId).distinct().forEach(limits::refreshUsage);
         return marked;
     }
 
@@ -105,7 +107,7 @@ public class FxMtmService {
 
     private void refreshLimitCharge(FxDeal d, LocalDate asOf) {
         try {
-            d.setLimitCharge(limits.charge(d.baseCurrency(), d.remainingBase(), asOf, d.getValueDate(), d.getLimitCurrency()));
+            d.setLimitCharge(limits.charge(d.getInstrument(), d.baseCurrency(), d.remainingBase(), asOf, d.getValueDate(), d.getLimitCurrency()));
         } catch (BusinessException e) {
             log.debug("Left {} limit charge unchanged: {}", d.getDealRef(), e.getMessage());
         }

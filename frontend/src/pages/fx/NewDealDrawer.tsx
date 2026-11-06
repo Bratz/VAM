@@ -16,7 +16,7 @@ import { Alert } from '../../components/ui/enhanced';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
 import { fxMarketApi } from '../../services/fxMarketApi';
-import { fxDealApi, Instrument, Quote, Side } from '../../services/fxDealApi';
+import { fxDealApi, CreditLimit, Instrument, Quote, Side } from '../../services/fxDealApi';
 import { QUOTE_BADGE } from '../fxDealBadges';
 import { errorText, fmt, fmtRate } from './fxFormat';
 
@@ -31,6 +31,8 @@ export interface TicketPrefill {
   windowStart?: string;
   purpose?: string;
   exposureRef?: string;
+  /** The legal entity the deal is for; defaults to the entity chosen in the header. */
+  entityId?: string;
 }
 
 const INSTRUMENTS: { value: Instrument; label: string }[] = [
@@ -49,8 +51,10 @@ interface Props {
 }
 
 const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill, onChanged }) => {
-  const { corporates } = useUser();
+  const { corporates, entities, currentEntityId } = useUser();
   const corporateName = corporates.find((c) => c.id === corporateId)?.name;
+  const [entityId, setEntityId] = useState('');
+  const [room, setRoom] = useState<CreditLimit | null>(null);
 
   const [pairs, setPairs] = useState<string[]>([]);
   const [pair, setPair] = useState('EUR/USD');
@@ -91,6 +95,8 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
   useEffect(() => {
     if (!isOpen) return;
     const p = prefill ?? {};
+    const known = (id?: string | null) => (id && entities.some((e) => e.id === id) ? id : undefined);
+    setEntityId(known(p.entityId) ?? known(currentEntityId) ?? (entities.find((e) => e.isTreasuryCenter) ?? entities[0])?.id ?? '');
     setPair(p.pair ?? 'EUR/USD');
     setSide(p.side ?? 'BUY');
     setAmount(String(p.amount ? Math.abs(p.amount) : 100000));
@@ -113,7 +119,15 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
         .catch(() => undefined);
     }
     return () => { current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run on open or a new prefill only; entities and the header's entity are read once per opening.
   }, [isOpen, prefill]);
+
+  useEffect(() => {
+    if (!isOpen || !corporateId || !entityId) { setRoom(null); return; }
+    let current = true;
+    fxDealApi.limit(corporateId, entityId).then((r) => { if (current) setRoom(r); }).catch(() => undefined);
+    return () => { current = false; };
+  }, [isOpen, corporateId, entityId, quote?.status]);
 
   // Count the validity window down locally, then ask the server what became of the quote. A counter-offer
   // changes quotedAt, so the countdown starts again even when the seconds remaining happen to be equal.
@@ -137,6 +151,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
 
   const onRequest = async () => {
     const n = Number(amount);
+    if (!entityId) { setFormError('Choose the entity the deal is for.'); return; }
     if (!corporateId || !(n > 0)) { setFormError('Enter an amount greater than zero.'); return; }
     if (instrument !== 'SPOT' && !valueDate) { setFormError('Pick a value date.'); return; }
     if (instrument === 'WINDOW' && !windowStart) { setFormError('Pick the first drawdown date.'); return; }
@@ -145,7 +160,7 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     setQuoteError(null);
     try {
       const q = await fxDealApi.requestQuote({
-        corporateId, pair, side, instrument, amount: n,
+        corporateId, entityId, pair, side, instrument, amount: n,
         valueDate: instrument === 'SPOT' ? undefined : valueDate,
         windowStart: instrument === 'WINDOW' ? windowStart : undefined,
         purpose: purpose || undefined,
@@ -240,6 +255,18 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
     >
       <div className="p-6 space-y-6">
         <section className="space-y-4">
+          <div>
+            <Select label="For entity" value={entityId} onChange={(e) => setEntityId(e.target.value)} disabled={firm}
+              options={entities.map((e) => ({ value: e.id, label: e.entityName }))} placeholder={entities.length ? undefined : 'No entities'} />
+            {room && (!room.usable || (room.entity && !room.entity.usable)) ? (
+              <p className="text-body-sm text-warning-700 dark:text-warning-300 mt-1.5">{!room.usable ? room.reason : room.entity?.reason}.</p>
+            ) : room?.entity ? (
+              <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-1.5">
+                FX sub-limit: {fmt(room.entity.headroom, 0)} of {fmt(room.entity.limit, 0)} {room.currency} left.
+                <span className="block">Group FX line: {fmt(room.headroom, 0)} {room.currency} left.</span>
+              </p>
+            ) : null}
+          </div>
           <Select label="Currency pair" value={pair} onChange={(e) => setPair(e.target.value)} options={pairOptions} disabled={firm} />
           <div>
             <span className="block body-strong mb-2">Direction</span>
@@ -263,7 +290,9 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
           {exposureRef && <p className="text-caption text-neutral-500 dark:text-neutral-400">Hedging exposure {exposureRef.replace('|', ' ')}.</p>}
           {formError && <p className="text-body-sm text-error-700 dark:text-error-300">{formError}</p>}
           {!firm && !bookedRef && (
-            <Button onClick={onRequest} loading={requesting} disabled={!corporateId} leftIcon={<Send className="w-4 h-4" />} fullWidth>
+            <Button onClick={onRequest} loading={requesting}
+              disabled={!corporateId || !entityId || (room !== null && (!room.usable || (room.entity !== undefined && !room.entity.usable)))}
+              leftIcon={<Send className="w-4 h-4" />} fullWidth>
               {quote ? 'Request a new price' : 'Request price'}
             </Button>
           )}

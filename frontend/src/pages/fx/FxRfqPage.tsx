@@ -100,7 +100,7 @@ const FxRfqPage: React.FC = () => {
         pair: q.pair, side: q.side, amount: q.amount, instrument: q.instrument,
         valueDate: q.instrument === 'SPOT' ? undefined : q.valueDate,
         windowStart: q.instrument === 'WINDOW' ? q.windowStart : undefined,
-        purpose: q.purpose, exposureRef: q.exposureRef,
+        purpose: q.purpose, exposureRef: q.exposureRef, entityId: q.entityId,
       },
     });
   };
@@ -115,8 +115,8 @@ const FxRfqPage: React.FC = () => {
   };
 
   const exportCsv = () => downloadCsv('fx-rfq-log.csv',
-    ['Requested', 'Pair', 'Side', 'Instrument', 'Amount', 'Price', 'Outcome', 'Reason', 'Rounds', 'Deal'],
-    rows.map((r) => [r.quote.createdAt, r.quote.pair, r.quote.side, r.quote.instrument, r.quote.amount, r.quote.clientRate,
+    ['Requested', 'Entity', 'Pair', 'Side', 'Instrument', 'Amount', 'Price', 'Outcome', 'Reason', 'Rounds', 'Deal'],
+    rows.map((r) => [r.quote.createdAt, r.quote.entityName, r.quote.pair, r.quote.side, r.quote.instrument, r.quote.amount, r.quote.clientRate,
       r.quote.status, r.quote.statusReason, r.quote.rounds, r.dealRef]));
 
   const s = log?.summary;
@@ -149,6 +149,7 @@ const FxRfqPage: React.FC = () => {
         </span>
       ),
     },
+    { key: 'entityName', header: 'Entity', dropOrder: 4, render: (_, r) => <span className="text-caption">{r.quote.entityName ?? '-'}</span> },
     { key: 'requestedBy', header: 'By', dropOrder: 1, render: (_, r) => <span className="text-caption">{r.quote.requestedBy ?? '-'}</span> },
     { key: 'dealRef', header: 'Deal', render: (_, r) => r.dealRef ? <span className="font-mono text-caption">{r.dealRef}</span> : <span className="text-neutral-500 dark:text-neutral-400">-</span> },
     {
@@ -228,6 +229,7 @@ const FxRfqPage: React.FC = () => {
               </>)}
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Requested</dt><dd>{when(q.createdAt)}</dd></div>
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">By</dt><dd>{q.requestedBy ?? '-'}</dd></div>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Entity</dt><dd>{q.entityName ?? '-'}</dd></div>
               {q.clientRate !== undefined && (<>
                 <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">{q.status === 'ACCEPTED' ? 'Accepted price' : 'Last price'}</dt><dd className="font-mono tabular-nums">{fmtRate(q.clientRate)}</dd></div>
                 <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Firm until</dt><dd>{when(q.validUntil)}</dd></div>

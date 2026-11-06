@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,7 +31,7 @@ import java.util.UUID;
 public class FxDealController {
 
     /** {@code amount} is in the pair's base currency; {@code valueDate} is the last drawdown date for a window. */
-    public record QuoteBody(@NotNull UUID corporateId, @NotNull String pair, @NotNull Side side,
+    public record QuoteBody(@NotNull UUID corporateId, @NotNull UUID entityId, @NotNull String pair, @NotNull Side side,
                             @NotNull Instrument instrument, @NotNull BigDecimal amount, LocalDate valueDate,
                             LocalDate windowStart, String purpose, String exposureRef) {
     }
@@ -47,7 +48,7 @@ public class FxDealController {
     @PostMapping("/quotes")
     public ApiResponse<QuoteView> request(@Valid @RequestBody QuoteBody b) {
         return ApiResponse.success(QuoteView.of(quotes.request(new FxQuoteService.Command(
-                b.corporateId(), b.pair(), b.side(), b.instrument(), b.amount(), b.valueDate(), b.windowStart(),
+                b.corporateId(), b.entityId(), b.pair(), b.side(), b.instrument(), b.amount(), b.valueDate(), b.windowStart(),
                 b.purpose(), b.exposureRef()))));
     }
 
@@ -113,8 +114,30 @@ public class FxDealController {
         return ApiResponse.success(new Confirmation(deal.getDealRef(), deals.confirmation(deal)));
     }
 
+    /** The group FX line and, with {@code entityId}, that entity's sub-limit. */
     @GetMapping("/limits")
-    public ApiResponse<LimitView> limit(@RequestParam UUID corporateId) {
-        return ApiResponse.success(LimitView.of(limits.position(corporateId)));
+    public ApiResponse<LimitView> limit(@RequestParam UUID corporateId, @RequestParam(required = false) UUID entityId) {
+        return ApiResponse.success(LimitView.of(limits.line(corporateId),
+                entityId == null ? null : limits.allocation(corporateId, entityId)));
+    }
+
+    /** The FX line and every active entity's sub-limit, for managing them on the Credit Limits page. */
+    @GetMapping("/lines")
+    public ApiResponse<FxDealModels.LineView> line(@RequestParam UUID corporateId) {
+        FxLimitService.Line l = limits.line(corporateId);
+        List<FxDealModels.AllocationView> all = limits.allocations(corporateId).stream().map(FxDealModels.AllocationView::of).toList();
+        BigDecimal allocated = all.stream().filter(FxDealModels.AllocationView::allocated)
+                .map(FxDealModels.AllocationView::limit).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return ApiResponse.success(new FxDealModels.LineView(LimitView.of(l, null), allocated,
+                l.usage().limit().subtract(allocated), all));
+    }
+
+    public record AllocationBody(@NotNull UUID corporateId, @NotNull UUID entityId, @NotNull BigDecimal amount) {
+    }
+
+    /** Sets an entity's FX sub-limit under the group line. */
+    @PutMapping("/lines/allocations")
+    public ApiResponse<FxDealModels.AllocationView> allocate(@Valid @RequestBody AllocationBody b) {
+        return ApiResponse.success(FxDealModels.AllocationView.of(limits.allocate(b.corporateId(), b.entityId(), b.amount())));
     }
 }

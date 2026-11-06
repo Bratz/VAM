@@ -7,7 +7,7 @@ import { StatStrip } from '../components/layout/StatStrip';
  * Backend: CreditFacilityController.java at /api/v1/credit-facilities/*
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wallet, Plus, RefreshCw, Search, Loader2, Calendar, XCircle, Ban, Eye, TrendingUp, ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, Link2, Landmark, CreditCard, Banknote, FileText, Briefcase, PiggyBank, Receipt, CheckCircle, Building2, X } from 'lucide-react';
+import { Wallet, Plus, RefreshCw, Search, Loader2, Calendar, XCircle, Ban, Eye, TrendingUp, ArrowUpRight, ArrowDownRight, Shield, AlertTriangle, Link2, Landmark, CreditCard, Banknote, FileText, Briefcase, PiggyBank, Receipt, CheckCircle, Building2, X, ArrowLeftRight } from 'lucide-react';
 import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
@@ -39,6 +39,7 @@ const FACILITY_TYPE_CONFIG: Record<string, { label: string; icon: any; color: st
   ASSET_BASED: { label: 'Asset Based', icon: Building2, tone: 'warning', color: 'text-warning-700 dark:text-warning-300', bgColor: 'bg-warning-100 dark:bg-warning-500/20' },
   CASH_POOLING: { label: 'Cash Pooling', icon: PiggyBank, tone: 'success', color: 'text-success-700 dark:text-success-300', bgColor: 'bg-success-100 dark:bg-success-500/20' },
   NOTIONAL_POOLING: { label: 'Notional Pooling', icon: Landmark, tone: 'info', color: 'text-info-700 dark:text-info-300', bgColor: 'bg-info-100 dark:bg-info-500/20' },
+  FX_TREASURY_LINE: { label: 'FX Treasury Line', icon: ArrowLeftRight, tone: 'accent', color: 'text-accent-700 dark:text-accent-300', bgColor: 'bg-accent-100 dark:bg-accent-500/20' },
   OTHER: { label: 'Other', icon: Wallet, tone: 'neutral', color: 'text-neutral-700 dark:text-neutral-200', bgColor: 'bg-surface-muted' },
 };
 
@@ -148,7 +149,8 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
         <Button variant="ghost" size="sm" onClick={onView} className="flex-1">
           <Eye className="w-3 h-3 mr-1" /> View
         </Button>
-        {facility.status === 'ACTIVE' && (
+        {/* An FX treasury line is used by FX deals, not drawn or repaid by hand: its outstanding follows the open deals. */}
+        {facility.status === 'ACTIVE' && facility.facilityType !== 'FX_TREASURY_LINE' && (
           <>
             <Button variant="ghost" size="sm" onClick={onDrawDown} className="flex-1" disabled={facility.availableLimit <= 0}>
               <ArrowUpRight className="w-3 h-3 mr-1" /> Draw

@@ -323,7 +323,8 @@ public class CreditFacility extends BaseEntity {
         IMPORT_CREDIT,      // Import credit facility
         PACKING_CREDIT,     // Packing credit
         BUYERS_CREDIT,      // Buyers credit
-        SUPPLIERS_CREDIT    // Suppliers credit
+        SUPPLIERS_CREDIT,   // Suppliers credit
+        FX_TREASURY_LINE    // FX dealing line: the credit a corporate may use for FX deals with the bank
     }
 
     public enum FacilityStatus {

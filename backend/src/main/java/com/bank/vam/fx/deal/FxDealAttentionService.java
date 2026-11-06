@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FxDealAttentionService {
 
-    public enum Type { CONFIRMATION_PENDING, CONFIRMATION_DISPUTED, SETTLEMENT_FAILED, FUNDING_NEEDED }
+    public enum Type { CONFIRMATION_PENDING, CONFIRMATION_DISPUTED, SETTLEMENT_FAILED, FUNDING_NEEDED, LIMIT_WARNING }
 
     public record Item(Type type, String severity, UUID corporateId, String corporateName, UUID dealId,
                        String dealRef, String headline, String detail, LocalDate dueDate) {
@@ -29,6 +29,7 @@ public class FxDealAttentionService {
     private final CorporateRepository corporates;
     private final FxConfirmationService confirmations;
     private final HeldCash cash;
+    private final FxLimitService limits;
 
     /** @param corporateId one corporate, or null for all */
     public List<Item> items(UUID corporateId) {
@@ -66,6 +67,18 @@ public class FxDealAttentionService {
                             "Settles " + d.getValueDate() + " and needs " + d.getSellCurrency() + " " + need.toPlainString()
                                     + "; the corporate holds " + held.toPlainString() + ".", d.getValueDate()));
                 }
+            }
+        }
+        // FX lines and entity sub-limits past their warning (80%) or critical (95%) threshold. dealId carries the
+        // limit's id so each alert is distinct; there is no deal behind it.
+        List<Corporate> scope = corporateId == null ? corporates.findAll() : corporates.findAllById(List.of(corporateId));
+        for (Corporate c : scope) {
+            for (FxLimitService.Alert a : limits.alerts(c.getId())) {
+                out.add(new Item(Type.LIMIT_WARNING, a.critical() ? "high" : "medium", c.getId(), c.getLegalName(),
+                        a.limitId(), null, a.what() + " is " + a.percentUsed().stripTrailingZeros().toPlainString() + "% used",
+                        a.usage().used().toPlainString() + " of " + a.usage().limit().toPlainString() + " " + a.currency()
+                                + " used, " + a.usage().headroom().max(BigDecimal.ZERO).toPlainString() + " left. Deals that do not fit are declined.",
+                        today));
             }
         }
         return out;

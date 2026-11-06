@@ -18,6 +18,7 @@ import {
   EntityLimitAllocationData,
 } from '../components/credit/EntityAllocationModal';
 import { usePageHeaderActions } from '../context/usePageHeader';
+import FxLineCard from '../components/credit/FxLineCard';
 import { formatCurrency } from '../utils';
 import { Amount } from '../components/Amount';
 
@@ -1317,6 +1318,8 @@ const CreditLimitsPage: React.FC = () => {
               <p className="text-neutral-600 dark:text-neutral-300">Create a Group Limit first to allocate to entities</p>
             </div>
           )}
+
+          <FxLineCard corporateId={selectedCorporateId} />
         </div>
       ) : (
         <div className="bg-surface-card rounded-lg border border-edge-subtle p-12 text-center animate-fade-in" style={{ animationDelay: '0.1s' }}>

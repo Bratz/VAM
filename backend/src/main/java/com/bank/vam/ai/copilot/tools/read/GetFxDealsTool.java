@@ -84,12 +84,28 @@ public class GetFxDealsTool implements CopilotTool {
                     }).toList();
             List<FxDeal> shown = matching.stream().limit(limit).toList();
 
-            FxLimitService.Position position = limits.position(context.corporateId());
+            // The group FX line (a facility under the bank's credit agreement) and each entity's sub-limit under it.
+            FxLimitService.Line line = limits.line(context.corporateId());
+            FxLimitService.Usage position = line.usage();
             Map<String, Object> limit1 = new LinkedHashMap<>();
-            limit1.put("currency", position.currency());
+            limit1.put("currency", line.currency());
+            limit1.put("usable", line.usable());
+            if (!line.usable()) {
+                limit1.put("reason", line.reason());
+            }
             limit1.put("limit", position.limit());
             limit1.put("used", position.used());
             limit1.put("headroom", position.headroom());
+            limit1.put("entities", limits.allocations(context.corporateId()).stream()
+                    .filter(a -> a.limitId() != null)
+                    .map(a -> {
+                        Map<String, Object> e = new LinkedHashMap<>();
+                        e.put("entity", a.entityName());
+                        e.put("limit", a.usage().limit());
+                        e.put("used", a.usage().used());
+                        e.put("headroom", a.usage().headroom());
+                        return e;
+                    }).toList());
 
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("total", matching.size());
@@ -99,7 +115,7 @@ public class GetFxDealsTool implements CopilotTool {
             data.put("deals", shown.stream().map(views::view).map(this::convert).toList());
 
             return ToolResult.ok(name(), matching.size() + " FX deal(s) (" + status + "), limit used "
-                    + position.used() + " of " + position.limit() + " " + position.currency(), data);
+                    + position.used() + " of " + position.limit() + " " + line.currency(), data);
         } catch (BusinessException e) {
             return ToolResult.error(name(), e.getMessage());
         } catch (Exception e) {

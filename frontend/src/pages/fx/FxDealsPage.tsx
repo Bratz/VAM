@@ -143,11 +143,12 @@ const FxDealsPage: React.FC = () => {
   };
 
   const exportCsv = () => downloadCsv('fx-deals.csv',
-    ['Deal', 'Pair', 'Side', 'Instrument', 'Buy currency', 'Buy amount', 'Sell currency', 'Sell amount', 'Rate', 'Value date', 'Status', 'Confirmation', 'Worth today (home)'],
-    shown.map((d) => [d.dealRef, d.pair, d.side, d.instrument, d.buyCurrency, d.buyAmount, d.sellCurrency, d.sellAmount, d.rate, d.valueDate, d.status, d.confirmationStatus, d.mtmHome]));
+    ['Deal', 'Entity', 'Pair', 'Side', 'Instrument', 'Buy currency', 'Buy amount', 'Sell currency', 'Sell amount', 'Rate', 'Value date', 'Status', 'Confirmation', 'Worth today (home)'],
+    shown.map((d) => [d.dealRef, d.entityName, d.pair, d.side, d.instrument, d.buyCurrency, d.buyAmount, d.sellCurrency, d.sellAmount, d.rate, d.valueDate, d.status, d.confirmationStatus, d.mtmHome]));
 
   const columns: Column<Deal>[] = [
     { key: 'dealRef', header: 'Deal', render: (_, d) => <span className="font-mono text-caption">{d.dealRef}</span> },
+    { key: 'entityName', header: 'Entity', render: (_, d) => <span className="text-body-sm">{d.entityName ?? '-'}</span> },
     { key: 'pair', header: 'Trade', render: (_, d) => <span className="font-medium">{d.side === 'BUY' ? 'Buy' : 'Sell'} {d.pair} <span className="text-neutral-500 dark:text-neutral-400">{d.instrument.toLowerCase()}</span></span> },
     { key: 'buyAmount', header: 'You buy', align: 'right', dropOrder: 2, render: (_, d) => <span className="font-mono tabular-nums">{d.buyCurrency} {fmt(d.buyAmount)}</span> },
     { key: 'sellAmount', header: 'You sell', align: 'right', dropOrder: 3, render: (_, d) => <span className="font-mono tabular-nums">{d.sellCurrency} {fmt(d.sellAmount)}</span> },
@@ -206,9 +207,9 @@ const FxDealsPage: React.FC = () => {
         <StatTile tone={net < 0 ? 'danger' : net > 0 ? 'success' : 'neutral'} icon={<Scale className="w-5 h-5" />} label="Worth today (net)"
           value={marked.length ? `${fmtSigned(net, 0)} ${marked[0].mtmHomeCurrency ?? ''}` : '-'}
           sub={open.length > marked.length ? `${open.length - marked.length} deal(s) not marked` : 'at mid, home currency'} />
-        <StatTile tone={usedPct > 85 ? 'danger' : usedPct > 60 ? 'warning' : 'info'} icon={<CreditCard className="w-5 h-5" />} label="FX credit limit"
-          value={limit ? `${fmt(limit.used, 0)} of ${fmt(limit.limit, 0)}` : '-'}
-          sub={limit ? `${fmt(limit.headroom, 0)} ${limit.currency} left` : undefined} />
+        <StatTile tone={limit && !limit.usable ? 'danger' : usedPct >= 95 ? 'danger' : usedPct >= 80 ? 'warning' : 'info'} icon={<CreditCard className="w-5 h-5" />} label="FX line"
+          value={!limit ? '-' : limit.usable ? `${fmt(limit.used, 0)} of ${fmt(limit.limit, 0)}` : 'Not available'}
+          sub={!limit ? undefined : limit.usable ? `${fmt(limit.headroom, 0)} ${limit.currency} left; sub-limits per entity on Credit Limits` : limit.reason} />
         <StatTile tone={attention.length ? 'warning' : 'success'} icon={<ShieldAlert className="w-5 h-5" />} label="Needs attention"
           value={String(attention.length)} sub={attention.length ? 'unconfirmed, disputed or failed' : 'nothing waiting'}
           onClick={attention.length || attentionOnly ? () => setAttentionOnly((v) => !v) : undefined} active={attentionOnly} />

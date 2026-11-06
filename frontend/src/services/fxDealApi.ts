@@ -17,6 +17,8 @@ export type SettlementStatus = 'PENDING' | 'SETTLED' | 'FAILED';
 
 export interface QuoteBody {
   corporateId: string;
+  /** The legal entity the deal is for; its FX sub-limit and the group line must both have room. */
+  entityId: string;
   pair: string;
   side: Side;
   instrument: Instrument;
@@ -33,6 +35,9 @@ export interface QuoteBody {
 export interface Quote {
   id: string;
   corporateId: string;
+  /** The legal entity the deal is for. */
+  entityId?: string;
+  entityName?: string;
   pair: string;
   baseCurrency: string;
   quoteCurrency: string;
@@ -94,6 +99,9 @@ export interface Deal {
   id: string;
   dealRef: string;
   corporateId: string;
+  /** The legal entity the deal is for. */
+  entityId?: string;
+  entityName?: string;
   instrument: Instrument;
   pair: string;
   side: Side;
@@ -179,12 +187,13 @@ export interface SettlementRun {
 }
 
 export interface DealAttention {
-  type: 'CONFIRMATION_PENDING' | 'CONFIRMATION_DISPUTED' | 'SETTLEMENT_FAILED' | 'FUNDING_NEEDED';
+  /** LIMIT_WARNING: an FX line or entity sub-limit past 80% (high past 95%); dealId is then the limit's id. */
+  type: 'CONFIRMATION_PENDING' | 'CONFIRMATION_DISPUTED' | 'SETTLEMENT_FAILED' | 'FUNDING_NEEDED' | 'LIMIT_WARNING';
   severity: 'high' | 'medium';
   corporateId: string;
   corporateName: string;
   dealId: string;
-  dealRef: string;
+  dealRef?: string;
   headline: string;
   detail: string;
   dueDate: string;
@@ -197,12 +206,42 @@ export interface DealEvent {
   timestamp: string;
 }
 
-export interface CreditLimit {
-  corporateId: string;
-  currency: string;
+/** One entity's FX sub-limit under the group line; allocated false when it has none. */
+export interface FxAllocation {
+  entityId: string;
+  entityName: string;
+  allocated: boolean;
+  usable: boolean;
+  reason?: string;
   limit: number;
   used: number;
   headroom: number;
+}
+
+/**
+ * The corporate's FX line: a facility under the bank's credit agreement. limit, used and headroom are the group
+ * line's; entity is the requested entity's sub-limit. usable false (with a reason) when there is no facility, or it
+ * or the line is not active or not in date.
+ */
+export interface CreditLimit {
+  corporateId: string;
+  currency: string;
+  usable: boolean;
+  reason?: string;
+  facilityName?: string;
+  expiry?: string;
+  limit: number;
+  used: number;
+  headroom: number;
+  entity?: FxAllocation;
+}
+
+/** The FX line with every active entity and its sub-limit, for the Credit Limits page. */
+export interface FxLineView {
+  line: CreditLimit;
+  allocated: number;
+  unallocated: number;
+  allocations: FxAllocation[];
 }
 
 export const fxDealApi = {
@@ -240,8 +279,17 @@ export const fxDealApi = {
   confirmation: (dealId: string) =>
     apiClient.get<ApiResponse<{ dealRef: string; text: string }>>(`/fx/deals/${dealId}/confirmation`).then(r => r.data.data),
 
-  limit: (corporateId: string) =>
-    apiClient.get<ApiResponse<CreditLimit>>('/fx/limits', { params: { corporateId } }).then(r => r.data.data),
+  /** The group FX line and, with entityId, that entity's sub-limit. */
+  limit: (corporateId: string, entityId?: string) =>
+    apiClient.get<ApiResponse<CreditLimit>>('/fx/limits', { params: { corporateId, entityId } }).then(r => r.data.data),
+
+  /** The FX line and every active entity's sub-limit. */
+  line: (corporateId: string) =>
+    apiClient.get<ApiResponse<FxLineView>>('/fx/lines', { params: { corporateId } }).then(r => r.data.data),
+
+  /** Sets an entity's FX sub-limit; all sub-limits together may not exceed the line. */
+  allocate: (corporateId: string, entityId: string, amount: number) =>
+    apiClient.put<ApiResponse<FxAllocation>>('/fx/lines/allocations', { corporateId, entityId, amount }).then(r => r.data.data),
 
   // ---- confirmation ----
   confirm: (dealId: string) =>

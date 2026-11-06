@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,19 +44,12 @@ class FxQuoteServiceTest {
     private final FxQuoteService service = new FxQuoteService(
             quotes, corporates, dealer, limitService, dealService, deals, events, props, forwards);
 
-    private final FxCreditLimit limit = limit();
+    private static final UUID ENTITY = UUID.randomUUID();
+    private static final FxLimitService.Usage ROOM = new FxLimitService.Usage(new BigDecimal("1000000"), BigDecimal.ZERO, new BigDecimal("1000000"));
     private FxDeal deal;
 
     private static BigDecimal bd(String v) {
         return new BigDecimal(v);
-    }
-
-    private static FxCreditLimit limit() {
-        FxCreditLimit l = new FxCreditLimit();
-        l.setCorporateId(CORP);
-        l.setCurrency("AED");
-        l.setLimitAmount(bd("1000000"));
-        return l;
     }
 
     @BeforeEach
@@ -74,17 +68,18 @@ class FxQuoteServiceTest {
         });
         when(dealer.price(anyString(), any(), any(), any(), any(), any())).thenReturn(new Price(
                 bd("1.10"), bd("0"), bd("1.10"), bd("3.00"), bd("1.1003"), bd("110030.00"), LocalDate.of(2026, 11, 9)));
-        when(limitService.limitFor(CORP)).thenReturn(limit);
-        when(limitService.lockLimitFor(CORP)).thenReturn(limit);
-        when(limitService.charge(anyString(), any(), any(), any(), anyString())).thenReturn(bd("1000.00"));
-        when(limitService.position(limit)).thenReturn(
-                new FxLimitService.Position(CORP, "AED", bd("1000000"), bd("0"), bd("1000000")));
+        when(limitService.allocation(CORP, ENTITY)).thenReturn(new FxLimitService.Allocation(
+                ENTITY, "Test Treasury Ltd", UUID.randomUUID(), "AED", true, null, ROOM));
+        when(limitService.line(CORP)).thenReturn(new FxLimitService.Line(
+                CORP, UUID.randomUUID(), UUID.randomUUID(), "FX treasury line", "AED", null, true, null, ROOM));
+        when(limitService.charge(any(), anyString(), any(), any(), any(), anyString())).thenReturn(bd("1000.00"));
+        // refusal(...) answers null by default: the deal fits.
         when(dealService.book(any(), any(), anyString())).thenReturn(deal);
         when(deals.findById(deal.getId())).thenReturn(Optional.of(deal));
     }
 
     private FxQuoteService.Command command() {
-        return new FxQuoteService.Command(CORP, "EUR/USD", Side.BUY, Instrument.SPOT, bd("100000"), null, null, null, null);
+        return new FxQuoteService.Command(CORP, ENTITY, "EUR/USD", Side.BUY, Instrument.SPOT, bd("100000"), null, null, null, null);
     }
 
     /** A quote the dealer has priced and that is still firm. */
@@ -108,26 +103,49 @@ class FxQuoteServiceTest {
 
     @Test
     void aRequestOverTheLimitIsDeclinedWithTheReasonAndNoPrice() {
-        when(limitService.position(limit)).thenReturn(
-                new FxLimitService.Position(CORP, "AED", bd("1000000"), bd("999500"), bd("500")));
+        when(limitService.refusal(eq(CORP), eq(ENTITY), any())).thenReturn(
+                "The FX sub-limit of Test Treasury Ltd would be exceeded (needs 1,000.00 AED, 500.00 left)");
 
         FxQuoteRequest q = service.request(command());
 
         assertThat(q.getStatus()).isEqualTo(QuoteStatus.REJECTED);
-        assertThat(q.getStatusReason()).contains("credit limit");
+        assertThat(q.getStatusReason()).startsWith("Not quoted. The FX sub-limit of Test Treasury Ltd");
         assertThat(q.getClientRate()).isNull();
+    }
+
+    @Test
+    void theDealIsForALegalEntityAndARequestWithoutOneIsRefusedBeforeAnythingIsSaved() {
+        FxQuoteRequest q = service.request(command());
+        assertThat(q.getEntityId()).isEqualTo(ENTITY);
+        assertThat(q.getEntityName()).isEqualTo("Test Treasury Ltd");
+
+        org.mockito.Mockito.clearInvocations(quotes);
+        assertThatThrownBy(() -> service.request(new FxQuoteService.Command(
+                CORP, null, "EUR/USD", Side.BUY, Instrument.SPOT, bd("100000"), null, null, null, null)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("legal entity");
+        verify(quotes, never()).save(any());
+    }
+
+    @Test
+    void acceptingChecksTheEntityAndTheLineUnderLocksAndBooksInTheLineCurrency() {
+        FxQuoteRequest q = firmQuote();
+
+        service.accept(q.getId());
+
+        verify(limitService).requireLocked(CORP, ENTITY, bd("1000.00"));
+        verify(dealService).book(any(), eq(bd("1000.00")), eq("AED"));
     }
 
     @Test
     void validatesTheRequestBeforeAnythingIsSaved() {
         assertThatThrownBy(() -> service.request(new FxQuoteService.Command(
-                CORP, "EURUSD", Side.BUY, Instrument.SPOT, bd("100000"), null, null, null, null)))
+                CORP, ENTITY, "EURUSD", Side.BUY, Instrument.SPOT, bd("100000"), null, null, null, null)))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("EUR/USD");
         assertThatThrownBy(() -> service.request(new FxQuoteService.Command(
-                CORP, "EUR/USD", Side.BUY, Instrument.SPOT, bd("10"), null, null, null, null)))
+                CORP, ENTITY, "EUR/USD", Side.BUY, Instrument.SPOT, bd("10"), null, null, null, null)))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("at least");
         assertThatThrownBy(() -> service.request(new FxQuoteService.Command(
-                CORP, "EUR/USD", Side.BUY, Instrument.FORWARD, bd("100000"), null, null, null, null)))
+                CORP, ENTITY, "EUR/USD", Side.BUY, Instrument.FORWARD, bd("100000"), null, null, null, null)))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("value date");
         verify(quotes, never()).save(any());
     }
@@ -160,7 +178,7 @@ class FxQuoteServiceTest {
     @Test
     void theLimitIsCheckedAgainAtAcceptanceAndAFailureBooksNothing() {
         FxQuoteRequest q = firmQuote();
-        doThrow(new BusinessException("FX_LIMIT_EXCEEDED", "used by another deal")).when(limitService).require(any(), any());
+        doThrow(new BusinessException("FX_LIMIT_EXCEEDED", "used by another deal")).when(limitService).requireLocked(any(), any(), any());
 
         assertThatThrownBy(() -> service.accept(q.getId()))
                 .isInstanceOf(BusinessException.class).hasMessageContaining("used by another deal");

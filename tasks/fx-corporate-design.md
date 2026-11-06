@@ -308,6 +308,44 @@ What the user sees on Straight2Bank, HSBCnet and Citi (CitiDirect/Velocity), and
 - **A.** Quotes and deals carry `spotRate` and `forwardPoints` for forwards and windows: the spot is the market spot moved against the client by the same margin as the all-in rate, and the points take it exactly to the all-in rate (`FxDealModels.ClientPrice`). Neither the mid nor the margin can be read from them. Shown on the price ticket, the deal drawer, the RFQ drawer and the confirmation ("Spot rate", "Forward points", then "Rate"). Spot deals show no build-up. The guard test now allows the client's spot and points and still rejects any mid, spread, margin or floor field, and checks spot plus points equals the all-in rate. Live: EUR/USD 3M buy, spot 1.092904 + 54.97 points = 1.098401, market mid 1.09236.
 - **H.** The ladder gains a Forecast column: flows from the corporate's latest completed Cash Forecast run that no invoice carries (pattern, ML, driver and manual lines; payroll, rent, tax), counted in full. Committed flows still come from live payables and receivables, not the run's AGING copy of them, because a run can be weeks old (the only one is) while invoices change daily; this differs from the first proposal above, which would have taken AGING from the run. Intercompany and FX-conversion categories and past dates are left out; forecast adjustments are not applied, matching the Cash Forecast summary. The ladder reports the run's time and flags it stale after `vam.fx.exposure.forecast-stale-days` (7). Exposure page: an "Of which forecast" column and a Cash Forecast tile (run date, or out of date, or no run). The MCP exposure tool carries the run date too. Live: GBP payroll of 850,000 on 20 Nov turned the GBP 0-30 bucket from +419,320 into -430,680 and the suggested hedge from a sale into "Buy 323,010 GBP".
 
+## Plan: FX line inside the app's credit model, with D (legal entity on the deal) - awaiting go
+
+**Review (2026-11-06).** The app has a full credit model: per-bank credit agreements holding typed facilities (overdraft, revolving, LC, guarantee, trade lines), synced from core banking (external limits), and CFO-allocated internal limits (a group limit per currency, sub-limits per legal entity and account), with utilise/release, held amounts, hard or soft, approval thresholds, warning (80%) and critical (95%) levels, effective and expiry dates, and breach and expiry lists. The FX limit sat outside all of it: `fx_credit_limit`, one row per corporate (nine rows, default 20m in the home currency), usage = notional x a tenor factor, no agreement, facility, entity, threshold, approval or expiry.
+
+**Decisions (interview).**
+
+| Question | Decision |
+|---|---|
+| Where the FX line lives | A facility of a new type (FX / treasury line) under the bank's credit agreement, synced like the others; its external limit is what deals use |
+| How a deal uses it | Spot at full notional; forwards and windows risk-weighted (notional x tenor factor, as now) |
+| Entities | One group line, sub-allocated to legal entities as internal sub-limits; a deal checks its entity's sub-limit and the group line |
+| Over the line | Hard: the desk declines with the reason |
+| Currency | The facility's currency; deals converted at the platform rate |
+| No FX facility | The corporate cannot deal ("no FX line"); demo: seed an FX facility per corporate at today's 20m, and an agreement where one is missing |
+| Entity with no FX sub-limit | Cannot deal until the CFO allocates one |
+| Controls that apply | Expiry and status block dealing; 80% and 95% raise attention items; the line and its sub-limits are shown and managed on Credit Facilities and Credit Limits; FX Deals shows the group line and the entity's usage |
+
+**Build (one step with D, because entity sub-limits need deals booked for an entity).**
+1. Facility type for the FX line (a Flyway migration, as V41 did, since Hibernate's CHECK on `facility_type` will not widen by itself); its external limit at group level; FX sub-limits per entity as internal limits whose parent is that line, kept apart from the entity's cash and overdraft sub-limits.
+2. Entity on quote and deal (D): picked on the ticket from the corporate's legal entities; carried to the confirmation, the deal, the RFQ log, the reports later, and the MCP tools.
+3. Limit checks at quote and accept: facility and limits active and in date, entity sub-limit present, charge within the entity sub-limit and the group line; locks on both rows at accept, as today on `fx_credit_limit`.
+4. Usage stays derived from open deals (the source of truth) and is written to the credit limits' `utilizedAmount` on every booking, close-out, roll and settlement, so the Administration pages show the same figure; spot at full notional.
+5. Migration and seeding (an ApplicationRunner, as the FX seeders do): per corporate, an FX facility at 20m under its agreement with the home bank (creating the agreement where missing) and, so the demo keeps dealing, the whole line allocated to the corporate's treasury centre or holding entity; other entities need an allocation. `fx_credit_limit` retired.
+6. UI: FX facility on Credit Facilities; FX sub-limits on Credit Limits; FX Deals shows the group line and the selected entity's sub-limit; the ticket shows the entity and its headroom.
+7. Attention items at 80% and 95% through the existing limit warning lists.
+
+### Built (2026-11-06): FX line in the credit model, with the deal booked for a legal entity - uncommitted
+
+As planned above. Notes from the build:
+
+- **Kept out of cash credit.** The FX line is `credit_limits` target type FX_LINE (external, from the FX_TREASURY_LINE facility) and the entity sub-limits FX_ENTITY (internal, parent the line). Fifteen `CreditLimitRepository` queries that matched only on corporate, target id or limit type now exclude both (`FxCreditLineRepository` reads them for FX). The guard is needed, not theoretical: two entities hold both a cash and an FX sub-limit (an unguarded single-result lookup would throw), and FX rows would have added 40m to two corporates' credit totals. Proof: 198 cash-credit reads (corporate limits, totals, totals by currency, groups, entity checks and ceilings, entity limits, funds availability) captured before the change are byte-identical after seeding and again with an FX deal open. The warning and critical lists include FX on purpose.
+- **V42** widens the hand-written CHECKs (`chk_cf_type`, `chk_cl_target_type`) and drops `fx_credit_limit`; mirrored in `database/migrations/`. `FxLineSeeder` gave the nine corporates a 20m FX facility under a home-bank agreement (created for all nine, none had one with the home bank), the line, and the whole line on the treasury centre or holding entity.
+- **Usage** is derived from open deals and written to the line's and sub-limits' utilised amounts, the line's allocated-to-children and the facility's outstanding on every deal status change and after the daily mark. The Credit Facilities page no longer offers Draw/Repay on an FX line.
+- **Entity on the deal**: quote, deal, confirmation ("Entity"), RFQ log, deals list, CSV exports, roll (the replacement keeps the entity), MCP deal tool (line and sub-limits). The ticket defaults to the header's entity and shows its sub-limit and the group line's headroom; an entity without a sub-limit sees why and cannot request a price.
+- **Credit Limits page**: an FX line section with every entity's sub-limit and an allocate/change action; allocations over the line or below current use are refused with the reason. Limit alerts at each limit's own 80% / 95% thresholds feed the Cockpit ("Review limits").
+- **Tests**: `FxLimitServiceTest` rewritten (12, against an in-memory store of the credit rows), quote tests for the entity and the locked re-check, roll keeps the entity; backend 436 passing. Live: 19 scripted checks against the running app and database (decline without a sub-limit, allocation over the line, spot at full notional, usage written to line, sub-limit and facility, decline over the sub-limit, forward at its risk weight, 80% alert, no cut below use, re-check at accept, expired facility, suspended line, facility listed); then the screens.
+- **Found, not fixed (pre-existing):** the Credit Facilities page uses a hard-coded corporate (`'corp-1'`, a TODO) and so lists every corporate's facilities, shows "NaN" for every facility's limit and "Standalone Facility" for every agreement name; two active EUR/AED mid rates exist (Reuters 4.0125, central bank 4.01) and the rate service resolves 4.01.
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

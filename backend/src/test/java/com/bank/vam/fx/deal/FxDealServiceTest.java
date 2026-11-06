@@ -29,7 +29,7 @@ class FxDealServiceTest {
     private final FxDealRepository deals = mock(FxDealRepository.class);
     private final FxEvents log = mock(FxEvents.class);
     private final CorporateRepository corporates = mock(CorporateRepository.class);
-    private final FxDealService service = new FxDealService(deals, mock(FxDealEventRepository.class), log, corporates);
+    private final FxDealService service = new FxDealService(deals, mock(FxDealEventRepository.class), log, corporates, mock(FxLimitService.class));
 
     private static BigDecimal bd(String v) {
         return new BigDecimal(v);

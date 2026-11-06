@@ -80,7 +80,7 @@ public class FxLifecycleService {
         BigDecimal remaining = d.remainingBase();
         finish(d, close, DealStatus.ROLLED, "Rolled");
 
-        FxQuoteRequest q = quoteService.request(new FxQuoteService.Command(d.getCorporateId(), d.getPair(), d.getSide(),
+        FxQuoteRequest q = quoteService.request(new FxQuoteService.Command(d.getCorporateId(), d.getEntityId(), d.getPair(), d.getSide(),
                 Instrument.FORWARD, remaining, requireDate(newValueDate), null, "Roll of " + d.getDealRef(), d.getExposureRef()));
         if (q.getStatus() != QuoteStatus.QUOTED) {
             throw new BusinessException("FX_ROLL_DECLINED", "The replacement forward was not quoted: " + q.getStatusReason());

@@ -40,7 +40,7 @@ public class FxQuoteService {
     private static final Pattern PAIR = Pattern.compile("[A-Z]{3}/[A-Z]{3}");
 
     /** What the client asks for. {@code valueDate} is the contracted date, or the last drawdown date of a window. */
-    public record Command(UUID corporateId, String pair, Side side, Instrument instrument, BigDecimal amount,
+    public record Command(UUID corporateId, UUID entityId, String pair, Side side, Instrument instrument, BigDecimal amount,
                           LocalDate valueDate, LocalDate windowStart, String purpose, String exposureRef) {
     }
 
@@ -60,9 +60,13 @@ public class FxQuoteService {
             throw new ResourceNotFoundException("Corporate not found: " + c.corporateId());
         }
         validate(c);
+        // Throws when the entity is not one of the corporate's active entities.
+        String entityName = limitService.allocation(c.corporateId(), c.entityId()).entityName();
 
         FxQuoteRequest q = new FxQuoteRequest();
         q.setCorporateId(c.corporateId());
+        q.setEntityId(c.entityId());
+        q.setEntityName(entityName);
         q.setPair(c.pair());
         q.setSide(c.side());
         q.setInstrument(c.instrument());
@@ -78,13 +82,13 @@ public class FxQuoteService {
         // An invalid pair or date throws here, which rolls the request back: nothing is left behind.
         Price price = dealer.price(c.pair(), c.side(), c.instrument(), q.getAmount(), c.valueDate(), c.windowStart());
 
-        FxCreditLimit limit = limitService.limitFor(c.corporateId());
-        BigDecimal charge = limitService.charge(q.baseCurrency(), q.getAmount(), LocalDate.now(), price.pricedDate(), limit.getCurrency());
-        FxLimitService.Position position = limitService.position(limit);
-        if (charge.compareTo(position.headroom()) > 0) {
+        FxLimitService.Line line = limitService.line(c.corporateId());
+        BigDecimal charge = limitService.charge(c.instrument(), q.baseCurrency(), q.getAmount(), LocalDate.now(),
+                price.pricedDate(), line.currency());
+        String refusal = limitService.refusal(c.corporateId(), c.entityId(), charge);
+        if (refusal != null) {
             q.setStatus(QuoteStatus.REJECTED);
-            q.setStatusReason("Not quoted: the corporate's FX credit limit would be exceeded (needs "
-                    + charge + " " + limit.getCurrency() + ", " + position.headroom().max(BigDecimal.ZERO) + " left)");
+            q.setStatusReason("Not quoted. " + refusal);
             log.quote(q, QuoteStatus.REQUESTED, QuoteStatus.REJECTED, q.getStatusReason());
             return q;
         }
@@ -104,7 +108,7 @@ public class FxQuoteService {
         q.setQuotedAt(LocalDateTime.now());
         q.setValidUntil(q.getQuotedAt().plusSeconds(props.getQuoteValiditySeconds()));
         q.setLimitCharge(charge);
-        q.setLimitCurrency(limit.getCurrency());
+        q.setLimitCurrency(line.currency());
         q.setStatus(QuoteStatus.QUOTED);
         log.quote(q, QuoteStatus.REQUESTED, QuoteStatus.QUOTED,
                 "Rate " + price.clientRate().toPlainString() + ", firm for " + props.getQuoteValiditySeconds() + "s");
@@ -174,12 +178,14 @@ public class FxQuoteService {
                             + (q.getStatusReason() == null ? "" : " (" + q.getStatusReason() + ")"));
         }
 
-        // The limit is checked again now, under a lock: another deal may have used the headroom since the quote.
-        FxCreditLimit limit = limitService.lockLimitFor(q.getCorporateId());
-        BigDecimal charge = limitService.charge(q.baseCurrency(), q.getAmount(), LocalDate.now(), q.getValueDate(), limit.getCurrency());
-        limitService.require(limitService.position(limit), charge);
+        // The line and the entity's sub-limit are checked again now, under locks: another deal may have used the
+        // headroom since the price, or the facility may have been suspended.
+        FxLimitService.Line line = limitService.line(q.getCorporateId());
+        BigDecimal charge = limitService.charge(q.getInstrument(), q.baseCurrency(), q.getAmount(), LocalDate.now(),
+                q.getValueDate(), line.currency());
+        limitService.requireLocked(q.getCorporateId(), q.getEntityId(), charge);
 
-        FxDeal deal = dealService.book(q, charge, limit.getCurrency());
+        FxDeal deal = dealService.book(q, charge, line.currency());
         q.setStatus(QuoteStatus.ACCEPTED);
         q.setAcceptedAt(LocalDateTime.now());
         q.setDealId(deal.getId());
@@ -257,6 +263,9 @@ public class FxQuoteService {
     private void validate(Command c) {
         if (c.pair() == null || !PAIR.matcher(c.pair()).matches()) {
             throw new BusinessException("FX_PAIR_UNSUPPORTED", "Pair must look like EUR/USD: " + c.pair());
+        }
+        if (c.entityId() == null) {
+            throw new BusinessException("FX_REQUEST_INVALID", "Choose the legal entity the deal is for");
         }
         if (c.side() == null || c.instrument() == null) {
             throw new BusinessException("FX_REQUEST_INVALID", "Side and instrument are required");

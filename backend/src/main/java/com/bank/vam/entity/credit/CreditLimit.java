@@ -317,7 +317,11 @@ public class CreditLimit extends BaseEntity {
         AGGREGATION_NODE,   // Limit on an aggregation point
         SHADOW_ACCOUNT,     // Limit on physical mirror
         ROOT,               // Global limit on root node
-        CORPORATE           // Group-wide limit on corporate
+        CORPORATE,          // Group-wide limit on corporate
+        /** The corporate's FX line: external, from the FX_TREASURY_LINE facility; target is the corporate. Kept out of cash credit. */
+        FX_LINE,
+        /** An entity's FX sub-limit: internal, parent is the FX line; target is the legal entity. Kept out of cash credit. */
+        FX_ENTITY
     }
 
     /**

@@ -34,26 +34,39 @@ import java.util.UUID;
  * Hierarchy: Corporate → Entity → VA
  */
 @Repository
+/*
+ * FX limits (target types FX_LINE and FX_ENTITY) live in this table but are not cash credit: every query here that
+ * matches only on corporate, target id or limit type excludes them, so an entity's FX sub-limit can never be taken
+ * for its cash limit, and FX lines never inflate credit totals or funds availability. The FX code reads them through
+ * com.bank.vam.fx.deal.FxCreditLineRepository. The warning and critical lists still include them, on purpose.
+ */
 public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> {
 
     // ========================================================================
     // BASIC FINDERS
     // ========================================================================
 
-    List<CreditLimit> findByCorporateIdOrderByLimitName(UUID corporateId);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.corporateId = :corporateId AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY') ORDER BY cl.limitName")
+    List<CreditLimit> findByCorporateIdOrderByLimitName(@Param("corporateId") UUID corporateId);
 
-    List<CreditLimit> findByCorporateId(UUID corporateId);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.corporateId = :corporateId AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    List<CreditLimit> findByCorporateId(@Param("corporateId") UUID corporateId);
 
-    List<CreditLimit> findByCorporateIdAndStatus(UUID corporateId, LimitStatus status);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.corporateId = :corporateId AND cl.status = :status AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    List<CreditLimit> findByCorporateIdAndStatus(@Param("corporateId") UUID corporateId, @Param("status") LimitStatus status);
 
-    List<CreditLimit> findByCorporateIdAndLimitType(UUID corporateId, LimitType limitType);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.corporateId = :corporateId AND cl.limitType = :limitType AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    List<CreditLimit> findByCorporateIdAndLimitType(@Param("corporateId") UUID corporateId, @Param("limitType") LimitType limitType);
 
-    List<CreditLimit> findByTargetId(UUID targetId);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.targetId = :targetId AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    List<CreditLimit> findByTargetId(@Param("targetId") UUID targetId);
 
-    List<CreditLimit> findByTargetIdAndStatus(UUID targetId, LimitStatus status);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.targetId = :targetId AND cl.status = :status AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    List<CreditLimit> findByTargetIdAndStatus(@Param("targetId") UUID targetId, @Param("status") LimitStatus status);
 
-    Optional<CreditLimit> findByTargetIdAndLimitTypeAndStatus(
-        UUID targetId, LimitType limitType, LimitStatus status);
+    @Query("SELECT cl FROM CreditLimit cl WHERE cl.targetId = :targetId AND cl.limitType = :limitType AND cl.status = :status AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')")
+    Optional<CreditLimit> findByTargetIdAndLimitTypeAndStatus(@Param("targetId") UUID targetId,
+            @Param("limitType") LimitType limitType, @Param("status") LimitStatus status);
 
     List<CreditLimit> findByCreditFacilityId(UUID facilityId);
 
@@ -77,6 +90,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT cl FROM CreditLimit cl 
         WHERE cl.targetId = :targetId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = 'EXTERNAL' 
         AND cl.status = 'ACTIVE'
         AND (cl.effectiveFrom IS NULL OR cl.effectiveFrom <= CURRENT_DATE)
@@ -91,6 +105,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT cl FROM CreditLimit cl 
         WHERE cl.targetId = :targetId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = 'INTERNAL' 
         AND cl.status = 'ACTIVE'
         AND (cl.effectiveFrom IS NULL OR cl.effectiveFrom <= CURRENT_DATE)
@@ -104,6 +119,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT cl FROM CreditLimit cl 
         WHERE cl.targetId = :targetId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.status = 'ACTIVE'
         AND (cl.effectiveFrom IS NULL OR cl.effectiveFrom <= CURRENT_DATE)
         AND (cl.effectiveTo IS NULL OR cl.effectiveTo >= CURRENT_DATE)
@@ -205,6 +221,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT cl FROM CreditLimit cl 
         WHERE cl.targetId = :targetId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitCurrency = :currency
         AND cl.limitType = 'INTERNAL'
         AND cl.status = 'ACTIVE'
@@ -383,6 +400,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT COALESCE(SUM(cl.limitAmount), 0) FROM CreditLimit cl 
         WHERE cl.corporateId = :corporateId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = :limitType
         AND cl.status = 'ACTIVE'
         """)
@@ -395,6 +413,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT COALESCE(SUM(cl.utilizedAmount), 0) FROM CreditLimit cl 
         WHERE cl.corporateId = :corporateId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = :limitType
         AND cl.status = 'ACTIVE'
         """)
@@ -407,6 +426,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT COALESCE(SUM(cl.availableAmount), 0) FROM CreditLimit cl 
         WHERE cl.corporateId = :corporateId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = :limitType
         AND cl.status = 'ACTIVE'
         """)
@@ -419,6 +439,7 @@ public interface CreditLimitRepository extends JpaRepository<CreditLimit, UUID> 
     @Query("""
         SELECT COALESCE(SUM(cl.limitAmount), 0) FROM CreditLimit cl 
         WHERE cl.corporateId = :corporateId 
+        AND cl.targetType NOT IN ('FX_LINE', 'FX_ENTITY')
         AND cl.limitType = :limitType
         AND cl.limitCurrency = :currency
         AND cl.status = 'ACTIVE'

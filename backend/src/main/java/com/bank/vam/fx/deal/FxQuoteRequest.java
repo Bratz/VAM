@@ -31,6 +31,14 @@ public class FxQuoteRequest extends BaseEntity {
     @Column(name = "corporate_id", nullable = false)
     private UUID corporateId;
 
+    /** The legal entity the deal is for; its FX sub-limit and the group line must both have room. */
+    @Column(name = "entity_id")
+    private UUID entityId;
+
+    /** The entity's name when the request was made, for the confirmation and the log. */
+    @Column(name = "entity_name", length = 200)
+    private String entityName;
+
     @Column(name = "pair", nullable = false, length = 7)
     private String pair;
 
