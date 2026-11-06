@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * FX notifications in the header bell: rate alerts the corporate sets on the indicative market rate, a reminder
+ * FX notifications in the header bell: rate alerts the corporate sets on its own buy or sell price, a reminder
  * when a deal reaches its value date within two days, and a confirmation waiting to be checked. One scan every
  * {@code vam.fx.notify-interval-ms} (30 s); each notification is raised once per alert or deal.
  */
@@ -36,28 +36,41 @@ public class FxNotifier {
     private final FxDealRepository deals;
     private final RateProvider rates;
     private final NotificationService notifications;
+    private final FxBoardService board;
 
     // ---- rate alerts ----
 
-    /** The direction follows from today's rate: a target above it fires when the rate rises to it. */
+    /**
+     * Buying, the alert fires when the client's buy price falls to the target; selling, when its sell price rises to
+     * it. A target already reached is refused: the price is there now.
+     */
     @Transactional
-    public FxRateAlert create(UUID corporateId, String pair, BigDecimal targetRate, String note) {
+    public FxRateAlert create(UUID corporateId, String pair, Side side, BigDecimal amount, BigDecimal targetRate, String note) {
         String p = pair == null ? "" : pair.trim().toUpperCase(Locale.ROOT);
         if (targetRate == null || targetRate.signum() <= 0) {
             throw new BusinessException("FX_ALERT_INVALID", "Enter the rate to be told about");
         }
-        SpotTick now = (p.matches("[A-Z]{3}/[A-Z]{3}") ? rates.spot(p) : java.util.Optional.<SpotTick>empty())
-                .orElseThrow(() -> new BusinessException("FX_ALERT_INVALID", "There is no market rate for " + pair));
-        int cmp = targetRate.compareTo(now.mid());
-        if (cmp == 0) {
-            throw new BusinessException("FX_ALERT_INVALID", p + " is at " + now.mid().toPlainString() + " now; choose a different rate");
+        if (!p.matches("[A-Z]{3}/[A-Z]{3}") || rates.spot(p).isEmpty()) {
+            throw new BusinessException("FX_ALERT_INVALID", "There is no market rate for " + pair);
+        }
+        if (side == null) {
+            throw new BusinessException("FX_ALERT_INVALID", "Choose whether you want to buy or sell " + p.substring(0, 3));
+        }
+        BigDecimal size = amount == null ? FxBoardService.DEFAULT_AMOUNT : amount;
+        BigDecimal now = board.spot(p, side, size);
+        boolean buying = side == Side.BUY;
+        if (buying ? targetRate.compareTo(now) >= 0 : targetRate.compareTo(now) <= 0) {
+            throw new BusinessException("FX_ALERT_INVALID", "You can " + (buying ? "buy" : "sell") + " " + p.substring(0, 3) + " at "
+                    + now.toPlainString() + " now; set a rate " + (buying ? "below" : "above") + " that");
         }
         FxRateAlert a = new FxRateAlert();
         a.setCorporateId(corporateId);
         a.setPair(p);
+        a.setSide(side);
+        a.setAmount(size);
         a.setTargetRate(targetRate);
-        a.setDirection(cmp > 0 ? FxRateAlert.Direction.ABOVE : FxRateAlert.Direction.BELOW);
-        a.setRateAtCreation(now.mid());
+        a.setDirection(buying ? FxRateAlert.Direction.BELOW : FxRateAlert.Direction.ABOVE);
+        a.setRateAtCreation(now);
         a.setNote(note == null || note.isBlank() ? null : note.trim());
         return alerts.save(a);
     }
@@ -91,24 +104,28 @@ public class FxNotifier {
     public int checkAlerts() {
         int fired = 0;
         for (FxRateAlert a : alerts.findByStatus(FxRateAlert.Status.ACTIVE)) {
-            BigDecimal mid = rates.spot(a.getPair()).map(SpotTick::mid).orElse(null);
-            if (mid == null) {
-                continue;
+            Side side = a.getSide() != null ? a.getSide() : a.getDirection() == FxRateAlert.Direction.BELOW ? Side.BUY : Side.SELL;
+            BigDecimal price;
+            try {
+                price = board.spot(a.getPair(), side, a.getAmount());
+            } catch (RuntimeException e) {
+                continue;   // no price for the pair now; looked at again on the next scan
             }
-            boolean reached = a.getDirection() == FxRateAlert.Direction.ABOVE
-                    ? mid.compareTo(a.getTargetRate()) >= 0 : mid.compareTo(a.getTargetRate()) <= 0;
+            boolean reached = side == Side.BUY ? price.compareTo(a.getTargetRate()) <= 0 : price.compareTo(a.getTargetRate()) >= 0;
             if (!reached) {
                 continue;
             }
             a.setStatus(FxRateAlert.Status.TRIGGERED);
             a.setTriggeredAt(LocalDateTime.now());
-            a.setTriggeredRate(mid);
+            a.setTriggeredRate(price);
             alerts.save(a);
+            String base = a.getPair().substring(0, 3);
+            String verb = side == Side.BUY ? "buy" : "sell";
             notifications.notifyOnce(a.getCorporateId(), NotificationType.FX_RATE_ALERT, NotificationCategory.INFO,
-                    "Rate alert: " + a.getPair() + " at " + mid.toPlainString(),
-                    a.getPair() + " has " + (a.getDirection() == FxRateAlert.Direction.ABOVE ? "risen to " : "fallen to ")
-                            + a.getTargetRate().stripTrailingZeros().toPlainString() + " (indicative " + mid.toPlainString() + ")."
-                            + (a.getNote() == null ? "" : " " + a.getNote()),
+                    "Rate alert: " + verb + " " + base + " at " + price.toPlainString(),
+                    "You can " + verb + " " + base + " in " + a.getPair() + " at " + price.toPlainString() + " (indicative), "
+                            + (side == Side.BUY ? "at or below" : "at or above") + " your " + a.getTargetRate().stripTrailingZeros().toPlainString()
+                            + ". Request a price to deal." + (a.getNote() == null ? "" : " " + a.getNote()),
                     "FX_RATE_ALERT", a.getId(), a.getPair(), "fx-market", "Open Market Rates");
             fired++;
         }

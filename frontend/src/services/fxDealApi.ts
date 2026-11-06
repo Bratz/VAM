@@ -207,13 +207,17 @@ export interface ReportTable {
   rows: string[][];
 }
 
-/** Tell me when the indicative rate of a pair reaches a level; arrives in the notification bell. Fires once. */
+/**
+ * Tell me when I can buy the base currency at or below a rate (side BUY), or sell it at or above one (SELL), on my
+ * own price at an amount; arrives in the notification bell. Fires once.
+ */
 export interface RateAlert {
   id: string;
   pair: string;
+  side: Side;
+  amount?: number;
   targetRate: number;
-  /** ABOVE: fires when the rate rises to the target; BELOW: when it falls to it. */
-  direction: 'ABOVE' | 'BELOW';
+  /** The client's price on that side when the alert was set. */
   rateAtCreation?: number;
   status: 'ACTIVE' | 'TRIGGERED' | 'CANCELLED';
   note?: string;
@@ -424,8 +428,8 @@ export const fxDealApi = {
   alerts: (corporateId: string) =>
     apiClient.get<ApiResponse<RateAlert[]>>('/fx/alerts', { params: { corporateId } }).then(r => r.data.data),
 
-  createAlert: (corporateId: string, pair: string, targetRate: number, note?: string) =>
-    apiClient.post<ApiResponse<RateAlert>>('/fx/alerts', { corporateId, pair, targetRate, note }).then(r => r.data.data),
+  createAlert: (corporateId: string, pair: string, side: Side, amount: number, targetRate: number, note?: string) =>
+    apiClient.post<ApiResponse<RateAlert>>('/fx/alerts', { corporateId, pair, side, amount, targetRate, note }).then(r => r.data.data),
 
   cancelAlert: (id: string) =>
     apiClient.post<ApiResponse<RateAlert>>(`/fx/alerts/${id}/cancel`).then(r => r.data.data),

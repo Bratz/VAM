@@ -1,8 +1,10 @@
 // ============================================================================
-// FxMarketPage ("Market Rates") — a ticking rate board and a forward curve from the simulated market in
-// FxMarketController. Mid rates only: the bank's margin is set per deal, so nothing here is a dealable price.
-// Polled (the app has no SSE/WebSocket), and the board's history lives in the browser only. From a row the
-// corporate can start a price request for that pair, or set a rate alert on it (it arrives in the notification bell).
+// FxMarketPage ("Market Rates") — the corporate's own two-way prices: for each pair, the rate it buys the base
+// currency at and the rate it sells it at, for an amount it chooses, from the same desk pricing as the deal ticket
+// (FxBoardController). Never the interbank mid: beside a deal price it gives the bank's margin away. Indicative:
+// clicking a price opens the ticket on that side, which streams a firm price (or requests one above the limits).
+// Polled (the app has no SSE/WebSocket); the sparklines' history lives in the browser only. Rate alerts are set on
+// a side of the client price and arrive in the notification bell.
 // ============================================================================
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,19 +15,20 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { StatStrip } from '../../components/layout/StatStrip';
 import { Card, CardHeader, Badge, Button, DataTable, Input, RowActions, StatTile } from '../../components/ui';
 import { Modal } from '../../components/ui/enhanced';
-import { fxDealApi, RateAlert } from '../../services/fxDealApi';
+import { fxDealApi, RateAlert, Side } from '../../services/fxDealApi';
 import type { Column } from '../../components/ui/DataTable';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
-import { fxMarketApi, ForwardQuote, SpotTick } from '../../services/fxMarketApi';
+import { fxMarketApi, BoardRow, CurveRow } from '../../services/fxMarketApi';
 import NewDealDrawer, { TicketPrefill } from './NewDealDrawer';
-import { errorText, fmtSigned, toneFor } from './fxFormat';
+import { errorText, fmt, fmtSigned, toneFor } from './fxFormat';
 
-const SPOT_POLL_MS = 1000;
+const BOARD_POLL_MS = 1000;
 const CURVE_POLL_MS = 5000;
 const HISTORY_POINTS = 60;
+const DEFAULT_AMOUNT = 100000;
 
-const digitsFor = (mid: number) => (mid >= 50 ? 3 : 5);
+const digitsFor = (rate: number) => (rate >= 50 ? 3 : 5);
 const fmtRate = (n: number, extra = 0) => n.toFixed(digitsFor(n) + extra);
 
 const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone }) => {
@@ -41,43 +44,58 @@ const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone 
   );
 };
 
+/** A price that opens the ticket on its side when clicked. */
+const PriceButton: React.FC<{ rate: number; label: string; tone?: string; onClick: () => void; extra?: number }> = ({ rate, label, tone, onClick, extra = 0 }) => (
+  <button type="button" onClick={(e) => { e.stopPropagation(); onClick(); }} aria-label={label} title={label}
+    className={cn('font-mono tabular-nums rounded px-1.5 py-0.5 -mx-1.5 hover:bg-primary-50 dark:hover:bg-primary-800/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500', tone)}>
+    {fmtRate(rate, extra)}
+  </button>
+);
+
 const FxMarketPage: React.FC = () => {
   const { currentCorporateId } = useUser();
   const [ticket, setTicket] = useState<{ prefill: TicketPrefill } | null>(null);
+  const [amountText, setAmountText] = useState(String(DEFAULT_AMOUNT));
+  const amount = Number(amountText) > 0 ? Number(amountText) : DEFAULT_AMOUNT;
+  const [rows, setRows] = useState<BoardRow[]>([]);
+  const [feedError, setFeedError] = useState<string | null>(null);
+  const [selected, setSelected] = useState('EUR/USD');
+  const [curve, setCurve] = useState<CurveRow[]>([]);
+  const [curveError, setCurveError] = useState<string | null>(null);
+  const [valueDate, setValueDate] = useState('');
+  const [custom, setCustom] = useState<CurveRow | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
+
   const [alerts, setAlerts] = useState<RateAlert[]>([]);
-  const [alertFor, setAlertFor] = useState<SpotTick | null>(null);
+  const [alertFor, setAlertFor] = useState<BoardRow | null>(null);
+  const [alertSide, setAlertSide] = useState<Side>('BUY');
   const [alertRate, setAlertRate] = useState('');
   const [alertNote, setAlertNote] = useState('');
   const [alertError, setAlertError] = useState<string | null>(null);
   const [savingAlert, setSavingAlert] = useState(false);
-  const [ticks, setTicks] = useState<SpotTick[]>([]);
-  const [feedError, setFeedError] = useState<string | null>(null);
-  const [selected, setSelected] = useState('EUR/USD');
-  const [curve, setCurve] = useState<ForwardQuote[]>([]);
-  const [curveError, setCurveError] = useState<string | null>(null);
-  const [valueDate, setValueDate] = useState('');
-  const [custom, setCustom] = useState<ForwardQuote | null>(null);
-  const [customError, setCustomError] = useState<string | null>(null);
 
   const history = useRef<Record<string, number[]>>({});
   const lastDir = useRef<Record<string, number>>({});
 
+  // The board, every second, at the chosen amount. A new amount starts the sparklines again.
   useEffect(() => {
+    history.current = {};
+    lastDir.current = {};
     let current = true;
     let inFlight = false;
     const load = async () => {
       if (inFlight || document.visibilityState === 'hidden') return;
       inFlight = true;
       try {
-        const next = await fxMarketApi.spots();
+        const next = await fxMarketApi.board(amount);
         if (!current) return;
-        for (const t of next) {
-          const h = history.current[t.pair] ?? [];
+        for (const r of next) {
+          const h = history.current[r.pair] ?? [];
           const prev = h[h.length - 1];
-          if (prev !== undefined && t.mid !== prev) lastDir.current[t.pair] = Math.sign(t.mid - prev);
-          history.current[t.pair] = [...h, t.mid].slice(-HISTORY_POINTS);
+          if (prev !== undefined && r.buy !== prev) lastDir.current[r.pair] = Math.sign(r.buy - prev);
+          history.current[r.pair] = [...h, r.buy].slice(-HISTORY_POINTS);
         }
-        setTicks(next);
+        setRows(next);
         setFeedError(null);
       } catch (err) {
         if (current) setFeedError(errorText(err));
@@ -86,18 +104,18 @@ const FxMarketPage: React.FC = () => {
       }
     };
     load();
-    const id = setInterval(load, SPOT_POLL_MS);
+    const id = setInterval(load, BOARD_POLL_MS);
     return () => {
       current = false;
       clearInterval(id);
     };
-  }, []);
+  }, [amount]);
 
   useEffect(() => {
     let current = true;
     const load = () =>
       fxMarketApi
-        .curve(selected)
+        .boardCurve(selected, amount)
         .then((c) => { if (current) { setCurve(c); setCurveError(null); } })
         .catch((err) => { if (current) setCurveError(errorText(err)); });
     setCurve([]);
@@ -107,7 +125,7 @@ const FxMarketPage: React.FC = () => {
       current = false;
       clearInterval(id);
     };
-  }, [selected]);
+  }, [selected, amount]);
 
   useEffect(() => {
     let current = true;
@@ -115,17 +133,22 @@ const FxMarketPage: React.FC = () => {
     setCustomError(null);
     if (valueDate) {
       fxMarketApi
-        .forward(selected, valueDate)
+        .boardForward(selected, amount, valueDate)
         .then((q) => { if (current) setCustom(q); })
         .catch((err) => { if (current) setCustomError(errorText(err)); });
     }
     return () => { current = false; };
-  }, [selected, valueDate]);
+  }, [selected, valueDate, amount]);
 
-  const tick = ticks.find((t) => t.pair === selected);
-  const first = curve[0];
-  const asOf = ticks[0] ? new Date(ticks[0].asOf).toLocaleTimeString() : '';
-  const mover = ticks.reduce<SpotTick | null>((m, t) => (!m || Math.abs(t.changeBps) > Math.abs(m.changeBps) ? t : m), null);
+  const row = rows.find((r) => r.pair === selected);
+  const asOf = rows[0] ? new Date(rows[0].asOf).toLocaleTimeString() : '';
+  const mover = rows.reduce<BoardRow | null>((m, r) => (!m || Math.abs(r.changeBps) > Math.abs(m.changeBps) ? r : m), null);
+  const base = (pair: string) => pair.slice(0, 3);
+
+  const openTicket = (pair: string, side: Side, forward?: { valueDate: string }) =>
+    setTicket({ prefill: { pair, side, amount, ...(forward ? { instrument: 'FORWARD' as const, valueDate: forward.valueDate } : {}) } });
+
+  // ---- rate alerts ----
 
   const loadAlerts = React.useCallback(() => {
     if (!currentCorporateId) { setAlerts([]); return; }
@@ -138,18 +161,23 @@ const FxMarketPage: React.FC = () => {
     return () => clearInterval(id);
   }, [loadAlerts]);
 
-  const startAlert = (t: SpotTick) => {
-    setAlertFor(t);
-    setAlertRate(fmtRate(t.mid));
+  const startAlert = (r: BoardRow, side: Side = 'BUY') => {
+    setAlertFor(r);
+    setAlertSide(side);
+    setAlertRate(fmtRate(side === 'BUY' ? r.buy : r.sell));
     setAlertNote('');
     setAlertError(null);
   };
+
+  // The dialog follows the board, so "now" stays current while it is open.
+  const alertRow = alertFor ? rows.find((r) => r.pair === alertFor.pair) ?? alertFor : null;
+  const alertNow = alertRow ? (alertSide === 'BUY' ? alertRow.buy : alertRow.sell) : 0;
 
   const saveAlert = async () => {
     if (!alertFor || !currentCorporateId) return;
     setSavingAlert(true);
     try {
-      await fxDealApi.createAlert(currentCorporateId, alertFor.pair, Number(alertRate), alertNote || undefined);
+      await fxDealApi.createAlert(currentCorporateId, alertFor.pair, alertSide, amount, Number(alertRate), alertNote || undefined);
       setAlertFor(null);
       loadAlerts();
     } catch (err) {
@@ -177,12 +205,16 @@ const FxMarketPage: React.FC = () => {
   const alertColumns: Column<RateAlert>[] = [
     { key: 'pair', header: 'Pair', render: (_, a) => <span className="font-medium">{a.pair}</span> },
     {
-      key: 'targetRate', header: 'Tell me when it', render: (_, a) => (
-        <span>{a.direction === 'ABOVE' ? 'rises to' : 'falls to'} <span className="font-mono tabular-nums">{a.targetRate}</span></span>
+      key: 'targetRate', header: 'Tell me when I can', render: (_, a) => (
+        <span>
+          {a.side === 'BUY' ? 'buy' : 'sell'} {base(a.pair)} at or {a.side === 'BUY' ? 'below' : 'above'}{' '}
+          <span className="font-mono tabular-nums">{a.targetRate}</span>
+          {a.amount !== undefined && <span className="block text-caption text-neutral-500 dark:text-neutral-400">for {fmt(a.amount, 0)} {base(a.pair)}</span>}
+        </span>
       ),
     },
     {
-      key: 'rateAtCreation', header: 'Rate when set', align: 'right', dropOrder: 1,
+      key: 'rateAtCreation', header: 'Price when set', align: 'right', dropOrder: 1,
       render: (_, a) => <span className="font-mono tabular-nums">{a.rateAtCreation !== undefined ? fmtRate(a.rateAtCreation) : '-'}</span>,
     },
     {
@@ -199,34 +231,40 @@ const FxMarketPage: React.FC = () => {
       render: (_, a) => (
         <RowActions actions={[
           { label: 'Cancel alert', icon: <X className="w-4 h-4" />, onClick: () => cancelAlert(a), hidden: a.status !== 'ACTIVE', danger: true },
-          { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => setTicket({ prefill: { pair: a.pair, side: 'BUY' } }) },
+          { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => openTicket(a.pair, a.side) },
         ]} />
       ),
     },
   ];
 
-  const boardColumns: Column<SpotTick>[] = [
+  const boardColumns: Column<BoardRow>[] = [
     {
       key: 'pair',
       header: 'Pair',
-      render: (_, t) =>
-        t.pair === selected ? <Badge variant="primary" size="sm">{t.pair}</Badge> : <span className="font-medium">{t.pair}</span>,
+      render: (_, r) =>
+        r.pair === selected ? <Badge variant="primary" size="sm">{r.pair}</Badge> : <span className="font-medium">{r.pair}</span>,
     },
     {
-      key: 'mid',
-      header: 'Indicative rate',
+      key: 'sell',
+      header: 'You sell',
       align: 'right',
-      render: (_, t) => (
-        <span className={cn('font-mono tabular-nums', toneFor(lastDir.current[t.pair] ?? 0))}>{fmtRate(t.mid)}</span>
-      ),
+      render: (_, r) => <PriceButton rate={r.sell} label={`Sell ${base(r.pair)} at ${fmtRate(r.sell)}: open a deal`}
+        tone={toneFor(lastDir.current[r.pair] ?? 0)} onClick={() => openTicket(r.pair, 'SELL')} />,
+    },
+    {
+      key: 'buy',
+      header: 'You buy',
+      align: 'right',
+      render: (_, r) => <PriceButton rate={r.buy} label={`Buy ${base(r.pair)} at ${fmtRate(r.buy)}: open a deal`}
+        tone={toneFor(lastDir.current[r.pair] ?? 0)} onClick={() => openTicket(r.pair, 'BUY')} />,
     },
     {
       key: 'changeBps',
       header: 'Change vs open',
       align: 'right',
       dropOrder: 2,
-      render: (_, t) => (
-        <span className={cn('font-mono tabular-nums', toneFor(t.changeBps))}>{fmtSigned(t.changeBps, 1)} bps</span>
+      render: (_, r) => (
+        <span className={cn('font-mono tabular-nums', toneFor(r.changeBps))}>{fmtSigned(r.changeBps, 1)} bps</span>
       ),
     },
     {
@@ -235,40 +273,47 @@ const FxMarketPage: React.FC = () => {
       align: 'right',
       dropOrder: 1,
       mobileHidden: true,
-      render: (_, t) => <Sparkline values={history.current[t.pair] ?? []} tone={toneFor(t.changeBps)} />,
+      render: (_, r) => <Sparkline values={history.current[r.pair] ?? []} tone={toneFor(r.changeBps)} />,
     },
     {
       key: 'actions',
       header: 'Actions',
       width: '4rem',
       minWidth: 64,
-      render: (_, t) => (
+      render: (_, r) => (
         <RowActions actions={[
-          { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => setTicket({ prefill: { pair: t.pair, side: 'BUY' } }) },
-          { label: 'Set rate alert…', icon: <BellRing className="w-4 h-4" />, onClick: () => startAlert(t), hidden: !currentCorporateId },
-          { label: 'Forward curve', icon: <LineChart className="w-4 h-4" />, onClick: () => setSelected(t.pair) },
-          { label: 'Copy rate', icon: <Copy className="w-4 h-4" />, onClick: () => { navigator.clipboard?.writeText(fmtRate(t.mid)).then(() => toast.success('Rate copied')).catch(() => undefined); } },
+          { label: `Buy ${base(r.pair)}…`, icon: <Send className="w-4 h-4" />, onClick: () => openTicket(r.pair, 'BUY') },
+          { label: `Sell ${base(r.pair)}…`, icon: <Send className="w-4 h-4" />, onClick: () => openTicket(r.pair, 'SELL') },
+          { label: 'Set rate alert…', icon: <BellRing className="w-4 h-4" />, onClick: () => startAlert(r), hidden: !currentCorporateId, divider: true },
+          { label: 'Forward curve', icon: <LineChart className="w-4 h-4" />, onClick: () => setSelected(r.pair) },
+          { label: 'Copy prices', icon: <Copy className="w-4 h-4" />, onClick: () => { navigator.clipboard?.writeText(`${r.pair} ${fmtRate(r.sell)} / ${fmtRate(r.buy)}`).then(() => toast.success('Prices copied')).catch(() => undefined); } },
         ]} />
       ),
     },
   ];
 
-  const curveColumns: Column<ForwardQuote>[] = [
+  const points = (p?: number) => (p === undefined || p === null ? '' : `${p >= 0 ? '+' : ''}${p.toFixed(2)} pts`);
+
+  const curveColumns: Column<CurveRow>[] = [
     { key: 'tenor', header: 'Tenor', render: (_, q) => <span className="font-medium">{q.tenor}</span> },
-    { key: 'valueDate', header: 'Value date', render: (_, q) => <span className="font-mono tabular-nums">{q.valueDate}</span> },
+    { key: 'valueDate', header: 'Value date', dropOrder: 1, render: (_, q) => <span className="font-mono tabular-nums">{q.valueDate}</span> },
     {
-      key: 'forwardPoints',
-      header: 'Points',
-      align: 'right',
-      render: (_, q) => (
-        <span className={cn('font-mono tabular-nums', toneFor(q.forwardPoints))}>{fmtSigned(q.forwardPoints, 1)}</span>
+      key: 'sell', header: 'You sell', align: 'right', render: (_, q) => (
+        <span>
+          <PriceButton rate={q.sell} extra={1} label={`Sell ${base(selected)} forward to ${q.valueDate} at ${fmtRate(q.sell, 1)}: open a deal`}
+            onClick={() => openTicket(selected, 'SELL', { valueDate: q.valueDate })} />
+          <span className="block text-caption font-mono tabular-nums text-neutral-500 dark:text-neutral-400">{points(q.sellPoints)}</span>
+        </span>
       ),
     },
     {
-      key: 'forwardMid',
-      header: 'Forward',
-      align: 'right',
-      render: (_, q) => <span className="font-mono tabular-nums">{fmtRate(q.forwardMid, 1)}</span>,
+      key: 'buy', header: 'You buy', align: 'right', render: (_, q) => (
+        <span>
+          <PriceButton rate={q.buy} extra={1} label={`Buy ${base(selected)} forward to ${q.valueDate} at ${fmtRate(q.buy, 1)}: open a deal`}
+            onClick={() => openTicket(selected, 'BUY', { valueDate: q.valueDate })} />
+          <span className="block text-caption font-mono tabular-nums text-neutral-500 dark:text-neutral-400">{points(q.buyPoints)}</span>
+        </span>
+      ),
     },
   ];
 
@@ -276,62 +321,63 @@ const FxMarketPage: React.FC = () => {
     <Page>
       <PageHeader
         title="Market Rates"
-        description="Indicative interbank rates and forward points. A dealable price comes from requesting one. The rates are simulated."
+        description="Your indicative buy and sell prices for each pair, at the amount you choose: the rate you buy the first currency at, and the rate you sell it at. Click a price to request a deal on that side. The rates are simulated."
       />
 
       <StatStrip>
-        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(ticks.length)} sub="on the rate board" />
+        <StatTile tone="primary" icon={<ListChecks className="w-5 h-5" />} label="Pairs listed" value={String(rows.length)} sub="on the rate board" />
         <StatTile tone={mover && mover.changeBps < 0 ? 'danger' : 'success'} icon={<Activity className="w-5 h-5" />} label="Biggest mover"
           value={mover ? mover.pair : '-'} sub={mover ? `${fmtSigned(mover.changeBps, 1)} bps vs open` : 'waiting for rates'} />
         <StatTile tone={feedError ? 'danger' : 'info'} icon={<Radio className="w-5 h-5" />} label="Feed"
-          value={feedError ? 'Unavailable' : ticks.length ? 'Running' : 'Connecting'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'waiting for the first rates')} />
+          value={feedError ? 'Unavailable' : rows.length ? 'Running' : 'Connecting'} sub={feedError ?? (asOf ? `as of ${asOf}` : 'waiting for the first rates')} />
       </StatStrip>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader
             title="Rate board"
-            subtitle="Select a pair to see its forward curve, or use a row’s actions to request a price."
+            subtitle={`Spot, for ${fmt(amount, 0)} of the first currency of each pair. The spread depends on the amount.`}
             action={feedError
               ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
-              : <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Simulated</Badge>}
+              : <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Indicative</Badge>}
           />
-          <DataTable<SpotTick>
-            data={ticks}
+          <DataTable<BoardRow>
+            data={rows}
             columns={boardColumns}
-            keyExtractor={(t) => t.pair}
-            onRowClick={(t) => setSelected(t.pair)}
+            keyExtractor={(r) => r.pair}
+            onRowClick={(r) => setSelected(r.pair)}
             compact
             hairline
             emptyTitle="Waiting for rates"
             emptyDescription="The market has not answered yet."
+            actions={
+              <label className="inline-flex items-center gap-2 text-caption text-neutral-600 dark:text-neutral-300">
+                Prices for
+                <Input aria-label="Amount of the first currency" inputSize="sm" inputMode="decimal" value={amountText}
+                  onChange={(e) => setAmountText(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="100000" />
+              </label>
+            }
           />
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader
             title={`${selected} forward curve`}
-            subtitle={tick ? `Spot ${fmtRate(tick.mid)} for value ${first?.spotDate ?? '…'}` : 'Waiting for the rate board'}
+            subtitle={row ? `Spot ${fmtRate(row.sell)} / ${fmtRate(row.buy)} for value ${row.valueDate}; outright rates below` : 'Waiting for the rate board'}
           />
           {curveError && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{curveError}</p>}
-          <DataTable<ForwardQuote>
+          <DataTable<CurveRow>
             data={curve}
             columns={curveColumns}
             keyExtractor={(q) => q.tenor ?? q.valueDate}
             compact
             hairline
             emptyTitle="Loading curve"
-            emptyDescription="Forward points appear once the pair has priced."
+            emptyDescription="Forward prices appear once the pair has priced."
           />
-          {first && (
-            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">
-              Points follow the interest differential: {selected.slice(0, 3)} {first.baseRatePct.toFixed(2)}% against{' '}
-              {selected.slice(4)} {first.quoteRatePct.toFixed(2)}%.
-            </p>
-          )}
 
           <div className="mt-5 pt-4 border-t border-edge">
-            <Input label="Price an exact value date" type="date" value={valueDate} min={first?.spotDate} onChange={(e) => setValueDate(e.target.value)} />
+            <Input label="Price an exact value date" type="date" value={valueDate} min={row?.valueDate} onChange={(e) => setValueDate(e.target.value)} />
             {customError && <p className="text-body-sm text-error-700 dark:text-error-300 mt-2">{customError}</p>}
             {custom && (
               <dl className="mt-3 grid grid-cols-3 gap-3 text-body-sm">
@@ -340,22 +386,25 @@ const FxMarketPage: React.FC = () => {
                   <dd className="font-mono tabular-nums">{custom.days}</dd>
                 </div>
                 <div>
-                  <dt className="text-caption text-neutral-500 dark:text-neutral-400">Points</dt>
-                  <dd className={cn('font-mono tabular-nums', toneFor(custom.forwardPoints))}>{fmtSigned(custom.forwardPoints, 1)}</dd>
+                  <dt className="text-caption text-neutral-500 dark:text-neutral-400">You sell</dt>
+                  <dd><PriceButton rate={custom.sell} extra={1} label={`Sell forward to ${custom.valueDate}`} onClick={() => openTicket(selected, 'SELL', { valueDate: custom.valueDate })} />
+                    <span className="block text-caption font-mono tabular-nums text-neutral-500 dark:text-neutral-400">{points(custom.sellPoints)}</span></dd>
                 </div>
                 <div>
-                  <dt className="text-caption text-neutral-500 dark:text-neutral-400">Forward mid</dt>
-                  <dd className="font-mono tabular-nums">{fmtRate(custom.forwardMid, 1)}</dd>
+                  <dt className="text-caption text-neutral-500 dark:text-neutral-400">You buy</dt>
+                  <dd><PriceButton rate={custom.buy} extra={1} label={`Buy forward to ${custom.valueDate}`} onClick={() => openTicket(selected, 'BUY', { valueDate: custom.valueDate })} />
+                    <span className="block text-caption font-mono tabular-nums text-neutral-500 dark:text-neutral-400">{points(custom.buyPoints)}</span></dd>
                 </div>
               </dl>
             )}
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">Points take your spot price to the outright rate for that date.</p>
           </div>
         </Card>
       </div>
 
       {currentCorporateId && (
         <Card>
-          <CardHeader title="Rate alerts" subtitle="Each fires once, in the notification bell, when the indicative rate reaches it. Set one from a pair's actions." />
+          <CardHeader title="Rate alerts" subtitle="Each fires once, in the notification bell, when your buy or sell price reaches it. Set one from a pair's actions." />
           <DataTable<RateAlert>
             data={alerts}
             columns={alertColumns}
@@ -363,7 +412,7 @@ const FxMarketPage: React.FC = () => {
             compact
             hairline
             emptyTitle="No rate alerts"
-            emptyDescription="Use Set rate alert on a pair to be told when it reaches a level."
+            emptyDescription="Use Set rate alert on a pair to be told when you can buy or sell at a level."
           />
         </Card>
       )}
@@ -372,7 +421,7 @@ const FxMarketPage: React.FC = () => {
         isOpen={!!alertFor}
         onClose={() => setAlertFor(null)}
         title={`Rate alert on ${alertFor?.pair ?? ''}`}
-        subtitle={alertFor ? `Now ${fmtRate(alertFor.mid)}` : undefined}
+        subtitle={alertRow ? `Now: you sell at ${fmtRate(alertRow.sell)}, you buy at ${fmtRate(alertRow.buy)} (for ${fmt(amount, 0)} ${base(alertRow.pair)})` : undefined}
         size="sm"
         footer={
           <>
@@ -381,10 +430,21 @@ const FxMarketPage: React.FC = () => {
           </>
         }
       >
-        {alertFor && (
+        {alertFor && alertRow && (
           <div className="space-y-3">
-            <Input label="Tell me when the rate reaches" inputMode="decimal" value={alertRate} onChange={(e) => setAlertRate(e.target.value)}
-              hint={Number(alertRate) > alertFor.mid ? 'Above today’s rate: fires when it rises to this' : Number(alertRate) < alertFor.mid ? 'Below today’s rate: fires when it falls to this' : 'Choose a rate other than today’s'} />
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Buy or sell">
+              {(['BUY', 'SELL'] as Side[]).map((s) => (
+                <Button key={s} size="sm" variant={alertSide === s ? 'primary' : 'outline'} aria-pressed={alertSide === s}
+                  onClick={() => { setAlertSide(s); setAlertRate(fmtRate(s === 'BUY' ? alertRow.buy : alertRow.sell)); }}>
+                  I want to {s === 'BUY' ? 'buy' : 'sell'} {base(alertRow.pair)}
+                </Button>
+              ))}
+            </div>
+            <Input label={`Tell me when I can ${alertSide === 'BUY' ? 'buy' : 'sell'} at or ${alertSide === 'BUY' ? 'below' : 'above'}`}
+              inputMode="decimal" value={alertRate} onChange={(e) => setAlertRate(e.target.value)}
+              hint={(alertSide === 'BUY' ? Number(alertRate) < alertNow : Number(alertRate) > alertNow)
+                ? `Your ${alertSide === 'BUY' ? 'buy' : 'sell'} price is ${fmtRate(alertNow)} now`
+                : `You can ${alertSide === 'BUY' ? 'buy' : 'sell'} at ${fmtRate(alertNow)} now; choose a rate ${alertSide === 'BUY' ? 'below' : 'above'} that`} />
             <Input label="Note (optional)" value={alertNote} onChange={(e) => setAlertNote(e.target.value)} placeholder="For example: buy EUR for the March payables" />
             {alertError && <p className="text-body-sm text-error-700 dark:text-error-300">{alertError}</p>}
           </div>

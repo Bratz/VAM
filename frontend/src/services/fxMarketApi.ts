@@ -25,7 +25,39 @@ export interface ForwardQuote {
   source: string;
 }
 
+/** The corporate's own spot price for a pair: it buys the base currency at {@code buy}, sells it at {@code sell}. Never the mid. */
+export interface BoardRow {
+  pair: string;
+  buy: number;
+  sell: number;
+  changeBps: number;
+  valueDate: string;
+  asOf: string;
+}
+
+/** One forward tenor: the outright rate each way, and the client points from the client spot. */
+export interface CurveRow {
+  pair: string;
+  tenor?: string | null;
+  valueDate: string;
+  days: number;
+  buy: number;
+  buyPoints?: number;
+  sell: number;
+  sellPoints?: number;
+}
+
 export const fxMarketApi = {
+  /** Market Rates: the corporate's two-way prices at an amount of the base currency (FxBoardController). */
+  board: (amount: number) =>
+    apiClient.get<ApiResponse<BoardRow[]>>('/fx/board', { params: { amount } }).then(r => r.data.data),
+
+  boardCurve: (pair: string, amount: number) =>
+    apiClient.get<ApiResponse<CurveRow[]>>('/fx/board/curve', { params: { pair, amount } }).then(r => r.data.data),
+
+  boardForward: (pair: string, amount: number, valueDate: string) =>
+    apiClient.get<ApiResponse<CurveRow>>('/fx/board/forward', { params: { pair, amount, valueDate } }).then(r => r.data.data),
+
   spots: () =>
     apiClient.get<ApiResponse<SpotTick[]>>('/fx/market/spots').then(r => r.data.data),
 

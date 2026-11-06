@@ -15,8 +15,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * A corporate's rate alert: tell me when the indicative market rate of a pair reaches a level. The direction is set
- * from where the rate was when the alert was made (a target above it fires when the rate rises to it). Fires once.
+ * A corporate's rate alert, on its own price: "tell me when I can buy EUR at or below X" (side BUY, direction
+ * BELOW) or "sell EUR at or above X" (side SELL, direction ABOVE), at an amount of the base currency (the spread
+ * depends on it). Never on the interbank mid, which corporate screens do not show. Fires once.
  */
 @Entity
 @Table(name = "fx_rate_alert")
@@ -35,6 +36,15 @@ public class FxRateAlert extends BaseEntity {
     @Column(name = "pair", nullable = false, length = 7)
     private String pair;
 
+    /** The side of the client's price watched: BUY the base currency, or SELL it. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "side", length = 4)
+    private Side side;
+
+    /** The amount of the base currency the price is for. */
+    @Column(name = "amount", precision = 18, scale = 2)
+    private BigDecimal amount;
+
     @Column(name = "target_rate", nullable = false, precision = 19, scale = 8)
     private BigDecimal targetRate;
 
@@ -42,7 +52,7 @@ public class FxRateAlert extends BaseEntity {
     @Column(name = "direction", nullable = false, length = 10)
     private Direction direction;
 
-    /** The rate when the alert was set, for the message. */
+    /** The client's price on that side when the alert was set. */
     @Column(name = "rate_at_creation", precision = 19, scale = 8)
     private BigDecimal rateAtCreation;
 

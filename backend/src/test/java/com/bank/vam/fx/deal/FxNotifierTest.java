@@ -32,10 +32,14 @@ class FxNotifierTest {
     private final FxDealRepository deals = mock(FxDealRepository.class);
     private final RateProvider rates = mock(RateProvider.class);
     private final NotificationService notifications = mock(NotificationService.class);
-    private final FxNotifier notifier = new FxNotifier(alerts, deals, rates, notifications);
+    private final FxBoardService board = mock(FxBoardService.class);
+    private final FxNotifier notifier = new FxNotifier(alerts, deals, rates, notifications, board);
 
-    private void rate(String mid) {
-        when(rates.spot("EUR/USD")).thenReturn(Optional.of(new SpotTick("EUR/USD", bd(mid), BigDecimal.ZERO, Instant.now(), "MOCK")));
+    /** The client's buy and sell price for EUR/USD now (the market itself is only asked whether the pair exists). */
+    private void price(String buy, String sell) {
+        when(rates.spot("EUR/USD")).thenReturn(Optional.of(new SpotTick("EUR/USD", bd("1.1"), BigDecimal.ZERO, Instant.now(), "MOCK")));
+        when(board.spot(eq("EUR/USD"), eq(Side.BUY), any())).thenReturn(bd(buy));
+        when(board.spot(eq("EUR/USD"), eq(Side.SELL), any())).thenReturn(bd(sell));
     }
 
     @BeforeEach
@@ -46,31 +50,47 @@ class FxNotifierTest {
     }
 
     @Test
-    void aTargetAboveTodaysRateFiresWhenTheRateRisesToItAndOnlyOnce() {
-        rate("1.0900");
-        FxRateAlert a = notifier.create(CORP, "eur/usd", bd("1.0950"), null);
-        assertThat(a.getDirection()).isEqualTo(FxRateAlert.Direction.ABOVE);
-        assertThat(a.getPair()).isEqualTo("EUR/USD");
+    void aBuyAlertFiresWhenTheClientsBuyPriceFallsToTheTargetAndOnlyOnce() {
+        price("1.0960", "1.0940");
+        FxRateAlert a = notifier.create(CORP, "eur/usd", Side.BUY, null, bd("1.0950"), null);
+        assertThat(a.getDirection()).isEqualTo(FxRateAlert.Direction.BELOW);
+        assertThat(a.getAmount()).isEqualByComparingTo("100000");
+        assertThat(a.getRateAtCreation()).isEqualByComparingTo("1.0960");
         when(alerts.findByStatus(FxRateAlert.Status.ACTIVE)).thenReturn(List.of(a));
 
-        rate("1.0940");
+        price("1.0951", "1.0931");
         assertThat(notifier.checkAlerts()).isZero();
 
-        rate("1.0951");
+        price("1.0949", "1.0929");
         assertThat(notifier.checkAlerts()).isEqualTo(1);
         assertThat(a.getStatus()).isEqualTo(FxRateAlert.Status.TRIGGERED);
-        assertThat(a.getTriggeredRate()).isEqualByComparingTo("1.0951");
-        verify(notifications).notifyOnce(eq(CORP), eq(NotificationType.FX_RATE_ALERT), any(), eq("Rate alert: EUR/USD at 1.0951"),
-                eq("EUR/USD has risen to 1.095 (indicative 1.0951)."), anyString(), eq(a.getId()), anyString(), eq("fx-market"), anyString());
+        assertThat(a.getTriggeredRate()).isEqualByComparingTo("1.0949");
+        verify(notifications).notifyOnce(eq(CORP), eq(NotificationType.FX_RATE_ALERT), any(), eq("Rate alert: buy EUR at 1.0949"),
+                eq("You can buy EUR in EUR/USD at 1.0949 (indicative), at or below your 1.095. Request a price to deal."),
+                anyString(), eq(a.getId()), anyString(), eq("fx-market"), anyString());
     }
 
     @Test
-    void anAlertAtTodaysRateOrForAnUnknownPairIsRefused() {
-        rate("1.0900");
-        assertThatThrownBy(() -> notifier.create(CORP, "EUR/USD", bd("1.09"), null)).isInstanceOf(BusinessException.class)
-                .hasMessageContaining("choose a different rate");
+    void aSellAlertWatchesTheSellPriceRising() {
+        price("1.0960", "1.0940");
+        FxRateAlert a = notifier.create(CORP, "EUR/USD", Side.SELL, bd("250000"), bd("1.0945"), null);
+        assertThat(a.getDirection()).isEqualTo(FxRateAlert.Direction.ABOVE);
+        when(alerts.findByStatus(FxRateAlert.Status.ACTIVE)).thenReturn(List.of(a));
+
+        price("1.0966", "1.0946");
+        assertThat(notifier.checkAlerts()).isEqualTo(1);
+        verify(board, org.mockito.Mockito.atLeastOnce()).spot("EUR/USD", Side.SELL, bd("250000"));
+    }
+
+    @Test
+    void anAlertAlreadyReachableOrForAnUnknownPairIsRefused() {
+        price("1.0960", "1.0940");
+        assertThatThrownBy(() -> notifier.create(CORP, "EUR/USD", Side.BUY, null, bd("1.0970"), null)).isInstanceOf(BusinessException.class)
+                .hasMessage("You can buy EUR at 1.0960 now; set a rate below that");
+        assertThatThrownBy(() -> notifier.create(CORP, "EUR/USD", Side.SELL, null, bd("1.0930"), null))
+                .hasMessage("You can sell EUR at 1.0940 now; set a rate above that");
         when(rates.spot("XXX/YYY")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> notifier.create(CORP, "XXX/YYY", bd("1"), null)).hasMessageContaining("no market rate");
+        assertThatThrownBy(() -> notifier.create(CORP, "XXX/YYY", Side.BUY, null, bd("1"), null)).hasMessageContaining("no market rate");
     }
 
     @Test

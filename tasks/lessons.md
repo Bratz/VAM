@@ -505,6 +505,11 @@ market", which is how a dealer thinks, not what a bank shows its client: the cli
 - Hiding a field in the UI is not enough: remove it from the response shape, the downloadable documents, the
   event text shown in a history, the CSV export and the MCP tools, which all reach the same person.
 - Keep a guard test on the shapes (record components) and the documents, so the next field added does not leak.
+- Again the same day: the fix exempted Market Rates as "indicative market information", so its Rate Board kept
+  showing the interbank mid, and the user asked why it did not show buy and sell. An exception carved out of a
+  rule is where the rule breaks next. A corporate's rate board shows its own two-way price (what it buys and sells
+  at, for an amount, spread included), as bank portals do; the mid is a dealer's figure wherever it appears.
+  When fixing a class of leak, list every surface of that audience and apply it to all of them, alerts included.
 
 ## L9 again: the FX credit limit was built beside the credit model, not in it (2026-11-06)
 
