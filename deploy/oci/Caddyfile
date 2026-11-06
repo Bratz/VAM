@@ -142,3 +142,19 @@ academy.161-33-9-182.sslip.io {
 		}
 	}
 }
+
+cookbook.161-33-9-182.sslip.io {
+	# The app has no sign-in. Knowledge-base writes stay local-only: the public can search, not edit.
+	respond /api/knowledge/add 403
+	@kbdelete {
+		method DELETE
+		path /api/knowledge/*
+	}
+	respond @kbdelete 403
+	# Everything else, including the app's own UI and /ws (Caddy proxies WebSockets as-is).
+	reverse_proxy cookbook-api:7600
+	log {
+		output stdout
+		format console
+	}
+}
