@@ -1,5 +1,8 @@
 package com.bank.vam.fx.exposure;
 
+import com.bank.vam.forecast.domain.enums.ForecastDirection;
+import com.bank.vam.forecast.domain.enums.ForecastSource;
+import com.bank.vam.forecast.domain.enums.RunStatus;
 import com.bank.vam.fx.exposure.ExposureCalculator.Flow;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -7,9 +10,12 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -53,6 +59,43 @@ class ExposureSources {
             }
         }
         return out;
+    }
+
+    /** The latest finished Cash Forecast run: when it ran, and the foreign-currency flows no invoice carries (signed: in positive, out negative). */
+    record ForecastFlows(OffsetDateTime runAt, List<Flow> flows) {
+    }
+
+    /**
+     * Categories that are not an exposure to hedge: intercompany nets inside the corporate, and an FX conversion is
+     * itself a hedge, already counted from the deals.
+     */
+    private static final Set<String> NOT_EXPOSURE = Set.of("INTERCOMPANY_IN", "INTERCOMPANY_OUT", "FX_CONVERSION");
+
+    /**
+     * Forecast flows from the corporate's latest completed Cash Forecast run. AGING lines are left out: they project
+     * the same open payables and receivables that {@link #payables} and {@link #receivables} read live, and a run can
+     * be days or weeks old while invoices change daily. What remains is what no invoice carries: recurring flows
+     * (payroll, rent, tax) from the pattern engine, model and driver lines, and manual entries. Past dates are dropped.
+     * The forecast's adjustments are not applied, as the Cash Forecast summary does not apply them either.
+     */
+    Optional<ForecastFlows> forecast(UUID corporateId, String base, LocalDate today) {
+        List<Object[]> run = em.createQuery("SELECT r.id, r.runAt FROM ForecastRun r WHERE r.corporateId = :c "
+                        + "AND r.status = :s ORDER BY r.runAt DESC", Object[].class)
+                .setParameter("c", corporateId).setParameter("s", RunStatus.COMPLETED).setMaxResults(1).getResultList();
+        if (run.isEmpty()) {
+            return Optional.empty();
+        }
+        List<Flow> flows = em.createQuery("SELECT l.currency, l.valueDate, l.amountMid, c.direction FROM ForecastLine l "
+                        + "JOIN l.category c WHERE l.run.id = :run AND l.currency <> :base AND l.valueDate >= :today "
+                        + "AND l.source <> :aging AND c.code NOT IN :excluded", Object[].class)
+                .setParameter("run", run.get(0)[0]).setParameter("base", base).setParameter("today", today)
+                .setParameter("aging", ForecastSource.AGING).setParameter("excluded", NOT_EXPOSURE)
+                .getResultList().stream()
+                .filter(r -> r[2] != null && ((BigDecimal) r[2]).signum() != 0)
+                .map(r -> new Flow(((String) r[0]).trim(), (LocalDate) r[1],
+                        r[3] == ForecastDirection.OUT ? ((BigDecimal) r[2]).abs().negate() : ((BigDecimal) r[2]).abs()))
+                .toList();
+        return Optional.of(new ForecastFlows((OffsetDateTime) run.get(0)[1], flows));
     }
 
     private List<Flow> flows(String jpql, UUID corporateId, String base) {

@@ -7,7 +7,7 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Download, AlertTriangle, CheckCircle, Coins, ShieldAlert, ListChecks, Send, Filter, X } from 'lucide-react';
+import { Upload, Download, AlertTriangle, CheckCircle, Coins, ShieldAlert, ListChecks, Send, Filter, X, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
@@ -171,6 +171,10 @@ const FxExposurePage: React.FC = () => {
   const columns = (ccy: string): Column<ExposureBucket>[] => [
     { key: 'label', header: 'Settles in', render: (_, b) => <span className="font-medium">{b.label}</span> },
     { key: 'exposure', header: 'Net exposure', align: 'right', render: (_, b) => <span className="font-mono tabular-nums">{fmtSigned(b.exposure)}</span> },
+    {
+      key: 'forecast', header: 'Of which forecast', align: 'right', dropOrder: 4,
+      render: (_, b) => <span className="font-mono tabular-nums">{b.forecast ? fmtSigned(b.forecast) : '-'}</span>,
+    },
     { key: 'hedged', header: 'Hedged', align: 'right', dropOrder: 3, render: (_, b) => <span className="font-mono tabular-nums">{b.hedged ? fmtSigned(b.hedged) : '-'}</span> },
     { key: 'hedgeRatio', header: 'Hedge ratio vs policy', dropOrder: 2, render: (_, b) => <RatioBar ratio={b.hedgeRatio} min={b.minRatio} max={b.maxRatio} status={b.status} /> },
     {
@@ -221,16 +225,19 @@ const FxExposurePage: React.FC = () => {
     <Page>
       <PageHeader
         title="Exposure & Hedging"
-        description="Foreign-currency exposure by currency and time bucket against the hedge policy. Amounts stay in each currency and are never summed across currencies. Declared exposures and hedges cover what payables, receivables and balances do not: ERP forecasts and forwards held with other banks."
+        description="Foreign-currency exposure by currency and time bucket against the hedge policy: open invoices, cash held, the Cash Forecast’s recurring and manual flows (payroll, rent, tax), and declared entries. Amounts stay in each currency and are never summed across currencies. Declared exposures and hedges cover what payables, receivables and balances do not: ERP forecasts and forwards held with other banks."
         actions={<Button onClick={() => { setUploadError(null); setUploadOpen(true); }} leftIcon={<Upload className="w-4 h-4" />}>Upload exposures</Button>}
       />
 
-      <StatStrip columns={3}>
+      <StatStrip columns={4}>
         <StatTile tone="primary" icon={<Coins className="w-5 h-5" />} label="Foreign currencies" value={ladder ? String(ladder.currencies.length) : '-'}
           sub={ladder ? `home currency ${ladder.baseCurrency}` : corporateName} loading={loading && !ladder} />
         <StatTile tone={policyBreaches ? 'danger' : 'success'} icon={<ShieldAlert className="w-5 h-5" />} label="Outside policy"
           value={ladder ? String(policyBreaches) : '-'} sub={policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'} />
         <StatTile tone="info" icon={<ListChecks className="w-5 h-5" />} label="Declared entries" value={String(entries.length)} sub="exposures and hedges uploaded" />
+        <StatTile tone={!ladder?.forecastRunAt ? 'neutral' : ladder.forecastStale ? 'warning' : 'success'} icon={<TrendingUp className="w-5 h-5" />}
+          label="Cash Forecast" value={ladder?.forecastRunAt ? new Date(ladder.forecastRunAt).toLocaleDateString() : 'No run'}
+          sub={!ladder?.forecastRunAt ? 'invoices and cash only' : ladder.forecastStale ? 'out of date: run it again in Cash Forecast' : 'recurring flows counted in full'} />
       </StatStrip>
 
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}

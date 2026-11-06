@@ -19,20 +19,45 @@ public final class FxDealModels {
             UUID id, UUID corporateId, String pair, String baseCurrency, String quoteCurrency, Side side,
             Instrument instrument, BigDecimal amount, LocalDate valueDate, LocalDate windowStart, String purpose,
             String exposureRef, QuoteStatus status, String statusReason,
-            BigDecimal clientRate, BigDecimal counterAmount, String dealer,
+            BigDecimal clientRate, BigDecimal spotRate, BigDecimal forwardPoints, BigDecimal counterAmount, String dealer,
             LocalDateTime quotedAt, LocalDateTime validUntil, long secondsRemaining, BigDecimal limitCharge,
             String limitCurrency, UUID dealId, String requestedBy, LocalDateTime createdAt,
             int rounds, int maxRounds, boolean bestPrice) {
 
         static QuoteView of(FxQuoteRequest q) {
+            ClientPrice price = ClientPrice.of(q.getInstrument(), q.getSide(), q.quoteCurrency(), q.getClientRate(),
+                    q.getMidRate(), q.getSpreadBps());
             long remaining = q.getStatus() == QuoteStatus.QUOTED
                     ? Math.max(0, Duration.between(LocalDateTime.now(), q.getValidUntil()).toSeconds()) : 0;
             return new QuoteView(q.getId(), q.getCorporateId(), q.getPair(), q.baseCurrency(), q.quoteCurrency(),
                     q.getSide(), q.getInstrument(), q.getAmount(), q.getValueDate(), q.getWindowStart(), q.getPurpose(),
                     q.getExposureRef(), q.getStatus(), q.getStatusReason(),
-                    q.getClientRate(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
+                    q.getClientRate(), price.spotRate(), price.forwardPoints(), q.getCounterAmount(), q.getDealer(), q.getQuotedAt(),
                     q.getValidUntil(), remaining, q.getLimitCharge(), q.getLimitCurrency(), q.getDealId(),
                     q.getRequestedBy(), q.getCreatedAt(), q.roundsUsed(), q.roundsAllowed(), Boolean.TRUE.equals(q.getBestPrice()));
+        }
+    }
+
+    /**
+     * A forward's all-in rate as the client sees it on a bank's portal: a spot rate and the forward points that take it
+     * to the all-in rate. The spot carries the bank's margin (the market spot moved against the client by the same
+     * margin as the all-in rate), so spot plus points is the all-in rate and neither the market mid nor the margin can
+     * be read from it. Spot deals have no build-up: both are null, as they are for rows from before the mid was kept.
+     */
+    public record ClientPrice(BigDecimal spotRate, BigDecimal forwardPoints) {
+
+        static final ClientPrice NONE = new ClientPrice(null, null);
+
+        public static ClientPrice of(Instrument instrument, Side side, String quoteCurrency, BigDecimal allIn,
+                                     BigDecimal spotMid, BigDecimal spreadBps) {
+            if (instrument == Instrument.SPOT || allIn == null || spotMid == null || spreadBps == null) {
+                return NONE;
+            }
+            BigDecimal margin = spreadBps.movePointLeft(4);
+            BigDecimal factor = side == Side.BUY ? BigDecimal.ONE.add(margin) : BigDecimal.ONE.subtract(margin);
+            BigDecimal spot = spotMid.multiply(factor).setScale(com.bank.vam.fx.ForwardPricer.rateScale(quoteCurrency), RoundingMode.HALF_UP);
+            BigDecimal points = allIn.subtract(spot).divide(com.bank.vam.fx.ForwardPricer.pip(quoteCurrency), 2, RoundingMode.HALF_UP);
+            return new ClientPrice(spot, points);
         }
     }
 
@@ -93,7 +118,7 @@ public final class FxDealModels {
     public record DealView(
             UUID id, String dealRef, UUID corporateId, UUID quoteRequestId, Instrument instrument, String pair,
             Side side, String buyCurrency, BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
-            BigDecimal rate, LocalDate tradeDate,
+            BigDecimal rate, BigDecimal spotRate, BigDecimal forwardPoints, LocalDate tradeDate,
             LocalDate valueDate, LocalDate windowStart, DealStatus status, BigDecimal limitCharge,
             String limitCurrency, String purpose, String exposureRef, LocalDateTime createdAt,
             ConfirmationStatus confirmationStatus, LocalDateTime confirmationIssuedAt, LocalDateTime confirmedAt,
@@ -103,9 +128,11 @@ public final class FxDealModels {
             BigDecimal mtmQuote, String mtmQuoteCurrency, BigDecimal mtmHome, String mtmHomeCurrency) {
 
         static DealView of(FxDeal d, java.util.Optional<FxMtmService.Mark> mark, boolean overdue) {
+            ClientPrice price = ClientPrice.of(d.getInstrument(), d.getSide(), d.quoteCurrency(), d.getRate(),
+                    d.getMidRate(), d.getSpreadBps());
             return new DealView(d.getId(), d.getDealRef(), d.getCorporateId(), d.getQuoteRequestId(), d.getInstrument(),
                     d.getPair(), d.getSide(), d.getBuyCurrency(), d.getBuyAmount(), d.getSellCurrency(),
-                    d.getSellAmount(), d.getRate(),
+                    d.getSellAmount(), d.getRate(), price.spotRate(), price.forwardPoints(),
                     d.getTradeDate(), d.getValueDate(), d.getWindowStart(), d.getStatus(), d.getLimitCharge(),
                     d.getLimitCurrency(), d.getPurpose(), d.getExposureRef(), d.getCreatedAt(),
                     d.getConfirmationStatus(), d.getConfirmationIssuedAt(), d.getConfirmedAt(), d.getConfirmedBy(),

@@ -288,6 +288,26 @@ The corporate saw the bank's interbank mid, forward points and margin in the pri
 
 Today the ladder reads open payables and receivables by due date, cash held in physical-account mirrors, and the CSV upload. The Cash Forecast already holds native-currency flows per corporate: AGING lines (the same payables and receivables, on an expected payment date), PATTERN lines (recurring flows such as payroll and rent that are in no invoice), and ML, DRIVER and MANUAL lines, each with a confidence and P10/P90. Proposal: when the corporate has a completed forecast run, take foreign-currency flows from its latest run instead of reading payables and receivables directly (AGING already carries them, so reading both would double count); show them as Committed (AGING) and Forecast (the other sources) per bucket; leave out the INTERCOMPANY_IN/OUT and FX_CONVERSION categories and dates already past; keep cash held and the CSV upload; fall back to payables and receivables when there is no run; show the run's date and flag it when stale. Seen in the data: one corporate has a completed run, dated 2026-09-19, with GBP 3.88m of PATTERN outflows that the ladder does not see today.
 
+## Next scope, from the portal interview (2026-11-06) - not built
+
+What the user sees on Straight2Bank, HSBCnet and Citi (CitiDirect/Velocity), and what follows for us. Not needed: FX swaps, NDFs, orders (only spot and forwards are bookable), maker-checker on dealing.
+
+| # | Seen on the portals | We have | To build |
+|---|---|---|---|
+| A | Forward price shown as all-in rate plus spot and forward points, no margin | All-in only (the last fix removed points too) | Show the client spot (spot with the margin in it) and the points that take it to the all-in rate; never the mid or margin |
+| B | Streaming click-to-deal for small and short trades, RFQ for large or long-dated, decided by amount and tenor | RFQ only | A streaming two-sided executable price under per-pair amount and tenor thresholds; RFQ (with negotiation) above them |
+| C | Settlement accounts default per currency (standing instructions), editable on the deal | Settlement picks the corporate's accounts itself | Standing settlement instructions per entity and currency; shown and editable on the ticket and the deal |
+| D | Deal booked for a legal entity chosen on the ticket | One counterparty per corporate | Entity on quote and deal; confirmations, settlement and reports per entity; limit stays at corporate level unless the bank sets entity limits |
+| E | FX in payments: a live rate on the payment screen booked on submit, or the payment linked to a deal already booked | Nothing (flat conversion in payments) | Rate lock on foreign-currency payments, and "use deal FXD-..." to settle a payment against a forward or window drawdown |
+| F | Reports: deal history export, maturities and settlements, month-end MTM statement, confirmation archive | CSV export of the blotter; confirmations per deal | A Reports page (or tab) with the four, period-filtered, PDF and CSV |
+| G | Notifications: rate alerts, maturity reminders, confirmation pending | Attention items in the Cockpit only | Rate alerts the corporate sets; reminders through the app's notification bell |
+| H | (our own plan) exposure from the Cash Forecast | AR/AP, cash, CSV | As proposed above; decision: forecast flows count **in full** toward the hedge ratio |
+
+**A and H done (2026-11-06), uncommitted.**
+
+- **A.** Quotes and deals carry `spotRate` and `forwardPoints` for forwards and windows: the spot is the market spot moved against the client by the same margin as the all-in rate, and the points take it exactly to the all-in rate (`FxDealModels.ClientPrice`). Neither the mid nor the margin can be read from them. Shown on the price ticket, the deal drawer, the RFQ drawer and the confirmation ("Spot rate", "Forward points", then "Rate"). Spot deals show no build-up. The guard test now allows the client's spot and points and still rejects any mid, spread, margin or floor field, and checks spot plus points equals the all-in rate. Live: EUR/USD 3M buy, spot 1.092904 + 54.97 points = 1.098401, market mid 1.09236.
+- **H.** The ladder gains a Forecast column: flows from the corporate's latest completed Cash Forecast run that no invoice carries (pattern, ML, driver and manual lines; payroll, rent, tax), counted in full. Committed flows still come from live payables and receivables, not the run's AGING copy of them, because a run can be weeks old (the only one is) while invoices change daily; this differs from the first proposal above, which would have taken AGING from the run. Intercompany and FX-conversion categories and past dates are left out; forecast adjustments are not applied, matching the Cash Forecast summary. The ladder reports the run's time and flags it stale after `vam.fx.exposure.forecast-stale-days` (7). Exposure page: an "Of which forecast" column and a Cash Forecast tile (run date, or out of date, or no run). The MCP exposure tool carries the run date too. Live: GBP payroll of 850,000 on 20 Nov turned the GBP 0-30 bucket from +419,320 into -430,680 and the suggested hedge from a sale into "Buy 323,010 GBP".
+
 ## Open risks / questions to revisit
 
 - Forward points from a simple interest-differential table are illustrative only; fine for a demo, not for pricing real trades.

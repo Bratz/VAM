@@ -29,15 +29,17 @@ final class ExposureCalculator {
         BigDecimal payables = BigDecimal.ZERO;
         BigDecimal balances = BigDecimal.ZERO;
         BigDecimal declared = BigDecimal.ZERO;
+        BigDecimal forecast = BigDecimal.ZERO;
         BigDecimal hedge = BigDecimal.ZERO;
     }
 
     /**
      * @param rateToBase     platform rate from a currency to the base currency, or null when none exists
+     * @param forecast        Cash Forecast flows no invoice carries, signed (in positive, out negative); counted in full
      * @param materialityBase an exposure smaller than this, in base currency, is not worth a hedge
      */
     static List<CurrencyRow> build(String base, LocalDate today,
-                                   List<Flow> payables, List<Flow> receivables, Map<String, BigDecimal> balances,
+                                   List<Flow> payables, List<Flow> receivables, List<Flow> forecast, Map<String, BigDecimal> balances,
                                    List<FxExposureEntry> entries, List<FxPolicyBand> bands,
                                    Function<String, BigDecimal> rateToBase, BigDecimal materialityBase) {
         Map<String, Map<ExposureBucket, Cell>> grid = new TreeMap<>();
@@ -49,6 +51,10 @@ final class ExposureCalculator {
         for (Flow f : receivables) {
             Cell c = cell(grid, f.currency(), ExposureBucket.forDate(f.date(), today));
             c.receivables = c.receivables.add(f.amount());
+        }
+        for (Flow f : forecast) {
+            Cell c = cell(grid, f.currency(), ExposureBucket.forDate(f.date(), today));
+            c.forecast = c.forecast.add(f.amount());
         }
         balances.forEach((ccy, amount) -> {
             Cell c = cell(grid, ccy, ExposureBucket.ON_HAND);
@@ -81,7 +87,7 @@ final class ExposureCalculator {
     }
 
     private static Bucket bucket(ExposureBucket b, Cell c, FxPolicyBand band, BigDecimal threshold) {
-        BigDecimal exposure = c.receivables.subtract(c.payables).add(c.balances).add(c.declared);
+        BigDecimal exposure = c.receivables.subtract(c.payables).add(c.forecast).add(c.balances).add(c.declared);
         BigDecimal open = exposure.add(c.hedge);
         BigDecimal min = band == null ? null : band.getMinHedgeRatio();
         BigDecimal max = band == null ? null : band.getMaxHedgeRatio();
@@ -116,7 +122,7 @@ final class ExposureCalculator {
                 status = HedgeStatus.WITHIN_POLICY;
             }
         }
-        return new Bucket(b, b.label(), c.receivables, c.payables, c.balances, c.declared, exposure, c.hedge,
+        return new Bucket(b, b.label(), c.receivables, c.payables, c.forecast, c.balances, c.declared, exposure, c.hedge,
                 open, ratio, min, max, status, adjust);
     }
 

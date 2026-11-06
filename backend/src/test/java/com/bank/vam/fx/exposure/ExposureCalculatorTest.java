@@ -48,7 +48,7 @@ class ExposureCalculatorTest {
 
     private static List<CurrencyRow> run(List<Flow> payables, List<Flow> receivables, Map<String, BigDecimal> balances,
                                          List<FxExposureEntry> entries, List<FxPolicyBand> bands) {
-        return ExposureCalculator.build("AED", TODAY, payables, receivables, balances, entries, bands, RATE, MATERIALITY);
+        return ExposureCalculator.build("AED", TODAY, payables, receivables, List.of(), balances, entries, bands, RATE, MATERIALITY);
     }
 
     private static List<CurrencyRow> run(List<Flow> payables, List<Flow> receivables, List<FxExposureEntry> entries) {
@@ -175,6 +175,23 @@ class ExposureCalculatorTest {
         assertThat(row.rateToBase()).isNull();
         // Without a rate the raw materiality figure is the threshold, and 100,000 still exceeds it.
         assertThat(bucket(rows, "XYZ", ExposureBucket.D0_30).status()).isEqualTo(HedgeStatus.UNDER_HEDGED);
+    }
+
+    @Test
+    void forecastFlowsCountInFullBesideTheInvoicesAndShowInTheirOwnColumn() {
+        // A GBP receivable of 1,000,000 in 10 days, and from the Cash Forecast a GBP payroll of 850,000 out in 15 days
+        // and a GBP manual inflow of 100,000 in 40 days.
+        List<CurrencyRow> rows = ExposureCalculator.build("AED", TODAY, List.of(), List.of(flow("GBP", 10, "1000000")),
+                List.of(flow("GBP", 15, "-850000"), flow("GBP", 40, "100000")), Map.of(), List.of(),
+                HedgePolicyService.defaultBands(CORP), RATE, MATERIALITY);
+
+        Bucket near = bucket(rows, "GBP", ExposureBucket.D0_30);
+        Bucket next = bucket(rows, "GBP", ExposureBucket.D31_60);
+        assertThat(near.receivables()).isEqualByComparingTo("1000000");
+        assertThat(near.forecast()).isEqualByComparingTo("-850000");
+        assertThat(near.exposure()).isEqualByComparingTo("150000"); // the forecast counts in full
+        assertThat(next.forecast()).isEqualByComparingTo("100000");
+        assertThat(next.exposure()).isEqualByComparingTo("100000");
     }
 
     @Test

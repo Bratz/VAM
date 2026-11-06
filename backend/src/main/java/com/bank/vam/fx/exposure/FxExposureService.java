@@ -45,11 +45,13 @@ public class FxExposureService {
     private final FxRateService rates;
     private final FxDealRepository deals;
     private final BigDecimal materialityBase;
+    private final int forecastStaleDays;
 
     public FxExposureService(CorporateRepository corporates, HomeCurrency homeCurrency, ExposureSources sources,
                              FxExposureEntryRepository entries, HedgePolicyService policy, FxRateService rates,
                              FxDealRepository deals,
-                             @Value("${vam.fx.exposure.materiality-base:25000}") BigDecimal materialityBase) {
+                             @Value("${vam.fx.exposure.materiality-base:25000}") BigDecimal materialityBase,
+                             @Value("${vam.fx.exposure.forecast-stale-days:7}") int forecastStaleDays) {
         this.corporates = corporates;
         this.homeCurrency = homeCurrency;
         this.sources = sources;
@@ -58,6 +60,7 @@ public class FxExposureService {
         this.rates = rates;
         this.deals = deals;
         this.materialityBase = materialityBase;
+        this.forecastStaleDays = forecastStaleDays;
     }
 
     public Ladder ladder(UUID corporateId) {
@@ -65,11 +68,15 @@ public class FxExposureService {
                 .orElseThrow(() -> new ResourceNotFoundException("Corporate not found: " + corporateId));
         String base = homeCurrency.of(corporateId);
         LocalDate today = LocalDate.now();
+        java.util.Optional<ExposureSources.ForecastFlows> forecast = sources.forecast(corporateId, base, today);
         List<CurrencyRow> rows = ExposureCalculator.build(base, today,
                 sources.payables(corporateId, base), sources.receivables(corporateId, base),
+                forecast.map(ExposureSources.ForecastFlows::flows).orElse(List.of()),
                 sources.balances(corporateId, base), declaredAndDealt(corporateId),
                 policy.bandsFor(corporateId), ccy -> rateToBase(ccy, base), materialityBase);
-        return new Ladder(corporateId, corporate.getLegalName(), base, today, rows);
+        java.time.OffsetDateTime runAt = forecast.map(ExposureSources.ForecastFlows::runAt).orElse(null);
+        boolean stale = runAt != null && runAt.toLocalDate().isBefore(today.minusDays(forecastStaleDays));
+        return new Ladder(corporateId, corporate.getLegalName(), base, today, rows, runAt, stale);
     }
 
     /** Policy breaches for one corporate, or for all of them when {@code corporateId} is null. */

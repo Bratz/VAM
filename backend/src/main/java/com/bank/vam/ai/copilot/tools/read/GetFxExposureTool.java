@@ -47,7 +47,8 @@ public class GetFxExposureTool implements CopilotTool {
 
     @Override
     public String description() {
-        return "The corporate's foreign-currency exposure by currency and time bucket against its hedge policy: net "
+        return "The corporate's foreign-currency exposure by currency and time bucket against its hedge policy, from open "
+                + "invoices, cash held, the Cash Forecast's recurring and manual flows, and declared entries: net "
                 + "exposure, amount hedged, hedge ratio vs the policy band, status (within policy / under-hedged / "
                 + "over-hedged), and the hedge needed to reach the band. Native currency amounts, never summed across "
                 + "currencies. Set breachesOnly to see just what is outside policy.";
@@ -84,6 +85,10 @@ public class GetFxExposureTool implements CopilotTool {
             data.put("corporateName", ladder.corporateName());
             data.put("baseCurrency", ladder.baseCurrency());
             data.put("asOf", ladder.asOf().toString());
+            if (ladder.forecastRunAt() != null) {
+                data.put("forecastRunAt", ladder.forecastRunAt().toString());
+                data.put("forecastStale", ladder.forecastStale());
+            }
             data.put("breachCount", breaches.size());
             data.put("breaches", breaches.stream().map(b -> convert(b)).toList());
             data.put("currencies", currencies);

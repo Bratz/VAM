@@ -46,6 +46,9 @@ export interface Quote {
   status: QuoteStatus;
   statusReason?: string;
   clientRate?: number;
+  /** Forwards only: the client spot (margin already in it) and the points to the all-in rate. Never the mid or margin. */
+  spotRate?: number;
+  forwardPoints?: number;
   counterAmount?: number;
   dealer?: string;
   quotedAt?: string;
@@ -99,6 +102,9 @@ export interface Deal {
   sellCurrency: string;
   sellAmount: number;
   rate: number;
+  /** Forwards only: the client spot (margin already in it) and the points to the all-in rate. */
+  spotRate?: number;
+  forwardPoints?: number;
   tradeDate: string;
   valueDate: string;
   windowStart?: string;

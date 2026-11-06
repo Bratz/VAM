@@ -222,6 +222,10 @@ const FxRfqPage: React.FC = () => {
             <dl className="grid grid-cols-2 gap-3 text-body-sm">
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Amount</dt><dd className="font-mono tabular-nums">{q.baseCurrency} {fmt(q.amount)}</dd></div>
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Value date</dt><dd className="font-mono tabular-nums">{q.windowStart ? `${q.windowStart} to ${q.valueDate}` : q.valueDate}</dd></div>
+              {q.spotRate !== undefined && q.forwardPoints !== undefined && (<>
+                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Spot rate</dt><dd className="font-mono tabular-nums">{fmtRate(q.spotRate)}</dd></div>
+                <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Forward points</dt><dd className="font-mono tabular-nums">{q.forwardPoints > 0 ? '+' : ''}{q.forwardPoints.toFixed(2)}</dd></div>
+              </>)}
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Requested</dt><dd>{when(q.createdAt)}</dd></div>
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">By</dt><dd>{q.requestedBy ?? '-'}</dd></div>
               {q.clientRate !== undefined && (<>

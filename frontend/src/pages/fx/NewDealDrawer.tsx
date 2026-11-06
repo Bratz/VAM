@@ -298,6 +298,12 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
                 <dl className="grid grid-cols-2 gap-3 text-body-sm">
                   <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Value date</dt>
                     <dd className="font-mono tabular-nums">{quote.windowStart ? `${quote.windowStart} to ${quote.valueDate}` : quote.valueDate}</dd></div>
+                  {quote.spotRate !== undefined && quote.forwardPoints !== undefined && (<>
+                    <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Spot rate</dt>
+                      <dd className="font-mono tabular-nums">{fmtRate(quote.spotRate)}</dd></div>
+                    <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Forward points</dt>
+                      <dd className="font-mono tabular-nums">{quote.forwardPoints > 0 ? '+' : ''}{quote.forwardPoints.toFixed(2)}</dd></div>
+                  </>)}
                   <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">FX credit limit used</dt>
                     <dd className="font-mono tabular-nums">{fmt(quote.limitCharge ?? 0, 0)} {quote.limitCurrency}</dd></div>
                 </dl>

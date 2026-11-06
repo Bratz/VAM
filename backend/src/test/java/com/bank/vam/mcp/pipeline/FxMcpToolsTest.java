@@ -129,17 +129,17 @@ class FxMcpToolsTest {
 
     private static Ladder ladder() {
         BigDecimal ten = new BigDecimal("1000000");
-        Bucket breached = new Bucket(ExposureBucket.D0_30, "0-30 days", ten, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        Bucket breached = new Bucket(ExposureBucket.D0_30, "0-30 days", ten, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 ten, BigDecimal.ZERO, ten, BigDecimal.ZERO, new BigDecimal("0.75"), BigDecimal.ONE,
                 HedgeStatus.UNDER_HEDGED, new BigDecimal("-750000"));
-        Bucket fine = new Bucket(ExposureBucket.D31_60, "31-60 days", ten, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        Bucket fine = new Bucket(ExposureBucket.D31_60, "31-60 days", ten, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 ten, new BigDecimal("-600000"), new BigDecimal("400000"), new BigDecimal("0.60"), new BigDecimal("0.50"),
                 new BigDecimal("0.80"), HedgeStatus.WITHIN_POLICY, null);
-        Bucket empty = new Bucket(ExposureBucket.D61_90, "61-90 days", BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+        Bucket empty = new Bucket(ExposureBucket.D61_90, "61-90 days", BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null,
                 HedgeStatus.WITHIN_POLICY, null);
         return new Ladder(CORP, "Acme Ltd", "GBP", LocalDate.of(2026, 11, 5),
-                List.of(new CurrencyRow("EUR", new BigDecimal("0.86"), List.of(breached, fine, empty))));
+                List.of(new CurrencyRow("EUR", new BigDecimal("0.86"), List.of(breached, fine, empty))), null, false);
     }
 
     @Test

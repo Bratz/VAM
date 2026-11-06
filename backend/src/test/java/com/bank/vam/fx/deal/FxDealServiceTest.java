@@ -165,13 +165,19 @@ class FxDealServiceTest {
 
         String text = service.confirmation(d).toLowerCase();
 
-        assertThat(text).doesNotContain("margin").doesNotContain("mid ").doesNotContain("bps").doesNotContain("forward points")
-                .doesNotContain("build-up");
+        assertThat(text).doesNotContain("margin").doesNotContain("mid").doesNotContain("bps").doesNotContain("build-up");
+        // What the corporate does see for a forward: a spot that already carries the margin, and the points to the all-in rate.
+        FxDealModels.DealView view = FxDealModels.DealView.of(d, Optional.empty(), false);
+        assertThat(view.spotRate()).isNotNull().isNotEqualByComparingTo(d.getMidRate());
+        assertThat(view.spotRate().add(view.forwardPoints().multiply(new BigDecimal("0.0001"))))
+                .isCloseTo(d.getRate(), org.assertj.core.data.Offset.offset(new BigDecimal("0.000001")));
+        assertThat(text).contains("spot rate      : " + view.spotRate().toPlainString())
+                .contains("forward points : +" + view.forwardPoints().toPlainString());
         java.util.List<Class<?>> corporateShapes = java.util.List.of(FxDealModels.QuoteView.class, FxDealModels.DealView.class,
                 FxLifecycleService.CloseOutQuote.class, FxLifecycleService.RollQuote.class);
         for (Class<?> shape : corporateShapes) {
             assertThat(java.util.Arrays.stream(shape.getRecordComponents()).map(java.lang.reflect.RecordComponent::getName))
-                    .as(shape.getSimpleName()).noneMatch(n -> n.toLowerCase().matches(".*(midrate|spread|forwardpoints|margin).*"));
+                    .as(shape.getSimpleName()).noneMatch(n -> n.matches("(mid|.*Mid|spread|.*Spread|margin|.*Margin|floor|.*Floor)([A-Z].*)?"));
         }
     }
 

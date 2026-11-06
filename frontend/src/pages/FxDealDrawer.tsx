@@ -150,6 +150,12 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
               <dd className="font-mono tabular-nums">{deal.rate.toFixed(rateDigits(deal.rate))}</dd></div>
             <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Value date</dt>
               <dd className="font-mono tabular-nums">{deal.windowStart ? `${deal.windowStart} to ${deal.valueDate}` : deal.valueDate}</dd></div>
+            {deal.spotRate !== undefined && deal.forwardPoints !== undefined && (<>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Spot rate</dt>
+                <dd className="font-mono tabular-nums">{deal.spotRate.toFixed(rateDigits(deal.spotRate))}</dd></div>
+              <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Forward points</dt>
+                <dd className="font-mono tabular-nums">{deal.forwardPoints > 0 ? '+' : ''}{deal.forwardPoints.toFixed(2)}</dd></div>
+            </>)}
             {inForce && (
               <div><dt className="text-caption text-neutral-500 dark:text-neutral-400">Worth today (indicative)</dt>
                 <dd className={cn('font-mono tabular-nums', toneFor(deal.mtmHome ?? deal.mtmQuote ?? 0))}>

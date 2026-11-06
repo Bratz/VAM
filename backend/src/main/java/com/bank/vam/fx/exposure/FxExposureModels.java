@@ -35,6 +35,7 @@ public final class FxExposureModels {
             String label,
             BigDecimal receivables,
             BigDecimal payables,
+            BigDecimal forecast,
             BigDecimal balances,
             BigDecimal declared,
             BigDecimal exposure,
@@ -51,8 +52,13 @@ public final class FxExposureModels {
     public record CurrencyRow(String currency, BigDecimal rateToBase, List<Bucket> buckets) {
     }
 
+    /**
+     * {@code forecastRunAt} is when the Cash Forecast run that fed the Forecast column ran, null when the corporate has
+     * none (then only invoices, cash and declared entries count); {@code forecastStale} flags a run older than the
+     * configured days.
+     */
     public record Ladder(UUID corporateId, String corporateName, String baseCurrency, LocalDate asOf,
-                         List<CurrencyRow> currencies) {
+                         List<CurrencyRow> currencies, java.time.OffsetDateTime forecastRunAt, boolean forecastStale) {
     }
 
     public record Breach(

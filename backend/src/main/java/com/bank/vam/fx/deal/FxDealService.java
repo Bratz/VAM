@@ -103,13 +103,24 @@ public class FxDealService {
                 "Instrument     : " + when,
                 "You buy        : " + d.getBuyCurrency() + " " + money(d.getBuyAmount()),
                 "You sell       : " + d.getSellCurrency() + " " + money(d.getSellAmount()),
-                "Rate           : " + d.getRate().stripTrailingZeros().toPlainString() + " (" + d.getPair() + ")",
+                buildUp(d) + "Rate           : " + d.getRate().stripTrailingZeros().toPlainString() + " (" + d.getPair() + ")",
                 "Status         : " + d.getStatus(),
                 "",
                 "Please check these details against the trade you agreed and confirm or dispute",
                 "the deal in FX Deals. A deal that is not confirmed cannot settle.",
                 "",
                 "Simulated desk and rates for demonstration. No settlement instructions are issued.");
+    }
+
+    /** For a forward, the spot rate and forward points that make up the all-in rate, as a portal shows them; none for spot. */
+    private static String buildUp(FxDeal d) {
+        FxDealModels.ClientPrice p = FxDealModels.ClientPrice.of(d.getInstrument(), d.getSide(), d.quoteCurrency(),
+                d.getRate(), d.getMidRate(), d.getSpreadBps());
+        if (p.spotRate() == null) {
+            return "";
+        }
+        return "Spot rate      : " + p.spotRate().toPlainString() + "\n"
+                + "Forward points : " + (p.forwardPoints().signum() > 0 ? "+" : "") + p.forwardPoints().toPlainString() + "\n";
     }
 
     public byte[] confirmationPdf(FxDeal d) {

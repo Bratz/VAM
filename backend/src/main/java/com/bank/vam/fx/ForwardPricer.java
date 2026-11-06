@@ -33,6 +33,16 @@ public class ForwardPricer {
     private static final Pattern TENOR = Pattern.compile("(\\d{1,2})([WM])");
     private static final Set<String> TWO_DECIMAL_QUOTES = Set.of("JPY", "INR");
 
+    /** A pip of a pair quoted in this currency: 0.01 for yen and rupee quotes, 0.0001 otherwise. */
+    public static BigDecimal pip(String quoteCurrency) {
+        return TWO_DECIMAL_QUOTES.contains(quoteCurrency) ? new BigDecimal("0.01") : new BigDecimal("0.0001");
+    }
+
+    /** Decimal places a forward or client rate in this quote currency is shown to: the spot's places plus one. */
+    public static int rateScale(String quoteCurrency) {
+        return TWO_DECIMAL_QUOTES.contains(quoteCurrency) ? 4 : 6;
+    }
+
     private final FxMarketProperties props;
     private final RateProvider rates;
     private final Clock clock;
@@ -95,7 +105,7 @@ public class ForwardPricer {
         BigDecimal quote = ratePct(spot.quote());
         BigDecimal factor = accrual(quote, days, spot.quote()).divide(accrual(base, days, spot.base()), MC);
         BigDecimal forwardRaw = spot.mid().multiply(factor, MC);
-        BigDecimal pip = TWO_DECIMAL_QUOTES.contains(spot.quote()) ? new BigDecimal("0.01") : new BigDecimal("0.0001");
+        BigDecimal pip = pip(spot.quote());
         BigDecimal points = forwardRaw.subtract(spot.mid()).divide(pip, 2, RoundingMode.HALF_UP);
 
         return new ForwardQuote(spot.pair(), tenor, spotDate, valueDate, days, spot.mid(), points,

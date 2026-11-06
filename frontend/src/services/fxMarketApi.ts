@@ -50,6 +50,8 @@ export interface ExposureBucket {
   label: string;
   receivables: number;
   payables: number;
+  /** Cash Forecast flows no invoice carries (payroll, rent, tax, manual), signed; counted in full. */
+  forecast: number;
   balances: number;
   declared: number;
   /** receivables - payables + balances + declared; positive = long the currency. */
@@ -78,6 +80,9 @@ export interface ExposureLadder {
   baseCurrency: string;
   asOf: string;
   currencies: ExposureCurrencyRow[];
+  /** When the Cash Forecast run that fed the Forecast column ran; absent when the corporate has none. */
+  forecastRunAt?: string;
+  forecastStale: boolean;
 }
 
 export interface PolicyBreach {
