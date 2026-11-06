@@ -30,6 +30,8 @@ export interface QuoteBody {
   purpose?: string;
   /** The exposure being hedged, as "CCY|BUCKET". */
   exposureRef?: string;
+  /** The price converts a payment: it settles through the payment and is used by submitting it. */
+  forPayment?: boolean;
 }
 
 export interface Quote {
@@ -167,6 +169,57 @@ export interface Settlement {
   /** The accounts posted to; a close-out uses one of them. */
   debitAccountLabel?: string;
   creditAccountLabel?: string;
+}
+
+/** One side of a streamed price: the client buying (buy) or selling (sell) the base currency. */
+export interface StreamLeg {
+  rate: number;
+  /** Forwards only: the client spot and the points to the all-in rate. */
+  spotRate?: number;
+  forwardPoints?: number;
+  counterAmount: number;
+}
+
+/** A two-sided click-to-deal price, or why the trade goes to a request for quote. */
+export interface StreamPrice {
+  streamable: boolean;
+  reason?: string;
+  pair: string;
+  amount: number;
+  instrument: Instrument;
+  valueDate?: string;
+  priceId?: string;
+  buy?: StreamLeg;
+  sell?: StreamLeg;
+  validForSeconds: number;
+  maxAmount: number;
+  maxTenorDays: number;
+}
+
+export type ReportKind = 'deals' | 'settlements' | 'mtm' | 'confirmations';
+
+/** One report for a period: the same table the CSV and PDF are made from. */
+export interface ReportTable {
+  kind: string;
+  title: string;
+  subtitle: string;
+  columns: string[];
+  rows: string[][];
+}
+
+/** Tell me when the indicative rate of a pair reaches a level; arrives in the notification bell. Fires once. */
+export interface RateAlert {
+  id: string;
+  pair: string;
+  targetRate: number;
+  /** ABOVE: fires when the rate rises to the target; BELOW: when it falls to it. */
+  direction: 'ABOVE' | 'BELOW';
+  rateAtCreation?: number;
+  status: 'ACTIVE' | 'TRIGGERED' | 'CANCELLED';
+  note?: string;
+  createdAt: string;
+  triggeredAt?: string;
+  triggeredRate?: number;
 }
 
 /** A home-bank account an entity may settle FX through. */
@@ -358,6 +411,33 @@ export const fxDealApi = {
 
   settlements: (dealId: string) =>
     apiClient.get<ApiResponse<Settlement[]>>(`/fx/deals/${dealId}/settlements`).then(r => r.data.data),
+
+  // ---- reports ----
+  report: (kind: ReportKind, corporateId: string, from: string, to: string) =>
+    apiClient.get<ApiResponse<ReportTable>>(`/fx/reports/${kind}`, { params: { corporateId, from, to } }).then(r => r.data.data),
+
+  /** Fetched as a blob so the download carries the session. */
+  reportFile: (kind: ReportKind, corporateId: string, from: string, to: string, format: 'csv' | 'pdf') =>
+    apiClient.get<Blob>(`/fx/reports/${kind}/${format}`, { params: { corporateId, from, to }, responseType: 'blob' }).then(r => r.data),
+
+  // ---- rate alerts ----
+  alerts: (corporateId: string) =>
+    apiClient.get<ApiResponse<RateAlert[]>>('/fx/alerts', { params: { corporateId } }).then(r => r.data.data),
+
+  createAlert: (corporateId: string, pair: string, targetRate: number, note?: string) =>
+    apiClient.post<ApiResponse<RateAlert>>('/fx/alerts', { corporateId, pair, targetRate, note }).then(r => r.data.data),
+
+  cancelAlert: (id: string) =>
+    apiClient.post<ApiResponse<RateAlert>>(`/fx/alerts/${id}/cancel`).then(r => r.data.data),
+
+  // ---- streaming ----
+  /** Both sides for a small, short trade, or why it is priced on request. Ask again every second or two. */
+  stream: (p: { corporateId: string; entityId: string; pair: string; amount: number; instrument: Instrument; valueDate?: string; purpose?: string; exposureRef?: string; forPayment?: boolean }) =>
+    apiClient.get<ApiResponse<StreamPrice>>('/fx/stream', { params: p }).then(r => r.data.data),
+
+  /** Books at the clicked side of a price shown a moment ago. */
+  streamDeal: (priceId: string, side: Side) =>
+    apiClient.post<ApiResponse<Deal>>('/fx/stream/deal', { priceId, side }).then(r => r.data.data),
 
   // ---- settlement accounts ----
   instructions: (corporateId: string) =>

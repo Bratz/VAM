@@ -45,10 +45,19 @@ class ConfirmationPdfTest {
     }
 
     @Test
-    void aVeryLongConfirmationStaysOnOnePage() {
+    void longTextRunsOnToMorePagesOf68LinesAndNothingIsLost() {
         String pdf = asText(ConfirmationPdf.render("line\n".repeat(500)));
 
-        assertThat(pdf).contains("/Count 1");
-        assertThat(pdf.split("Tj", -1).length - 1).isLessThanOrEqualTo(68);
+        // 500 lines plus the empty one after the last newline: 501 over pages of 68.
+        assertThat(pdf).contains("/Count 8");
+        assertThat(pdf.split("Tj", -1).length - 1).isEqualTo(501);
+    }
+
+    @Test
+    void aFormFeedStartsANewPageAndLandscapeIsWider() {
+        String pdf = asText(ConfirmationPdf.render("first\fsecond", true));
+
+        assertThat(pdf).contains("/Count 2").contains("/MediaBox [0 0 842 595]");
+        assertThat(pdf).contains("(first) Tj").contains("(second) Tj");
     }
 }

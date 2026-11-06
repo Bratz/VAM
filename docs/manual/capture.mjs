@@ -80,6 +80,7 @@ const SECTIONS = [
     ['fx-deals', 'FX Deals'],
     ['fx-rfq', 'RFQ Log'],
     ['fx-settlement', 'Settlement Instructions'],
+    ['fx-reports', 'FX Reports'],
   ]},
   { title: 'Credit & Interest', pages: [
     ['credit-limits', 'Credit Limits'],

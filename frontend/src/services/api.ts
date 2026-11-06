@@ -3063,12 +3063,15 @@ export const payablesApiPhase2 = {
   },
 
   // Execute payment for an approved payable
-  executePayment: async (payableId: string, executedBy: string, paymentChannel?: string, paymentMethod?: string): Promise<any> => {
+  /** fx: how a payable in another currency than its account is converted (a locked rate or a booked deal). */
+  executePayment: async (payableId: string, executedBy: string, paymentChannel?: string, paymentMethod?: string,
+                         fx?: { fxPriceId?: string; fxQuoteId?: string; fxDealId?: string } | null): Promise<any> => {
     const response = await apiClient.post<ApiResponse<any>>(`/payables/${payableId}/execute`, {
       payableId,
       executedBy,
       paymentChannel,
-      paymentMethod
+      paymentMethod,
+      ...(fx ?? {}),
     });
     return extractPayableData(response.data);
   },
@@ -6019,7 +6022,7 @@ export interface CreditAgreement {
   agreementName: string;
   agreementType: AgreementType;
   counterpartyBankId?: string;
-  counterpartyBankName?: string;
+  bankName?: string;
   externalReference?: string;
   totalLimit: number;
   totalUtilized: number;
@@ -6042,7 +6045,7 @@ interface CreditAgreementCreateRequest {
   agreementName: string;
   agreementType: AgreementType;
   counterpartyBankId?: string;
-  counterpartyBankName?: string;
+  bankName?: string;
   externalReference?: string;
   totalLimit: number;
   limitCurrency: string;
@@ -6153,7 +6156,7 @@ export interface CreditFacility {
   facilityName: string;
   facilityType: FacilityType;
   externalReference?: string;
-  facilityLimit: number;
+  sanctionedLimit: number;
   drawingPower: number;
   currentOutstanding: number;
   availableLimit: number;
@@ -6179,7 +6182,7 @@ interface CreditFacilityCreateRequest {
   facilityName: string;
   facilityType: FacilityType;
   externalReference?: string;
-  facilityLimit: number;
+  sanctionedLimit: number;
   facilityCurrency: string;
   linkedPhysicalAccountId?: string;
   effectiveDate: string;
@@ -7975,6 +7978,10 @@ export interface Iso20022OutwardPaymentRequest {
   serviceLevel?: 'SEPA' | 'NURG' | 'URGP';
   /** The route chosen in the routing step, when one was. */
   routeSelectionId?: string;
+  /** FX when the currency is not the source account's (backend FxPaymentService). */
+  fxPriceId?: string;
+  fxQuoteId?: string;
+  fxDealId?: string;
 }
 
 interface Iso20022OutwardPaymentResponse {

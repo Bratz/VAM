@@ -4,6 +4,7 @@ import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.util.Iso20022XmlBuilder;
 import com.bank.vam.repository.VirtualAccountRepository;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -63,6 +65,7 @@ public class Iso20022OutwardPaymentService {
     private final PaymentRoutingService paymentRoutingService;
     private final VirtualAccountRepository virtualAccountRepository;
     private final Iso20022XmlBuilder xmlBuilder;
+    private final FxPaymentService fxPayments;
 
     // ========================================================================
     // PROCESS OUTWARD PAYMENT - Delegates to TransactionService
@@ -80,6 +83,8 @@ public class Iso20022OutwardPaymentService {
     @Transactional
     public OutwardPaymentResponse processOutwardPayment(OutwardPaymentRequest request) {
         long startTime = System.currentTimeMillis();
+        FxPaymentService.Conversion fx = null;
+        BigDecimal instructed = request.getAmount();
 
         log.info("ISO 20022 outward payment: sourceVa={}, amount={} {}, beneficiary={}, isPobo={}",
                 request.getSourceVaId(), request.getAmount(), request.getCurrency(), 
@@ -95,6 +100,14 @@ public class Iso20022OutwardPaymentService {
 
             if (!sourceVa.isActive()) {
                 return buildErrorResponse(request, startTime, "AC04", "Source virtual account is not active");
+            }
+
+            // A payment in another currency is converted first; the legs below then move the debit amount, in the
+            // account's currency. The request's amount goes back to the instructed one for the pain.001.
+            fx = fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), fxOf(request.getFxPriceId(),
+                    request.getFxQuoteId(), request.getFxDealId(), request.getFxAtMarket()));
+            if (fx != null) {
+                request.setAmount(fx.debitAmount());
             }
 
             Transaction txn;
@@ -128,6 +141,10 @@ public class Iso20022OutwardPaymentService {
             if (request.getRouteSelectionId() != null) {
                 paymentRoutingService.attachToTransaction(request.getRouteSelectionId(), txn.getId());
             }
+            request.setAmount(instructed);
+            if (fx != null) {
+                fxPayments.settle(fx, txn, sourceVa);
+            }
 
             // Generate pain.001 XML
             String pain001Xml = xmlBuilder.buildPain001(request, sourceVa, txn);
@@ -140,11 +157,21 @@ public class Iso20022OutwardPaymentService {
 
         } catch (BusinessException e) {
             log.warn("ISO 20022 outward payment failed: {}", e.getMessage());
+            request.setAmount(instructed);
+            // Nothing of a failed payment is kept (its FX booking included). Rolling back here, rather than letting a
+            // failed inner call mark the transaction, turns the failure into the RJCT response instead of a 500.
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return buildErrorResponse(request, startTime, "RJCT", e.getMessage());
         } catch (Exception e) {
             log.error("ISO 20022 outward payment error: ", e);
+            request.setAmount(instructed);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return buildErrorResponse(request, startTime, "TECH", "Technical error: " + e.getMessage());
         }
+    }
+
+    private static FxPaymentService.Instruction fxOf(UUID priceId, UUID quoteId, UUID dealId, Boolean atMarket) {
+        return new FxPaymentService.Instruction(priceId, quoteId, dealId, Boolean.TRUE.equals(atMarket));
     }
 
     /**
@@ -319,7 +346,16 @@ public class Iso20022OutwardPaymentService {
 
             // Process each instruction via TransactionService
             for (PaymentInstruction instruction : request.getInstructions()) {
+                FxPaymentService.Conversion fx = null;
                 try {
+                    // A bulk file has no one to click a price: an instruction in another currency takes its own FX
+                    // fields, else the live price within the streaming limits.
+                    boolean anyFx = instruction.getFxPriceId() != null || instruction.getFxQuoteId() != null
+                            || instruction.getFxDealId() != null || instruction.getFxAtMarket() != null;
+                    fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), anyFx
+                            ? fxOf(instruction.getFxPriceId(), instruction.getFxQuoteId(), instruction.getFxDealId(), instruction.getFxAtMarket())
+                            : FxPaymentService.Instruction.AT_MARKET);
+                    BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
                     Transaction txn;
 
                     if (isIhbAccount) {
@@ -327,7 +363,7 @@ public class Iso20022OutwardPaymentService {
                         TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
                                 .ownerVaId(sourceVa.getId())              // IHB Current Account
                                 .payerVaId(treasurySettlementVa.getId())  // Treasury Settlement VA
-                                .amount(instruction.getAmount())
+                                .amount(debit)
                                 .beneficiaryName(instruction.getCreditorName())
                                 .beneficiaryAccount(instruction.getCreditorAccount())
                                 .beneficiaryBankSwift(instruction.getCreditorBic())
@@ -347,7 +383,7 @@ public class Iso20022OutwardPaymentService {
                         TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
                                 .ownerVaId(request.getBehalfOfVaId())
                                 .payerVaId(request.getSourceVaId())
-                                .amount(instruction.getAmount())
+                                .amount(debit)
                                 .beneficiaryName(instruction.getCreditorName())
                                 .beneficiaryAccount(instruction.getCreditorAccount())
                                 .beneficiaryBankSwift(instruction.getCreditorBic())
@@ -361,7 +397,7 @@ public class Iso20022OutwardPaymentService {
                         // Standard bulk - each instruction goes through makePayment
                         TransactionDto.PaymentRequest paymentRequest = TransactionDto.PaymentRequest.builder()
                                 .fromVaId(request.getSourceVaId())
-                                .amount(instruction.getAmount())
+                                .amount(debit)
                                 .beneficiaryName(instruction.getCreditorName())
                                 .beneficiaryAccount(instruction.getCreditorAccount())
                                 .beneficiaryBankSwift(instruction.getCreditorBic())
@@ -374,9 +410,12 @@ public class Iso20022OutwardPaymentService {
                         txn = transactionService.makePayment(paymentRequest);
                     }
 
+                    if (fx != null) {
+                        fxPayments.settle(fx, txn, sourceVa);
+                    }
                     transactions.add(txn);
                     successCount++;
-                    totalAmount = totalAmount.add(instruction.getAmount());
+                    totalAmount = totalAmount.add(debit);
                     if (txn.getFeeAmount() != null) {
                         totalFees = totalFees.add(txn.getFeeAmount());
                     }
@@ -391,6 +430,7 @@ public class Iso20022OutwardPaymentService {
 
                 } catch (Exception e) {
                     log.warn("Bulk instruction failed: {} - {}", instruction.getInstructionId(), e.getMessage());
+                    fxPayments.abandon(fx, e.getMessage());
                     failedCount++;
 
                     results.add(PaymentInstructionResult.builder()

@@ -879,6 +879,11 @@ public class PayablesDto {
         private String paymentMethod;    // WIRE, ACH, RTGS, SEPA
         private String executedBy;
         private String notes;
+        /** FX, when the payable's currency is not its account's (see FxPaymentService). */
+        private UUID fxPriceId;
+        private UUID fxQuoteId;
+        private UUID fxDealId;
+        private Boolean fxAtMarket;
     }
 
     /**

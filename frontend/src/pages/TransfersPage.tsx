@@ -17,6 +17,8 @@ import { Send, ArrowRight, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Building
 import { Card, Button, Badge, Input, Select , StatusIconBadge, DataTable } from '../components/ui';
 import { Modal, Stepper } from '../components/ui/enhanced';
 import { PaymentRouteOptions } from '../components/payments/PaymentRouteOptions';
+import { PaymentFxPanel, PaymentFx } from '../components/payments/PaymentFxPanel';
+import { useUser } from '../context/useUser';
 import { formatCurrency, formatRelativeTime, cn } from '../utils';
 import {
   transactionsApi,
@@ -1647,6 +1649,9 @@ export default function TransfersPage() {
   // payment goes out unrouted, which is every payment before this existed and every one in a
   // currency uc05 cannot quote.
   const [routeSelection, setRouteSelection] = useState<{ id: string; channel: string } | null>(null);
+  /** How a payment in another currency than its account is converted; null until a rate or deal is chosen. */
+  const [paymentFx, setPaymentFx] = useState<PaymentFx | null>(null);
+  const { currentCorporateId } = useUser();
   const [refreshing, setRefreshing] = useState(false);
 
   // Corporate/Program/Legal Entity selection
@@ -2107,6 +2112,11 @@ export default function TransfersPage() {
       toast.error('Please fill in all required fields');
       return;
     }
+    const payingAccount = allAccounts.find(a => a.id === formData.fromVaId);
+    if (payingAccount && payingAccount.currencyCode !== formData.currency && !paymentFx) {
+      toast.error(`Choose how to convert ${formData.currency} from the ${payingAccount.currencyCode} account: lock a rate or use a booked deal`);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -2124,6 +2134,7 @@ export default function TransfersPage() {
         behalfOfVaId: formData.isPobo ? formData.behalfOfVaId : undefined,
         endToEndId: `E2E-${Date.now()}`,
         routeSelectionId: routeSelection?.id,
+        ...(paymentFx ?? {}),
       };
 
       const response = await iso20022Api.processOutwardPayment(request);
@@ -3141,6 +3152,21 @@ export default function TransfersPage() {
                     onChange={(e) => setFormData({ ...formData, valueDate: e.target.value })}
                   />
                 </div>
+                {transferType === 'outward' && (() => {
+                  const payingAccount = allAccounts.find(a => a.id === formData.fromVaId);
+                  return (
+                    <div className="mt-4">
+                      <PaymentFxPanel
+                        corporateId={payingAccount?.corporateId ?? currentCorporateId}
+                        entityId={payingAccount?.owningEntityId}
+                        accountCurrency={payingAccount?.currencyCode}
+                        currency={formData.currency}
+                        amount={parseFloat(formData.amount) || 0}
+                        onChange={setPaymentFx}
+                      />
+                    </div>
+                  );
+                })()}
                 <div className="mt-4">
                   <Input
                     label={transferType === 'outward' ? 'Remittance Information' : 'Description'}

@@ -41,7 +41,16 @@ public class FxQuoteService {
 
     /** What the client asks for. {@code valueDate} is the contracted date, or the last drawdown date of a window. */
     public record Command(UUID corporateId, UUID entityId, String pair, Side side, Instrument instrument, BigDecimal amount,
-                          LocalDate valueDate, LocalDate windowStart, String purpose, String exposureRef) {
+                          LocalDate valueDate, LocalDate windowStart, String purpose, String exposureRef, boolean forPayment) {
+
+        /**
+         * {@code forPayment}: the price converts a payment. It settles through the payment, not the settlement
+         * accounts, so none are needed, and it can only be used by submitting that payment ({@link FxPaymentService}).
+         */
+        public Command(UUID corporateId, UUID entityId, String pair, Side side, Instrument instrument, BigDecimal amount,
+                       LocalDate valueDate, LocalDate windowStart, String purpose, String exposureRef) {
+            this(corporateId, entityId, pair, side, instrument, amount, valueDate, windowStart, purpose, exposureRef, false);
+        }
     }
 
     private final FxQuoteRequestRepository quotes;
@@ -57,6 +66,15 @@ public class FxQuoteService {
 
     @Transactional
     public FxQuoteRequest request(Command c) {
+        return request(c, null);
+    }
+
+    /**
+     * {@code streamed} is a price the client dealt on from the stream ({@link FxStreamService}): it is used as is
+     * instead of asking the desk again, and cannot be negotiated. Null prices the request now.
+     */
+    @Transactional
+    FxQuoteRequest request(Command c, Price streamed) {
         if (!corporates.existsById(c.corporateId())) {
             throw new ResourceNotFoundException("Corporate not found: " + c.corporateId());
         }
@@ -81,13 +99,15 @@ public class FxQuoteService {
         log.quote(q, null, QuoteStatus.REQUESTED, describe(q));
 
         // An invalid pair or date throws here, which rolls the request back: nothing is left behind.
-        Price price = dealer.price(c.pair(), c.side(), c.instrument(), q.getAmount(), c.valueDate(), c.windowStart());
+        Price price = streamed != null ? streamed
+                : dealer.price(c.pair(), c.side(), c.instrument(), q.getAmount(), c.valueDate(), c.windowStart());
 
         FxLimitService.Line line = limitService.line(c.corporateId());
         BigDecimal charge = limitService.charge(c.instrument(), q.baseCurrency(), q.getAmount(), LocalDate.now(),
                 price.pricedDate(), line.currency());
         String refusal = limitService.refusal(c.corporateId(), c.entityId(), charge);
-        if (refusal == null) {
+        q.setForPayment(c.forPayment());
+        if (refusal == null && !c.forPayment()) {
             // The bank must be able to post both legs: the bought currency to one account, the sold from another.
             boolean buyBase = c.side() == Side.BUY;
             FxSettlementAccounts.Resolved buy = settlementAccounts.resolve(c.corporateId(), c.entityId(), buyBase ? q.baseCurrency() : q.quoteCurrency());
@@ -117,15 +137,16 @@ public class FxQuoteService {
         q.setForwardMid(price.forwardMid());
         q.setRateScale(price.forwardMid().scale());
         q.setOpeningSpreadBps(price.spreadBps());
-        q.setMaxRounds(props.getNegotiationMaxRounds());
+        q.setMaxRounds(streamed != null ? 0 : props.getNegotiationMaxRounds());
         q.setNegotiationRounds(0);
         q.setQuotedAt(LocalDateTime.now());
         q.setValidUntil(q.getQuotedAt().plusSeconds(props.getQuoteValiditySeconds()));
         q.setLimitCharge(charge);
         q.setLimitCurrency(line.currency());
         q.setStatus(QuoteStatus.QUOTED);
-        log.quote(q, QuoteStatus.REQUESTED, QuoteStatus.QUOTED,
-                "Rate " + price.clientRate().toPlainString() + ", firm for " + props.getQuoteValiditySeconds() + "s");
+        log.quote(q, QuoteStatus.REQUESTED, QuoteStatus.QUOTED, streamed != null
+                ? "Dealt on the streamed price " + price.clientRate().toPlainString()
+                : "Rate " + price.clientRate().toPlainString() + ", firm for " + props.getQuoteValiditySeconds() + "s");
         return q;
     }
 
@@ -180,8 +201,17 @@ public class FxQuoteService {
 
     @Transactional(noRollbackFor = BusinessException.class)
     public FxDeal accept(UUID id) {
+        return accept(id, false);
+    }
+
+    /** {@code forPayment}: accepted by submitting the payment it converts; the only way such a price is used. */
+    @Transactional(noRollbackFor = BusinessException.class)
+    FxDeal accept(UUID id, boolean forPayment) {
         FxQuoteRequest q = quotes.lockById(id).orElseThrow(() -> notFound(id));
         expireIfLapsed(q);
+        if (Boolean.TRUE.equals(q.getForPayment()) && !forPayment) {
+            throw new BusinessException("FX_QUOTE_FOR_PAYMENT", "This price converts a payment; submit the payment to use it");
+        }
 
         if (q.getStatus() == QuoteStatus.ACCEPTED) {
             return deals.findById(q.getDealId()).orElseThrow();
@@ -274,7 +304,7 @@ public class FxQuoteService {
         }
     }
 
-    private void validate(Command c) {
+    void validate(Command c) {
         if (c.pair() == null || !PAIR.matcher(c.pair()).matches()) {
             throw new BusinessException("FX_PAIR_UNSUPPORTED", "Pair must look like EUR/USD: " + c.pair());
         }
@@ -284,7 +314,8 @@ public class FxQuoteService {
         if (c.side() == null || c.instrument() == null) {
             throw new BusinessException("FX_REQUEST_INVALID", "Side and instrument are required");
         }
-        if (c.amount() == null || c.amount().compareTo(props.getMinAmount()) < 0) {
+        // A payment's conversion has no dealing minimum: it is as small as the payment.
+        if (c.amount() == null || c.amount().signum() <= 0 || (!c.forPayment() && c.amount().compareTo(props.getMinAmount()) < 0)) {
             throw new BusinessException("FX_AMOUNT_INVALID", "Amount must be at least " + props.getMinAmount().toPlainString());
         }
         if (c.instrument() != Instrument.SPOT && c.valueDate() == null) {

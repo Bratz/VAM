@@ -51,6 +51,8 @@ public class PaymentsProcessor implements DomainProcessor {
                         .sourceVaId(sourceVa.getId())
                         .amount(row.amount())
                         .currency(row.currency())
+                        // No one is at the file to lock a rate: a row in another currency takes the live price.
+                        .fxAtMarket(true)
                         .creditorName(row.creditorName())
                         .creditorAccount(row.creditorAccount())
                         .remittanceInfo(row.remittanceInformation())

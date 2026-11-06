@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, ChevronDown, LogOut, User, HelpCircle, Settings, Layers, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Search, ChevronDown, LogOut, User, HelpCircle, Settings, Layers, Moon, Sun, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
 import { cn } from '../../utils';
 import { Avatar } from '../ui';
 import { BRAND } from '../../branding';
@@ -373,22 +374,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPath, onNavigate, collapsed, o
 
 interface HeaderProps {
   currentPage: string;
+  onNavigate: (page: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage }) => {
-  const [showNotifications, setShowNotifications] = useState(false);
+const Header: React.FC<HeaderProps> = ({ currentPage, onNavigate }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isTreasury } = useUser();
   const { resolvedMode, toggleMode } = useTheme();
   const pageActions = useRegisteredPageHeaderActions();
   const { title: registeredTitle, description: registeredDescription } = useRegisteredPageHeader();
 
-  const notifications = [
-    { id: 0, title: 'POBO Payment Processed', message: 'AED 150,000 paid by HQ on behalf of Dubai Sub', time: '1 min ago', type: 'success' },
-    { id: 1, title: 'Netting Cycle Ready', message: 'Q1 2024 cycle calculated - AED 275K savings', time: '5 min ago', type: 'info' },
-    { id: 2, title: 'Credit Limit Warning', message: 'EUR Overdraft Facility at 85% utilization', time: '15 min ago', type: 'warning' },
-    { id: 3, title: 'New Exception', message: 'Unmatched payment AED 15,000 routed to Exception VA', time: '30 min ago', type: 'warning' },
-  ];
 
   return (
     <header className={cn(
@@ -517,62 +512,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage }) => {
               : <Moon className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />}
           </button>
 
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2.5 hover:bg-neutral-100 dark:hover:bg-primary-800/50 rounded-lg transition-colors"
-            >
-              <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-error-500 rounded-full ring-2 ring-white" />
-            </button>
-
-            {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
-                <div className={cn(
-                  'absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)]',
-                  'bg-surface-card rounded-lg shadow-2xl border border-neutral-200/60 z-20 overflow-hidden',
-                  'animate-scale-in origin-top-right'
-                )}>
-                  <div className="p-4 border-b border-edge-subtle flex items-center justify-between">
-                    <h3 className="font-semibold text-primary-900 dark:text-neutral-50">Notifications</h3>
-                    <button className="text-body-sm text-primary-600 hover:text-primary-700 dark:hover:text-primary-200 font-medium dark:text-primary-200">
-                      Mark all read
-                    </button>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        className="p-4 hover:bg-neutral-50 dark:hover:bg-primary-800/50 cursor-pointer border-b border-edge-subtle last:border-0 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            'w-2.5 h-2.5 rounded-full mt-1.5 shrink-0',
-                            n.type === 'warning' && 'bg-warning-500',
-                            n.type === 'info' && 'bg-info-500',
-                            n.type === 'success' && 'bg-success-500',
-                            n.type === 'error' && 'bg-error-500'
-                          )} />
-                          <div className="min-w-0">
-                            <p className="body-strong">{n.title}</p>
-                            <p className="body-sm mt-0.5 line-clamp-2">{n.message}</p>
-                            <p className="caption mt-1.5">{n.time}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="p-3 border-t border-edge-subtle bg-neutral-50/50 dark:bg-primary-950/50">
-                    <button className="w-full text-body-sm text-primary-600 hover:text-primary-700 dark:hover:text-primary-200 font-medium py-1.5 dark:text-primary-200">
-                      View All Notifications
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <NotificationBell onNavigate={onNavigate} />
 
           {/* Divider */}
           <div className="w-px h-8 bg-neutral-200 mx-2 block dark:bg-primary-800" />
@@ -702,7 +642,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onNavigat
         sidebarCollapsed ? 'pl-16' : 'pl-60', // clears the fixed sidebar
         'transition-[padding] duration-300'
       )}>
-        <Header currentPage={currentPage} />
+        <Header currentPage={currentPage} onNavigate={onNavigate} />
 
         {/* App shell padding + page-enter animation only. Content max-width
             and vertical rhythm are owned by the <Page> primitive (see

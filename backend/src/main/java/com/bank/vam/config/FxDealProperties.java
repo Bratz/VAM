@@ -23,6 +23,33 @@ public class FxDealProperties {
     private int quoteValiditySeconds = 30;
 
     /**
+     * Streaming (click-to-deal), set by the bank per pair: the largest amount, in the pair's base currency, and the
+     * longest tenor in days after spot (0 = spot only) it streams. Larger or longer trades go to a request for quote.
+     * Either direction of a pair uses its row; a pair without one takes {@code defaultStreaming}.
+     */
+    private Map<String, StreamLimit> streaming = Map.ofEntries(
+            Map.entry("EUR/USD", stream("1000000", 31)), Map.entry("GBP/USD", stream("1000000", 31)),
+            Map.entry("USD/JPY", stream("1000000", 31)), Map.entry("USD/CHF", stream("1000000", 31)),
+            Map.entry("EUR/GBP", stream("1000000", 31)), Map.entry("EUR/JPY", stream("1000000", 31)));
+    private StreamLimit defaultStreaming = stream("250000", 0);
+    /** How long a streamed price can be dealt on after it was shown. */
+    private int streamValiditySeconds = 5;
+
+    @Getter
+    @Setter
+    public static class StreamLimit {
+        private BigDecimal maxAmount;
+        private int maxTenorDays;
+    }
+
+    private static StreamLimit stream(String maxAmount, int maxTenorDays) {
+        StreamLimit s = new StreamLimit();
+        s.setMaxAmount(new BigDecimal(maxAmount));
+        s.setMaxTenorDays(maxTenorDays);
+        return s;
+    }
+
+    /**
      * Negotiation: how many times a client may ask for a better price on one request, how much of its opening
      * margin the desk will ever give up (more on larger tickets), and how much of what is left it gives per round.
      */

@@ -3,6 +3,7 @@ package com.bank.vam.service.payables;
 import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.payables.PayablesDto.*;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
@@ -62,6 +63,7 @@ public class PayablesService {
     private final NettingService nettingService;
     private final LegalEntityRepository legalEntityRepository;
     private final PoboExecutionService poboExecutionService;
+    private final FxPaymentService fxPayments;
 
     // TODO: Inject these when available
     // private final IhbUnifiedService ihbService;
@@ -652,6 +654,13 @@ public class PayablesService {
         PaymentRequest savedPaymentRequest = paymentRequestRepository.save(paymentRequest);
         log.info("Created PaymentRequest: {} for payable: {}", savedPaymentRequest.getId(), payable.getPayableNumber());
 
+        // A payable in another currency than its account is converted first (a rate locked on screen, a booked deal,
+        // or for files the live price); the legs then debit the converted amount in the account's currency.
+        FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(),
+            new FxPaymentService.Instruction(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
+                Boolean.TRUE.equals(request.getFxAtMarket())));
+        BigDecimal debit = fx == null ? payable.getNetAmount() : fx.debitAmount();
+
         // 2. Execute payment via TransactionService
         // =====================================================================
         // ROUTING LOGIC:
@@ -682,7 +691,7 @@ public class PayablesService {
             TransactionDto.PoboPaymentRequest poboRequest = TransactionDto.PoboPaymentRequest.builder()
                 .ownerVaId(sourceVa.getId())           // IHB Current Account (subsidiary bears cost)
                 .payerVaId(treasurySettlementVa.getId()) // Treasury Settlement VA (makes payment)
-                .amount(payable.getNetAmount())
+                .amount(debit)
                 .valueDate(payable.getScheduledDate() != null ? payable.getScheduledDate() : LocalDate.now())
                 .description("POBO Payment for " + (payable.getInvoiceNumber() != null ?
                     "Invoice: " + payable.getInvoiceNumber() : payable.getPayableNumber()))
@@ -713,7 +722,7 @@ public class PayablesService {
             // Regular payment flow
             TransactionDto.PaymentRequest paymentTxnRequest = TransactionDto.PaymentRequest.builder()
                 .fromVaId(sourceVa.getId())
-                .amount(payable.getNetAmount())
+                .amount(debit)
                 .valueDate(payable.getScheduledDate() != null ? payable.getScheduledDate() : LocalDate.now())
                 .description("Payment for " + (payable.getInvoiceNumber() != null ?
                     "Invoice: " + payable.getInvoiceNumber() : payable.getPayableNumber()))
@@ -725,6 +734,9 @@ public class PayablesService {
                 .build();
 
             debitTxn = transactionService.makePayment(paymentTxnRequest);
+        }
+        if (fx != null) {
+            fxPayments.settle(fx, debitTxn, sourceVa);
         }
         log.info("Transaction created via TransactionService: {} for VA: {}",
             debitTxn.getReferenceNumber(), sourceVa.getVaNumber());

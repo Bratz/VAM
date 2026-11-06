@@ -64,18 +64,52 @@ public class FxSettlementService {
                     + d.getWindowStart() + " to " + d.getValueDate() + ", and not in the past");
         }
 
-        List<FxSettlement> earlier = new ArrayList<>(settlements.findByDealIdOrderByCreatedAtAsc(dealId)).stream()
-                .filter(s -> s.getKind() == SettlementKind.DRAWDOWN).toList();
-        boolean last = amount.compareTo(d.remainingBase()) == 0;
-        FxSettlement s = settlement(d, SettlementKind.DRAWDOWN, valueDate,
-                last ? d.getBuyAmount().subtract(sum(earlier, true)) : share(d.getBuyAmount(), amount, d.baseAmount()),
-                last ? d.getSellAmount().subtract(sum(earlier, false)) : share(d.getSellAmount(), amount, d.baseAmount()));
+        BigDecimal[] legs = legsFor(d, amount);
+        FxSettlement s = settlement(d, SettlementKind.DRAWDOWN, valueDate, legs[0], legs[1]);
         d.setDrawnAmount(d.getDrawnAmount().add(amount));
         if (d.getStatus() == DealStatus.ACTIVE) {
             dealService.transition(d, DealStatus.PARTIALLY_DRAWN, "First drawdown taken");
         }
         log.note(d, "DRAWDOWN_SCHEDULED", "Drawdown of " + d.baseCurrency() + " " + amount.toPlainString()
                 + " scheduled for " + valueDate + "; " + d.remainingBase().toPlainString() + " left in the window");
+        return settlements.save(s);
+    }
+
+    /**
+     * The bought and sold amounts for {@code base} of what is left of a deal. The last part takes exactly what is
+     * left of each leg, so no rounding is lost across parts.
+     */
+    BigDecimal[] legsFor(FxDeal d, BigDecimal base) {
+        List<FxSettlement> earlier = settlements.findByDealIdOrderByCreatedAtAsc(d.getId()).stream()
+                .filter(s -> s.getKind() == SettlementKind.DRAWDOWN).toList();
+        boolean last = base.compareTo(d.remainingBase()) == 0;
+        return new BigDecimal[] {
+                last ? d.getBuyAmount().subtract(sum(earlier, true)) : share(d.getBuyAmount(), base, d.baseAmount()),
+                last ? d.getSellAmount().subtract(sum(earlier, false)) : share(d.getSellAmount(), base, d.baseAmount())};
+    }
+
+    /**
+     * Part or all of a deal paid out as a payment ({@link FxPaymentService}): settled now, through the payment, so
+     * nothing is posted to the settlement accounts. The rest of a forward still settles through them on its date.
+     */
+    @Transactional
+    public FxSettlement paidByPayment(FxDeal d, BigDecimal base, String paymentRef, String debitLabel) {
+        BigDecimal[] legs = legsFor(d, base);
+        boolean whole = base.compareTo(d.baseAmount()) == 0;
+        FxSettlement s = settlement(d, whole ? SettlementKind.MATURITY : SettlementKind.DRAWDOWN, LocalDate.now(), legs[0], legs[1]);
+        s.setStatus(SettlementStatus.SETTLED);
+        s.setSettledAt(LocalDateTime.now());
+        s.setDebitAccountLabel(debitLabel);
+        s.setCreditAccountLabel("Paid out as payment " + paymentRef);
+        d.setDrawnAmount(d.getDrawnAmount().add(base));
+        log.note(d, "PAID_BY_PAYMENT", d.getBuyCurrency() + " " + legs[0].toPlainString() + " paid out as payment " + paymentRef
+                + ", " + d.getSellCurrency() + " " + legs[1].toPlainString() + " debited from " + debitLabel);
+        if (d.remainingBase().signum() == 0) {
+            d.setSettledAt(LocalDateTime.now());
+            dealService.transition(d, DealStatus.SETTLED, "Paid out as payment " + paymentRef);
+        } else if (d.getStatus() == DealStatus.ACTIVE) {
+            dealService.transition(d, DealStatus.PARTIALLY_DRAWN, "Part paid out as payment " + paymentRef);
+        }
         return settlements.save(s);
     }
 

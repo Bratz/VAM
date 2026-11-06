@@ -74,6 +74,7 @@ import FxExposurePage from './pages/fx/FxExposurePage';
 import FxDealsPage from './pages/fx/FxDealsPage';
 import FxRfqPage from './pages/fx/FxRfqPage';
 import FxSettlementPage from './pages/fx/FxSettlementPage';
+import FxReportsPage from './pages/fx/FxReportsPage';
 import EntityBalanceTreePage from './pages/EntityBalanceTreePage';
 
 // ============================================================================
@@ -178,6 +179,7 @@ export type PageType =
   | 'fx-deals'
   | 'fx-rfq'
   | 'fx-settlement'
+  | 'fx-reports'
   | 'entity-balance-tree'
   
   // Unified VAM Design - Legal Entity & Account Attachments
@@ -443,7 +445,7 @@ const sectionFor = (page: PageType): SectionKey => {
   if (page === 'sync-admin' || page === 'integrations' || page === 'tax-charges' || page === 'settings' || page === 'operation-history') return 'admin';
   if (page.startsWith('intercompany')) return 'intercompany';
   const treasuryPages: PageType[] = ['ihb','pooling','notional-pooling','sweeping','simulator','netting-enhanced','hierarchy',
-    'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates','fx-workspace','fx-market','fx-exposure','fx-deals','fx-rfq','fx-settlement',
+    'forecasting','multi-bank-liquidity','currency-mirrors','credit-limits','funds-check','balance-aggregation','fx-rates','fx-workspace','fx-market','fx-exposure','fx-deals','fx-rfq','fx-settlement','fx-reports',
     'entity-balance-tree','legal-entities','account-attachments','credit-agreements','credit-facilities','interest-config',
     'interest-accruals','exceptions','hierarchy-operations'];
   if (treasuryPages.includes(page)) return 'treasury';
@@ -595,6 +597,7 @@ const App: React.FC = () => {
       case 'fx-workspace': return <FxDealsPage />;
       case 'fx-rfq': return <FxRfqPage />;
       case 'fx-settlement': return <FxSettlementPage />;
+      case 'fx-reports': return <FxReportsPage />;
       case 'entity-balance-tree': return <EntityBalanceTreePage />;
       
       // ====================================================================

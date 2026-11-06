@@ -27,10 +27,15 @@ import java.util.Set;
  * Demo data: every entity holding an FX sub-limit gets a current account at the home bank, with its mirror, in its
  * functional currency, USD, EUR and GBP where it has none, opened with 5,000,000. Without them its deals have nowhere
  * to settle and are declined. Runs after {@link FxLineSeeder}; idempotent.
+ *
+ * <p>An entity that gains a second home-bank account in a currency (for instance a program's own bank account,
+ * opened by {@code ProgramBankAccountBackfillRunner}, which runs before this) would have its deals in that currency
+ * declined until someone chose between them. Where it has no instruction there, the instruction is set to the oldest
+ * account: the one its deals were settling through while it was the only one.
  */
 @Slf4j
 @Component
-@Order(112)
+@Order(114)
 @RequiredArgsConstructor
 public class FxSettlementAccountSeeder implements ApplicationRunner {
 
@@ -64,9 +69,14 @@ public class FxSettlementAccountSeeder implements ApplicationRunner {
                         currencies.add(e.getFunctionalCurrency() != null ? e.getFunctionalCurrency() : homeCurrency.of(c.getId()));
                         currencies.addAll(java.util.List.of("USD", "EUR", "GBP"));
                         for (String ccy : currencies) {
-                            if (settlementAccounts.eligible(e.getId(), ccy).isEmpty()) {
+                            var eligible = settlementAccounts.eligible(e.getId(), ccy);
+                            if (eligible.isEmpty()) {
                                 shadows.ensureHomeBankShadow(banks.save(account(c, e, ccy, bic)));
                                 opened++;
+                            } else if (eligible.size() > 1 && !settlementAccounts.resolve(c.getId(), e.getId(), ccy).fromInstruction()) {
+                                settlementAccounts.setInstruction(c.getId(), e.getId(), ccy, eligible.get(0).id());
+                                log.info("FX settlement accounts: {} now has {} {} accounts at the home bank; its deals keep settling "
+                                        + "through {}", e.getEntityName(), eligible.size(), ccy, eligible.get(0).label());
                             }
                         }
                     } catch (Exception ex) {

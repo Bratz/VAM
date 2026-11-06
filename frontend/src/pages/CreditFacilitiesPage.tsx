@@ -12,7 +12,8 @@ import { Card, Button, Badge, Input , StatusIconBadge } from '../components/ui';
 import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
-import { creditFacilitiesApi, CreditFacility, FacilityType, ApiResponse } from '../services/api';
+import { creditFacilitiesApi, creditAgreementsApi, CreditAgreement, CreditFacility, FacilityType, ApiResponse } from '../services/api';
+import { useUser } from '../context/useUser';
 
 // ============================================================================
 // CONSTANTS
@@ -99,7 +100,7 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
           <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} />
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{facility.facilityName}</h3>
-            <p className="body-sm line-clamp-1">{facility.agreementName || 'Standalone Facility'}</p>
+            <p className="body-sm line-clamp-1">{facility.agreementName ?? (facility.creditAgreementId ? 'Credit agreement' : 'Not under an agreement')}</p>
           </div>
         </div>
         <Badge className={cn("text-caption", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
@@ -116,10 +117,10 @@ const FacilityCard: React.FC<FacilityCardProps> = ({ facility, onView, onDrawDow
 
       <div className="mt-4">
         <div className="flex items-baseline justify-between mb-2">
-          <span className="stat-value-sm">{formatCurrency(facility.facilityLimit, facility.facilityCurrency)}</span>
+          <span className="stat-value-sm">{formatCurrency(facility.sanctionedLimit, facility.facilityCurrency)}</span>
           <Badge variant={statusConfig.variant as any} size="sm">{statusConfig.label}</Badge>
         </div>
-        <UtilizationBar outstanding={facility.currentOutstanding} limit={facility.facilityLimit} currency={facility.facilityCurrency} />
+        <UtilizationBar outstanding={facility.currentOutstanding} limit={facility.sanctionedLimit} currency={facility.facilityCurrency} />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-caption">
@@ -176,7 +177,8 @@ const CreditFacilitiesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [corporateId] = useState('corp-1'); // TODO: Get from context
+  // The corporate chosen in the header; none chosen (All Corporates) lists every corporate's facilities.
+  const corporateId = useUser().currentCorporateId ?? '';
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -191,7 +193,7 @@ const CreditFacilitiesPage: React.FC = () => {
     facilityName: '',
     facilityType: 'OVERDRAFT' as FacilityType,
     externalReference: '',
-    facilityLimit: '',
+    sanctionedLimit: '',
     facilityCurrency: 'AED',
     effectiveDate: new Date().toISOString().split('T')[0],
     expiryDate: '',
@@ -205,14 +207,17 @@ const CreditFacilitiesPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      let response;
-      try {
-        response = await creditFacilitiesApi.getByCorporate(corporateId);
-      } catch {
-        response = await creditFacilitiesApi.getAll();
-      }
+      const [response, agreementsResponse] = await Promise.all([
+        corporateId ? creditFacilitiesApi.getByCorporate(corporateId) : creditFacilitiesApi.getAll(),
+        corporateId ? creditAgreementsApi.getByCorporate(corporateId) : creditAgreementsApi.getAll(),
+      ]);
+      // The API gives a facility its agreement's id only; the card shows the agreement's name.
+      const agreements = extractData(agreementsResponse as ApiResponse<CreditAgreement[]>);
+      const names = new Map((Array.isArray(agreements) ? agreements : []).map((a) => [a.id, a.agreementName]));
       const data = extractData(response);
-      setFacilities(Array.isArray(data) ? data : []);
+      setFacilities((Array.isArray(data) ? data : []).map((f) => ({
+        ...f, agreementName: f.creditAgreementId ? names.get(f.creditAgreementId) : undefined,
+      })));
     } catch (err) {
       console.error('Failed to load facilities:', err);
       setError('Failed to load credit facilities.');
@@ -236,7 +241,8 @@ const CreditFacilitiesPage: React.FC = () => {
   };
 
   const handleCreate = async () => {
-    if (!createForm.facilityName || !createForm.facilityLimit) return;
+    if (!corporateId) { setError('Choose a corporate in the header first.'); return; }
+    if (!createForm.facilityName || !createForm.sanctionedLimit) return;
     try {
       setProcessing(true);
       setError(null);
@@ -247,7 +253,7 @@ const CreditFacilitiesPage: React.FC = () => {
         facilityName: createForm.facilityName,
         facilityType: createForm.facilityType,
         externalReference: createForm.externalReference || undefined,
-        facilityLimit: parseFloat(createForm.facilityLimit),
+        sanctionedLimit: parseFloat(createForm.sanctionedLimit),
         facilityCurrency: createForm.facilityCurrency,
         effectiveDate: createForm.effectiveDate,
         expiryDate: createForm.expiryDate,
@@ -259,7 +265,7 @@ const CreditFacilitiesPage: React.FC = () => {
       setShowCreateModal(false);
       setCreateForm({
         facilityName: '', facilityType: 'OVERDRAFT', externalReference: '',
-        facilityLimit: '', facilityCurrency: 'AED',
+        sanctionedLimit: '', facilityCurrency: 'AED',
         effectiveDate: new Date().toISOString().split('T')[0], expiryDate: '',
         interestRateType: 'FLOATING', baseRateValue: '', spreadPercent: '',
       });
@@ -315,8 +321,10 @@ const CreditFacilitiesPage: React.FC = () => {
   const stats = {
     total: facilities.length,
     active: activeFacilities.length,
-    totalLimit: activeFacilities.reduce((sum, f) => sum + f.facilityLimit, 0),
+    totalLimit: activeFacilities.reduce((sum, f) => sum + f.sanctionedLimit, 0),
     totalOutstanding: activeFacilities.reduce((sum, f) => sum + f.currentOutstanding, 0),
+    // Totals only add up within one currency; across several they are not shown as a sum.
+    currency: new Set(activeFacilities.map(f => f.facilityCurrency)).size === 1 ? activeFacilities[0].facilityCurrency : null,
     overdrafts: facilities.filter(f => f.facilityType === 'OVERDRAFT' && f.status === 'ACTIVE').length,
   };
 
@@ -383,7 +391,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Total Limit</p>
-                <p className="text-body-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{formatCurrency(stats.totalLimit)}</p>
+                <p className="text-body-lg font-bold text-primary-900 mt-1 tracking-tight dark:text-neutral-50">{stats.currency ? formatCurrency(stats.totalLimit, stats.currency) : (activeFacilities.length ? 'Several currencies' : '-')}</p>
               </div>
               <StatusIconBadge tone="accent" icon={Shield} />
             </div>
@@ -394,7 +402,7 @@ const CreditFacilitiesPage: React.FC = () => {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="label">Outstanding</p>
-                <p className="text-body-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{formatCurrency(stats.totalOutstanding)}</p>
+                <p className="text-body-lg font-bold text-warning-600 mt-1 tracking-tight dark:text-warning-300">{stats.currency ? formatCurrency(stats.totalOutstanding, stats.currency) : (activeFacilities.length ? 'Several currencies' : '-')}</p>
               </div>
               <StatusIconBadge tone="warning" icon={TrendingUp} />
             </div>
@@ -508,8 +516,8 @@ const CreditFacilitiesPage: React.FC = () => {
               <label className="field-label block mb-1">Facility Limit *</label>
               <Input
                 type="number"
-                value={createForm.facilityLimit}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, facilityLimit: e.target.value }))}
+                value={createForm.sanctionedLimit}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, sanctionedLimit: e.target.value }))}
                 placeholder="10000000"
               />
             </div>
@@ -574,7 +582,7 @@ const CreditFacilitiesPage: React.FC = () => {
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={processing || !createForm.facilityName || !createForm.facilityLimit}>
+            <Button onClick={handleCreate} disabled={processing || !createForm.facilityName || !createForm.sanctionedLimit}>
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
               Create Facility
             </Button>
@@ -591,7 +599,7 @@ const CreditFacilitiesPage: React.FC = () => {
               <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <span className="ml-2 font-medium">{FACILITY_TYPE_CONFIG[selectedFacility.facilityType]?.label}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Status:</span> <span className="ml-2 font-medium">{selectedFacility.status}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Currency:</span> <span className="ml-2 font-medium">{selectedFacility.facilityCurrency}</span></div>
-              <div><span className="text-neutral-500 dark:text-neutral-400">Facility Limit:</span> <span className="ml-2 font-medium">{formatCurrency(selectedFacility.facilityLimit, selectedFacility.facilityCurrency)}</span></div>
+              <div><span className="text-neutral-500 dark:text-neutral-400">Facility Limit:</span> <span className="ml-2 font-medium">{formatCurrency(selectedFacility.sanctionedLimit, selectedFacility.facilityCurrency)}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Drawing Power:</span> <span className="ml-2 font-medium">{formatCurrency(selectedFacility.drawingPower, selectedFacility.facilityCurrency)}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Outstanding:</span> <span className="ml-2 font-medium text-warning-600 dark:text-warning-300">{formatCurrency(selectedFacility.currentOutstanding, selectedFacility.facilityCurrency)}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Available:</span> <span className="ml-2 font-medium text-success-600 dark:text-success-300">{formatCurrency(selectedFacility.availableLimit, selectedFacility.facilityCurrency)}</span></div>
@@ -608,7 +616,7 @@ const CreditFacilitiesPage: React.FC = () => {
             </div>
             <UtilizationBar
               outstanding={selectedFacility.currentOutstanding}
-              limit={selectedFacility.facilityLimit}
+              limit={selectedFacility.sanctionedLimit}
               currency={selectedFacility.facilityCurrency}
             />
             <div className="flex justify-end pt-4 border-t">

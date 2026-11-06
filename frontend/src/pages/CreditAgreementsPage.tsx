@@ -13,6 +13,7 @@ import { CurrencyPicker } from '../components/ui/CurrencyPicker';
 import { Modal } from '../components/ui/enhanced';
 import { formatCurrency, cn, formatDate } from '../utils';
 import { creditAgreementsApi, CreditAgreement, AgreementType, ApiResponse } from '../services/api';
+import { useUser } from '../context/useUser';
 
 // ============================================================================
 // CONSTANTS
@@ -87,7 +88,7 @@ const AgreementCard: React.FC<AgreementCardProps> = ({ agreement, onView, onUtil
           <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} />
           <div>
             <h3 className="font-semibold text-primary-900 line-clamp-1 dark:text-neutral-50">{agreement.agreementName}</h3>
-            <p className="body-sm">{agreement.counterpartyBankName || 'Bank'}</p>
+            <p className="body-sm">{agreement.bankName || 'Bank'}</p>
           </div>
         </div>
         <Badge className={cn("text-caption", typeConfig.bgColor, typeConfig.color)}>{typeConfig.label}</Badge>
@@ -136,7 +137,8 @@ const CreditAgreementsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const [corporateId] = useState('corp-1'); // TODO: Get from context
+  // The corporate chosen in the header; none chosen (All Corporates) lists every corporate's agreements.
+  const corporateId = useUser().currentCorporateId ?? '';
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -150,7 +152,7 @@ const CreditAgreementsPage: React.FC = () => {
   const [createForm, setCreateForm] = useState({
     agreementName: '',
     agreementType: 'MASTER' as AgreementType,
-    counterpartyBankName: '',
+    bankName: '',
     externalReference: '',
     totalLimit: '',
     limitCurrency: 'AED',
@@ -165,13 +167,7 @@ const CreditAgreementsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      // Try to get by corporate first, fallback to getAll
-      let response;
-      try {
-        response = await creditAgreementsApi.getByCorporate(corporateId);
-      } catch {
-        response = await creditAgreementsApi.getAll();
-      }
+      const response = corporateId ? await creditAgreementsApi.getByCorporate(corporateId) : await creditAgreementsApi.getAll();
       const data = extractData(response);
       setAgreements(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -201,6 +197,7 @@ const CreditAgreementsPage: React.FC = () => {
 
   // Create agreement
   const handleCreate = async () => {
+    if (!corporateId) { setError('Choose a corporate in the header first.'); return; }
     if (!createForm.agreementName || !createForm.totalLimit) return;
     try {
       setProcessing(true);
@@ -209,7 +206,7 @@ const CreditAgreementsPage: React.FC = () => {
         corporateId,
         agreementName: createForm.agreementName,
         agreementType: createForm.agreementType,
-        counterpartyBankName: createForm.counterpartyBankName || undefined,
+        bankName: createForm.bankName || undefined,
         externalReference: createForm.externalReference || undefined,
         totalLimit: parseFloat(createForm.totalLimit),
         limitCurrency: createForm.limitCurrency,
@@ -220,7 +217,7 @@ const CreditAgreementsPage: React.FC = () => {
       });
       await loadData();
       setShowCreateModal(false);
-      setCreateForm({ agreementName: '', agreementType: 'MASTER', counterpartyBankName: '', externalReference: '', totalLimit: '', limitCurrency: 'AED', effectiveDate: new Date().toISOString().split('T')[0], expiryDate: '', baseRateType: 'EIBOR', spreadBps: '' });
+      setCreateForm({ agreementName: '', agreementType: 'MASTER', bankName: '', externalReference: '', totalLimit: '', limitCurrency: 'AED', effectiveDate: new Date().toISOString().split('T')[0], expiryDate: '', baseRateType: 'EIBOR', spreadBps: '' });
     } catch (err) {
       console.error('Failed to create agreement:', err);
       setError('Failed to create credit agreement.');
@@ -369,7 +366,7 @@ const CreditAgreementsPage: React.FC = () => {
           <div><label className="field-label block mb-1">Agreement Name *</label><Input value={createForm.agreementName} onChange={(e) => setCreateForm(prev => ({ ...prev, agreementName: e.target.value }))} placeholder="e.g., ENBD Master Credit Agreement" /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="field-label block mb-1">Agreement Type *</label><select value={createForm.agreementType} onChange={(e) => setCreateForm(prev => ({ ...prev, agreementType: e.target.value as any }))} className="w-full px-3 py-2 border border-edge-strong rounded-lg">{Object.entries(AGREEMENT_TYPE_CONFIG).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}</select></div>
-            <div><label className="field-label block mb-1">Bank Name</label><Input value={createForm.counterpartyBankName} onChange={(e) => setCreateForm(prev => ({ ...prev, counterpartyBankName: e.target.value }))} placeholder="Emirates NBD" /></div>
+            <div><label className="field-label block mb-1">Bank Name</label><Input value={createForm.bankName} onChange={(e) => setCreateForm(prev => ({ ...prev, bankName: e.target.value }))} placeholder="Emirates NBD" /></div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="field-label block mb-1">Total Limit *</label><Input type="number" value={createForm.totalLimit} onChange={(e) => setCreateForm(prev => ({ ...prev, totalLimit: e.target.value }))} placeholder="100000000" /></div>
@@ -391,7 +388,7 @@ const CreditAgreementsPage: React.FC = () => {
               <div><span className="text-neutral-500 dark:text-neutral-400">Name:</span> <span className="ml-2 font-medium">{selectedAgreement.agreementName}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Type:</span> <span className="ml-2 font-medium">{AGREEMENT_TYPE_CONFIG[selectedAgreement.agreementType]?.label}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Status:</span> <span className="ml-2 font-medium">{selectedAgreement.status}</span></div>
-              <div><span className="text-neutral-500 dark:text-neutral-400">Bank:</span> <span className="ml-2 font-medium">{selectedAgreement.counterpartyBankName || 'N/A'}</span></div>
+              <div><span className="text-neutral-500 dark:text-neutral-400">Bank:</span> <span className="ml-2 font-medium">{selectedAgreement.bankName || 'N/A'}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Total Limit:</span> <span className="ml-2 font-medium">{formatCurrency(selectedAgreement.totalLimit, selectedAgreement.limitCurrency)}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Utilized:</span> <span className="ml-2 font-medium">{formatCurrency(selectedAgreement.totalUtilized, selectedAgreement.limitCurrency)}</span></div>
               <div><span className="text-neutral-500 dark:text-neutral-400">Available:</span> <span className="ml-2 font-medium text-success-600 dark:text-success-300">{formatCurrency(selectedAgreement.availableLimit, selectedAgreement.limitCurrency)}</span></div>

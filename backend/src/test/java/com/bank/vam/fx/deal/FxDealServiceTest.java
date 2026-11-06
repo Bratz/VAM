@@ -176,7 +176,8 @@ class FxDealServiceTest {
         assertThat(text).contains("spot rate      : " + view.spotRate().toPlainString())
                 .contains("forward points : +" + view.forwardPoints().toPlainString());
         java.util.List<Class<?>> corporateShapes = java.util.List.of(FxDealModels.QuoteView.class, FxDealModels.DealView.class,
-                FxLifecycleService.CloseOutQuote.class, FxLifecycleService.RollQuote.class);
+                FxLifecycleService.CloseOutQuote.class, FxLifecycleService.RollQuote.class,
+                FxStreamService.StreamPrice.class, FxStreamService.Leg.class);
         for (Class<?> shape : corporateShapes) {
             assertThat(java.util.Arrays.stream(shape.getRecordComponents()).map(java.lang.reflect.RecordComponent::getName))
                     .as(shape.getSimpleName()).noneMatch(n -> n.matches("(mid|.*Mid|spread|.*Spread|margin|.*Margin|floor|.*Floor)([A-Z].*)?"));

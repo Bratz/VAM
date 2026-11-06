@@ -40,6 +40,10 @@ public class FxQuoteRequest extends BaseEntity {
     private String entityName;
 
     /** The accounts the deal settles through: the bought currency is credited to one, the sold debited from the other. */
+    /** The price converts a payment and settles through it (see FxPaymentService). */
+    @Column(name = "for_payment")
+    private Boolean forPayment;
+
     @Column(name = "buy_account_id")
     private UUID buyAccountId;
 

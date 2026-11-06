@@ -2,16 +2,18 @@
 // FxMarketPage ("Market Rates") — a ticking rate board and a forward curve from the simulated market in
 // FxMarketController. Mid rates only: the bank's margin is set per deal, so nothing here is a dealable price.
 // Polled (the app has no SSE/WebSocket), and the board's history lives in the browser only. From a row the
-// corporate can start a price request for that pair.
+// corporate can start a price request for that pair, or set a rate alert on it (it arrives in the notification bell).
 // ============================================================================
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Radio, AlertTriangle, Activity, ListChecks, Send, LineChart, Copy } from 'lucide-react';
+import { Radio, AlertTriangle, Activity, ListChecks, Send, LineChart, Copy, BellRing, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Page } from '../../components/layout/Page';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { StatStrip } from '../../components/layout/StatStrip';
-import { Card, CardHeader, Badge, DataTable, Input, RowActions, StatTile } from '../../components/ui';
+import { Card, CardHeader, Badge, Button, DataTable, Input, RowActions, StatTile } from '../../components/ui';
+import { Modal } from '../../components/ui/enhanced';
+import { fxDealApi, RateAlert } from '../../services/fxDealApi';
 import type { Column } from '../../components/ui/DataTable';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
@@ -42,6 +44,12 @@ const Sparkline: React.FC<{ values: number[]; tone: string }> = ({ values, tone 
 const FxMarketPage: React.FC = () => {
   const { currentCorporateId } = useUser();
   const [ticket, setTicket] = useState<{ prefill: TicketPrefill } | null>(null);
+  const [alerts, setAlerts] = useState<RateAlert[]>([]);
+  const [alertFor, setAlertFor] = useState<SpotTick | null>(null);
+  const [alertRate, setAlertRate] = useState('');
+  const [alertNote, setAlertNote] = useState('');
+  const [alertError, setAlertError] = useState<string | null>(null);
+  const [savingAlert, setSavingAlert] = useState(false);
   const [ticks, setTicks] = useState<SpotTick[]>([]);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [selected, setSelected] = useState('EUR/USD');
@@ -119,6 +127,84 @@ const FxMarketPage: React.FC = () => {
   const asOf = ticks[0] ? new Date(ticks[0].asOf).toLocaleTimeString() : '';
   const mover = ticks.reduce<SpotTick | null>((m, t) => (!m || Math.abs(t.changeBps) > Math.abs(m.changeBps) ? t : m), null);
 
+  const loadAlerts = React.useCallback(() => {
+    if (!currentCorporateId) { setAlerts([]); return; }
+    fxDealApi.alerts(currentCorporateId).then(setAlerts).catch(() => undefined);
+  }, [currentCorporateId]);
+  // Alerts are checked on the server every 30 seconds; refresh the list as often.
+  useEffect(() => {
+    loadAlerts();
+    const id = setInterval(loadAlerts, 30000);
+    return () => clearInterval(id);
+  }, [loadAlerts]);
+
+  const startAlert = (t: SpotTick) => {
+    setAlertFor(t);
+    setAlertRate(fmtRate(t.mid));
+    setAlertNote('');
+    setAlertError(null);
+  };
+
+  const saveAlert = async () => {
+    if (!alertFor || !currentCorporateId) return;
+    setSavingAlert(true);
+    try {
+      await fxDealApi.createAlert(currentCorporateId, alertFor.pair, Number(alertRate), alertNote || undefined);
+      setAlertFor(null);
+      loadAlerts();
+    } catch (err) {
+      setAlertError(errorText(err));
+    } finally {
+      setSavingAlert(false);
+    }
+  };
+
+  const cancelAlert = async (a: RateAlert) => {
+    try {
+      await fxDealApi.cancelAlert(a.id);
+      loadAlerts();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+
+  const ALERT_BADGE: Record<RateAlert['status'], { label: string; variant: 'info' | 'success' | 'neutral' }> = {
+    ACTIVE: { label: 'Watching', variant: 'info' },
+    TRIGGERED: { label: 'Reached', variant: 'success' },
+    CANCELLED: { label: 'Cancelled', variant: 'neutral' },
+  };
+
+  const alertColumns: Column<RateAlert>[] = [
+    { key: 'pair', header: 'Pair', render: (_, a) => <span className="font-medium">{a.pair}</span> },
+    {
+      key: 'targetRate', header: 'Tell me when it', render: (_, a) => (
+        <span>{a.direction === 'ABOVE' ? 'rises to' : 'falls to'} <span className="font-mono tabular-nums">{a.targetRate}</span></span>
+      ),
+    },
+    {
+      key: 'rateAtCreation', header: 'Rate when set', align: 'right', dropOrder: 1,
+      render: (_, a) => <span className="font-mono tabular-nums">{a.rateAtCreation !== undefined ? fmtRate(a.rateAtCreation) : '-'}</span>,
+    },
+    {
+      key: 'status', header: 'Status', render: (_, a) => (
+        <span>
+          <Badge variant={ALERT_BADGE[a.status].variant} size="sm">{ALERT_BADGE[a.status].label}</Badge>
+          {a.triggeredRate !== undefined && <span className="block text-caption text-neutral-500 dark:text-neutral-400 mt-0.5">at {fmtRate(a.triggeredRate)}</span>}
+        </span>
+      ),
+    },
+    { key: 'note', header: 'Note', dropOrder: 2, render: (_, a) => <span className="text-caption">{a.note ?? '-'}</span> },
+    {
+      key: 'actions', header: 'Actions', width: '4rem', minWidth: 64,
+      render: (_, a) => (
+        <RowActions actions={[
+          { label: 'Cancel alert', icon: <X className="w-4 h-4" />, onClick: () => cancelAlert(a), hidden: a.status !== 'ACTIVE', danger: true },
+          { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => setTicket({ prefill: { pair: a.pair, side: 'BUY' } }) },
+        ]} />
+      ),
+    },
+  ];
+
   const boardColumns: Column<SpotTick>[] = [
     {
       key: 'pair',
@@ -159,6 +245,7 @@ const FxMarketPage: React.FC = () => {
       render: (_, t) => (
         <RowActions actions={[
           { label: 'Request price', icon: <Send className="w-4 h-4" />, onClick: () => setTicket({ prefill: { pair: t.pair, side: 'BUY' } }) },
+          { label: 'Set rate alert…', icon: <BellRing className="w-4 h-4" />, onClick: () => startAlert(t), hidden: !currentCorporateId },
           { label: 'Forward curve', icon: <LineChart className="w-4 h-4" />, onClick: () => setSelected(t.pair) },
           { label: 'Copy rate', icon: <Copy className="w-4 h-4" />, onClick: () => { navigator.clipboard?.writeText(fmtRate(t.mid)).then(() => toast.success('Rate copied')).catch(() => undefined); } },
         ]} />
@@ -265,6 +352,44 @@ const FxMarketPage: React.FC = () => {
           </div>
         </Card>
       </div>
+
+      {currentCorporateId && (
+        <Card>
+          <CardHeader title="Rate alerts" subtitle="Each fires once, in the notification bell, when the indicative rate reaches it. Set one from a pair's actions." />
+          <DataTable<RateAlert>
+            data={alerts}
+            columns={alertColumns}
+            keyExtractor={(a) => a.id}
+            compact
+            hairline
+            emptyTitle="No rate alerts"
+            emptyDescription="Use Set rate alert on a pair to be told when it reaches a level."
+          />
+        </Card>
+      )}
+
+      <Modal
+        isOpen={!!alertFor}
+        onClose={() => setAlertFor(null)}
+        title={`Rate alert on ${alertFor?.pair ?? ''}`}
+        subtitle={alertFor ? `Now ${fmtRate(alertFor.mid)}` : undefined}
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setAlertFor(null)}>Cancel</Button>
+            <Button onClick={saveAlert} loading={savingAlert} disabled={!(Number(alertRate) > 0)} leftIcon={<BellRing className="w-4 h-4" />}>Set alert</Button>
+          </>
+        }
+      >
+        {alertFor && (
+          <div className="space-y-3">
+            <Input label="Tell me when the rate reaches" inputMode="decimal" value={alertRate} onChange={(e) => setAlertRate(e.target.value)}
+              hint={Number(alertRate) > alertFor.mid ? 'Above today’s rate: fires when it rises to this' : Number(alertRate) < alertFor.mid ? 'Below today’s rate: fires when it falls to this' : 'Choose a rate other than today’s'} />
+            <Input label="Note (optional)" value={alertNote} onChange={(e) => setAlertNote(e.target.value)} placeholder="For example: buy EUR for the March payables" />
+            {alertError && <p className="text-body-sm text-error-700 dark:text-error-300">{alertError}</p>}
+          </div>
+        )}
+      </Modal>
 
       <NewDealDrawer
         isOpen={!!ticket}

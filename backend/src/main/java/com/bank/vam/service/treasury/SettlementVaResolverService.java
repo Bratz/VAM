@@ -85,6 +85,32 @@ public class SettlementVaResolverService {
     private final ProgramRepository programRepository;
     private final ExceptionTransactionRepository exceptionRepository;
 
+    /**
+     * For writing a parking record in a transaction of its own (see {@link #parked}). Optional so the unit tests
+     * that build this service by hand need not supply one; without it the record is written in the caller's.
+     */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    /** The exception account a refused transaction is parked against, and the record that says so. */
+    private record Parked(VirtualAccount exceptionVa, ExceptionTransaction exception) {
+    }
+
+    /**
+     * Writes a parking record (and the exception account, when it is new) in its own transaction. The caller refuses
+     * the payment by throwing, which rolls its transaction back; written there, the record the error message cites
+     * ("parked for review, reference EXC-...") was rolled back with it and never existed.
+     */
+    private Parked parked(java.util.function.Supplier<Parked> write) {
+        if (transactionManager == null) {
+            return write.get();
+        }
+        org.springframework.transaction.support.TransactionTemplate own =
+            new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+        own.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return own.execute(status -> write.get());
+    }
+
     // Naming conventions
     private static final String SETTLEMENT_VA_PREFIX = "SETTLEMENT";
     private static final String EXCEPTION_VA_PREFIX = "EXCEPTION";
@@ -344,9 +370,12 @@ public class SettlementVaResolverService {
 
         log.warn(failureReason);
 
-        VirtualAccount exceptionVa = resolveOrCreateExceptionVa(sourceVa);
-        ExceptionTransaction exception = createMissingSettlementVaException(
-            sourceVa, exceptionVa, amount, transactionId);
+        Parked p = parked(() -> {
+            VirtualAccount exVa = resolveOrCreateExceptionVa(sourceVa);
+            return new Parked(exVa, createMissingSettlementVaException(sourceVa, exVa, amount, transactionId));
+        });
+        VirtualAccount exceptionVa = p.exceptionVa();
+        ExceptionTransaction exception = p.exception();
 
         log.error("Transaction parked in Exception VA {} due to missing Settlement VA. " +
                   "Exception ID: {}, Program: {}, Currency: {}",
@@ -545,9 +574,12 @@ public class SettlementVaResolverService {
                 contraVa.getVaNumber(), contraEntityId);
 
             // Park in Exception VA with ENTITY_MISMATCH type
-            VirtualAccount exceptionVa = resolveOrCreateExceptionVa(sourceVa);
-            ExceptionTransaction exception = createEntityMismatchException(
-                sourceVa, contraVa, settlementVa, exceptionVa, amount, transactionId);
+            Parked p = parked(() -> {
+                VirtualAccount exVa = resolveOrCreateExceptionVa(sourceVa);
+                return new Parked(exVa, createEntityMismatchException(sourceVa, contraVa, settlementVa, exVa, amount, transactionId));
+            });
+            VirtualAccount exceptionVa = p.exceptionVa();
+            ExceptionTransaction exception = p.exception();
 
             String failureReason = String.format(
                 "ENTITY MISMATCH: Settlement VA %s (entity %s) does not match contra VA %s (entity %s). " +
@@ -1287,32 +1319,19 @@ public class SettlementVaResolverService {
     }
 
     /**
-     * Find parent for Settlement VA.
-     * Tries to find Currency Mirror at same currency, otherwise null.
+     * Where a new Settlement VA goes: beside the currency mirror the source account sits in (under the mirror's
+     * mother), otherwise at the program's top level (no parent). Never inside a currency mirror: the resolver looks
+     * beside the account, beside each of its ancestors, then at the top level, so a Settlement VA under a mirror was
+     * never found, and every payment it was provisioned for was parked as "Settlement VA not configured". This used to
+     * pick the source's mirror, or failing that any mirror of the program in the currency.
      */
     private UUID findParentForSettlement(VirtualAccount sourceVa) {
         if (sourceVa.getParentAccountId() != null) {
-            // Check if parent is a Currency Mirror
             Optional<VirtualAccount> parent = vaRepository.findById(sourceVa.getParentAccountId());
-            if (parent.isPresent() && 
-                parent.get().getAccountCategory() == AccountCategory.CURRENCY_MIRROR) {
-                return parent.get().getId();
+            if (parent.isPresent() && parent.get().getAccountCategory() == AccountCategory.CURRENCY_MIRROR) {
+                return parent.get().getParentAccountId();
             }
         }
-        
-        // Try to find Currency Mirror for this program/currency
-        if (sourceVa.getProgramId() != null) {
-            Optional<VirtualAccount> currencyMirror = vaRepository
-                .findCurrencyMirrorsByProgramAndCurrency(sourceVa.getProgramId(), sourceVa.getCurrencyCode())
-                .stream()
-                .filter(va -> va.getStatus() == VaStatus.ACTIVE)
-                .findFirst();
-            
-            if (currencyMirror.isPresent()) {
-                return currencyMirror.get().getId();
-            }
-        }
-        
         return null;
     }
 

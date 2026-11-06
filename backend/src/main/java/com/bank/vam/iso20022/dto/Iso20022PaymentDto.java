@@ -178,6 +178,15 @@ public class Iso20022PaymentDto {
          * is every payment made before this existed and every one in a currency uc05 cannot quote.
          */
         private UUID routeSelectionId;
+
+        /**
+         * FX, when {@code currency} is not the source account's (see FxPaymentService): a streamed price the payer saw,
+         * a firm price requested for this payment, a booked deal to draw on, or the live price (unattended channels).
+         */
+        private UUID fxPriceId;
+        private UUID fxQuoteId;
+        private UUID fxDealId;
+        private Boolean fxAtMarket;
     }
 
     @Data
@@ -354,6 +363,15 @@ public class Iso20022PaymentDto {
 
         private String remittanceInfo;
         private String structuredRef;
+
+        /**
+         * FX, when {@code currency} is not the source account's (see FxPaymentService): a streamed price the payer saw,
+         * a firm price requested for this payment, a booked deal to draw on, or the live price (unattended channels).
+         */
+        private UUID fxPriceId;
+        private UUID fxQuoteId;
+        private UUID fxDealId;
+        private Boolean fxAtMarket;
     }
 
     @Data

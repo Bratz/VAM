@@ -7,6 +7,9 @@
 // accepting re-checks validity and the credit limit on the server, so nothing here is the authority. Before
 // accepting, the corporate may ask for a better price a few times (simulated desk, see SimulatedDealer.counter):
 // each answer is a new firm price with a fresh countdown, or "this is our best".
+//
+// Small, short trades stream instead (what streams is set by the bank per pair): both sides refresh every two
+// seconds and one click deals. Anything larger or longer is requested as above.
 // ============================================================================
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -16,7 +19,7 @@ import { Alert } from '../../components/ui/enhanced';
 import { useUser } from '../../context/useUser';
 import { cn } from '../../utils';
 import { fxMarketApi } from '../../services/fxMarketApi';
-import { fxDealApi, CreditLimit, Instrument, Quote, ResolvedAccount, Side } from '../../services/fxDealApi';
+import { fxDealApi, CreditLimit, Instrument, Quote, ResolvedAccount, Side, StreamLeg, StreamPrice } from '../../services/fxDealApi';
 import { QUOTE_BADGE } from '../fxDealBadges';
 import { errorText, fmt, fmtRate } from './fxFormat';
 
@@ -141,6 +144,42 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
       .catch(() => { if (current) setLegs(null); });
     return () => { current = false; };
   }, [isOpen, corporateId, entityId, pair, side]);
+  // The stream: re-priced every two seconds while the form describes a trade and nothing is quoted or booked.
+  const [stream, setStream] = useState<StreamPrice | null>(null);
+  const [dealing, setDealing] = useState<Side | null>(null);
+  useEffect(() => {
+    const n = Number(amount);
+    if (!isOpen || !corporateId || !entityId || !(n > 0) || (instrument !== 'SPOT' && !valueDate) || quote || bookedRef) {
+      setStream(null);
+      return;
+    }
+    let current = true;
+    const load = () => fxDealApi.stream({
+      corporateId, entityId, pair, amount: n, instrument,
+      valueDate: instrument === 'SPOT' ? undefined : valueDate,
+      purpose: purpose || undefined, exposureRef: exposureRef || undefined,
+    }).then((s) => { if (current) setStream(s); }).catch(() => { if (current) setStream(null); });
+    load();
+    const id = setInterval(load, 2000);
+    return () => { current = false; clearInterval(id); };
+  }, [isOpen, corporateId, entityId, pair, amount, instrument, valueDate, purpose, exposureRef, quote, bookedRef]);
+  const streaming = !!stream?.streamable;
+
+  const onStreamDeal = async (s: Side) => {
+    if (!stream?.priceId) return;
+    setDealing(s);
+    setFormError(null);
+    try {
+      const deal = await fxDealApi.streamDeal(stream.priceId, s);
+      setBookedRef(deal.dealRef);
+      onChanged();
+    } catch (err) {
+      setFormError(errorText(err));
+    } finally {
+      setDealing(null);
+    }
+  };
+
   const noAccount = legs ? (!legs.buy.account ? legs.buy.reason : !legs.sell.account ? legs.sell.reason : undefined) : undefined;
 
   // Count the validity window down locally, then ask the server what became of the quote. A counter-offer
@@ -311,7 +350,41 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
           <Input label="Purpose (optional)" value={purpose} onChange={(e) => setPurpose(e.target.value)} disabled={firm} />
           {exposureRef && <p className="text-caption text-neutral-500 dark:text-neutral-400">Hedging exposure {exposureRef.replace('|', ' ')}.</p>}
           {formError && <p className="text-body-sm text-error-700 dark:text-error-300">{formError}</p>}
-          {!firm && !bookedRef && (
+          {streaming && stream?.buy && stream.sell && !bookedRef && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="body-strong">Live price</span>
+                <span className="text-caption text-neutral-500 dark:text-neutral-400">Click a side to deal. Simulated desk.</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(['SELL', 'BUY'] as Side[]).map((s) => {
+                  const leg = (s === 'BUY' ? stream.buy : stream.sell) as StreamLeg;
+                  return (
+                    <button key={s} type="button" onClick={() => onStreamDeal(s)}
+                      disabled={!!dealing || !!noAccount || (room !== null && (!room.usable || (room.entity !== undefined && !room.entity.usable)))}
+                      className={cn('rounded-lg border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 disabled:opacity-50',
+                        s === side ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'border-edge hover:border-primary-400')}>
+                      <span className="block text-caption text-neutral-500 dark:text-neutral-400">{s === 'BUY' ? 'You buy' : 'You sell'} {base}</span>
+                      <span className="block font-mono tabular-nums text-stat-sm text-primary-900 dark:text-neutral-50">{fmtRate(leg.rate)}</span>
+                      <span className="block text-caption font-mono tabular-nums text-neutral-500 dark:text-neutral-400">
+                        {leg.spotRate !== undefined && leg.forwardPoints !== undefined
+                          ? `${fmtRate(leg.spotRate)} ${leg.forwardPoints >= 0 ? '+' : ''}${leg.forwardPoints.toFixed(2)} pts`
+                          : `${quoteCcy} ${fmt(leg.counterAmount)}`}
+                      </span>
+                      {dealing === s && <span className="block text-caption mt-1">Booking...</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {!streaming && stream?.reason && !quote && !bookedRef && (
+            <p className="text-caption text-neutral-500 dark:text-neutral-400">{stream.reason}, so request a price below.</p>
+          )}
+          {!streaming && bookedRef && !quote && (
+            <Alert variant="success" title="Deal booked">{bookedRef} is booked. Its confirmation is waiting for you in Deals.</Alert>
+          )}
+          {!firm && !bookedRef && !streaming && (
             <Button onClick={onRequest} loading={requesting}
               disabled={!corporateId || !entityId || !!noAccount || (room !== null && (!room.usable || (room.entity !== undefined && !room.entity.usable)))}
               leftIcon={<Send className="w-4 h-4" />} fullWidth>

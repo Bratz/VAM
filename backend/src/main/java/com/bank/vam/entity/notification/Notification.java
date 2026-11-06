@@ -218,7 +218,12 @@ public class Notification extends BaseEntity {
         // System notifications
         SYSTEM_ALERT,
         SYSTEM_MAINTENANCE,
-        SYSTEM_ERROR
+        SYSTEM_ERROR,
+
+        // Foreign exchange
+        FX_RATE_ALERT,
+        FX_MATURITY_REMINDER,
+        FX_CONFIRMATION_PENDING
     }
 
     public enum NotificationCategory {

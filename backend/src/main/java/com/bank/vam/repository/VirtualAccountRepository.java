@@ -43,6 +43,11 @@ import java.util.UUID;
  */
 @Repository
 public interface VirtualAccountRepository extends JpaRepository<VirtualAccount, UUID> {
+
+    /** The row, locked for update until the transaction ends (balance aggregation recalculates one node at a time). */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM VirtualAccount v WHERE v.id = :id")
+    Optional<VirtualAccount> lockById(@Param("id") UUID id);
     
     // ========================================================================
     // BASIC LOOKUPS

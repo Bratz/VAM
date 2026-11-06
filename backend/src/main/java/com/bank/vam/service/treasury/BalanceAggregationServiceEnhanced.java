@@ -11,7 +11,12 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -80,6 +85,10 @@ public class BalanceAggregationServiceEnhanced {
     @Autowired
     private BalanceAggregationServiceEnhanced self;
 
+    /** For recalculating one hierarchy node per transaction (see aggregateForCorporate). Optional for hand-built tests. */
+    @Autowired(required = false)
+    private PlatformTransactionManager transactionManager;
+
     // ========================================================================
     // REAL-TIME BALANCE PROPAGATION
     // ========================================================================
@@ -133,18 +142,20 @@ public class BalanceAggregationServiceEnhanced {
         propagateToAncestors(va, balanceDelta);
 
         // ================================================================
-        // Step 3 (v5.7.0): Trigger async full recalculation
+        // Step 3: the full recalculation, once this transaction has committed
         // ================================================================
-        // This ensures ALL Currency Mirrors at ALL levels are updated correctly
-        // with currency-wise propagation (M3 EUR + M5 EUR → M1 EUR at ROOT)
+        // This ensures ALL Currency Mirrors at ALL levels are updated correctly with currency-wise
+        // propagation (M3 EUR + M5 EUR -> M1 EUR at ROOT), which steps 1 and 2 do not.
         //
-        // Without this, only the immediate sibling mirror is updated in real-time,
-        // and ancestor Currency Mirrors would have stale values until scheduled aggregation.
+        // It used to be started from here, inside the payment's transaction. It then ran beside the
+        // still-open payment (and the next one), read the balances from before the payment, and --
+        // rewriting the corporate's whole hierarchy in one transaction -- locked the rows steps 1
+        // and 2 had locked, in another order: a deadlock that PostgreSQL could resolve by failing
+        // the payment. Now it starts after the commit and recalculates one node at a time
+        // (see aggregateForCorporate), so it never holds one lock while waiting for another.
         UUID corporateId = va.getCorporateId();
         if (corporateId != null) {
-            log.info("Triggering async full recalculation for corporate {} after transaction on VA {}",
-                corporateId, va.getVaNumber());
-            self.fullRefreshAfterTransaction(corporateId, vaId);
+            refreshAfterCommit(corporateId, vaId);
         }
 
         // ================================================================
@@ -155,6 +166,35 @@ public class BalanceAggregationServiceEnhanced {
         // When balance goes less negative (repayment), utilization decreases.
         // This propagates up the credit limit hierarchy (Entity → Regional → Group).
         updateCreditUtilization(va, balanceDelta);
+    }
+
+    /**
+     * Runs the corporate's full recalculation once the current transaction commits (at once when there is none),
+     * and only once per corporate per transaction however many of its accounts moved. Nothing runs on rollback.
+     */
+    private void refreshAfterCommit(UUID corporateId, UUID triggeringVaId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            self.fullRefreshAfterTransaction(corporateId, triggeringVaId);
+            return;
+        }
+        String key = "balance-refresh:" + corporateId;
+        if (TransactionSynchronizationManager.hasResource(key)) {
+            return;
+        }
+        TransactionSynchronizationManager.bindResource(key, Boolean.TRUE);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                log.info("Triggering async full recalculation for corporate {} after transaction on VA {}",
+                    corporateId, triggeringVaId);
+                self.fullRefreshAfterTransaction(corporateId, triggeringVaId);
+            }
+
+            @Override
+            public void afterCompletion(int status) {
+                TransactionSynchronizationManager.unbindResourceIfPossible(key);
+            }
+        });
     }
 
     /**
@@ -405,7 +445,7 @@ public class BalanceAggregationServiceEnhanced {
      * Runs every 5 minutes by default.
      */
     @Scheduled(fixedRateString = "${vam.aggregation.interval-ms:300000}")
-    @Transactional
+    // Not @Transactional: aggregateForCorporate commits node by node.
     public void scheduledAggregation() {
         log.info("Starting scheduled balance aggregation...");
 
@@ -442,13 +482,20 @@ public class BalanceAggregationServiceEnhanced {
 
     /**
      * Aggregate balances for all VAs in a corporate hierarchy.
-     * 
+     *
      * ORDER OF OPERATIONS (Bottom-Up):
      * 1. First, recalculate all CURRENCY_MIRRORs (sum of same-currency siblings)
      * 2. Then, recalculate AGGREGATION nodes (sum of Currency Mirror balanceInBase)
      * 3. Finally, recalculate ROOT (sum of all children)
+     *
+     * <p>Each node is recalculated in a transaction of its own: its row is locked, its figure is worked out from what
+     * its children hold at that moment, and the transaction commits before the next node. So this never holds one lock
+     * while waiting for another -- a payment updating the same mirrors and aggregations (propagateBalanceChange steps
+     * 1-2) can make it wait, but the two can no longer deadlock -- and a node is never overwritten with a sum read
+     * before a payment that had it locked committed. Nodes go deepest first, then by id, so concurrent recalculations
+     * also take rows in the same order. Not transactional itself: with one enclosing transaction (as it had, and
+     * the scheduled run around every corporate) the locks were all held to the end.
      */
-    @Transactional
     public int aggregateForCorporate(UUID corporateId) {
         log.debug("Aggregating balances for corporate: {}", corporateId);
 
@@ -465,12 +512,10 @@ public class BalanceAggregationServiceEnhanced {
             .collect(Collectors.groupingBy(VirtualAccount::getAccountCategory, Collectors.counting()));
         log.info("Corporate {} has {} VAs: {}", corporateId, allVas.size(), categoryCount);
 
-        // Sort by hierarchy level descending (deepest first for bottom-up)
-        allVas.sort((a, b) -> {
-            int levelA = a.getHierarchyLevel() != null ? a.getHierarchyLevel() : 0;
-            int levelB = b.getHierarchyLevel() != null ? b.getHierarchyLevel() : 0;
-            return Integer.compare(levelB, levelA);
-        });
+        // Deepest first for bottom-up, then by id: the same order every time.
+        allVas.sort(Comparator.comparing((VirtualAccount v) -> v.getHierarchyLevel() != null ? v.getHierarchyLevel() : 0)
+            .reversed()
+            .thenComparing(VirtualAccount::getId, Comparator.nullsLast(Comparator.naturalOrder())));
 
         LocalDateTime now = LocalDateTime.now();
         int aggregated = 0;
@@ -481,8 +526,7 @@ public class BalanceAggregationServiceEnhanced {
         // ================================================================
         for (VirtualAccount va : allVas) {
             if (va.getAccountCategory() == AccountCategory.CURRENCY_MIRROR) {
-                recalculateCurrencyMirror(va, now);
-                aggregated++;
+                aggregated += recalculateLocked(va, node -> recalculateCurrencyMirror(node, now));
             }
         }
 
@@ -492,8 +536,7 @@ public class BalanceAggregationServiceEnhanced {
         // ================================================================
         for (VirtualAccount va : allVas) {
             if (va.getAccountCategory() == AccountCategory.AGGREGATION) {
-                recalculateAggregationNode(va, now);
-                aggregated++;
+                aggregated += recalculateLocked(va, node -> recalculateAggregationNode(node, now));
             }
         }
 
@@ -502,13 +545,35 @@ public class BalanceAggregationServiceEnhanced {
         // ================================================================
         for (VirtualAccount va : allVas) {
             if (va.getAccountCategory() == AccountCategory.ROOT) {
-                recalculateAggregationNode(va, now);
-                aggregated++;
+                aggregated += recalculateLocked(va, node -> recalculateAggregationNode(node, now));
             }
         }
 
         log.info("Aggregated {} hierarchy VAs for corporate {}", aggregated, corporateId);
         return aggregated;
+    }
+
+    /**
+     * Recalculates one node in a transaction of its own, holding only that node's row lock. Returns 1 when done, 0 when
+     * the node is gone or failed (logged; the next run catches up). Without a transaction manager (unit tests built
+     * by hand) it recalculates the node as given.
+     */
+    private int recalculateLocked(VirtualAccount node, java.util.function.Consumer<VirtualAccount> recalculate) {
+        if (transactionManager == null) {
+            recalculate.accept(node);
+            return 1;
+        }
+        TransactionTemplate own = new TransactionTemplate(transactionManager);
+        own.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        try {
+            return own.execute(status -> vaRepository.lockById(node.getId()).map(locked -> {
+                recalculate.accept(locked);
+                return 1;
+            }).orElse(0));
+        } catch (Exception e) {
+            log.warn("Could not recalculate {} ({}); the next run will: {}", node.getVaNumber(), node.getAccountCategory(), e.getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -780,7 +845,7 @@ public class BalanceAggregationServiceEnhanced {
      * Full refresh for entire corporate.
      */
     @Async
-    @Transactional
+    // Not @Transactional: aggregateForCorporate commits node by node.
     public void fullRefresh(UUID corporateId) {
         log.info("Starting full balance refresh for corporate: {}", corporateId);
         aggregateForCorporate(corporateId);
@@ -805,7 +870,7 @@ public class BalanceAggregationServiceEnhanced {
      * @param triggeringVaId The VA that triggered this refresh (for logging)
      */
     @Async
-    @Transactional
+    // Not @Transactional: aggregateForCorporate commits node by node.
     public void fullRefreshAfterTransaction(UUID corporateId, UUID triggeringVaId) {
         log.info("[ASYNC] Starting post-transaction full refresh for corporate {} (triggered by VA {})",
             corporateId, triggeringVaId);

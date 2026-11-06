@@ -142,4 +142,20 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     @Query("SELECT COUNT(n) FROM Notification n WHERE n.userId = :userId AND n.deliveryStatus NOT IN ('READ', 'FAILED')")
     long countUnreadByUser(@Param("userId") String userId);
+
+    // ---- the header bell ----
+
+    boolean existsByNotificationTypeAndReferenceId(NotificationType type, UUID referenceId);
+
+    List<Notification> findTop30ByCorporateIdOrderByCreatedAtDesc(UUID corporateId);
+
+    List<Notification> findTop30ByOrderByCreatedAtDesc();
+
+    long countByCorporateIdAndReadAtIsNull(UUID corporateId);
+
+    long countByReadAtIsNull();
+
+    List<Notification> findByCorporateIdAndReadAtIsNull(UUID corporateId);
+
+    List<Notification> findByReadAtIsNull();
 }

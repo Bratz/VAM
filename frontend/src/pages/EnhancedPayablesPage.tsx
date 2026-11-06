@@ -19,6 +19,7 @@ import { Search, Plus, Send, Clock, FileText, Eye, AlertTriangle, RefreshCw, Loa
 import { Card, Button, Badge, DataTable } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
+import { PaymentFxPanel, PaymentFx } from '../components/payments/PaymentFxPanel';
 import toast from 'react-hot-toast';
 import { formatCurrency, formatDate, cn } from '../utils';
 import { useNavigation } from '../hooks/useNavigation';
@@ -27,6 +28,8 @@ import {
   programsApi, 
   legalEntityApi,
   payablesApiPhase2,
+  virtualAccountsApi,
+  VirtualAccount,
   Corporate,
   Program,
   LegalEntity,
@@ -618,14 +621,24 @@ interface PayNowConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   payable: PayablePhase2 | null;
-  onConfirm: () => Promise<void>;
+  onConfirm: (fx: PaymentFx | null) => Promise<void>;
   loading?: boolean;
 }
 
 const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
   isOpen, onClose, payable, onConfirm, loading
 }) => {
+  // The paying account: a payable in another currency than it must be converted (see PaymentFxPanel).
+  const [account, setAccount] = useState<VirtualAccount | null>(null);
+  const [fx, setFx] = useState<PaymentFx | null>(null);
+  useEffect(() => {
+    setAccount(null);
+    setFx(null);
+    if (!isOpen || !payable?.virtualAccountId) return;
+    virtualAccountsApi.getById(payable.virtualAccountId).then((r) => setAccount(r.data ?? null)).catch(() => undefined);
+  }, [isOpen, payable?.virtualAccountId]);
   if (!isOpen || !payable) return null;
+  const needsFx = !!account && account.currencyCode !== payable.currencyCode;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Execute Payment" size="md">
@@ -653,13 +666,24 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
           </div>
         </div>
 
+        {account && (
+          <PaymentFxPanel
+            corporateId={account.corporateId}
+            entityId={account.owningEntityId}
+            accountCurrency={account.currencyCode}
+            currency={payable.currencyCode}
+            amount={payable.netAmount}
+            onChange={setFx}
+          />
+        )}
+
         <p className="body-sm">
           This will execute the payment immediately. This action cannot be undone.
         </p>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-edge">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={onConfirm} disabled={loading}>
+          <Button variant="primary" onClick={() => onConfirm(fx)} disabled={loading || (needsFx && !fx)}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
             Execute Payment
           </Button>
@@ -1091,12 +1115,12 @@ const EnhancedPayablesPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one shot per payableId, enforced by the deepLinkHandled ref.
   }, [params?.payableId]);
 
-  const handleConfirmPayNow = async () => {
+  const handleConfirmPayNow = async (fx: PaymentFx | null) => {
     if (!payNowTarget) return;
     setPayNowLoading(true);
     try {
       const currentUser = 'current-user'; // TODO: Get from auth context
-      await payablesApiPhase2.executePayment(payNowTarget.id, currentUser);
+      await payablesApiPhase2.executePayment(payNowTarget.id, currentUser, undefined, undefined, fx);
 
       // Refresh data after payment
       await loadPayables();

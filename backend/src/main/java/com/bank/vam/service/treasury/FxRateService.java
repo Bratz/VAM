@@ -202,17 +202,14 @@ public class FxRateService {
         // Calculate mid rate if bid/ask available
         rate.calculateMidRate();
 
-        // Deactivate old rates for same pair/type
-        if (rate.getId() != null) {
-            fxRateRepository.deactivateOldRates(
-                rate.getFromCurrency(),
-                rate.getToCurrency(),
-                rate.getRateType(),
-                rate.getId()
-            );
-        }
-
         FxRate saved = fxRateRepository.save(rate);
+
+        // The new rate replaces the open ones before it for the same pair, type and scope. (This used to run only
+        // when the rate already had an id, which a new rate never has, so old rates stayed current beside it.)
+        UUID scope = saved.getCorporateId() != null ? saved.getCorporateId() : FxRateRepository.GLOBAL;
+        fxRateRepository.supersede(saved.getFromCurrency(), saved.getToCurrency(), saved.getRateType(), scope,
+            FxRateRepository.GLOBAL, saved.getRateDate() != null ? saved.getRateDate() : LocalDate.now(),
+            LocalDateTime.now(), saved.getId());
         
         // Update cache
         String cacheKey = buildCacheKey(rate.getFromCurrency(), rate.getToCurrency(), rate.getRateType());

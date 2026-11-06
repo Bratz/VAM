@@ -183,20 +183,30 @@ public interface FxRateRepository extends JpaRepository<FxRate, UUID> {
     // ========================================================================
 
     /**
-     * Deactivate old rates for a pair.
+     * Ends the rates a new one replaces: same pair, type and scope (one corporate's internal rates, or the global
+     * ones), dated on or before it and still open. They stay active, so a fixing can still be read for its date;
+     * only "latest rate" stops seeing them. {@code scope} is the corporate id, or {@link #GLOBAL} for global rates.
      */
     @Modifying
     @Query("""
-        UPDATE FxRate fr SET fr.isActive = false, fr.updatedAt = CURRENT_TIMESTAMP 
-        WHERE fr.fromCurrency = :from AND fr.toCurrency = :to 
+        UPDATE FxRate fr SET fr.effectiveTo = :at, fr.updatedAt = CURRENT_TIMESTAMP
+        WHERE fr.fromCurrency = :from AND fr.toCurrency = :to
         AND fr.rateType = :rateType
-        AND fr.id != :excludeId
-        AND fr.isActive = true
+        AND COALESCE(fr.corporateId, :global) = :scope
+        AND fr.rateDate <= :rateDate
+        AND fr.id <> :excludeId
+        AND fr.isActive = true AND fr.effectiveTo IS NULL
         """)
-    int deactivateOldRates(@Param("from") String fromCurrency,
-                           @Param("to") String toCurrency,
-                           @Param("rateType") RateType rateType,
-                           @Param("excludeId") UUID excludeId);
+    int supersede(@Param("from") String fromCurrency,
+                  @Param("to") String toCurrency,
+                  @Param("rateType") RateType rateType,
+                  @Param("scope") UUID scope,
+                  @Param("global") UUID global,
+                  @Param("rateDate") LocalDate rateDate,
+                  @Param("at") java.time.LocalDateTime at,
+                  @Param("excludeId") UUID excludeId);
+
+    UUID GLOBAL = new UUID(0L, 0L);
 
     /**
      * Update rate value.

@@ -49,7 +49,7 @@ class PayablesServiceTest {
     private final PayablesService service = new PayablesService(
             payableRepository, partyRepository, virtualAccountRepository, transactionRepository,
             paymentRequestRepository, transactionService, marketProfile, nettingService,
-            legalEntityRepository, poboExecutionService);
+            legalEntityRepository, poboExecutionService, mock(com.bank.vam.fx.deal.FxPaymentService.class));
 
     private static final UUID PAYABLE_ID = UUID.randomUUID();
 

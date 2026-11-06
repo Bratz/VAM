@@ -6,35 +6,49 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A one-page PDF of monospaced text, written by hand: a trade confirmation is a page of plain lines,
- * which does not justify a PDF library. Characters outside Latin-1 become '?', and long lines wrap.
+ * A PDF of monospaced text, written by hand: a trade confirmation is a page of plain lines and a report is a text
+ * table, which does not justify a PDF library. A form feed ('\f') starts a new page, as does running out of lines.
+ * Characters outside Latin-1 become '?', and long lines wrap. Reports use landscape for their wider tables.
  */
 final class ConfirmationPdf {
-
-    private static final int WRAP = 88;
-    private static final int MAX_LINES = 68;
 
     private ConfirmationPdf() {
     }
 
+    /** Portrait, 9 pt: a confirmation. */
     static byte[] render(String text) {
-        List<String> lines = wrap(text);
+        return render(text, false);
+    }
 
-        StringBuilder content = new StringBuilder("BT\n/F1 9 Tf\n12 TL\n50 790 Td\n");
-        for (String line : lines) {
-            content.append('(').append(escape(line)).append(") Tj\nT*\n");
-        }
-        content.append("ET");
-        byte[] stream = content.toString().getBytes(StandardCharsets.ISO_8859_1);
+    static byte[] render(String text, boolean landscape) {
+        int width = landscape ? 842 : 595;
+        int height = landscape ? 595 : 842;
+        int size = landscape ? 8 : 9;
+        int leading = size + 3;
+        // Portrait keeps the confirmation's long-standing 88 by 68; landscape fits the page at 8 pt.
+        int wrap = landscape ? (int) ((width - 100) / (size * 0.6)) : 88;
+        int perPage = landscape ? (height - 100) / leading : 68;
+        List<List<String>> pages = paginate(text, wrap, perPage);
 
         List<byte[]> objects = new ArrayList<>();
-        objects.add("<< /Type /Catalog /Pages 2 0 R >>".getBytes(StandardCharsets.ISO_8859_1));
-        objects.add("<< /Type /Pages /Kids [3 0 R] /Count 1 >>".getBytes(StandardCharsets.ISO_8859_1));
-        objects.add(("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R "
-                + "/Resources << /Font << /F1 5 0 R >> >> >>").getBytes(StandardCharsets.ISO_8859_1));
-        objects.add(concat(("<< /Length " + stream.length + " >>\nstream\n").getBytes(StandardCharsets.ISO_8859_1),
-                stream, "\nendstream".getBytes(StandardCharsets.ISO_8859_1)));
-        objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>".getBytes(StandardCharsets.ISO_8859_1));
+        objects.add(latin1("<< /Type /Catalog /Pages 2 0 R >>"));
+        StringBuilder kids = new StringBuilder();
+        for (int i = 0; i < pages.size(); i++) {
+            kids.append(4 + 2 * i).append(" 0 R ");
+        }
+        objects.add(latin1("<< /Type /Pages /Kids [" + kids.toString().trim() + "] /Count " + pages.size() + " >>"));
+        objects.add(latin1("<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>"));
+        for (int i = 0; i < pages.size(); i++) {
+            StringBuilder content = new StringBuilder("BT\n/F1 " + size + " Tf\n" + leading + " TL\n50 " + (height - 52) + " Td\n");
+            for (String line : pages.get(i)) {
+                content.append('(').append(escape(line)).append(") Tj\nT*\n");
+            }
+            content.append("ET");
+            byte[] stream = content.toString().getBytes(StandardCharsets.ISO_8859_1);
+            objects.add(latin1("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + width + " " + height + "] /Contents "
+                    + (5 + 2 * i) + " 0 R /Resources << /Font << /F1 3 0 R >> >> >>"));
+            objects.add(concat(latin1("<< /Length " + stream.length + " >>\nstream\n"), stream, latin1("\nendstream")));
+        }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         write(out, "%PDF-1.4\n");
@@ -54,17 +68,23 @@ final class ConfirmationPdf {
         return out.toByteArray();
     }
 
-    private static List<String> wrap(String text) {
-        List<String> lines = new ArrayList<>();
-        for (String raw : text.split("\n", -1)) {
-            String line = raw;
-            while (line.length() > WRAP) {
-                lines.add(line.substring(0, WRAP));
-                line = "  " + line.substring(WRAP);
+    private static List<List<String>> paginate(String text, int wrap, int perPage) {
+        List<List<String>> pages = new ArrayList<>();
+        for (String page : text.split("\f", -1)) {
+            List<String> lines = new ArrayList<>();
+            for (String raw : page.split("\n", -1)) {
+                String line = raw;
+                while (line.length() > wrap) {
+                    lines.add(line.substring(0, wrap));
+                    line = "  " + line.substring(wrap);
+                }
+                lines.add(line);
             }
-            lines.add(line);
+            for (int i = 0; i < lines.size(); i += perPage) {
+                pages.add(lines.subList(i, Math.min(lines.size(), i + perPage)));
+            }
         }
-        return lines.size() > MAX_LINES ? lines.subList(0, MAX_LINES) : lines;
+        return pages.isEmpty() ? List.of(List.of("")) : pages;
     }
 
     private static String escape(String line) {
@@ -79,6 +99,10 @@ final class ConfirmationPdf {
             }
         }
         return sb.toString();
+    }
+
+    private static byte[] latin1(String s) {
+        return s.getBytes(StandardCharsets.ISO_8859_1);
     }
 
     private static byte[] concat(byte[]... parts) {

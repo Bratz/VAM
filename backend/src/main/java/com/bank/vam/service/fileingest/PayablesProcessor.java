@@ -95,6 +95,8 @@ public class PayablesProcessor implements DomainProcessor {
                 .paymentChannel("BANK_TRANSFER")
                 .paymentMethod("WIRE")
                 .executedBy(ACTOR)
+                // No one is at the file to lock a rate: a payable in another currency takes the live price.
+                .fxAtMarket(true)
                 .build();
         PaymentExecutionResponse executed = payablesService.executePayment(executionRequest);
 

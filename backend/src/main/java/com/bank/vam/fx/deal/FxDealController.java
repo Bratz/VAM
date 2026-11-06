@@ -33,7 +33,7 @@ public class FxDealController {
     /** {@code amount} is in the pair's base currency; {@code valueDate} is the last drawdown date for a window. */
     public record QuoteBody(@NotNull UUID corporateId, @NotNull UUID entityId, @NotNull String pair, @NotNull Side side,
                             @NotNull Instrument instrument, @NotNull BigDecimal amount, LocalDate valueDate,
-                            LocalDate windowStart, String purpose, String exposureRef) {
+                            LocalDate windowStart, String purpose, String exposureRef, Boolean forPayment) {
     }
 
     /** Ask the desk for a better price; with no {@code targetRate} it is "your best price". */
@@ -49,7 +49,7 @@ public class FxDealController {
     public ApiResponse<QuoteView> request(@Valid @RequestBody QuoteBody b) {
         return ApiResponse.success(QuoteView.of(quotes.request(new FxQuoteService.Command(
                 b.corporateId(), b.entityId(), b.pair(), b.side(), b.instrument(), b.amount(), b.valueDate(), b.windowStart(),
-                b.purpose(), b.exposureRef()))));
+                b.purpose(), b.exposureRef(), Boolean.TRUE.equals(b.forPayment())))));
     }
 
     /**

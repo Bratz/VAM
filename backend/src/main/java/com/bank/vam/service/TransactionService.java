@@ -16,6 +16,7 @@ import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.exception.SettlementVaException;
 import com.bank.vam.repository.TransactionRepository;
+import com.bank.vam.service.treasury.CoreBankingBalance;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.hierarchy.LegalEntityRepository;
 import com.bank.vam.repository.payables.PayableRepository;
@@ -173,6 +174,7 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.repository.PhysicalAccountRepository physicalAccountRepository;
     private final LegalEntityRepository legalEntityRepository;
     private final ChargeConfigurationRepository chargeConfigRepository;
     private final PayableRepository payableRepository;
@@ -915,6 +917,7 @@ public class TransactionService {
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
         shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, request.getAmount().negate());
 
         Transaction txn4 = Transaction.builder()
                 .movementType(Transaction.MovementType.DEBIT)
@@ -1137,6 +1140,7 @@ public class TransactionService {
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
         shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, request.getAmount().negate());
 
         Transaction txn4_shadowOut = Transaction.builder()
                 .movementType(Transaction.MovementType.POBO_DEBIT)
@@ -1476,6 +1480,7 @@ public class TransactionService {
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
         shadowVa.applyShadowMovement(request.getAmount().negate());
         virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, request.getAmount().negate());
 
         // Also debit Treasury Settlement VA for the external payment
         BigDecimal treasuryBalanceBefore2 = treasurySettlementVa.getCurrentBalance();
@@ -1621,6 +1626,7 @@ public class TransactionService {
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
         shadowVa.applyShadowMovement(netAmount);
         virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, netAmount);
 
         // Also credit Treasury Settlement VA for the external collection
         BigDecimal treasuryBalanceBefore1 = treasurySettlementVa.getCurrentBalance();
@@ -2303,6 +2309,7 @@ public class TransactionService {
         BigDecimal shadowBalanceBefore = shadowVa.getCurrentBalance();
         shadowVa.applyShadowMovement(request.getAmount());
         virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, request.getAmount());
 
         Transaction txn1_shadowIn = Transaction.builder()
                 .movementType(Transaction.MovementType.ROBO_CREDIT)

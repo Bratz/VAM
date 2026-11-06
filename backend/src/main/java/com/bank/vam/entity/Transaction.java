@@ -229,6 +229,22 @@ public class Transaction extends BaseEntity {
     // FEE TRACKING (ENHANCED v5.0)
     // ========================================================================
 
+    /**
+     * A payment in a currency other than its account's: what the beneficiary receives (instructed), the rate and
+     * the FX deal that converted it; {@code amount} is then what the account was debited, in its own currency.
+     */
+    @Column(name = "instructed_amount", precision = 18, scale = 2)
+    private BigDecimal instructedAmount;
+
+    @Column(name = "instructed_currency", length = 3)
+    private String instructedCurrency;
+
+    @Column(name = "fx_rate", precision = 19, scale = 8)
+    private BigDecimal fxRate;
+
+    @Column(name = "fx_deal_ref", length = 40)
+    private String fxDealRef;
+
     @Column(name = "correlation_id")
     private String correlationId;
 

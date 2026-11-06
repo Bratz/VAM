@@ -75,6 +75,40 @@ class SettlementVaResolverServiceTest {
     }
 
     /**
+     * The payment that is refused for a missing Settlement VA rolls back; the parking record its error cites must not
+     * go with it. So the record is written in a transaction of its own (REQUIRES_NEW), committed before the caller
+     * throws.
+     */
+    @Test
+    void theParkingRecordIsWrittenAndCommittedInItsOwnTransaction() {
+        VirtualAccountRepository vaRepository = mock(VirtualAccountRepository.class);
+        ExceptionTransactionRepository exceptionRepository = mock(ExceptionTransactionRepository.class);
+        when(vaRepository.save(any(VirtualAccount.class))).thenAnswer(inv -> {
+            VirtualAccount va = inv.getArgument(0);
+            va.setId(UUID.randomUUID());
+            return va;
+        });
+        when(exceptionRepository.save(any(ExceptionTransaction.class))).thenAnswer(inv -> inv.getArgument(0));
+        org.springframework.transaction.PlatformTransactionManager tm = mock(org.springframework.transaction.PlatformTransactionManager.class);
+        org.springframework.transaction.TransactionStatus own = new org.springframework.transaction.support.SimpleTransactionStatus();
+        when(tm.getTransaction(any())).thenReturn(own);
+
+        SettlementVaResolverService resolver =
+                new SettlementVaResolverService(vaRepository, mock(ProgramRepository.class), exceptionRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(resolver, "transactionManager", tm);
+
+        VirtualAccount sourceVa = VirtualAccount.builder().vaNumber("VA-AED-1").programId(UUID.randomUUID())
+                .currencyCode("AED").build();
+        SettlementVaResolverService.SettlementVaResolutionResult result =
+                resolver.resolveSettlementVaWithResult(sourceVa, new BigDecimal("10.00"), null);
+
+        assertThat(result.getExceptionRaised()).isNotNull();
+        org.mockito.Mockito.verify(tm).getTransaction(org.mockito.ArgumentMatchers.argThat(d ->
+                d.getPropagationBehavior() == org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        org.mockito.Mockito.verify(tm).commit(own);
+    }
+
+    /**
      * Regression guard for provisioning a Settlement VA on a "flat" program — one with no
      * hierarchy_nodes ROOT and no AccountCategory.ROOT VA (several flagship demo corporates
      * are exactly this shape: standalone PHYSICAL_MIRROR shadows, nothing else). The
@@ -108,5 +142,37 @@ class SettlementVaResolverServiceTest {
         assertThat(settlementVa.getProgramId()).isEqualTo(programId);
         assertThat(settlementVa.getCorporateId()).isEqualTo(corporateId);
         assertThat(settlementVa.getCurrencyCode()).isEqualTo("GBP");
+    }
+
+    /**
+     * A program with currency mirrors used to get its Settlement VA inside one of them, where the resolver (beside the
+     * account, beside its ancestors, the top level) never looked: every payment was then parked as "Settlement VA not
+     * configured". It goes to the top level, or beside the mirror a source account sits in.
+     */
+    @Test
+    void aSettlementVaIsNeverPlacedInsideACurrencyMirror() {
+        VirtualAccountRepository vaRepository = mock(VirtualAccountRepository.class);
+        ProgramRepository programRepository = mock(ProgramRepository.class);
+        when(vaRepository.save(any(VirtualAccount.class))).thenAnswer(inv -> {
+            VirtualAccount va = inv.getArgument(0);
+            va.setId(UUID.randomUUID());
+            return va;
+        });
+        UUID programId = UUID.randomUUID();
+        UUID rootId = UUID.randomUUID();
+        VirtualAccount mirror = VirtualAccount.builder().programId(programId).currencyCode("AED")
+                .accountCategory(VirtualAccount.AccountCategory.CURRENCY_MIRROR).parentAccountId(rootId).build();
+        mirror.setId(UUID.randomUUID());
+        when(vaRepository.findCurrencyMirrorsByProgramAndCurrency(programId, "AED")).thenReturn(java.util.List.of(mirror));
+        when(vaRepository.findById(mirror.getId())).thenReturn(Optional.of(mirror));
+        when(programRepository.findById(programId)).thenReturn(Optional.of(
+                Program.builder().corporateId(UUID.randomUUID()).programCode("COLL5").build()));
+        SettlementVaResolverService resolver =
+                new SettlementVaResolverService(vaRepository, programRepository, mock(ExceptionTransactionRepository.class));
+
+        assertThat(resolver.provisionSettlementVa(programId, "AED").getParentAccountId()).isNull();
+
+        VirtualAccount inMirror = VirtualAccount.builder().programId(programId).currencyCode("AED").parentAccountId(mirror.getId()).build();
+        assertThat(resolver.provisionSettlementVa(inMirror).getParentAccountId()).isEqualTo(rootId);
     }
 }

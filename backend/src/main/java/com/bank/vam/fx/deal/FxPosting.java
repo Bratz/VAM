@@ -1,11 +1,11 @@
 package com.bank.vam.fx.deal;
 
-import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.repository.PhysicalAccountRepository;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.service.treasury.CoreBankingBalance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -44,17 +44,7 @@ class FxPosting {
         BigDecimal before = v.getCurrentBalance();
         v.applyShadowMovement(delta);
         mirrors.save(v);
-        // ponytail: BalanceRefreshService copies the physical account's balance onto the mirror every 15 minutes,
-        // so the bank account moves too or the posting is undone. Other postings in the app do not do this yet.
-        if (v.getLinkedPhysicalAccountId() != null) {
-            banks.findById(v.getLinkedPhysicalAccountId()).ifPresent(p -> {
-                p.setCurrentBalance(p.getCurrentBalance().add(delta));
-                p.setAvailableBalance(p.getAvailableBalance().add(delta));
-                p.setLedgerBalance(p.getLedgerBalance().add(delta));
-                p.setBalanceAsOf(LocalDateTime.now());
-                banks.save(p);
-            });
-        }
+        CoreBankingBalance.follow(banks, v, delta);
         Transaction.MovementType type = delta.signum() >= 0 ? Transaction.MovementType.CREDIT : Transaction.MovementType.DEBIT;
         movements.save(Transaction.builder()
                 .movementType(type)

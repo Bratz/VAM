@@ -981,6 +981,7 @@ public class SweepService {
     private void mirrorIfHomeBankShadow(VirtualAccount va, BigDecimal delta) {
         if (va.isPhysicalMirror() && va.isHomeBankHeld(homeBankProperties.getBic())) {
             va.mirrorBankBalance(delta);
+            CoreBankingBalance.follow(physicalAccountRepository, va, delta);
         }
     }
 
