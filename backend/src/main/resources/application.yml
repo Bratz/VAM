@@ -97,9 +97,8 @@ vam:
   # boot with VAM_HOME_BANK_BIC = the home bank's full SWIFT:
   #   EU=DEUTDEFFXXX  KSA=RJHISARIXXX  UK=LOYDGB2LXXX
   #   US=CHASUS33XXX  AE=EBILAEADXXX  SG=SCBLSGSGXXX
-  # NOTE: MarketProfile.homeBankBic is display-only (via /market-profile) and
-  # uses truncated BICs — it is NOT the pool/activation home-bank check, which
-  # reads HomeBankProperties (vam.home-bank.bic) only. Separate cleanup.
+  # NOTE: this is THE home-bank BIC. MarketProfileProperties.getActiveHomeBankBic()
+  # returns it too; MarketProfile.homeBankBic is only its fallback when unset.
   #
   # Only the BIC is configured. The home-bank DISPLAY NAME is resolved from
   # the actual account data by this BIC (always consistent with the BIC);

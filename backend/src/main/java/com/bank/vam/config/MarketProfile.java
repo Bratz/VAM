@@ -99,7 +99,7 @@ public class MarketProfile {
             .defaultTimezone("Asia/Dubai")
             .defaultBaseRateType("EIBOR")
             .weekend(Weekend.SAT_SUN)         // post-2022 reform — UAE works Mon-Fri now
-            .homeBankBic("EABORAEAD")
+            .homeBankBic("EBILAEAD")          // Emirates NBD; was "EABORAEAD", nine characters and no bank's BIC
             .homeBankName("Emirates NBD")
             .ibanCountryCode("AE")
             .suggestedCurrencies(List.of("AED", "USD", "EUR", "GBP", "SAR", "SGD"))

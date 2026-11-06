@@ -523,3 +523,11 @@ for "credit limit" because FX felt like a separate domain.
 - When a new kind of row joins a shared table, check every query on that table that filters only on corporate, target
   or type: those are the ones that silently start counting the new rows. Capture the existing reads before the change
   and diff them after; identical output is the proof.
+
+- **Green locally, broken on OCI: check the config that differs.** The FX settlement seeder and the program
+  bank-account backfill opened accounts at `MarketProfileProperties.getActiveHomeBankBic()`, the profile's
+  display value. On the UK profile (local) that is `HBUKGB4B`, a valid BIC; on the UAE profile (OCI) it was
+  `EABORAEAD`, nine characters, so every new account failed bean validation at commit, each failure was caught
+  and logged, and the app started green with nothing seeded. A startup runner that swallows per-row errors
+  needs its log read after a deploy, not just the deploy's status. The home bank is `vam.home-bank.bic`;
+  `getActiveHomeBankBic()` now returns it.

@@ -48,6 +48,11 @@ public class MarketProfileProperties {
 
     private MarketProfile resolved;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    @Getter(lombok.AccessLevel.NONE)
+    @Setter(lombok.AccessLevel.NONE)
+    private HomeBankProperties homeBank;
+
     @PostConstruct
     void init() {
         MarketProfile base = MarketProfile.resolve(profile);
@@ -88,7 +93,15 @@ public class MarketProfileProperties {
     public String getDefaultTimezone()      { return resolved.getDefaultTimezone(); }
     public String getDefaultBaseRateType()  { return resolved.getDefaultBaseRateType(); }
     public MarketProfile.Weekend getActiveWeekend() { return resolved.getWeekend(); }
-    public String getActiveHomeBankBic()    { return resolved.getHomeBankBic(); }
+    /**
+     * The home bank's BIC: {@code vam.home-bank.bic} ({@code VAM_HOME_BANK_BIC}), the one pooling and activation
+     * check, so accounts opened at "the home bank" are opened there. The profile's own value is only a fallback; it
+     * was the answer before, and on the UAE profile it was not even a BIC, so every account opened at it failed.
+     */
+    public String getActiveHomeBankBic() {
+        String configured = homeBank == null ? null : homeBank.getBic();
+        return configured != null && !configured.isBlank() ? configured : resolved.getHomeBankBic();
+    }
     public String getActiveHomeBankName()   { return resolved.getHomeBankName(); }
     public String getActiveIbanCountryCode(){ return resolved.getIbanCountryCode(); }
     public List<String> getActiveSuggestedCurrencies() { return resolved.getSuggestedCurrencies(); }
