@@ -69,7 +69,7 @@ final class MandateMessages {
         x.append("</Drtn>\n");
         x.append("      </Ocrncs>\n");
         if (max != null) {
-            x.append("      <MaxAmt Ccy=\"").append(esc(m.getCurrency())).append("\">").append(max.toPlainString()).append("</MaxAmt>\n");
+            x.append("      <MaxAmt Ccy=\"").append(esc(m.getCurrency())).append("\">").append(max.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()).append("</MaxAmt>\n");
         }
         x.append("      <Cdtr><Nm>").append(esc(creditorName)).append("</Nm></Cdtr>\n");
         x.append("      <CdtrAcct><Id><Othr><Id>").append(esc(creditorAccount)).append("</Id></Othr></Id></CdtrAcct>\n");

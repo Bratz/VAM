@@ -123,7 +123,7 @@ class MandateServiceTest {
         // an amendment waits; refused, nothing changes
         when(mandates.findById(m.getId())).thenReturn(Optional.of(m));
         service.amend(m.getId(), new MandateService.Amendment(null, null, new BigDecimal("900"), null));
-        assertTrue(m.getLastMessage().contains("<MndtAmdmntReq>") && m.getLastMessage().contains(">900</MaxAmt>"));
+        assertTrue(m.getLastMessage().contains("<MndtAmdmntReq>") && m.getLastMessage().contains(">900.00</MaxAmt>"));
         assertEquals(new BigDecimal("500"), m.getMaxPerCollection());
         MandateService.BankAnswer refused = service.bankAnswer(m.getId(), false, "MS02");
         assertEquals("AMENDMENT_REFUSED", refused.result());
