@@ -104,6 +104,7 @@ const DOMAIN_OPTIONS: { value: IngestDomain; label: string; description: string;
   { value: 'RECEIVABLES_INVOICE', label: 'Raise Invoices', description: 'Bulk-create new invoices awaiting payment', icon: <FileText className="w-5 h-5" /> },
   { value: 'PAYABLES', label: 'Payables', description: 'Outgoing vendor payments', icon: <ArrowUpFromLine className="w-5 h-5" /> },
   { value: 'PAYMENTS', label: 'Payments', description: 'Outgoing payment instructions', icon: <Send className="w-5 h-5" /> },
+  { value: 'COLLECTIONS', label: 'Collections', description: 'Collect invoices by direct debit, or Request to Pay', icon: <Workflow className="w-5 h-5" /> },
 ];
 
 /** The pipeline has three possible shapes depending on what actually happens for this job's

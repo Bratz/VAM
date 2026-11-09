@@ -18,6 +18,7 @@ import com.bank.vam.service.party.PartyService;
 import com.bank.vam.service.receivables.ReceivablesService;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -74,22 +75,11 @@ public class ReceivableInvoiceProcessor implements DomainProcessor {
             TransformedRow row = byRowNumber.get(staged.getSourceRowNumber());
             try {
                 VirtualAccount va = virtualAccountService.getByViban(row.viban());
-                UUID partyId = resolveOrCreateParty(corporateId, row.debtorName());
-
-                CreateInvoiceRequest request = CreateInvoiceRequest.builder()
-                        .customerId(partyId)
-                        .customerName(row.debtorName())
-                        .customerVaNumber(row.debtorAccount())
-                        .targetVaId(va.getId())
-                        .amount(row.amount())
-                        .currencyCode(row.currency())
-                        .dueDate(LocalDate.now().plusDays(30))
-                        .description(row.remittanceInformation())
-                        .build();
-                InvoiceResponse created = receivablesService.createInvoice(corporateId, request);
+                UUID created = raiseInvoice(corporateId, va, row.debtorName(), row.debtorAccount(), row.amount(),
+                        row.currency(), LocalDate.now().plusDays(30), row.remittanceInformation());
 
                 staged.setStatus(RowStatus.PROCESSED);
-                staged.setProcessedEntityId(created.getId());
+                staged.setProcessedEntityId(created);
                 staged.setReason(null);
             } catch (Exception e) {
                 staged.setStatus(RowStatus.FAILED);
@@ -97,6 +87,27 @@ public class ReceivableInvoiceProcessor implements DomainProcessor {
             }
             repository.save(staged);
         }
+    }
+
+    /**
+     * Raises one invoice, paid into {@code va}, for the customer named {@code customer} (found by exact legal name or
+     * onboarded, see {@link #resolveOrCreateParty}). Also what a collections file or API line that names no existing
+     * invoice uses before collecting it.
+     */
+    public UUID raiseInvoice(UUID corporateId, VirtualAccount va, String customer, String customerAccount, BigDecimal amount,
+                             String currency, LocalDate dueDate, String description) {
+        CreateInvoiceRequest request = CreateInvoiceRequest.builder()
+                .customerId(resolveOrCreateParty(corporateId, customer))
+                .customerName(customer)
+                .customerVaNumber(customerAccount)
+                .targetVaId(va.getId())
+                .amount(amount)
+                .currencyCode(currency)
+                .dueDate(dueDate)
+                .description(description)
+                .build();
+        InvoiceResponse created = receivablesService.createInvoice(corporateId, request);
+        return created.getId();
     }
 
     /** Look up the debtor as an existing customer Party under this corporate; if none exists,
@@ -123,7 +134,7 @@ public class ReceivableInvoiceProcessor implements DomainProcessor {
         return created.getId();
     }
 
-    private UUID resolveCorporateId(UUID ingestJobId) {
+    UUID resolveCorporateId(UUID ingestJobId) {
         IngestJob job = ingestJobRepository.findById(ingestJobId).orElse(null);
         if (job == null || job.getCustomerId() == null) {
             return null;

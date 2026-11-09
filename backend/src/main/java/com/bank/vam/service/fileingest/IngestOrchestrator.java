@@ -36,6 +36,7 @@ public class IngestOrchestrator {
     private final ReceivableInvoiceProcessor receivableInvoiceProcessor;
     private final PayablesProcessor payablesProcessor;
     private final PaymentsProcessor paymentsProcessor;
+    private final CollectionsProcessor collectionsProcessor;
     private final IngestJobRepository ingestJobRepository;
     private final StagedTransactionRepository stagedTransactionRepository;
     private final TimelineEventPublisher timelinePublisher;
@@ -50,6 +51,7 @@ public class IngestOrchestrator {
                                ReceivableInvoiceProcessor receivableInvoiceProcessor,
                                PayablesProcessor payablesProcessor,
                                PaymentsProcessor paymentsProcessor,
+                               CollectionsProcessor collectionsProcessor,
                                IngestJobRepository ingestJobRepository,
                                StagedTransactionRepository stagedTransactionRepository,
                                TimelineEventPublisher timelinePublisher,
@@ -63,6 +65,7 @@ public class IngestOrchestrator {
         this.receivableInvoiceProcessor = receivableInvoiceProcessor;
         this.payablesProcessor = payablesProcessor;
         this.paymentsProcessor = paymentsProcessor;
+        this.collectionsProcessor = collectionsProcessor;
         this.ingestJobRepository = ingestJobRepository;
         this.stagedTransactionRepository = stagedTransactionRepository;
         this.timelinePublisher = timelinePublisher;
@@ -76,7 +79,9 @@ public class IngestOrchestrator {
         Path sourceFile = workspaceRoot.resolve(job.getWorkspacePath());
 
         TransformOutput output;
-        if (job.getDomain() == IngestDomain.RECEIVABLES) {
+        // The hand-written CSV shape also fits collections: amount, currency, the account paid into (viban), the
+        // customer (debtor*) and the invoice number (remittanceInformation).
+        if (job.getDomain() == IngestDomain.RECEIVABLES || job.getDomain() == IngestDomain.COLLECTIONS) {
             try {
                 output = receivablesCsvTransform.transform(sourceFile);
             } catch (IllegalArgumentException unrecognizedFormat) {
@@ -122,6 +127,7 @@ public class IngestOrchestrator {
             case RECEIVABLES_INVOICE -> receivableInvoiceProcessor;
             case PAYABLES -> payablesProcessor;
             case PAYMENTS -> paymentsProcessor;
+            case COLLECTIONS -> collectionsProcessor;
         };
         processor.process(ingestJobId, output.rows());
 

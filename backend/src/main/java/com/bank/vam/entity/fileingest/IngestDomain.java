@@ -10,5 +10,8 @@ public enum IngestDomain {
      * RECEIVABLES: initiates a collection request instead of recording one already collected. */
     RECEIVABLES_INVOICE,
     PAYABLES,
-    PAYMENTS
+    PAYMENTS,
+    /** Collect invoices: each row names an invoice (remittanceInformation) or is raised as one from its debtor,
+     * amount and account; the file goes out as one collection run (direct debit / Request to Pay). */
+    COLLECTIONS
 }

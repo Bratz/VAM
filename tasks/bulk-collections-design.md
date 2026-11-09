@@ -117,7 +117,18 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
    - V45 widens `collection_lines_status_check` (Hibernate's enum CHECK isn't updated by ddl-auto).
    - V44 refunds the fee that collections before 0eb5fcc were charged twice (FEEFIX-* ADJUSTMENT credits).
    - Invoice list: OVERDUE (and PARTIAL) now selectable for both Plan collection and COBO; `canRequestCobo` accepts them.
-4. Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API.
+4. ✅ Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API. *(built 2026-11-09; RTP came with step 2)*
+   - `CollectionIntake`: a line naming an existing invoice of the corporate collects it (amount = outstanding, same
+     currency and account, else the line fails with the reason); a line naming none raises it first via
+     `ReceivableInvoiceProcessor.raiseInvoice` (customer by legal name or onboarded), due on its date or today.
+     Duplicates within a batch are refused.
+   - File: ingest domain `COLLECTIONS` ("Collections" on the upload page). The hand-written CSV shape
+     (`amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId`) is accepted without the agent;
+     other layouts go to the agent as usual (its prompt now says invoice numbers go in remittanceInformation). The
+     file's invoices go out as one run (source FILE); each row is PROCESSED with "CR-…: direct debit on … / Request to
+     Pay sent", or FAILED with why.
+   - API: `POST /collections/runs/lines` {corporateId, lines:[{invoiceNumber?, customer?, customerAccount?, account,
+     amount, currency, dueDate?, description?}]} → the run (source API) plus `rejected` lines with reasons.
 5. Cross-currency convert-on-credit (deal first).
 6. E-mandate flow (pain.009/010/011/012).
 7. Collections UI.

@@ -28,6 +28,7 @@ public class CollectionsController {
     private final CollectionRunService runs;
     private final CollectionSettlementService settlement;
     private final CollectionReturnService returns;
+    private final CollectionIntake intake;
 
     @GetMapping("/mandates")
     public ApiResponse<List<MandateService.MandateView>> list(@RequestParam UUID corporateId) {
@@ -74,6 +75,21 @@ public class CollectionsController {
         CollectionRunService.RunDetail run = runs.submit(request.corporateId(),
                 request.receivableIds() == null ? List.of() : request.receivableIds(), CollectionRun.Source.INVOICES);
         return ApiResponse.success(run, "Collection run " + run.run().runRef() + " sent");
+    }
+
+    public record LinesRequest(UUID corporateId, List<CollectionIntake.IntakeLine> lines) {
+    }
+
+    /**
+     * For the corporate's ERP: lines naming an invoice collect it; lines naming none raise it first. The lines that
+     * resolve go out as one run; the rest come back in {@code rejected} with the reason.
+     */
+    @PostMapping("/runs/lines")
+    public ApiResponse<CollectionIntake.IntakeResult> submitLines(@RequestBody LinesRequest request) {
+        CollectionIntake.IntakeResult r = intake.collect(request.corporateId(), request.lines() == null ? List.of() : request.lines(),
+                CollectionRun.Source.API);
+        return ApiResponse.success(r, "Collection run " + r.run().run().runRef() + " sent"
+                + (r.rejected().isEmpty() ? "" : "; " + r.rejected().size() + " line(s) not collected"));
     }
 
     @GetMapping("/runs")
