@@ -88,7 +88,23 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
    - Not yet: frequency cap is stored but not counted (needs collection history, step 2); lead time is one business day for
      every scheme, weekends only. The invoice list only lets OPEN/PARTIAL be selected (its COBO rule), so OVERDUE invoices
      can be planned through the API but not picked in the portal yet.
-2. pain.008 generation + submit + simulated settlement with hold and release job.
+2. ✅ pain.008 generation + submit + simulated settlement with hold and release job. *(built 2026-11-09)*
+   - `CollectionRun` / `CollectionLine` (tables `collection_runs`, `collection_lines`). `POST /collections/runs` routes and
+     sends at once (no approval): direct debits → **one pain.008 per run**, one PmtInf per (receiving account, scheme, date,
+     currency, SeqTp FRST/RCUR/OOFF); Request to Pay lines are sent now via the existing pain.013 service (each in its own
+     transaction). `GET /runs`, `/runs/{id}`, `/runs/{id}/pain008`.
+   - Routing now counts history: frequency cap per calendar week/month/quarter/year (earlier collections + this batch),
+     one-off used once, invoices with a debit in flight left out, receiving account in another currency → RTP until step 5.
+   - `CollectionSettlementService`: daily (`vam.collections.eod-cron`, default 18:30) or `POST /collections/process?asOf=`.
+     On the collection date: 4-leg `processCollection`, net amount **held**, invoice **paid** (gross) at settlement so a
+     return can reopen it; one-off mandate → USED. Hold until collection date + the corporate's
+     `collectionHoldBusinessDays` (default 5; `GET/PUT /collections/settings`), then released to available.
+     A line that fails to credit stays SENT with the reason and is retried next run.
+   - Portal: the plan modal has **Send collections**, shows each line's status and downloads the pain.008.
+   - Fixed on the way (existing bugs found live): `processCollection` charged the fee twice (credited net, then posted the
+     fee leg) — the target is now credited gross; and 11 places set available = current, releasing every hold on the
+     account — now `syncAvailableToCurrent()` (available = current − held).
+   - Not yet: hold-days setting has no portal field (step 7); a real camt.054 credit for a debit is not matched to its line (step 3).
 3. Returns/rejects (pacs.004 / pain.002 / camt.054 DBIT) → reverse, reopen, RTP fallback, mandate suspend.
 4. Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API.
 5. Cross-currency convert-on-credit (deal first).

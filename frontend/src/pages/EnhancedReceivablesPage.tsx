@@ -1836,6 +1836,7 @@ const EnhancedReceivablesPage: React.FC = () => {
         onClose={() => setPlanIds(null)}
         corporateId={selectedCorporateId}
         receivableIds={planIds ?? []}
+        onSent={() => { setSelectedIds(new Set()); fetchData(); }}
       />
 
       <CoboRequestModal

@@ -2,13 +2,17 @@ package com.bank.vam.collections;
 
 import com.bank.vam.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +25,8 @@ public class CollectionsController {
 
     private final MandateService mandates;
     private final CollectionRoutingService routing;
+    private final CollectionRunService runs;
+    private final CollectionSettlementService settlement;
 
     @GetMapping("/mandates")
     public ApiResponse<List<MandateService.MandateView>> list(@RequestParam UUID corporateId) {
@@ -59,5 +65,52 @@ public class CollectionsController {
     @PostMapping("/runs/preview")
     public ApiResponse<CollectionRoutingService.Preview> preview(@RequestBody PreviewRequest request) {
         return ApiResponse.success(routing.preview(request.corporateId(), request.receivableIds() == null ? List.of() : request.receivableIds()));
+    }
+
+    /** Routes the invoices and sends them: direct debits into the run's pain.008, Request to Pay for the rest. */
+    @PostMapping("/runs")
+    public ApiResponse<CollectionRunService.RunDetail> submit(@RequestBody PreviewRequest request) {
+        CollectionRunService.RunDetail run = runs.submit(request.corporateId(),
+                request.receivableIds() == null ? List.of() : request.receivableIds(), CollectionRun.Source.INVOICES);
+        return ApiResponse.success(run, "Collection run " + run.run().runRef() + " sent");
+    }
+
+    @GetMapping("/runs")
+    public ApiResponse<List<CollectionRunService.RunSummary>> runs(@RequestParam UUID corporateId) {
+        return ApiResponse.success(runs.list(corporateId));
+    }
+
+    @GetMapping("/runs/{id}")
+    public ApiResponse<CollectionRunService.RunDetail> run(@PathVariable UUID id) {
+        return ApiResponse.success(runs.get(id));
+    }
+
+    @GetMapping(value = "/runs/{id}/pain008", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> pain008(@PathVariable UUID id) {
+        CollectionRun run = runs.find(id);
+        if (run.getPain008Xml() == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + run.getRunRef() + ".pain008.xml\"")
+                .body(run.getPain008Xml());
+    }
+
+    /** Settles direct debits due by {@code asOf} (default today) and lifts holds that end by it. Runs daily on its own. */
+    @PostMapping("/process")
+    public ApiResponse<CollectionSettlementService.Result> process(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
+        return ApiResponse.success(settlement.process(asOf != null ? asOf : LocalDate.now()));
+    }
+
+    public record Settings(int holdBusinessDays) {
+    }
+
+    @GetMapping("/settings")
+    public ApiResponse<Settings> settings(@RequestParam UUID corporateId) {
+        return ApiResponse.success(new Settings(runs.holdDays(corporateId)));
+    }
+
+    @PutMapping("/settings")
+    public ApiResponse<Settings> updateSettings(@RequestParam UUID corporateId, @RequestBody Settings settings) {
+        return ApiResponse.success(new Settings(runs.setHoldDays(corporateId, settings.holdBusinessDays())), "Saved");
     }
 }

@@ -71,6 +71,8 @@ export interface CollectionLine {
   mandateId?: string;
   mandateReference?: string;
   schemeCode?: string;
+  /** FRST, RCUR or OOFF. */
+  sequenceType?: string;
   /** Why it is not a direct debit (or left out). */
   reason?: string;
 }
@@ -85,6 +87,37 @@ export interface CollectionTotal {
 export interface CollectionPreview {
   lines: CollectionLine[];
   totals: CollectionTotal[];
+}
+
+export type LineStatus = 'SENT' | 'SETTLED' | 'AVAILABLE' | 'RTP_SENT' | 'EXCLUDED' | 'FAILED';
+
+export interface RunLine extends Omit<CollectionLine, 'receivableId'> {
+  id: string;
+  receivableId: string;
+  status: LineStatus;
+  endToEndId?: string;
+  settledOn?: string;
+  creditedAmount?: number;
+  transactionRef?: string;
+  holdUntil?: string;
+  releasedOn?: string;
+}
+
+export interface RunSummary {
+  id: string;
+  runRef: string;
+  createdAt: string;
+  source: 'INVOICES' | 'FILE' | 'API';
+  lineStatuses: Partial<Record<LineStatus, number>>;
+  totals: CollectionTotal[];
+  hasPain008: boolean;
+  /** No line is still on its way. */
+  completed: boolean;
+}
+
+export interface RunDetail {
+  run: RunSummary;
+  lines: RunLine[];
 }
 
 export const collectionsApi = {
@@ -106,6 +139,25 @@ export const collectionsApi = {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then(r => r.data.data);
+  },
+
+  submit: (corporateId: string, receivableIds: string[]) =>
+    apiClient.post<ApiResponse<RunDetail>>('/collections/runs', { corporateId, receivableIds }).then(r => r.data.data),
+
+  runs: (corporateId: string) =>
+    apiClient.get<ApiResponse<RunSummary[]>>('/collections/runs', { params: { corporateId } }).then(r => r.data.data),
+
+  run: (id: string) => apiClient.get<ApiResponse<RunDetail>>(`/collections/runs/${id}`).then(r => r.data.data),
+
+  /** Saves the run's pain.008 as a file. */
+  downloadPain008: async (id: string, runRef: string) => {
+    const xml = await apiClient.get<string>(`/collections/runs/${id}/pain008`, { responseType: 'text' }).then(r => r.data);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'application/xml' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${runRef}.pain008.xml`;
+    a.click();
+    URL.revokeObjectURL(url);
   },
 
   preview: (corporateId: string, receivableIds: string[]) =>

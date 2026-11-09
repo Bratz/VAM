@@ -542,3 +542,14 @@ for "credit limit" because FX felt like a separate domain.
   window priced at its start was booked ending the day it opened. Nothing failed: windows simply could not be drawn
   after their first day. Found only when a live check sorted deals by value date. When a pricing result carries a
   date, check which date the contract needs before storing it.
+
+- **Mocked repositories never run a query.** A custom `@Query` naming a nested enum as
+  `com.bank.vam.collections.CollectionLine.Status.SENT` passed every unit test and stopped the app at startup
+  (Hibernate needs `Outer$Inner`, or a derived query). After adding or changing a `@Query`, start the backend before
+  calling the step done; prefer derived query methods when they can say it.
+
+- **A new feature is the first real user of an old mechanism; test the mechanism, not only the feature.** Direct-debit
+  holds were the first code to put anything in `heldBalance`. The live run showed 11 places that wrote
+  available = current, so the second credit released the first one's hold, and `processCollection` credited the net and
+  then charged the fee again. Neither showed before because nothing held money and nobody compared a balance with the
+  fee rows. When a feature leans on an unused field or path, assert the balances end to end, not only its own records.

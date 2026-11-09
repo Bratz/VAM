@@ -20,6 +20,10 @@ public class Corporate extends BaseEntity {
     @Column(name = "legal_name", nullable = false)
     private String legalName;
 
+    /** Business days a direct-debit collection stays held after it settles (null: 5), the window for returns. */
+    @Column(name = "collection_hold_business_days")
+    private Integer collectionHoldBusinessDays;
+
     @Column(name = "trade_name")
     private String tradeName;
 
