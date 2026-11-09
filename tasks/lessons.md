@@ -553,3 +553,9 @@ for "credit limit" because FX felt like a separate domain.
   available = current, so the second credit released the first one's hold, and `processCollection` credited the net and
   then charged the fee again. Neither showed before because nothing held money and nobody compared a balance with the
   fee rows. When a feature leans on an unused field or path, assert the balances end to end, not only its own records.
+
+- **A new enum value on a Hibernate-created table needs a widening migration — on every environment, not only where
+  you test.** Hibernate 6 writes a CHECK listing an @Enumerated column's values when it creates a table and
+  ddl-auto never updates it. Locally `ingest_job` happened to have no CHECK, so the COLLECTIONS domain worked here
+  and failed on OCI as a bare 500 at insert (V46; V41 and V45 were the same trap). When an enum gains a value,
+  grep which entities store it and ship a conditional drop-and-re-add of their CHECKs in the same change.
