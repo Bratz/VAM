@@ -46,6 +46,7 @@ public class Iso20022PaymentController {
     private final Iso20022RequestToPayService requestToPayService;
     private final CollectionReturnService collectionReturns;
     private final CollectionSettlementService collectionSettlement;
+    private final com.bank.vam.collections.MandateService mandateService;
 
     // ========================================================================
     // INWARD PAYMENTS (Credits via VIBAN routing)
@@ -178,6 +179,18 @@ public class Iso20022PaymentController {
         String message = String.format("%d of %d applied", applied, outcomes.size());
         if (applied == outcomes.size()) return ResponseEntity.ok(ApiResponse.success(outcomes, message));
         return ResponseEntity.status(applied == 0 ? HttpStatus.BAD_REQUEST : HttpStatus.PARTIAL_CONTENT).body(ApiResponse.success(outcomes, message));
+    }
+
+    @PostMapping(value = "/inward/pain012", consumes = MediaType.APPLICATION_XML_VALUE)
+    @Operation(summary = "Process pain.012 mandate acceptance report",
+            description = "The payer's bank's answer to an e-mandate request (pain.009) or amendment (pain.010): "
+                    + "an accepted request activates the mandate or applies the amendment; a refused one cancels it or drops the amendment.")
+    public ResponseEntity<ApiResponse<List<com.bank.vam.collections.MandateService.BankAnswer>>> processPain012(@RequestBody String pain012Xml) {
+        List<com.bank.vam.collections.MandateService.BankAnswer> answers = mandateService.acceptanceReport(pain012Xml);
+        long matched = answers.stream().filter(a -> !"UNKNOWN".equals(a.result()) && !"UNCHANGED".equals(a.result())).count();
+        String message = String.format("%d of %d applied", matched, answers.size());
+        return matched == answers.size() ? ResponseEntity.ok(ApiResponse.success(answers, message))
+                : ResponseEntity.status(matched == 0 ? HttpStatus.BAD_REQUEST : HttpStatus.PARTIAL_CONTENT).body(ApiResponse.success(answers, message));
     }
 
     @PostMapping(value = "/inward/pain014", consumes = MediaType.APPLICATION_XML_VALUE)

@@ -48,6 +48,31 @@ public class CollectionsController {
         return ApiResponse.success(result, result.imported() + " mandates imported");
     }
 
+    /** An e-mandate: sent to the payer's bank (pain.009) and pending until it accepts. */
+    @PostMapping("/mandates/emandate")
+    public ApiResponse<MandateService.MandateView> requestEMandate(@RequestBody MandateService.MandateRequest request) {
+        return ApiResponse.success(mandates.requestEMandate(request), "Mandate request sent to the payer's bank");
+    }
+
+    @PostMapping("/mandates/{id}/amend")
+    public ApiResponse<MandateService.MandateView> amend(@PathVariable UUID id, @RequestBody MandateService.Amendment amendment) {
+        return ApiResponse.success(mandates.amend(id, amendment));
+    }
+
+    public record BankAnswerRequest(boolean accepted, String reasonCode) {
+    }
+
+    /** The payer's bank's answer to a waiting e-mandate request or amendment, recorded by hand. */
+    @PostMapping("/mandates/{id}/bank-answer")
+    public ApiResponse<MandateService.BankAnswer> bankAnswer(@PathVariable UUID id, @RequestBody BankAnswerRequest request) {
+        return ApiResponse.success(mandates.bankAnswer(id, request.accepted(), request.reasonCode()));
+    }
+
+    @GetMapping(value = "/mandates/{id}/message", produces = MediaType.APPLICATION_XML_VALUE)
+    public String lastMessage(@PathVariable UUID id) {
+        return mandates.lastMessage(id);
+    }
+
     @PutMapping("/mandates/{id}")
     public ApiResponse<MandateService.MandateView> update(@PathVariable UUID id, @RequestBody MandateService.MandateUpdate update) {
         return ApiResponse.success(mandates.update(id, update), "Mandate updated");

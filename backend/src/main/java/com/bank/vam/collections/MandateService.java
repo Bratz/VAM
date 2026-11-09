@@ -10,7 +10,11 @@ import com.bank.vam.entity.party.PartyBankAccount;
 import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.fx.exposure.ExposureCsvParser;
+import com.bank.vam.config.HomeBankProperties;
+import com.bank.vam.repository.CorporateRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import com.bank.vam.repository.party.PartyBankAccountRepository;
 import com.bank.vam.repository.party.PartyRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +43,8 @@ public class MandateService {
     private final PartyRepository parties;
     private final PartyBankAccountRepository partyAccounts;
     private final VirtualAccountRepository accounts;
+    private final CorporateRepository corporates;
+    private final HomeBankProperties homeBank;
 
     /**
      * The customer is {@code customerPartyId}, or {@code customer} (party code or legal name) from a file;
@@ -62,7 +68,16 @@ public class MandateService {
                               String creditorAccount, String schemeCode, String currency, Type mandateType,
                               LocalDate validFrom, LocalDate validTo, LocalDate signedDate,
                               BigDecimal maxPerCollection, Integer frequencyCount, Period frequencyPeriod,
-                              Status status, String statusReason, Source source, boolean expired) {
+                              Status status, String statusReason, Source source, boolean expired,
+                              String awaitingBank, boolean hasMessage) {
+    }
+
+    /** What an amendment changes; null fields stay as they are. */
+    public record Amendment(String debtorIban, String debtorBic, BigDecimal maxPerCollection, LocalDate validTo) {
+    }
+
+    /** {@code result}: ACTIVE, CANCELLED (refused), AMENDED, AMENDMENT_REFUSED, UNKNOWN or UNCHANGED. */
+    public record BankAnswer(String requestId, String mandateReference, String result, String detail) {
     }
 
     public record ImportResult(int imported, List<MandateView> mandates) {
@@ -75,6 +90,130 @@ public class MandateService {
     @Transactional
     public MandateView register(MandateRequest request) {
         return views(List.of(mandates.save(build(request, Set.of())))).get(0);
+    }
+
+    /**
+     * An electronic mandate: sent to the payer's bank as a pain.009 and PENDING (not usable) until its pain.012
+     * accepts it.
+     */
+    @Transactional
+    public MandateView requestEMandate(MandateRequest request) {
+        CustomerMandate m = build(request, Set.of());
+        m.setSource(Source.EMANDATE);
+        m.setStatus(Status.PENDING);
+        m.setRequestId("MRQ-" + random());
+        m.setLastMessage(MandateMessages.initiation(m, creditorName(m), accountNumber(m), homeBank.getBic()));
+        return views(List.of(mandates.save(m))).get(0);
+    }
+
+    /**
+     * Changes the payer's account or the limits. An e-mandate's change goes to the payer's bank as a pain.010 and
+     * applies only when accepted; any other mandate changes at once.
+     */
+    @Transactional
+    public MandateView amend(UUID id, Amendment a) {
+        CustomerMandate m = find(id);
+        if (m.getStatus() != Status.ACTIVE && m.getStatus() != Status.SUSPENDED) {
+            throw new BusinessException("Mandate " + m.getMandateReference() + " is " + m.getStatus() + " and cannot be amended");
+        }
+        String iban = blankToNull(a.debtorIban()) == null ? null : iban(a.debtorIban());
+        String bic = blankToNull(a.debtorBic()) == null ? null : a.debtorBic().trim().toUpperCase(Locale.ROOT);
+        if (bic != null && !bic.matches("[A-Z0-9]{8}([A-Z0-9]{3})?")) throw new BusinessException("Customer bank BIC (debtorBic) is not a valid BIC: " + bic);
+        if (a.maxPerCollection() != null && a.maxPerCollection().signum() <= 0) throw new BusinessException("maxPerCollection must be positive");
+        if (a.validTo() != null && a.validTo().isBefore(m.getValidFrom())) throw new BusinessException("validTo is before validFrom");
+        if (iban == null && bic == null && a.maxPerCollection() == null && a.validTo() == null) throw new BusinessException("Nothing to amend");
+        if (m.getSource() == Source.EMANDATE) {
+            if (Boolean.TRUE.equals(m.getPendingAmendment())) throw new BusinessException("An amendment is already waiting for the payer's bank");
+            m.setPendingAmendment(true);
+            m.setPendingDebtorIban(iban);
+            m.setPendingDebtorBic(bic);
+            m.setPendingMaxPerCollection(a.maxPerCollection());
+            m.setPendingValidTo(a.validTo());
+            m.setRequestId("MRQ-" + random());
+            m.setLastMessage(MandateMessages.amendment(m, creditorName(m), accountNumber(m), homeBank.getBic()));
+        } else {
+            if (iban != null) m.setDebtorIban(iban);
+            if (bic != null) m.setDebtorBic(bic);
+            if (a.maxPerCollection() != null) m.setMaxPerCollection(a.maxPerCollection());
+            if (a.validTo() != null) m.setValidTo(a.validTo());
+        }
+        return views(List.of(m)).get(0);
+    }
+
+    /** The payer's bank's answer to the waiting request, recorded by hand (there is no clearing link). */
+    @Transactional
+    public BankAnswer bankAnswer(UUID id, boolean accepted, String reasonCode) {
+        CustomerMandate m = find(id);
+        return answer(m, accepted, reasonCode);
+    }
+
+    /** pain.012 MandateAcceptanceReport: each answer is matched to its request by the original MsgId, else the mandate id. */
+    @Transactional
+    public List<BankAnswer> acceptanceReport(String xml) {
+        Document doc = IsoXml.parse(xml);
+        List<BankAnswer> out = new ArrayList<>();
+        for (Element u : IsoXml.all(doc, "UndrlygAccptncDtls")) {
+            String msgId = IsoXml.path(u, "OrgnlMsgInf", "MsgId");
+            String ref = IsoXml.path(u, "OrgnlMndt", "OrgnlMndtId");
+            if (ref == null) ref = IsoXml.text(u, "MndtId");
+            boolean accepted = "true".equalsIgnoreCase(IsoXml.path(u, "AccptncRslt", "Accptd"));
+            String code = IsoXml.path(u, "AccptncRslt", "RjctRsn", "Cd");
+            Optional<CustomerMandate> m = msgId == null ? Optional.empty() : mandates.findByRequestId(msgId);
+            if (m.isEmpty() && ref != null) {
+                List<CustomerMandate> byRef = mandates.findByMandateReferenceIgnoreCase(ref);
+                if (byRef.size() == 1) m = Optional.of(byRef.get(0));
+            }
+            out.add(m.map(x -> answer(x, accepted, code))
+                    .orElse(new BankAnswer(msgId, ref, "UNKNOWN", "No mandate request with this message id or mandate reference")));
+        }
+        return out;
+    }
+
+    private BankAnswer answer(CustomerMandate m, boolean accepted, String reasonCode) {
+        String code = reasonCode == null ? "MS03" : reasonCode.trim().toUpperCase(Locale.ROOT);
+        String why = code + " " + CollectionReturnService.REASONS.getOrDefault(code, "Refused");
+        String result;
+        if (m.getStatus() == Status.PENDING) {
+            m.setStatus(accepted ? Status.ACTIVE : Status.CANCELLED);
+            m.setStatusReason(accepted ? null : "Refused by the payer's bank: " + why);
+            result = accepted ? "ACTIVE" : "CANCELLED";
+        } else if (Boolean.TRUE.equals(m.getPendingAmendment())) {
+            if (accepted) {
+                if (m.getPendingDebtorIban() != null) m.setDebtorIban(m.getPendingDebtorIban());
+                if (m.getPendingDebtorBic() != null) m.setDebtorBic(m.getPendingDebtorBic());
+                if (m.getPendingMaxPerCollection() != null) m.setMaxPerCollection(m.getPendingMaxPerCollection());
+                if (m.getPendingValidTo() != null) m.setValidTo(m.getPendingValidTo());
+            } else {
+                m.setStatusReason("Amendment refused by the payer's bank: " + why);
+            }
+            m.setPendingAmendment(null);
+            m.setPendingDebtorIban(null);
+            m.setPendingDebtorBic(null);
+            m.setPendingMaxPerCollection(null);
+            m.setPendingValidTo(null);
+            result = accepted ? "AMENDED" : "AMENDMENT_REFUSED";
+        } else {
+            return new BankAnswer(m.getRequestId(), m.getMandateReference(), "UNCHANGED", "Nothing of " + m.getMandateReference() + " is waiting for the payer's bank");
+        }
+        return new BankAnswer(m.getRequestId(), m.getMandateReference(), result, accepted ? null : why);
+    }
+
+    public String lastMessage(UUID id) {
+        String xml = find(id).getLastMessage();
+        if (xml == null) throw new ResourceNotFoundException("No message has been sent for this mandate");
+        return xml;
+    }
+
+    private String creditorName(CustomerMandate m) {
+        return corporates.findById(m.getCorporateId()).map(c -> c.getLegalName()).orElse("Creditor");
+    }
+
+    private String accountNumber(CustomerMandate m) {
+        return accounts.findById(m.getCreditorVaId()).map(VirtualAccount::getVaNumber).orElse(String.valueOf(m.getCreditorVaId()));
+    }
+
+    private static String random() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 20).toUpperCase(Locale.ROOT);
     }
 
     /** The whole file is refused if any row is bad, so a corporate never has half a file of mandates loaded. */
@@ -148,6 +287,10 @@ public class MandateService {
         if (to == null) throw new BusinessException("Cannot " + action + " a mandate that is " + from);
         m.setStatus(to);
         m.setStatusReason(reason == null || reason.isBlank() ? null : reason.trim());
+        if (to == Status.CANCELLED && m.getSource() == Source.EMANDATE) {
+            // the payer's bank is told; a cancellation needs no answer
+            m.setLastMessage(MandateMessages.cancellation(m, "MCX-" + random(), "MD17"));
+        }
         return views(List.of(m)).get(0);
     }
 
@@ -332,7 +475,9 @@ public class MandateService {
                 names.get(m.getCustomerPartyId()), m.getDebtorName(), m.getDebtorIban(), m.getDebtorBic(), m.getCreditorVaId(),
                 numbers.get(m.getCreditorVaId()), m.getSchemeCode(), m.getCurrency(), m.getMandateType(), m.getValidFrom(),
                 m.getValidTo(), m.getSignedDate(), m.getMaxPerCollection(), m.getFrequencyCount(), m.getFrequencyPeriod(),
-                m.getStatus(), m.getStatusReason(), m.getSource(), m.getValidTo() != null && m.getValidTo().isBefore(today))).toList();
+                m.getStatus(), m.getStatusReason(), m.getSource(), m.getValidTo() != null && m.getValidTo().isBefore(today),
+                m.getStatus() == Status.PENDING ? "INITIATION" : Boolean.TRUE.equals(m.getPendingAmendment()) ? "AMENDMENT" : null,
+                m.getLastMessage() != null)).toList();
     }
 
     private static String blankToNull(String s) {

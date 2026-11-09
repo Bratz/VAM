@@ -86,6 +86,32 @@ public class CustomerMandate extends BaseEntity {
     @Column(name = "source", nullable = false, length = 10)
     private Source source = Source.API;
 
+    // ---- e-mandate: the request waiting for the payer's bank, and what it asks ----
+
+    /** MndtReqId / MsgId of the last pain.009 or pain.010 sent; the bank's pain.012 answers it. */
+    @Column(name = "request_id", length = 35)
+    private String requestId;
+
+    /** The last mandate message sent (pain.009, .010 or .011). */
+    @Column(name = "last_message", columnDefinition = "text")
+    private String lastMessage;
+
+    /** An amendment waiting for the payer's bank (pain.010): applied when accepted, dropped when refused. */
+    @Column(name = "pending_amendment")
+    private Boolean pendingAmendment;
+
+    @Column(name = "pending_debtor_iban", length = 34)
+    private String pendingDebtorIban;
+
+    @Column(name = "pending_debtor_bic", length = 11)
+    private String pendingDebtorBic;
+
+    @Column(name = "pending_max_per_collection", precision = 19, scale = 2)
+    private BigDecimal pendingMaxPerCollection;
+
+    @Column(name = "pending_valid_to")
+    private LocalDate pendingValidTo;
+
     public enum Type { ONE_OFF, RECURRING }
 
     public enum Period { WEEK, MONTH, QUARTER, YEAR }

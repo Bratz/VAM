@@ -13,4 +13,8 @@ public interface CustomerMandateRepository extends JpaRepository<CustomerMandate
     List<CustomerMandate> findByCorporateIdAndCustomerPartyIdIn(UUID corporateId, Collection<UUID> partyIds);
 
     boolean existsByCorporateIdAndMandateReferenceIgnoreCase(UUID corporateId, String mandateReference);
+
+    java.util.Optional<CustomerMandate> findByRequestId(String requestId);
+
+    List<CustomerMandate> findByMandateReferenceIgnoreCase(String mandateReference);
 }
