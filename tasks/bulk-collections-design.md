@@ -1,0 +1,89 @@
+# Bulk Collections — design
+
+Status: spec agreed 2026-11-09 (interview), not built.
+
+## What exists today (review, 2026-11-09)
+
+- Bulk invoice raising: file ingest `RECEIVABLES_INVOICE` → one Receivable per row, VIBAN-linked, Party auto-onboarded.
+- Bulk posting of money already received: file ingest `RECEIVABLES`; camt.054 (fixed 2026-11-09: every credit line,
+  each in its own transaction, routed by its own CdtrAcct; duplicate guard now keys on the stored EndToEndId).
+- VIBAN-per-customer matching, unmatched queue (match / return / escalate), COBO, single-invoice Request to Pay (pain.013/014).
+- Missing: direct debit of any kind (no pain.008, no customer mandates, no returns), bulk Request to Pay, collection runs.
+  `ExternalMandate` is the corporate's mandate over its *own* external accounts (sweeps) — not reused here.
+
+## Decisions (from the interview)
+
+| Topic | Decision |
+|---|---|
+| Model | Both: direct debit where a mandate allows, Request to Pay otherwise; one run can mix them |
+| Scheme | Scheme-neutral pain.008; scheme is a code on the mandate (no scheme-specific rules yet) |
+| Initiation | From open invoices (portal), file upload (ingest), API |
+| Routing per invoice | Mandate first: active mandate that allows the amount and date → DD; else RTP; neither → excluded with a reason |
+| Mandates in | Corporate registers (portal / file, active from its given date); electronic flow (pain.009 → pain.012 accept; pain.010 amend, pain.011 cancel); API |
+| Mandate limits | Max per collection; one-off vs recurring; valid from/to; frequency cap (N per week/month/quarter/year) |
+| Collection date | Each line on its invoice due date; if past or inside the lead time, next possible business day. A run spans dates |
+| Crediting | On settlement date, held until the hold period ends; hold length is **per corporate** |
+| Returns / rejects | Reverse the held credit, reopen the invoice with the reason, then send a Request to Pay for it |
+| Approval | None: submitting a run sends it |
+| Currency | Convert on credit: collect in the invoice currency; if the VA differs, convert using the corporate's FX deals first, then the live rate |
+
+## Model
+
+**CustomerMandate** (new table `customer_mandates`)
+- corporateId, customerPartyId, debtor IBAN/BIC (or customerPartyBankAccountId), creditor VA (receiving account)
+- mandateReference (unique per corporate), schemeCode (free text, e.g. `UAE_DDS`, `SEPA_CORE`), currency
+- type ONE_OFF | RECURRING; validFrom, validTo; maxPerCollection; frequencyCap {count, period}
+- status PENDING (e-mandate sent) | ACTIVE | SUSPENDED | CANCELLED | EXPIRED | USED (one-off done)
+- source PORTAL | FILE | API | EMANDATE; signedDate; sequence state FIRST used? (drives FRST/RCUR in pain.008)
+
+**CollectionRun** / **CollectionLine** (new)
+- Run: corporateId, ref, source (INVOICES | FILE | API), status BUILDING → SUBMITTED → PARTLY_SETTLED → COMPLETED, totals per method.
+- Line: receivableId, method DD | RTP | EXCLUDED (+ reason), mandateId, amount, currency, collectionDate, endToEndId,
+  status PLANNED → SENT → SETTLED (held) → AVAILABLE | RETURNED → RTP_SENT, returnReason, fx fields (rate, deal ref).
+
+**Corporate setting**: `collectionHoldBusinessDays` (default 5).
+
+## Flows
+
+1. **Build** — from selected open invoices, a file (new ingest domain `COLLECTIONS`: rows reference an invoice or raise one
+   the way `RECEIVABLES_INVOICE` does), or `POST /api/v1/collections/runs`. Routing runs per line (mandate first).
+   Mandate checks: ACTIVE, date within validity, amount ≤ max, frequency cap not reached, one-off not used.
+2. **Submit** — DD lines grouped by (creditor VA, scheme, collection date, currency, sequence type) → one pain.008 each
+   (GrpHdr NbOfTxs/CtrlSum, PmtInf per group). RTP lines → pain.013 each via the existing service. No approval.
+3. **Settle** — DD settlement arrives (camt.054 credit or a settlement call on the collection date): credit the VA via the
+   existing 4-leg `processCollection`, amount moved to `held_balance`; the invoice is marked paid-pending.
+   Cross-currency: convert on credit, deal first (deals that **sell** the invoice currency and **buy** the account currency) then live rate.
+4. **Release** — daily job lifts holds whose `settled + collectionHoldBusinessDays` has passed; invoice → PAID.
+5. **Return / reject** — pacs.004 or pain.002 (and camt.054 DBIT return entries) matched by EndToEndId: debit the held
+   amount back, reopen the invoice with the reason code, auto-send a Request to Pay, notify treasury. Mandate
+   reason codes that mean the mandate is dead (e.g. MD01/AC04/MD07) suspend the mandate too.
+6. **E-mandate** — pain.009 out (mandate PENDING); pain.012 in accepts/rejects; pain.010/011 for amend/cancel.
+
+## API (sketch)
+
+- `GET/POST /api/v1/collections/mandates`, `PUT …/{id}`, `POST …/{id}/cancel`, `POST …/mandates/file`, `POST /api/v1/iso20022/inward/pain012`
+- `POST /api/v1/collections/runs` (from receivableIds or raw lines) → routed preview; `POST …/runs/{id}/submit`
+- `GET …/runs`, `GET …/runs/{id}` (lines, per-method totals, pain.008 downloads)
+- `POST /api/v1/iso20022/inward/pacs004`, `…/pain002` for returns/rejects
+
+## UI
+
+Receivables gets a **Collections** area: Runs (list + run detail with lines, method, status, hold-until),
+Mandates (register, upload, e-mandate status), and "Collect" from the invoice list's selection.
+
+## Defaults I chose (say if wrong)
+
+- Settlement of a DD is simulated on the collection date when no camt.054 arrives (no live clearing link), like other rails here.
+- Lead time per scheme code is a small config map (default 1 business day).
+- A line whose mandate fails a check falls to RTP; with no debtor Party for RTP it is EXCLUDED.
+- Returned-then-RTP happens once; a returned RTP-sourced payment is not retried.
+
+## Build order
+
+1. Mandates (entity, API, portal register/upload) + routing preview for a run from invoices.
+2. pain.008 generation + submit + simulated settlement with hold and release job.
+3. Returns/rejects (pacs.004 / pain.002 / camt.054 DBIT) → reverse, reopen, RTP fallback, mandate suspend.
+4. Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API.
+5. Cross-currency convert-on-credit (deal first).
+6. E-mandate flow (pain.009/010/011/012).
+7. Collections UI.

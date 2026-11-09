@@ -15,7 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * ISO 20022 Payment Controller.
@@ -89,20 +91,37 @@ public class Iso20022PaymentController {
     @PostMapping(value = "/inward/camt054", consumes = MediaType.APPLICATION_XML_VALUE)
     @Operation(summary = "Process camt.054 notification",
             description = "Parse and process ISO 20022 camt.054 (Bank-to-Customer Debit/Credit Notification) XML message")
-    public ResponseEntity<ApiResponse<InwardPaymentResponse>> processCamt054(
+    public ResponseEntity<ApiResponse<List<InwardPaymentResponse>>> processCamt054(
             @RequestBody String camt054Xml) {
         log.info("REST: Process camt.054 XML message");
 
         try {
-            InwardPaymentRequest request = inwardPaymentService.parseCamt054(camt054Xml);
-            InwardPaymentResponse response = inwardPaymentService.processInwardPayment(request);
+            // One call per line: each goes through the service proxy in its own transaction, so a
+            // failed line rolls back alone and its siblings still post.
+            List<InwardPaymentResponse> results = inwardPaymentService.parseCamt054(camt054Xml).stream().map(request -> {
+                InwardPaymentResponse r;
+                try {
+                    r = inwardPaymentService.processInwardPayment(request);
+                } catch (Exception e) {
+                    log.error("camt.054 line {} failed: ", request.getEndToEndId(), e);
+                    r = InwardPaymentResponse.builder().success(false).statusCode("RJCT").errorCode("TECH")
+                            .statusReason(e.getMessage()).errorMessage(e.getMessage()).build();
+                }
+                r.setEndToEndId(request.getEndToEndId());
+                return r;
+            }).toList();
 
-            if (response.isSuccess()) {
-                return ResponseEntity.ok(ApiResponse.success(response, "camt.054 processed successfully"));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.error(response.getErrorMessage()));
+            long ok = results.stream().filter(InwardPaymentResponse::isSuccess).count();
+            if (ok == results.size()) {
+                return ResponseEntity.ok(ApiResponse.success(results,
+                        String.format("camt.054 processed: %d/%d posted", ok, results.size())));
             }
+            if (ok == 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(results.stream()
+                        .map(InwardPaymentResponse::getErrorMessage).distinct().collect(Collectors.joining("; "))));
+            }
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(ApiResponse.success(results,
+                    String.format("camt.054 partial: %d/%d posted", ok, results.size())));
         } catch (Exception e) {
             log.error("Failed to process camt.054: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

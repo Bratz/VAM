@@ -46,6 +46,7 @@ import org.hibernate.type.SqlTypes;
     @Index(name = "idx_txn_movement_type", columnList = "movement_type"),
     @Index(name = "idx_txn_status", columnList = "status"),
     @Index(name = "idx_txn_correlation", columnList = "correlation_id"),
+    @Index(name = "idx_txn_end_to_end", columnList = "end_to_end_id"),
     @Index(name = "idx_txn_viban", columnList = "viban"),
     @Index(name = "idx_txn_viban_id", columnList = "viban_id"),
     @Index(name = "idx_txn_reconciled", columnList = "reconciled_reference_type, reconciled_reference_id"),
@@ -247,6 +248,10 @@ public class Transaction extends BaseEntity {
 
     @Column(name = "correlation_id")
     private String correlationId;
+
+    /** The payer's ISO 20022 EndToEndId on an inbound collection's credited leg: the inward duplicate guard keys on it. */
+    @Column(name = "end_to_end_id", length = 35)
+    private String endToEndId;
 
     @Column(name = "fee_amount", precision = 18, scale = 2)
     @Builder.Default

@@ -82,6 +82,8 @@ public class Iso20022PaymentDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class InwardPaymentResponse {
+        /** Which line of a multi-transaction message this result is for. */
+        private String endToEndId;
         private boolean success;
         private String statusCode;
         private String statusReason;

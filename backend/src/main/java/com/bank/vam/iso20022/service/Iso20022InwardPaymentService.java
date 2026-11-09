@@ -135,17 +135,17 @@ public class Iso20022InwardPaymentService {
             }
 
             // 2b. Idempotency guard: a re-delivered message or a re-uploaded bulk file must not
-            // post the same payment twice. Keyed on endToEndId + target account + amount/currency
+            // post the same payment twice. Keyed on endToEndId + target account + gross amount/currency
             // (not endToEndId alone) so a coincidentally-reused ID against a different payment
-            // still processes normally. findAllByCorrelationId (not the singular finder) because
-            // processCollection's 4-leg accounting writes multiple Transaction rows sharing one
-            // correlationId.
-            if (request.getEndToEndId() != null && !request.getEndToEndId().isBlank()) {
-                VirtualAccount duplicateVa = va;
-                Optional<Transaction> duplicate = transactionRepository.findAllByCorrelationId(request.getEndToEndId())
+            // still processes normally. processCollection stores the endToEndId on the credited
+            // leg, whose amount is net of the collection fee -- hence amount + fee. NOTPROVIDED is
+            // the ISO placeholder for "no id", so it never identifies a payment.
+            if (request.getEndToEndId() != null && !request.getEndToEndId().isBlank()
+                    && !"NOTPROVIDED".equalsIgnoreCase(request.getEndToEndId())) {
+                Optional<Transaction> duplicate = transactionRepository.findAllByEndToEndIdAndVaId(request.getEndToEndId(), va.getId())
                         .stream()
-                        .filter(t -> duplicateVa.getId().equals(t.getVaId())
-                                && request.getAmount().compareTo(t.getAmount()) == 0
+                        .filter(t -> request.getAmount().compareTo(t.getAmount().add(
+                                        t.getFeeAmount() != null ? t.getFeeAmount() : BigDecimal.ZERO)) == 0
                                 && request.getCurrency().equalsIgnoreCase(t.getCurrencyCode()))
                         .findFirst();
                 if (duplicate.isPresent()) {
@@ -356,82 +356,49 @@ public class Iso20022InwardPaymentService {
     // ========================================================================
 
     /**
-     * Parse camt.054 XML and convert to InwardPaymentRequest.
-     * Uses standard Java XML parsing instead of Prowide library.
+     * Parse camt.054 XML into one InwardPaymentRequest per credited transaction: every Ntfctn,
+     * every CRDT Ntry, and every TxDtls inside a batched entry (a bulk collection is typically one
+     * Ntry carrying N TxDtls). Each line is routed by its own CdtrAcct IBAN when present (the
+     * VIBAN), else by the notification's Acct. A batched line with no amount of its own is
+     * returned without one so it fails validation alone, rather than posting the batch total.
      */
-    public InwardPaymentRequest parseCamt054(String xml) {
+    public List<InwardPaymentRequest> parseCamt054(String xml) {
         try {
             Document doc = parseXml(xml);
-
-            // Get Group Header
             String msgId = getElementText(doc, "MsgId");
 
-            // Get Notification
             NodeList ntfctnList = doc.getElementsByTagName("Ntfctn");
             if (ntfctnList.getLength() == 0) {
                 throw new BusinessException("No Ntfctn found in camt.054");
             }
 
-            Element ntfctn = (Element) ntfctnList.item(0);
+            List<InwardPaymentRequest> requests = new java.util.ArrayList<>();
+            for (int n = 0; n < ntfctnList.getLength(); n++) {
+                Element ntfctn = (Element) ntfctnList.item(n);
+                String acctIban = getNestedText(ntfctn, "Acct", "IBAN");
 
-            // Get entries and find credit entry
-            NodeList ntryList = ntfctn.getElementsByTagName("Ntry");
-            Element creditEntry = null;
+                for (Element ntry : children(ntfctn, "Ntry")) {
+                    Element ind = child(ntry, "CdtDbtInd");
+                    if (ind == null || !"CRDT".equals(ind.getTextContent().trim())) continue;
 
-            for (int i = 0; i < ntryList.getLength(); i++) {
-                Element ntry = (Element) ntryList.item(i);
-                String cdtDbtInd = getElementTextFromParent(ntry, "CdtDbtInd");
-                if ("CRDT".equals(cdtDbtInd)) {
-                    creditEntry = ntry;
-                    break;
+                    List<Element> txs = new java.util.ArrayList<>();
+                    for (Element dtls : children(ntry, "NtryDtls")) txs.addAll(children(dtls, "TxDtls"));
+                    Element entryAmt = child(ntry, "Amt");
+                    if (txs.isEmpty()) {
+                        requests.add(camt054Line(xml, msgId, acctIban, entryAmt, null));
+                    } else {
+                        for (Element tx : txs) {
+                            Element amt = txs.size() == 1 ? entryAmt : txAmount(tx);
+                            requests.add(camt054Line(xml, msgId, acctIban, amt, tx));
+                        }
+                    }
                 }
             }
 
-            if (creditEntry == null) {
+            if (requests.isEmpty()) {
                 throw new BusinessException("No credit entry found in camt.054");
             }
-
-            var request = InwardPaymentRequest.builder()
-                    .messageId(msgId)
-                    .creationDateTime(LocalDateTime.now())
-                    .channel("CAMT054")
-                    .rawXml(xml);
-
-            // Amount
-            Element amtElement = getFirstElement(creditEntry, "Amt");
-            if (amtElement != null) {
-                request.amount(new BigDecimal(amtElement.getTextContent().trim()));
-                request.currency(amtElement.getAttribute("Ccy"));
-            }
-
-            // Account (VIBAN)
-            String acctIban = getNestedText(ntfctn, "Acct", "IBAN");
-            request.creditorAccount(acctIban);
-
-            // Entry details
-            Element ntryDtls = getFirstElement(creditEntry, "NtryDtls");
-            if (ntryDtls != null) {
-                Element txDtls = getFirstElement(ntryDtls, "TxDtls");
-                if (txDtls != null) {
-                    // References
-                    String instrId = getNestedText(txDtls, "Refs", "InstrId");
-                    String endToEndId = getNestedText(txDtls, "Refs", "EndToEndId");
-                    request.instructionId(instrId);
-                    request.endToEndId(endToEndId);
-
-                    // Related parties - Debtor
-                    String debtorName = getDeepNestedText(txDtls, "RltdPties", "Dbtr", "Pty", "Nm");
-                    String debtorAcct = getDeepNestedText(txDtls, "RltdPties", "DbtrAcct", "Id", "IBAN");
-                    request.debtorName(debtorName);
-                    request.debtorAccount(debtorAcct);
-
-                    // Remittance info
-                    String ustrd = getNestedText(txDtls, "RmtInf", "Ustrd");
-                    request.remittanceInfo(ustrd);
-                }
-            }
-
-            return request.build();
+            return requests;
 
         } catch (BusinessException e) {
             throw e;
@@ -439,6 +406,51 @@ public class Iso20022InwardPaymentService {
             log.error("Failed to parse camt.054: ", e);
             throw new BusinessException("Failed to parse camt.054 message: " + e.getMessage());
         }
+    }
+
+    private InwardPaymentRequest camt054Line(String xml, String msgId, String acctIban, Element amt, Element tx) {
+        var request = InwardPaymentRequest.builder()
+                .messageId(msgId)
+                .creationDateTime(LocalDateTime.now())
+                .channel("CAMT054")
+                .rawXml(xml)
+                .creditorAccount(acctIban);
+        if (amt != null) {
+            request.amount(new BigDecimal(amt.getTextContent().trim()));
+            request.currency(amt.getAttribute("Ccy"));
+        }
+        if (tx != null) {
+            request.instructionId(getNestedText(tx, "Refs", "InstrId"));
+            request.endToEndId(getNestedText(tx, "Refs", "EndToEndId"));
+            request.debtorName(getDeepNestedText(tx, "RltdPties", "Dbtr", "Pty", "Nm"));
+            request.debtorAccount(getDeepNestedText(tx, "RltdPties", "DbtrAcct", "Id", "IBAN"));
+            request.remittanceInfo(getNestedText(tx, "RmtInf", "Ustrd"));
+            String cdtrIban = getDeepNestedText(tx, "RltdPties", "CdtrAcct", "Id", "IBAN");
+            if (cdtrIban != null && !cdtrIban.isBlank()) request.creditorAccount(cdtrIban);
+        }
+        return request.build();
+    }
+
+    /** A batched line's own amount: TxDtls/Amt (camt.054.001.08) or AmtDtls/TxAmt/Amt (.001.02). */
+    private Element txAmount(Element tx) {
+        Element amt = child(tx, "Amt");
+        if (amt != null) return amt;
+        Element dtls = child(tx, "AmtDtls");
+        Element txAmt = dtls == null ? null : child(dtls, "TxAmt");
+        return txAmt == null ? null : child(txAmt, "Amt");
+    }
+
+    private List<Element> children(Element parent, String tagName) {
+        List<Element> out = new java.util.ArrayList<>();
+        for (var node = parent.getFirstChild(); node != null; node = node.getNextSibling()) {
+            if (node instanceof Element e && tagName.equals(e.getTagName())) out.add(e);
+        }
+        return out;
+    }
+
+    private Element child(Element parent, String tagName) {
+        List<Element> found = children(parent, tagName);
+        return found.isEmpty() ? null : found.get(0);
     }
 
     // ========================================================================

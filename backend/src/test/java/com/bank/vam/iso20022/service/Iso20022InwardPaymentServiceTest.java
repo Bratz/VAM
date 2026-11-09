@@ -82,7 +82,7 @@ class Iso20022InwardPaymentServiceTest {
     void firstCallProcessesNormally() {
         stubAccountLookup();
         stubSuccessfulCollection();
-        when(transactionRepository.findAllByCorrelationId("E2E-1")).thenReturn(List.of());
+        when(transactionRepository.findAllByEndToEndIdAndVaId("E2E-1", VA_ID)).thenReturn(List.of());
 
         InwardPaymentResponse response = service.processInwardPayment(request("E2E-1", BigDecimal.valueOf(100)));
 
@@ -101,7 +101,7 @@ class Iso20022InwardPaymentServiceTest {
                 .referenceNumber("REF-1")
                 .build();
         existing.setId(UUID.randomUUID());
-        when(transactionRepository.findAllByCorrelationId("E2E-1")).thenReturn(List.of(existing));
+        when(transactionRepository.findAllByEndToEndIdAndVaId("E2E-1", VA_ID)).thenReturn(List.of(existing));
 
         InwardPaymentResponse response = service.processInwardPayment(request("E2E-1", BigDecimal.valueOf(100)));
 
@@ -122,7 +122,7 @@ class Iso20022InwardPaymentServiceTest {
                 .referenceNumber("REF-1")
                 .build();
         existing.setId(UUID.randomUUID());
-        when(transactionRepository.findAllByCorrelationId("E2E-1")).thenReturn(List.of(existing));
+        when(transactionRepository.findAllByEndToEndIdAndVaId("E2E-1", VA_ID)).thenReturn(List.of(existing));
 
         // Same endToEndId, different amount than the existing transaction.
         InwardPaymentResponse response = service.processInwardPayment(request("E2E-1", BigDecimal.valueOf(250)));
@@ -138,7 +138,7 @@ class Iso20022InwardPaymentServiceTest {
 
         service.processInwardPayment(request(null, BigDecimal.valueOf(100)));
 
-        verify(transactionRepository, never()).findAllByCorrelationId(any());
+        verify(transactionRepository, never()).findAllByEndToEndIdAndVaId(any(), any());
         verify(transactionService, times(1)).processCollection(any());
     }
 
@@ -222,5 +222,50 @@ class Iso20022InwardPaymentServiceTest {
         assertTrue(response.isSuccess());
         assertFalse(response.isAutoReconciled());
         assertNull(response.getReconciledReferenceId());
+    }
+
+    /** The credited leg holds the amount net of the collection fee; the guard must still see the gross. */
+    @Test
+    void repeatedEndToEndIdIsSuppressedWhenTheCreditedLegIsNetOfFee() {
+        stubAccountLookup();
+        Transaction existing = Transaction.builder().vaId(VA_ID).amount(BigDecimal.valueOf(98))
+                .feeAmount(BigDecimal.valueOf(2)).currencyCode("AED").referenceNumber("REF-1").build();
+        existing.setId(UUID.randomUUID());
+        when(transactionRepository.findAllByEndToEndIdAndVaId("E2E-1", VA_ID)).thenReturn(List.of(existing));
+
+        InwardPaymentResponse response = service.processInwardPayment(request("E2E-1", BigDecimal.valueOf(100)));
+
+        assertEquals("REF-1", response.getTransactionReference());
+        verify(transactionService, never()).processCollection(any());
+    }
+
+    /** A bulk camt.054 used to post only its first credit; every credited line must come back. */
+    @Test
+    void camt054ReturnsEveryCreditLine() {
+        String xml = """
+                <Document><BkToCstmrDbtCdtNtfctn><GrpHdr><MsgId>M1</MsgId></GrpHdr>
+                <Ntfctn><Acct><Id><IBAN>AE070331234567890123456</IBAN></Id></Acct>
+                  <Ntry><Amt Ccy="AED">300.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><NtryDtls>
+                    <TxDtls><Refs><EndToEndId>E1</EndToEndId></Refs><Amt Ccy="AED">100.00</Amt>
+                      <RltdPties><CdtrAcct><Id><IBAN>AE11VIBAN1</IBAN></Id></CdtrAcct></RltdPties></TxDtls>
+                    <TxDtls><Refs><EndToEndId>E2</EndToEndId></Refs>
+                      <AmtDtls><InstdAmt><Amt Ccy="USD">54.45</Amt></InstdAmt><TxAmt><Amt Ccy="AED">200.00</Amt></TxAmt></AmtDtls></TxDtls>
+                  </NtryDtls></Ntry>
+                  <Ntry><Amt Ccy="AED">50.00</Amt><CdtDbtInd>DBIT</CdtDbtInd></Ntry>
+                  <Ntry><Amt Ccy="AED">75.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><NtryDtls>
+                    <TxDtls><Refs><EndToEndId>E3</EndToEndId></Refs></TxDtls></NtryDtls></Ntry>
+                </Ntfctn>
+                <Ntfctn><Acct><Id><IBAN>AE22OTHER</IBAN></Id></Acct>
+                  <Ntry><Amt Ccy="AED">10.00</Amt><CdtDbtInd>CRDT</CdtDbtInd></Ntry>
+                </Ntfctn></BkToCstmrDbtCdtNtfctn></Document>""";
+
+        List<InwardPaymentRequest> lines = service.parseCamt054(xml);
+
+        assertEquals(4, lines.size());
+        assertEquals(List.of("E1", "E2", "E3"), lines.subList(0, 3).stream().map(InwardPaymentRequest::getEndToEndId).toList());
+        assertEquals(List.of("100.00", "200.00", "75.00", "10.00"), lines.stream().map(l -> l.getAmount().toPlainString()).toList());
+        assertEquals("AED", lines.get(1).getCurrency());
+        assertEquals(List.of("AE11VIBAN1", "AE070331234567890123456", "AE070331234567890123456", "AE22OTHER"),
+                lines.stream().map(InwardPaymentRequest::getCreditorAccount).toList());
     }
 }

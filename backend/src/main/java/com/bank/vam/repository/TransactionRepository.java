@@ -232,6 +232,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t FROM Transaction t WHERE t.correlationId = :correlationId ORDER BY t.createdAt ASC")
     List<Transaction> findAllByCorrelationId(@Param("correlationId") String correlationId);
 
+    List<Transaction> findAllByEndToEndIdAndVaId(String endToEndId, UUID vaId);
+
     /**
      * Find by external reference (instructionId in ISO 20022)
      */

@@ -2440,6 +2440,7 @@ public class TransactionService {
                 .viban(request.getViban())
                 .routedViaViban(request.getViban() != null)
                 .isRobo(true)
+                .endToEndId(request.getEndToEndId())
                 .feeAmount(collectionFee)
                 .autoReconciled(request.getMatchedReceivableId() != null)
                 .status(Transaction.TransactionStatus.COMPLETED)
