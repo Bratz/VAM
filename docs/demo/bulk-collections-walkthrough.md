@@ -36,6 +36,8 @@ Receiving account throughout: **QA-TXN-L7-53197 · Main Operating Account** (AED
 | FX forward | **FXD-20261109-4F243F** · sell USD 1,000 / buy AED 3,671.69 @ 3.671685 · value 16 Nov | |
 | Collection run | **CR-20261109-A07F9D** (A1, A2, B1, C1) | |
 | Collection run | **CR-20261109-854FA7** (C-USD) | |
+| Collection runs (file) | **CR-20261109-2BD853**, **CR-20261109-5D3626** | from the Collections file in step 6 |
+| Customer + invoice (file) | **Oasis Fresh Foods LLC**, AED 250.00 | raised by row 2 of the file |
 
 To repeat the demo, use new names/references (references must be unique per corporate), or cancel the
 DEMO-* mandates first from their row menus.
@@ -192,7 +194,7 @@ You see: *"Up to 17 Nov 2026: 0 collected, 1 released from hold."*; the run read
 
 ---
 
-## 6. Bulk by file (ERP route) — *not completed on vam-five on 9 Nov*
+## 6. Bulk by file (ERP route)
 
 **File Ingest Pipeline** → *What are you uploading?* **Collections** → Corporate **TestMNC** → choose the
 file → **Upload and start pipeline**.
@@ -204,12 +206,21 @@ amount,currency,viban,debtorName,debtorAccount,remittanceInformation,endToEndId
 10.00,AED,QA-TXN-L7-53197,,,INV-DOES-NOT-EXIST,R3
 ```
 
-Expected (verified locally): R1 *direct debit on … under DEMO-UPL-1*; R2 raises a new customer and invoice
-and sends a Request to Pay; R3 fails *"No invoice INV-DOES-NOT-EXIST, and no customer to raise one for"*; a run
-with source *File upload* appears under Collection runs.
+You see: the job reaches **Done** and lists each row with what happened to it:
 
-**On vam-five the upload returned "Request failed with status code 500"** — being investigated (suspected: the
-database's check constraint on the upload's domain predates the new *Collections* domain).
+| Row | Status | Reason |
+|---|---|---|
+| 1 | Processed | *CR-20261109-5D3626: direct debit on 2026-11-10 under DEMO-UPL-1* |
+| 2 | Processed | *CR-20261109-2BD853: Request to Pay sent (No mandate)* — customer **Oasis Fresh Foods LLC** and its invoice were raised from the row |
+| 3 | Failed | *No invoice INV-DOES-NOT-EXIST, and no customer to raise one for* |
+
+**Collection runs** then lists the file's run(s) with source **File upload**. Row 1 names its account by the
+invoice's virtual IBAN; the account number (e.g. QA-TXN-L7-53197) works too, and spaces or lower case in an IBAN
+don't matter.
+
+> Recorded in two passes on 9 Nov: the first upload returned a 500 (fixed by migration V46), and on the next run
+> row 1 failed with *"No account AE6304…"* (virtual IBANs were not looked up in the VIBAN table; fixed in
+> 85c54be). Rows 2–3 come from that run, row 1 from a re-upload of just that row — hence two File runs.
 
 ---
 
