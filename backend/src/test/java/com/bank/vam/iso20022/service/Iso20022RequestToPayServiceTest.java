@@ -31,9 +31,11 @@ class Iso20022RequestToPayServiceTest {
 
     private final com.bank.vam.repository.VirtualAccountRepository accounts = mock(com.bank.vam.repository.VirtualAccountRepository.class);
     private final com.bank.vam.service.viban.VibanService vibans = mock(com.bank.vam.service.viban.VibanService.class);
+    private final com.bank.vam.outbox.OutboxEmailRepository outbox = mock(com.bank.vam.outbox.OutboxEmailRepository.class);
     private final Iso20022RequestToPayService service =
             new Iso20022RequestToPayService(receivableRepository, partyRepository, xmlBuilder, accounts, vibans,
-                    mock(org.springframework.transaction.PlatformTransactionManager.class));
+                    mock(org.springframework.transaction.PlatformTransactionManager.class), outbox,
+                    mock(com.bank.vam.repository.CorporateRepository.class));
 
     {
         org.springframework.test.util.ReflectionTestUtils.setField(service, "frontendBaseUrl", "https://portal.example");
@@ -64,6 +66,30 @@ class Iso20022RequestToPayServiceTest {
         assertTrue(response.getPain013Xml().contains("Pay online: https://portal.example/?page=pay-invoice&amp;token=" + r.getPaymentLinkToken()));
         assertEquals(response.getPain013Xml(), r.getRequestToPayXml());
         assertEquals(response.getPain013Xml(), service.lastRequest(RECEIVABLE_ID));
+
+        // the customer has no email address: the email is kept, marked NO_ADDRESS
+        org.mockito.ArgumentCaptor<com.bank.vam.outbox.OutboxEmail> mail = org.mockito.ArgumentCaptor.forClass(com.bank.vam.outbox.OutboxEmail.class);
+        verify(outbox).save(mail.capture());
+        assertEquals("NO_ADDRESS", mail.getValue().getStatus());
+        assertEquals("https://portal.example/?page=pay-invoice&token=" + r.getPaymentLinkToken(), mail.getValue().getLink());
+        assertTrue(mail.getValue().getBody().contains("Or transfer AED 750.00 to IBAN AE070331234567890123456, quoting INV-2026-0001"), mail.getValue().getBody());
+    }
+
+    @Test
+    void theRequestIsEmailedToTheCustomersAddress() {
+        Receivable r = receivable();
+        Party p = debtor();
+        p.setContactEmail("ap@acme.example");
+        when(receivableRepository.findById(RECEIVABLE_ID)).thenReturn(Optional.of(r));
+        when(partyRepository.findById(PARTY_ID)).thenReturn(Optional.of(p));
+
+        service.sendRequestToPay(RECEIVABLE_ID);
+
+        org.mockito.ArgumentCaptor<com.bank.vam.outbox.OutboxEmail> mail = org.mockito.ArgumentCaptor.forClass(com.bank.vam.outbox.OutboxEmail.class);
+        verify(outbox).save(mail.capture());
+        assertEquals("ap@acme.example", mail.getValue().getToAddress());
+        assertEquals("SENT", mail.getValue().getStatus());
+        assertTrue(mail.getValue().getSubject().startsWith("Payment request: INV-2026-0001 · AED 750.00"), mail.getValue().getSubject());
     }
 
     private static final UUID RECEIVABLE_ID = UUID.randomUUID();

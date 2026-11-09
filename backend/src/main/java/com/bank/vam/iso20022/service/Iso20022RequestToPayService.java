@@ -43,9 +43,47 @@ public class Iso20022RequestToPayService {
     private final com.bank.vam.repository.VirtualAccountRepository accounts;
     private final com.bank.vam.service.viban.VibanService vibans;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
+    private final com.bank.vam.outbox.OutboxEmailRepository outbox;
+    private final com.bank.vam.repository.CorporateRepository corporates;
 
     @org.springframework.beans.factory.annotation.Value("${app.frontend-base-url}")
     private String frontendBaseUrl;
+
+    /**
+     * The Request to Pay as the email the payer would get. There is no mail server: it is kept in the outbox
+     * (SENT, simulated), or marked NO_ADDRESS when neither the invoice nor the customer has an email address.
+     */
+    private com.bank.vam.outbox.OutboxEmail email(Receivable r, Party debtor, String link, String endToEndId) {
+        String to = r.getCustomerEmail() != null && !r.getCustomerEmail().isBlank() ? r.getCustomerEmail().trim()
+                : debtor.getContactEmail() != null && !debtor.getContactEmail().isBlank() ? debtor.getContactEmail().trim() : null;
+        String creditor = corporates.findById(r.getCorporateId()).map(c -> c.getLegalName())
+                .orElse(r.getOwningEntityName() != null ? r.getOwningEntityName() : "Your supplier");
+        String amount = r.getCurrencyCode() + " " + new java.text.DecimalFormat("#,##0.00").format(r.getOutstandingAmount());
+        StringBuilder body = new StringBuilder()
+                .append("Dear ").append(debtor.getLegalName()).append(",\n\n")
+                .append(creditor).append(" requests payment of ").append(amount).append(" for invoice ").append(r.getReceivableNumber())
+                .append(r.getDescription() != null ? " (" + r.getDescription() + ")" : "")
+                .append(r.getDueDate() != null ? ", due on " + r.getDueDate() : "").append(".\n\n")
+                .append("Pay online: ").append(link).append("\n\n");
+        if (r.getViban() != null) {
+            body.append("Or transfer ").append(amount).append(" to IBAN ").append(r.getViban())
+                    .append(", quoting ").append(r.getReceivableNumber()).append(" as the reference.\n\n");
+        }
+        body.append("This payment request was sent as ISO 20022 pain.013, reference ").append(endToEndId).append(".");
+
+        com.bank.vam.outbox.OutboxEmail e = new com.bank.vam.outbox.OutboxEmail();
+        e.setCorporateId(r.getCorporateId());
+        e.setToAddress(to);
+        e.setToName(debtor.getLegalName());
+        e.setSubject("Payment request: " + r.getReceivableNumber() + " · " + amount + " · " + creditor);
+        e.setBody(body.toString());
+        e.setRelatedType("REQUEST_TO_PAY");
+        e.setRelatedId(r.getId());
+        e.setRelatedRef(r.getReceivableNumber());
+        e.setLink(link);
+        e.setStatus(to != null ? "SENT" : "NO_ADDRESS");
+        return e;
+    }
 
     @Transactional
     public RequestToPayResponse sendRequestToPay(UUID receivableId) {
@@ -64,9 +102,10 @@ public class Iso20022RequestToPayService {
             receivable.setPaymentLinkToken(UUID.randomUUID().toString());
         }
         ensureViban(receivable);
-        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId,
-                frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken());
+        String link = frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken();
+        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId, link);
         receivable.setRequestToPayXml(xml);
+        outbox.save(email(receivable, debtor, link, endToEndId));
 
         receivable.setRequestToPayStatus(RequestToPayStatus.SENT);
         receivable.setRequestToPayMessageId(endToEndId);

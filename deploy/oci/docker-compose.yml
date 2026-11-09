@@ -121,6 +121,9 @@ services:
       # all, so no bank account could back any of its programs.
       VAM_MARKET_PROFILE: UAE
       VAM_HOME_BANK_BIC: EBILAEADXXX
+      # Links the server writes into messages (Request to Pay "Pay online", outbox emails) point at the
+      # portal people actually use; unset, they would say http://localhost:3000.
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-https://vam-five.vercel.app}
       # Intelligent payment routing. uc05's compose attaches to THIS project's network
       # (`networks.default.name: oci_default, external: true` in uc05-liquidity-demo's
       # deploy/oci/docker-compose.yml), so the container is reachable by service name --

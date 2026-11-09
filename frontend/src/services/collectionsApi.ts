@@ -251,3 +251,28 @@ export const collectionsApi = {
   preview: (corporateId: string, receivableIds: string[]) =>
     apiClient.post<ApiResponse<CollectionPreview>>('/collections/runs/preview', { corporateId, receivableIds }).then(r => r.data.data),
 };
+
+/** An email the platform would have sent; there is no mail server, so it is kept in the outbox. */
+export interface OutboxEmail {
+  id: string;
+  createdAt: string;
+  corporateId?: string;
+  /** Absent when the recipient has no email address (status NO_ADDRESS). */
+  toAddress?: string;
+  toName?: string;
+  subject: string;
+  body: string;
+  relatedType?: string;
+  relatedId?: string;
+  relatedRef?: string;
+  /** The link the email carries (the invoice's pay page). */
+  link?: string;
+  status: 'SENT' | 'NO_ADDRESS';
+}
+
+export const outboxApi = {
+  forCorporate: (corporateId: string) =>
+    apiClient.get<ApiResponse<OutboxEmail[]>>('/outbox', { params: { corporateId } }).then(r => r.data.data),
+  forRecord: (relatedId: string) =>
+    apiClient.get<ApiResponse<OutboxEmail[]>>('/outbox', { params: { relatedId } }).then(r => r.data.data),
+};

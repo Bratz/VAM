@@ -3,7 +3,8 @@ import { Download, Undo2, Workflow, CalendarCheck, Save, QrCode, Copy, ExternalL
 import QRCode from 'react-qr-code';
 import { Badge, Button, DataTable, Drawer, Input, RowActions, Select } from '../ui';
 import { Modal } from '../ui/enhanced';
-import { collectionsApi, LineStatus, payLink, RunDetail, RunLine, RunSummary } from '../../services/collectionsApi';
+import { collectionsApi, LineStatus, OutboxEmail, outboxApi, payLink, RunDetail, RunLine, RunSummary } from '../../services/collectionsApi';
+import { OutboxEmailView } from './OutboxTab';
 import { errorText } from '../../pages/fx/fxFormat';
 import { formatCurrency, formatDate } from '../../utils';
 import { METHOD, STATUS } from './collectionLabels';
@@ -30,6 +31,7 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
   const [reason, setReason] = useState('AM04');
   const [paying, setPaying] = useState<RunLine | null>(null);
   const [copied, setCopied] = useState(false);
+  const [emails, setEmails] = useState<OutboxEmail[] | null>(null);
 
   const load = useCallback(async () => {
     if (!corporateId) return;
@@ -245,7 +247,10 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
                     {l.reason && <p className="text-neutral-500 dark:text-neutral-400">{l.reason}</p>}
                     {l.paymentLinkToken && (
                       <Button size="sm" variant="ghost" className="mt-1 -ml-2" leftIcon={<QrCode className="w-4 h-4" />}
-                        onClick={() => { setCopied(false); setPaying(l); }}>
+                        onClick={() => {
+                          setCopied(false); setEmails(null); setPaying(l);
+                          outboxApi.forRecord(l.receivableId).then(setEmails).catch(() => setEmails([]));
+                        }}>
                         Pay link &amp; QR
                       </Button>
                     )}
@@ -302,6 +307,14 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
                 </div>
               )}
             </div>
+          </div>
+        )}
+        {emails && (
+          <div className="mt-5 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 mb-2">
+              {emails.length === 0 ? 'No email was sent for this request.' : 'The email the customer got (simulated: kept in the Outbox, not delivered)'}
+            </p>
+            {emails[0] && <OutboxEmailView email={emails[0]} />}
           </div>
         )}
       </Modal>

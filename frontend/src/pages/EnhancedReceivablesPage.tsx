@@ -20,6 +20,7 @@ import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { MandatesTab } from '../components/collections/MandatesTab';
 import { CollectionRunsTab } from '../components/collections/CollectionRunsTab';
+import { OutboxTab } from '../components/collections/OutboxTab';
 import { CollectionPlanModal } from '../components/collections/CollectionPlanModal';
 
 /** Invoices that can still be collected (by COBO or a collection run): open, partly paid or overdue. */
@@ -638,7 +639,7 @@ const EnhancedReceivablesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history' | 'mandates' | 'collection-runs'>('invoices');
+  const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history' | 'mandates' | 'collection-runs' | 'outbox'>('invoices');
   const [planIds, setPlanIds] = useState<string[] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, setProcessing] = useState(false);
@@ -1153,6 +1154,7 @@ const EnhancedReceivablesPage: React.FC = () => {
     { id: 'cobo-history' as const, label: 'COBO History', count: coboHistoryInvoices.length },
     { id: 'collection-runs' as const, label: 'Collection runs', count: undefined },
     { id: 'mandates' as const, label: 'Mandates', count: undefined },
+    { id: 'outbox' as const, label: 'Outbox', count: undefined },
   ];
 
   return (
@@ -1758,6 +1760,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
               {activeTab === 'collection-runs' && <CollectionRunsTab corporateId={selectedCorporateId} />}
               {activeTab === 'mandates' && <MandatesTab corporateId={selectedCorporateId} />}
+              {activeTab === 'outbox' && <OutboxTab corporateId={selectedCorporateId} />}
 
               {/* COBO History Tab - WITH TREASURY APPROVAL BUTTONS */}
               {activeTab === 'cobo-history' && (
