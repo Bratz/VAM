@@ -26,7 +26,8 @@ class CollectionIntakeTest {
     private final ReceivableRepository receivables = mock(ReceivableRepository.class);
     private final VirtualAccountRepository accounts = mock(VirtualAccountRepository.class);
     private final ReceivableInvoiceProcessor invoices = mock(ReceivableInvoiceProcessor.class);
-    private final CollectionIntake intake = new CollectionIntake(receivables, accounts, invoices, mock(CollectionRunService.class));
+    private final com.bank.vam.service.VirtualAccountService vaService = mock(com.bank.vam.service.VirtualAccountService.class);
+    private final CollectionIntake intake = new CollectionIntake(receivables, accounts, vaService, invoices, mock(CollectionRunService.class));
 
     private static final UUID CORP = UUID.randomUUID();
     private final VirtualAccount va = VirtualAccount.builder().vaNumber("VA-1").build();
@@ -37,8 +38,8 @@ class CollectionIntakeTest {
     CollectionIntakeTest() {
         va.setId(UUID.randomUUID());
         va.setCorporateId(CORP);
-        when(accounts.findByViban(any())).thenReturn(Optional.empty());
-        when(accounts.findByViban("AE11VIBAN")).thenReturn(Optional.of(va));
+        when(vaService.getByViban(any())).thenThrow(new com.bank.vam.exception.ResourceNotFoundException("no VIBAN"));
+        doReturn(va).when(vaService).getByViban("AE11VIBAN");
         when(accounts.findByVaNumber(any())).thenReturn(Optional.empty());
         VirtualAccount other = VirtualAccount.builder().vaNumber("VA-X").build();
         other.setId(UUID.randomUUID());

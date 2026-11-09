@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 public class VirtualAccountService {
 
     private final VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.repository.viban.VibanRepository vibanRepository;
     private final ProgramRepository programRepository;
     private final CorporateRepository corporateRepository;
     private final PhysicalAccountRepository physicalAccountRepository;
@@ -118,9 +119,16 @@ public class VirtualAccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found: " + vaNumber));
     }
 
+    /**
+     * The account a virtual IBAN belongs to. An account's VIBANs live in the vibans table (one account, many
+     * VIBANs); the account's own viban column holds at most a legacy one and is mostly empty, so it is only the
+     * first place looked. Spaces and letter case in the IBAN don't matter.
+     */
     @Transactional(readOnly = true)
     public VirtualAccount getByViban(String viban) {
-        return virtualAccountRepository.findByViban(viban)
+        String iban = viban == null ? "" : viban.replaceAll("\\s+", "").toUpperCase(java.util.Locale.ROOT);
+        return virtualAccountRepository.findByViban(iban)
+                .or(() -> vibanRepository.findByViban(iban).flatMap(v -> virtualAccountRepository.findById(v.getVirtualAccountId())))
                 .orElseThrow(() -> new ResourceNotFoundException("Virtual account not found for VIBAN: " + viban));
     }
 

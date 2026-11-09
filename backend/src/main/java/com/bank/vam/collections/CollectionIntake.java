@@ -3,7 +3,9 @@ package com.bank.vam.collections;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.service.VirtualAccountService;
 import com.bank.vam.repository.receivables.ReceivableRepository;
 import com.bank.vam.service.fileingest.ReceivableInvoiceProcessor;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class CollectionIntake {
 
     private final ReceivableRepository receivables;
     private final VirtualAccountRepository accounts;
+    private final VirtualAccountService virtualAccounts;
     private final ReceivableInvoiceProcessor invoices;
     private final CollectionRunService runs;
 
@@ -104,8 +107,12 @@ public class CollectionIntake {
     private VirtualAccount account(UUID corporateId, String ref) {
         if (ref == null || ref.isBlank()) throw new BusinessException("No account to collect into");
         String r = ref.replaceAll("\\s+", "");
-        VirtualAccount va = accounts.findByViban(r).or(() -> accounts.findByVaNumber(r))
-                .orElseThrow(() -> new BusinessException("No account " + ref));
+        VirtualAccount va;
+        try {
+            va = virtualAccounts.getByViban(r); // a virtual IBAN, from the vibans table
+        } catch (ResourceNotFoundException notAViban) {
+            va = accounts.findByVaNumber(r).orElseThrow(() -> new BusinessException("No account " + ref));
+        }
         if (!corporateId.equals(va.getCorporateId())) throw new BusinessException("Account " + ref + " belongs to another corporate");
         return va;
     }
