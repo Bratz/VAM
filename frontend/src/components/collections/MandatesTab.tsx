@@ -61,6 +61,9 @@ export const MandatesTab: React.FC<{ corporateId: string }> = ({ corporateId }) 
 
   useEffect(() => { load(); }, [load]);
 
+  // The register form's customer and account lists belong to one corporate; drop them when it changes.
+  useEffect(() => { setCustomers([]); setAccounts([]); }, [corporateId]);
+
   const openRegister = async () => {
     setForm(emptyForm);
     setFormError(null);
