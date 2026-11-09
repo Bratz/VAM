@@ -339,7 +339,7 @@ public class ReconciliationService {
         }
         BigDecimal before = settlementVa.getCurrentBalance() != null ? settlementVa.getCurrentBalance() : BigDecimal.ZERO;
         settlementVa.setCurrentBalance(before.subtract(amount));
-        settlementVa.setAvailableBalance(settlementVa.getCurrentBalance());
+        settlementVa.syncAvailableToCurrent();
         virtualAccountRepository.save(settlementVa);
 
         Transaction txn = transactionRepository.save(Transaction.builder()

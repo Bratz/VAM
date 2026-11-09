@@ -1577,6 +1577,14 @@ public class VirtualAccount extends BaseEntity {
         this.lastActivityDate = LocalDate.now();
     }
 
+    /**
+     * After a balance change written as a new currentBalance: available is current less what is held. These call
+     * sites used to set available = current, which silently released every hold on the account.
+     */
+    public void syncAvailableToCurrent() {
+        this.availableBalance = this.currentBalance.subtract(this.heldBalance != null ? this.heldBalance : BigDecimal.ZERO);
+    }
+
     public void hold(BigDecimal amount) {
         if (this.heldBalance == null) this.heldBalance = BigDecimal.ZERO;
         this.heldBalance = this.heldBalance.add(amount);

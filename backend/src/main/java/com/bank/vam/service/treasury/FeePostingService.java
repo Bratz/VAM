@@ -173,7 +173,7 @@ public class FeePostingService {
         // 6. DEBIT source VA (balance change + transaction record)
         BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
         sourceVa.setCurrentBalance(sourceBalanceBefore.subtract(amount));
-        sourceVa.setAvailableBalance(sourceVa.getCurrentBalance());
+        sourceVa.syncAvailableToCurrent();
         vaRepository.save(sourceVa);
         
         Transaction debitTxn = Transaction.builder()
@@ -201,7 +201,7 @@ public class FeePostingService {
         // 7. CREDIT Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = settlementVa.getCurrentBalance();
         settlementVa.setCurrentBalance(settlementBalanceBefore.add(amount));
-        settlementVa.setAvailableBalance(settlementVa.getCurrentBalance());
+        settlementVa.syncAvailableToCurrent();
         vaRepository.save(settlementVa);
         
         Transaction creditTxn = Transaction.builder()
@@ -349,7 +349,7 @@ public class FeePostingService {
         // 6. DEBIT source VA (WITH balance change) - v5.2 FIX
         BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
         sourceVa.setCurrentBalance(sourceBalanceBefore.subtract(amount));
-        sourceVa.setAvailableBalance(sourceVa.getCurrentBalance());
+        sourceVa.syncAvailableToCurrent();
         vaRepository.save(sourceVa);
         
         Transaction debitTxn = Transaction.builder()
@@ -378,7 +378,7 @@ public class FeePostingService {
         // 6. CREDIT Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = settlementVa.getCurrentBalance();
         settlementVa.setCurrentBalance(settlementBalanceBefore.add(amount));
-        settlementVa.setAvailableBalance(settlementVa.getCurrentBalance());
+        settlementVa.syncAvailableToCurrent();
         vaRepository.save(settlementVa);
         
         Transaction creditTxn = Transaction.builder()
@@ -542,7 +542,7 @@ public class FeePostingService {
         // 7. DEBIT source VA (WITH balance change) - v5.2 FIX
         BigDecimal sourceBalanceBefore = sourceVa.getCurrentBalance();
         sourceVa.setCurrentBalance(sourceBalanceBefore.subtract(amount));
-        sourceVa.setAvailableBalance(sourceVa.getCurrentBalance());
+        sourceVa.syncAvailableToCurrent();
         vaRepository.save(sourceVa);
         
         Transaction debitTxn = Transaction.builder()
@@ -571,7 +571,7 @@ public class FeePostingService {
         // 7. CREDIT target Settlement VA (balance change + transaction record)
         BigDecimal settlementBalanceBefore = targetSettlementVa.getCurrentBalance();
         targetSettlementVa.setCurrentBalance(settlementBalanceBefore.add(amount));
-        targetSettlementVa.setAvailableBalance(targetSettlementVa.getCurrentBalance());
+        targetSettlementVa.syncAvailableToCurrent();
         vaRepository.save(targetSettlementVa);
         
         Transaction creditTxn = Transaction.builder()

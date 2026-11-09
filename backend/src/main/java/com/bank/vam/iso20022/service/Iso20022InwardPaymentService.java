@@ -138,14 +138,16 @@ public class Iso20022InwardPaymentService {
             // post the same payment twice. Keyed on endToEndId + target account + gross amount/currency
             // (not endToEndId alone) so a coincidentally-reused ID against a different payment
             // still processes normally. processCollection stores the endToEndId on the credited
-            // leg, whose amount is net of the collection fee -- hence amount + fee. NOTPROVIDED is
+            // leg, which carries the gross (rows booked before 2026-11-09 carried the net, so amount
+            // + fee matches those). NOTPROVIDED is
             // the ISO placeholder for "no id", so it never identifies a payment.
             if (request.getEndToEndId() != null && !request.getEndToEndId().isBlank()
                     && !"NOTPROVIDED".equalsIgnoreCase(request.getEndToEndId())) {
                 Optional<Transaction> duplicate = transactionRepository.findAllByEndToEndIdAndVaId(request.getEndToEndId(), va.getId())
                         .stream()
-                        .filter(t -> request.getAmount().compareTo(t.getAmount().add(
-                                        t.getFeeAmount() != null ? t.getFeeAmount() : BigDecimal.ZERO)) == 0
+                        .filter(t -> (request.getAmount().compareTo(t.getAmount()) == 0
+                                        || request.getAmount().compareTo(t.getAmount().add(
+                                                t.getFeeAmount() != null ? t.getFeeAmount() : BigDecimal.ZERO)) == 0)
                                 && request.getCurrency().equalsIgnoreCase(t.getCurrencyCode()))
                         .findFirst();
                 if (duplicate.isPresent()) {

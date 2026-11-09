@@ -998,7 +998,7 @@ public class NettingService {
 
                         // Update available balance
                         if (receiverVa.getAvailableBalance() != null) {
-                            receiverVa.setAvailableBalance(receiverVa.getCurrentBalance());
+                            receiverVa.syncAvailableToCurrent();
                         }
                         virtualAccountRepository.save(receiverVa);
 

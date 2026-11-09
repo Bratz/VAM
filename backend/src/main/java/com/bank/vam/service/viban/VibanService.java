@@ -341,7 +341,7 @@ public class VibanService {
         // Credit VA with net amount
         BigDecimal balanceBefore = va.getCurrentBalance();
         va.setCurrentBalance(balanceBefore.add(netAmount));
-        va.setAvailableBalance(va.getCurrentBalance());
+        va.syncAvailableToCurrent();
         virtualAccountRepository.save(va);
         
         String correlationId = "VIBAN-" + System.currentTimeMillis();

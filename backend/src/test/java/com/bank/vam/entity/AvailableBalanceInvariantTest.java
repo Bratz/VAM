@@ -51,6 +51,17 @@ class AvailableBalanceInvariantTest {
         assertThat(va.getCurrentBalance()).isEqualByComparingTo("-150");
     }
 
+    /** Services that write a new currentBalance then sync available; that must keep what is held, held. */
+    @Test
+    void syncAfterANewCurrentBalanceKeepsTheHold() {
+        VirtualAccount va = account("1000", "0");
+        va.hold(new BigDecimal("400"));
+        va.setCurrentBalance(va.getCurrentBalance().add(new BigDecimal("50")));
+        va.syncAvailableToCurrent();
+        assertInvariant(va);
+        assertThat(va.getAvailableBalance()).isEqualByComparingTo("650");
+    }
+
     @Test
     void holdPreservesIt() {
         VirtualAccount va = account("1000", "0");

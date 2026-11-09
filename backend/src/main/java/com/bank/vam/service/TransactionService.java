@@ -685,7 +685,7 @@ public class TransactionService {
         // ENTRY 4: CREDIT Destination VA
         BigDecimal toBalanceBefore = toVa.getCurrentBalance();
         toVa.setCurrentBalance(toBalanceBefore.add(request.getAmount()));
-        toVa.setAvailableBalance(toVa.getCurrentBalance());
+        toVa.syncAvailableToCurrent();
         virtualAccountRepository.save(toVa);
 
         Transaction txn4_destIn = createTransaction(
@@ -2407,10 +2407,11 @@ public class TransactionService {
         );
         allTransactions.add(txn3_settlementOut);
 
-        // ENTRY 4: CREDIT Target VA (final destination, NET amount after fee)
+        // ENTRY 4: CREDIT Target VA with the GROSS amount -- what legs 1-3 moved. The fee flow below then debits the
+        // fee, so the account ends net. Crediting the net here as well charged the fee twice.
         BigDecimal targetBalanceBefore = targetVa.getCurrentBalance();
-        targetVa.setCurrentBalance(targetBalanceBefore.add(netAmount));
-        targetVa.setAvailableBalance(targetVa.getCurrentBalance());
+        targetVa.setCurrentBalance(targetBalanceBefore.add(request.getAmount()));
+        targetVa.syncAvailableToCurrent();
         targetVa.setLastTransactionAt(LocalDateTime.now());
         targetVa.setLastActivityDate(LocalDate.now());
         virtualAccountRepository.save(targetVa);
@@ -2422,7 +2423,7 @@ public class TransactionService {
                 .legalEntityId(targetVa.getOwningEntityId())
                 .vaId(targetVa.getId())
                 .programId(targetVa.getProgramId())
-                .amount(netAmount)
+                .amount(request.getAmount())
                 .currencyCode(currency)
                 .balanceBefore(targetBalanceBefore)
                 .balanceAfter(targetVa.getCurrentBalance())
@@ -2444,7 +2445,7 @@ public class TransactionService {
                 .feeAmount(collectionFee)
                 .autoReconciled(request.getMatchedReceivableId() != null)
                 .status(Transaction.TransactionStatus.COMPLETED)
-                .processingNotes("Inbound collection - leg 4 of 4 (final credit). Net after fee: " + netAmount)
+                .processingNotes("Inbound collection - leg 4 of 4 (final credit, gross). Net after the fee leg: " + netAmount)
                 .build();
         txn4_targetIn = transactionRepository.save(txn4_targetIn);
         allTransactions.add(txn4_targetIn);
