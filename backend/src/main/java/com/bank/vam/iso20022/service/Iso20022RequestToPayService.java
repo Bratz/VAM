@@ -40,6 +40,12 @@ public class Iso20022RequestToPayService {
     private final ReceivableRepository receivableRepository;
     private final PartyRepository partyRepository;
     private final Iso20022XmlBuilder xmlBuilder;
+    private final com.bank.vam.repository.VirtualAccountRepository accounts;
+    private final com.bank.vam.service.viban.VibanService vibans;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
 
     @Transactional
     public RequestToPayResponse sendRequestToPay(UUID receivableId) {
@@ -52,7 +58,15 @@ public class Iso20022RequestToPayService {
                 .orElseThrow(() -> new RuntimeException("Receivable " + receivableId + " has no linked customer Party"));
 
         String endToEndId = "R2P-" + UUID.randomUUID();
-        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId);
+        // What the payer needs to pay it: a "pay this invoice" page, and a virtual IBAN so the payment matches
+        // the invoice by itself. Both are created here if the invoice has none.
+        if (receivable.getPaymentLinkToken() == null) {
+            receivable.setPaymentLinkToken(UUID.randomUUID().toString());
+        }
+        ensureViban(receivable);
+        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId,
+                frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken());
+        receivable.setRequestToPayXml(xml);
 
         receivable.setRequestToPayStatus(RequestToPayStatus.SENT);
         receivable.setRequestToPayMessageId(endToEndId);
@@ -68,6 +82,49 @@ public class Iso20022RequestToPayService {
                 .messageId(endToEndId)
                 .pain013Xml(xml)
                 .build();
+    }
+
+    /**
+     * Gives the invoice its own VIBAN on its collection account, as invoice creation does when asked, so a payment
+     * made against the request matches the invoice automatically. In its own transaction: a program that cannot
+     * issue a VIBAN still gets its Request to Pay, just without one.
+     */
+    private void ensureViban(Receivable receivable) {
+        if (receivable.hasLinkedViban() || receivable.getVirtualAccountId() == null) return;
+        try {
+            org.springframework.transaction.support.TransactionTemplate own = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+            own.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            com.bank.vam.dto.viban.VibanDto.VibanResponse created = own.execute(t -> {
+                com.bank.vam.entity.VirtualAccount va = accounts.findById(receivable.getVirtualAccountId()).orElseThrow();
+                return vibans.createViban(va.getProgramId(), com.bank.vam.dto.viban.VibanDto.VibanCreateRequest.builder()
+                        .virtualAccountId(va.getId())
+                        .vibanType(com.bank.vam.entity.viban.Viban.VibanType.INVOICE)
+                        .referenceType(com.bank.vam.entity.viban.Viban.REF_TYPE_INVOICE)
+                        .referenceId(receivable.getId().toString())
+                        .expectedAmount(receivable.getOutstandingAmount())
+                        .currencyCode(receivable.getCurrencyCode())
+                        .validUntil(receivable.getDueDate() != null && receivable.getDueDate().isAfter(java.time.LocalDate.now())
+                                ? receivable.getDueDate().plusDays(30).atStartOfDay() : LocalDateTime.now().plusDays(30))
+                        .singleUse(false)
+                        .customerName(receivable.getCustomerName())
+                        .build());
+            });
+            receivable.setViban(created.getViban());
+            receivable.setPrimaryVibanId(created.getId());
+        } catch (RuntimeException e) {
+            log.warn("No VIBAN for {}: {}", receivable.getReceivableNumber(), e.getMessage());
+        }
+    }
+
+    /** The last pain.013 sent for this invoice. */
+    @Transactional(readOnly = true)
+    public String lastRequest(UUID receivableId) {
+        Receivable r = receivableRepository.findById(receivableId)
+                .orElseThrow(() -> new com.bank.vam.exception.ResourceNotFoundException("Receivable not found: " + receivableId));
+        if (r.getRequestToPayXml() == null) {
+            throw new com.bank.vam.exception.ResourceNotFoundException("No Request to Pay has been kept for " + r.getReceivableNumber());
+        }
+        return r.getRequestToPayXml();
     }
 
     @Transactional

@@ -256,7 +256,8 @@ public class Iso20022XmlBuilder {
     // pain.013 - Creditor Payment Activation Request (Request to Pay)
     // ========================================================================
 
-    public String buildPain013(Receivable receivable, Party debtor, String endToEndId) {
+    /** {@code paymentLink}: the invoice's public "pay this invoice" page, sent to the payer as a second Ustrd line; null for none. */
+    public String buildPain013(Receivable receivable, Party debtor, String endToEndId, String paymentLink) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.013.001.07\">\n");
@@ -313,6 +314,9 @@ public class Iso20022XmlBuilder {
         xml.append("        <RmtInf>\n");
         xml.append("          <Ustrd>").append(escape(receivable.getReceivableNumber()
                 + (receivable.getDescription() != null ? " - " + receivable.getDescription() : ""))).append("</Ustrd>\n");
+        if (paymentLink != null) {
+            xml.append("          <Ustrd>").append(escape("Pay online: " + paymentLink)).append("</Ustrd>\n");
+        }
         xml.append("        </RmtInf>\n");
 
         xml.append("      </CdtTrfTxInf>\n");

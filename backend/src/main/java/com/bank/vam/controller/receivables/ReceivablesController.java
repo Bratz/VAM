@@ -140,6 +140,12 @@ public class ReceivablesController {
         return ResponseEntity.ok(Map.of("success", true, "data", response));
     }
 
+    @Operation(summary = "The last Request to Pay sent", description = "The pain.013 XML last sent for this receivable")
+    @GetMapping(value = "/{receivableId}/request-to-pay/message", produces = org.springframework.http.MediaType.APPLICATION_XML_VALUE)
+    public String lastRequestToPay(@PathVariable UUID receivableId) {
+        return requestToPayService.lastRequest(receivableId);
+    }
+
     // ========================================================================
     // E-COMMERCE ORDERS (Legacy)
     // ========================================================================

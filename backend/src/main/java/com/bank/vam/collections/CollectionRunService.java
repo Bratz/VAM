@@ -40,6 +40,7 @@ public class CollectionRunService {
     private final CorporateRepository corporates;
     private final Iso20022RequestToPayService requestToPay;
     private final HomeBankProperties homeBank;
+    private final com.bank.vam.repository.receivables.ReceivableRepository receivables;
     private final PlatformTransactionManager transactionManager;
 
     public record RunSummary(UUID id, String runRef, LocalDateTime createdAt, CollectionRun.Source source,
@@ -133,7 +134,24 @@ public class CollectionRunService {
     public RunDetail get(UUID runId) {
         CollectionRun run = find(runId);
         List<CollectionLine> l = lines.findByRunIdOrderByCreatedAtAsc(runId);
+        withPayInfo(l);
         return new RunDetail(summary(run, l), l);
+    }
+
+    /** For each line that sent a Request to Pay: its invoice's pay-link token, VIBAN and whether its pain.013 is kept. */
+    private void withPayInfo(List<CollectionLine> l) {
+        List<UUID> ids = l.stream().filter(x -> x.getStatus() == Status.RTP_SENT || Boolean.TRUE.equals(x.getRtpAfterReturn()))
+                .map(CollectionLine::getReceivableId).toList();
+        if (ids.isEmpty()) return;
+        Map<UUID, com.bank.vam.entity.receivables.Receivable> byId = receivables.findAllById(ids).stream()
+                .collect(Collectors.toMap(com.bank.vam.entity.receivables.Receivable::getId, Function.identity()));
+        for (CollectionLine x : l) {
+            com.bank.vam.entity.receivables.Receivable r = byId.get(x.getReceivableId());
+            if (r == null || !ids.contains(x.getReceivableId())) continue;
+            x.setPaymentLinkToken(r.getPaymentLinkToken());
+            x.setPayViban(r.getViban());
+            x.setRequestToPayKept(r.getRequestToPayXml() != null);
+        }
     }
 
     public CollectionRun find(UUID runId) {

@@ -139,6 +139,20 @@ public class CollectionLine extends BaseEntity {
     @Column(name = "rtp_after_return")
     private Boolean rtpAfterReturn;
 
+    // ---- how the customer pays a Request to Pay: filled in when a run is read, not stored on the line ----
+
+    /** The invoice's public "pay this invoice" token; the portal builds the link and QR from it. */
+    @Transient
+    private String paymentLinkToken;
+
+    /** The invoice's virtual IBAN, to pay into. */
+    @Transient
+    private String payViban;
+
+    /** The invoice's last pain.013 is kept and can be downloaded. */
+    @Transient
+    private Boolean requestToPayKept;
+
     /**
      * SENT: in the pain.008, awaiting its collection date. SETTLED: credited and held. AVAILABLE: the hold has
      * lifted. RTP_SENT: a Request to Pay went instead. EXCLUDED: not collected (see reason). FAILED: could not be

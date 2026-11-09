@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -28,8 +29,42 @@ class Iso20022RequestToPayServiceTest {
     private final PartyRepository partyRepository = mock(PartyRepository.class);
     private final Iso20022XmlBuilder xmlBuilder = new Iso20022XmlBuilder();
 
+    private final com.bank.vam.repository.VirtualAccountRepository accounts = mock(com.bank.vam.repository.VirtualAccountRepository.class);
+    private final com.bank.vam.service.viban.VibanService vibans = mock(com.bank.vam.service.viban.VibanService.class);
     private final Iso20022RequestToPayService service =
-            new Iso20022RequestToPayService(receivableRepository, partyRepository, xmlBuilder);
+            new Iso20022RequestToPayService(receivableRepository, partyRepository, xmlBuilder, accounts, vibans,
+                    mock(org.springframework.transaction.PlatformTransactionManager.class));
+
+    {
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "frontendBaseUrl", "https://portal.example");
+    }
+
+    /** An invoice with no VIBAN or link gets both; the link travels in the pain.013, which is kept on the invoice. */
+    @Test
+    void requestToPayGivesTheInvoiceAPayLinkAndAVibanAndKeepsTheMessage() {
+        Receivable r = receivable();
+        r.setViban(null);
+        UUID vaId = UUID.randomUUID();
+        r.setVirtualAccountId(vaId);
+        com.bank.vam.entity.VirtualAccount va = com.bank.vam.entity.VirtualAccount.builder().programId(UUID.randomUUID()).build();
+        va.setId(vaId);
+        when(accounts.findById(vaId)).thenReturn(Optional.of(va));
+        UUID vibanId = UUID.randomUUID();
+        when(vibans.createViban(any(), any())).thenReturn(com.bank.vam.dto.viban.VibanDto.VibanResponse.builder()
+                .id(vibanId).viban("AE070331234567890123456").build());
+        when(receivableRepository.findById(RECEIVABLE_ID)).thenReturn(Optional.of(r));
+        when(partyRepository.findById(PARTY_ID)).thenReturn(Optional.of(debtor()));
+
+        RequestToPayResponse response = service.sendRequestToPay(RECEIVABLE_ID);
+
+        assertNotNull(r.getPaymentLinkToken());
+        assertEquals("AE070331234567890123456", r.getViban());
+        assertEquals(vibanId, r.getPrimaryVibanId());
+        assertTrue(response.getPain013Xml().contains("<IBAN>AE070331234567890123456</IBAN>"), response.getPain013Xml());
+        assertTrue(response.getPain013Xml().contains("Pay online: https://portal.example/?page=pay-invoice&amp;token=" + r.getPaymentLinkToken()));
+        assertEquals(response.getPain013Xml(), r.getRequestToPayXml());
+        assertEquals(response.getPain013Xml(), service.lastRequest(RECEIVABLE_ID));
+    }
 
     private static final UUID RECEIVABLE_ID = UUID.randomUUID();
     private static final UUID PARTY_ID = UUID.randomUUID();

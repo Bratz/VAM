@@ -301,6 +301,10 @@ public class Receivable extends BaseEntity {
     @Column(name = "payment_link_token", unique = true, length = 40)
     private String paymentLinkToken;
 
+    /** The last pain.013 (Request to Pay) sent for this invoice, kept so it can be downloaded. */
+    @Column(name = "request_to_pay_xml", columnDefinition = "text")
+    private String requestToPayXml;
+
     // ========================================================================
     // PHASE 3: NETTING INTEGRATION (NEW)
     // ========================================================================

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Download, Undo2, Workflow, CalendarCheck, Save } from 'lucide-react';
+import { Download, Undo2, Workflow, CalendarCheck, Save, QrCode, Copy, ExternalLink, FileCode } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import { Badge, Button, DataTable, Drawer, Input, RowActions, Select } from '../ui';
 import { Modal } from '../ui/enhanced';
-import { collectionsApi, LineStatus, RunDetail, RunLine, RunSummary } from '../../services/collectionsApi';
+import { collectionsApi, LineStatus, payLink, RunDetail, RunLine, RunSummary } from '../../services/collectionsApi';
 import { errorText } from '../../pages/fx/fxFormat';
 import { formatCurrency, formatDate } from '../../utils';
 import { METHOD, STATUS } from './collectionLabels';
@@ -27,6 +28,8 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
   const [returning, setReturning] = useState<RunLine | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [reason, setReason] = useState('AM04');
+  const [paying, setPaying] = useState<RunLine | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     if (!corporateId) return;
@@ -240,6 +243,12 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
                   <div className="text-body-sm">
                     {l.mandateReference && <p className="font-mono whitespace-nowrap">{l.mandateReference} · {l.sequenceType}</p>}
                     {l.reason && <p className="text-neutral-500 dark:text-neutral-400">{l.reason}</p>}
+                    {l.paymentLinkToken && (
+                      <Button size="sm" variant="ghost" className="mt-1 -ml-2" leftIcon={<QrCode className="w-4 h-4" />}
+                        onClick={() => { setCopied(false); setPaying(l); }}>
+                        Pay link &amp; QR
+                      </Button>
+                    )}
                   </div>
                 ),
               },
@@ -247,6 +256,8 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
                 key: 'id', header: '', align: 'right',
                 render: (_, l) => (
                   <RowActions actions={[
+                    { label: 'Download pain.013', icon: <FileCode className="w-4 h-4" />, hidden: !l.requestToPayKept,
+                      onClick: () => collectionsApi.downloadRequestToPay(l.receivableId, l.receivableNumber ?? 'request').catch(err => setError(errorText(err))) },
                     { label: l.status === 'SENT' ? 'Mark rejected' : 'Mark returned', icon: <Undo2 className="w-4 h-4" />, danger: true,
                       onClick: () => startReturn(l), hidden: l.method !== 'DIRECT_DEBIT' || !RETURNABLE.includes(l.status) },
                   ]} />
@@ -256,6 +267,44 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
           />
         )}
       </Drawer>
+
+      <Modal
+        isOpen={!!paying}
+        onClose={() => setPaying(null)}
+        title={paying ? `Pay ${paying.receivableNumber}` : ''}
+        subtitle={paying ? `${paying.customerName ?? ''} · ${paying.amount != null && paying.currency ? formatCurrency(paying.amount, paying.currency) : ''}` : undefined}
+        footer={<Button variant="ghost" onClick={() => setPaying(null)}>Close</Button>}
+      >
+        {paying?.paymentLinkToken && (
+          <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+            <div className="p-3 bg-white rounded-lg border border-neutral-200 shrink-0">
+              <QRCode value={payLink(paying.paymentLinkToken)} size={156} />
+            </div>
+            <div className="space-y-3 min-w-0 w-full">
+              <div>
+                <p className="text-caption text-neutral-500 dark:text-neutral-400">Pay link — the customer opens it, or scans the code</p>
+                <p className="text-body-sm font-mono break-all">{payLink(paying.paymentLinkToken)}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" leftIcon={<Copy className="w-4 h-4" />}
+                  onClick={() => navigator.clipboard.writeText(payLink(paying.paymentLinkToken!)).then(() => setCopied(true))}>
+                  {copied ? 'Copied' : 'Copy link'}
+                </Button>
+                <Button size="sm" variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />}
+                  onClick={() => window.open(payLink(paying.paymentLinkToken!), '_blank', 'noopener')}>
+                  Open pay page
+                </Button>
+              </div>
+              {paying.payViban && (
+                <div>
+                  <p className="text-caption text-neutral-500 dark:text-neutral-400">Or pay by bank transfer to this invoice's IBAN (matched automatically)</p>
+                  <p className="text-body-sm font-mono">{paying.payViban}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal
         isOpen={!!returning}

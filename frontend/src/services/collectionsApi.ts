@@ -127,7 +127,16 @@ export interface RunLine extends Omit<CollectionLine, 'receivableId'> {
   returnCode?: string;
   returnedOn?: string;
   rtpAfterReturn?: boolean;
+  /** Request to Pay lines: the invoice's public pay-page token (the link and QR are built from it). */
+  paymentLinkToken?: string;
+  /** Request to Pay lines: the invoice's virtual IBAN to pay into. */
+  payViban?: string;
+  /** Request to Pay lines: the pain.013 sent is kept and can be downloaded. */
+  requestToPayKept?: boolean;
 }
+
+/** The public "pay this invoice" page for a payment-link token, on this portal. */
+export const payLink = (token: string) => `${window.location.origin}/?page=pay-invoice&token=${token}`;
 
 export interface ReturnOutcome {
   endToEndId: string;
@@ -230,6 +239,11 @@ export const collectionsApi = {
 
   bankAnswer: (id: string, accepted: boolean, reasonCode?: string) =>
     apiClient.post<ApiResponse<BankAnswer>>(`/collections/mandates/${id}/bank-answer`, { accepted, reasonCode }).then(r => r.data.data),
+
+  /** Saves the last pain.013 (Request to Pay) sent for an invoice. */
+  downloadRequestToPay: async (receivableId: string, invoiceNumber: string) =>
+    saveXml(await apiClient.get<string>(`/receivables/${receivableId}/request-to-pay/message`, { responseType: 'text' }).then(r => r.data),
+      `${invoiceNumber}.pain013.xml`),
 
   downloadMandateMessage: async (id: string, reference: string) =>
     saveXml(await apiClient.get<string>(`/collections/mandates/${id}/message`, { responseType: 'text' }).then(r => r.data), `${reference}.xml`),
