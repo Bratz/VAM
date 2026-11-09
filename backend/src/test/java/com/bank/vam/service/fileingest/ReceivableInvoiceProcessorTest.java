@@ -78,7 +78,7 @@ class ReceivableInvoiceProcessorTest {
     @Test
     void readyRowWithResolvableVibanRaisesAnInvoice() {
         StagedTransaction staged = stageOneReadyRow();
-        when(partyRepository.findByCorporateIdAndLegalNameIgnoreCase(any(), any())).thenReturn(Optional.empty());
+        when(partyRepository.findAllByCorporateIdAndLegalNameIgnoreCase(any(), any())).thenReturn(List.of());
         when(partyService.createParty(any(), any())).thenReturn(PartyResponse.builder().id(UUID.randomUUID()).build());
 
         UUID receivableId = UUID.randomUUID();
@@ -124,8 +124,8 @@ class ReceivableInvoiceProcessorTest {
         UUID existingPartyId = UUID.randomUUID();
         Party existing = Party.builder().legalName("Acme Corp").build();
         existing.setId(existingPartyId);
-        when(partyRepository.findByCorporateIdAndLegalNameIgnoreCase(any(), eq("Acme Corp")))
-                .thenReturn(Optional.of(existing));
+        when(partyRepository.findAllByCorporateIdAndLegalNameIgnoreCase(any(), eq("Acme Corp")))
+                .thenReturn(List.of(existing));
         when(receivablesService.createInvoice(any(), any())).thenReturn(
                 InvoiceResponse.builder().id(UUID.randomUUID()).build());
 
@@ -140,7 +140,7 @@ class ReceivableInvoiceProcessorTest {
     @Test
     void unknownDebtorIsAutoOnboardedAsAPendingKycParty() {
         stageOneReadyRow();
-        when(partyRepository.findByCorporateIdAndLegalNameIgnoreCase(any(), any())).thenReturn(Optional.empty());
+        when(partyRepository.findAllByCorporateIdAndLegalNameIgnoreCase(any(), any())).thenReturn(List.of());
         UUID newPartyId = UUID.randomUUID();
         when(partyService.createParty(any(), any())).thenReturn(PartyResponse.builder().id(newPartyId).build());
         when(receivablesService.createInvoice(any(), any())).thenReturn(
@@ -156,5 +156,20 @@ class ReceivableInvoiceProcessorTest {
         ArgumentCaptor<CreateInvoiceRequest> invoiceCaptor = ArgumentCaptor.forClass(CreateInvoiceRequest.class);
         verify(receivablesService).createInvoice(any(), invoiceCaptor.capture());
         assertEquals(newPartyId, invoiceCaptor.getValue().getCustomerId());
+    }
+
+    /** Names are not unique: picking either customer would raise the invoice against a guess. */
+    @Test
+    void customerNameSharedByTwoPartiesFailsTheRowWithAReason() {
+        StagedTransaction staged = stageOneReadyRow();
+        when(partyRepository.findAllByCorporateIdAndLegalNameIgnoreCase(any(), eq("Acme Corp")))
+                .thenReturn(List.of(Party.builder().legalName("Acme Corp").build(), Party.builder().legalName("ACME CORP").build()));
+
+        processor.process(JOB_ID, List.of(row()));
+
+        assertEquals(RowStatus.FAILED, staged.getStatus());
+        assertEquals("2 customers are called Acme Corp; rename one of them so the file can say which is meant", staged.getReason());
+        verify(receivablesService, never()).createInvoice(any(), any());
+        verify(partyService, never()).createParty(any(), any());
     }
 }

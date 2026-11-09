@@ -9,6 +9,7 @@ import com.bank.vam.entity.fileingest.IngestJob;
 import com.bank.vam.entity.fileingest.RowStatus;
 import com.bank.vam.entity.fileingest.StagedTransaction;
 import com.bank.vam.entity.party.Party;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.repository.fileingest.IngestJobRepository;
 import com.bank.vam.repository.fileingest.StagedTransactionRepository;
 import com.bank.vam.repository.party.PartyRepository;
@@ -102,19 +103,24 @@ public class ReceivableInvoiceProcessor implements DomainProcessor {
      * auto-onboard one -- this IS "KYCC details created automatically": createParty() already
      * defaults a new Party to kycStatus=PENDING, this app's real (if informally named) KYCC
      * model. Exact-match on legalName so a re-uploaded file for the same customer reliably finds
-     * the SAME Party rather than creating a duplicate on every run. */
+     * the SAME Party rather than creating a duplicate on every run. Two customers sharing the
+     * name fail the row: guessing would raise the invoice against the wrong customer. */
     private UUID resolveOrCreateParty(UUID corporateId, String debtorName) {
-        return partyRepository.findByCorporateIdAndLegalNameIgnoreCase(corporateId, debtorName)
-                .map(Party::getId)
-                .orElseGet(() -> {
-                    PartyResponse created = partyService.createParty(corporateId, CreatePartyRequest.builder()
-                            .partyType("COMPANY") // TransformedRow has no signal to distinguish
-                                                   // INDIVIDUAL vs COMPANY; documented default.
-                            .legalName(debtorName)
-                            .roles(Set.of("CUSTOMER"))
-                            .build());
-                    return created.getId();
-                });
+        List<Party> named = partyRepository.findAllByCorporateIdAndLegalNameIgnoreCase(corporateId, debtorName);
+        if (named.size() > 1) {
+            throw new BusinessException(named.size() + " customers are called " + debtorName
+                    + "; rename one of them so the file can say which is meant");
+        }
+        if (named.size() == 1) {
+            return named.get(0).getId();
+        }
+        PartyResponse created = partyService.createParty(corporateId, CreatePartyRequest.builder()
+                .partyType("COMPANY") // TransformedRow has no signal to distinguish
+                                       // INDIVIDUAL vs COMPANY; documented default.
+                .legalName(debtorName)
+                .roles(Set.of("CUSTOMER"))
+                .build());
+        return created.getId();
     }
 
     private UUID resolveCorporateId(UUID ingestJobId) {
