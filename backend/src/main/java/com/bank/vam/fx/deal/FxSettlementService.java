@@ -119,6 +119,34 @@ public class FxSettlementService {
     }
 
     /**
+     * Part or all of a deal used by a collection: the corporate received the deal's sold currency from a payer and
+     * the account was credited the bought currency. Recorded like {@link #paidByPayment}, so it counts as utilisation.
+     */
+    @Transactional
+    public FxSettlement receivedByCollection(FxDeal d, BigDecimal base, String creditRef, UUID creditId, String accountLabel) {
+        BigDecimal[] legs = legsFor(d, base);
+        boolean whole = base.compareTo(d.baseAmount()) == 0;
+        FxSettlement s = settlement(d, whole ? SettlementKind.MATURITY : SettlementKind.DRAWDOWN, LocalDate.now(), legs[0], legs[1]);
+        s.setStatus(SettlementStatus.SETTLED);
+        s.setSettledAt(LocalDateTime.now());
+        s.setDebitAccountLabel("Received by collection " + creditRef);
+        s.setCreditAccountLabel(accountLabel);
+        s.setPaymentRef(creditRef);
+        s.setPaymentId(creditId);
+        d.setDrawnAmount(d.getDrawnAmount().add(base));
+        log.note(d, "USED_BY_COLLECTION", d.getSellCurrency() + " " + legs[1].toPlainString() + " collected by " + creditRef
+                + ", " + d.getBuyCurrency() + " " + legs[0].toPlainString() + " credited to " + accountLabel
+                + (d.remainingBase().signum() > 0 ? "; " + d.remainingBase().toPlainString() + " " + d.baseCurrency() + " left" : ""));
+        if (d.remainingBase().signum() == 0) {
+            d.setSettledAt(LocalDateTime.now());
+            dealService.transition(d, DealStatus.SETTLED, "Used by collection " + creditRef);
+        } else if (d.getInstrument() == Instrument.WINDOW && d.getStatus() == DealStatus.ACTIVE) {
+            dealService.transition(d, DealStatus.PARTIALLY_DRAWN, "Part used by collection " + creditRef);
+        }
+        return settlements.save(s);
+    }
+
+    /**
      * Settles everything due on or before {@code asOf} (today when null). Passing a later date is how the
      * demo moves the clock forward; the simulated desk has no other way to reach a value date.
      */

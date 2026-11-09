@@ -113,7 +113,11 @@ public class CollectionReturnService {
             if (was == Status.SETTLED) {
                 accounts.findById(l.getCreditorVaId()).orElseThrow().releaseHold(l.getCreditedAmount());
             }
-            transactions.reverseCollection(l.getCreditorVaId(), l.getAmount(), l.getCurrency(), l.getTransactionRef(),
+            // ponytail: a converted collection is reversed at its original rate (what was credited goes back out); a
+            // bank would reconvert at the day's rate, and the FX deal's utilisation is not undone.
+            transactions.reverseCollection(l.getCreditorVaId(),
+                    l.getCreditGross() != null ? l.getCreditGross() : l.getAmount(),
+                    l.getCreditCurrency() != null ? l.getCreditCurrency() : l.getCurrency(), l.getTransactionRef(),
                     why, l.getDebtorName(), l.getDebtorIban(), "DIRECT_DEBIT");
             reopen(l);
             l.setStatus(Status.RETURNED);

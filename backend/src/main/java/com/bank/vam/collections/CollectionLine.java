@@ -107,6 +107,19 @@ public class CollectionLine extends BaseEntity {
     @Column(name = "transaction_ref", length = 50)
     private String transactionRef;
 
+    /** The account's currency and the gross credited in it, when it differs from the invoice's (converted on credit). */
+    @Column(name = "credit_currency", length = 3)
+    private String creditCurrency;
+
+    @Column(name = "credit_gross", precision = 19, scale = 2)
+    private BigDecimal creditGross;
+
+    @Column(name = "fx_rate", precision = 19, scale = 8)
+    private BigDecimal fxRate;
+
+    @Column(name = "fx_deal_ref", length = 60)
+    private String fxDealRef;
+
     @Column(name = "hold_until")
     private LocalDate holdUntil;
 

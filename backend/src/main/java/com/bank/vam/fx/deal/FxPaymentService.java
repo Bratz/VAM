@@ -258,6 +258,66 @@ public class FxPaymentService {
     }
 
     /**
+     * Money collected in {@code ccy} for an account in another currency (a direct debit on an invoice in a foreign
+     * currency): the corporate sells {@code amount} of {@code ccy} for the account's currency. Deals that sell
+     * {@code ccy} and buy the account's currency go first, soonest value date first, at their rates; a spot is booked
+     * at the live sell price for the rest. Null when there is nothing to convert. {@code debitAmount} of the result is
+     * what to credit the account, in its currency.
+     */
+    @Transactional
+    public Conversion convertIncoming(VirtualAccount target, String ccy, BigDecimal amount) {
+        String accountCcy = target.getCurrencyCode();
+        if (ccy == null || ccy.equalsIgnoreCase(accountCcy)) {
+            return null;
+        }
+        if (target.getOwningEntityId() == null) {
+            throw invalid(label(target) + " belongs to no legal entity, and an FX deal is booked for one");
+        }
+        List<FxDeal> fitting = deals.findByCorporateIdAndStatusIn(target.getCorporateId(), DRAWABLE).stream()
+                .filter(d -> target.getOwningEntityId().equals(d.getEntityId()))
+                .filter(d -> ccy.equals(d.getSellCurrency()) && accountCcy.equals(d.getBuyCurrency()))
+                .filter(d -> d.getConfirmationStatus() == ConfirmationStatus.AFFIRMED)
+                .filter(d -> notToday(d) == null && available(d, ccy).signum() > 0)
+                .sorted(Comparator.comparing(FxDeal::getValueDate).thenComparing(FxDeal::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        List<Part> parts = new ArrayList<>();
+        BigDecimal left = amount;
+        for (FxDeal d : fitting) {
+            if (left.signum() == 0) {
+                break;
+            }
+            BigDecimal sold = left.min(available(d, ccy));
+            BigDecimal base = toBase(d, ccy, sold);
+            parts.add(new Part(Source.DEAL, d, base, sold, settlement.legsFor(d, base)[0], d.getRate()));
+            left = left.subtract(sold);
+        }
+        if (left.signum() > 0) {
+            FxQuoteService.Command c = new FxQuoteService.Command(target.getCorporateId(), target.getOwningEntityId(),
+                    ccy + "/" + accountCcy, Side.SELL, Instrument.SPOT, left, null, null, "Collection conversion", null, true);
+            FxStreamService.StreamPrice p = stream.price(c);
+            if (!p.streamable()) {
+                throw new BusinessException("FX_COLLECTION_NEEDS_DEAL", p.reason() + ", so " + ccy + " " + left.toPlainString()
+                        + " cannot be converted at the live price; book an FX deal selling " + ccy + " for " + accountCcy);
+            }
+            FxDeal deal = accepted(quotes.request(c, stream.take(p.priceId()).sell()));
+            parts.add(new Part(Source.LIVE, deal, deal.baseAmount(), left, deal.getBuyAmount(), deal.getRate()));
+        }
+        return conversion(amount, ccy, accountCcy, parts);
+    }
+
+    /** After the collection's ledger legs: settles each deal's part through it and notes the FX on the credit. */
+    @Transactional
+    public void settleIncoming(Conversion cv, Transaction credit, VirtualAccount target) {
+        for (Part p : cv.parts()) {
+            settlement.receivedByCollection(p.deal(), p.base(), credit.getReferenceNumber(), credit.getId(), label(target));
+        }
+        credit.setInstructedAmount(cv.instructedAmount());
+        credit.setInstructedCurrency(cv.instructedCurrency());
+        credit.setFxRate(cv.rate());
+        credit.setFxDealRef(cv.dealRefs());
+    }
+
+    /**
      * FX for a batch (a bulk payment, a file): per paying entity and currency pair, the batch's total is covered by
      * the deals that fit, soonest value date first, and ONE deal is booked at the live price for whatever they leave,
      * when that is within the streaming limit (so a large batch split into small lines cannot dodge it). The lines

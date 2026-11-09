@@ -192,8 +192,11 @@ class CollectionRoutingServiceTest {
     }
 
     @Test
-    void receivingAccountInAnotherCurrencyFallsToRequestToPay() {
-        assertEquals("pays into a USD account and the invoice is in AED",
-                CollectionRoutingService.unusableNow(mandate("M", null), List.of(), MONDAY, "USD", "AED"));
+    void anAccountInAnotherCurrencyConvertsOnCreditWhenItHasAnEntityToBookFor() {
+        VirtualAccount usd = VirtualAccount.builder().currencyCode("USD").build();
+        assertEquals("pays into a USD account that belongs to no legal entity, so the AED collected cannot be converted",
+                CollectionRoutingService.unusableNow(mandate("M", null), List.of(), MONDAY, usd, "AED"));
+        usd.setOwningEntityId(UUID.randomUUID());
+        assertNull(CollectionRoutingService.unusableNow(mandate("M", null), List.of(), MONDAY, usd, "AED"));
     }
 }

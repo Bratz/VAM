@@ -298,4 +298,43 @@ class FxPaymentServiceTest {
         assertThat(out.get(1).held()).startsWith("Waiting for FX: after the deals that fit, EUR 200.00 of this batch is left to convert, and above 150 EUR");
         verify(quotes, never()).accept(any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
+
+    /** A EUR collection for a USD account: the deal selling EUR for USD first, the rest sold at the live price. */
+    @Test
+    void aCollectionInAnotherCurrencyIsSoldThroughDealsFirstThenAtTheLivePrice() {
+        FxDeal sells = DealFixtures.deal(Side.SELL, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(3));
+        FxDeal buys = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(1));
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(buys, sells));
+        when(settlement.legsFor(sells, bd("100000.00"))).thenReturn(new BigDecimal[] {bd("110000.00"), bd("100000.00")});
+
+        UUID priceId = UUID.randomUUID();
+        FxStreamService.Leg leg = new FxStreamService.Leg(bd("1.0990"), null, null, bd("21980.00"));
+        when(stream.price(argThat(c -> c.side() == Side.SELL && c.pair().equals("EUR/USD") && c.forPayment() && c.amount().compareTo(bd("20000")) == 0)))
+                .thenReturn(new FxStreamService.StreamPrice(true, null, "EUR/USD", bd("20000"), Instrument.SPOT, LocalDate.now(), priceId,
+                        leg, leg, 5, bd("1000000"), 31));
+        Price sellPrice = new Price(bd("1.1"), bd("0"), bd("1.1"), bd("3"), bd("1.0990"), bd("21980.00"), LocalDate.now());
+        when(stream.take(priceId)).thenReturn(new FxStreamService.Issued(null, sellPrice, sellPrice, Instant.now().plusSeconds(5)));
+        FxQuoteRequest q = new FxQuoteRequest();
+        q.setId(UUID.randomUUID());
+        q.setStatus(QuoteStatus.QUOTED);
+        when(quotes.request(argThat(c -> c.side() == Side.SELL), eq(sellPrice))).thenReturn(q);
+        FxDeal spot = DealFixtures.deal(Side.SELL, Instrument.SPOT, DealStatus.PENDING_SETTLEMENT, LocalDate.now());
+        spot.setSellAmount(bd("20000.00"));
+        spot.setBuyAmount(bd("21980.00"));
+        when(quotes.accept(q.getId(), true)).thenReturn(spot);
+
+        FxPaymentService.Conversion cv = payments.convertIncoming(usdAccount(), "EUR", bd("120000"));
+
+        assertThat(cv.parts()).extracting(FxPaymentService.Part::deal).containsExactly(sells, spot); // not the deal buying EUR
+        assertThat(cv.debitAmount()).isEqualByComparingTo("131980.00"); // credited to the USD account
+        assertThat(cv.debitCurrency()).isEqualTo("USD");
+        verify(confirmations).affirm(spot.getId());
+
+        Transaction credit = new Transaction();
+        credit.setReferenceNumber("COL-1");
+        payments.settleIncoming(cv, credit, usdAccount());
+        verify(settlement).receivedByCollection(sells, bd("100000.00"), "COL-1", null, "VA-USD-1");
+        assertThat(credit.getInstructedCurrency()).isEqualTo("EUR");
+        assertThat(payments.convertIncoming(usdAccount(), "USD", bd("5"))).isNull();
+    }
 }

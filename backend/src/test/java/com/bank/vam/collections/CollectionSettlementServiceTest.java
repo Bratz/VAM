@@ -35,8 +35,10 @@ class CollectionSettlementServiceTest {
     private final ReceivablesService receivablesService = mock(ReceivablesService.class);
     private final ReceivableRepository receivables = mock(ReceivableRepository.class);
     private final VirtualAccountRepository accounts = mock(VirtualAccountRepository.class);
+    private final com.bank.vam.fx.deal.FxPaymentService fx = mock(com.bank.vam.fx.deal.FxPaymentService.class);
     private final CollectionSettlementService service = new CollectionSettlementService(lines, runs, mandates, runService,
-            transactions, receivablesService, receivables, accounts, mock(PlatformTransactionManager.class));
+            transactions, receivablesService, receivables, accounts, fx, mock(com.bank.vam.repository.TransactionRepository.class),
+            mock(PlatformTransactionManager.class));
 
     private static final LocalDate FRIDAY = LocalDate.of(2026, 11, 13);
 

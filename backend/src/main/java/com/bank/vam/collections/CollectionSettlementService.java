@@ -4,6 +4,8 @@ import com.bank.vam.collections.CollectionLine.Status;
 import com.bank.vam.dto.TransactionDto;
 import com.bank.vam.dto.receivables.ReceivablesDto.RecordPaymentRequest;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.fx.deal.FxPaymentService;
+import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
@@ -41,6 +43,8 @@ public class CollectionSettlementService {
     private final ReceivablesService receivablesService;
     private final ReceivableRepository receivables;
     private final VirtualAccountRepository accounts;
+    private final FxPaymentService fx;
+    private final TransactionRepository ledger;
     private final PlatformTransactionManager transactionManager;
 
     public record Result(LocalDate asOf, int settled, int released, int notCollected, int failed) {
@@ -107,10 +111,17 @@ public class CollectionSettlementService {
             return Status.FAILED;
         }
 
+        // An invoice in another currency than the account converts on credit: the corporate's deals selling it first,
+        // then the live price. Booked in this line's transaction, so a credit that fails books no FX either.
+        VirtualAccount target = accounts.findById(l.getCreditorVaId()).orElseThrow();
+        FxPaymentService.Conversion cv = fx.convertIncoming(target, l.getCurrency(), l.getAmount());
+        BigDecimal gross = cv != null ? cv.debitAmount() : l.getAmount();
+        String creditCcy = cv != null ? cv.debitCurrency() : l.getCurrency();
+
         TransactionDto.CollectionResponse credit = transactions.processCollection(TransactionDto.CollectionRequest.builder()
                 .targetVaId(l.getCreditorVaId())
-                .amount(l.getAmount())
-                .currencyCode(l.getCurrency())
+                .amount(gross)
+                .currencyCode(creditCcy)
                 .valueDate(l.getCollectionDate())
                 .remitterName(l.getDebtorName())
                 .remitterAccount(l.getDebtorIban())
@@ -125,6 +136,13 @@ public class CollectionSettlementService {
 
         VirtualAccount account = accounts.findById(l.getCreditorVaId()).orElseThrow();
         account.hold(credit.getNetAmount());
+        if (cv != null) {
+            fx.settleIncoming(cv, ledger.findById(credit.getTransactionId()).orElseThrow(), account);
+            l.setCreditCurrency(creditCcy);
+            l.setCreditGross(gross);
+            l.setFxRate(cv.rate());
+            l.setFxDealRef(cv.dealRefs());
+        }
 
         LocalDate holdUntil = CollectionRoutingService.addBusinessDays(l.getCollectionDate(), runService.holdDays(l.getCorporateId()));
         l.setStatus(Status.SETTLED);

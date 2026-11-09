@@ -72,7 +72,7 @@ public class CollectionRoutingService {
                         .stream().collect(Collectors.groupingBy(CollectionLine::getMandateId,
                                 Collectors.mapping(CollectionLine::getCollectionDate, Collectors.toCollection(ArrayList::new))))),
                 all.isEmpty() ? Map.of() : accounts.findAllById(all.stream().map(CustomerMandate::getCreditorVaId).collect(Collectors.toSet()))
-                        .stream().collect(Collectors.toMap(VirtualAccount::getId, VirtualAccount::getCurrencyCode)));
+                        .stream().collect(Collectors.toMap(VirtualAccount::getId, Function.identity())));
         Map<UUID, CollectionLine> inFlight = found.isEmpty() ? Map.of()
                 : lines.findByReceivableIdInAndStatusIn(found.keySet(), CollectionLine.IN_FLIGHT).stream()
                 .collect(Collectors.toMap(CollectionLine::getReceivableId, Function.identity(), (a, b) -> a));
@@ -93,7 +93,7 @@ public class CollectionRoutingService {
     }
 
     /** What earlier collections and the lines already routed in this batch have used of each mandate. */
-    private record Batch(Map<UUID, List<LocalDate>> uses, Map<UUID, String> accountCurrency) {
+    private record Batch(Map<UUID, List<LocalDate>> uses, Map<UUID, VirtualAccount> account) {
         List<LocalDate> usesOf(UUID mandateId) {
             return uses.getOrDefault(mandateId, List.of());
         }
@@ -114,7 +114,7 @@ public class CollectionRoutingService {
         for (CustomerMandate m : candidates) {
             List<LocalDate> used = batch.usesOf(m.getId());
             String problem = unusable(m, amount, currency, date);
-            if (problem == null) problem = unusableNow(m, used, date, batch.accountCurrency().get(m.getCreditorVaId()), currency);
+            if (problem == null) problem = unusableNow(m, used, date, batch.account().get(m.getCreditorVaId()), currency);
             if (problem == null) {
                 String sequence = m.getMandateType() == Type.ONE_OFF ? "OOFF" : used.isEmpty() ? "FRST" : "RCUR";
                 batch.uses().computeIfAbsent(m.getId(), k -> new ArrayList<>()).add(date);
@@ -140,7 +140,7 @@ public class CollectionRoutingService {
     }
 
     /** What its collections so far (including this batch's) and its receiving account allow, or null. */
-    static String unusableNow(CustomerMandate m, List<LocalDate> used, LocalDate date, String accountCurrency, String currency) {
+    static String unusableNow(CustomerMandate m, List<LocalDate> used, LocalDate date, VirtualAccount account, String currency) {
         if (m.getMandateType() == Type.ONE_OFF && !used.isEmpty()) return "is one-off and has been used";
         if (m.getFrequencyCount() != null && m.getFrequencyPeriod() != null) {
             LocalDate start = periodStart(m.getFrequencyPeriod(), date);
@@ -151,9 +151,10 @@ public class CollectionRoutingService {
                         + " and has " + inPeriod + " in the one starting " + start;
             }
         }
-        // ponytail: converting on credit is build step 5; until then the money must arrive in the account's own currency
-        if (accountCurrency != null && !accountCurrency.equals(currency)) {
-            return "pays into a " + accountCurrency + " account and the invoice is in " + currency;
+        // In another currency the collection converts on credit, through an FX deal booked for the account's entity.
+        if (account != null && !currency.equals(account.getCurrencyCode()) && account.getOwningEntityId() == null) {
+            return "pays into a " + account.getCurrencyCode() + " account that belongs to no legal entity, so the "
+                    + currency + " collected cannot be converted";
         }
         return null;
     }

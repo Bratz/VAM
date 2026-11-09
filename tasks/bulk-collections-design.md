@@ -129,6 +129,15 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
      Pay sent", or FAILED with why.
    - API: `POST /collections/runs/lines` {corporateId, lines:[{invoiceNumber?, customer?, customerAccount?, account,
      amount, currency, dueDate?, description?}]} → the run (source API) plus `rejected` lines with reasons.
-5. Cross-currency convert-on-credit (deal first).
+5. ✅ Cross-currency convert-on-credit (deal first). *(built 2026-11-09)*
+   - `FxPaymentService.convertIncoming`: deals of the account's entity that **sell** the invoice currency and **buy** the
+     account's, affirmed and drawable today, soonest value date first; a SELL spot at the live price (for-payment) for
+     the rest. `settleIncoming` records each deal's use (`FxSettlementService.receivedByCollection`, event
+     USED_BY_COLLECTION) against the credit and puts instructed amount/currency, rate and deal refs on it.
+   - Settlement converts before the 4-leg credit (same transaction: a failed credit books no FX), credits the account
+     in its currency, and the line keeps `creditCurrency`, `creditGross`, `fxRate`, `fxDealRef`.
+   - Routing: an account in another currency is fine when it belongs to a legal entity (FX is booked per entity).
+   - ponytail: a converted collection is returned at its original rate (the AED credited goes back out); a bank
+     would reconvert at the day's rate, and the deal's use is not undone.
 6. E-mandate flow (pain.009/010/011/012).
 7. Collections UI.
