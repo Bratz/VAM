@@ -11,6 +11,8 @@ public interface CollectionLineRepository extends JpaRepository<CollectionLine, 
 
     List<CollectionLine> findByRunIdOrderByCreatedAtAsc(UUID runId);
 
+    java.util.Optional<CollectionLine> findByEndToEndId(String endToEndId);
+
     List<CollectionLine> findByRunIdIn(Collection<UUID> runIds);
 
     List<CollectionLine> findByReceivableIdInAndStatusIn(Collection<UUID> receivableIds, Collection<CollectionLine.Status> statuses);

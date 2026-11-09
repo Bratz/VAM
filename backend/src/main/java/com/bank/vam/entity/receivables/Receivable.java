@@ -781,7 +781,7 @@ public class Receivable extends BaseEntity {
      * Check if this receivable is eligible for COBO routing.
      */
     public boolean canRequestCobo() {
-        return status == ReceivableStatus.OPEN
+        return (status == ReceivableStatus.OPEN || status == ReceivableStatus.PARTIAL || status == ReceivableStatus.OVERDUE)
             && collectionRoute == CollectionRoute.DIRECT
             && (coboRequestStatus == null || coboRequestStatus == CoboRequestStatus.NOT_REQUESTED);
     }

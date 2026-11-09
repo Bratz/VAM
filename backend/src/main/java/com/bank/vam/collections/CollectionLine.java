@@ -113,10 +113,24 @@ public class CollectionLine extends BaseEntity {
     @Column(name = "released_on")
     private LocalDate releasedOn;
 
+    // ---- return / reject ----
+
+    /** ISO 20022 reason code, e.g. AM04 (insufficient funds). */
+    @Column(name = "return_code", length = 4)
+    private String returnCode;
+
+    @Column(name = "returned_on")
+    private LocalDate returnedOn;
+
+    /** A Request to Pay went to the customer after the return. */
+    @Column(name = "rtp_after_return")
+    private Boolean rtpAfterReturn;
+
     /**
      * SENT: in the pain.008, awaiting its collection date. SETTLED: credited and held. AVAILABLE: the hold has
      * lifted. RTP_SENT: a Request to Pay went instead. EXCLUDED: not collected (see reason). FAILED: could not be
-     * sent, or the invoice no longer needed collecting on the date.
+     * sent, or the invoice no longer needed collecting on the date. REJECTED: refused before it settled (pain.002),
+     * no money moved. RETURNED: came back after it settled (pacs.004); the money was reversed and the invoice reopened.
      */
-    public enum Status { SENT, SETTLED, AVAILABLE, RTP_SENT, EXCLUDED, FAILED }
+    public enum Status { SENT, SETTLED, AVAILABLE, RTP_SENT, EXCLUDED, FAILED, REJECTED, RETURNED }
 }

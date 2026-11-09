@@ -2501,6 +2501,85 @@ public class TransactionService {
     }
 
     /**
+     * Gives a collection's money back to the payer (a returned direct debit): the gross leaves the target account
+     * and the shadow account / CBS account it arrived through -- legs 1 and 4 of {@link #processCollection} run
+     * backwards (the settlement legs netted to nothing). The collection fee is not refunded. The target may go
+     * below zero: a return is not optional for the account holder.
+     *
+     * @return the target account's REVERSAL movement
+     */
+    @Transactional
+    public Transaction reverseCollection(UUID targetVaId, BigDecimal amount, String currency, String originalCorrelationId,
+                                         String reason, String payerName, String payerAccount, String channel) {
+        VirtualAccount targetVa = virtualAccountRepository.findById(targetVaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Target VA not found"));
+        VirtualAccount shadowVa = resolveShadowVa(targetVa);
+        String correlationId = generateCorrelationId("RTN");
+
+        BigDecimal shadowBefore = shadowVa.getCurrentBalance();
+        shadowVa.applyShadowMovement(amount.negate());
+        virtualAccountRepository.save(shadowVa);
+        CoreBankingBalance.follow(physicalAccountRepository, shadowVa, amount.negate());
+        transactionRepository.save(Transaction.builder()
+                .movementType(Transaction.MovementType.REVERSAL)
+                .transactionCategory(TransactionCategory.EXTERNAL)
+                .corporateId(shadowVa.getCorporateId())
+                .vaId(shadowVa.getId())
+                .physicalAccountId(shadowVa.getLinkedPhysicalAccountId())
+                .programId(shadowVa.getProgramId())
+                .amount(amount)
+                .currencyCode(currency)
+                .balanceBefore(shadowBefore)
+                .balanceAfter(shadowVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(LocalDate.now())
+                .referenceNumber(generateReferenceNumber("CBSRTN"))
+                .description("Returned to " + payerName + ": " + reason)
+                .channel(channel)
+                .remitterName(payerName)
+                .remitterAccount(payerAccount)
+                .counterpartyVaId(targetVa.getId())
+                .correlationId(correlationId)
+                .externalReference(originalCorrelationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Collection return - leg 1 of 2 (CBS payout)")
+                .build());
+
+        BigDecimal targetBefore = targetVa.getCurrentBalance();
+        targetVa.setCurrentBalance(targetBefore.subtract(amount));
+        targetVa.syncAvailableToCurrent();
+        targetVa.setLastTransactionAt(LocalDateTime.now());
+        virtualAccountRepository.save(targetVa);
+        Transaction out = transactionRepository.save(Transaction.builder()
+                .movementType(Transaction.MovementType.REVERSAL)
+                .transactionCategory(TransactionCategory.EXTERNAL)
+                .corporateId(targetVa.getCorporateId())
+                .legalEntityId(targetVa.getOwningEntityId())
+                .vaId(targetVa.getId())
+                .programId(targetVa.getProgramId())
+                .amount(amount)
+                .currencyCode(currency)
+                .balanceBefore(targetBefore)
+                .balanceAfter(targetVa.getCurrentBalance())
+                .transactionDate(LocalDateTime.now())
+                .valueDate(LocalDate.now())
+                .referenceNumber(generateReferenceNumber("RTN"))
+                .description("Collection returned to " + payerName + ": " + reason)
+                .channel(channel)
+                .remitterName(payerName)
+                .remitterAccount(payerAccount)
+                .counterpartyVaId(shadowVa.getId())
+                .correlationId(correlationId)
+                .externalReference(originalCorrelationId)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .processingNotes("Collection return - leg 2 of 2 (account debit)")
+                .build());
+        propagateBalanceChanges(targetVa.getId(), amount.negate());
+        log.info("Collection returned: {} {} out of {} via {}, reason {}", amount, currency, targetVa.getVaNumber(), shadowVa.getVaNumber(), reason);
+        return out;
+    }
+
+    /**
      * Calculate collection fee based on routing method.
      * VIBAN routing gets lower fee than standard collection.
      */

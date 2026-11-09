@@ -1,6 +1,10 @@
 package com.bank.vam.iso20022.controller;
 
+import com.bank.vam.collections.CollectionLine;
+import com.bank.vam.collections.CollectionReturnService;
+import com.bank.vam.collections.CollectionSettlementService;
 import com.bank.vam.dto.ApiResponse;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
 import com.bank.vam.iso20022.service.Iso20022InwardPaymentService;
 import com.bank.vam.iso20022.service.Iso20022OutwardPaymentService;
@@ -40,6 +44,8 @@ public class Iso20022PaymentController {
     private final Iso20022OutwardPaymentService outwardPaymentService;
     private final Iso20022StatusService statusService;
     private final Iso20022RequestToPayService requestToPayService;
+    private final CollectionReturnService collectionReturns;
+    private final CollectionSettlementService collectionSettlement;
 
     // ========================================================================
     // INWARD PAYMENTS (Credits via VIBAN routing)
@@ -96,12 +102,34 @@ public class Iso20022PaymentController {
         log.info("REST: Process camt.054 XML message");
 
         try {
+            // Debit entries returning our direct debits (TxDtls with a RtrInf reason) go to the collections
+            // return flow; a notification can carry only those, and then has no credit to post.
+            List<CollectionReturnService.Return> returned = CollectionReturnService.parseCamt054Returns(camt054Xml);
+            List<InwardPaymentRequest> credits;
+            try {
+                credits = inwardPaymentService.parseCamt054(camt054Xml);
+            } catch (BusinessException noCredit) {
+                if (returned.isEmpty()) throw noCredit;
+                credits = List.of();
+            }
+            List<InwardPaymentResponse> results = new java.util.ArrayList<>(collectionReturns.apply(returned).stream()
+                    .map(o -> InwardPaymentResponse.builder().endToEndId(o.endToEndId())
+                            .success("RETURNED".equals(o.result()) || "REJECTED".equals(o.result()))
+                            .statusCode(o.result()).statusReason(o.detail()).errorMessage(o.detail()).build())
+                    .toList());
             // One call per line: each goes through the service proxy in its own transaction, so a
-            // failed line rolls back alone and its siblings still post.
-            List<InwardPaymentResponse> results = inwardPaymentService.parseCamt054(camt054Xml).stream().map(request -> {
+            // failed line rolls back alone and its siblings still post. A credit for one of our direct
+            // debits settles that debit instead of posting as an ordinary collection.
+            results.addAll(credits.stream().map(request -> {
                 InwardPaymentResponse r;
                 try {
-                    r = inwardPaymentService.processInwardPayment(request);
+                    java.util.Optional<CollectionLine> debit = collectionSettlement.settleFromBank(
+                            request.getEndToEndId(), request.getAmount(), request.getCurrency());
+                    r = debit.isPresent()
+                            ? InwardPaymentResponse.builder().success(true).statusCode("ACCP")
+                                .statusReason("Settled direct debit " + debit.get().getMandateReference() + " for " + debit.get().getReceivableNumber())
+                                .transactionReference(debit.get().getTransactionRef()).virtualAccountId(debit.get().getCreditorVaId()).build()
+                            : inwardPaymentService.processInwardPayment(request);
                 } catch (Exception e) {
                     log.error("camt.054 line {} failed: ", request.getEndToEndId(), e);
                     r = InwardPaymentResponse.builder().success(false).statusCode("RJCT").errorCode("TECH")
@@ -109,7 +137,7 @@ public class Iso20022PaymentController {
                 }
                 r.setEndToEndId(request.getEndToEndId());
                 return r;
-            }).toList();
+            }).toList());
 
             long ok = results.stream().filter(InwardPaymentResponse::isSuccess).count();
             if (ok == results.size()) {
@@ -127,6 +155,29 @@ public class Iso20022PaymentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error("Failed to parse camt.054: " + e.getMessage()));
         }
+    }
+
+    @PostMapping(value = "/inward/pacs004", consumes = MediaType.APPLICATION_XML_VALUE)
+    @Operation(summary = "Process pacs.004 payment return",
+            description = "Direct debits returned after they settled: each TxInf is matched to its collection by "
+                    + "OrgnlEndToEndId; the money goes back, the invoice reopens and a Request to Pay is sent.")
+    public ResponseEntity<ApiResponse<List<CollectionReturnService.Outcome>>> processPacs004(@RequestBody String pacs004Xml) {
+        return returnsResponse(collectionReturns.apply(CollectionReturnService.parsePacs004(pacs004Xml)));
+    }
+
+    @PostMapping(value = "/inward/pain002", consumes = MediaType.APPLICATION_XML_VALUE)
+    @Operation(summary = "Process pain.002 status report on a direct-debit run",
+            description = "Rejected debits (TxSts RJCT, or a rejected payment block or message) are marked rejected "
+                    + "and their invoices sent a Request to Pay. Accepted statuses change nothing.")
+    public ResponseEntity<ApiResponse<List<CollectionReturnService.Outcome>>> processPain002(@RequestBody String pain002Xml) {
+        return returnsResponse(collectionReturns.apply(collectionReturns.parsePain002(pain002Xml)));
+    }
+
+    private static ResponseEntity<ApiResponse<List<CollectionReturnService.Outcome>>> returnsResponse(List<CollectionReturnService.Outcome> outcomes) {
+        long applied = outcomes.stream().filter(o -> "RETURNED".equals(o.result()) || "REJECTED".equals(o.result())).count();
+        String message = String.format("%d of %d applied", applied, outcomes.size());
+        if (applied == outcomes.size()) return ResponseEntity.ok(ApiResponse.success(outcomes, message));
+        return ResponseEntity.status(applied == 0 ? HttpStatus.BAD_REQUEST : HttpStatus.PARTIAL_CONTENT).body(ApiResponse.success(outcomes, message));
     }
 
     @PostMapping(value = "/inward/pain014", consumes = MediaType.APPLICATION_XML_VALUE)

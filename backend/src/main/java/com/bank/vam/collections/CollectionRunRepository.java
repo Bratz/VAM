@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface CollectionRunRepository extends JpaRepository<CollectionRun, UUID> {
 
     List<CollectionRun> findByCorporateIdOrderByCreatedAtDesc(UUID corporateId);
+
+    java.util.Optional<CollectionRun> findByRunRef(String runRef);
 }

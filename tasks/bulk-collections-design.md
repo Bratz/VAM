@@ -105,7 +105,18 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
      fee leg) — the target is now credited gross; and 11 places set available = current, releasing every hold on the
      account — now `syncAvailableToCurrent()` (available = current − held).
    - Not yet: hold-days setting has no portal field (step 7); a real camt.054 credit for a debit is not matched to its line (step 3).
-3. Returns/rejects (pacs.004 / pain.002 / camt.054 DBIT) → reverse, reopen, RTP fallback, mandate suspend.
+3. ✅ Returns/rejects (pacs.004 / pain.002 / camt.054 DBIT) → reverse, reopen, RTP fallback, mandate suspend. *(built 2026-11-09)*
+   - `CollectionReturnService`: by EndToEndId. SENT → REJECTED (no money). SETTLED/AVAILABLE → hold released, gross back
+     out through `TransactionService.reverseCollection` (shadow + target REVERSAL legs; the fee is not refunded), invoice
+     reopened (OVERDUE when past due) → RETURNED. Then a Request to Pay for the invoice. AC01/AC04/AC06/AG01/MD01/MD07
+     suspend the mandate; otherwise a returned one-off goes back to ACTIVE. Returned/rejected debits don't use the cap.
+   - In: `POST /iso20022/inward/pacs004`, `/inward/pain002` (TxSts RJCT, or a rejected PmtInf / whole message = every
+     waiting debit of that run), `/inward/camt054` DBIT entries with RtrInf; portal/API `POST /collections/lines/{id}/return`
+     with `GET /collections/return-reasons`. A camt.054 **credit** for a waiting debit settles that line instead of the
+     simulated settlement (if it cannot settle, the credit posts as an ordinary inward payment).
+   - V45 widens `collection_lines_status_check` (Hibernate's enum CHECK isn't updated by ddl-auto).
+   - V44 refunds the fee that collections before 0eb5fcc were charged twice (FEEFIX-* ADJUSTMENT credits).
+   - Invoice list: OVERDUE (and PARTIAL) now selectable for both Plan collection and COBO; `canRequestCobo` accepts them.
 4. Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API.
 5. Cross-currency convert-on-credit (deal first).
 6. E-mandate flow (pain.009/010/011/012).

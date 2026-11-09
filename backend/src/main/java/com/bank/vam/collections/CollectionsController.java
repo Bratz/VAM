@@ -27,6 +27,7 @@ public class CollectionsController {
     private final CollectionRoutingService routing;
     private final CollectionRunService runs;
     private final CollectionSettlementService settlement;
+    private final CollectionReturnService returns;
 
     @GetMapping("/mandates")
     public ApiResponse<List<MandateService.MandateView>> list(@RequestParam UUID corporateId) {
@@ -99,6 +100,20 @@ public class CollectionsController {
     public ApiResponse<CollectionSettlementService.Result> process(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf) {
         return ApiResponse.success(settlement.process(asOf != null ? asOf : LocalDate.now()));
+    }
+
+    public record ReturnRequest(String reasonCode) {
+    }
+
+    /** "Mark returned": a collected debit comes back (or a waiting one is rejected) with an ISO reason code. */
+    @PostMapping("/lines/{id}/return")
+    public ApiResponse<CollectionReturnService.Outcome> returnLine(@PathVariable UUID id, @RequestBody ReturnRequest request) {
+        return ApiResponse.success(returns.returnLine(id, request.reasonCode()));
+    }
+
+    @GetMapping("/return-reasons")
+    public ApiResponse<Map<String, String>> returnReasons() {
+        return ApiResponse.success(new java.util.TreeMap<>(CollectionReturnService.REASONS));
     }
 
     public record Settings(int holdBusinessDays) {

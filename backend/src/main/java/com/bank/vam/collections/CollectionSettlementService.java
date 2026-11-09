@@ -17,7 +17,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -75,6 +77,23 @@ public class CollectionSettlementService {
             released++;
         }
         return new Result(asOf, settled, released, notCollected, failed);
+    }
+
+    /**
+     * A bank credit (camt.054) for a direct debit still waiting to settle: settles that line now instead of on the
+     * simulated date. Empty when no waiting debit has this EndToEndId, amount and currency, or when the line cannot
+     * settle (its invoice was paid meanwhile) -- the caller then posts the credit as an ordinary inward payment, so
+     * money that arrived is never dropped.
+     */
+    public Optional<CollectionLine> settleFromBank(String endToEndId, BigDecimal amount, String currency) {
+        if (endToEndId == null || amount == null) return Optional.empty();
+        Optional<CollectionLine> waiting = lines.findByEndToEndId(endToEndId)
+                .filter(l -> l.getStatus() == Status.SENT && l.getAmount().compareTo(amount) == 0 && l.getCurrency().equalsIgnoreCase(currency));
+        if (waiting.isEmpty()) return Optional.empty();
+        TransactionTemplate own = new TransactionTemplate(transactionManager);
+        own.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        Status s = own.execute(t -> settle(waiting.get().getId()));
+        return s == Status.SETTLED ? lines.findById(waiting.get().getId()) : Optional.empty();
     }
 
     private Status settle(UUID lineId) {

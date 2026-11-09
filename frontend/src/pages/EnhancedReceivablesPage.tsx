@@ -20,6 +20,9 @@ import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
 import { MandatesTab } from '../components/collections/MandatesTab';
 import { CollectionPlanModal } from '../components/collections/CollectionPlanModal';
+
+/** Invoices that can still be collected (by COBO or a collection run): open, partly paid or overdue. */
+const COLLECTABLE = ['OPEN', 'PARTIAL', 'OVERDUE'];
 import { formatCurrency, formatDate, cn } from '../utils';
 import {
   receivablesApi,
@@ -912,7 +915,7 @@ const EnhancedReceivablesPage: React.FC = () => {
 
   const handleSelectAll = () => {
     const selectableIds = filteredInvoices
-      .filter(inv => ['OPEN', 'PARTIAL'].includes(inv.status))
+      .filter(inv => COLLECTABLE.includes(inv.status))
       .map(inv => inv.id);
     
     if (selectedIds.size === selectableIds.length) {
@@ -1107,7 +1110,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       <div className="flex items-center justify-end gap-2 animate-fade-in" style={{ animationDelay: '0.05s' }}>
         {activeTab === 'invoices' && (
           <Button variant="outline" size="sm" onClick={handleSelectAll}>
-            {selectedIds.size > 0 && selectedIds.size === filteredInvoices.filter(inv => ['OPEN', 'PARTIAL'].includes(inv.status)).length
+            {selectedIds.size > 0 && selectedIds.size === filteredInvoices.filter(inv => COLLECTABLE.includes(inv.status)).length
               ? 'Clear selection'
               : 'Select all eligible'}
           </Button>
@@ -1314,7 +1317,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       header: '', minWidth: 48,
                       width: '3rem',
                       render: (_, invoice) => {
-                        const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
+                        const isSelectable = COLLECTABLE.includes(invoice.status);
                         return (
                           <Checkbox
                             size="sm"
@@ -1430,7 +1433,7 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'actions',
                       header: 'Actions', minWidth: 210,
                       render: (_, invoice) => {
-                        const isSelectable = ['OPEN', 'PARTIAL'].includes(invoice.status);
+                        const isSelectable = COLLECTABLE.includes(invoice.status);
                         const canRequestCobo = !invoice.isCobo &&
                           invoice.coboRequestStatus === 'NOT_REQUESTED' &&
                           isSelectable;
