@@ -169,6 +169,37 @@ export interface Settlement {
   /** The accounts posted to; a close-out uses one of them. */
   debitAccountLabel?: string;
   creditAccountLabel?: string;
+  /** Set when a payment took this part of the deal: the deal's utilisation. */
+  paymentRef?: string;
+  paymentId?: string;
+}
+
+/** Part of a payment taken from a deal, in the payment's currency. */
+export interface FxDraw {
+  dealId: string;
+  amount: number;
+}
+
+/** A deal that fits a payment: what it can still deliver, and what it covers of this one. */
+export interface PaymentFit {
+  dealId: string;
+  dealRef: string;
+  instrument: Instrument;
+  valueDate: string;
+  pair: string;
+  rate: number;
+  available: number;
+  covers: number;
+  debit: number;
+}
+
+/** The deals that fit a payment, soonest value date first, and what is left for a rate. */
+export interface PaymentPlan {
+  currency: string;
+  accountCurrency: string;
+  amount: number;
+  deals: PaymentFit[];
+  rest: number;
 }
 
 /** One side of a streamed price: the client buying (buy) or selling (sell) the base currency. */
@@ -339,6 +370,13 @@ export interface FxLineView {
 }
 
 export const fxDealApi = {
+  /** The deals that fit a payment; {@code use} limits them to the ones the payer kept ticked. */
+  paymentPlan: (accountId: string, currency: string, amount: number, use?: string[]) =>
+    apiClient.get<ApiResponse<PaymentPlan>>('/fx/payments/plan', {
+      // an empty list is "none": sent as an id no deal has, since an empty parameter would read as all
+      params: { accountId, currency, amount, ...(use ? { use: (use.length ? use : ['00000000-0000-0000-0000-000000000000']).join(',') } : {}) },
+    }).then(r => r.data.data),
+
   /** Ask the desk for a better price. With no targetRate it is "your best price". */
   counter: (id: string, body: { targetRate?: number; note?: string } = {}) =>
     apiClient.post<ApiResponse<Quote>>(`/fx/quotes/${id}/counter`, body).then(r => r.data.data),

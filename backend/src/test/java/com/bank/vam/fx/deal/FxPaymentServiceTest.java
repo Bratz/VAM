@@ -90,7 +90,7 @@ class FxPaymentServiceTest {
         Transaction t = new Transaction();
         t.setReferenceNumber("PAY-1");
         payments.settle(cv, t, usdAccount());
-        verify(settlement).paidByPayment(deal, deal.baseAmount(), "PAY-1", "VA-USD-1");
+        verify(settlement).paidByPayment(deal, deal.baseAmount(), "PAY-1", null, "VA-USD-1");
         assertThat(t.getInstructedAmount()).isEqualByComparingTo("1000");
         assertThat(t.getInstructedCurrency()).isEqualTo("EUR");
         assertThat(t.getFxDealRef()).isEqualTo(deal.getDealRef());
@@ -115,18 +115,18 @@ class FxPaymentServiceTest {
         when(deals.findById(window.getId())).thenReturn(Optional.of(window));
         when(settlement.legsFor(window, bd("1000"))).thenReturn(new BigDecimal[] {bd("1000.00"), bd("1100.00")});
 
-        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(null, null, window.getId(), false));
+        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("1000"), FxPaymentService.Instruction.of(null, null, window.getId(), null, false));
         assertThat(cv.debitAmount()).isEqualByComparingTo("1100.00");
 
-        FxDeal forward = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().plusDays(3));
-        when(deals.findById(forward.getId())).thenReturn(Optional.of(forward));
-        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(null, null, forward.getId(), false)))
-                .hasMessageContaining("can pay on its value date");
+        FxDeal overdue = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, LocalDate.now().minusDays(1));
+        when(deals.findById(overdue.getId())).thenReturn(Optional.of(overdue));
+        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"), FxPaymentService.Instruction.of(null, null, overdue.getId(), null, false)))
+                .hasMessageContaining("is settling through its settlement accounts");
 
         FxDeal wrongWay = DealFixtures.deal(Side.SELL, Instrument.WINDOW, DealStatus.ACTIVE, LocalDate.now().plusDays(20));
         wrongWay.setWindowStart(LocalDate.now().minusDays(5));
         when(deals.findById(wrongWay.getId())).thenReturn(Optional.of(wrongWay));
-        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(null, null, wrongWay.getId(), false)))
+        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"), FxPaymentService.Instruction.of(null, null, wrongWay.getId(), null, false)))
                 .hasMessageContaining("buys USD and sells EUR");
     }
 
@@ -153,5 +153,149 @@ class FxPaymentServiceTest {
 
         assertThatThrownBy(() -> payments.preview(usdAccount(), "EUR", bd("2000000"), null))
                 .hasMessage("Above 1,000,000 EUR in EUR/USD the desk prices on request: ask for a price for this payment");
+    }
+
+    // ---- deal-first FX: the deals that fit, combined, then a rate for the rest ------------------------------------
+
+    private static FxDeal small(Instrument instrument, LocalDate valueDate, String eur) {
+        FxDeal d = DealFixtures.deal(Side.BUY, instrument, instrument == Instrument.SPOT ? DealStatus.PENDING_SETTLEMENT : DealStatus.ACTIVE, valueDate);
+        d.setBuyAmount(bd(eur));
+        d.setSellAmount(bd(eur).multiply(bd("1.10")).setScale(2));
+        if (instrument == Instrument.WINDOW) {
+            d.setWindowStart(LocalDate.now().minusDays(10));
+        }
+        return d;
+    }
+
+    /** A forward due in 5 days (EUR 300), a window open today (EUR 600), and two that do not fit. */
+    private List<FxDeal> book() {
+        FxDeal forward = small(Instrument.FORWARD, LocalDate.now().plusDays(5), "300.00");
+        FxDeal window = small(Instrument.WINDOW, LocalDate.now().plusDays(20), "600.00");
+        FxDeal otherEntity = small(Instrument.FORWARD, LocalDate.now().plusDays(1), "900.00");
+        otherEntity.setEntityId(UUID.randomUUID());
+        FxDeal unconfirmed = small(Instrument.SPOT, LocalDate.now().plusDays(2), "900.00");
+        unconfirmed.setConfirmationStatus(ConfirmationStatus.ISSUED);
+        List<FxDeal> all = List.of(window, otherEntity, forward, unconfirmed);
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(all);
+        all.forEach(d -> when(deals.findById(d.getId())).thenReturn(Optional.of(d)));
+        when(settlement.legsFor(any(), any())).thenAnswer(inv -> {
+            BigDecimal base = inv.getArgument(1);
+            return new BigDecimal[] {base, base.multiply(bd("1.10")).setScale(2)};
+        });
+        return List.of(forward, window);
+    }
+
+    @Test
+    void thePlanUsesTheEntitysConfirmedDealsSoonestValueDateFirstUntilThePaymentIsCovered() {
+        List<FxDeal> fit = book();
+
+        FxPaymentService.Plan plan = payments.plan(usdAccount(), "EUR", bd("1000"), null);
+
+        assertThat(plan.deals()).extracting(FxPaymentService.Fit::dealId).containsExactly(fit.get(0).getId(), fit.get(1).getId());
+        assertThat(plan.deals()).extracting(FxPaymentService.Fit::covers).usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(bd("300"), bd("600"));
+        assertThat(plan.rest()).isEqualByComparingTo("100");
+
+        FxPaymentService.Plan unticked = payments.plan(usdAccount(), "EUR", bd("1000"), List.of(fit.get(1).getId()));
+        assertThat(unticked.deals().get(0).covers()).isEqualByComparingTo("0");
+        assertThat(unticked.rest()).isEqualByComparingTo("400");
+    }
+
+    @Test
+    void severalDealsAndALivePriceForTheRestMakeOnePaymentAtTheBlendedRate() {
+        List<FxDeal> fit = book();
+        UUID priceId = UUID.randomUUID();
+        FxQuoteService.Command shown = new FxQuoteService.Command(CORP, ENTITY, "EUR/USD", Side.BUY, Instrument.SPOT, bd("100"),
+                null, null, null, null, true);
+        Price buy = new Price(bd("1.1"), bd("0"), bd("1.1"), bd("3"), bd("1.1003"), bd("110.03"), LocalDate.now());
+        when(stream.take(priceId)).thenReturn(new FxStreamService.Issued(shown, buy, buy, Instant.now().plusSeconds(5)));
+        FxQuoteRequest q = new FxQuoteRequest();
+        q.setId(UUID.randomUUID());
+        q.setStatus(QuoteStatus.QUOTED);
+        when(quotes.request(any(), eq(buy))).thenReturn(q);
+        FxDeal booked = small(Instrument.SPOT, LocalDate.now().plusDays(2), "100.00");
+        booked.setSellAmount(bd("110.03"));
+        booked.setRate(bd("1.1003"));
+        when(quotes.accept(q.getId(), true)).thenReturn(booked);
+
+        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("1000"), new FxPaymentService.Instruction(priceId, null,
+                List.of(new FxPaymentService.Draw(fit.get(0).getId(), bd("300")), new FxPaymentService.Draw(fit.get(1).getId(), bd("600"))), false));
+
+        assertThat(cv.parts()).hasSize(3);
+        assertThat(cv.debitAmount()).isEqualByComparingTo("1100.03");
+        assertThat(cv.rate()).isEqualByComparingTo("1.10003");
+        assertThat(cv.dealRefs()).isEqualTo(fit.get(0).getDealRef() + " +2");
+
+        Transaction t = new Transaction();
+        t.setReferenceNumber("PAY-2");
+        payments.settle(cv, t, usdAccount());
+        verify(settlement).paidByPayment(fit.get(0), bd("300"), "PAY-2", null, "VA-USD-1");
+        verify(settlement).paidByPayment(booked, booked.baseAmount(), "PAY-2", null, "VA-USD-1");
+    }
+
+    @Test
+    void anUnattendedPaymentTakesTheDealsThatFitBeforeTheMarket() {
+        book();
+
+        FxPaymentService.Conversion cv = payments.convert(usdAccount(), "EUR", bd("800"), FxPaymentService.Instruction.AT_MARKET);
+
+        assertThat(cv.parts()).extracting(FxPaymentService.Part::paid).usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(bd("300"), bd("500"));
+        verify(stream, never()).price(any());
+    }
+
+    @Test
+    void dealsThatDoNotCoverThePaymentNeedARateForTheRest() {
+        List<FxDeal> fit = book();
+
+        assertThatThrownBy(() -> payments.convert(usdAccount(), "EUR", bd("1000"),
+                FxPaymentService.Instruction.of(null, null, fit.get(0).getId(), null, false)))
+                .hasMessageContaining("lock a rate for the remaining 700");
+    }
+
+    @Test
+    void aBatchCoversItsTotalWithTheDealsThenOneLiveDealAndLinesDrawInOrder() {
+        List<FxDeal> fit = book();
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(fit.get(0)));
+        UUID priceId = UUID.randomUUID();
+        FxStreamService.Leg leg = new FxStreamService.Leg(bd("1.1003"), null, null, bd("220.06"));
+        when(stream.price(argThat(c -> c.amount().compareTo(bd("200")) == 0))).thenReturn(new FxStreamService.StreamPrice(true, null, "EUR/USD",
+                bd("200"), Instrument.SPOT, LocalDate.now(), priceId, leg, leg, 5, bd("1000000"), 31));
+        Price buy = new Price(bd("1.1"), bd("0"), bd("1.1"), bd("3"), bd("1.1003"), bd("220.06"), LocalDate.now());
+        when(stream.take(priceId)).thenReturn(new FxStreamService.Issued(null, buy, buy, Instant.now().plusSeconds(5)));
+        FxQuoteRequest q = new FxQuoteRequest();
+        q.setId(UUID.randomUUID());
+        q.setStatus(QuoteStatus.QUOTED);
+        when(quotes.request(argThat(c -> c.amount().compareTo(bd("200")) == 0 && c.forPayment()), eq(buy))).thenReturn(q);
+        FxDeal booked = small(Instrument.SPOT, LocalDate.now().plusDays(2), "200.00");
+        when(quotes.accept(q.getId(), true)).thenReturn(booked);
+
+        List<FxPaymentService.BatchFx> out = payments.prepareBatch(List.of(
+                new FxPaymentService.BatchRow(usdAccount(), "EUR", bd("200")),
+                new FxPaymentService.BatchRow(usdAccount(), "EUR", bd("300")),
+                new FxPaymentService.BatchRow(usdAccount(), "USD", bd("50"))));
+
+        assertThat(out.get(0).instruction().draws()).containsExactly(new FxPaymentService.Draw(fit.get(0).getId(), bd("200")));
+        assertThat(out.get(1).instruction().draws()).containsExactly(new FxPaymentService.Draw(fit.get(0).getId(), bd("100.00")),
+                new FxPaymentService.Draw(booked.getId(), bd("200.00")));
+        assertThat(out.get(2).instruction()).isEqualTo(FxPaymentService.Instruction.AT_MARKET);
+        verify(quotes).accept(q.getId(), true);
+    }
+
+    @Test
+    void aBatchRemainderAboveTheStreamingLimitHoldsTheLinesTheDealsCannotCover() {
+        List<FxDeal> fit = book();
+        when(deals.findByCorporateIdAndStatusIn(eq(CORP), any())).thenReturn(List.of(fit.get(0)));
+        when(stream.price(any())).thenReturn(new FxStreamService.StreamPrice(false, "Above 150 EUR in EUR/USD the desk prices on request",
+                "EUR/USD", bd("200"), Instrument.SPOT, null, null, null, null, 0, bd("150"), 31));
+
+        List<FxPaymentService.BatchFx> out = payments.prepareBatch(List.of(
+                new FxPaymentService.BatchRow(usdAccount(), "EUR", bd("200")),
+                new FxPaymentService.BatchRow(usdAccount(), "EUR", bd("300"))));
+
+        assertThat(out.get(0).instruction().draws()).hasSize(1);
+        assertThat(out.get(1).instruction()).isNull();
+        assertThat(out.get(1).held()).startsWith("Waiting for FX: after the deals that fit, EUR 200.00 of this batch is left to convert, and above 150 EUR");
+        verify(quotes, never()).accept(any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 }

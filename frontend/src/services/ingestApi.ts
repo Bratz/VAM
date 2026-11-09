@@ -39,6 +39,8 @@ export interface IngestRowCounts {
   processed: number;
   quarantined: number;
   failed: number;
+  /** Payment lines in another currency the corporate's FX deals could not cover; released with releaseFx. */
+  awaitingFx: number;
 }
 
 export interface IngestJobResponse {
@@ -63,7 +65,7 @@ export interface TimelineEventResponse {
 }
 
 // Mirrors RowStatus.java.
-export type RowStatus = 'STAGED' | 'READY' | 'QUARANTINED' | 'PROCESSED' | 'FAILED';
+export type RowStatus = 'STAGED' | 'READY' | 'QUARANTINED' | 'PROCESSED' | 'FAILED' | 'AWAITING_FX';
 
 export interface StagedRowResponse {
   sourceRowNumber: number;
@@ -99,6 +101,12 @@ export const ingestApi = {
 
   getJob: async (jobId: string): Promise<IngestJobResponse> => {
     const res = await apiClient.get<IngestJobResponse>(`/ingest/jobs/${jobId}`);
+    return res.data;
+  },
+
+  /** Pays the job's AWAITING_FX lines once treasury has booked FX for them; returns the updated job. */
+  releaseFx: async (jobId: string): Promise<IngestJobResponse> => {
+    const res = await apiClient.post<IngestJobResponse>(`/ingest/jobs/${jobId}/release-fx`);
     return res.data;
   },
 

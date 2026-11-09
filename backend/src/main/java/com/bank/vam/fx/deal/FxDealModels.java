@@ -148,12 +148,12 @@ public final class FxDealModels {
     public record SettlementView(UUID id, SettlementKind kind, LocalDate valueDate, String buyCurrency,
                                  BigDecimal buyAmount, String sellCurrency, BigDecimal sellAmount,
                                  SettlementStatus status, String reason, LocalDateTime settledAt,
-                                 String debitAccountLabel, String creditAccountLabel) {
+                                 String debitAccountLabel, String creditAccountLabel, String paymentRef, UUID paymentId) {
 
         static SettlementView of(FxSettlement s) {
             return new SettlementView(s.getId(), s.getKind(), s.getValueDate(), s.getBuyCurrency(), s.getBuyAmount(),
                     s.getSellCurrency(), s.getSellAmount(), s.getStatus(), s.getReason(), s.getSettledAt(),
-                    s.getDebitAccountLabel(), s.getCreditAccountLabel());
+                    s.getDebitAccountLabel(), s.getCreditAccountLabel(), s.getPaymentRef(), s.getPaymentId());
         }
     }
 

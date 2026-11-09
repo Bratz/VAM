@@ -37,14 +37,25 @@ public class FileIngestController {
     private final IngestJobRepository ingestJobRepository;
     private final TimelineEventRepository timelineEventRepository;
     private final StagedTransactionRepository stagedTransactionRepository;
+    private final com.bank.vam.service.fileingest.IngestFx ingestFx;
 
     public FileIngestController(IngestJobService ingestJobService, IngestJobRepository ingestJobRepository,
                                  TimelineEventRepository timelineEventRepository,
-                                 StagedTransactionRepository stagedTransactionRepository) {
+                                 StagedTransactionRepository stagedTransactionRepository,
+                                 com.bank.vam.service.fileingest.IngestFx ingestFx) {
         this.ingestJobService = ingestJobService;
         this.ingestJobRepository = ingestJobRepository;
         this.timelineEventRepository = timelineEventRepository;
         this.stagedTransactionRepository = stagedTransactionRepository;
+        this.ingestFx = ingestFx;
+    }
+
+    /** Pays the job's lines waiting for FX, once treasury has booked a deal for them; the others wait again, saying why. */
+    @PostMapping("/jobs/{id}/release-fx")
+    public ResponseEntity<IngestJobResponse> releaseFx(@PathVariable UUID id) {
+        ingestFx.release(id);
+        IngestJob job = ingestJobRepository.findById(id).orElseThrow(() -> new NoSuchElementException("No ingest job " + id));
+        return ResponseEntity.ok(IngestJobResponse.from(job, rowCountsFor(List.of(id)).get(id)));
     }
 
     /** Most recent uploads first, capped rather than paginated — this is an ops/support view,
@@ -80,7 +91,8 @@ public class FileIngestController {
                     total,
                     statuses.getOrDefault(RowStatus.PROCESSED, 0L),
                     statuses.getOrDefault(RowStatus.QUARANTINED, 0L),
-                    statuses.getOrDefault(RowStatus.FAILED, 0L)));
+                    statuses.getOrDefault(RowStatus.FAILED, 0L),
+                    statuses.getOrDefault(RowStatus.AWAITING_FX, 0L)));
         });
         return out;
     }

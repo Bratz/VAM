@@ -668,6 +668,7 @@ const PayNowConfirmModal: React.FC<PayNowConfirmModalProps> = ({
 
         {account && (
           <PaymentFxPanel
+            accountId={account.id}
             corporateId={account.corporateId}
             entityId={account.owningEntityId}
             accountCurrency={account.currencyCode}

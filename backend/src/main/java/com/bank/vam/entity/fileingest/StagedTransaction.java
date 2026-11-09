@@ -39,7 +39,7 @@ public class StagedTransaction {
     @Column(nullable = false)
     private RowStatus status = RowStatus.STAGED;
 
-    /** Populated only when status = QUARANTINED or FAILED. */
+    /** Populated only when status = QUARANTINED, FAILED or AWAITING_FX. */
     @Column(length = 2000)
     private String reason;
 
@@ -53,6 +53,10 @@ public class StagedTransaction {
 
     /** FK to whatever real entity got created once status = PROCESSED (a Transaction id, a Payable id, ...). */
     private UUID processedEntityId;
+
+    /** AWAITING_FX only: the transformed line as JSON, so it can be paid on release without the original file. */
+    @Column(columnDefinition = "text")
+    private String heldRow;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();

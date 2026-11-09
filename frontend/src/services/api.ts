@@ -532,6 +532,12 @@ export interface GroupedTransaction {
   currencyCode: string;
   isCredit: boolean;
 
+  // FX, when the payment was in another currency: what was paid, at what rate, through which deal(s)
+  instructedAmount?: number;
+  instructedCurrency?: string;
+  fxRate?: number;
+  fxDealRef?: string;
+
   // Balance changes on user's account
   balanceBefore: number;
   balanceAfter: number;
@@ -762,6 +768,8 @@ export interface PaymentPreviewResponse {
   fxPair?: string;
   fxDealRef?: string;
   fxIndicative?: boolean;
+  /** Each part of the conversion: a deal, the live rate, or a firm price. */
+  fxParts?: { source: 'DEAL' | 'LIVE' | 'FIRM'; dealRef?: string; paid: number; debit: number; rate: number }[];
   paymentFee: number;
   /** Missing when the payment cannot be converted; validationMessage says why. */
   totalDebit?: number;
@@ -836,7 +844,7 @@ export const transactionsApi = {
   previewTransfer: (data: { fromVaId: string; toVaId: string; amount: number }) =>
     apiClient.post<ApiResponse<TransferPreviewResponse>>('/transactions/transfer/preview', data).then(r => r.data),
 
-  previewPayment: (data: { fromVaId: string; amount: number; channel?: string; currency?: string; fxQuoteId?: string; fxDealId?: string }) =>
+  previewPayment: (data: { fromVaId: string; amount: number; channel?: string; currency?: string; fxQuoteId?: string; fxDeals?: { dealId: string; amount: number }[] }) =>
     apiClient.post<ApiResponse<PaymentPreviewResponse>>('/transactions/payment/preview', data).then(r => r.data),
 
   bulkTransfer: (data: BulkTransferRequest) =>
@@ -3074,7 +3082,7 @@ export const payablesApiPhase2 = {
   // Execute payment for an approved payable
   /** fx: how a payable in another currency than its account is converted (a locked rate or a booked deal). */
   executePayment: async (payableId: string, executedBy: string, paymentChannel?: string, paymentMethod?: string,
-                         fx?: { fxPriceId?: string; fxQuoteId?: string; fxDealId?: string } | null): Promise<any> => {
+                         fx?: { fxPriceId?: string; fxQuoteId?: string; fxDealId?: string; fxDeals?: { dealId: string; amount: number }[] } | null): Promise<any> => {
     const response = await apiClient.post<ApiResponse<any>>(`/payables/${payableId}/execute`, {
       payableId,
       executedBy,
@@ -7991,6 +7999,8 @@ export interface Iso20022OutwardPaymentRequest {
   fxPriceId?: string;
   fxQuoteId?: string;
   fxDealId?: string;
+  /** Deals to draw on first, with the amount each covers in the payment currency. */
+  fxDeals?: { dealId: string; amount: number }[];
 }
 
 interface Iso20022OutwardPaymentResponse {

@@ -96,6 +96,19 @@ class FxQuoteServiceTest {
     }
 
     @Test
+    void aWindowPricedAtItsStartStillRunsToTheEndDateAskedForAndIsChargedForIt() {
+        LocalDate start = LocalDate.of(2026, 11, 9);
+        LocalDate end = LocalDate.of(2026, 12, 9);
+        // the dealer prices this window at its start (the worse end for the client): pricedDate = start
+        FxQuoteRequest q = service.request(new FxQuoteService.Command(CORP, ENTITY, "EUR/USD", Side.BUY, Instrument.WINDOW, bd("100000"),
+                end, start, null, null));
+
+        assertThat(q.getValueDate()).isEqualTo(end);
+        assertThat(q.getWindowStart()).isEqualTo(start);
+        verify(limitService).charge(eq(Instrument.WINDOW), anyString(), any(), any(), eq(end), anyString());
+    }
+
+    @Test
     void aRequestWithinLimitIsQuotedFirmForTheConfiguredSeconds() {
         FxQuoteRequest q = service.request(command());
 

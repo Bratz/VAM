@@ -154,6 +154,9 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
     : { inForce: false, canAct: false, canDraw: false, canChangeAccounts: false };
   const accountOptions = (list: SettlementAccount[]) => list.map((a) => ({ value: a.id, label: a.label }));
   const base = deal?.pair.slice(0, 3) ?? '';
+  // Payment drawdowns get their own section; the settlement list keeps the rest so nothing shows twice.
+  const paymentRows = settlements.filter((s) => s.paymentRef);
+  const otherSettlements = settlements.filter((s) => !s.paymentRef);
 
   return (
     <Drawer
@@ -321,10 +324,33 @@ const FxDealDrawer: React.FC<{ deal: Deal | null; action?: DealAction | null; on
             </Section>
           )}
 
-          {settlements.length > 0 && (
+          {paymentRows.length > 0 && (
+            <Section title="Used by payments">
+              <p className="text-body-sm">
+                <span className="font-mono tabular-nums">{base} {fmt(paymentRows.reduce((sum, s) => sum + (s.buyCurrency === base ? s.buyAmount : s.sellAmount), 0))}</span> used by payments of{' '}
+                <span className="font-mono tabular-nums">{fmt(deal.baseAmount)}</span>;{' '}
+                <span className="font-mono tabular-nums">{fmt(deal.remainingAmount)}</span> left
+              </p>
+              <ul className="space-y-2">
+                {paymentRows.map((s) => (
+                  <li key={s.id} className="text-body-sm border border-edge-subtle rounded-md p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-caption">{s.paymentRef}</span>
+                      <span className="font-mono text-caption tabular-nums text-neutral-500 dark:text-neutral-400">{s.settledAt?.slice(0, 10) ?? s.valueDate}</span>
+                    </div>
+                    <p className="font-mono text-caption tabular-nums mt-1">
+                      Bought {s.buyCurrency} {fmt(s.buyAmount)}, debited {s.sellCurrency} {fmt(s.sellAmount)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
+
+          {otherSettlements.length > 0 && (
             <Section title="Settlement">
               <ul className="space-y-2">
-                {settlements.map((s) => (
+                {otherSettlements.map((s) => (
                   <li key={s.id} className="text-body-sm border border-edge-subtle rounded-md p-2">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">{s.kind === 'CLOSE_OUT' ? 'Close-out difference' : s.kind === 'DRAWDOWN' ? 'Drawdown' : 'Maturity'}, value {s.valueDate}</span>

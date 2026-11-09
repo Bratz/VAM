@@ -7,5 +7,7 @@ public enum RowStatus {
     READY,
     QUARANTINED,
     PROCESSED,
+    /** A payment in another currency the FX deals could not cover; paid once treasury books FX and releases it. */
+    AWAITING_FX,
     FAILED
 }

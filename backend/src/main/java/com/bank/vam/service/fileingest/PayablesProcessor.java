@@ -7,6 +7,7 @@ import com.bank.vam.dto.payables.PayablesDto.PaymentExecutionResponse;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.fileingest.RowStatus;
 import com.bank.vam.entity.fileingest.StagedTransaction;
+import com.bank.vam.fx.deal.FxPaymentService;
 import com.bank.vam.repository.fileingest.StagedTransactionRepository;
 import com.bank.vam.service.VirtualAccountService;
 import com.bank.vam.service.payables.PayablesService;
@@ -47,12 +48,14 @@ public class PayablesProcessor implements DomainProcessor {
     private final StagedTransactionRepository repository;
     private final VirtualAccountService virtualAccountService;
     private final PayablesService payablesService;
+    private final IngestFx ingestFx;
 
     public PayablesProcessor(StagedTransactionRepository repository, VirtualAccountService virtualAccountService,
-                              PayablesService payablesService) {
+                              PayablesService payablesService, IngestFx ingestFx) {
         this.repository = repository;
         this.virtualAccountService = virtualAccountService;
         this.payablesService = payablesService;
+        this.ingestFx = ingestFx;
     }
 
     @Override
@@ -61,10 +64,18 @@ public class PayablesProcessor implements DomainProcessor {
                 .collect(Collectors.toMap(TransformedRow::sourceRowNumber, Function.identity()));
 
         List<StagedTransaction> readyRows = repository.findByIngestJobIdAndStatus(ingestJobId, RowStatus.READY);
+        Map<UUID, FxPaymentService.BatchFx> fxPlan = ingestFx.plan(readyRows, byRowNumber);
         for (StagedTransaction staged : readyRows) {
             TransformedRow row = byRowNumber.get(staged.getSourceRowNumber());
+            FxPaymentService.BatchFx fx = ingestFx.of(fxPlan, staged);
+            if (fx.instruction() == null) {
+                // Held before the payable is created, so a release creates it once, with its FX.
+                ingestFx.hold(staged, row, fx.held());
+                repository.save(staged);
+                continue;
+            }
             try {
-                processOne(staged, row);
+                processOne(staged, row, fx.instruction());
             } catch (Exception e) {
                 fail(staged, DomainProcessor.failureReason(e));
             }
@@ -72,7 +83,7 @@ public class PayablesProcessor implements DomainProcessor {
         }
     }
 
-    private void processOne(StagedTransaction staged, TransformedRow row) {
+    private void processOne(StagedTransaction staged, TransformedRow row, FxPaymentService.Instruction fx) {
         VirtualAccount sourceVa = virtualAccountService.getByViban(row.viban());
 
         CreatePayableRequest createRequest = CreatePayableRequest.builder()
@@ -95,8 +106,9 @@ public class PayablesProcessor implements DomainProcessor {
                 .paymentChannel("BANK_TRANSFER")
                 .paymentMethod("WIRE")
                 .executedBy(ACTOR)
-                // No one is at the file to lock a rate: a payable in another currency takes the live price.
-                .fxAtMarket(true)
+                // No one is at the file to choose: the deals planned over the file, else the live price.
+                .fxDeals(fx.draws())
+                .fxAtMarket(fx.atMarket() ? Boolean.TRUE : null)
                 .build();
         PaymentExecutionResponse executed = payablesService.executePayment(executionRequest);
 

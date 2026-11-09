@@ -90,10 +90,12 @@ public class FxSettlementService {
 
     /**
      * Part or all of a deal paid out as a payment ({@link FxPaymentService}): settled now, through the payment, so
-     * nothing is posted to the settlement accounts. The rest of a forward still settles through them on its date.
+     * nothing is posted to the settlement accounts. The row carries the payment, so a deal's rows with one are its
+     * utilisation. What is left of a forward or spot still settles through the accounts on its value date, and the
+     * deal keeps its status; a window moves to PARTIALLY_DRAWN as with any drawdown.
      */
     @Transactional
-    public FxSettlement paidByPayment(FxDeal d, BigDecimal base, String paymentRef, String debitLabel) {
+    public FxSettlement paidByPayment(FxDeal d, BigDecimal base, String paymentRef, UUID paymentId, String debitLabel) {
         BigDecimal[] legs = legsFor(d, base);
         boolean whole = base.compareTo(d.baseAmount()) == 0;
         FxSettlement s = settlement(d, whole ? SettlementKind.MATURITY : SettlementKind.DRAWDOWN, LocalDate.now(), legs[0], legs[1]);
@@ -101,13 +103,16 @@ public class FxSettlementService {
         s.setSettledAt(LocalDateTime.now());
         s.setDebitAccountLabel(debitLabel);
         s.setCreditAccountLabel("Paid out as payment " + paymentRef);
+        s.setPaymentRef(paymentRef);
+        s.setPaymentId(paymentId);
         d.setDrawnAmount(d.getDrawnAmount().add(base));
         log.note(d, "PAID_BY_PAYMENT", d.getBuyCurrency() + " " + legs[0].toPlainString() + " paid out as payment " + paymentRef
-                + ", " + d.getSellCurrency() + " " + legs[1].toPlainString() + " debited from " + debitLabel);
+                + ", " + d.getSellCurrency() + " " + legs[1].toPlainString() + " debited from " + debitLabel
+                + (d.remainingBase().signum() > 0 ? "; " + d.remainingBase().toPlainString() + " " + d.baseCurrency() + " left" : ""));
         if (d.remainingBase().signum() == 0) {
             d.setSettledAt(LocalDateTime.now());
             dealService.transition(d, DealStatus.SETTLED, "Paid out as payment " + paymentRef);
-        } else if (d.getStatus() == DealStatus.ACTIVE) {
+        } else if (d.getInstrument() == Instrument.WINDOW && d.getStatus() == DealStatus.ACTIVE) {
             dealService.transition(d, DealStatus.PARTIALLY_DRAWN, "Part paid out as payment " + paymentRef);
         }
         return settlements.save(s);

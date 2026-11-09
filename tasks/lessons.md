@@ -536,3 +536,9 @@ for "credit limit" because FX felt like a separate domain.
   without FX fields were given "convert at market", and `convert` refused any FX instruction on a payment in the
   account's own currency, so every ordinary bulk row and file payable failed. E's live run only sent FX rows. When a
   path adds a default for one kind of row, the live run includes a plain row of the other kind.
+
+- **A date used to price a contract is not the contract's date.** The dealer prices a window forward at its worse
+  end for the client and returns that as its "priced date"; the quote copied it into the deal's value date, so a
+  window priced at its start was booked ending the day it opened. Nothing failed: windows simply could not be drawn
+  after their first day. Found only when a live check sorted deals by value date. When a pricing result carries a
+  date, check which date the contract needs before storing it.

@@ -150,7 +150,19 @@ const FxDealsPage: React.FC = () => {
     { key: 'dealRef', header: 'Deal', render: (_, d) => <span className="font-mono text-caption">{d.dealRef}</span> },
     { key: 'entityName', header: 'Entity', render: (_, d) => <span className="text-body-sm">{d.entityName ?? '-'}</span> },
     { key: 'pair', header: 'Trade', render: (_, d) => <span className="font-medium">{d.side === 'BUY' ? 'Buy' : 'Sell'} {d.pair} <span className="text-neutral-500 dark:text-neutral-400">{d.instrument.toLowerCase()}</span></span> },
-    { key: 'buyAmount', header: 'You buy', align: 'right', dropOrder: 2, render: (_, d) => <span className="font-mono tabular-nums">{d.buyCurrency} {fmt(d.buyAmount)}</span> },
+    {
+      // Utilisation sits under the amount: the blotter has no room for its own column at desktop width.
+      key: 'buyAmount', header: 'You buy', align: 'right', dropOrder: 2, render: (_, d) => (
+        <span className="font-mono tabular-nums">
+          {d.buyCurrency} {fmt(d.buyAmount)}
+          {d.drawnAmount > 0 && (
+            <span className="block text-caption font-sans text-neutral-500 dark:text-neutral-400">
+              {d.pair.slice(0, 3)} {fmt(d.drawnAmount)} used{d.baseAmount > 0 ? ` · ${Math.round((d.drawnAmount / d.baseAmount) * 100)}%` : ''}
+            </span>
+          )}
+        </span>
+      ),
+    },
     { key: 'sellAmount', header: 'You sell', align: 'right', dropOrder: 3, render: (_, d) => <span className="font-mono tabular-nums">{d.sellCurrency} {fmt(d.sellAmount)}</span> },
     { key: 'rate', header: 'Rate', align: 'right', dropOrder: 1, render: (_, d) => <span className="font-mono tabular-nums">{fmtRate(d.rate)}</span> },
     { key: 'valueDate', header: 'Value date', render: (_, d) => <span className="font-mono tabular-nums">{d.windowStart ? `${d.windowStart} to ${d.valueDate}` : d.valueDate}</span> },

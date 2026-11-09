@@ -401,6 +401,8 @@ public class TransactionDto {
         private UUID fxPriceId;
         private UUID fxQuoteId;
         private UUID fxDealId;
+        /** Deals to draw on first, in order, each with the amount it covers in the payment currency. */
+        private java.util.List<com.bank.vam.fx.deal.FxPaymentService.Draw> fxDeals;
         private Boolean fxAtMarket;
     }
 
@@ -1113,6 +1115,11 @@ public class TransactionDto {
         private String currency;
         private UUID fxQuoteId;
         private UUID fxDealId;
+        /** Deals to draw on first, in order, each with the amount it covers in the payment currency. */
+        private java.util.List<com.bank.vam.fx.deal.FxPaymentService.Draw> fxDeals;
+    }
+
+    public record FxPartView(String source, String dealRef, BigDecimal paid, BigDecimal debit, BigDecimal rate) {
     }
 
     @Data
@@ -1148,6 +1155,8 @@ public class TransactionDto {
         private String fxDealRef;
         /** The live price, which moves until the payment is sent; false for a booked deal or a firm price. */
         private Boolean fxIndicative;
+        /** Each part of the conversion: a deal (its ref), the live rate or a firm price; what it pays and debits. */
+        private java.util.List<FxPartView> fxParts;
 
         // Fees
         private BigDecimal paymentFee;
@@ -1214,6 +1223,12 @@ public class TransactionDto {
         private BigDecimal feeAmount;           // Total fees
         private String currencyCode;
         private boolean isCredit;               // true = money in, false = money out
+
+        // FX, when the payment was in another currency: what was paid, at what rate, through which deal(s)
+        private BigDecimal instructedAmount;
+        private String instructedCurrency;
+        private BigDecimal fxRate;
+        private String fxDealRef;
 
         // Balance changes on user's account
         private BigDecimal balanceBefore;

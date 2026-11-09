@@ -351,7 +351,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
             // In another currency the debit is priced: by the deal or firm price chosen, else live
             currency: formData.currency,
             fxQuoteId: paymentFx?.fxQuoteId,
-            fxDealId: paymentFx?.fxDealId,
+            fxDeals: paymentFx?.fxDeals,
           });
           setFeePreview(result.data || result);
         }
@@ -372,7 +372,7 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
     const timeoutId = setTimeout(fetchFeePreview, 500);
     return () => clearTimeout(timeoutId);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the account ids on purpose: the objects get new identities on every account-list refresh, which would re-fire this debounced preview call without the quote having changed.
-  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName, formData.currency, paymentFx?.fxQuoteId, paymentFx?.fxDealId]);
+  }, [sourceAccount?.id, targetAccount?.id, amount, transferType, formData.creditorName, formData.currency, paymentFx?.fxQuoteId, JSON.stringify(paymentFx?.fxDeals ?? [])]);
 
   // Get transfer type display info
   const getTypeInfo = () => {
@@ -653,12 +653,15 @@ const TransferSummary: React.FC<TransferSummaryProps> = ({
                         {formatCurrency(feePreview.instructedAmount ?? 0, feePreview.instructedCurrency)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-caption">
-                      <span className="text-neutral-500 dark:text-neutral-400">
-                        {feePreview.fxDealRef ? `Deal ${feePreview.fxDealRef}` : feePreview.fxIndicative ? 'Live rate, moves until sent' : 'Firm price'}
-                      </span>
-                      <span className="text-neutral-700 tabular-nums dark:text-neutral-200">{feePreview.fxPair} {feePreview.fxRate}</span>
-                    </div>
+                    {(feePreview.fxParts ?? []).map((p, i) => (
+                      <div key={i} className="flex justify-between gap-2 text-caption">
+                        <span className="text-neutral-500 dark:text-neutral-400">
+                          {p.source === 'DEAL' ? `Deal ${p.dealRef}` : p.source === 'LIVE' ? 'Live rate, moves until sent' : 'Firm price'}
+                          {(feePreview.fxParts?.length ?? 0) > 1 && <> · {formatCurrency(p.paid, feePreview.instructedCurrency)}</>}
+                        </span>
+                        <span className="text-neutral-700 tabular-nums dark:text-neutral-200">{p.rate}</span>
+                      </div>
+                    ))}
                     <div className="flex justify-between text-body-sm">
                       <span className="text-neutral-600 dark:text-neutral-300">Converted</span>
                       <span className="text-neutral-700 font-medium dark:text-neutral-200">
@@ -3188,6 +3191,7 @@ export default function TransfersPage() {
                   return (
                     <div className="mt-4">
                       <PaymentFxPanel
+                        accountId={payingAccount?.id}
                         corporateId={payingAccount?.corporateId ?? currentCorporateId}
                         entityId={payingAccount?.owningEntityId}
                         accountCurrency={payingAccount?.currencyCode}

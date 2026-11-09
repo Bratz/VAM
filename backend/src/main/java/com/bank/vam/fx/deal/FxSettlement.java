@@ -75,4 +75,11 @@ public class FxSettlement extends BaseEntity {
 
     @Column(name = "settled_at")
     private LocalDateTime settledAt;
+
+    /** The payment that took this part of the deal ({@code FxPaymentService}); null for settlement through the accounts. */
+    @Column(name = "payment_ref", length = 60)
+    private String paymentRef;
+
+    @Column(name = "payment_id")
+    private UUID paymentId;
 }

@@ -740,7 +740,7 @@ public class TransactionService {
         FxPaymentService.Conversion fx;
         try {
             fx = fxPayments.preview(fromVa, request.getCurrency(), request.getAmount(),
-                    new FxPaymentService.Instruction(null, request.getFxQuoteId(), request.getFxDealId(), false));
+                    FxPaymentService.Instruction.of(null, request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), false));
         } catch (BusinessException e) {
             return TransactionDto.PaymentPreviewResponse.builder()
                 .fromVaId(fromVa.getId()).fromVaNumber(fromVa.getVaNumber()).fromVaName(fromVa.getVaName())
@@ -782,9 +782,11 @@ public class TransactionService {
             .instructedAmount(fx == null ? null : fx.instructedAmount())
             .instructedCurrency(fx == null ? null : fx.instructedCurrency())
             .fxRate(fx == null ? null : fx.rate())
-            .fxPair(fx == null ? null : fx.deal() != null ? fx.deal().getPair() : fx.instructedCurrency() + "/" + fx.debitCurrency())
-            .fxDealRef(fx == null || fx.deal() == null ? null : fx.deal().getDealRef())
-            .fxIndicative(fx == null ? null : fx.deal() == null && request.getFxQuoteId() == null)
+            .fxPair(fx == null ? null : fx.pair())
+            .fxDealRef(fx == null ? null : fx.dealRefs())
+            .fxIndicative(fx == null ? null : fx.indicative())
+            .fxParts(fx == null ? null : fx.parts().stream().map(p -> new TransactionDto.FxPartView(p.source().name(),
+                p.deal() == null ? null : p.deal().getDealRef(), p.paid(), p.debit(), p.rate())).toList())
             .paymentFee(paymentFee)
             .totalDebit(totalDebit)
             .fundsAvailable(fundsCheck.isApproved())
@@ -828,8 +830,8 @@ public class TransactionService {
         // A payment in another currency is converted first (refused without FX); from here on the amount is the
         // debit in the account's currency. Callers that converted already (ISO 20022, payables) send no currency.
         FxPaymentService.Conversion fx = fxPayments.convert(fromVa, request.getCurrency(), request.getAmount(),
-                new FxPaymentService.Instruction(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
-                        Boolean.TRUE.equals(request.getFxAtMarket())));
+                FxPaymentService.Instruction.of(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
+                        request.getFxDeals(), request.getFxAtMarket()));
         if (fx != null) {
             request.setAmount(fx.debitAmount());
         }
@@ -3338,6 +3340,8 @@ public class TransactionService {
             buildAccountingEntries(allLegs, includeInternal);
 
         int visibleEntryCount = accountingEntries.size();
+        // The leg the payment's FX was noted on (FxPaymentService.settle)
+        Transaction fxLeg = allLegs.stream().filter(t -> t.getInstructedCurrency() != null).findFirst().orElse(null);
 
         return TransactionDto.GroupedTransactionResponse.builder()
             .correlationId(correlationId)
@@ -3353,6 +3357,10 @@ public class TransactionService {
             .feeAmount(feeAmount)
             .currencyCode(primaryTxn.getCurrencyCode())
             .isCredit(isCredit)
+            .instructedAmount(fxLeg == null ? null : fxLeg.getInstructedAmount())
+            .instructedCurrency(fxLeg == null ? null : fxLeg.getInstructedCurrency())
+            .fxRate(fxLeg == null ? null : fxLeg.getFxRate())
+            .fxDealRef(fxLeg == null ? null : fxLeg.getFxDealRef())
             .balanceBefore(primaryTxn.getBalanceBefore())
             .balanceAfter(primaryTxn.getBalanceAfter())
             .counterpartyName(counterpartyName)

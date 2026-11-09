@@ -186,6 +186,8 @@ public class Iso20022PaymentDto {
         private UUID fxPriceId;
         private UUID fxQuoteId;
         private UUID fxDealId;
+        /** Deals to draw on first, in order, each with the amount it covers in the payment currency. */
+        private java.util.List<com.bank.vam.fx.deal.FxPaymentService.Draw> fxDeals;
         private Boolean fxAtMarket;
     }
 
@@ -371,6 +373,8 @@ public class Iso20022PaymentDto {
         private UUID fxPriceId;
         private UUID fxQuoteId;
         private UUID fxDealId;
+        /** Deals to draw on first, in order, each with the amount it covers in the payment currency. */
+        private java.util.List<com.bank.vam.fx.deal.FxPaymentService.Draw> fxDeals;
         private Boolean fxAtMarket;
     }
 

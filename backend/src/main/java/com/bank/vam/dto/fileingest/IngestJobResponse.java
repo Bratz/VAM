@@ -31,8 +31,8 @@ public record IngestJobResponse(
         RowCounts rows
 ) {
     /** {@code total} is every staged row, so STAGED/READY rows in flight are total - the rest. */
-    public record RowCounts(long total, long processed, long quarantined, long failed) {
-        public static final RowCounts NONE = new RowCounts(0, 0, 0, 0);
+    public record RowCounts(long total, long processed, long quarantined, long failed, long awaitingFx) {
+        public static final RowCounts NONE = new RowCounts(0, 0, 0, 0, 0);
 
         /** True once the pipeline has finished and not one row made it through. */
         public boolean nothingPosted() {

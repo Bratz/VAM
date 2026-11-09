@@ -102,9 +102,13 @@ public class FxQuoteService {
         Price price = streamed != null ? streamed
                 : dealer.price(c.pair(), c.side(), c.instrument(), q.getAmount(), c.valueDate(), c.windowStart());
 
+        // A window is priced at its worse end for the client (SimulatedDealer), which can be its start; it still runs
+        // to the end date asked for, and is charged for that tenor. Taking the pricing date here once shrank such a
+        // window to the day it opened.
+        LocalDate settles = c.instrument() == Instrument.WINDOW ? c.valueDate() : price.pricedDate();
         FxLimitService.Line line = limitService.line(c.corporateId());
         BigDecimal charge = limitService.charge(c.instrument(), q.baseCurrency(), q.getAmount(), LocalDate.now(),
-                price.pricedDate(), line.currency());
+                settles, line.currency());
         String refusal = limitService.refusal(c.corporateId(), c.entityId(), charge);
         q.setForPayment(c.forPayment());
         if (refusal == null && !c.forPayment()) {
@@ -127,7 +131,7 @@ public class FxQuoteService {
             return q;
         }
 
-        q.setValueDate(price.pricedDate());
+        q.setValueDate(settles);
         q.setMidRate(price.spotMid());
         q.setForwardPoints(price.forwardPoints());
         q.setSpreadBps(price.spreadBps());

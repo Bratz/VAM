@@ -1800,6 +1800,12 @@ const TransactionsPage: React.FC = () => {
               Gross: {formatCurrency(t.grossAmount, t.currencyCode)} | Fee: {formatCurrency(t.feeAmount, t.currencyCode)}
             </p>
           )}
+          {t.instructedCurrency && t.instructedAmount != null && (
+            <p className="caption tabular-nums">
+              Paid {formatCurrency(t.instructedAmount, t.instructedCurrency)} at {t.fxRate}
+              {t.fxDealRef && <> · <span className="font-mono">{t.fxDealRef}</span></>}
+            </p>
+          )}
         </div>
       ),
     },

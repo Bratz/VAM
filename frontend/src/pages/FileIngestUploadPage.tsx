@@ -46,6 +46,7 @@ import { Card, CardHeader, Button, Badge, DataTable } from '../components/ui';
 import { Stepper } from '../components/ui/enhanced';
 import { ingestApi, IngestDomain, IngestJobResponse, IngestStage, RowStatus, StagedRowResponse, TimelineEventResponse } from '../services/ingestApi';
 import { formatFileSize } from '../utils';
+import { useNavigation } from '../hooks/useNavigation';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -278,6 +279,7 @@ const ROW_STATUS_BADGE: Record<RowStatus, { variant: 'success' | 'error' | 'warn
   QUARANTINED: { variant: 'warning', label: 'Quarantined' },
   READY: { variant: 'neutral', label: 'Ready' },
   STAGED: { variant: 'neutral', label: 'Staged' },
+  AWAITING_FX: { variant: 'warning', label: 'Waiting for FX' },
 };
 
 /** Rows only exist once staging has actually happened — fetching earlier would just 404/empty. */
@@ -302,11 +304,12 @@ function jobOutcome(job: IngestJobResponse): JobOutcome {
   if (job.stage === 'BLOCKED') return { kind: 'blocked', variant: 'error', label: 'Blocked' };
   if (job.stage !== 'DONE') return { kind: 'running', variant: 'info', label: STAGE_LABELS[job.stage] };
 
-  const { total, processed, failed, quarantined } = job.rows ?? { total: 0, processed: 0, failed: 0, quarantined: 0 };
+  const { total, processed, failed, quarantined, awaitingFx = 0 } = job.rows ?? { total: 0, processed: 0, failed: 0, quarantined: 0, awaitingFx: 0 };
   // A job with no rows at all is a pipeline that ran on an empty file; nothing failed, so "Done".
   if (total === 0) return { kind: 'done', variant: 'success', label: 'Done' };
-  if (processed === 0) return { kind: 'nothing', variant: 'error', label: 'Nothing posted' };
-  if (failed + quarantined > 0) {
+  // Lines waiting for FX can still be released, so a job holding them is partial, not "Nothing posted".
+  if (processed === 0 && awaitingFx === 0) return { kind: 'nothing', variant: 'error', label: 'Nothing posted' };
+  if (failed + quarantined + awaitingFx > 0) {
     return { kind: 'partial', variant: 'warning', label: `${processed} of ${total} posted` };
   }
   return { kind: 'done', variant: 'success', label: 'Done' };
@@ -327,6 +330,9 @@ const FileIngestUploadPage: React.FC = () => {
   const [rows, setRows] = useState<StagedRowResponse[]>([]);
   const [history, setHistory] = useState<IngestJobResponse[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const [releasing, setReleasing] = useState(false);
+  const [releaseNote, setReleaseNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const { navigate } = useNavigation();
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stopPolling = () => {
@@ -424,7 +430,29 @@ const FileIngestUploadPage: React.FC = () => {
     }
   };
 
+  const handleReleaseFx = async () => {
+    if (!job) return;
+    setReleasing(true);
+    setReleaseNote(null);
+    try {
+      const updated = await ingestApi.releaseFx(job.id);
+      setJob(updated);
+      setRows(await ingestApi.getRows(updated.id));
+      const left = updated.rows?.awaitingFx ?? 0;
+      setReleaseNote({
+        ok: left === 0,
+        text: `${updated.rows?.processed ?? 0} of ${updated.rows?.total ?? 0} posted.${left ? ` ${left} line(s) still waiting for FX.` : ''}`,
+      });
+    } catch (err) {
+      const e = err as { response?: { data?: { message?: string } }; message?: string };
+      setReleaseNote({ ok: false, text: e?.response?.data?.message || e?.message || 'Release failed' });
+    } finally {
+      setReleasing(false);
+    }
+  };
+
   const handleReset = () => {
+    setReleaseNote(null);
     stopPolling();
     setJob(null);
     setTimeline([]);
@@ -730,7 +758,7 @@ const FileIngestUploadPage: React.FC = () => {
           </Card>
 
           {doneSummary && (
-            <div className="grid grid-cols-4 gap-3">
+            <div className={`grid ${doneSummary.awaitingFx > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-3`}>
               <Card padding="sm" className="text-center">
                 <p className="caption">Total rows</p>
                 <p className="text-heading-sm font-semibold text-primary-900 dark:text-neutral-50 mt-0.5">{doneSummary.total}</p>
@@ -750,7 +778,31 @@ const FileIngestUploadPage: React.FC = () => {
                 <p className="text-heading-sm font-semibold text-error-700 dark:text-error-300 mt-0.5">{doneSummary.failed}</p>
                 <p className="caption">Failed</p>
               </Card>
+              {doneSummary.awaitingFx > 0 && (
+                <Card padding="sm" className="text-center">
+                  <Clock className="w-4 h-4 text-warning-500 dark:text-warning-300 mx-auto" />
+                  <p className="text-heading-sm font-semibold text-warning-700 dark:text-warning-300 mt-0.5">{doneSummary.awaitingFx}</p>
+                  <p className="caption">Waiting for FX</p>
+                </Card>
+              )}
             </div>
+          )}
+
+          {(job.rows?.awaitingFx ?? 0) > 0 && (
+            <div className="p-3 rounded-lg bg-warning-50 dark:bg-warning-500/10 border border-warning-200 dark:border-warning-500/30 flex items-start gap-2">
+              <Clock className="w-4 h-4 text-warning-600 dark:text-warning-300 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-body-sm text-warning-800 dark:text-warning-300">
+                  {job.rows.awaitingFx} line(s) are waiting for FX. Book a deal for them on{' '}
+                  <button type="button" onClick={() => navigate('fx-deals')} className="font-medium underline hover:no-underline">FX Deals</button>{' '}
+                  (or get a firm price), then release them.
+                </p>
+                <Button size="sm" variant="outline" className="mt-2" loading={releasing} onClick={handleReleaseFx}>Release lines</Button>
+              </div>
+            </div>
+          )}
+          {releaseNote && (
+            <p className={`text-body-sm ${releaseNote.ok ? 'text-success-700 dark:text-success-300' : 'text-warning-700 dark:text-warning-300'}`}>{releaseNote.text}</p>
           )}
 
           {rows.length > 0 && (

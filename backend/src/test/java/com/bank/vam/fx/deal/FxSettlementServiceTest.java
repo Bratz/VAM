@@ -305,4 +305,22 @@ class FxSettlementServiceTest {
         ArgumentCaptor<FxSettlement> none = ArgumentCaptor.forClass(FxSettlement.class);
         verify(settlements, never()).save(none.capture());
     }
+
+    @Test
+    void aPaymentTakingPartOfAForwardRecordsItsUseAndLeavesTheRestToSettleOnItsDate() {
+        FxDeal forward = DealFixtures.deal(Side.BUY, Instrument.FORWARD, DealStatus.ACTIVE, DUE);
+        UUID payment = UUID.randomUUID();
+
+        FxSettlement s = service.paidByPayment(forward, new BigDecimal("30000.00"), "PAY-7", payment, "VA-USD-1");
+
+        assertThat(s.getPaymentRef()).isEqualTo("PAY-7");
+        assertThat(s.getPaymentId()).isEqualTo(payment);
+        assertThat(s.getStatus()).isEqualTo(SettlementStatus.SETTLED);
+        assertThat(forward.getStatus()).isEqualTo(DealStatus.ACTIVE);
+        assertThat(forward.remainingBase()).isEqualByComparingTo("70000.00");
+
+        FxDeal window = DealFixtures.deal(Side.BUY, Instrument.WINDOW, DealStatus.ACTIVE, DUE);
+        service.paidByPayment(window, new BigDecimal("30000.00"), "PAY-8", UUID.randomUUID(), "VA-USD-1");
+        assertThat(window.getStatus()).isEqualTo(DealStatus.PARTIALLY_DRAWN);
+    }
 }

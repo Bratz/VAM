@@ -657,8 +657,8 @@ public class PayablesService {
         // A payable in another currency than its account is converted first (a rate locked on screen, a booked deal,
         // or for files the live price); the legs then debit the converted amount in the account's currency.
         FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, payable.getCurrencyCode(), payable.getNetAmount(),
-            new FxPaymentService.Instruction(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
-                Boolean.TRUE.equals(request.getFxAtMarket())));
+            FxPaymentService.Instruction.of(request.getFxPriceId(), request.getFxQuoteId(), request.getFxDealId(),
+                request.getFxDeals(), request.getFxAtMarket()));
         BigDecimal debit = fx == null ? payable.getNetAmount() : fx.debitAmount();
 
         // 2. Execute payment via TransactionService

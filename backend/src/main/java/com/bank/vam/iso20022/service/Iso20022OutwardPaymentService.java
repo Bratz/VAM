@@ -108,8 +108,8 @@ public class Iso20022OutwardPaymentService {
 
             // A payment in another currency is converted first; the legs below then move the debit amount, in the
             // account's currency. The request's amount goes back to the instructed one for the pain.001.
-            fx = fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), fxOf(request.getFxPriceId(),
-                    request.getFxQuoteId(), request.getFxDealId(), request.getFxAtMarket()));
+            fx = fxPayments.convert(sourceVa, request.getCurrency(), request.getAmount(), FxPaymentService.Instruction.of(request.getFxPriceId(),
+                    request.getFxQuoteId(), request.getFxDealId(), request.getFxDeals(), request.getFxAtMarket()));
             if (fx != null) {
                 request.setAmount(fx.debitAmount());
             }
@@ -172,10 +172,6 @@ public class Iso20022OutwardPaymentService {
             TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             return buildErrorResponse(request, startTime, "TECH", "Technical error: " + e.getMessage());
         }
-    }
-
-    private static FxPaymentService.Instruction fxOf(UUID priceId, UUID quoteId, UUID dealId, Boolean atMarket) {
-        return new FxPaymentService.Instruction(priceId, quoteId, dealId, Boolean.TRUE.equals(atMarket));
     }
 
     /**
@@ -354,9 +350,31 @@ public class Iso20022OutwardPaymentService {
             final VirtualAccount payer = treasurySettlementVa;
             TransactionTemplate rowTx = new TransactionTemplate(transactionManager);
             rowTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-            for (PaymentInstruction instruction : request.getInstructions()) {
+            // FX for the batch first, committed before any row: per currency, the deals that fit cover the batch's
+            // total, one deal is booked for what they leave (within the streaming limit), and rows draw in order.
+            List<PaymentInstruction> lines = request.getInstructions();
+            List<FxPaymentService.BatchFx> batchFx = rowTx.execute(status -> fxPayments.prepareBatch(lines.stream()
+                    .map(l -> new FxPaymentService.BatchRow(sourceVa, l.getCurrency(), ownFx(l) ? null : l.getAmount())).toList()));
+            for (int n = 0; n < lines.size(); n++) {
+                PaymentInstruction instruction = lines.get(n);
+                FxPaymentService.BatchFx planned = batchFx.get(n);
+                if (!ownFx(instruction) && planned.instruction() == null) {
+                    failedCount++;
+                    results.add(PaymentInstructionResult.builder()
+                            .instructionId(instruction.getInstructionId())
+                            .endToEndId(instruction.getEndToEndId())
+                            .success(false)
+                            .errorCode("AWAITING_FX")
+                            .errorMessage(planned.held())
+                            .build());
+                    continue;
+                }
+                FxPaymentService.Instruction fxFor = ownFx(instruction)
+                        ? FxPaymentService.Instruction.of(instruction.getFxPriceId(), instruction.getFxQuoteId(), instruction.getFxDealId(),
+                                instruction.getFxDeals(), instruction.getFxAtMarket())
+                        : planned.instruction();
                 try {
-                    Paid paid = rowTx.execute(status -> payRow(request, instruction, sourceVa, isIhbAccount, payer));
+                    Paid paid = rowTx.execute(status -> payRow(request, instruction, sourceVa, isIhbAccount, payer, fxFor));
                     Transaction txn = paid.txn();
                     BigDecimal debit = paid.debit();
                     transactions.add(txn);
@@ -421,16 +439,16 @@ public class Iso20022OutwardPaymentService {
     private record Paid(Transaction txn, BigDecimal debit) {
     }
 
+    /** A row naming its own FX keeps it; the others take the batch's. */
+    private static boolean ownFx(PaymentInstruction l) {
+        return l.getFxPriceId() != null || l.getFxQuoteId() != null || l.getFxDealId() != null
+                || (l.getFxDeals() != null && !l.getFxDeals().isEmpty()) || l.getFxAtMarket() != null;
+    }
+
     /** One bulk instruction: converted where its currency is not the account's, then paid. */
     private Paid payRow(BulkPaymentRequest request, PaymentInstruction instruction, VirtualAccount sourceVa,
-                        boolean isIhbAccount, VirtualAccount treasurySettlementVa) {
-        // A bulk file has no one to click a price: an instruction in another currency takes its own FX
-        // fields, else the live price within the streaming limits.
-        boolean anyFx = instruction.getFxPriceId() != null || instruction.getFxQuoteId() != null
-                || instruction.getFxDealId() != null || instruction.getFxAtMarket() != null;
-        FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), anyFx
-                ? fxOf(instruction.getFxPriceId(), instruction.getFxQuoteId(), instruction.getFxDealId(), instruction.getFxAtMarket())
-                : FxPaymentService.Instruction.AT_MARKET);
+                        boolean isIhbAccount, VirtualAccount treasurySettlementVa, FxPaymentService.Instruction fxFor) {
+        FxPaymentService.Conversion fx = fxPayments.convert(sourceVa, instruction.getCurrency(), instruction.getAmount(), fxFor);
         BigDecimal debit = fx == null ? instruction.getAmount() : fx.debitAmount();
         Transaction txn;
 
