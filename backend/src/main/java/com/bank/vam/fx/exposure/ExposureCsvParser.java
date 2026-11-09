@@ -15,7 +15,7 @@ import java.util.UUID;
  * Reads the upload: {@code kind,currency,amount,valueDate[,reference[,description]]}. The whole
  * file is rejected if any row is bad, so a corporate never ends up with half a forecast loaded.
  */
-final class ExposureCsvParser {
+public final class ExposureCsvParser {
 
     static final int MAX_ROWS = 5000;
     private static final int MAX_ERRORS = 20;
@@ -116,7 +116,7 @@ final class ExposureCsvParser {
     }
 
     /** Comma-separated with double-quoted fields and "" as an escaped quote. */
-    static List<String> split(String line) {
+    public static List<String> split(String line) {
         List<String> out = new ArrayList<>();
         StringBuilder cur = new StringBuilder();
         boolean quoted = false;

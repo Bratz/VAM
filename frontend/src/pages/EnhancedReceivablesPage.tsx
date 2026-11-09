@@ -18,6 +18,8 @@ import { Search, Download, RefreshCw, Clock, ArrowDownLeft, FileText, Eye, X, Al
 import { Card, Button, Badge, Input, Select, StatusIconBadge, DataTable, StatTile, Checkbox } from '../components/ui';
 import { Modal } from '../components/ui/enhanced';
 import { NettingCyclePickerModal } from '../components/treasury/NettingCyclePickerModal';
+import { MandatesTab } from '../components/collections/MandatesTab';
+import { CollectionPlanModal } from '../components/collections/CollectionPlanModal';
 import { formatCurrency, formatDate, cn } from '../utils';
 import {
   receivablesApi,
@@ -584,7 +586,8 @@ const EnhancedReceivablesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history'>('invoices');
+  const [activeTab, setActiveTab] = useState<'invoices' | 'intercompany' | 'pending-netting' | 'vibans' | 'cobo-history' | 'mandates'>('invoices');
+  const [planIds, setPlanIds] = useState<string[] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [, setProcessing] = useState(false);
   
@@ -1095,6 +1098,7 @@ const EnhancedReceivablesPage: React.FC = () => {
     { id: 'pending-netting' as const, label: 'Pending Netting', count: pendingNettingInvoices.length },
     { id: 'vibans' as const, label: 'VIBANs', count: vibans.length },
     { id: 'cobo-history' as const, label: 'COBO History', count: coboHistoryInvoices.length },
+    { id: 'mandates' as const, label: 'Mandates', count: undefined },
   ];
 
   return (
@@ -1115,6 +1119,11 @@ const EnhancedReceivablesPage: React.FC = () => {
             leftIcon={<ArrowDownLeft className="w-4 h-4" />}
           >
             Request COBO ({selectedIds.size})
+          </Button>
+        )}
+        {selectedIds.size > 0 && selectedCorporateId && (
+          <Button variant="outline" onClick={() => setPlanIds(Array.from(selectedIds))}>
+            Plan collection ({selectedIds.size})
           </Button>
         )}
         <Button variant="outline" onClick={fetchData} leftIcon={<RefreshCw className="w-4 h-4" />}>
@@ -1270,12 +1279,14 @@ const EnhancedReceivablesPage: React.FC = () => {
                 )}
               >
                 {tab.label}
+                {tab.count !== undefined && (
                 <span className={cn(
                   'ml-2 px-2 py-0.5 text-caption rounded-full transition-colors',
                   activeTab === tab.id ? 'bg-primary-100 text-primary-700 dark:bg-primary-700 dark:text-neutral-200' : 'bg-surface-muted text-neutral-600 dark:text-neutral-300'
                 )}>
                   {tab.count}
                 </span>
+                )}
               </button>
             ))}
           </div>
@@ -1691,6 +1702,8 @@ const EnhancedReceivablesPage: React.FC = () => {
                 />
               )}
 
+              {activeTab === 'mandates' && <MandatesTab corporateId={selectedCorporateId} />}
+
               {/* COBO History Tab - WITH TREASURY APPROVAL BUTTONS */}
               {activeTab === 'cobo-history' && (
                 <DataTable
@@ -1818,6 +1831,13 @@ const EnhancedReceivablesPage: React.FC = () => {
       </Card>
 
       {/* COBO Request Modal */}
+      <CollectionPlanModal
+        isOpen={planIds !== null}
+        onClose={() => setPlanIds(null)}
+        corporateId={selectedCorporateId}
+        receivableIds={planIds ?? []}
+      />
+
       <CoboRequestModal
         isOpen={showCoboModal}
         onClose={() => { setShowCoboModal(false); setCoboReceivables([]); }}

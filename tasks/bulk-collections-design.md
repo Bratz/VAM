@@ -80,7 +80,14 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
 
 ## Build order
 
-1. Mandates (entity, API, portal register/upload) + routing preview for a run from invoices.
+1. ✅ Mandates (entity, API, portal register/upload) + routing preview for a run from invoices. *(built 2026-11-09)*
+   - `com.bank.vam.collections`: `CustomerMandate` (table `customer_mandates`, ddl-auto), `MandateService`
+     (register / CSV import all-or-nothing / update / suspend-resume-cancel; IBAN mod-97 check; blank IBAN →
+     customer's primary bank account), `CollectionRoutingService` (`POST /collections/runs/preview`), `CollectionsController`.
+   - Portal: Receivables → **Mandates** tab (list, register, upload, row actions); **Plan collection (n)** on selected invoices.
+   - Not yet: frequency cap is stored but not counted (needs collection history, step 2); lead time is one business day for
+     every scheme, weekends only. The invoice list only lets OPEN/PARTIAL be selected (its COBO rule), so OVERDUE invoices
+     can be planned through the API but not picked in the portal yet.
 2. pain.008 generation + submit + simulated settlement with hold and release job.
 3. Returns/rejects (pacs.004 / pain.002 / camt.054 DBIT) → reverse, reopen, RTP fallback, mandate suspend.
 4. Bulk RTP inside runs; file ingest `COLLECTIONS` domain; runs API.
