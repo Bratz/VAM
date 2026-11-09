@@ -2,24 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Download, Send } from 'lucide-react';
 import { Badge, Button, DataTable } from '../ui';
 import { Modal } from '../ui/enhanced';
-import { collectionsApi, CollectionLine, CollectionMethod, CollectionPreview, LineStatus, RunDetail } from '../../services/collectionsApi';
+import { collectionsApi, CollectionLine, CollectionPreview, LineStatus, RunDetail } from '../../services/collectionsApi';
+import { METHOD, STATUS } from './collectionLabels';
 import { errorText } from '../../pages/fx/fxFormat';
 import { formatCurrency, formatDate } from '../../utils';
-
-const METHOD: Record<CollectionMethod, { label: string; variant: 'success' | 'info' | 'neutral' }> = {
-  DIRECT_DEBIT: { label: 'Direct debit', variant: 'success' },
-  REQUEST_TO_PAY: { label: 'Request to Pay', variant: 'info' },
-  EXCLUDED: { label: 'Left out', variant: 'neutral' },
-};
-
-const STATUS: Record<LineStatus, { label: string; variant: 'success' | 'info' | 'neutral' | 'warning' | 'error' }> = {
-  SENT: { label: 'Debit sent', variant: 'info' },
-  SETTLED: { label: 'Collected, held', variant: 'warning' },
-  AVAILABLE: { label: 'Collected', variant: 'success' },
-  RTP_SENT: { label: 'Request sent', variant: 'info' },
-  EXCLUDED: { label: 'Left out', variant: 'neutral' },
-  FAILED: { label: 'Failed', variant: 'error' },
-};
 
 type Row = CollectionLine & { status?: LineStatus };
 

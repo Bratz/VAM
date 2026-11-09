@@ -139,5 +139,18 @@ Mandates (register, upload, e-mandate status), and "Collect" from the invoice li
    - Routing: an account in another currency is fine when it belongs to a legal entity (FX is booked per entity).
    - ponytail: a converted collection is returned at its original rate (the AED credited goes back out); a bank
      would reconvert at the day's rate, and the deal's use is not undone.
-6. E-mandate flow (pain.009/010/011/012).
-7. Collections UI.
+6. ✅ E-mandate flow (pain.009/010/011/012). *(built 2026-11-09)*
+   - `POST /collections/mandates/emandate`: the mandate is PENDING (routing won't use it) and a pain.009 is kept as its
+     last message, MsgId = MndtReqId = `requestId`. `POST /iso20022/inward/pain012` (matched by OrgnlMsgInf/MsgId, else a
+     unique OrgnlMndtId) or the portal's `POST /mandates/{id}/bank-answer`: accepted → ACTIVE; refused → CANCELLED.
+   - `POST /mandates/{id}/amend` (IBAN, BIC, max, valid-to): an e-mandate's change is held in `pending_*` and sent as a
+     pain.010, applied on acceptance, dropped on refusal; other mandates change at once. Cancelling an e-mandate keeps
+     a pain.011 (no answer needed). `GET /mandates/{id}/message` downloads the last message.
+   - `IsoXml`: shared namespace-aware, DTD-free reader for inbound messages (returns and acceptance reports).
+7. ✅ Collections UI. *(built 2026-11-09)*
+   - Receivables → **Collection runs**: runs with amounts per method and where their lines are, pain.008 download; the
+     corporate's hold period; "Settle due collections up to <date>" (the evening job, by hand); a run drawer with each
+     line's status, collection/hold/release dates, FX credited, mandate/reason, and "Mark returned / rejected" with
+     ISO reason codes.
+   - **Mandates**: the e-mandate option when registering, "Awaiting bank" / "Change awaiting bank", Amend, Bank
+     accepted / refused, download the last message. Shared labels in `collectionLabels.ts`.
