@@ -1,5 +1,6 @@
 package com.bank.vam.service.receivables;
 
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.entity.hierarchy.LegalEntity;
 import com.bank.vam.entity.pobo.IntercompanyRecharge;
 import com.bank.vam.entity.Transaction;
@@ -89,17 +90,24 @@ public class CoboReceivableService {
             receivableId, collectorEntityId);
         
         Receivable receivable = receivableRepository.findById(receivableId)
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + receivableId));
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + receivableId));
         
         // Validate can request COBO
         if (!receivable.canRequestCobo()) {
-            throw new IllegalStateException("Receivable cannot be submitted for COBO: status=" + 
+            throw new BusinessException("Receivable cannot be submitted for COBO: status=" + 
                 receivable.getStatus() + ", route=" + receivable.getCollectionRoute());
         }
-        
+        if (receivable.getOwningEntityId() == null) {
+            throw new BusinessException(receivable.getReceivableNumber() + " has no owning entity: collecting on behalf "
+                + "of another entity needs one to forward the money to");
+        }
+        if (collectorEntityId.equals(receivable.getOwningEntityId())) {
+            throw new BusinessException("The collector is the invoice's own entity; collect it directly instead");
+        }
+
         // Get collector entity details
         LegalEntity collectorEntity = legalEntityRepository.findById(collectorEntityId)
-            .orElseThrow(() -> new IllegalArgumentException("Collector entity not found: " + collectorEntityId));
+            .orElseThrow(() -> new BusinessException("Collector entity not found: " + collectorEntityId));
         
         // Submit for COBO
         receivable.requestCobo(
@@ -125,10 +133,10 @@ public class CoboReceivableService {
         log.info("Approving COBO request for receivable {}", receivableId);
         
         Receivable receivable = receivableRepository.findById(receivableId)
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + receivableId));
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + receivableId));
         
         if (receivable.getCoboRequestStatus() != CoboRequestStatus.PENDING_TREASURY_APPROVAL) {
-            throw new IllegalStateException("COBO request not pending approval: " + 
+            throw new BusinessException("COBO request not pending approval: " + 
                 receivable.getCoboRequestStatus());
         }
         
@@ -148,10 +156,10 @@ public class CoboReceivableService {
         log.info("Rejecting COBO request for receivable {}: {}", receivableId, reason);
         
         Receivable receivable = receivableRepository.findById(receivableId)
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + receivableId));
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + receivableId));
         
         if (receivable.getCoboRequestStatus() != CoboRequestStatus.PENDING_TREASURY_APPROVAL) {
-            throw new IllegalStateException("COBO request not pending approval: " + 
+            throw new BusinessException("COBO request not pending approval: " + 
                 receivable.getCoboRequestStatus());
         }
         
@@ -187,39 +195,38 @@ public class CoboReceivableService {
         log.info("Executing COBO collection for receivable {}", request.getReceivableId());
         
         Receivable receivable = receivableRepository.findById(request.getReceivableId())
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + request.getReceivableId()));
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + request.getReceivableId()));
         
         // Validate ready for collection
         if (receivable.getCoboRequestStatus() != CoboRequestStatus.APPROVED) {
-            throw new IllegalStateException("COBO not approved for collection: " + 
+            throw new BusinessException("COBO not approved for collection: " + 
                 receivable.getCoboRequestStatus());
         }
         
-        // Get treasury VA (collector's account). The confirmation UI doesn't ask the user to
-        // pick one -- the collecting entity was already fixed when COBO was requested/approved
-        // (receivable.coboCollectorEntityId), so resolve that entity's collection VA here rather
-        // than trusting the caller to supply it.
-        UUID resolvedTreasuryVaId = request.getTreasuryVaId();
-        if (resolvedTreasuryVaId == null) {
-            // `receivable` is reassigned later in this method (after the save()), so it can't be
-            // captured by a lambda -- pull out the fields this one needs first.
-            final String collectorEntityCode = receivable.getCoboCollectorEntityCode();
-            final UUID collectorEntityId = receivable.getCoboCollectorEntityId();
-            final String currencyCode = receivable.getCurrencyCode();
-            resolvedTreasuryVaId = virtualAccountRepository
-                .findByOwningEntityIdAndAccountCategoryAndCurrencyCode(
+        // The account the collected money goes into: the one the treasurer picked in the Collect dialog (from
+        // collectAccounts), else the collecting entity's COLLECTION account in the invoice currency when it has one.
+        // It must belong to the collecting entity fixed at approval, be in the invoice currency, and be active.
+        // `receivable` is reassigned later in this method (after the save()), so it can't be captured by a
+        // lambda -- pull out the fields needed first.
+        final String collectorEntityCode = receivable.getCoboCollectorEntityCode();
+        final UUID collectorEntityId = receivable.getCoboCollectorEntityId();
+        final String currencyCode = receivable.getCurrencyCode();
+        VirtualAccount treasuryVa = request.getTreasuryVaId() != null
+            ? virtualAccountRepository.findById(request.getTreasuryVaId())
+                .orElseThrow(() -> new BusinessException("Account not found: " + request.getTreasuryVaId()))
+            : virtualAccountRepository.findByOwningEntityIdAndAccountCategoryAndCurrencyCode(
                     collectorEntityId, VirtualAccount.AccountCategory.COLLECTION, currencyCode)
-                .map(VirtualAccount::getId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                    "No active COLLECTION virtual account found for treasury entity " +
-                    collectorEntityCode + " in " + currencyCode));
+                .orElseThrow(() -> new BusinessException("Choose the account to collect into: " + collectorEntityCode
+                    + " has no " + currencyCode + " collection account"));
+        if (!collectorEntityId.equals(treasuryVa.getOwningEntityId())) {
+            throw new BusinessException(treasuryVa.getVaNumber() + " does not belong to the collecting entity " + collectorEntityCode);
         }
-        final UUID treasuryVaId = resolvedTreasuryVaId;
-        VirtualAccount treasuryVa = virtualAccountRepository.findById(treasuryVaId)
-            .orElseThrow(() -> new IllegalArgumentException("Treasury VA not found: " + treasuryVaId));
-
+        if (!currencyCode.equals(treasuryVa.getCurrencyCode())) {
+            throw new BusinessException(treasuryVa.getVaNumber() + " holds " + treasuryVa.getCurrencyCode()
+                + "; the invoice is in " + currencyCode);
+        }
         if (treasuryVa.getStatus() != VaStatus.ACTIVE) {
-            throw new IllegalStateException("Treasury VA not active: " + treasuryVa.getStatus());
+            throw new BusinessException(treasuryVa.getVaNumber() + " is " + treasuryVa.getStatus() + ", not active");
         }
 
         // Get subsidiary VA (owning entity's account for forwarding) -- defaults to the
@@ -228,8 +235,17 @@ public class CoboReceivableService {
             ? request.getSubsidiaryVaId() : receivable.getVirtualAccountId();
         VirtualAccount subsidiaryVa = subsidiaryVaId != null
             ? virtualAccountRepository.findById(subsidiaryVaId).orElse(null) : null;
-        
-        BigDecimal collectionAmount = request.getAmount() != null ? 
+
+        // The entity the money is collected on behalf of: the invoice's owner, else its account's. Checked here,
+        // before anything moves -- without one there is no subsidiary to forward to or recharge.
+        final UUID onBehalfOf = receivable.getOwningEntityId() != null ? receivable.getOwningEntityId()
+            : subsidiaryVa != null ? subsidiaryVa.getOwningEntityId() : null;
+        if (onBehalfOf == null) {
+            throw new BusinessException(receivable.getReceivableNumber() + " has no owning entity, so there is no subsidiary to "
+                + "collect on behalf of; reject the COBO request and collect it directly");
+        }
+
+        BigDecimal collectionAmount = request.getAmount() != null ?
             request.getAmount() : receivable.getOutstandingAmount();
         
         String correlationId = "COBO-" + System.currentTimeMillis();
@@ -303,12 +319,12 @@ public class CoboReceivableService {
 
         // Get entity details for IntercompanyRecharge
         UUID treasuryEntityId = treasuryVa.getOwningEntityId();
-        UUID subsidiaryEntityId = receivable.getOwningEntityId();
+        UUID subsidiaryEntityId = onBehalfOf;
 
         LegalEntity treasuryEntity = legalEntityRepository.findById(treasuryEntityId)
-            .orElseThrow(() -> new IllegalArgumentException("Treasury entity not found: " + treasuryEntityId));
+            .orElseThrow(() -> new BusinessException("Treasury entity not found: " + treasuryEntityId));
         LegalEntity subsidiaryEntity = legalEntityRepository.findById(subsidiaryEntityId)
-            .orElseThrow(() -> new IllegalArgumentException("Subsidiary entity not found: " + subsidiaryEntityId));
+            .orElseThrow(() -> new BusinessException("Subsidiary entity not found: " + subsidiaryEntityId));
 
         // 5. Create COBO recharge - Treasury collected, now owes Subsidiary
         IntercompanyRecharge coboRecharge = IntercompanyRecharge.builder()
@@ -432,12 +448,37 @@ public class CoboReceivableService {
             .build();
     }
 
+    /** An account the treasurer can collect an approved COBO invoice into. */
+    public record CollectAccount(UUID id, String vaNumber, String vaName, String category, BigDecimal currentBalance) {
+    }
+
+    /**
+     * Where an approved COBO invoice can be collected into: the collecting entity's active COLLECTION and
+     * TRANSACTION accounts in the invoice currency, COLLECTION first. The treasurer picks one in the Collect dialog.
+     */
+    @Transactional(readOnly = true)
+    public List<CollectAccount> collectAccounts(UUID receivableId) {
+        Receivable receivable = receivableRepository.findById(receivableId)
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + receivableId));
+        if (receivable.getCoboCollectorEntityId() == null) {
+            throw new BusinessException("Receivable " + receivable.getReceivableNumber() + " has no collecting entity");
+        }
+        return virtualAccountRepository.findByOwningEntityIdAndStatus(receivable.getCoboCollectorEntityId(), VaStatus.ACTIVE).stream()
+            .filter(v -> receivable.getCurrencyCode().equals(v.getCurrencyCode()))
+            .filter(v -> v.getAccountCategory() == VirtualAccount.AccountCategory.COLLECTION
+                || v.getAccountCategory() == VirtualAccount.AccountCategory.TRANSACTION)
+            .sorted(java.util.Comparator.comparing((VirtualAccount v) -> v.getAccountCategory() != VirtualAccount.AccountCategory.COLLECTION)
+                .thenComparing(VirtualAccount::getVaNumber))
+            .map(v -> new CollectAccount(v.getId(), v.getVaNumber(), v.getVaName(), v.getAccountCategory().name(), v.getCurrentBalance()))
+            .toList();
+    }
+
     /**
      * Preview COBO collection (calculate fees without executing).
      */
     public CoboPreviewResult previewCoboCollection(UUID receivableId) {
         Receivable receivable = receivableRepository.findById(receivableId)
-            .orElseThrow(() -> new IllegalArgumentException("Receivable not found: " + receivableId));
+            .orElseThrow(() -> new BusinessException("Receivable not found: " + receivableId));
         
         BigDecimal amount = receivable.getOutstandingAmount();
         BigDecimal coboFee = calculateCoboFee(amount);

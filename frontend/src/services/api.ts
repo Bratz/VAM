@@ -1833,6 +1833,14 @@ interface CoboSubmitRequest {
   notes?: string;
 }
 
+export interface CoboCollectAccount {
+  id: string;
+  vaNumber: string;
+  vaName?: string;
+  category: 'COLLECTION' | 'TRANSACTION';
+  currentBalance: number;
+}
+
 interface CoboExecuteRequest {
   receivableId: string;
   // Treasury's collecting VA -- omit to let the backend resolve it from the
@@ -2063,6 +2071,12 @@ export const receivablesApiPhase3 = {
     return extractReceivableData(response.data);
   },
   
+  /** The collecting entity's accounts an approved COBO invoice can be collected into (COLLECTION first). */
+  coboCollectAccounts: async (receivableId: string): Promise<CoboCollectAccount[]> => {
+    const response = await apiClient.get<ApiResponse<CoboCollectAccount[]>>(`/receivables/${receivableId}/cobo/collect-accounts`);
+    return response.data.data;
+  },
+
   previewCobo: async (receivableId: string): Promise<CoboPreviewResponse> => {
     const response = await apiClient.get<ApiResponse<CoboPreviewResponse>>(
       `/receivables/${receivableId}/cobo/preview`

@@ -354,6 +354,12 @@ public class ReceivablesController {
         ));
     }
 
+    @Operation(summary = "Accounts an approved COBO invoice can be collected into")
+    @GetMapping("/{receivableId}/cobo/collect-accounts")
+    public ResponseEntity<Map<String, Object>> coboCollectAccounts(@PathVariable UUID receivableId) {
+        return ResponseEntity.ok(Map.of("success", true, "data", coboService.collectAccounts(receivableId)));
+    }
+
     @Operation(summary = "Preview COBO collection (calculate fees)")
     @GetMapping("/{receivableId}/cobo/preview")
     public ResponseEntity<Map<String, Object>> previewCobo(@PathVariable UUID receivableId) {

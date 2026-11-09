@@ -40,7 +40,9 @@ import {
   type Corporate,
   type Program,
   type LegalEntity,
+  type CoboCollectAccount,
 } from '../services/api';
+import { errorText } from './fx/fxFormat';
 import { useNavigation } from '../hooks/useNavigation';
 import { useReportingRates } from '../hooks/useReportingRates';
 import { useMarket } from '../context/useMarket';
@@ -463,7 +465,8 @@ interface TreasuryApprovalModalProps {
   onClose: () => void;
   invoice: InvoicePhase3 | null;
   action: 'approve' | 'reject' | 'execute' | null;
-  onConfirm: (reason?: string) => Promise<void>;
+  /** reason: for a rejection; treasuryVaId: the account an execution collects into. */
+  onConfirm: (reason?: string, treasuryVaId?: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -476,6 +479,28 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
   loading,
 }) => {
   const [reason, setReason] = useState('');
+  const [accounts, setAccounts] = useState<CoboCollectAccount[] | null>(null);
+  const [accountId, setAccountId] = useState('');
+  const [accountsError, setAccountsError] = useState<string | null>(null);
+
+  // Executing needs the account the money goes into: the collecting entity's accounts in the invoice
+  // currency, COLLECTION first and pre-selected; the treasurer can pick another.
+  useEffect(() => {
+    if (!isOpen || action !== 'execute' || !invoice) return;
+    let live = true;
+    setAccounts(null);
+    setAccountId('');
+    setAccountsError(null);
+    receivablesApiPhase3.coboCollectAccounts(invoice.id)
+      .then(list => {
+        if (!live) return;
+        setAccounts(list);
+        const preferred = list.find(a => a.category === 'COLLECTION') ?? (list.length === 1 ? list[0] : undefined);
+        if (preferred) setAccountId(preferred.id);
+      })
+      .catch(err => { if (live) setAccountsError(errorText(err)); });
+    return () => { live = false; };
+  }, [isOpen, action, invoice]);
 
   if (!invoice || !action) return null;
 
@@ -492,7 +517,7 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
   };
 
   const handleConfirm = async () => {
-    await onConfirm(action === 'reject' ? reason : undefined);
+    await onConfirm(action === 'reject' ? reason : undefined, action === 'execute' ? accountId : undefined);
     setReason('');
   };
 
@@ -522,6 +547,29 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
           </div>
         </div>
 
+        {action === 'execute' && (
+          <div>
+            <Select
+              id="cobo-collect-account"
+              label="Collect into"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              placeholder={accounts === null && !accountsError ? 'Loading accounts…' : 'Choose an account'}
+              options={(accounts ?? []).map(a => ({
+                value: a.id,
+                label: `${a.vaNumber}${a.vaName ? ` · ${a.vaName}` : ''} · ${a.category === 'COLLECTION' ? 'Collection' : 'Transaction'} · ${formatCurrency(a.currentBalance, invoice.currencyCode)}`,
+              }))}
+              hint={`${invoice.coboCollectorEntityCode ?? 'The collecting entity'}'s ${invoice.currencyCode} accounts`}
+            />
+            {accounts?.length === 0 && (
+              <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">
+                {invoice.coboCollectorEntityCode ?? 'The collecting entity'} has no active {invoice.currencyCode} collection or transaction account to collect into.
+              </p>
+            )}
+            {accountsError && <p className="mt-2 text-body-sm text-error-700 dark:text-error-300">{accountsError}</p>}
+          </div>
+        )}
+
         {action === 'reject' && (
           <div>
             <label className="field-label block mb-2">
@@ -544,7 +592,7 @@ const TreasuryApprovalModal: React.FC<TreasuryApprovalModalProps> = ({
           <Button 
             variant={action === 'reject' ? 'danger' : 'primary'}
             onClick={handleConfirm}
-            disabled={loading || (action === 'reject' && !reason.trim())}
+            disabled={loading || (action === 'reject' && !reason.trim()) || (action === 'execute' && !accountId)}
             leftIcon={
               loading ? <Loader2 className="w-4 h-4 animate-spin" /> :
               action === 'approve' ? <ThumbsUp className="w-4 h-4" /> :
@@ -977,7 +1025,7 @@ const EnhancedReceivablesPage: React.FC = () => {
     setShowApprovalModal(true);
   };
 
-  const handleApprovalConfirm = async (reason?: string) => {
+  const handleApprovalConfirm = async (reason?: string, treasuryVaId?: string) => {
     if (!approvalInvoice || !approvalAction) return;
     
     setApprovalLoading(true);
@@ -989,6 +1037,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       } else if (approvalAction === 'execute') {
         await receivablesApiPhase3.executeCoboCollection({
           receivableId: approvalInvoice.id,
+          treasuryVaId,
           subsidiaryVaId: approvalInvoice.subsidiaryVaId,
           amount: approvalInvoice.outstandingAmount,
           paymentReference: `COBO-${Date.now()}`,
@@ -1000,7 +1049,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       setApprovalInvoice(null);
       setApprovalAction(null);
     } catch (err: any) {
-      setError(err.message || 'Action failed');
+      setError(errorText(err));
     } finally {
       setApprovalLoading(false);
     }
