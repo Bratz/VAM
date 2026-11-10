@@ -559,3 +559,7 @@ for "credit limit" because FX felt like a separate domain.
   ddl-auto never updates it. Locally `ingest_job` happened to have no CHECK, so the COLLECTIONS domain worked here
   and failed on OCI as a bare 500 at insert (V46; V41 and V45 were the same trap). When an enum gains a value,
   grep which entities store it and ship a conditional drop-and-re-add of their CHECKs in the same change.
+
+## Tailwind here has no sm/md/lg breakpoints (2026-11-10)
+`tailwind.config` overrides `screens` to only `xl` (1280) and `2xl` (1536); the portal is desktop-only.
+`lg:grid-cols-3` silently does nothing and the grid stays one column. Use fixed `grid-cols-N`, or `xl:`.

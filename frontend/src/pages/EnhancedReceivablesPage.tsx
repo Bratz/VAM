@@ -25,12 +25,24 @@ import { CollectionPlanModal } from '../components/collections/CollectionPlanMod
 
 /** Invoices that can still be collected (by COBO or a collection run): open, partly paid or overdue. */
 const COLLECTABLE = ['OPEN', 'PARTIAL', 'OVERDUE'];
+const SETTLED = ['PAID', 'CANCELLED', 'WRITTEN_OFF', 'NETTED', 'DRAFT']; // not owed (DRAFT: not issued yet)
+const LAST_CORPORATE_KEY = 'receivables.corporateId';
+// Today as a local YYYY-MM-DD: dueDate is date-only, and new Date(dueDate) < new Date() calls an invoice
+// due today overdue for anyone east of UTC.
+const todayIso = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+/** Money still owed and the due date has passed, whatever the stored status says (OPEN, PARTIAL, OVERDUE, COBO_*). */
+const isOverdue = (i: { outstandingAmount: number; dueDate: string; status: string }) =>
+  i.outstandingAmount > 0 && !!i.dueDate && i.dueDate < todayIso() && !SETTLED.includes(i.status);
+const daysOverdue = (dueDate: string) =>
+  Math.round((new Date(`${todayIso()}T00:00:00`).getTime() - new Date(`${dueDate}T00:00:00`).getTime()) / 86400000);
 import { formatCurrency, formatDate, cn } from '../utils';
 import {
   receivablesApi,
   receivablesApiPhase3,
   corporatesApi,
-  programsApi,
   legalEntityApi,
   apiClient,
   type ApiResponse,
@@ -39,7 +51,6 @@ import {
   type NettingStatusReceivable,
   type ReceivableStatusPhase3,
   type Corporate,
-  type Program,
   type LegalEntity,
   type CoboCollectAccount,
 } from '../services/api';
@@ -158,7 +169,9 @@ interface CoboPreview {
 // ============================================================================
 
 const statusConfig: Record<string, { variant: 'success' | 'warning' | 'error' | 'neutral' | 'info'; label: string }> = {
+  DRAFT: { variant: 'neutral', label: 'Draft' },
   OPEN: { variant: 'info', label: 'Open' },
+  OVERDUE: { variant: 'error', label: 'Overdue' },
   PARTIAL: { variant: 'warning', label: 'Partial' },
   PAID: { variant: 'success', label: 'Paid' },
   CANCELLED: { variant: 'neutral', label: 'Cancelled' },
@@ -620,10 +633,8 @@ const EnhancedReceivablesPage: React.FC = () => {
   
   // Filter state
   const [corporates, setCorporates] = useState<Corporate[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
   const [legalEntities, setLegalEntities] = useState<LegalEntity[]>([]);
   const [selectedCorporateId, setSelectedCorporateId] = useState<string>('');
-  const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
   
   // Data state
@@ -666,8 +677,11 @@ const EnhancedReceivablesPage: React.FC = () => {
         const response = await corporatesApi.getAll();
         if (response.success && response.data) {
           setCorporates(response.data);
-          if (response.data.length > 0) {
-            setSelectedCorporateId(response.data[0].id);
+          let last: string | null = null;
+          try { last = localStorage.getItem(LAST_CORPORATE_KEY); } catch { /* storage unavailable */ }
+          const remembered = response.data.find((c) => c.id === last);
+          if (remembered || response.data.length > 0) {
+            setSelectedCorporateId((remembered ?? response.data[0]).id);
           }
         }
       } catch (err) {
@@ -676,29 +690,6 @@ const EnhancedReceivablesPage: React.FC = () => {
     };
     loadCorporates();
   }, []);
-
-  // Load programs when corporate changes
-  useEffect(() => {
-    if (!selectedCorporateId) return;
-    
-    const loadPrograms = async () => {
-      try {
-        const response = await programsApi.getAll({ corporateId: selectedCorporateId });
-        if (response.success && response.data) {
-          // Handle both array and paginated response formats
-          const programsList = Array.isArray(response.data) ? response.data : 
-            (response.data as any).content || [];
-          setPrograms(programsList);
-          if (programsList.length > 0) {
-            setSelectedProgramId(programsList[0].id);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load programs:', err);
-      }
-    };
-    loadPrograms();
-  }, [selectedCorporateId]);
 
   // Load entities when corporate changes (entities are at corporate level)
   useEffect(() => {
@@ -866,10 +857,7 @@ const EnhancedReceivablesPage: React.FC = () => {
     // ISO strings against the local date: dueDate is date-only, so new Date(dueDate) < new
     // Date() would call an invoice due today overdue for anyone east of UTC.
     const now = new Date();
-    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const settled = ['PAID', 'CANCELLED', 'WRITTEN_OFF', 'NETTED'];
-    const isOverdue = (i: InvoicePhase3) =>
-      i.outstandingAmount > 0 && !!i.dueDate && i.dueDate < todayIso && !settled.includes(i.status);
+    const settled = SETTLED;
 
     const sum = (list: InvoicePhase3[], pick: (i: InvoicePhase3) => number) =>
       list.reduce((total, i) => {
@@ -892,7 +880,7 @@ const EnhancedReceivablesPage: React.FC = () => {
       ? Math.round(unsettled.reduce((total, i) => total + daysSince(i.invoiceDate), 0) / unsettled.length)
       : 0;
 
-    const open = invoices.filter((i) => ['OPEN', 'PARTIAL'].includes(i.status));
+    const open = invoices.filter((i) => i.outstandingAmount > 0 && !settled.includes(i.status) && !isOverdue(i));
     const partial = invoices.filter((i) => i.status === 'PARTIAL');
     const paidInvoices = invoices.filter((i) => i.status === 'PAID');
     const overdue = invoices.filter(isOverdue);
@@ -902,13 +890,14 @@ const EnhancedReceivablesPage: React.FC = () => {
     const nettingIncluded = invoices.filter((i) => i.nettingStatus === 'INCLUDED' || i.nettingStatus === 'PENDING');
 
     return {
-      totalReceivables: sum(invoices, outstanding),
+      // What is owed: not drafts, nor cancelled or written off. Equals Not yet due + Overdue.
+      totalReceivables: sum(invoices.filter((i) => !settled.includes(i.status)), outstanding),
       openInvoices: sum(open, outstanding),
       partialPaid: sum(partial, paid),
       overdueAmount: sum(overdue, outstanding),
       collectedThisMonth: sum(paidInvoices, paid),
       invoiceCount: invoices.length,
-      openCount: invoices.filter((i) => i.status === 'OPEN').length,
+      openCount: open.length,
       partialCount: partial.length,
       overdueCount: overdue.length,
       paidCount: paidInvoices.length,
@@ -930,7 +919,9 @@ const EnhancedReceivablesPage: React.FC = () => {
     return invoices.filter(inv => 
       inv.invoiceNumber.toLowerCase().includes(query) ||
       inv.customerName.toLowerCase().includes(query) ||
-      inv.description?.toLowerCase().includes(query)
+      inv.description?.toLowerCase().includes(query) ||
+      inv.customerVaNumber?.toLowerCase().replace(/\s/g, '').includes(query.replace(/\s/g, '')) ||
+      inv.owningEntityCode?.toLowerCase().includes(query)
     );
   }, [invoices, searchQuery]);
 
@@ -1116,6 +1107,15 @@ const EnhancedReceivablesPage: React.FC = () => {
     navigate('receivables-create', Object.keys(params).length > 0 ? params : undefined);
   };
 
+  const handleIssueDraft = async (invoice: InvoicePhase3) => {
+    try {
+      await apiClient.post(`/receivables/invoices/${invoice.id}/issue`);
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Could not issue ${invoice.invoiceNumber}`);
+    }
+  };
+
   const handleViewInvoice = (invoice: InvoicePhase3) => {
     setViewInvoice(invoice);
   };
@@ -1203,7 +1203,7 @@ const EnhancedReceivablesPage: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <Input
-              placeholder="Search invoices..."
+              placeholder="Search by invoice, customer, VIBAN or entity..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -1212,17 +1212,19 @@ const EnhancedReceivablesPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Scope picker — Corporate + Program + Entity. Entity goes in
+      {/* Scope picker — Corporate + Entity. Entity goes in
           ScopeSelector's `rightSlot` so it gets the same medallion / label /
           Select recipe as the other two fields. */}
       <ScopeSelector
-        mode="corporate-program"
+        mode="corporate-only"
+        requireSelection
         corporates={corporates}
-        programs={programs}
         selectedCorporateId={selectedCorporateId}
-        selectedProgramId={selectedProgramId}
-        onCorporateChange={setSelectedCorporateId}
-        onProgramChange={setSelectedProgramId}
+        onCorporateChange={(id) => {
+          setSelectedCorporateId(id);
+          setSelectedEntityId('');
+          try { localStorage.setItem(LAST_CORPORATE_KEY, id); } catch { /* storage unavailable */ }
+        }}
         rightSlot={(
           <div className="flex items-center gap-2">
             <StatusIconBadge tone="success" icon={Building2} size="sm" />
@@ -1255,9 +1257,9 @@ const EnhancedReceivablesPage: React.FC = () => {
             delay={0.15}
           />
           <StatsCard
-            title="Open / Partial"
+            title="Not yet due"
             value={formatCurrency(stats.openInvoices, reportingCurrency)}
-            subtitle={`${stats.openCount + stats.partialCount} invoices`}
+            subtitle={`${stats.openCount} invoices`}
             icon={<Clock className="w-5 h-5" />}
             color="blue"
             delay={0.2}
@@ -1429,13 +1431,12 @@ const EnhancedReceivablesPage: React.FC = () => {
                       key: 'dueDate',
                       header: 'Due Date', minWidth: 100, dropOrder: 1,
                       render: (_, invoice) => {
-                        const isOverdue = new Date(invoice.dueDate) < new Date() && invoice.status === 'OPEN';
-                        const daysOverdue = isOverdue ? Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                        const late = isOverdue(invoice);
                         return (
                           <div className="flex flex-col gap-1">
                             <span className="text-body-sm">{formatDate(invoice.dueDate)}</span>
-                            {isOverdue && (
-                              <span className="text-caption text-error-600 font-medium dark:text-error-300">{daysOverdue} days overdue</span>
+                            {late && (
+                              <span className="text-caption text-error-600 font-medium dark:text-error-300">{daysOverdue(invoice.dueDate)} days overdue</span>
                             )}
                           </div>
                         );
@@ -1495,6 +1496,11 @@ const EnhancedReceivablesPage: React.FC = () => {
                             <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)} title="View Details">
                               <Eye className="w-4 h-4" />
                             </Button>
+                            {(invoice.status as string) === 'DRAFT' && (
+                              <Button variant="outline" size="sm" onClick={() => handleIssueDraft(invoice)} title="Issue invoice">
+                                Issue
+                              </Button>
+                            )}
                             {canRequestCobo && (
                               <Button
                                 variant="outline"

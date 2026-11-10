@@ -52,6 +52,8 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
     // ========================================================================
 
     Optional<Receivable> findByReceivableNumber(String receivableNumber);
+
+    boolean existsByCorporateIdAndReceivableNumber(UUID corporateId, String receivableNumber);
     
     Optional<Receivable> findByExternalReference(String externalReference);
     

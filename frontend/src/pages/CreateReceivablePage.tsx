@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Search, Building2, FileText, Calendar, CreditCard, QrCode, Check, Loader2, Copy, Landmark, FolderTree, Paperclip, Upload, X, Plus, Trash2, Link2, Mail, Bell, Calculator, DollarSign, ArrowDownLeft, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Building2, FileText, CreditCard, QrCode, Check, Loader2, Copy, Landmark, Paperclip, X, Plus, Trash2, Link2, Mail, Calculator, DollarSign, ArrowDownLeft, Info, Package, Receipt, AlertTriangle } from 'lucide-react';
 import { partiesApi, legalEntityApi, virtualAccountsApi, receivablesApi, corporatesApi } from '../services/api';
 import { useNavigation } from '../hooks/useNavigation';
 import { Page } from '../components/layout/Page';
@@ -75,14 +75,6 @@ interface ChargeConfig {
   isPercentage: boolean;
 }
 
-interface HierarchyNode {
-  id: string;
-  code: string;
-  name: string;
-  level: string;
-  path: string;
-}
-
 interface IntercompanyEntity {
   id: string;
   code: string;
@@ -139,21 +131,14 @@ interface ReceivableFormData {
   behalfEntityId: string;
   coboRechargeMarkup: number;
   
-  // Hierarchy (Optional)
-  hierarchyNodeId: string;
-  revenueCenter: string;
   
   // Documents (Optional)
-  attachments: File[];
   externalRefs: { type: string; value: string }[];
   customerNotes: string;
   internalNotes: string;
   
   // Reminders (Optional)
   sendInvoiceEmail: boolean;
-  reminderDays: number[];
-  enableDunning: boolean;
-  dunningMaxLevel: number;
 }
 
 // ============================================================================
@@ -197,7 +182,6 @@ const REFERENCE_TYPES = [
   { value: 'OTHER', label: 'Other' },
 ];
 
-const REMINDER_DAYS = [-7, -3, -1, 1, 3, 7, 14, 30];
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -224,6 +208,43 @@ const calculateDueDate = (invoiceDate: string, paymentTerms: string): string => 
     date.setDate(date.getDate() + term.days);
   }
   return date.toISOString().split('T')[0];
+};
+
+// A party as the customer picker shows it. Credit figures are not loaded (0 = unknown, and hidden).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- party DTO from partiesApi is untyped here
+const toCustomer = (p: any): Customer => ({
+  id: p.id,
+  name: p.displayName || p.legalName || 'Unknown',
+  code: p.partyCode || '',
+  creditLimit: 0,
+  creditUsed: 0,
+  creditAvailable: 0,
+  currency: 'AED',
+  email: p.contactEmail || '',
+  overdueAmount: 0,
+});
+
+/**
+ * What the invoice asks the customer to pay, and its parts.
+ * Without line items the Amount typed is VAT-inclusive (the VAT in it is recorded, the amount due does not change);
+ * line items carry their own VAT on top. Extra charges are added to the amount due either way.
+ */
+const invoiceBreakdown = (f: ReceivableFormData) => {
+  const lines = f.useLineItems ? f.lineItems : [];
+  const lineSubtotal = lines.reduce((t, i) => t + i.quantity * i.unitPrice, 0);
+  const discount = lines.reduce((t, i) => t + i.quantity * i.unitPrice * i.discountPercent / 100, 0);
+  const lineTax = lines.reduce((t, i) => {
+    const rate = TAX_CONFIGS.find(c => c.code === i.taxCode)?.rate || 0;
+    return t + (i.quantity * i.unitPrice * (1 - i.discountPercent / 100)) * rate / 100;
+  }, 0);
+  const typed = parseFloat(f.amount) || 0;
+  const subtotal = f.useLineItems ? lineSubtotal : typed;
+  const charges = f.charges.reduce((t, c) => t + (c.isPercentage ? subtotal * c.amount / 100 : c.amount), 0);
+  const vatOn = f.taxConfig.vatEnabled && !f.taxConfig.taxExempt && !f.taxConfig.reverseCharge;
+  const tax = f.useLineItems ? lineTax : vatOn ? typed * f.taxConfig.vatRate / (100 + f.taxConfig.vatRate) : 0;
+  const total = (f.useLineItems ? lineSubtotal - discount + lineTax : typed) + charges;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  return { subtotal: r2(subtotal), discount: r2(discount), charges: r2(charges), tax: r2(tax), total: r2(total) };
 };
 
 // formatCurrency now comes from the shared util (Phase 12 Task D3) — the local
@@ -882,76 +903,11 @@ const CoboTab: React.FC<{
   );
 };
 
-// Hierarchy Tab
-const HierarchyTab: React.FC<{
-  formData: ReceivableFormData;
-  setFormData: React.Dispatch<React.SetStateAction<ReceivableFormData>>;
-  hierarchyNodes: HierarchyNode[];
-}> = ({ formData, setFormData, hierarchyNodes }) => {
-  return (
-    <div className="space-y-4">
-      <p className="body-sm">
-        Assign this receivable to a hierarchy node for reporting and allocation.
-      </p>
-
-      <div className="space-y-2">
-        {hierarchyNodes.map((node) => (
-          <button
-            key={node.id}
-            onClick={() => setFormData(prev => ({
-              ...prev,
-              hierarchyNodeId: prev.hierarchyNodeId === node.id ? '' : node.id
-            }))}
-            className={cn(
-              'w-full flex items-center justify-between p-3 border rounded-lg transition-all text-left',
-              formData.hierarchyNodeId === node.id
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-800/40'
-                : 'border-edge hover:border-primary-300'
-            )}
-          >
-            <div>
-              <p className="body-strong">{node.name}</p>
-              <p className="caption">{node.path}</p>
-            </div>
-            <span className="caption px-2 py-1 bg-surface-muted rounded-md">
-              {node.level}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Revenue Center */}
-      <div className="pt-4 border-t">
-        <label className="field-label block mb-2">Revenue Center</label>
-        <input
-          type="text"
-          value={formData.revenueCenter}
-          onChange={(e) => setFormData(prev => ({ ...prev, revenueCenter: e.target.value }))}
-          placeholder="e.g., RC-001, Sales-Dubai"
-          className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm"
-        />
-      </div>
-    </div>
-  );
-};
-
 // Documents Tab
 const DocumentsTab: React.FC<{
   formData: ReceivableFormData;
   setFormData: React.Dispatch<React.SetStateAction<ReceivableFormData>>;
 }> = ({ formData, setFormData }) => {
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...files] }));
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
-    }));
-  };
-
   const handleAddRef = () => {
     setFormData(prev => ({
       ...prev,
@@ -977,42 +933,6 @@ const DocumentsTab: React.FC<{
 
   return (
     <div className="space-y-6">
-      {/* File Upload */}
-      <div>
-        <p className="field-label mb-2">Attachments</p>
-        <div className="border-2 border-dashed border-edge rounded-lg p-6 text-center hover:border-primary-300 transition-colors">
-          <input
-            type="file"
-            multiple
-            onChange={handleFileUpload}
-            className="hidden"
-            id="file-upload"
-          />
-          <label htmlFor="file-upload" className="cursor-pointer">
-            <Upload className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
-            <p className="body-sm">Click to upload or drag and drop</p>
-            <p className="caption mt-1">PDF, DOC, XLS up to 10MB</p>
-          </label>
-        </div>
-
-        {formData.attachments.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {formData.attachments.map((file, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-surface-page rounded-lg">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                  <span className="text-body-sm text-neutral-700 dark:text-neutral-200">{file.name}</span>
-                  <span className="caption">({(file.size / 1024).toFixed(1)} KB)</span>
-                </div>
-                <button onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-neutral-200 dark:hover:bg-primary-700 rounded-md">
-                  <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* External References */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -1078,133 +998,31 @@ const DocumentsTab: React.FC<{
   );
 };
 
-// Reminders Tab
-const RemindersTab: React.FC<{
+// Email Tab
+const EmailTab: React.FC<{
   formData: ReceivableFormData;
   setFormData: React.Dispatch<React.SetStateAction<ReceivableFormData>>;
-}> = ({ formData, setFormData }) => {
-  const toggleReminderDay = (day: number) => {
-    setFormData(prev => ({
-      ...prev,
-      reminderDays: prev.reminderDays.includes(day)
-        ? prev.reminderDays.filter(d => d !== day)
-        : [...prev.reminderDays, day].sort((a, b) => a - b),
-    }));
-  };
-
-  const dunningLevels = [
-    { level: 1, name: 'Friendly Reminder', description: 'Gentle payment reminder' },
-    { level: 2, name: 'Formal Notice', description: 'Official payment request' },
-    { level: 3, name: 'Final Notice', description: 'Last warning before action' },
-    { level: 4, name: 'Collection Action', description: 'Escalate to collections' },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Send Invoice Email */}
-      <div className="flex items-center justify-between p-4 bg-info-50 rounded-lg dark:bg-info-500/10">
-        <div className="flex items-center gap-3">
-          <Mail className="w-5 h-5 text-info-600 dark:text-info-300" />
-          <div>
-            <p className="body-strong">Send Invoice on Create</p>
-            <p className="caption">Email invoice to customer when created</p>
-          </div>
-        </div>
-        <Toggle
-          aria-label="Send invoice email"
-          checked={formData.sendInvoiceEmail}
-          onChange={(enabled) => setFormData(prev => ({ ...prev, sendInvoiceEmail: enabled }))}
-          size="sm"
-        />
-      </div>
-
-      {/* Payment Reminders */}
-      <div className="space-y-3">
-        <h4 className="body-strong">Payment Reminder Schedule</h4>
-        <p className="caption">Select days relative to due date (negative = before, positive = after)</p>
-        <div className="flex flex-wrap gap-2">
-          {REMINDER_DAYS.map((day) => (
-            <button
-              key={day}
-              onClick={() => toggleReminderDay(day)}
-              className={cn(
-                'px-3 py-2 text-body-sm rounded-lg border transition-colors',
-                formData.reminderDays.includes(day)
-                  ? 'bg-primary-100 dark:bg-primary-700 border-primary-500 text-primary-700 dark:text-neutral-200'
-                  : 'bg-surface-card border-edge-strong text-neutral-600 dark:text-neutral-300 hover:border-primary-300'
-              )}
-            >
-              {day > 0 ? `+${day}` : day} days
-            </button>
-          ))}
-        </div>
-        {formData.reminderDays.length > 0 && (
-          <p className="caption">
-            Reminders will be sent: {formData.reminderDays.map(d => d > 0 ? `${d} days after` : d === 0 ? 'on due date' : `${Math.abs(d)} days before`).join(', ')}
-          </p>
-        )}
-      </div>
-
-      {/* Dunning Process */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="body-strong">Dunning Process</h4>
-            <p className="caption">Automated escalation for overdue invoices</p>
-          </div>
-          <Toggle
-            aria-label="Enable dunning"
-            checked={formData.enableDunning}
-            onChange={(enabled) => setFormData(prev => ({ ...prev, enableDunning: enabled }))}
-            size="sm"
-          />
-        </div>
-
-        {formData.enableDunning && (
-          <div className="space-y-2">
-            {dunningLevels.map((level) => (
-              <div
-                key={level.level}
-                className={cn(
-                  'flex items-center justify-between p-3 rounded-lg border',
-                  level.level <= formData.dunningMaxLevel
-                    ? 'bg-warning-50 border-warning-200 dark:bg-warning-500/10 dark:border-warning-500/30'
-                    : 'bg-surface-page border-edge opacity-50'
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-body-sm font-bold',
-                    level.level <= formData.dunningMaxLevel ? 'bg-warning-200 dark:bg-warning-500/15 text-warning-700 dark:text-warning-300' : 'bg-neutral-200 text-neutral-500 dark:text-neutral-400 dark:bg-primary-800'
-                  )}>
-                    {level.level}
-                  </div>
-                  <div>
-                    <p className="body-strong">{level.name}</p>
-                    <p className="caption">{level.description}</p>
-                  </div>
-                </div>
-                {level.level <= formData.dunningMaxLevel && (
-                  <Check className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                )}
-              </div>
-            ))}
-            <div className="flex items-center gap-2 mt-3">
-              <span className="body-sm">Enable up to level:</span>
-              <select
-                value={formData.dunningMaxLevel}
-                onChange={(e) => setFormData(prev => ({ ...prev, dunningMaxLevel: parseInt(e.target.value) }))}
-                className="px-3 py-1.5 text-body-sm border border-edge-strong rounded-lg"
-              >
-                {[1, 2, 3, 4].map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
+  email?: string;
+}> = ({ formData, setFormData, email }) => (
+  <div className="flex items-center justify-between p-4 bg-info-50 rounded-lg dark:bg-info-500/10">
+    <div className="flex items-center gap-3">
+      <Mail className="w-5 h-5 text-info-600 dark:text-info-300" />
+      <div>
+        <p className="body-strong">Email the invoice on create</p>
+        <p className="caption">
+          {email ? `To ${email}` : 'The customer has no email address; it will be kept as "No address"'}, with the pay link.
+          Kept in Receivables → Outbox (no mail server is connected).
+        </p>
       </div>
     </div>
-  );
-};
+    <Toggle
+      aria-label="Send invoice email"
+      checked={formData.sendInvoiceEmail}
+      onChange={(enabled) => setFormData(prev => ({ ...prev, sendInvoiceEmail: enabled }))}
+      size="sm"
+    />
+  </div>
+);
 
 // ============================================================================
 // MAIN COMPONENT
@@ -1258,16 +1076,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     collectingEntityId: '',
     behalfEntityId: '',
     coboRechargeMarkup: 0,
-    hierarchyNodeId: '',
-    revenueCenter: '',
-    attachments: [],
     externalRefs: [],
     customerNotes: '',
     internalNotes: '',
     sendInvoiceEmail: true,
-    reminderDays: [-3, 1, 7],
-    enableDunning: false,
-    dunningMaxLevel: 2,
   });
 
   // UI state
@@ -1284,7 +1096,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [accounts, setAccounts] = useState<CollectionAccount[]>([]);
   const [entities, setEntities] = useState<IntercompanyEntity[]>([]);
-  const [hierarchyNodes, setHierarchyNodes] = useState<HierarchyNode[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [corporateName, setCorporateName] = useState<string>('');
 
@@ -1317,17 +1128,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           pageSize: 100
         });
         const customersList = customersResponse?.parties || customersResponse?.data?.parties || [];
-        setCustomers(customersList.map((p: any) => ({
-          id: p.id,
-          name: p.displayName || p.legalName || 'Unknown',
-          code: p.partyCode || '',
-          creditLimit: 0,
-          creditUsed: 0,
-          creditAvailable: 0,
-          currency: 'AED',
-          email: p.contactEmail || '',
-          overdueAmount: 0
-        })));
+        setCustomers(customersList.map(toCustomer));
       } catch (error) {
         console.error('Failed to load customers:', error);
         setCustomers([]);
@@ -1376,7 +1177,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           id: e.id,
           code: e.entityCode || '',
           name: e.entityName || '',
-          type: e.entityType === 'HEAD_OFFICE' ? 'HEADQUARTERS' : 'SUBSIDIARY',
+          // Who can collect for others: the treasury centre, or a holding company.
+          type: e.isTreasuryCenter || e.treasuryCenter || e.entityType === 'TREASURY_CENTER' || e.entityType === 'HOLDING'
+            ? 'HEADQUARTERS' : 'SUBSIDIARY',
           currency: e.baseCurrency || 'AED',
           ihbBalance: 0
         })));
@@ -1385,8 +1188,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         setEntities([]);
       }
 
-      // Hierarchy nodes would come from a hierarchy API if available
-      setHierarchyNodes([]);
 
       setDataLoading(false);
     };
@@ -1400,9 +1201,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     { id: 'tax-charges', label: 'Tax & Charges', icon: Calculator, badge: formData.charges.length },
     { id: 'payment-link', label: 'Payment Link', icon: Link2, badge: 0 },
     { id: 'cobo', label: 'COBO', icon: ArrowDownLeft, badge: formData.coboEnabled ? 1 : 0 },
-    { id: 'hierarchy', label: 'Hierarchy', icon: FolderTree, badge: formData.hierarchyNodeId ? 1 : 0 },
-    { id: 'documents', label: 'Documents', icon: Paperclip, badge: formData.attachments.length + formData.externalRefs.length },
-    { id: 'reminders', label: 'Reminders', icon: Bell, badge: formData.enableDunning || formData.reminderDays.length > 0 ? 1 : 0 },
+    { id: 'documents', label: 'References & Notes', icon: Paperclip, badge: formData.externalRefs.length },
+    { id: 'email', label: 'Email', icon: Mail, badge: formData.sendInvoiceEmail ? 1 : 0 },
   ];
 
   // Initialize due date
@@ -1435,7 +1235,20 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   }, [formData.currency, accounts]);
 
   // Filter customers
-  const filteredCustomers = customers.filter(c =>
+  // Typing searches the server: the list loaded up front holds only the first 100 customers.
+  const [customerMatches, setCustomerMatches] = useState<Customer[] | null>(null);
+  useEffect(() => {
+    const q = customerSearch.trim();
+    if (q.length < 2) { setCustomerMatches(null); return; }
+    let live = true;
+    const t = setTimeout(() => {
+      partiesApi.getAll({ corporateId: effectiveCorporateId, role: 'CUSTOMER', query: q, pageSize: 25 })
+        .then((r: any) => { if (live) setCustomerMatches((r?.parties || r?.data?.parties || []).map(toCustomer)); })
+        .catch(() => { if (live) setCustomerMatches(null); });
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [customerSearch, effectiveCorporateId]);
+  const filteredCustomers = customerMatches ?? customers.filter(c =>
     c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     c.code.toLowerCase().includes(customerSearch.toLowerCase())
   );
@@ -1465,8 +1278,11 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     const newErrors: Record<string, string> = {};
     // Customer and collection account are optional - can be added later
     if (!formData.invoiceNumber) newErrors.invoiceNumber = 'Invoice number is required';
-    if (!formData.amount || parseFloat(formData.amount) <= 0) newErrors.amount = 'Valid amount is required';
-    if (selectedCustomer && selectedCustomer.creditAvailable > 0 && parseFloat(formData.amount) > selectedCustomer.creditAvailable) {
+    if (breakdown.total <= 0) newErrors.amount = formData.useLineItems ? 'Add a line item with an amount' : 'Valid amount is required';
+    if (formData.coboEnabled && (!formData.collectingEntityId || !formData.behalfEntityId)) {
+      newErrors.submit = 'Collect on behalf: choose the collecting treasury and the subsidiary (COBO tab), or switch it off';
+    }
+    if (selectedCustomer && selectedCustomer.creditAvailable > 0 && breakdown.total > selectedCustomer.creditAvailable) {
       newErrors.amount = `Amount exceeds available credit (${formatCurrency(selectedCustomer.creditAvailable, selectedCustomer.currency)})`;
     }
     setErrors(newErrors);
@@ -1498,7 +1314,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         owningEntityCode = behalfEntity?.code;
       } else if (entities.length > 0) {
         // Non-COBO: use the first available entity (typically HQ)
-        const defaultEntity = entities.find(e => e.type === 'HEADQUARTERS') || entities[0];
+        const defaultEntity = entities[0];
         owningEntityId = defaultEntity.id;
         owningEntityCode = defaultEntity.code;
       }
@@ -1513,9 +1329,32 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         customerId: formData.customerId,
         customerName: selectedCustomer?.name || '',
         customerVaNumber: selectedCustomer?.assignedViban || '',
-        amount: formData.useLineItems && formData.lineItems.length > 0
-          ? calculatedTotal
-          : parseFloat(formData.amount) || 0,
+        amount: breakdown.total,
+        discountAmount: breakdown.discount,
+        taxAmount: breakdown.tax,
+        invoiceNumber: formData.invoiceNumber,
+        issueDate: formData.invoiceDate,
+        paymentTermsDays: PAYMENT_TERMS.find(t => t.value === formData.paymentTerms)?.days,
+        externalReference: formData.reference,
+        customerEmail: selectedCustomer?.email || undefined,
+        notes: formData.customerNotes,
+        draft: isDraft,
+        sendInvoiceEmail: formData.sendInvoiceEmail,
+        coboCollectorEntityId: formData.coboEnabled && formData.behalfEntityId ? formData.collectingEntityId : undefined,
+        // Kept with the invoice; there are no columns for these.
+        metadata: JSON.stringify({
+          subtotal: breakdown.subtotal,
+          charges: breakdown.charges,
+          lineItems: formData.useLineItems ? formData.lineItems : undefined,
+          extraCharges: formData.charges.length ? formData.charges : undefined,
+          vat: formData.taxConfig,
+          vatIncludedInAmount: !formData.useLineItems,
+          earlyPaymentDiscount: formData.earlyPaymentDiscount.enabled ? formData.earlyPaymentDiscount : undefined,
+          latePaymentFee: formData.latePaymentFee.enabled ? formData.latePaymentFee : undefined,
+          externalRefs: formData.externalRefs.length ? formData.externalRefs : undefined,
+          internalNotes: formData.internalNotes || undefined,
+          coboRechargeMarkup: formData.coboEnabled ? formData.coboRechargeMarkup : undefined,
+        }),
         currencyCode: formData.currency,
         dueDate: formData.dueDate,
         description: formData.description || `Invoice ${formData.invoiceNumber}`,
@@ -1528,8 +1367,6 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         autoReconcile: true,
         allowPartialPayment: true,
         allowOverpayment: false,
-        // Hierarchy context
-        hierarchyNodeId: formData.hierarchyNodeId || undefined,
         // Line items if using itemized invoice
         lineItems: formData.useLineItems ? formData.lineItems.map(item => ({
           description: item.description,
@@ -1568,18 +1405,13 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     navigator.clipboard.writeText(text);
   };
 
+  const breakdown = useMemo(() => invoiceBreakdown(formData), [formData]);
+
   // Collection account is optional in general, but required when generating a VIBAN --
   // VibanService.createInvoiceViban() needs a real target VA to attach the VIBAN to.
-  const canSubmit = Boolean(formData.invoiceNumber) && Boolean(formData.amount) && parseFloat(formData.amount) > 0
+  const canSubmit = Boolean(formData.invoiceNumber) && breakdown.total > 0
     && (!formData.generateViban || Boolean(formData.collectionAccountId));
 
-  // Calculate totals from line items if used
-  const calculatedTotal = useMemo(() => {
-    if (formData.useLineItems && formData.lineItems.length > 0) {
-      return formData.lineItems.reduce((sum, item) => sum + item.lineTotal, 0);
-    }
-    return parseFloat(formData.amount) || 0;
-  }, [formData.useLineItems, formData.lineItems, formData.amount]);
 
   return (
     // Phase 10 Design System Unification (2026-05-13): page body wrapped
@@ -1588,49 +1420,49 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // sticky -- Layout's own header already occupies `sticky top-0`, and a
     // second sticky element at the same offset would overlap it.
     <div>
-      {/* Header */}
-      <div className="bg-surface-card border border-edge rounded-lg shadow-sm mb-6">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-              </button>
-              <PageHeader
-                title={isEditMode ? 'Edit Receivable' : 'Create Receivable'}
-                description={formData.invoiceNumber}
-              />
-            </div>
-            {/* Hidden below sm: this page also has an always-visible bottom
-                action bar (Cancel/Save Draft/Create Invoice) with the same
-                buttons -- on narrow screens there isn't room for both, and
-                the bottom bar already covers it. */}
-            <div className="items-center gap-3 flex">
-              <button
-                onClick={() => handleSubmit(true)}
-                disabled={loading}
-                className="px-4 py-2 field-label bg-surface-card border border-edge-strong rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
-              >
-                Save Draft
-              </button>
-              <button
-                onClick={() => handleSubmit(false)}
-                disabled={loading || !canSubmit}
-                className={cn(
-                  'px-4 py-2 text-body-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
-                  canSubmit ? 'bg-primary-600 hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'
-                )}
-              >
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                {isEditMode ? 'Update' : 'Create Invoice'}
-              </button>
+      {/* Main Content */}
+      <Page maxWidth="narrow" className="py-6">
+        {/* Header */}
+        <div className="bg-surface-card border border-edge rounded-lg shadow-sm mb-6">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+                </button>
+                <PageHeader
+                  title={isEditMode ? 'Edit Receivable' : 'Create Receivable'}
+                  description={formData.invoiceNumber}
+                />
+              </div>
+              {/* Hidden below sm: this page also has an always-visible bottom
+                  action bar (Cancel/Save Draft/Create Invoice) with the same
+                  buttons -- on narrow screens there isn't room for both, and
+                  the bottom bar already covers it. */}
+              <div className="items-center gap-3 flex">
+                <button
+                  onClick={() => handleSubmit(true)}
+                  disabled={loading}
+                  className="px-4 py-2 field-label bg-surface-card border border-edge-strong rounded-lg hover:bg-neutral-50 dark:hover:bg-primary-800/50 transition-colors disabled:opacity-50"
+                >
+                  Save Draft
+                </button>
+                <button
+                  onClick={() => handleSubmit(false)}
+                  disabled={loading || !canSubmit}
+                  className={cn(
+                    'px-4 py-2 text-body-sm font-medium text-white rounded-lg transition-colors flex items-center gap-2',
+                    canSubmit ? 'bg-primary-600 hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'
+                  )}
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isEditMode ? 'Update' : 'Create Invoice'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <Page maxWidth="narrow" className="py-8">
         {/* Corporate & Entity Context Banner */}
         <div className="mb-6 p-4 bg-gradient-to-r from-info-50 to-cat-1-soft border border-info-200 rounded-lg dark:border-info-500/30 dark:from-info-500/15 dark:to-cat-1/15">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -1724,12 +1556,15 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                           <p className="body-strong">{customer.name}</p>
                           <p className="caption">{customer.code}</p>
                         </div>
+                        {/* Credit figures are not loaded for customers (always 0), so they are shown only when known. */}
                         <div className="text-right">
-                          <p className="caption">Credit Available</p>
-                          <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
-                            {formatCurrency(customer.creditAvailable, customer.currency)}
-                          </p>
-                          {customer.overdueAmount && customer.overdueAmount > 0 && (
+                          {customer.creditLimit > 0 && (<>
+                            <p className="caption">Credit Available</p>
+                            <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">
+                              {formatCurrency(customer.creditAvailable, customer.currency)}
+                            </p>
+                          </>)}
+                          {!!customer.overdueAmount && customer.overdueAmount > 0 && (
                             <p className="text-caption text-error-500 dark:text-error-300">Overdue: {formatCurrency(customer.overdueAmount, customer.currency)}</p>
                           )}
                         </div>
@@ -1753,7 +1588,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                     </button>
                   </div>
-                  <div className="grid gap-4 mt-4 grid-cols-3">
+                  {selectedCustomer.creditLimit > 0 && <div className="grid gap-4 mt-4 grid-cols-3">
                     <div>
                       <p className="caption">Credit Limit</p>
                       <p className="body-strong font-semibold">{formatCurrency(selectedCustomer.creditLimit, selectedCustomer.currency)}</p>
@@ -1766,7 +1601,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="caption">Available</p>
                       <p className="text-body-sm font-semibold text-success-600 dark:text-success-300">{formatCurrency(selectedCustomer.creditAvailable, selectedCustomer.currency)}</p>
                     </div>
-                  </div>
+                  </div>}
                   {selectedCustomer.assignedViban && (
                     <div className="mt-3 pt-3 border-t border-info-200 dark:border-info-500/30">
                       <p className="caption">Assigned VIBAN</p>
@@ -1812,10 +1647,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       value={formData.amount}
                       onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                       placeholder="0.00"
-                      className={cn('flex-1 px-3 py-2 border rounded-l-lg text-body-sm', errors.amount ? 'border-error-300' : 'border-edge-strong', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
+                      className={cn('flex-1 min-w-0 px-3 py-2 border rounded-l-lg text-body-sm', errors.amount ? 'border-error-300' : 'border-edge-strong', 'focus:outline-none focus:ring-2 focus:ring-primary-200')}
                       disabled={formData.useLineItems}
                     />
-                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="px-3 py-2 border border-l-0 border-edge-strong rounded-r-lg text-body-sm bg-surface-page">
+                    <select value={formData.currency} onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value }))} className="shrink-0 px-3 py-2 border border-l-0 border-edge-strong rounded-r-lg text-body-sm bg-surface-page">
                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
@@ -1830,10 +1665,10 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 </div>
                 <div>
                   <label className="field-label block mb-1">Due Date</label>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-surface-page border border-edge rounded-lg">
-                    <Calendar className="w-4 h-4 text-neutral-400" />
-                    <span className="text-body-sm text-neutral-900 dark:text-neutral-50">{formData.dueDate ? formatDate(formData.dueDate) : '-'}</span>
-                  </div>
+                  <input type="date" value={formData.dueDate} min={formData.invoiceDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                    className="w-full px-3 py-2 border border-edge-strong rounded-lg text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-200" />
+                  <p className="caption mt-1">Set from the payment terms; change it if needed.</p>
                 </div>
                 <div>
                   <label className="field-label block mb-1">Reference (PO/Contract)</label>
@@ -1944,9 +1779,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                 {activeTab === 'tax-charges' && <TaxChargesTab formData={formData} setFormData={setFormData} currency={formData.currency} />}
                 {activeTab === 'payment-link' && <PaymentLinkTab />}
                 {activeTab === 'cobo' && <CoboTab formData={formData} setFormData={setFormData} entities={entities} />}
-                {activeTab === 'hierarchy' && <HierarchyTab formData={formData} setFormData={setFormData} hierarchyNodes={hierarchyNodes} />}
                 {activeTab === 'documents' && <DocumentsTab formData={formData} setFormData={setFormData} />}
-                {activeTab === 'reminders' && <RemindersTab formData={formData} setFormData={setFormData} />}
+                {activeTab === 'email' && <EmailTab formData={formData} setFormData={setFormData} email={selectedCustomer?.email} />}
                 {!activeTab && (
                   <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                     <p className="text-body-sm">Click a tab above to configure optional settings</p>
@@ -1973,12 +1807,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   </div>
                   <div className="pt-3 border-t border-edge-subtle">
                     <p className="caption">Amount</p>
-                    <p className="stat-value-sm">
-                      {formData.useLineItems && formData.lineItems.length > 0
-                        ? formatCurrency(calculatedTotal, formData.currency)
-                        : formData.amount ? formatCurrency(parseFloat(formData.amount), formData.currency) : '-'
-                      }
-                    </p>
+                    <p className="stat-value-sm">{breakdown.total > 0 ? formatCurrency(breakdown.total, formData.currency) : '-'}</p>
+                    {breakdown.tax > 0 && <p className="caption mt-1">incl. VAT {formatCurrency(breakdown.tax, formData.currency)}</p>}
+                    {breakdown.charges > 0 && <p className="caption">incl. charges {formatCurrency(breakdown.charges, formData.currency)}</p>}
                     {formData.useLineItems && <p className="caption mt-1">{formData.lineItems.length} line item(s)</p>}
                   </div>
                   <div>
@@ -1997,16 +1828,14 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                   )}
 
                   {/* Features Summary */}
-                  {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.hierarchyNodeId || formData.attachments.length > 0 || formData.enableDunning) && (
+                  {(formData.useLineItems || formData.charges.length > 0 || formData.coboEnabled || formData.sendInvoiceEmail) && (
                     <div className="pt-3 border-t border-edge-subtle">
                       <p className="caption mb-2">Includes</p>
                       <div className="flex flex-wrap gap-1">
                         {formData.useLineItems && <span className="px-2 py-1 bg-info-50 text-info-700 text-caption rounded-md dark:bg-info-500/10 dark:text-info-300">{formData.lineItems.length} items</span>}
                         {formData.charges.length > 0 && <span className="px-2 py-1 bg-warning-50 text-warning-700 text-caption rounded-md dark:bg-warning-500/10 dark:text-warning-300">{formData.charges.length} charges</span>}
                         {formData.coboEnabled && <span className="px-2 py-1 bg-success-50 text-success-700 text-caption rounded-md dark:bg-success-500/10 dark:text-success-300">COBO</span>}
-                        {formData.hierarchyNodeId && <span className="px-2 py-1 bg-cat-2-soft text-cat-2 dark:text-cat-2-fg text-caption rounded-md dark:bg-cat-2/15">Hierarchy</span>}
-                        {formData.attachments.length > 0 && <span className="px-2 py-1 bg-surface-muted text-neutral-700 dark:text-neutral-200 text-caption rounded-md">{formData.attachments.length} files</span>}
-                        {formData.enableDunning && <span className="px-2 py-1 bg-error-50 text-error-700 text-caption rounded-md dark:bg-error-500/10 dark:text-error-300">Dunning</span>}
+                        {formData.sendInvoiceEmail && <span className="px-2 py-1 bg-surface-muted text-neutral-700 dark:text-neutral-200 text-caption rounded-md">Email</span>}
                       </div>
                     </div>
                   )}
@@ -2021,7 +1850,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                       <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
                       <ul className="text-caption text-warning-700 mt-1 space-y-1 dark:text-warning-300">
                         {!formData.customerId && <li>• Select a customer</li>}
-                        {(!formData.amount || parseFloat(formData.amount) <= 0) && !formData.useLineItems && <li>• Enter an amount</li>}
+                        {breakdown.total <= 0 && !formData.useLineItems && <li>• Enter an amount</li>}
                         {formData.useLineItems && formData.lineItems.length === 0 && <li>• Add at least one line item</li>}
                         {formData.generateViban && !formData.collectionAccountId && <li>• Select collection account (required to generate a VIBAN)</li>}
                       </ul>

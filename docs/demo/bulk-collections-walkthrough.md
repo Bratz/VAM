@@ -72,7 +72,8 @@ You see: the three parties in the list, codes CUS-67706 / 67707 / 67708, KYC *Pe
 | Gulf Star Logistics LLC | 4500 | Immediate | 9 Nov |
 | Desert Rose Retail LLC | 2750 | Net 7 | 16 Nov |
 
-The invoice number in the form (INV-202611-…) is a draft; the saved one is INV-2026-xxxx (table above).
+When recorded (9 Nov) the form's number was replaced on save by an INV-2026-xxxx one (table above). Since 10 Nov the
+invoice keeps the number shown in the form (INV-202611-…), which can be edited; a number already used is refused.
 
 ### 0.3 Hold period
 **Receivables (AR) → Collection runs** tab → *Hold collected direct debits for* **5** → **Save**.
@@ -322,7 +323,7 @@ request still went out as pain.013, and the pay link still works.
 
 - **Corporate filter** on Receivables can come back on another corporate — check it says TestMNC.
 - Registration Country on **Add Party** is pre-filled with AE.
-- Invoice numbers shown in the Create Invoice form are drafts; the saved number differs.
+- Before 10 Nov the Create Invoice form's number was replaced on save; it is now kept as shown.
 - Requests to Pay sent before 10 Nov (the 9 Nov recording) have no pay link, VIBAN or email: use the line's
   **Send Request to Pay again**. A paid invoice is refused (*already paid; there is nothing to request*).
 - Pay links are built on the server from `FRONTEND_BASE_URL`; the OCI compose file sets it to

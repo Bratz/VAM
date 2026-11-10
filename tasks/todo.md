@@ -1,5 +1,24 @@
 # Active Work / Status Tracker
 
+## ✅ Create Invoice saves what it shows; AR list fixes (2026-11-10)
+User: "fix all" (the five items found reviewing Create Invoice / the AR list).
+- [x] 1. Create Invoice: send and store what the form collects
+  - invoice number as typed (unique per corporate), invoice date, payment terms days, reference,
+    customer email, gross / discount / tax / net, Save Draft = DRAFT status
+  - line items, charges, VAT config, early-payment / late-fee terms, internal notes, external refs,
+    revenue centre, recharge markup -> `metadata` JSON (no columns for them)
+  - COBO: after create, submit through CoboReceivableService.submitForCobo (the existing flow)
+  - "Send invoice email" -> an outbox email with the pay link
+  - removed: file attachments (no storage), reminder days / dunning (no engine)
+- [x] 2. Hierarchy: taken from the collection account's node on the backend; the empty tab goes
+- [x] 3. Receivables page remembers the last corporate
+- [x] 4. Customer picker searches the server, not the first 100
+- [x] 5. Tiles: Not yet due + Overdue split the open book
+- [x] Drafts can be issued (AR list "Issue", POST /receivables/invoices/{id}/issue); drafts are not owed
+- Review: 521 backend tests (5 new); live run on TestMNC created a COBO invoice (stored number, VAT 50 of 1,050,
+  PO, email, metadata, PENDING_TREASURY_APPROVAL) and a draft that was issued; tiles sum (8,169,405.33 ≈
+  655,945.27 + 7,513,460.05); last corporate remembered. Test rows deleted.
+
 ## ✅ Home-bank shadow accounts: automatic, and chosen at program setup
 User decisions: every home-bank (INTERNAL) bank account gets a shadow account automatically;
 program setup presents those shadows to pick from.

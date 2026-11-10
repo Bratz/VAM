@@ -235,6 +235,20 @@ public class ReceivablesDto {
         
         // NEW: Line items (Week 3)
         private List<InvoiceLineItem> lineItems;
+
+        // The rest of what the Create Invoice form collects
+        private String invoiceNumber;          // as typed; generated when blank. Unique per corporate.
+        private LocalDate issueDate;
+        private Integer paymentTermsDays;
+        private String externalReference;      // PO / contract
+        private String customerEmail;
+        private BigDecimal discountAmount;     // breakdown only: amount is what the customer pays
+        private BigDecimal taxAmount;
+        private String notes;                  // for the customer
+        private String metadata;               // JSON: line items, charges, VAT and payment terms, internal notes
+        private UUID coboCollectorEntityId;    // collect on behalf of the owning entity: submitted for treasury approval
+        private Boolean draft;
+        private Boolean sendInvoiceEmail;
     }
 
     @Data

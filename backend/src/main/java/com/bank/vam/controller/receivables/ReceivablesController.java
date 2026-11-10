@@ -119,6 +119,12 @@ public class ReceivablesController {
         return ResponseEntity.ok(Map.of("success", true, "data", invoice, "message", "Invoice created successfully"));
     }
 
+    @PostMapping("/invoices/{invoiceId}/issue")
+    @Operation(summary = "Issue a draft invoice", description = "A DRAFT invoice becomes OPEN")
+    public ResponseEntity<Map<String, Object>> issueDraft(@PathVariable UUID invoiceId) {
+        return ResponseEntity.ok(Map.of("success", true, "data", receivablesService.issueDraft(invoiceId)));
+    }
+
     @PostMapping("/invoices/{invoiceId}/record-payment")
     @Operation(summary = "Record payment", description = "Record a payment against an invoice")
     public ResponseEntity<Map<String, Object>> recordPayment(

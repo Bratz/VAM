@@ -93,6 +93,9 @@ public class ReceivablesService {
     private final SettlementVaResolverService settlementVaResolver;
     private final ExceptionTransactionRepository exceptionTransactionRepository;
 
+    private final CoboReceivableService coboReceivables;
+    private final com.bank.vam.outbox.OutboxEmailRepository outbox;
+
     // ========================================================================
     // CONFIGURATION - Fee Rates
     // ========================================================================
@@ -340,7 +343,17 @@ public class ReceivablesService {
             log.warn("No owningEntityId provided in request body - receivable will have null owningEntityId");
         }
 
-        String invoiceNumber = "INV-" + LocalDate.now().getYear() + "-" + String.format("%04d", System.currentTimeMillis() % 10000);
+        // The number the user typed, when there is one; it must not repeat within the corporate.
+        String typed = request.getInvoiceNumber() == null ? "" : request.getInvoiceNumber().trim();
+        if (!typed.isEmpty() && receivableRepository.existsByCorporateIdAndReceivableNumber(effectiveCorporateId, typed)) {
+            throw new BusinessException("Invoice number " + typed + " is already used; choose another");
+        }
+        String invoiceNumber = !typed.isEmpty() ? typed
+                : "INV-" + LocalDate.now().getYear() + "-" + String.format("%04d", System.currentTimeMillis() % 10000);
+        boolean draft = Boolean.TRUE.equals(request.getDraft());
+        // The invoice sits where its collection account sits in the hierarchy.
+        VirtualAccount collectionVa = request.getTargetVaId() == null ? null
+                : virtualAccountRepository.findById(request.getTargetVaId()).orElse(null);
 
         // Real, shareable "pay this invoice" link -- unconditional (unlike VIBAN generation, this
         // costs nothing and needs no target account) -- see PublicReceivablesController.
@@ -361,19 +374,27 @@ public class ReceivablesService {
             .customerName(request.getCustomerName())
             .virtualAccountId(request.getTargetVaId())
             .paymentLinkToken(paymentLinkToken)
-            .issueDate(LocalDate.now())
+            .issueDate(request.getIssueDate() != null ? request.getIssueDate() : LocalDate.now())
             .dueDate(request.getDueDate())
+            .paymentTermsDays(request.getPaymentTermsDays())
+            .externalReference(blankToNull(request.getExternalReference()))
+            .customerEmail(blankToNull(request.getCustomerEmail()))
             .grossAmount(request.getAmount())
             .netAmount(request.getAmount())
+            .discountAmount(request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO)
+            .taxAmount(request.getTaxAmount() != null ? request.getTaxAmount() : BigDecimal.ZERO)
             .outstandingAmount(request.getAmount())
             .paidAmount(BigDecimal.ZERO)
             .currencyCode(request.getCurrencyCode() != null ? request.getCurrencyCode() : "AED")
             .description(request.getDescription())
-            .status(Receivable.ReceivableStatus.OPEN)
+            .notes(blankToNull(request.getNotes()))
+            .metadata(blankToNull(request.getMetadata()))
+            .status(draft ? Receivable.ReceivableStatus.DRAFT : Receivable.ReceivableStatus.OPEN)
             .collectionRoute(Receivable.CollectionRoute.DIRECT)
             .allowPartialPayment(Boolean.TRUE.equals(request.getAllowPartialPayment()))
             .allowOverpayment(Boolean.TRUE.equals(request.getAllowOverpayment()))
-            .hierarchyNodeId(request.getHierarchyNodeId())
+            .hierarchyNodeId(collectionVa != null && collectionVa.getHierarchyNodeId() != null
+                    ? collectionVa.getHierarchyNodeId() : request.getHierarchyNodeId())
             .createdBy("system")
             .build();
 
@@ -417,6 +438,14 @@ public class ReceivablesService {
             savedReceivable = receivableRepository.save(savedReceivable);
         }
 
+        if (!draft && request.getCoboCollectorEntityId() != null) {
+            // The same request the COBO History tab makes: it waits for treasury approval.
+            savedReceivable = coboReceivables.submitForCobo(savedReceivable.getId(), request.getCoboCollectorEntityId(), "portal");
+        }
+        if (!draft && Boolean.TRUE.equals(request.getSendInvoiceEmail())) {
+            outbox.save(invoiceEmail(savedReceivable, paymentLink));
+        }
+
         return InvoiceResponse.builder()
             .id(savedReceivable.getId())
             .invoiceNumber(savedReceivable.getReceivableNumber())
@@ -440,6 +469,61 @@ public class ReceivablesService {
             .matchedPayments(Collections.emptyList())
             .createdAt(savedReceivable.getCreatedAt())
             .build();
+    }
+
+    /** A draft becomes a real invoice: OPEN, owed, and collectable. */
+    @Transactional
+    public InvoiceResponse issueDraft(UUID invoiceId) {
+        Receivable r = receivableRepository.findById(invoiceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + invoiceId));
+        if (r.getStatus() != Receivable.ReceivableStatus.DRAFT) {
+            throw new BusinessException(r.getReceivableNumber() + " is not a draft (" + r.getStatus() + ")");
+        }
+        if (r.getNetAmount() == null || r.getNetAmount().signum() <= 0) {
+            throw new BusinessException(r.getReceivableNumber() + " has no amount; a draft needs one to be issued");
+        }
+        r.setStatus(Receivable.ReceivableStatus.OPEN);
+        return mapReceivableToInvoiceResponse(receivableRepository.save(r));
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    /**
+     * The invoice as the email the customer would get. There is no mail server: it is kept in the outbox,
+     * or marked NO_ADDRESS when the invoice has no email address.
+     */
+    private com.bank.vam.outbox.OutboxEmail invoiceEmail(Receivable r, String payLink) {
+        java.text.DecimalFormat money = new java.text.DecimalFormat("#,##0.00");
+        String creditor = corporateRepository.findById(r.getCorporateId()).map(Corporate::getLegalName).orElse("Your supplier");
+        String amount = r.getCurrencyCode() + " " + money.format(r.getNetAmount());
+        StringBuilder body = new StringBuilder()
+                .append("Dear ").append(r.getCustomerName() != null ? r.getCustomerName() : "customer").append(",\n\n")
+                .append(creditor).append(" has issued invoice ").append(r.getReceivableNumber()).append(" for ").append(amount)
+                .append(r.getTaxAmount() != null && r.getTaxAmount().signum() > 0
+                        ? " (including VAT " + r.getCurrencyCode() + " " + money.format(r.getTaxAmount()) + ")" : "")
+                .append(r.getDueDate() != null ? ", due on " + r.getDueDate() : "").append(".\n");
+        if (r.getDescription() != null) body.append(r.getDescription()).append("\n");
+        if (r.getExternalReference() != null) body.append("Your reference: ").append(r.getExternalReference()).append("\n");
+        if (r.getNotes() != null) body.append("\n").append(r.getNotes()).append("\n");
+        body.append("\nPay online: ").append(payLink).append("\n");
+        if (r.getViban() != null) {
+            body.append("Or transfer ").append(amount).append(" to IBAN ").append(r.getViban())
+                    .append(", quoting ").append(r.getReceivableNumber()).append(".\n");
+        }
+        com.bank.vam.outbox.OutboxEmail e = new com.bank.vam.outbox.OutboxEmail();
+        e.setCorporateId(r.getCorporateId());
+        e.setToAddress(r.getCustomerEmail());
+        e.setToName(r.getCustomerName());
+        e.setSubject("Invoice " + r.getReceivableNumber() + " \u00b7 " + amount + " \u00b7 " + creditor);
+        e.setBody(body.toString());
+        e.setRelatedType("INVOICE");
+        e.setRelatedId(r.getId());
+        e.setRelatedRef(r.getReceivableNumber());
+        e.setLink(payLink);
+        e.setStatus(r.getCustomerEmail() != null ? "SENT" : "NO_ADDRESS");
+        return e;
     }
 
     /** For the public, unauthenticated "pay this invoice" page (PublicReceivablesController) --

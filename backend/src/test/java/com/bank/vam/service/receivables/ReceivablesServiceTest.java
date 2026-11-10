@@ -51,10 +51,13 @@ class ReceivablesServiceTest {
     private final ExceptionTransactionRepository exceptionTransactionRepository = mock(ExceptionTransactionRepository.class);
     private final CorporateRepository corporateRepository = mock(CorporateRepository.class);
 
+    private final CoboReceivableService coboReceivables = mock(CoboReceivableService.class);
+    private final com.bank.vam.outbox.OutboxEmailRepository outbox = mock(com.bank.vam.outbox.OutboxEmailRepository.class);
+
     private final ReceivablesService service = new ReceivablesService(
             virtualAccountRepository, transactionRepository, vibanRepository, receivableRepository,
             vibanService, corporateRepository, feePostingService, transactionService, settlementVaResolver,
-            exceptionTransactionRepository);
+            exceptionTransactionRepository, coboReceivables, outbox);
 
     {
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "http://test.local");
@@ -148,6 +151,98 @@ class ReceivablesServiceTest {
         assertNotNull(saved.getValue().getPaymentLinkToken());
         assertTrue(response.getPaymentLink().startsWith("http://test.local/?page=pay-invoice&token="));
         assertTrue(response.getPaymentLink().endsWith(saved.getValue().getPaymentLinkToken()));
+    }
+
+    /** What the form collects is stored: its number, date, terms, reference, email, VAT and the rest as metadata. */
+    @Test
+    void theInvoiceKeepsWhatTheFormCollected() {
+        stubSaveAssignsId();
+        LocalDate issued = LocalDate.now().minusDays(2);
+
+        InvoiceResponse response = service.createInvoice(null, baseRequest()
+                .invoiceNumber(" INV-TYPED-1 ").issueDate(issued).paymentTermsDays(30)
+                .externalReference("PO-77").customerEmail("ap@acme.example")
+                .taxAmount(new BigDecimal("23.81")).discountAmount(BigDecimal.ONE)
+                .notes("Thank you").metadata("{\"lineItems\":[]}").build());
+
+        ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
+        verify(receivableRepository, atLeastOnce()).save(saved.capture());
+        Receivable r = saved.getValue();
+        assertEquals("INV-TYPED-1", response.getInvoiceNumber());
+        assertEquals(issued, r.getIssueDate());
+        assertEquals(30, r.getPaymentTermsDays());
+        assertEquals("PO-77", r.getExternalReference());
+        assertEquals("ap@acme.example", r.getCustomerEmail());
+        assertEquals(new BigDecimal("23.81"), r.getTaxAmount());
+        assertEquals(BigDecimal.valueOf(500), r.getNetAmount());
+        assertEquals("Thank you", r.getNotes());
+        assertEquals("{\"lineItems\":[]}", r.getMetadata());
+        assertEquals(Receivable.ReceivableStatus.OPEN, r.getStatus());
+    }
+
+    @Test
+    void aTypedNumberAlreadyUsedByTheCorporateIsRefused() {
+        UUID corporateId = UUID.randomUUID();
+        when(receivableRepository.existsByCorporateIdAndReceivableNumber(corporateId, "INV-1")).thenReturn(true);
+
+        assertThrows(BusinessException.class,
+                () -> service.createInvoice(corporateId, baseRequest().invoiceNumber("INV-1").build()));
+        verify(receivableRepository, never()).save(any());
+    }
+
+    /** A draft is stored as DRAFT and nothing goes out: no COBO request, no email. */
+    @Test
+    void aDraftIsKeptAsADraftAndNotSent() {
+        stubSaveAssignsId();
+
+        service.createInvoice(null, baseRequest().draft(true).sendInvoiceEmail(true)
+                .coboCollectorEntityId(UUID.randomUUID()).build());
+
+        ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
+        verify(receivableRepository, atLeastOnce()).save(saved.capture());
+        assertEquals(Receivable.ReceivableStatus.DRAFT, saved.getValue().getStatus());
+        verifyNoInteractions(coboReceivables, outbox);
+    }
+
+    @Test
+    void collectOnBehalfIsSubmittedAndTheInvoiceIsEmailed() {
+        stubSaveAssignsId();
+        UUID treasury = UUID.randomUUID();
+        when(coboReceivables.submitForCobo(any(), eq(treasury), eq("portal"))).thenAnswer(inv -> {
+            Receivable r = Receivable.builder().receivableNumber("INV-X").currencyCode("AED")
+                    .netAmount(BigDecimal.valueOf(500)).customerEmail("ap@acme.example").build();
+            r.setId(inv.getArgument(0));
+            return r;
+        });
+
+        service.createInvoice(null, baseRequest().coboCollectorEntityId(treasury).sendInvoiceEmail(true).build());
+
+        verify(coboReceivables).submitForCobo(any(), eq(treasury), eq("portal"));
+        ArgumentCaptor<com.bank.vam.outbox.OutboxEmail> mail = ArgumentCaptor.forClass(com.bank.vam.outbox.OutboxEmail.class);
+        verify(outbox).save(mail.capture());
+        assertEquals("SENT", mail.getValue().getStatus());
+        assertEquals("INVOICE", mail.getValue().getRelatedType());
+        assertTrue(mail.getValue().getBody().contains("Pay online: http://test.local/?page=pay-invoice&token="));
+    }
+
+    @Test
+    void issuingADraftOpensIt_andOnlyADraftWithAnAmount() {
+        Receivable draft = Receivable.builder().receivableNumber("INV-D").status(Receivable.ReceivableStatus.DRAFT)
+                .netAmount(BigDecimal.TEN).grossAmount(BigDecimal.TEN).outstandingAmount(BigDecimal.TEN)
+                .paidAmount(BigDecimal.ZERO).currencyCode("AED").build();
+        draft.setId(UUID.randomUUID());
+        when(receivableRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
+        when(receivableRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertEquals("OPEN", service.issueDraft(draft.getId()).getStatus());
+        // Issued now: a second issue is refused.
+        assertThrows(BusinessException.class, () -> service.issueDraft(draft.getId()));
+
+        Receivable empty = Receivable.builder().receivableNumber("INV-E").status(Receivable.ReceivableStatus.DRAFT)
+                .netAmount(BigDecimal.ZERO).build();
+        empty.setId(UUID.randomUUID());
+        when(receivableRepository.findById(empty.getId())).thenReturn(Optional.of(empty));
+        assertThrows(BusinessException.class, () -> service.issueDraft(empty.getId()));
     }
 
     @Test
