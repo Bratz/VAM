@@ -92,6 +92,17 @@ class Iso20022RequestToPayServiceTest {
         assertTrue(mail.getValue().getSubject().startsWith("Payment request: INV-2026-0001 · AED 750.00"), mail.getValue().getSubject());
     }
 
+    /** "Send again" on a paid invoice is refused, and nothing is emailed. */
+    @Test
+    void aPaidInvoiceIsNotRequestedAgain() {
+        Receivable r = receivable();
+        r.setOutstandingAmount(BigDecimal.ZERO);
+        when(receivableRepository.findById(RECEIVABLE_ID)).thenReturn(Optional.of(r));
+
+        assertThrows(com.bank.vam.exception.BusinessException.class, () -> service.sendRequestToPay(RECEIVABLE_ID));
+        verifyNoInteractions(outbox);
+    }
+
     private static final UUID RECEIVABLE_ID = UUID.randomUUID();
     private static final UUID PARTY_ID = UUID.randomUUID();
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Download, Undo2, Workflow, CalendarCheck, Save, QrCode, Copy, ExternalLink, FileCode } from 'lucide-react';
+import { Download, Undo2, Workflow, CalendarCheck, Save, QrCode, Copy, ExternalLink, FileCode, Send } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { Badge, Button, DataTable, Drawer, Input, RowActions, Select } from '../ui';
 import { Modal } from '../ui/enhanced';
@@ -261,6 +261,10 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
                 key: 'id', header: '', align: 'right',
                 render: (_, l) => (
                   <RowActions actions={[
+                    { label: 'Send Request to Pay again', icon: <Send className="w-4 h-4" />,
+                      hidden: l.status !== 'RTP_SENT' && !l.rtpAfterReturn,
+                      onClick: () => collectionsApi.resendRequestToPay(l.receivableId)
+                        .then(() => open && openRun(open.run.id)).catch(err => setError(errorText(err))) },
                     { label: 'Download pain.013', icon: <FileCode className="w-4 h-4" />, hidden: !l.requestToPayKept,
                       onClick: () => collectionsApi.downloadRequestToPay(l.receivableId, l.receivableNumber ?? 'request').catch(err => setError(errorText(err))) },
                     { label: l.status === 'SENT' ? 'Mark rejected' : 'Mark returned', icon: <Undo2 className="w-4 h-4" />, danger: true,

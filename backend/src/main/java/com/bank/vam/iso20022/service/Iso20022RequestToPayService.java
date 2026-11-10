@@ -92,6 +92,9 @@ public class Iso20022RequestToPayService {
         if (receivable.getCustomerPartyId() == null) {
             throw new RuntimeException("Receivable " + receivableId + " has no linked customer Party");
         }
+        if (receivable.getOutstandingAmount() == null || receivable.getOutstandingAmount().signum() <= 0) {
+            throw new com.bank.vam.exception.BusinessException(receivable.getReceivableNumber() + " is already paid; there is nothing to request");
+        }
         Party debtor = partyRepository.findById(receivable.getCustomerPartyId())
                 .orElseThrow(() -> new RuntimeException("Receivable " + receivableId + " has no linked customer Party"));
 

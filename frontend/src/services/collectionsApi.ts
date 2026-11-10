@@ -241,6 +241,9 @@ export const collectionsApi = {
     apiClient.post<ApiResponse<BankAnswer>>(`/collections/mandates/${id}/bank-answer`, { accepted, reasonCode }).then(r => r.data.data),
 
   /** Saves the last pain.013 (Request to Pay) sent for an invoice. */
+  /** Sends the invoice's Request to Pay again: a fresh pain.013 and email, with its pay link and IBAN. */
+  resendRequestToPay: (receivableId: string) =>
+    apiClient.post(`/receivables/${receivableId}/request-to-pay/send`).then(() => undefined),
   downloadRequestToPay: async (receivableId: string, invoiceNumber: string) =>
     saveXml(await apiClient.get<string>(`/receivables/${receivableId}/request-to-pay/message`, { responseType: 'text' }).then(r => r.data),
       `${invoiceNumber}.pain013.xml`),

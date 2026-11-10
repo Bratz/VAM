@@ -7,7 +7,8 @@ is played from the portal: **Settle due collections up to <date>**, **Mark retur
 
 **Story.** Test Multinational Corp's treasury collects what its customers owe: by direct debit where it
 holds a mandate, by Request to Pay where it does not; collected money is held for the return window, and a
-debit that bounces is reversed and turned into a Request to Pay.
+debit that bounces is reversed and turned into a Request to Pay. A Request to Pay reaches the customer as an
+email with a pay link, a QR code and the invoice's own IBAN.
 
 Corporate used throughout: **Test Multinational Corp** (shown as *TestMNC* / *TEST-MNC-001*).
 Receiving account throughout: **QA-TXN-L7-53197 · Main Operating Account** (AED, legal entity MNC Treasury Center).
@@ -52,7 +53,8 @@ DEMO-* mandates first from their row menus.
    - Party Type **Company**, Legal Name **Al Noor Trading LLC**, Roles: click **Customer**,
      Registration Country **AE** (it is pre-filled with AE — do not type a second "AE").
 3. **Create Party**.
-4. Repeat for **Gulf Star Logistics LLC** and **Desert Rose Retail LLC**.
+4. Repeat for **Gulf Star Logistics LLC** and **Desert Rose Retail LLC**. For Desert Rose, also fill
+   **Email** `ap@desertrose.example` (Basic Info). Leave the other two without one: step 8 shows both cases.
 
 You see: the three parties in the list, codes CUS-67706 / 67707 / 67708, KYC *Pending*.
 
@@ -254,6 +256,54 @@ don't matter.
 
 ---
 
+## 8. Request to Pay — what the customer gets (≈3 min)
+
+> **Script, not yet recorded.** Added after 9 Nov (commits 746864a, 8e79f0a). Values in *italics* are what to
+> expect; IBANs and tokens differ per run. Requests sent before the release carry no link, IBAN or email: on
+> such a line, row menu → **Send Request to Pay again** first.
+
+Every Request to Pay (step 2's two, and the one step 4 sent after the return) now gives the invoice:
+a **pay link**, a **virtual IBAN** of its own, a kept **pain.013**, and an **email** to the customer.
+There is no mail server: emails are kept in an **Outbox** and nothing is delivered.
+
+### 8.1 The pay link and QR
+1. **Collection runs** → click the run from step 2.
+2. On **INV-2026-5352** (Desert Rose, *Request sent*) click **Pay link & QR**.
+
+You see: a window **Pay INV-2026-5352** · *Desert Rose Retail LLC · AED 2,750.00* with
+- a QR code, and the link *https://vam-five.vercel.app/?page=pay-invoice&token=…*;
+- **Copy link** and **Open pay page**;
+- *Or pay by bank transfer to this invoice's IBAN (matched automatically)* — an **AE…** virtual IBAN;
+- below it, *The email the customer got*: To *Desert Rose Retail LLC <ap@desertrose.example>*, subject
+  *Payment request: INV-2026-5352 · AED 2,750.00 · Test Multinational Corp*, the body, and the QR again.
+
+3. Scan the QR with a phone, or **Open pay page**: the customer's page opens without a sign-in, showing the
+   invoice, the amount and the IBAN.
+
+### 8.2 The ISO message
+Row menu of the same line → **Download pain.013**. The file is the CreditorPaymentActivationRequest that was
+sent; its remittance carries two lines: `<Ustrd>INV-2026-5352…</Ustrd>` and
+`<Ustrd>Pay online: https://vam-five.vercel.app/?page=pay-invoice&token=…</Ustrd>`.
+
+### 8.3 The Outbox
+**Receivables (AR) → Outbox** tab (Corporate **TestMNC**).
+
+You see one email per Request to Pay, newest first:
+
+| To | Subject | Status |
+|---|---|---|
+| Gulf Star Logistics LLC · *no email address* | Payment request: INV-2026-6941 · AED 4,500.00 · … | **No address** (sent after the return in step 4) |
+| Desert Rose Retail LLC · ap@desertrose.example | Payment request: INV-2026-5352 · AED 2,750.00 · … | **Sent (simulated)** |
+| Al Noor Trading LLC · *no email address* | Payment request: INV-2026-3141 · AED 1,800.00 · … | **No address** |
+
+Click a row to read the email. *No address* means neither the invoice nor the customer has an email; the
+request still went out as pain.013, and the pay link still works.
+
+> Talking point: one customer, three ways to pay the same request: tap the link, scan the code, or transfer
+> to an IBAN that only this invoice uses, so the money reconciles itself.
+
+---
+
 ## For a technical audience (Swagger: `/api/swagger-ui.html`)
 
 | Endpoint | What it does |
@@ -264,11 +314,18 @@ don't matter.
 | `POST /api/v1/iso20022/inward/camt054` | A credit that settles a waiting debit; debit entries with a return reason |
 | `POST /api/v1/collections/runs/lines` | ERP: lines naming invoices, or new invoices to raise and collect |
 | `GET /api/v1/collections/runs/{id}/pain008` | The run's pain.008 |
+| `POST /api/v1/receivables/{id}/request-to-pay/send` | Send a Request to Pay: pay link, VIBAN, pain.013, outbox email |
+| `GET /api/v1/receivables/{id}/request-to-pay/message` | The last pain.013 sent for the invoice |
+| `GET /api/v1/outbox?corporateId=` · `?relatedId=` | The simulated outbox, for a corporate or one invoice |
 
 ## Gotchas seen while recording
 
 - **Corporate filter** on Receivables can come back on another corporate — check it says TestMNC.
 - Registration Country on **Add Party** is pre-filled with AE.
 - Invoice numbers shown in the Create Invoice form are drafts; the saved number differs.
+- Requests to Pay sent before 10 Nov (the 9 Nov recording) have no pay link, VIBAN or email: use the line's
+  **Send Request to Pay again**. A paid invoice is refused (*already paid; there is nothing to request*).
+- Pay links are built on the server from `FRONTEND_BASE_URL`; the OCI compose file sets it to
+  https://vam-five.vercel.app. A *localhost* link in an email means a deploy dropped that setting.
 - "Settle due collections up to" moves the simulated clock; it settles everything due up to that date for
   every corporate, the same as the evening job.
