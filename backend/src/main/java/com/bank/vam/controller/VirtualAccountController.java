@@ -92,11 +92,17 @@ public class VirtualAccountController {
             @RequestParam(required = false) String walletType,
             @Parameter(description = "Filter by currency") 
             @RequestParam(required = false) String currencyCode,
+            @Parameter(description = "Only this corporate's accounts")
+            @RequestParam(required = false) UUID corporateId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
         Page<VirtualAccount> page;
         
-        if (status != null) {
+        // corporateId was sent by every caller (virtualAccountsApi.getAll) but never declared, so it was ignored and
+        // one corporate's screens listed every corporate's accounts (Create Invoice offered them as collection accounts).
+        if (corporateId != null) {
+            page = virtualAccountRepository.findByCorporateId(corporateId, pageable);
+        } else if (status != null) {
             page = virtualAccountRepository.findByStatus(status, pageable);
         } else if (walletType != null) {
             page = virtualAccountRepository.findByWalletType(walletType, pageable);
