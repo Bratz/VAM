@@ -5,15 +5,14 @@ import com.bank.vam.entity.VirtualAccount.BalanceDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.Set;
 
 /**
  * Fallback adapter for rails that aren't wired in v1 (SWIFT, Open Banking,
- * Host-to-Host, API aggregators, manual). Returns the existing balance with
- * an updated timestamp so freshness counters reset; real adapters arrive in
- * v3/v4 (SWIFT) and later phases.
+ * Host-to-Host, API aggregators, manual). No bank is contacted, so every
+ * fetch fails with "not connected" and the existing balance is left as it is;
+ * real adapters arrive in v3/v4 (SWIFT) and later phases.
  *
  * Registered once and serves all unhandled {@link BalanceDataSource} values
  * via {@link BalanceRefreshService}'s fallback path.
@@ -42,10 +41,7 @@ public class StubAdapter implements ShadowBalanceAdapter {
 
     @Override
     public RefreshResult fetch(VirtualAccount shadow) {
-        log.debug("StubAdapter: returning existing balance for {} (source={})",
-                shadow.getVaNumber(), shadow.getBalanceDataSource());
-        return RefreshResult.ok(shadow.getBankBalance(),
-                                shadow.getBankAvailableBalance(),
-                                LocalDateTime.now());
+        return RefreshResult.fail("Not connected: no adapter for balance source "
+                + shadow.getBalanceDataSource());
     }
 }

@@ -1,6 +1,7 @@
 package com.bank.vam.fx.deal;
 
 import com.bank.vam.config.MarketProfileProperties;
+import com.bank.vam.entity.BaseEntity;
 import com.bank.vam.entity.Corporate;
 import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.credit.CreditLimit;
@@ -94,7 +95,9 @@ public class FxSettlementAccountSeeder implements ApplicationRunner {
     private PhysicalAccount account(Corporate c, LegalEntity e, String ccy, String bic) {
         String number = number(e, ccy);
         String country = marketProfile.getActiveIbanCountryCode();
-        return PhysicalAccount.builder()
+        // Opened here with a made-up balance: marked as a default (the screens say "Default opening balance"). It stays
+        // CORE_BANKING because this platform is the home bank's ledger: CoreBankingAdapter mirrors it into the shadow.
+        return BaseEntity.systemDefault(PhysicalAccount.builder()
                 .corporateId(c.getId())
                 .legalEntityId(e.getId())
                 .accountNumber(number)
@@ -124,10 +127,9 @@ public class FxSettlementAccountSeeder implements ApplicationRunner {
                 .status(PhysicalAccount.AccountStatus.ACTIVE)
                 .syncStatus(PhysicalAccount.SyncStatus.SYNCED)
                 .syncFrequencyMinutes(0)
-                .lastSyncAt(LocalDateTime.now())
                 .balanceAsOf(LocalDateTime.now())
                 .openedDate(LocalDate.now())
-                .build();
+                .build());
     }
 
     /** A stable number per entity and currency, moved on if another account already has it. */

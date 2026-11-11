@@ -2,6 +2,7 @@ package com.bank.vam.service.treasury;
 
 import com.bank.vam.dto.VirtualAccountDto;
 import com.bank.vam.dto.treasury.IhbDto;
+import com.bank.vam.entity.BaseEntity;
 import com.bank.vam.entity.PhysicalAccount;
 import com.bank.vam.entity.Program;
 import com.bank.vam.entity.Transaction;
@@ -48,6 +49,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class IhbUnifiedService {
+
+    /** rateSource of a figure taken from a built-in default rate, not one the bank or corporate set. */
+    static final String RATE_DEFAULT = "DEFAULT";
 
     private final LegalEntityRepository legalEntityRepository;
     private final VirtualAccountRepository virtualAccountRepository;
@@ -428,6 +432,7 @@ public class IhbUnifiedService {
                 .currency(request.getCurrency() != null ? request.getCurrency() : treasuryCenter.getEffectiveIhbCurrency())
                 .tenorDays(request.getTenorDays())
                 .rateType(request.getRateType())
+                .rateSource(RATE_DEFAULT) // the 5.00 base above is built in, not a reference rate the bank set
                 .build();
     }
 
@@ -450,7 +455,9 @@ public class IhbUnifiedService {
         String settlementFrequency = "MONTHLY";
         BigDecimal minLoanAmount = new BigDecimal("10000");
         BigDecimal minDepositAmount = new BigDecimal("10000");
-        
+        // Every 5.00 below is a built-in default; the rates are the bank's only when a config it set prices them.
+        boolean defaultRates = true;
+
         if (configId != null) {
             // Load rates from InterestConfiguration
             InterestConfiguration config = interestConfigRepository.findById(configId)
@@ -461,7 +468,10 @@ public class IhbUnifiedService {
                         config.getConfigName(), treasuryCenter.getEntityCode());
                 
                 // Get base rate and type
-                baseRate = config.getDebitBaseRate() != null ? 
+                defaultRates = config.isSystemDefault()
+                        || (config.getDebitBaseRate() == null && config.getCreditBaseRate() == null
+                            && (config.getEffectiveDebitRate() == null || config.getEffectiveCreditRate() == null));
+                baseRate = config.getDebitBaseRate() != null ?
                         config.getDebitBaseRate() : 
                         (config.getCreditBaseRate() != null ? config.getCreditBaseRate() : new BigDecimal("5.00"));
                 baseRateType = config.getDebitBaseRateType() != null ?
@@ -548,6 +558,7 @@ public class IhbUnifiedService {
                 // Config reference
                 .interestConfigId(configId)
                 .hasInterestConfig(configId != null)
+                .rateSource(defaultRates ? RATE_DEFAULT : "CONFIGURED")
                 // Validity
                 .effectiveFrom(LocalDate.now())
                 .build();
@@ -620,6 +631,7 @@ public class IhbUnifiedService {
         dto.setAvailableLimit(entity.getIhbAvailableLimit());
         dto.setLendingRateSpread(entity.getLendingRateSpread());
         dto.setBorrowingRateSpread(entity.getBorrowingRateSpread());
+        dto.setSpreadsDefault(entity.getSpreadsDefault());
         dto.setCanLend(entity.getCanLend());
         dto.setCanBorrow(entity.getCanBorrow());
         dto.setContactEmail(entity.getContactEmail());
@@ -963,6 +975,7 @@ public class IhbUnifiedService {
         int dayBasis = 360; // Default ACT/360
         BigDecimal rate;
         String interestType;
+        boolean defaultRate = (balance.signum() > 0 ? va.getEffectiveCreditRate() : va.getEffectiveDebitRate()) == null;
 
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
             // Credit position - earns interest
@@ -996,6 +1009,7 @@ public class IhbUnifiedService {
             .eodBalance(va.getCurrentBalance())
             .positionType(va.getIhbPositionType())
             .rateApplied(rate)
+            .rateSource(defaultRate ? RATE_DEFAULT : "ACCOUNT")
             .interestAmount(dailyInterest)
             .interestType(interestType)
             .accruedCreditInterest(va.getAccruedCreditInterest())
@@ -2250,6 +2264,9 @@ public class IhbUnifiedService {
             .status(InterestConfiguration.ConfigStatus.ACTIVE)
             .effectiveFrom(LocalDate.now())
             .build();
+        if (request.getCreditRate() == null || request.getDebitRate() == null || request.getPenaltyRate() == null) {
+            BaseEntity.systemDefault(config); // holds a built-in rate, not one the bank or corporate agreed
+        }
 
         return interestConfigRepository.save(config);
     }

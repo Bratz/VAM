@@ -6,6 +6,8 @@ import com.bank.vam.entity.party.Party.*;
 import com.bank.vam.entity.party.PartyBankAccount;
 import com.bank.vam.entity.party.PartyDocument;
 import com.bank.vam.entity.party.PartyDocument.*;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
 import com.bank.vam.repository.party.PartyRepository;
 import com.bank.vam.repository.party.PartyBankAccountRepository;
 import com.bank.vam.repository.party.PartyDocumentRepository;
@@ -20,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,12 +44,8 @@ public class PartyService {
     private final PartyRepository partyRepository;
     private final PartyBankAccountRepository bankAccountRepository;
     private final PartyDocumentRepository documentRepository;
-    private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
-    // Demo corporate ID for testing
-    private static final UUID DEMO_CORPORATE_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-    
-    // Thread-safe counter for party code generation (initialized with current time for uniqueness across restarts)
+// Thread-safe counter for party code generation (initialized with current time for uniqueness across restarts)
     private static final AtomicLong PARTY_CODE_COUNTER = new AtomicLong(System.currentTimeMillis() % 100000);
     
     // Maximum retry attempts for party code generation conflicts
@@ -60,8 +57,6 @@ public class PartyService {
 
     @Transactional(readOnly = true)
     public PartyListResponse getAllParties(UUID corporateId, PartySearchRequest request) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         int page = request != null && request.getPage() != null ? request.getPage() : 0;
         int size = request != null && request.getPageSize() != null ? request.getPageSize() : 20;
         String sortBy = request != null && request.getSortBy() != null ? request.getSortBy() : "createdAt";
@@ -71,15 +66,8 @@ public class PartyService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
         Page<Party> parties;
-        
-        // Check if we have real data
-        long totalCount = partyRepository.countByCorporateId(corporateId);
-        
-        if (totalCount == 0) {
-            return buildDemoPartyList();
-        }
-        
-        // Apply filters including Phase 1 filters
+
+// Apply filters including Phase 1 filters
         if (request != null && hasFilters(request)) {
             PartyType partyType = request.getPartyType() != null ? 
                 PartyType.valueOf(request.getPartyType()) : null;
@@ -121,21 +109,20 @@ public class PartyService {
 
     @Transactional(readOnly = true)
     public PartyDetailResponse getPartyDetail(UUID partyId) {
-        Party party = partyRepository.findById(partyId).orElse(null);
-        
-        if (party == null) {
-            return buildDemoPartyDetail(partyId);
-        }
-        
+        Party party = partyRepository.findById(partyId)
+            .orElseThrow(() -> new ResourceNotFoundException("Party not found: " + partyId));
+
         List<BankAccountResponse> bankAccounts = bankAccountRepository.findByPartyId(partyId)
             .stream().map(this::mapToBankAccountResponse).collect(Collectors.toList());
         
-        List<DocumentResponse> documents = documentRepository.findByPartyId(partyId)
+        List<PartyDocument> partyDocuments = documentRepository.findByPartyId(partyId);
+        List<DocumentResponse> documents = partyDocuments
             .stream().map(this::mapToDocumentResponse).collect(Collectors.toList());
-        
-        ComplianceDetailResponse compliance = buildComplianceDetail(party);
-        List<ActivityLogResponse> activityLog = buildActivityLog(party);
-        
+
+        ComplianceDetailResponse compliance = buildComplianceDetail(party, partyDocuments);
+        // ponytail: nothing writes party events to the audit log yet, so there is no activity to show
+        List<ActivityLogResponse> activityLog = List.of();
+
         // Phase 1: Build POBO and IC config
         PoboConfigResponse poboConfig = buildPoboConfig(party);
         IntercompanyConfigResponse icConfig = buildIntercompanyConfig(party);
@@ -153,9 +140,8 @@ public class PartyService {
 
     @Transactional
     public PartyResponse createParty(UUID corporateId, CreatePartyRequest request) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
-        // Retry loop to handle potential duplicate key conflicts
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+// Retry loop to handle potential duplicate key conflicts
         for (int attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
             String partyCode = generateUniquePartyCode(request.getPartyType(), request.getRoles());
             
@@ -197,8 +183,8 @@ public class PartyService {
                     // Defaults
                     .kycStatus(KycStatus.PENDING)
                     .riskRating(RiskRating.MEDIUM)
-                    .sanctionsStatus(SanctionsStatus.CLEAR)
-                    .status(PartyStatus.ACTIVE)
+                    .sanctionsStatus(null) // not screened yet
+.status(PartyStatus.ACTIVE)
                     .poboEligible(false)
                     .isIntercompany(false)
                     .nettingEligible(false)
@@ -276,14 +262,8 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getPoboEligibleVendors(UUID corporateId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> vendors = partyRepository.findPoboEligibleVendors(corporateId);
-        
-        if (vendors.isEmpty()) {
-            return buildDemoPoboVendors();
-        }
-        
+
         return vendors.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
@@ -294,8 +274,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getPoboEligibleVendorsByOwningEntity(UUID corporateId, UUID owningEntityId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> vendors = partyRepository.findPoboEligibleVendorsByOwningEntity(corporateId, owningEntityId);
         
         return vendors.stream()
@@ -443,15 +421,9 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getIntercompanyParties(UUID corporateId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> parties = partyRepository.findIntercompanyParties(corporateId);
-        
-        if (parties.isEmpty()) {
-            return buildDemoIntercompanyParties();
-        }
-        
-        return parties.stream()
+
+return parties.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
@@ -461,8 +433,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getIntercompanyPartiesByOwningEntity(UUID corporateId, UUID owningEntityId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> parties = partyRepository.findIntercompanyPartiesByOwningEntity(corporateId, owningEntityId);
         
         return parties.stream()
@@ -475,9 +445,8 @@ public class PartyService {
      */
     @Transactional
     public PartyResponse createIntercompanyParty(UUID corporateId, CreateIntercompanyPartyRequest request) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
-        // Check if IC party already exists for this combination
+        if (corporateId == null) throw new BusinessException("corporateId is required");
+// Check if IC party already exists for this combination
         Optional<Party> existing = partyRepository.findIntercompanyPartyByLinkedEntity(
             corporateId, request.getLinkedLegalEntityId(), request.getOwningEntityId());
         
@@ -528,8 +497,8 @@ public class PartyService {
                     // Compliance
                     .kycStatus(KycStatus.EXEMPTED)
                     .riskRating(RiskRating.LOW)
-                    .sanctionsStatus(SanctionsStatus.CLEAR)
-                    .status(PartyStatus.ACTIVE)
+                    .sanctionsStatus(null) // not screened yet
+.status(PartyStatus.ACTIVE)
                     .build();
                 
                 party = partyRepository.save(party);
@@ -613,15 +582,9 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getNettingEligibleParties(UUID corporateId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> parties = partyRepository.findNettingEligibleParties(corporateId);
-        
-        if (parties.isEmpty()) {
-            return buildDemoNettingParties();
-        }
-        
-        return parties.stream()
+
+return parties.stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
@@ -631,8 +594,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getNettingEligiblePartiesByOwningEntity(UUID corporateId, UUID owningEntityId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> parties = partyRepository.findNettingEligiblePartiesByOwningEntity(corporateId, owningEntityId);
         
         return parties.stream()
@@ -649,8 +610,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public List<PartyResponse> getPartiesByOwningEntity(UUID corporateId, UUID owningEntityId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Party> parties = partyRepository.findByOwningEntityId(corporateId, owningEntityId);
         
         return parties.stream()
@@ -663,8 +622,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public Page<PartyResponse> getVendorsByOwningEntity(UUID corporateId, UUID owningEntityId, Pageable pageable) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         Page<Party> parties = partyRepository.findByOwningEntityIdAndRole(
             corporateId, owningEntityId, "VENDOR", pageable);
         
@@ -676,8 +633,6 @@ public class PartyService {
      */
     @Transactional(readOnly = true)
     public Page<PartyResponse> getCustomersByOwningEntity(UUID corporateId, UUID owningEntityId, Pageable pageable) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         Page<Party> parties = partyRepository.findByOwningEntityIdAndRole(
             corporateId, owningEntityId, "CUSTOMER", pageable);
         
@@ -690,25 +645,14 @@ public class PartyService {
     
     @Transactional(readOnly = true)
     public PartyStatsResponse getExtendedStats(UUID corporateId) {
-        if (corporateId == null) corporateId = DEMO_CORPORATE_ID;
-        
         List<Object[]> results = partyRepository.getExtendedStats(corporateId);
         
         if (results.isEmpty() || results.get(0)[0] == null || ((Number) results.get(0)[0]).longValue() == 0) {
             return PartyStatsResponse.builder()
-                .totalParties(7L)
-                .customers(2L)
-                .vendors(3L)
-                .employees(1L)
-                .government(1L)
-                .financial(1L)
-                .kycPending(1L)
-                .kycExpired(0L)
-                .highRisk(1L)
-                .sanctionsAlerts(1L)
-                .poboEligibleVendors(2L)
-                .intercompanyParties(2L)
-                .nettingEligibleParties(3L)
+                .totalParties(0L).customers(0L).vendors(0L).employees(0L)
+                .government(0L).financial(0L).kycPending(0L).kycExpired(0L)
+                .highRisk(0L).sanctionsAlerts(0L)
+                .poboEligibleVendors(0L).intercompanyParties(0L).nettingEligibleParties(0L)
                 .build();
         }
         
@@ -736,11 +680,7 @@ public class PartyService {
 
     @Transactional(readOnly = true)
     public List<BankAccountResponse> getPartyBankAccounts(UUID partyId) {
-        List<PartyBankAccount> accounts = bankAccountRepository.findByPartyId(partyId);
-        if (accounts.isEmpty()) {
-            return buildDemoBankAccounts();
-        }
-        return accounts.stream().map(this::mapToBankAccountResponse).collect(Collectors.toList());
+        return bankAccountRepository.findByPartyId(partyId).stream().map(this::mapToBankAccountResponse).collect(Collectors.toList());
     }
 
     @Transactional
@@ -800,11 +740,7 @@ public class PartyService {
 
     @Transactional(readOnly = true)
     public List<DocumentResponse> getPartyDocuments(UUID partyId) {
-        List<PartyDocument> documents = documentRepository.findByPartyId(partyId);
-        if (documents.isEmpty()) {
-            return buildDemoDocuments();
-        }
-        return documents.stream().map(this::mapToDocumentResponse).collect(Collectors.toList());
+        return documentRepository.findByPartyId(partyId).stream().map(this::mapToDocumentResponse).collect(Collectors.toList());
     }
 
     @Transactional
@@ -897,22 +833,8 @@ public class PartyService {
         Party party = partyRepository.findById(partyId)
             .orElseThrow(() -> new RuntimeException("Party not found: " + partyId));
         
-        party.setSanctionsLastChecked(LocalDateTime.now());
-        
-        if (Boolean.TRUE.equals(request.getRunSanctions())) {
-            party.setSanctionsStatus(SanctionsStatus.CLEAR);
-        }
-        
-        party = partyRepository.save(party);
-        log.info("Ran screening for party {}", party.getPartyCode());
-        
-        return ScreeningResponse.builder()
-            .sanctionsStatus(party.getSanctionsStatus().name())
-            .pepStatus(party.getPepStatus())
-            .adverseMediaStatus(party.getAdverseMediaStatus())
-            .screenedAt(LocalDateTime.now())
-            .hits(Collections.emptyList())
-            .build();
+        throw new BusinessException("Not available: sanctions screening — no screening provider is connected, so "
+            + party.getLegalName() + " cannot be marked clear");
     }
 
     @Transactional(readOnly = true)
@@ -1047,7 +969,7 @@ public class PartyService {
             .kycExpiresAt(party.getKycExpiresAt())
             .riskRating(party.getRiskRating().name())
             .riskScore(party.getRiskScore())
-            .sanctionsStatus(party.getSanctionsStatus().name())
+            .sanctionsStatus(party.getSanctionsStatus() != null ? party.getSanctionsStatus().name() : null)
             .pepStatus(party.getPepStatus())
             .adverseMediaStatus(party.getAdverseMediaStatus())
             .status(party.getStatus().name())
@@ -1155,221 +1077,32 @@ public class PartyService {
             .build();
     }
 
-    private ComplianceDetailResponse buildComplianceDetail(Party party) {
-        int verificationProgress = 0;
-        if (party.getKycStatus() == KycStatus.VERIFIED) verificationProgress = 100;
-        else if (party.getKycStatus() == KycStatus.IN_PROGRESS) verificationProgress = 50;
-        else if (party.getKycStatus() == KycStatus.PENDING) verificationProgress = 20;
-        else if (party.getKycStatus() == KycStatus.EXEMPTED) verificationProgress = 100;
-        
-        List<RiskFactorResponse> riskFactors = Arrays.asList(
-            RiskFactorResponse.builder().factor("Country risk").rating("Low").description("UAE - Low risk jurisdiction").build(),
-            RiskFactorResponse.builder().factor("Industry risk").rating("Low").description("Standard commercial activity").build(),
-            RiskFactorResponse.builder().factor("Transaction pattern").rating("Normal").description("Consistent with profile").build()
-        );
-        
-        List<RequiredDocumentResponse> requiredDocs = Arrays.asList(
-            RequiredDocumentResponse.builder().documentType("TRADE_LICENSE").name("Trade License").isProvided(true).status("VERIFIED").build(),
-            RequiredDocumentResponse.builder().documentType("TAX_CERTIFICATE").name("Tax Certificate").isProvided(true).status("VERIFIED").build()
-        );
-        
+    /** Compliance as recorded: the party's own fields and the documents it has actually provided. */
+    private ComplianceDetailResponse buildComplianceDetail(Party party, List<PartyDocument> documents) {
+        long verified = documents.stream().filter(d -> d.getVerificationStatus() == VerificationStatus.VERIFIED).count();
+        List<RequiredDocumentResponse> provided = documents.stream()
+            .map(d -> RequiredDocumentResponse.builder()
+                .documentType(d.getDocumentType().name())
+                .name(d.getName())
+                .isProvided(true)
+                .status(d.getVerificationStatus().name())
+                .build())
+            .collect(Collectors.toList());
+
         return ComplianceDetailResponse.builder()
             .kycStatus(party.getKycStatus().name())
             .kycExpiresAt(party.getKycExpiresAt())
             .kycVerifiedAt(party.getKycVerifiedAt())
             .kycVerifiedBy(party.getKycVerifiedBy())
-            .verificationProgress(verificationProgress)
+            .verificationProgress(documents.isEmpty() ? null : (int) (verified * 100 / documents.size()))
             .riskRating(party.getRiskRating().name())
-            .riskScore(party.getRiskScore() != null ? party.getRiskScore() : 25)
-            .riskFactors(riskFactors)
-            .sanctionsStatus(party.getSanctionsStatus().name())
+            .riskScore(party.getRiskScore())
+            .riskFactors(List.of())
+            .sanctionsStatus(party.getSanctionsStatus() != null ? party.getSanctionsStatus().name() : null)
             .sanctionsLastChecked(party.getSanctionsLastChecked())
             .pepStatus(party.getPepStatus())
             .adverseMediaStatus(party.getAdverseMediaStatus())
-            .requiredDocuments(requiredDocs)
+            .requiredDocuments(provided)
             .build();
-    }
-
-    private List<ActivityLogResponse> buildActivityLog(Party party) {
-        return Arrays.asList(
-            ActivityLogResponse.builder().action("KYC Verified").user("Sarah M.").timestamp(LocalDateTime.now().minusDays(2)).type("success").build(),
-            ActivityLogResponse.builder().action("Bank account added").user("John D.").timestamp(LocalDateTime.now().minusWeeks(1)).type("info").build(),
-            ActivityLogResponse.builder().action("Party created").user("Admin").timestamp(party.getCreatedAt()).type("neutral").build()
-        );
-    }
-
-    // ========================================================================
-    // DEMO DATA BUILDERS
-    // ========================================================================
-
-    private PartyListResponse buildDemoPartyList() {
-        String sampleCorp = marketProfile.getActiveSampleCorporateName();
-        String shortName = shortDisplayName(sampleCorp);
-        String sampleTax = marketProfile.getActiveSampleTaxId();
-        List<PartyResponse> parties = Arrays.asList(
-            buildDemoPartyResponse("1", "PARTY-001", "COMPANY", sampleCorp, shortName,
-                Set.of("CUSTOMER", "VENDOR"), sampleTax, "VERIFIED", "LOW", "ACTIVE", 3, 8, true, false),
-            buildDemoPartyResponse("2", "PARTY-002", "COMPANY", "Dubai Logistics & Supply Chain LLC", "Dubai Logistics",
-                Set.of("VENDOR"), "TRN100234567", "VERIFIED", "MEDIUM", "ACTIVE", 2, 5, true, false),
-            buildDemoPartyResponse("3", "IC-SINGAPORE-VEN", "COMPANY", "Singapore Subsidiary (Intercompany)", "SUB-SINGAPORE (IC)",
-                Set.of("VENDOR"), null, "EXEMPTED", "LOW", "ACTIVE", 0, 0, true, true)
-        );
-        
-        return PartyListResponse.builder()
-            .parties(parties)
-            .totalCount(3L)
-            .page(0)
-            .pageSize(20)
-            .stats(PartyStatsResponse.builder()
-                .totalParties(3L).customers(1L).vendors(3L).employees(0L)
-                .government(0L).financial(0L).kycPending(0L).kycExpired(0L)
-                .highRisk(0L).sanctionsAlerts(0L)
-                .poboEligibleVendors(2L).intercompanyParties(1L).nettingEligibleParties(1L)
-                .build())
-            .build();
-    }
-
-    private PartyResponse buildDemoPartyResponse(String id, String code, String type, String legalName,
-            String displayName, Set<String> roles, String taxId, String kycStatus, String riskRating,
-            String status, int bankAccounts, int documents, boolean poboEligible, boolean isIntercompany) {
-        return PartyResponse.builder()
-            .id(UUID.fromString("00000000-0000-0000-0000-00000000000" + id.charAt(0)))
-            .corporateId(DEMO_CORPORATE_ID)
-            .partyCode(code)
-            .partyType(type)
-            .legalName(legalName)
-            .displayName(displayName)
-            .roles(roles)
-            .taxId(taxId)
-            .registrationCountry(marketProfile.getDefaultCountryCode())
-            .country(marketProfile.getDefaultCountryCode())
-            .city(sampleCityFromTimezone(marketProfile.getDefaultTimezone()))
-            .kycStatus(kycStatus)
-            .kycExpiresAt(LocalDate.now().plusMonths(6))
-            .riskRating(riskRating)
-            .riskScore(riskRating.equals("LOW") ? 25 : riskRating.equals("MEDIUM") ? 50 : 75)
-            .sanctionsStatus("CLEAR")
-            .pepStatus(false)
-            .adverseMediaStatus(false)
-            .status(status)
-            .bankAccountsCount(bankAccounts)
-            .documentsCount(documents)
-            .createdAt(LocalDateTime.now().minusMonths(6))
-            .onboardedAt(LocalDateTime.now().minusMonths(6))
-            // Phase 1
-            .poboEligible(poboEligible)
-            .isIntercompany(isIntercompany)
-            .nettingEligible(isIntercompany)
-            .canReceivePoboPayment(poboEligible && "ACTIVE".equals(status))
-            .canParticipateInNetting(isIntercompany)
-            .build();
-    }
-
-    private List<PartyResponse> buildDemoPoboVendors() {
-        String sampleCorp = marketProfile.getActiveSampleCorporateName();
-        String shortName = shortDisplayName(sampleCorp);
-        String sampleTax = marketProfile.getActiveSampleTaxId();
-        return Arrays.asList(
-            buildDemoPartyResponse("1", "PARTY-001", "COMPANY", sampleCorp, shortName,
-                Set.of("VENDOR"), sampleTax, "VERIFIED", "LOW", "ACTIVE", 3, 8, true, false),
-            buildDemoPartyResponse("2", "PARTY-002", "COMPANY", "Dubai Logistics & Supply Chain LLC", "Dubai Logistics",
-                Set.of("VENDOR"), "TRN100234567", "VERIFIED", "MEDIUM", "ACTIVE", 2, 5, true, false)
-        );
-    }
-
-    private List<PartyResponse> buildDemoIntercompanyParties() {
-        return Arrays.asList(
-            buildDemoPartyResponse("3", "IC-SINGAPORE-VEN", "COMPANY", "Singapore Subsidiary (Intercompany)", "SUB-SINGAPORE (IC)",
-                Set.of("VENDOR"), null, "EXEMPTED", "LOW", "ACTIVE", 0, 0, true, true),
-            buildDemoPartyResponse("4", "IC-LONDON-CUS", "COMPANY", "London Subsidiary (Intercompany)", "SUB-LONDON (IC)",
-                Set.of("CUSTOMER"), null, "EXEMPTED", "LOW", "ACTIVE", 0, 0, true, true)
-        );
-    }
-
-    private List<PartyResponse> buildDemoNettingParties() {
-        return buildDemoIntercompanyParties();
-    }
-
-    private PartyDetailResponse buildDemoPartyDetail(UUID partyId) {
-        String sampleCorp = marketProfile.getActiveSampleCorporateName();
-        String shortName = shortDisplayName(sampleCorp);
-        String sampleTax = marketProfile.getActiveSampleTaxId();
-        PartyResponse party = buildDemoPartyResponse("1", "PARTY-001", "COMPANY",
-            sampleCorp, shortName,
-            Set.of("CUSTOMER", "VENDOR"), sampleTax, "VERIFIED", "LOW", "ACTIVE", 3, 8, true, false);
-        
-        return PartyDetailResponse.builder()
-            .party(party)
-            .bankAccounts(buildDemoBankAccounts())
-            .documents(buildDemoDocuments())
-            .compliance(ComplianceDetailResponse.builder()
-                .kycStatus("VERIFIED")
-                .kycExpiresAt(LocalDate.now().plusMonths(6))
-                .verificationProgress(80)
-                .riskRating("LOW")
-                .riskScore(25)
-                .sanctionsStatus("CLEAR")
-                .pepStatus(false)
-                .adverseMediaStatus(false)
-                .build())
-            .activityLog(Arrays.asList(
-                ActivityLogResponse.builder().action("KYC Verified").user("Sarah M.").timestamp(LocalDateTime.now().minusDays(2)).type("success").build(),
-                ActivityLogResponse.builder().action("Bank account added").user("John D.").timestamp(LocalDateTime.now().minusWeeks(1)).type("info").build()
-            ))
-            .poboConfig(PoboConfigResponse.builder()
-                .poboEligible(true)
-                .defaultPayerEntityCode("HQ-TREASURY")
-                .build())
-            .intercompanyConfig(IntercompanyConfigResponse.builder()
-                .isIntercompany(false)
-                .nettingEligible(false)
-                .build())
-            .build();
-    }
-
-    /** Trim a long corporate name into a short display name (last word stripped if multi-word). */
-    private String shortDisplayName(String corp) {
-        if (corp == null || corp.isBlank()) return "";
-        String[] parts = corp.split("\\s+");
-        if (parts.length <= 2) return corp;
-        // Drop legal-form suffix (PJSC / Ltd / GmbH / Plc / Pte / Inc.) for a friendlier short name.
-        return String.join(" ", java.util.Arrays.copyOfRange(parts, 0, parts.length - 1));
-    }
-
-    /** Extract a representative city from an IANA timezone (e.g. "Asia/Dubai" → "Dubai"). */
-    private String sampleCityFromTimezone(String tz) {
-        if (tz == null || !tz.contains("/")) return "Capital";
-        String city = tz.substring(tz.lastIndexOf('/') + 1).replace('_', ' ');
-        return city;
-    }
-
-    private List<BankAccountResponse> buildDemoBankAccounts() {
-        String homeCcy = marketProfile.getDefaultCurrency();
-        String homeBankName = marketProfile.getActiveHomeBankName();
-        String homeBankBic = marketProfile.getActiveHomeBankBic();
-        String holder = marketProfile.getActiveSampleCorporateName();
-        String primaryIban = marketProfile.getActiveSampleIban();
-        // Derive a second IBAN by bumping the last digit for the USD account.
-        String secondaryIban = primaryIban == null || primaryIban.isBlank()
-                ? "" : primaryIban.substring(0, primaryIban.length() - 1) + "7";
-        return Arrays.asList(
-            BankAccountResponse.builder().id(UUID.randomUUID()).label("Primary " + homeCcy).holderName(holder)
-                .bankName(homeBankName).bankCode(homeBankBic).iban(primaryIban).currency(homeCcy)
-                .isPrimary(true).isVerified(true).status("ACTIVE").build(),
-            BankAccountResponse.builder().id(UUID.randomUUID()).label("USD Account").holderName(holder)
-                .bankName(homeBankName).bankCode(homeBankBic).iban(secondaryIban).currency("USD")
-                .isPrimary(false).isVerified(true).status("ACTIVE").build()
-        );
-    }
-
-    private List<DocumentResponse> buildDemoDocuments() {
-        return Arrays.asList(
-            DocumentResponse.builder().id(UUID.randomUUID()).documentType("TRADE_LICENSE").category("KYC")
-                .name("Trade License 2024").documentNumber("TL-2024-123456").issueDate(LocalDate.of(2024, 1, 1))
-                .expiryDate(LocalDate.of(2024, 12, 31)).verificationStatus("VERIFIED").fileType("PDF").isExpired(false).build(),
-            DocumentResponse.builder().id(UUID.randomUUID()).documentType("TAX_CERTIFICATE").category("KYC")
-                .name("VAT Registration Certificate").documentNumber("TRN100123456").issueDate(LocalDate.of(2023, 1, 1))
-                .verificationStatus("VERIFIED").fileType("PDF").isExpired(false).build()
-        );
     }
 }

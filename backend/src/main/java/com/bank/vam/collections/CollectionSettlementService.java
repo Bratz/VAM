@@ -50,6 +50,9 @@ public class CollectionSettlementService {
     public record Result(LocalDate asOf, int settled, int released, int notCollected, int failed) {
     }
 
+    /** Kept on a line settled by date rather than by a bank credit: no clearing house answered for it. */
+    static final String SIMULATED = "Simulated settlement: there is no clearing link, so it settled on its date";
+
     @Scheduled(cron = "${vam.collections.eod-cron:0 30 18 * * *}")
     void endOfDay() {
         try {
@@ -67,7 +70,7 @@ public class CollectionSettlementService {
         int settled = 0, released = 0, notCollected = 0, failed = 0;
         for (UUID id : lines.dueToSettle(asOf)) {
             try {
-                Status s = own.execute(t -> settle(id));
+                Status s = own.execute(t -> settle(id, SIMULATED));
                 if (s == Status.SETTLED) settled++; else notCollected++;
             } catch (RuntimeException e) {
                 // stays SENT and is tried again at the next run; the reason says what went wrong
@@ -96,11 +99,12 @@ public class CollectionSettlementService {
         if (waiting.isEmpty()) return Optional.empty();
         TransactionTemplate own = new TransactionTemplate(transactionManager);
         own.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        Status s = own.execute(t -> settle(waiting.get().getId()));
+        Status s = own.execute(t -> settle(waiting.get().getId(), null));
         return s == Status.SETTLED ? lines.findById(waiting.get().getId()) : Optional.empty();
     }
 
-    private Status settle(UUID lineId) {
+    /** @param settledNote kept as the line's reason once settled: {@link #SIMULATED}, or null for a bank credit */
+    private Status settle(UUID lineId, String settledNote) {
         CollectionLine l = lines.findById(lineId).orElseThrow();
         Receivable invoice = receivables.findById(l.getReceivableId()).orElse(null);
         if (invoice == null || !CollectionRoutingService.COLLECTABLE.contains(invoice.getStatus())
@@ -150,7 +154,7 @@ public class CollectionSettlementService {
         l.setCreditedAmount(credit.getNetAmount());
         l.setTransactionRef(credit.getReferenceNumber());
         l.setHoldUntil(holdUntil);
-        l.setReason(null);
+        l.setReason(settledNote);
 
         RecordPaymentRequest paid = new RecordPaymentRequest();
         paid.setAmount(l.getAmount());

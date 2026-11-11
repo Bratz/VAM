@@ -1,6 +1,7 @@
 package com.bank.vam.controller.payables;
 
 import com.bank.vam.dto.payables.PayablesDto.*;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.service.payables.PayablesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,8 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * PayablesController - Phase 2 Enhanced with POBO, Intercompany & Netting Endpoints
@@ -32,10 +35,7 @@ public class PayablesController {
 
     private final PayablesService payablesService;
 
-    // Demo corporate ID for backward compatibility
-    private static final UUID DEMO_CORPORATE_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-
-    // ========================================================================
+// ========================================================================
     // CRUD OPERATIONS
     // ========================================================================
 
@@ -43,11 +43,10 @@ public class PayablesController {
     @Operation(summary = "Create payable", 
                description = "Create a new payable with entity context and optional POBO/IC configuration")
     public ResponseEntity<PayableResponse> createPayable(
+            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestBody CreatePayableRequest request
     ) {
-        if (request.getCorporateId() == null) {
-            request.setCorporateId(DEMO_CORPORATE_ID);
-        }
+        request.setCorporateId(requireCorporate(request.getCorporateId() != null ? request.getCorporateId() : corporateId));
         return ResponseEntity.ok(payablesService.createPayable(request));
     }
 
@@ -88,14 +87,13 @@ public class PayablesController {
             @Parameter(description = "Sort by field") @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort order") @RequestParam(defaultValue = "desc") String sortOrder
     ) {
-        // Don't use demo corporate ID - allow null to return all payables
         // Use owningEntityId from param, fallback to legalEntityId from header
         UUID effectiveOwningEntityId = owningEntityId != null ? owningEntityId : legalEntityId;
         log.info("Search payables - corporateId: {}, legalEntityId (header): {}, owningEntityId (param): {}, effectiveOwningEntityId: {}",
             corporateId, legalEntityId, owningEntityId, effectiveOwningEntityId);
 
         PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(corporateId)  // Can be null - service will handle it
+            .corporateId(requireCorporate(corporateId))
             .owningEntityId(effectiveOwningEntityId)
             .partyId(partyId)
             .status(status)
@@ -129,8 +127,7 @@ public class PayablesController {
     public ResponseEntity<PayableStatsResponse> getStats(
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId
     ) {
-        return ResponseEntity.ok(payablesService.getStats(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID));
+        return ResponseEntity.ok(payablesService.getStats(requireCorporate(corporateId)));
     }
 
     // ========================================================================
@@ -193,12 +190,13 @@ public class PayablesController {
     @Operation(summary = "Get POBO-eligible payables", 
                description = "Returns approved payables that can be submitted for POBO")
     public ResponseEntity<PayableListResponse> getPoboEligiblePayables(
+            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestParam(required = false) UUID owningEntityId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(DEMO_CORPORATE_ID)
+            .corporateId(requireCorporate(corporateId))
             .owningEntityId(owningEntityId)
             .status("APPROVED")
             .paymentRoute("DIRECT")
@@ -213,12 +211,13 @@ public class PayablesController {
     @Operation(summary = "Get POBO payment history", 
                description = "Returns executed POBO payments with IHB loan references")
     public ResponseEntity<PayableListResponse> getPoboHistory(
+            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestParam(required = false) UUID owningEntityId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(DEMO_CORPORATE_ID)
+            .corporateId(requireCorporate(corporateId))
             .owningEntityId(owningEntityId)
             .paymentRoute("POBO")
             .page(page)
@@ -236,11 +235,10 @@ public class PayablesController {
     @Operation(summary = "Create intercompany payable", 
                description = "Create a payable to another group entity")
     public ResponseEntity<IntercompanyPayableResponse> createIntercompanyPayable(
+            @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestBody CreateIntercompanyPayableRequest request
     ) {
-        if (request.getCorporateId() == null) {
-            request.setCorporateId(DEMO_CORPORATE_ID);
-        }
+        request.setCorporateId(requireCorporate(request.getCorporateId() != null ? request.getCorporateId() : corporateId));
         return ResponseEntity.ok(payablesService.createIntercompanyPayable(request));
     }
 
@@ -253,7 +251,7 @@ public class PayablesController {
             @RequestParam(defaultValue = "20") int size
     ) {
         PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(corporateId != null ? corporateId : DEMO_CORPORATE_ID)
+            .corporateId(requireCorporate(corporateId))
             .isIntercompany(true)
             .page(page)
             .size(size)
@@ -309,16 +307,9 @@ public class PayablesController {
     public ResponseEntity<java.util.Map<String, Object>> removeFromNettingCycle(
             @RequestBody RemoveFromNettingRequest request
     ) {
-        int count = 0;
-        for (UUID payableId : request.getPayableIds()) {
-            // Remove individual payables
-            // In practice, would use nettingCycleId from the payable
-        }
-        
-        return ResponseEntity.ok(java.util.Map.of(
-            "removedCount", count,
-            "reason", request.getReason()
-        ));
+        // Clearing the payable's cycle fields alone would leave its netting entry behind in the cycle.
+        throw new BusinessException("Not available: removing individual payables from a netting cycle"
+            + " — their netting entries are not removed; cancel the cycle instead");
     }
 
     @GetMapping("/netting/by-cycle/{cycleId}")
@@ -329,14 +320,7 @@ public class PayablesController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size
     ) {
-        // Would use specific repository method
-        PayableSearchRequest request = PayableSearchRequest.builder()
-            .corporateId(DEMO_CORPORATE_ID)
-            .page(page)
-            .size(size)
-            .build();
-        
-        return ResponseEntity.ok(payablesService.searchPayables(request));
+        return ResponseEntity.ok(payablesService.getPayablesInNettingCycle(cycleId, page, size));
     }
 
     // ========================================================================
@@ -419,12 +403,8 @@ public class PayablesController {
     public ResponseEntity<BatchOperationResponse> batchApprove(
             @RequestBody BatchApproveRequest request
     ) {
-        // Would implement in service
-        return ResponseEntity.ok(BatchOperationResponse.builder()
-            .successIds(request.getPayableIds())
-            .successCount(request.getPayableIds().size())
-            .failedCount(0)
-            .build());
+        return ResponseEntity.ok(eachPayable(request.getPayableIds(),
+            id -> payablesService.approvePayable(id, request.getApprovedBy(), null)));
     }
 
     @PostMapping("/batch/schedule")
@@ -433,11 +413,36 @@ public class PayablesController {
     public ResponseEntity<BatchOperationResponse> batchSchedule(
             @RequestBody BatchScheduleRequest request
     ) {
-        // Would implement in service
-        return ResponseEntity.ok(BatchOperationResponse.builder()
-            .successIds(request.getPayableIds())
-            .successCount(request.getPayableIds().size())
-            .failedCount(0)
-            .build());
+        return ResponseEntity.ok(eachPayable(request.getPayableIds(),
+            id -> payablesService.schedulePayment(id, request.getScheduledDate(), request.getPaymentPriority(),
+                null, request.getScheduledBy())));
+    }
+
+    /** Runs the single-payable action on each id; one failure does not stop the rest. */
+    private static BatchOperationResponse eachPayable(List<UUID> ids, Consumer<UUID> action) {
+        List<UUID> succeeded = new ArrayList<>();
+        List<BatchOperationError> errors = new ArrayList<>();
+        for (UUID id : ids) {
+            try {
+                action.accept(id);
+                succeeded.add(id);
+            } catch (RuntimeException e) {
+                errors.add(BatchOperationError.builder().payableId(id).errorMessage(e.getMessage()).build());
+            }
+        }
+        return BatchOperationResponse.builder()
+            .successIds(succeeded)
+            .errors(errors)
+            .successCount(succeeded.size())
+            .failedCount(errors.size())
+            .build();
+    }
+
+    /** Payables belong to one corporate; never fall back to a default one. */
+    private static UUID requireCorporate(UUID corporateId) {
+        if (corporateId == null) {
+            throw new BusinessException("corporateId is required (X-Corporate-Id header or request body)");
+        }
+        return corporateId;
     }
 }

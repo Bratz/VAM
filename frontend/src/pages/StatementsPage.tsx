@@ -1300,7 +1300,7 @@ const StatementsPage: React.FC = () => {
         fetchInitialData();
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.response?.data?.message || err.message);
     } finally {
       setGenerating(false);
     }

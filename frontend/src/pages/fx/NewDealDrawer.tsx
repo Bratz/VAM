@@ -397,7 +397,10 @@ const NewDealDrawer: React.FC<Props> = ({ isOpen, onClose, corporateId, prefill,
           <section className="space-y-4 border-t border-edge pt-5">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-body-sm font-semibold text-primary-900 dark:text-neutral-50">Price</h3>
-              <Badge variant={QUOTE_BADGE[quote.status].variant}>{QUOTE_BADGE[quote.status].label}</Badge>
+              <span className="inline-flex gap-1.5">
+                {quote.dealer === 'SIMULATED' && <Badge variant="warning">Simulated</Badge>}
+                <Badge variant={QUOTE_BADGE[quote.status].variant}>{QUOTE_BADGE[quote.status].label}</Badge>
+              </span>
             </div>
 
             {firm && buyLeg && sellLeg && (

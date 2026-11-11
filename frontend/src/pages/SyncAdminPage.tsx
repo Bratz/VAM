@@ -41,6 +41,8 @@ const SyncAdminPage: React.FC = () => {
     try {
       await syncAdminApi.triggerJob(jobType);
       await fetchData();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err.message || 'Sync job could not be started');
     } finally {
       setProcessing(null);
     }
@@ -82,8 +84,8 @@ const SyncAdminPage: React.FC = () => {
       {stats && (
         <div className="grid grid-cols-5 gap-4">
           <Card><div className="p-4"><p className="stat-value-sm">{stats.jobsToday}</p><p className="body-sm">Jobs Today</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-success">{stats.successRate}%</p><p className="body-sm">Success Rate</p></div></Card>
-          <Card><div className="p-4"><p className="stat-value-sm">{stats.averageDuration}</p><p className="body-sm">Avg Duration</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-success">{stats.successRate != null ? `${stats.successRate}%` : '—'}</p><p className="body-sm">Success Rate</p></div></Card>
+          <Card><div className="p-4"><p className="stat-value-sm">{stats.averageDuration ?? '—'}</p><p className="body-sm">Avg Duration</p></div></Card>
           <Card><div className="p-4"><p className="stat-value-warning">{stats.queueDepth}</p><p className="body-sm">Queue Depth</p></div></Card>
           <Card><div className="p-4"><p className="stat-value-error">{stats.failedJobs24h}</p><p className="body-sm">Failed (24h)</p></div></Card>
         </div>

@@ -335,4 +335,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     /** Movements on any of the given VAs from a point in time — used for wallet volumes. */
     List<Transaction> findByVaIdInAndTransactionDateGreaterThanEqual(
         List<UUID> vaIds, java.time.LocalDateTime from);
+
+    /**
+     * The account's ledger balance just before {@code before}: balanceAfter of the last
+     * posted transaction strictly earlier than it. Empty when the ledger has none.
+     */
+    @Query("SELECT t.balanceAfter FROM Transaction t WHERE t.vaId = :vaId AND t.transactionDate < :before " +
+           "AND t.balanceAfter IS NOT NULL AND t.status NOT IN ('FAILED', 'CANCELLED') " +
+           "ORDER BY t.transactionDate DESC, t.createdAt DESC LIMIT 1")
+    Optional<BigDecimal> findLedgerBalanceBefore(@Param("vaId") UUID vaId, @Param("before") LocalDateTime before);
 }

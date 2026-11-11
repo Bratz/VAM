@@ -184,7 +184,9 @@ public class ProgramBankAccountBackfillRunner implements ApplicationRunner {
     private boolean open(Program program, String ccy, BigDecimal opening, String bic) {
         LegalEntity owner = mainEntity(program, ccy);
         String number = number(program, ccy);
-        PhysicalAccount pa = banks.save(PhysicalAccount.builder()
+        // Invented here (number and balance): marked as a default (the screens say "Default opening balance"). It stays
+        // CORE_BANKING because this platform is the home bank's ledger: CoreBankingAdapter mirrors it into the shadow.
+        PhysicalAccount pa = banks.save(com.bank.vam.entity.BaseEntity.systemDefault(PhysicalAccount.builder()
                 .corporateId(program.getCorporateId())
                 .legalEntityId(owner == null ? null : owner.getId())
                 .accountNumber(number)
@@ -207,10 +209,9 @@ public class ProgramBankAccountBackfillRunner implements ApplicationRunner {
                 .status(PhysicalAccount.AccountStatus.ACTIVE)
                 .syncStatus(PhysicalAccount.SyncStatus.SYNCED)
                 .syncFrequencyMinutes(0)
-                .lastSyncAt(LocalDateTime.now())
                 .balanceAsOf(LocalDateTime.now())
                 .openedDate(LocalDate.now())
-                .build());
+                .build()));
         VirtualAccount mirror = shadows.createShadowAccountForProgram(pa.getId(), program.getId());
         // The mirror's ledger starts where the bank does, so the refresh finds nothing to reconcile.
         mirror.setCurrentBalance(opening);

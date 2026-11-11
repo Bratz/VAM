@@ -120,6 +120,14 @@ public class LegalEntity extends BaseEntity {
     @Builder.Default
     private BigDecimal ownershipPercent = new BigDecimal("100.00");
 
+    /**
+     * True while {@link #ownershipPercent} is the built-in 100, not a figure anyone entered. Null on rows from before
+     * this was tracked (not known). Cleared by {@link #setOwnershipPercent}.
+     */
+    @Column(name = "ownership_default")
+    @Builder.Default
+    private Boolean ownershipDefault = true;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "consolidation_method", length = 20)
     @Builder.Default
@@ -293,6 +301,29 @@ public class LegalEntity extends BaseEntity {
     @Column(name = "borrowing_rate_spread", precision = 8, scale = 5)
     @Builder.Default
     private BigDecimal borrowingRateSpread = new BigDecimal("0.75000");
+
+    /**
+     * True while the IHB spreads are built-in defaults (0.50 / 0.75, or 0.25 / 0 for a treasury centre), not ones
+     * anyone set. Null on rows from before this was tracked (not known). Cleared by the spread setters.
+     */
+    @Column(name = "spreads_default")
+    @Builder.Default
+    private Boolean spreadsDefault = true;
+
+    public void setOwnershipPercent(BigDecimal ownershipPercent) {
+        this.ownershipPercent = ownershipPercent;
+        this.ownershipDefault = false;
+    }
+
+    public void setLendingRateSpread(BigDecimal lendingRateSpread) {
+        this.lendingRateSpread = lendingRateSpread;
+        this.spreadsDefault = false;
+    }
+
+    public void setBorrowingRateSpread(BigDecimal borrowingRateSpread) {
+        this.borrowingRateSpread = borrowingRateSpread;
+        this.spreadsDefault = false;
+    }
 
     /**
      * Whether this entity can act as a LENDER in IHB transactions.
@@ -716,7 +747,7 @@ public class LegalEntity extends BaseEntity {
             .corporateId(corporateId).parentEntityId(parentEntityId).entityCode(entityCode)
             .entityName(entityName).entityType(EntityType.SUBSIDIARY).functionalCurrency(functionalCurrency)
             .reportingCurrency(functionalCurrency).hierarchyLevel(level)
-            .hierarchyPath(buildHierarchyPath(parentPath, entityCode)).ownershipPercent(ownershipPercent)
+            .hierarchyPath(buildHierarchyPath(parentPath, entityCode)).ownershipPercent(ownershipPercent).ownershipDefault(false)
             .consolidationMethod(ownershipPercent.compareTo(new BigDecimal("50")) > 0 
                 ? ConsolidationMethod.FULL : ConsolidationMethod.EQUITY)
             .isBankCustomer(isBankCustomer).bancsCustomerId(isBankCustomer ? bancsCustomerId : null)
@@ -780,6 +811,7 @@ public class LegalEntity extends BaseEntity {
         this.canBorrow = canBorrow;
         this.lendingRateSpread = lendingSpread != null ? lendingSpread : new BigDecimal("0.50000");
         this.borrowingRateSpread = borrowingSpread != null ? borrowingSpread : new BigDecimal("0.75000");
+        this.spreadsDefault = lendingSpread == null || borrowingSpread == null;
         this.ihbCurrency = this.functionalCurrency;
         this.totalLentOut = BigDecimal.ZERO;
         this.totalDeposited = BigDecimal.ZERO;
@@ -802,6 +834,7 @@ public class LegalEntity extends BaseEntity {
         this.canBorrow = false;
         this.lendingRateSpread = new BigDecimal("0.25000"); // Lower spread for treasury
         this.borrowingRateSpread = BigDecimal.ZERO;
+        this.spreadsDefault = true;
         this.ihbCurrency = this.functionalCurrency;
         this.totalLentOut = BigDecimal.ZERO;
         this.totalDeposited = BigDecimal.ZERO;

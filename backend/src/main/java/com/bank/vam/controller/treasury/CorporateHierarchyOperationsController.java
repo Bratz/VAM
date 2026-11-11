@@ -3,6 +3,7 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.HierarchyOperationsDto.*;
 import com.bank.vam.entity.VirtualAccount;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.entity.VirtualAccount.AccountCategory;
 import com.bank.vam.entity.VirtualAccount.VaStatus;
 import com.bank.vam.repository.VirtualAccountRepository;
@@ -43,8 +44,7 @@ import java.util.stream.Collectors;
  * - GET /movable-aggregations - Get movable Aggregations
  * - GET /history - Get operation history (stub)
  * - GET /pending-approvals - Get pending approvals (stub)
- * - POST /approve/{id} - Approve operation (stub)
- * - POST /reject/{id} - Reject operation (stub)
+ * - POST /approve/{id}, /reject/{id} - refused: no approval workflow exists
  * 
  * FIXED v5.0.1: Corrected imports for MoveLimitPolicy and MergeLimitPolicy
  * - Enums are now in HierarchyOperationDtos (service.treasury package)
@@ -236,19 +236,8 @@ public class CorporateHierarchyOperationsController {
             @PathVariable UUID operationId,
             @RequestParam String approvedBy) {
         
-        log.info("API: Approve operation={} by {}", operationId, approvedBy);
-        
-        try {
-            // TODO: Implement approval logic
-            log.warn("Approval workflow not yet implemented for operation: {}", operationId);
-            return ResponseEntity.ok(ApiResponse.success(null, 
-                "Operation approved (approval workflow not yet implemented)"));
-                
-        } catch (Exception e) {
-            log.error("Failed to approve operation", e);
-            return ResponseEntity.status(500)
-                .body(ApiResponse.error("Failed to approve operation: " + e.getMessage()));
-        }
+        throw new BusinessException("Not available: approving operation " + operationId
+            + " — hierarchy operations have no approval workflow");
     }
 
     @PostMapping("/reject/{operationId}")
@@ -259,19 +248,8 @@ public class CorporateHierarchyOperationsController {
             @RequestParam String rejectedBy,
             @RequestParam(required = false) String reason) {
 
-        log.info("API: Reject operation={} by {} - reason: {}", operationId, rejectedBy, reason);
-
-        try {
-            // TODO: Implement rejection logic
-            log.warn("Approval workflow not yet implemented for operation: {}", operationId);
-            return ResponseEntity.ok(ApiResponse.success(null,
-                "Operation rejected (approval workflow not yet implemented)"));
-
-        } catch (Exception e) {
-            log.error("Failed to reject operation", e);
-            return ResponseEntity.status(500)
-                .body(ApiResponse.error("Failed to reject operation: " + e.getMessage()));
-        }
+        throw new BusinessException("Not available: rejecting operation " + operationId
+            + " — hierarchy operations have no approval workflow");
     }
 
     // ════════════════════════════════════════════════════════════════════════════════

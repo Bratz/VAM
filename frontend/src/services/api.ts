@@ -2703,6 +2703,8 @@ interface PoboIhbLoanPreview {
   estimatedMonthlyInterest: number;
   tenor: string;
   expectedSettlementDate?: string;
+  /** DEFAULT: the rate is a built-in figure, not the IHB's priced rate. */
+  rateSource?: string;
 }
 
 export interface PoboPreviewResponse {
@@ -5674,6 +5676,8 @@ export interface InterestConfiguration {
   sourceSystem?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Created by the application with built-in default rates, not rates the bank agreed. */
+  systemDefault?: boolean;
 }
 
 export interface InterestConfigurationStatistics {
@@ -7241,6 +7245,8 @@ export interface TreasuryRates {
   minDepositAmount: number;
   interestConfigId?: string;
   hasInterestConfig?: boolean;
+  /** DEFAULT: built-in rates (base 5.00), not ones the bank set. */
+  rateSource?: string;
   effectiveFrom?: string;
   effectiveTo?: string;
 }

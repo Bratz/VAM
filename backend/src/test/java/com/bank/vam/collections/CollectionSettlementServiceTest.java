@@ -86,6 +86,7 @@ class CollectionSettlementServiceTest {
 
         assertEquals(1, r.settled());
         assertEquals(Status.SETTLED, line.getStatus());
+        assertEquals(CollectionSettlementService.SIMULATED, line.getReason()); // settled by date, not by a clearing answer
         assertEquals(new BigDecimal("98.00"), line.getCreditedAmount());
         assertEquals(LocalDate.of(2026, 11, 20), line.getHoldUntil()); // 5 business days after Friday
         assertEquals(new BigDecimal("98.00"), account.getHeldBalance());

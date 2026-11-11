@@ -33,7 +33,10 @@ import java.util.random.RandomGenerator;
 @Component
 public class MockRateProvider implements RateProvider {
 
-    static final String SOURCE = "MOCK";
+    /** Every rate from here is simulated; screens show this as a "Simulated" badge. */
+    public static final String SOURCE = "SIMULATED";
+    /** How often a configured pair with no stored mid is looked up again. */
+    static final long ANCHOR_RETRY_MS = 60_000;
 
     private final FxMarketProperties props;
     private final Function<String, Optional<BigDecimal>> anchorLookup;
@@ -42,6 +45,7 @@ public class MockRateProvider implements RateProvider {
 
     private final Map<String, State> walks = new LinkedHashMap<>();
     private long lastTickMillis;
+    private long lastAnchorMillis;
     private boolean started;
 
     @Autowired
@@ -66,6 +70,9 @@ public class MockRateProvider implements RateProvider {
             out.add(tick(s.pair, s.mid(), s.anchor, asOf));
         }
         for (String cross : props.getCrosses()) {
+            if (!quoted(cross.substring(0, 3)) || !quoted(cross.substring(4, 7))) {
+                continue; // a leg has no stored rate, so the cross has none either
+            }
             double now = usdPer(cross.substring(0, 3), false) / usdPer(cross.substring(4, 7), false);
             double open = usdPer(cross.substring(0, 3), true) / usdPer(cross.substring(4, 7), true);
             out.add(tick(cross, now, open, asOf));
@@ -88,25 +95,42 @@ public class MockRateProvider implements RateProvider {
     private void advance() {
         long now = nowMillis.getAsLong();
         if (!started) {
-            for (FxMarketProperties.Walk w : props.getWalks()) {
-                double anchor = anchorLookup.apply(w.getPair()).orElse(w.getFallbackMid()).doubleValue();
-                walks.put(w.getPair(), new State(w.getPair(), anchor, w.getVolBps()));
-            }
             started = true;
             lastTickMillis = now;
-            return;
+            lastAnchorMillis = now - ANCHOR_RETRY_MS;
         }
         long due = (now - lastTickMillis) / props.getTickIntervalMs();
-        if (due <= 0) {
-            return;
-        }
-        long steps = Math.min(due, props.getMaxCatchUpSteps());
-        lastTickMillis = due > steps ? now : lastTickMillis + due * props.getTickIntervalMs();
-        for (long i = 0; i < steps; i++) {
-            for (State s : walks.values()) {
-                s.dev = s.dev * (1 - props.getMeanReversion()) + s.volBps / 1e4 * rng.nextGaussian();
+        if (due > 0) {
+            long steps = Math.min(due, props.getMaxCatchUpSteps());
+            lastTickMillis = due > steps ? now : lastTickMillis + due * props.getTickIntervalMs();
+            for (long i = 0; i < steps; i++) {
+                for (State s : walks.values()) {
+                    s.dev = s.dev * (1 - props.getMeanReversion()) + s.volBps / 1e4 * rng.nextGaussian();
+                }
             }
         }
+        // After the steps, so a pair that has just got a stored rate starts exactly at it.
+        if (now - lastAnchorMillis >= ANCHOR_RETRY_MS) {
+            anchorMissing(now);
+        }
+    }
+
+    /**
+     * Starts a walk for each configured pair whose mid is now stored. A pair without one is left off the board
+     * (no rate, rather than a made-up one) and looked up again after {@link #ANCHOR_RETRY_MS}.
+     */
+    private void anchorMissing(long now) {
+        lastAnchorMillis = now;
+        for (FxMarketProperties.Walk w : props.getWalks()) {
+            if (!walks.containsKey(w.getPair())) {
+                anchorLookup.apply(w.getPair()).ifPresent(mid ->
+                        walks.put(w.getPair(), new State(w.getPair(), mid.doubleValue(), w.getVolBps())));
+            }
+        }
+    }
+
+    private boolean quoted(String ccy) {
+        return ccy.equals("USD") || walks.containsKey(ccy + "/USD") || walks.containsKey("USD/" + ccy);
     }
 
     /** USD per one unit of {@code ccy}, from whichever walk quotes it against USD. */
@@ -145,7 +169,7 @@ public class MockRateProvider implements RateProvider {
         try {
             return Optional.of(fxRateService.getRate(pair.substring(0, 3), pair.substring(4, 7)));
         } catch (RuntimeException e) {
-            log.warn("No stored mid for {}, using the configured fallback: {}", pair, e.getMessage());
+            log.debug("No stored mid for {}, so it has no simulated rate: {}", pair, e.getMessage());
             return Optional.empty();
         }
     }

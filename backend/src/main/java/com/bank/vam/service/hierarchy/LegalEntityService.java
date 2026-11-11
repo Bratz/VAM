@@ -109,9 +109,10 @@ public class LegalEntityService {
             .legalForm(request.getLegalForm())
             
             // Ownership
-            .ownershipPercent(request.getOwnershipPercent() != null 
-                ? request.getOwnershipPercent() 
+            .ownershipPercent(request.getOwnershipPercent() != null
+                ? request.getOwnershipPercent()
                 : BigDecimal.valueOf(100))
+            .ownershipDefault(request.getOwnershipPercent() == null)
             .consolidationMethod(parseConsolidationMethod(request.getConsolidationMethod()))
             
             // Treasury config

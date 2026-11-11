@@ -384,6 +384,7 @@ public class ChargeDataInitializer implements ApplicationRunner {
             return false;
         }
 
+        config.setCreatedBy(com.bank.vam.entity.BaseEntity.SYSTEM_DEFAULT); // made-up tariff: screens show it as a default
         ChargeConfiguration saved = chargeConfigRepository.save(config);
         log.info("Created charge configuration: {} - {} ({}) = {}% / {} fixed",
                 saved.getChargeCode(),

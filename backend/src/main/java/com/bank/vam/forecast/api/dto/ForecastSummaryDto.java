@@ -14,10 +14,7 @@ import java.util.UUID;
  * running an opening-balance-anchored cumulative sum to produce
  * {@code closingBalance} per week.
  *
- * <p>Sprint 1 anchors {@code openingBalance} at {@code 0}. Real opening
- * balance integration (via {@code BalanceAggregationService}) is a Sprint 2
- * follow-up; the chart shape is correct either way — the y-axis offset just
- * shifts when the real opening lands.
+ * <p>{@code openingBalance} is today's bank balance in {@code currency}.
  *
  * <p>Field names match {@code frontend/src/services/api.ts :: ForecastSummary}
  * verbatim — keep them in sync if the shape changes.

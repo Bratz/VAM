@@ -55,10 +55,12 @@ public final class FxExposureModels {
     /**
      * {@code forecastRunAt} is when the Cash Forecast run that fed the Forecast column ran, null when the corporate has
      * none (then only invoices, cash and declared entries count); {@code forecastStale} flags a run older than the
-     * configured days.
+     * configured days. {@code policyDefault} is true while the hedge policy is the application's default bands, not one
+     * the corporate set.
      */
     public record Ladder(UUID corporateId, String corporateName, String baseCurrency, LocalDate asOf,
-                         List<CurrencyRow> currencies, java.time.OffsetDateTime forecastRunAt, boolean forecastStale) {
+                         List<CurrencyRow> currencies, java.time.OffsetDateTime forecastRunAt, boolean forecastStale,
+                         boolean policyDefault) {
     }
 
     public record Breach(

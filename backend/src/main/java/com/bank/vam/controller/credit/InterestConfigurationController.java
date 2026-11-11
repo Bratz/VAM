@@ -841,6 +841,7 @@ public class InterestConfigurationController {
             .lastSyncAt(config.getLastSyncAt())
             .createdAt(config.getCreatedAt())
             .updatedAt(config.getUpdatedAt())
+            .systemDefault(config.isSystemDefault())
             .build();
     }
 

@@ -96,4 +96,28 @@ class CurrencyMirrorHoldsNoCashTest {
         assertThat(mirror.getAvailableBalance())
             .isEqualByComparingTo(mirror.getCurrentBalance().subtract(held));
     }
+
+    /** A mirror with no FX rate is not converted at 1:1: its rate stays unknown and it is left out of the total. */
+    @Test
+    void aMirrorWithNoRateIsLeftOutOfTheTotalNotConvertedAtOne() {
+        UUID corp = UUID.randomUUID();
+        VirtualAccount root = account("ROOT", AccountCategory.ROOT, "0");
+        VirtualAccount aed = account("M-AED", AccountCategory.CURRENCY_MIRROR, "0");
+        aed.setMirrorBalance(new BigDecimal("1000"));
+        aed.setFxRate(BigDecimal.ONE);
+        aed.setBalanceInBase(new BigDecimal("1000"));
+        VirtualAccount xyz = account("M-XYZ", AccountCategory.CURRENCY_MIRROR, "0");
+        xyz.setCurrencyCode("XYZ");
+        xyz.setMirrorBalance(new BigDecimal("500")); // no rate: fxRate and balanceInBase null
+
+        when(vas.findRootAccount(corp)).thenReturn(java.util.Optional.of(root));
+        when(vas.findByParentAccountIdAndAccountCategory(root.getId(), AccountCategory.CURRENCY_MIRROR)).thenReturn(List.of(aed, xyz));
+
+        var position = service.getMultiCurrencyPosition(corp, "AED");
+
+        assertThat(position.getTotalInBase()).isEqualByComparingTo("1000");
+        var unconverted = position.getCurrencyBreakdown().get(1);
+        assertThat(unconverted.getFxRate()).isNull();
+        assertThat(unconverted.getConvertedBalance()).isNull();
+    }
 }

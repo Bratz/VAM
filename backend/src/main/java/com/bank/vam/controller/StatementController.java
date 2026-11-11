@@ -5,6 +5,7 @@ import com.bank.vam.entity.Transaction;
 import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -125,89 +126,36 @@ public class StatementController {
         VirtualAccount account = virtualAccountRepository.findById(accountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + accountId));
         
-        // Generate unique statement reference
-        String statementRef = String.format("STMT-%s-%s-%d",
-                account.getVaNumber().substring(0, Math.min(8, account.getVaNumber().length())),
-                LocalDate.now().toString().replace("-", ""),
-                System.currentTimeMillis() % 10000);
-        
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("statementReference", statementRef);
-        response.put("accountId", account.getId());
-        response.put("vaNumber", account.getVaNumber());
-        response.put("vaName", account.getVaName());
-        response.put("format", format.toUpperCase());
-        response.put("fromDate", fromDate);
-        response.put("toDate", toDate);
-        response.put("status", "GENERATED");
-        response.put("downloadUrl", "/api/v1/statements/download/" + statementRef);
-        response.put("expiresAt", LocalDateTime.now().plusDays(7));
-        response.put("generatedAt", LocalDateTime.now());
-        
-        log.info("Generated {} statement {} for account {}", format, statementRef, account.getVaNumber());
-        
-        return ResponseEntity.ok(ApiResponse.success(response));
+        throw new BusinessException("Not available: " + format.toUpperCase() + " statement file for "
+                + account.getVaNumber() + " — no statement file generator is implemented; use the on-screen statement");
     }
 
     @GetMapping("/download/{statementRef}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> downloadStatement(
             @PathVariable String statementRef) {
-        
-        // In production, this would fetch from storage and return file
-        Map<String, Object> response = new HashMap<>();
-        response.put("statementReference", statementRef);
-        response.put("status", "DOWNLOAD_READY");
-        response.put("message", "Statement download endpoint - implement file generation");
-        
-        return ResponseEntity.ok(ApiResponse.success(response));
+        throw new BusinessException("Not available: statement " + statementRef + " — no statement files are stored");
     }
 
+    /** No statement files are generated or stored, so there is no history to list. */
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getStatementHistory(
             @RequestParam(required = false) UUID accountId,
             @RequestParam(required = false) UUID corporateId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
-        // TODO: Implement actual statement history from database
-        // For now, return mock data
-        List<Map<String, Object>> history = new ArrayList<>();
-        for (int i = 0; i < Math.min(size, 10); i++) {
-            Map<String, Object> stmt = new LinkedHashMap<>();
-            stmt.put("id", UUID.randomUUID());
-            stmt.put("statementReference", String.format("STMT-2024-%05d", i + 1 + (page * size)));
-            stmt.put("vaNumber", "VA" + String.format("%010d", 1000000 + i));
-            stmt.put("fromDate", LocalDate.now().minusMonths(i + 1));
-            stmt.put("toDate", LocalDate.now().minusMonths(i));
-            stmt.put("format", i % 2 == 0 ? "PDF" : "CSV");
-            stmt.put("status", "AVAILABLE");
-            stmt.put("fileSize", (100 + i * 50) + " KB");
-            stmt.put("generatedAt", LocalDateTime.now().minusDays(i));
-            stmt.put("expiresAt", LocalDateTime.now().plusDays(30 - i));
-            history.add(stmt);
-        }
-        
-        return ResponseEntity.ok(ApiResponse.success(history));
+        return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 
+    /** Only what is actually produced: the on-screen statements here and camt.053 (JSON / XML) from /iso20022. */
     @GetMapping("/types")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getStatementTypes() {
         List<Map<String, Object>> types = Arrays.asList(
-            createStatementType("ACCOUNT", "Account Statement", 
+            createStatementType("ACCOUNT", "Account Statement",
                 "Detailed transaction history for a single account",
-                Arrays.asList("PDF", "CSV", "MT940", "CAMT.053")),
-            createStatementType("CORPORATE", "Corporate Statement", 
+                Arrays.asList("JSON", "CAMT.053")),
+            createStatementType("CORPORATE", "Corporate Statement",
                 "Consolidated statement across all corporate accounts",
-                Arrays.asList("PDF", "CSV", "XLSX")),
-            createStatementType("BALANCE", "Balance Confirmation", 
-                "Point-in-time balance certificate",
-                Arrays.asList("PDF")),
-            createStatementType("AUDIT", "Audit Report", 
-                "Detailed audit trail with timestamps",
-                Arrays.asList("PDF", "XLSX")),
-            createStatementType("RECONCILIATION", "Reconciliation Report", 
-                "Account reconciliation with opening/closing balances",
-                Arrays.asList("PDF", "CSV", "XLSX"))
+                Arrays.asList("JSON"))
         );
         return ResponseEntity.ok(ApiResponse.success(types));
     }

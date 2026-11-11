@@ -24,8 +24,9 @@ class MandateServiceTest {
     private final CustomerMandateRepository mandates = mock(CustomerMandateRepository.class);
     private final PartyRepository parties = mock(PartyRepository.class);
     private final VirtualAccountRepository accounts = mock(VirtualAccountRepository.class);
+    private final com.bank.vam.repository.CorporateRepository corporates = mock(com.bank.vam.repository.CorporateRepository.class);
     private final MandateService service = new MandateService(mandates, parties, mock(PartyBankAccountRepository.class), accounts,
-            mock(com.bank.vam.repository.CorporateRepository.class), new com.bank.vam.config.HomeBankProperties());
+            corporates, new com.bank.vam.config.HomeBankProperties());
 
     private static final UUID CORP = UUID.randomUUID();
     private static final String HEADER = "mandateReference,customer,creditorAccount,schemeCode,validFrom,debtorIban,maxPerCollection,frequency,type\n";
@@ -100,6 +101,9 @@ class MandateServiceTest {
     void anEMandateWaitsForThePayersBankAndItsAmendmentsToo() {
         knownCustomerAndAccount();
         when(mandates.save(any())).thenAnswer(i -> i.getArgument(0));
+        com.bank.vam.entity.Corporate corp = new com.bank.vam.entity.Corporate();
+        corp.setLegalName("Brato Trading LLC"); // the creditor named in the mandate messages
+        when(corporates.findById(CORP)).thenReturn(Optional.of(corp));
         MandateService.MandateRequest req = new MandateService.MandateRequest(CORP, null, "Acme Trading LLC", null,
                 "AE070331234567890123456", null, null, "VA-AED-1", "MND-E1", "UAE_DDS", null, null,
                 java.time.LocalDate.of(2026, 11, 1), null, null, new BigDecimal("500"), null, null, null);

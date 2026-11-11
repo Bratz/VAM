@@ -14,6 +14,11 @@ import static org.assertj.core.api.Assertions.within;
 
 class MockRateProviderTest {
 
+    /** What fx_rates holds in these tests: a mid for every configured walk. */
+    private static final java.util.function.Function<String, Optional<BigDecimal>> STORED = pair -> Optional.ofNullable(java.util.Map.of(
+            "EUR/USD", "1.0926", "GBP/USD", "1.2665", "USD/JPY", "149.50", "USD/CHF", "0.8800",
+            "USD/INR", "83.20", "USD/SGD", "1.3400", "USD/AED", "3.6725", "USD/SAR", "3.7500").get(pair)).map(BigDecimal::new);
+
     private final FxMarketProperties props = new FxMarketProperties();
     private final AtomicLong now = new AtomicLong(1_000_000);
 
@@ -26,19 +31,27 @@ class MockRateProviderTest {
     }
 
     @Test
-    void startsFromTheStoredMidAndFallsBackToConfigWhenThereIsNone() {
-        MockRateProvider p = provider(pair -> pair.equals("EUR/USD") ? Optional.of(new BigDecimal("2.0")) : Optional.empty());
+    void startsFromTheStoredMidAndAPairWithNoneHasNoRate() {
+        java.util.Map<String, BigDecimal> stored = new java.util.HashMap<>(java.util.Map.of("EUR/USD", new BigDecimal("2.0")));
+        MockRateProvider p = provider(pair -> Optional.ofNullable(stored.get(pair)));
 
         List<SpotTick> first = p.spots();
 
         assertThat(find(first, "EUR/USD").mid()).isEqualByComparingTo("2.00000");
-        assertThat(find(first, "GBP/USD").mid()).isEqualByComparingTo("1.26650");
         assertThat(find(first, "EUR/USD").changeBps()).isEqualByComparingTo("0");
+        assertThat(find(first, "EUR/USD").source()).isEqualTo("SIMULATED");
+        assertThat(first).extracting(SpotTick::pair).containsExactly("EUR/USD"); // no GBP leg, so no EUR/GBP cross either
+        assertThat(p.spot("GBP/USD")).isEmpty();
+
+        // Once a rate is stored the pair joins the board at the next look-up.
+        stored.put("GBP/USD", new BigDecimal("1.25"));
+        now.addAndGet(MockRateProvider.ANCHOR_RETRY_MS);
+        assertThat(p.spot("GBP/USD").orElseThrow().mid()).isEqualByComparingTo("1.25000");
     }
 
     @Test
     void ticksOnlyAsTimePassesAndCapsTheCatchUp() {
-        MockRateProvider p = provider(pair -> Optional.empty());
+        MockRateProvider p = provider(STORED);
         BigDecimal start = find(p.spots(), "EUR/USD").mid();
 
         now.addAndGet(500);
@@ -54,7 +67,7 @@ class MockRateProviderTest {
 
     @Test
     void crossesStayTriangularWithTheirLegs() {
-        MockRateProvider p = provider(pair -> Optional.empty());
+        MockRateProvider p = provider(STORED);
         p.spots();
         for (int i = 0; i < 40; i++) {
             now.addAndGet(1000);
@@ -69,7 +82,7 @@ class MockRateProviderTest {
 
     @Test
     void pegsNeverMoveAndOtherPairsStayNearTheirAnchor() {
-        MockRateProvider p = provider(pair -> Optional.empty());
+        MockRateProvider p = provider(STORED);
         p.spots();
         double worst = 0;
         for (int i = 0; i < 200; i++) {
@@ -84,7 +97,7 @@ class MockRateProviderTest {
 
     @Test
     void invertsAQuotedPairAndKnowsNothingAboutOthers() {
-        MockRateProvider p = provider(pair -> Optional.empty());
+        MockRateProvider p = provider(STORED);
         double eurUsd = find(p.spots(), "EUR/USD").mid().doubleValue();
 
         assertThat(p.spot("USD/EUR").orElseThrow().mid().doubleValue()).isCloseTo(1 / eurUsd, within(1e-5));

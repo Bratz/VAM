@@ -125,6 +125,8 @@ public class TaxChargeDto {
         private LocalDate effectiveFrom;
         private LocalDate effectiveTo;
         private LocalDateTime createdAt;
+        /** Seeded at startup with a made-up tariff, not the bank's agreed terms. */
+        private boolean systemDefault;
     }
 
     @Data

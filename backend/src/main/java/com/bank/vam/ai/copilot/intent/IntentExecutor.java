@@ -35,7 +35,7 @@ public class IntentExecutor {
     private final ToolRegistry toolRegistry;
 
     public List<ToolResult> execute(IntentMatch match, UUID conversationId) {
-        ToolContext ctx = toolRegistry.buildContext(null, "demo-user", conversationId);
+        ToolContext ctx = toolRegistry.buildContext(null, com.bank.vam.config.CurrentUser.name(), conversationId);
 
         return switch (match.intent()) {
             case GET_POSITION -> List.of(

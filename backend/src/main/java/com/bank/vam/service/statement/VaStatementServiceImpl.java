@@ -52,6 +52,7 @@ public class VaStatementServiceImpl implements VaStatementService {
     private final VirtualAccountRepository virtualAccountRepository;
     private final TransactionRepository transactionRepository;
     private final VaStatementRepository statementRepository;
+    private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     private static final DateTimeFormatter ISO_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -398,17 +399,19 @@ public class VaStatementServiceImpl implements VaStatementService {
                 .vaCount(((Number) row[3]).intValue())
                 .build())
             .collect(Collectors.toList());
+        // Across currencies there is no single total: only the per-currency breakdown is given.
+        boolean mixed = currencyBreakdown.size() > 1;
 
         return AggregatedBalance.builder()
             .vaId(request.getVaId())
             .vaNumber(va.getVaNumber())
             .asOfDate(request.getAsOfDate())
-            .bookedBalance(bookedBalance)
-            .availableBalance(availableBalance)
-            .heldBalance(heldBalance)
-            .creditLimit(creditLimit)
-            .effectiveAvailable(availableBalance.add(creditLimit != null ? creditLimit : BigDecimal.ZERO))
-            .currencyCode(va.getCurrencyCode())
+            .bookedBalance(mixed ? null : bookedBalance)
+            .availableBalance(mixed ? null : availableBalance)
+            .heldBalance(mixed ? null : heldBalance)
+            .creditLimit(mixed ? null : creditLimit)
+            .effectiveAvailable(mixed ? null : availableBalance.add(creditLimit != null ? creditLimit : BigDecimal.ZERO))
+            .currencyCode(mixed ? null : va.getCurrencyCode())
             .childVaCount(vaIds.size())
             .includedVaIds(vaIds)
             .currencyBreakdown(currencyBreakdown)
@@ -463,6 +466,7 @@ public class VaStatementServiceImpl implements VaStatementService {
      * Formula: balance_at_time = current_balance - sum(credits_after_time) + sum(debits_after_time)
      */
     private BigDecimal calculateHistoricalBalance(List<UUID> vaIds, LocalDateTime asOfTime) {
+        requireSingleCurrency(vaIds);
         // Get current balance
         BigDecimal currentBalance = statementRepository.sumCurrentBalanceForVaIds(vaIds);
 
@@ -474,6 +478,16 @@ public class VaStatementServiceImpl implements VaStatementService {
         return currentBalance
             .subtract(creditsAfter != null ? creditsAfter : BigDecimal.ZERO)
             .add(debitsAfter != null ? debitsAfter : BigDecimal.ZERO);
+    }
+
+    /** Balances in different currencies are not added together; such a hierarchy has no single total. */
+    private void requireSingleCurrency(List<UUID> vaIds) {
+        List<Object[]> byCurrency = statementRepository.sumBalancesByVaIdsGroupedByCurrency(vaIds);
+        if (byCurrency.size() > 1) {
+            throw new com.bank.vam.exception.BusinessException("Not available: one balance for accounts in "
+                + byCurrency.stream().map(r -> String.valueOf(r[0])).collect(Collectors.joining(", "))
+                + " — amounts in different currencies are not added together");
+        }
     }
 
     private BigDecimal calculateAggregatedOpeningBalance(List<UUID> vaIds, LocalDate date) {
@@ -771,6 +785,7 @@ public class VaStatementServiceImpl implements VaStatementService {
             .accountCategory(va.getAccountCategory() != null ? va.getAccountCategory().name() : null)
             .corporateId(va.getCorporateId())
             .programId(va.getProgramId())
+            .servicerBic(marketProfile.getActiveHomeBankBic())
             .build();
     }
 

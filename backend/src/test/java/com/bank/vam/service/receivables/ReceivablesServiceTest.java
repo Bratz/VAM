@@ -13,10 +13,12 @@ import com.bank.vam.repository.CorporateRepository;
 import com.bank.vam.repository.TransactionRepository;
 import com.bank.vam.repository.VirtualAccountRepository;
 import com.bank.vam.repository.receivables.ReceivableRepository;
+import com.bank.vam.repository.receivables.UnmatchedPaymentRepository;
+import com.bank.vam.dto.receivables.ReceivablesDto.MatchPaymentRequest;
+import com.bank.vam.dto.receivables.ReceivablesDto.ReleaseEscrowRequest;
 import com.bank.vam.repository.treasury.ExceptionTransactionRepository;
 import com.bank.vam.repository.viban.VibanRepository;
 import com.bank.vam.service.TransactionService;
-import com.bank.vam.service.treasury.FeePostingService;
 import com.bank.vam.service.treasury.SettlementVaResolverService;
 import com.bank.vam.service.viban.VibanService;
 import org.junit.jupiter.api.Test;
@@ -45,7 +47,6 @@ class ReceivablesServiceTest {
     private final VibanRepository vibanRepository = mock(VibanRepository.class);
     private final ReceivableRepository receivableRepository = mock(ReceivableRepository.class);
     private final VibanService vibanService = mock(VibanService.class);
-    private final FeePostingService feePostingService = mock(FeePostingService.class);
     private final TransactionService transactionService = mock(TransactionService.class);
     private final SettlementVaResolverService settlementVaResolver = mock(SettlementVaResolverService.class);
     private final ExceptionTransactionRepository exceptionTransactionRepository = mock(ExceptionTransactionRepository.class);
@@ -53,16 +54,19 @@ class ReceivablesServiceTest {
 
     private final CoboReceivableService coboReceivables = mock(CoboReceivableService.class);
     private final com.bank.vam.outbox.OutboxEmailRepository outbox = mock(com.bank.vam.outbox.OutboxEmailRepository.class);
+    private final UnmatchedPaymentRepository unmatchedPaymentRepository = mock(UnmatchedPaymentRepository.class);
+    private final ReconciliationService reconciliationService = mock(ReconciliationService.class);
 
     private final ReceivablesService service = new ReceivablesService(
             virtualAccountRepository, transactionRepository, vibanRepository, receivableRepository,
-            vibanService, corporateRepository, feePostingService, transactionService, settlementVaResolver,
-            exceptionTransactionRepository, coboReceivables, outbox);
+            vibanService, corporateRepository, transactionService, settlementVaResolver,
+            exceptionTransactionRepository, coboReceivables, outbox, unmatchedPaymentRepository, reconciliationService);
 
     {
         ReflectionTestUtils.setField(service, "frontendBaseUrl", "http://test.local");
     }
 
+    private static final UUID CORPORATE_ID = UUID.randomUUID();
     private static final UUID TARGET_VA_ID = UUID.randomUUID();
     private static final UUID PROGRAM_ID = UUID.randomUUID();
 
@@ -95,7 +99,7 @@ class ReceivablesServiceTest {
         when(vibanService.createViban(eq(PROGRAM_ID), any(VibanCreateRequest.class)))
                 .thenReturn(VibanResponse.builder().id(realVibanId).viban("AE-REAL-VIBAN-123").build());
 
-        InvoiceResponse response = service.createInvoice(null, baseRequest()
+        InvoiceResponse response = service.createInvoice(CORPORATE_ID, baseRequest()
                 .createViban(true)
                 .targetVaId(TARGET_VA_ID)
                 .build());
@@ -125,7 +129,7 @@ class ReceivablesServiceTest {
         stubSaveAssignsId();
         CreateInvoiceRequest request = baseRequest().createViban(true).build();
 
-        assertThrows(BusinessException.class, () -> service.createInvoice(null, request));
+        assertThrows(BusinessException.class, () -> service.createInvoice(CORPORATE_ID, request));
         verify(vibanService, never()).createViban(any(), any());
     }
 
@@ -133,7 +137,7 @@ class ReceivablesServiceTest {
     void noVibanRequestedLeavesVibanFieldsNull() {
         stubSaveAssignsId();
 
-        InvoiceResponse response = service.createInvoice(null, baseRequest().build());
+        InvoiceResponse response = service.createInvoice(CORPORATE_ID, baseRequest().build());
 
         assertNull(response.getViban());
         assertNull(response.getVibanId());
@@ -145,7 +149,7 @@ class ReceivablesServiceTest {
         stubSaveAssignsId();
         ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
 
-        InvoiceResponse response = service.createInvoice(null, baseRequest().build());
+        InvoiceResponse response = service.createInvoice(CORPORATE_ID, baseRequest().build());
 
         verify(receivableRepository, atLeastOnce()).save(saved.capture());
         assertNotNull(saved.getValue().getPaymentLinkToken());
@@ -159,7 +163,7 @@ class ReceivablesServiceTest {
         stubSaveAssignsId();
         LocalDate issued = LocalDate.now().minusDays(2);
 
-        InvoiceResponse response = service.createInvoice(null, baseRequest()
+        InvoiceResponse response = service.createInvoice(CORPORATE_ID, baseRequest()
                 .invoiceNumber(" INV-TYPED-1 ").issueDate(issued).paymentTermsDays(30)
                 .externalReference("PO-77").customerEmail("ap@acme.example")
                 .taxAmount(new BigDecimal("23.81")).discountAmount(BigDecimal.ONE)
@@ -195,7 +199,7 @@ class ReceivablesServiceTest {
     void aDraftIsKeptAsADraftAndNotSent() {
         stubSaveAssignsId();
 
-        service.createInvoice(null, baseRequest().draft(true).sendInvoiceEmail(true)
+        service.createInvoice(CORPORATE_ID, baseRequest().draft(true).sendInvoiceEmail(true)
                 .coboCollectorEntityId(UUID.randomUUID()).build());
 
         ArgumentCaptor<Receivable> saved = ArgumentCaptor.forClass(Receivable.class);
@@ -215,7 +219,7 @@ class ReceivablesServiceTest {
             return r;
         });
 
-        service.createInvoice(null, baseRequest().coboCollectorEntityId(treasury).sendInvoiceEmail(true).build());
+        service.createInvoice(CORPORATE_ID, baseRequest().coboCollectorEntityId(treasury).sendInvoiceEmail(true).build());
 
         verify(coboReceivables).submitForCobo(any(), eq(treasury), eq("portal"));
         ArgumentCaptor<com.bank.vam.outbox.OutboxEmail> mail = ArgumentCaptor.forClass(com.bank.vam.outbox.OutboxEmail.class);
@@ -223,6 +227,15 @@ class ReceivablesServiceTest {
         assertEquals("SENT", mail.getValue().getStatus());
         assertEquals("INVOICE", mail.getValue().getRelatedType());
         assertTrue(mail.getValue().getBody().contains("Pay online: http://test.local/?page=pay-invoice&token="));
+    }
+
+    /** It used to answer with four made-up demo invoices, the same under every such corporate. */
+    @Test
+    void aCorporateWithNoInvoicesGetsNone() {
+        UUID corporateId = UUID.randomUUID();
+        when(receivableRepository.findByCorporateId(corporateId)).thenReturn(java.util.List.of());
+
+        assertTrue(service.getAllInvoices(corporateId, null, null).isEmpty());
     }
 
     @Test
@@ -278,5 +291,44 @@ class ReceivablesServiceTest {
         when(receivableRepository.findByPaymentLinkToken("no-such-token")).thenReturn(Optional.empty());
 
         assertTrue(service.getPublicInvoiceByToken("no-such-token").isEmpty());
+    }
+
+    @Test
+    void anInvoiceWithoutACorporateIsRefusedNotFiledUnderADemoOne() {
+        BusinessException e = assertThrows(BusinessException.class, () -> service.createInvoice(null, baseRequest().build()));
+        assertEquals("corporateId is required", e.getMessage());
+        verify(receivableRepository, never()).save(any());
+    }
+
+    /** Nothing recorded, nothing shown: no demo orders, POS rows or unmatched payments. */
+    @Test
+    void emptySourcesListEmpty() {
+        when(unmatchedPaymentRepository.findAll()).thenReturn(java.util.List.of());
+
+        assertTrue(service.getUnmatchedPayments(CORPORATE_ID).isEmpty());
+        assertTrue(service.getAllEcommerceOrders(CORPORATE_ID, null, null).isEmpty());
+        assertTrue(service.getPlatformStats(CORPORATE_ID).isEmpty());
+        assertTrue(service.getAllPosCollections(CORPORATE_ID, null, null).isEmpty());
+        assertTrue(service.getMerchantSummaries(CORPORATE_ID).isEmpty());
+        assertEquals(0, service.getPosStats(CORPORATE_ID).getTransactionCount());
+    }
+
+    @Test
+    void escrowReleaseWithNoOrdersIsRefused() {
+        assertThrows(BusinessException.class,
+                () -> service.releaseEscrow(UUID.randomUUID(), new ReleaseEscrowRequest()));
+    }
+
+    @Test
+    void aMatchTheLedgerRefusesIsReportedNotFaked() {
+        UUID paymentId = UUID.randomUUID();
+        UUID invoiceId = UUID.randomUUID();
+        when(reconciliationService.manualMatch(paymentId, invoiceId, "portal")).thenReturn(
+                ReconciliationService.ReconciliationResult.builder().success(false).errorMessage("Unmatched payment not found").build());
+        MatchPaymentRequest request = new MatchPaymentRequest();
+        request.setInvoiceId(invoiceId);
+
+        BusinessException e = assertThrows(BusinessException.class, () -> service.matchPayment(paymentId, request));
+        assertEquals("Unmatched payment not found", e.getMessage());
     }
 }

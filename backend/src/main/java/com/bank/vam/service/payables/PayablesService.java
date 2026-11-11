@@ -64,6 +64,9 @@ public class PayablesService {
     private final LegalEntityRepository legalEntityRepository;
     private final PoboExecutionService poboExecutionService;
     private final FxPaymentService fxPayments;
+    private final com.bank.vam.repository.tax.ChargeConfigurationRepository chargeConfigurationRepository;
+    private final com.bank.vam.repository.receivables.ReceivableRepository receivableRepository;
+    private final com.bank.vam.service.treasury.FxRateService fxRateService;
 
     // TODO: Inject these when available
     // private final IhbUnifiedService ihbService;
@@ -260,32 +263,21 @@ public class PayablesService {
                     request.getSortBy() != null ? request.getSortBy() : "createdAt")
         );
 
-        try {
-            // If no corporate ID, return all payables
-            if (request.getCorporateId() == null) {
-                log.info("No corporate ID provided, returning all payables");
-                Page<Payable> payablePage = payableRepository.findAll(pageable);
-                return mapToListResponse(payablePage);
-            }
-            
-            // Try the complex search first
-            Page<Payable> payablePage = payableRepository.searchPayables(
-                request.getCorporateId(),
-                request.getOwningEntityId(),
-                request.getStatus() != null ? PayableStatus.valueOf(request.getStatus()) : null,
-                request.getPaymentRoute() != null ? PaymentRoute.valueOf(request.getPaymentRoute()) : null,
-                request.getIsIntercompany(),
-                request.getNettingEligible(),
-                request.getSearchTerm(),
-                pageable
-            );
-            return mapToListResponse(payablePage);
-        } catch (Exception e) {
-            log.warn("Complex search failed, falling back to findAll: {}", e.getMessage());
-            // Ultimate fallback - just get all payables
-            Page<Payable> payablePage = payableRepository.findAll(pageable);
-            return mapToListResponse(payablePage);
+        // A search is always scoped to one corporate — never every corporate's payables.
+        if (request.getCorporateId() == null) {
+            throw new BusinessException("corporateId is required (X-Corporate-Id header)");
         }
+        Page<Payable> payablePage = payableRepository.searchPayables(
+            request.getCorporateId(),
+            request.getOwningEntityId(),
+            request.getStatus() != null ? PayableStatus.valueOf(request.getStatus()) : null,
+            request.getPaymentRoute() != null ? PaymentRoute.valueOf(request.getPaymentRoute()) : null,
+            request.getIsIntercompany(),
+            request.getNettingEligible(),
+            request.getSearchTerm(),
+            pageable
+        );
+        return mapToListResponse(payablePage);
     }
 
     // ========================================================================
@@ -460,33 +452,25 @@ public class PayablesService {
         
         String currencyCode = payables.get(0).getCurrencyCode();
 
-        // Calculate charges (simplified - would integrate with TaxChargeService)
+        // Charges come from the configured POBO fee; none configured means none charged.
         List<PoboChargeBreakdown> charges = new ArrayList<>();
-        BigDecimal poboFee = totalAmount.multiply(new BigDecimal("0.005")).setScale(2, RoundingMode.HALF_UP);
-        charges.add(PoboChargeBreakdown.builder()
-            .chargeCode("POBO-FEE")
-            .chargeName("POBO Service Fee")
-            .chargeType("PERCENTAGE")
-            .calculatedAmount(poboFee)
+        chargeConfigurationRepository.findActivePoboFee().ifPresent(config -> charges.add(PoboChargeBreakdown.builder()
+            .chargeCode(config.getChargeCode())
+            .chargeName(config.getChargeName())
+            .chargeType(config.getChargeCategory() != null ? config.getChargeCategory().name() : null)
+            .calculatedAmount(config.calculateCharge(totalAmount))
             .waived(false)
-            .build());
+            .build()));
 
-        BigDecimal totalCharges = poboFee;
+        BigDecimal totalCharges = charges.stream()
+            .map(PoboChargeBreakdown::getCalculatedAmount)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal netPayment = totalAmount.add(totalCharges);
 
-        // IHB loan preview (simplified - would integrate with IhbUnifiedService)
-        BigDecimal interestRate = new BigDecimal("5.5"); // Annual rate
-        BigDecimal dailyInterest = totalAmount.multiply(interestRate)
-            .divide(new BigDecimal("36500"), 4, RoundingMode.HALF_UP);
-        BigDecimal monthlyInterest = dailyInterest.multiply(new BigDecimal("30")).setScale(2, RoundingMode.HALF_UP);
-
-        PoboIhbLoanPreview ihbPreview = PoboIhbLoanPreview.builder()
-            .principalAmount(totalAmount)
-            .interestRate(interestRate)
-            .estimatedDailyInterest(dailyInterest)
-            .estimatedMonthlyInterest(monthlyInterest)
-            .tenor("ON_DEMAND")
-            .build();
+        // No real IHB lending rate source exists for this preview, so no loan
+        // projection is shown rather than one priced on an invented rate.
+        PoboIhbLoanPreview ihbPreview = null;
 
         // Validation
         List<String> warnings = new ArrayList<>();
@@ -494,10 +478,14 @@ public class PayablesService {
             warnings.add("Large payment amount - additional approval may be required");
         }
 
+        Optional<LegalEntity> payingEntity = request.getPayingEntityId() == null
+            ? Optional.empty()
+            : legalEntityRepository.findById(request.getPayingEntityId());
+
         return PoboPreviewResponse.builder()
             .payingEntityId(request.getPayingEntityId())
-            .payingEntityCode("TREASURY") // Would lookup from LegalEntity
-            .payingEntityName("Corporate Treasury")
+            .payingEntityCode(payingEntity.map(LegalEntity::getEntityCode).orElse(null))
+            .payingEntityName(payingEntity.map(LegalEntity::getEntityName).orElse(null))
             .behalfEntityId(request.getBehalfEntityId())
             .behalfEntityCode(payables.get(0).getOwningEntityCode())
             .behalfEntityName(payables.get(0).getOwningEntityName())
@@ -635,6 +623,7 @@ public class PayablesService {
 
         VirtualAccount sourceVa = virtualAccountRepository.findById(payable.getVirtualAccountId())
             .orElseThrow(() -> new ResourceNotFoundException("Source VA not found: " + payable.getVirtualAccountId()));
+        debtorAgentBic(); // the pain.001 needs it: refuse before any money moves, not after
 
         // Generate payment reference
         String paymentRef = "PMT-" + System.currentTimeMillis();
@@ -901,7 +890,27 @@ public class PayablesService {
      * Generate pain.001 (CustomerCreditTransferInitiation) XML for a payable.
      * ISO 20022 pain.001.001.09 format.
      */
+    /** This bank's BIC, the pain.001 debtor agent; refused rather than a placeholder when unset. */
+    private String debtorAgentBic() {
+        String bic = marketProfile.getActiveHomeBankBic();
+        if (bic == null || bic.isBlank()) {
+            throw new BusinessException("Not available: no home bank BIC configured for the debtor agent");
+        }
+        return bic;
+    }
+
     private String generatePain001ForPayable(Payable payable, String msgId, PaymentExecutionRequest request) {
+        if (payable.getVirtualAccountId() == null) {
+            throw new BusinessException("Not available: payable " + payable.getPayableNumber() + " has no debtor account");
+        }
+        String debtorBic = debtorAgentBic();
+        // The debtor's real name: the payable's owning entity, else its legal entity record — never a placeholder.
+        String debtorName = payable.getOwningEntityName() != null && !payable.getOwningEntityName().isBlank()
+            ? payable.getOwningEntityName()
+            : Optional.ofNullable(payable.getOwningEntityId()).flatMap(legalEntityRepository::findById)
+                .map(LegalEntity::getEntityName).filter(n -> !n.isBlank())
+                .orElseThrow(() -> new BusinessException("Not available: pain.001 for payable "
+                    + payable.getPayableNumber() + " — no owning entity name is recorded for the debtor"));
         LocalDateTime now = LocalDateTime.now();
         String creationDateTime = now.toString().replace("T", " ").substring(0, 19);
 
@@ -917,16 +926,16 @@ public class PayablesService {
         xml.append("      <NbOfTxs>1</NbOfTxs>\n");
         xml.append("      <CtrlSum>").append(payable.getNetAmount().setScale(2, RoundingMode.HALF_UP)).append("</CtrlSum>\n");
         xml.append("      <InitgPty>\n");
-        xml.append("        <Nm>").append(escapeXml(payable.getOwningEntityName() != null ?
-            payable.getOwningEntityName() : "Corporate")).append("</Nm>\n");
-        xml.append("        <Id>\n");
-        xml.append("          <OrgId>\n");
-        xml.append("            <Othr>\n");
-        xml.append("              <Id>").append(payable.getOwningEntityCode() != null ?
-            payable.getOwningEntityCode() : "CORP").append("</Id>\n");
-        xml.append("            </Othr>\n");
-        xml.append("          </OrgId>\n");
-        xml.append("        </Id>\n");
+        xml.append("        <Nm>").append(escapeXml(debtorName)).append("</Nm>\n");
+        if (payable.getOwningEntityCode() != null) { // InitgPty/Id is optional: left out when no code is recorded
+            xml.append("        <Id>\n");
+            xml.append("          <OrgId>\n");
+            xml.append("            <Othr>\n");
+            xml.append("              <Id>").append(escapeXml(payable.getOwningEntityCode())).append("</Id>\n");
+            xml.append("            </Othr>\n");
+            xml.append("          </OrgId>\n");
+            xml.append("        </Id>\n");
+        }
         xml.append("      </InitgPty>\n");
         xml.append("    </GrpHdr>\n");
 
@@ -955,16 +964,14 @@ public class PayablesService {
 
         // Debtor (Payer)
         xml.append("      <Dbtr>\n");
-        xml.append("        <Nm>").append(escapeXml(payable.getOwningEntityName() != null ?
-            payable.getOwningEntityName() : "Corporate")).append("</Nm>\n");
+        xml.append("        <Nm>").append(escapeXml(debtorName)).append("</Nm>\n");
         xml.append("      </Dbtr>\n");
 
         // Debtor Account (Source VA)
         xml.append("      <DbtrAcct>\n");
         xml.append("        <Id>\n");
         xml.append("          <Othr>\n");
-        xml.append("            <Id>").append(payable.getVirtualAccountId() != null ?
-            payable.getVirtualAccountId().toString() : "VA-DEFAULT").append("</Id>\n");
+        xml.append("            <Id>").append(payable.getVirtualAccountId()).append("</Id>\n");
         xml.append("          </Othr>\n");
         xml.append("        </Id>\n");
         xml.append("        <Ccy>").append(payable.getCurrencyCode()).append("</Ccy>\n");
@@ -973,7 +980,7 @@ public class PayablesService {
         // Debtor Agent (Bank)
         xml.append("      <DbtrAgt>\n");
         xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>BANKAEXX</BICFI>\n"); // Placeholder BIC
+        xml.append("          <BICFI>").append(escapeXml(debtorBic)).append("</BICFI>\n");
         xml.append("        </FinInstnId>\n");
         xml.append("      </DbtrAgt>\n");
 
@@ -1110,8 +1117,17 @@ public class PayablesService {
     @Transactional(readOnly = true)
     public IntercompanyPositionResponse getIntercompanyPosition(UUID entityId, UUID counterpartyId) {
         BigDecimal payablesTotal = payableRepository.sumIntercompanyExposure(entityId, counterpartyId);
-        // Would also get receivables from ReceivableRepository
-        BigDecimal receivablesTotal = BigDecimal.ZERO; // Placeholder
+        BigDecimal receivablesTotal = receivableRepository.sumIntercompanyOutstandingBetweenEntities(entityId, counterpartyId);
+
+        // The sums are raw amounts; netting them is only meaningful in one currency.
+        Set<String> currencies = new TreeSet<>();
+        payableRepository.findIntercompanyExposureCurrencies(entityId, counterpartyId).stream()
+            .filter(Objects::nonNull).forEach(currencies::add);
+        receivableRepository.findIntercompanyOutstandingCurrenciesBetweenEntities(entityId, counterpartyId).stream()
+            .filter(Objects::nonNull).forEach(currencies::add);
+        if (currencies.size() > 1) {
+            throw new BusinessException("Not available: intercompany position spans currencies " + currencies);
+        }
 
         return IntercompanyPositionResponse.builder()
             .entityId(entityId)
@@ -1119,7 +1135,7 @@ public class PayablesService {
             .payablesTotal(payablesTotal)
             .receivablesTotal(receivablesTotal)
             .netPosition(payablesTotal.subtract(receivablesTotal))
-            .currencyCode("AED")
+            .currencyCode(currencies.isEmpty() ? null : currencies.iterator().next())
             .build();
     }
 
@@ -1139,15 +1155,16 @@ public class PayablesService {
             payables = payableRepository.findNettingEligibleNotInCycle();
         }
 
+        String reportingCcy = marketProfile.getDefaultCurrency();
         BigDecimal totalAmount = payables.stream()
-            .map(Payable::getNetAmount)
+            .map(p -> inCurrency(p.getNetAmount(), p, reportingCcy))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Group by owning entity
         java.util.Map<String, BigDecimal> byOwningEntity = payables.stream()
             .collect(Collectors.groupingBy(
                 p -> p.getOwningEntityCode() != null ? p.getOwningEntityCode() : "UNKNOWN",
-                Collectors.reducing(BigDecimal.ZERO, Payable::getNetAmount, BigDecimal::add)
+                Collectors.reducing(BigDecimal.ZERO, p -> inCurrency(p.getNetAmount(), p, reportingCcy), BigDecimal::add)
             ));
 
         // Group by counterparty
@@ -1155,13 +1172,13 @@ public class PayablesService {
             .filter(p -> p.getCounterpartyEntityCode() != null)
             .collect(Collectors.groupingBy(
                 Payable::getCounterpartyEntityCode,
-                Collectors.reducing(BigDecimal.ZERO, Payable::getNetAmount, BigDecimal::add)
+                Collectors.reducing(BigDecimal.ZERO, p -> inCurrency(p.getNetAmount(), p, reportingCcy), BigDecimal::add)
             ));
 
         return NettingEligiblePayablesResponse.builder()
             .payables(payables.stream().map(this::mapToResponse).collect(Collectors.toList()))
             .totalAmount(totalAmount)
-            .currencyCode("AED")
+            .currencyCode(reportingCcy)
             .count(payables.size())
             .byOwningEntity(byOwningEntity)
             .byCounterparty(byCounterparty)
@@ -1217,6 +1234,11 @@ public class PayablesService {
             .failedCount(failedCount)
             .totalAmountAdded(totalAdded)
             .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PayableListResponse getPayablesInNettingCycle(UUID nettingCycleId, int page, int size) {
+        return mapToListResponse(payableRepository.findAllByNettingCycleId(nettingCycleId, PageRequest.of(page, size)));
     }
 
     /**
@@ -1410,14 +1432,16 @@ public class PayablesService {
         long poboCount = payables.stream().filter(p -> 
             p.getPaymentRoute() == PaymentRoute.POBO).count();
 
+        // Totals in the market's currency, each payable converted at the stored rate (FX_RATE_UNAVAILABLE if none).
+        String reportingCcy = marketProfile.getDefaultCurrency();
         BigDecimal totalAmount = payables.stream()
-            .map(Payable::getNetAmount)
+            .map(p -> inCurrency(p.getNetAmount(), p, reportingCcy))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal outstandingAmount = payables.stream()
-            .filter(p -> p.getStatus() != PayableStatus.PAID && 
+            .filter(p -> p.getStatus() != PayableStatus.PAID &&
                         p.getStatus() != PayableStatus.CANCELLED &&
                         p.getStatus() != PayableStatus.NETTED)
-            .map(Payable::getOutstandingAmount)
+            .map(p -> inCurrency(p.getOutstandingAmount(), p, reportingCcy))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return PayableStatsResponse.builder()
@@ -1430,13 +1454,22 @@ public class PayablesService {
             .poboRequestedCount(poboCount)
             .totalAmount(totalAmount)
             .outstandingAmount(outstandingAmount)
-            .currencyCode("AED")
+            .currencyCode(reportingCcy)
             .build();
     }
 
     // ========================================================================
     // HELPER METHODS
     // ========================================================================
+
+    /** A payable amount in {@code ccy} at the stored FX rate; never added across currencies unconverted. */
+    private BigDecimal inCurrency(BigDecimal amount, Payable p, String ccy) {
+        if (amount == null) return BigDecimal.ZERO;
+        if (p.getCurrencyCode() == null) {
+            throw new BusinessException("Not available: payable " + p.getPayableNumber() + " has no currency");
+        }
+        return fxRateService.convert(amount, p.getCurrencyCode(), ccy);
+    }
 
     private String generatePayableNumber(UUID corporateId) {
         return "PAY-" + System.currentTimeMillis() + "-" + 

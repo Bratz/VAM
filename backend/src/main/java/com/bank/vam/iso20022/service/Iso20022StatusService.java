@@ -132,11 +132,9 @@ public class Iso20022StatusService {
             }
         }
 
-        // Determine opening balance (balance before first transaction or current if no transactions)
-        BigDecimal openingBalance = transactions.isEmpty() ?
-                va.getCurrentBalance() :
-                transactions.get(0).getBalanceBefore() != null ?
-                        transactions.get(0).getBalanceBefore() : BigDecimal.ZERO;
+        // Balances at the period's edges, from the ledger -- null when it has none.
+        BigDecimal openingBalance = transactionRepository.findLedgerBalanceBefore(va.getId(), fromDateTime).orElse(null);
+        BigDecimal closingBalance = transactionRepository.findLedgerBalanceBefore(va.getId(), toDateTime).orElse(null);
 
         String messageId = "STMT-" + System.currentTimeMillis();
         String statementId = "STM" + fromDate.toString().replace("-", "") + "-" + toDate.toString().replace("-", "");
@@ -150,7 +148,7 @@ public class Iso20022StatusService {
                 .fromDate(fromDate)
                 .toDate(toDate)
                 .openingBalance(openingBalance)
-                .closingBalance(va.getCurrentBalance())
+                .closingBalance(closingBalance)
                 .creditCount(creditCount)
                 .creditSum(creditSum)
                 .debitCount(debitCount)

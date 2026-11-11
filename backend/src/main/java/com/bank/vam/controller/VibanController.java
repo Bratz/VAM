@@ -93,55 +93,45 @@ public class VibanController {
     public ResponseEntity<ApiResponse<VibanStatsResponse>> getVibanStats() {
         log.info("Getting VIBAN statistics");
         
-        try {
-            // Count VIBANs by status
-            long total = vibanRepository.count();
-            long assigned = vibanRepository.countByStatus(Viban.STATUS_ACTIVE);
-            long available = vibanRepository.countByStatus(Viban.STATUS_RETURNED); // RETURNED = available in pool
-            long reserved = vibanRepository.countByStatus(Viban.STATUS_PARTIAL);   // PARTIAL = reserved/in-progress
-            long expired = vibanRepository.countByStatus(Viban.STATUS_EXPIRED);
-            
-            // Pool statistics
-            long totalPools = vibanPoolRepository.count();
-            long activePools = vibanPoolRepository.countByStatus(VibanPool.STATUS_ACTIVE);
-            
-            // Count pools below low threshold
-            List<VibanPool> allPools = vibanPoolRepository.findAll();
-            long lowThresholdPools = allPools.stream()
-                .filter(p -> p.getStatus().equals(VibanPool.STATUS_ACTIVE))
-                .filter(p -> {
-                    double utilization = (double) p.getAvailableCount() / p.getPoolSize() * 100;
-                    return utilization <= p.getLowThresholdPercent();
-                })
-                .count();
-            
-            // Payment routing stats (simplified - would need transaction repo in production)
-            long totalPaymentsRouted = vibanRepository.sumTimesUsed();
-            BigDecimal totalAmountRouted = vibanRepository.sumTotalAmountReceived();
-            
-            VibanStatsResponse stats = VibanStatsResponse.builder()
-                .total((int) total)
-                .assigned((int) assigned)
-                .available((int) available)
-                .reserved((int) reserved)
-                .expired((int) expired)
-                .totalPools((int) totalPools)
-                .activePools((int) activePools)
-                .lowThresholdPools((int) lowThresholdPools)
-                .totalPaymentsRouted((int) totalPaymentsRouted)
-                .totalAmountRouted(totalAmountRouted != null ? totalAmountRouted : BigDecimal.ZERO)
-                .build();
-            
-            return ResponseEntity.ok(ApiResponse.success(stats));
-        } catch (Exception e) {
-            log.error("Error getting VIBAN stats: {}", e.getMessage(), e);
-            // Return empty stats on error
-            return ResponseEntity.ok(ApiResponse.success(VibanStatsResponse.builder()
-                .total(0).assigned(0).available(0).reserved(0).expired(0)
-                .totalPools(0).activePools(0).lowThresholdPools(0)
-                .totalPaymentsRouted(0).totalAmountRouted(BigDecimal.ZERO)
-                .build()));
-        }
+        // Count VIBANs by status
+        long total = vibanRepository.count();
+        long assigned = vibanRepository.countByStatus(Viban.STATUS_ACTIVE);
+        long available = vibanRepository.countByStatus(Viban.STATUS_RETURNED); // RETURNED = available in pool
+        long reserved = vibanRepository.countByStatus(Viban.STATUS_PARTIAL);   // PARTIAL = reserved/in-progress
+        long expired = vibanRepository.countByStatus(Viban.STATUS_EXPIRED);
+        
+        // Pool statistics
+        long totalPools = vibanPoolRepository.count();
+        long activePools = vibanPoolRepository.countByStatus(VibanPool.STATUS_ACTIVE);
+        
+        // Count pools below low threshold
+        List<VibanPool> allPools = vibanPoolRepository.findAll();
+        long lowThresholdPools = allPools.stream()
+            .filter(p -> p.getStatus().equals(VibanPool.STATUS_ACTIVE))
+            .filter(p -> {
+                double utilization = (double) p.getAvailableCount() / p.getPoolSize() * 100;
+                return utilization <= p.getLowThresholdPercent();
+            })
+            .count();
+        
+        // Payment routing stats (simplified - would need transaction repo in production)
+        long totalPaymentsRouted = vibanRepository.sumTimesUsed();
+        BigDecimal totalAmountRouted = vibanRepository.sumTotalAmountReceived();
+        
+        VibanStatsResponse stats = VibanStatsResponse.builder()
+            .total((int) total)
+            .assigned((int) assigned)
+            .available((int) available)
+            .reserved((int) reserved)
+            .expired((int) expired)
+            .totalPools((int) totalPools)
+            .activePools((int) activePools)
+            .lowThresholdPools((int) lowThresholdPools)
+            .totalPaymentsRouted((int) totalPaymentsRouted)
+            .totalAmountRouted(totalAmountRouted != null ? totalAmountRouted : BigDecimal.ZERO)
+            .build();
+        
+        return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
     // ========================================================================

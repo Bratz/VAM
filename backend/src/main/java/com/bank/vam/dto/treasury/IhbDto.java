@@ -34,6 +34,8 @@ public class IhbDto {
         private BigDecimal availableLimit;
         private BigDecimal lendingRateSpread;
         private BigDecimal borrowingRateSpread;
+        /** The spreads are built-in defaults nobody set; null when not known (older rows). */
+        private Boolean spreadsDefault;
         private Boolean canLend;
         private Boolean canBorrow;
         private String contactName;
@@ -173,7 +175,9 @@ public class IhbDto {
         // Interest Configuration reference (NEW)
         private UUID interestConfigId;           // The attached InterestConfiguration
         private boolean hasInterestConfig;       // Whether rates come from config or defaults
-        
+        /** DEFAULT when the base rate is the built-in 5.00 or the config is one the app made up; CONFIGURED otherwise. */
+        private String rateSource;
+
         // Legacy fields (deprecated, kept for backward compatibility)
         @Deprecated
         private UUID lendingInterestConfigId;
@@ -214,6 +218,8 @@ public class IhbDto {
         private String currency;
         private Integer tenorDays;
         private String rateType;
+        /** DEFAULT: the base rate is the built-in 5.00, not a reference rate the bank set. */
+        private String rateSource;
     }
 
     // ========================================================================

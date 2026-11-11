@@ -233,6 +233,7 @@ public class IntercompanyService {
                         .borrowerId(behalfEntityId)
                         .principalAmount(totalAmount)
                         .interestRate(interestRate)
+                        .rateSource(payingEntity.getLendingRateSpread() != null ? "ENTITY" : "DEFAULT")
                         .estimatedInterest(totalAmount.multiply(interestRate).divide(new BigDecimal("36500"), 4, RoundingMode.HALF_UP))
                         .build())
                 .withinCreditLimit(withinLimit)
@@ -253,72 +254,13 @@ public class IntercompanyService {
      * {@code PayablesService.executePobo}/{@code PoboExecutionService},
      * which execute POBO against existing {@code Payable} records — this
      * one creates the {@code IntercompanyTransaction} from a raw amount).
-     * No discrete {@code IhbLoan} entity exists in this codebase, so
-     * {@code ihbLoanId}/{@code ihbLoanRef} are left unset rather than
-     * fabricated as random placeholders.
+     * Refused: no posting path moves money for an ad-hoc amount (the real POBO
+     * posting works on Payable records), so recording it PROCESSED and
+     * consuming IHB limits would claim a payment that never happened.
      */
     public PoboResultResponse executePobo(PoboRequest request) {
-        UUID payingEntityId = request.getPayingEntityId();
-        UUID behalfEntityId = request.getBehalfEntityId();
-        BigDecimal amount = request.getAmount();
-        String currencyCode = request.getCurrencyCode() != null ? request.getCurrencyCode() : marketProfile.getDefaultCurrency();
-        
-        LegalEntity payingEntity = legalEntityRepository.findById(payingEntityId)
-                .orElseThrow(() -> new BusinessException("Paying entity not found: " + payingEntityId));
-        LegalEntity behalfEntity = legalEntityRepository.findById(behalfEntityId)
-                .orElseThrow(() -> new BusinessException("Behalf entity not found: " + behalfEntityId));
-        
-        BigDecimal charges = calculateCharges(amount, "POBO");
-        BigDecimal totalAmount = amount.add(charges);
-        
-        String transactionRef = "POBO-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        if (Boolean.TRUE.equals(behalfEntity.getIhbEnabled())) {
-            behalfEntity.utilizeIhbLimit(totalAmount);
-            legalEntityRepository.save(behalfEntity);
-        }
-        
-        if (Boolean.TRUE.equals(payingEntity.getCanLend())) {
-            payingEntity.addLentAmount(totalAmount);
-            legalEntityRepository.save(payingEntity);
-        }
-        
-        IntercompanyTransaction transaction = IntercompanyTransaction.builder()
-                .transactionRef(transactionRef)
-                .transactionType(IntercompanyTransaction.TransactionType.POBO)
-                .payingEntityId(payingEntityId)
-                .payingEntityCode(payingEntity.getEntityCode())
-                .payingEntityName(payingEntity.getEntityName())
-                .behalfEntityId(behalfEntityId)
-                .behalfEntityCode(behalfEntity.getEntityCode())
-                .behalfEntityName(behalfEntity.getEntityName())
-                .amount(amount)
-                .currencyCode(currencyCode)
-                .charges(charges)
-                .netAmount(totalAmount)
-                .status(IntercompanyTransaction.TransactionStatus.PROCESSED)
-                .processedAt(LocalDateTime.now())
-                .description(request.getDescription())
-                .createdBy("SYSTEM")
-                .build();
-        
-        transaction = transactionRepository.save(transaction);
-        log.info("Created POBO transaction: {}", transactionRef);
-        
-        return PoboResultResponse.builder()
-                .transactionRef(transactionRef)
-                .status("SUCCESS")
-                .message("POBO payment executed successfully")
-                .payingEntityId(payingEntityId)
-                .payingEntityCode(payingEntity.getEntityCode())
-                .behalfEntityId(behalfEntityId)
-                .behalfEntityCode(behalfEntity.getEntityCode())
-                .amount(amount)
-                .currencyCode(currencyCode)
-                .charges(charges)
-                .totalAmount(totalAmount)
-                .processedAt(LocalDateTime.now())
-                .build();
+        throw new BusinessException("Not available: ad-hoc POBO transfer — no posting path moves the funds; "
+                + "execute POBO against a payable instead");
     }
 
     @Transactional(readOnly = true)
@@ -467,25 +409,9 @@ public class IntercompanyService {
             throw new BusinessException("Transaction is not in ACTIVE status");
         }
         
-        String depositRef = "DEP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        UUID ihbDepositId = UUID.randomUUID();
-        
-        transaction.setStatus(IntercompanyTransaction.TransactionStatus.PROCESSED);
-        transaction.setProcessedAt(LocalDateTime.now());
-        transaction.setIhbDepositId(ihbDepositId);
-        transactionRepository.save(transaction);
-        
-        log.info("Processed COBO collection: {}", transactionRef);
-        
-        return CoboCollectionResponse.builder()
-                .transactionRef(transactionRef)
-                .status("SUCCESS")
-                .message("COBO collection processed")
-                .collectedAmount(request.getAmount())
-                .ihbDepositId(ihbDepositId)
-                .ihbDepositRef(depositRef)
-                .processedAt(LocalDateTime.now())
-                .build();
+        // No IHB deposit service exists, so nothing would be collected or deposited.
+        throw new BusinessException("Not available: COBO collection for " + transactionRef
+                + " — no IHB deposit is posted for intercompany collections");
     }
 
     @Transactional(readOnly = true)
@@ -602,35 +528,9 @@ public class IntercompanyService {
     }
 
     public SettlementResultResponse executeSettlement(SettlementRequest request) {
-        List<UUID> transactionIds = request.getTransactionIds();
-        String settlementRef = "SETTLE-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        
-        int settledCount = 0;
-        BigDecimal totalSettled = BigDecimal.ZERO;
-        
-        for (UUID txId : transactionIds) {
-            Optional<IntercompanyTransaction> optTx = transactionRepository.findById(txId);
-            if (optTx.isPresent()) {
-                IntercompanyTransaction tx = optTx.get();
-                tx.setStatus(IntercompanyTransaction.TransactionStatus.SETTLED);
-                tx.setSettlementRef(settlementRef);
-                tx.setSettledAt(LocalDateTime.now());
-                transactionRepository.save(tx);
-                settledCount++;
-                totalSettled = totalSettled.add(tx.getNetAmount() != null ? tx.getNetAmount() : BigDecimal.ZERO);
-            }
-        }
-        
-        log.info("Settlement {} completed: {} transactions, total {}", settlementRef, settledCount, totalSettled);
-        
-        return SettlementResultResponse.builder()
-                .settlementRef(settlementRef)
-                .status("SUCCESS")
-                .message("Settlement completed successfully")
-                .transactionsSettled(settledCount)
-                .totalAmount(totalSettled)
-                .settledAt(LocalDateTime.now())
-                .build();
+        // Marking SETTLED would claim money moved; no settlement posting exists.
+        throw new BusinessException("Not available: intercompany settlement of " + request.getTransactionIds().size()
+                + " transaction(s) — no settlement payment is posted");
     }
 
     @Transactional(readOnly = true)

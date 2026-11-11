@@ -339,7 +339,12 @@ const FxMarketPage: React.FC = () => {
             subtitle={`Spot, for ${fmt(amount, 0)} of the first currency of each pair. The spread depends on the amount.`}
             action={feedError
               ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Feed unavailable</Badge>
-              : <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Indicative</Badge>}
+              : (
+                <span className="inline-flex gap-1.5">
+                  {rows[0]?.source === 'SIMULATED' && <Badge variant="warning">Simulated</Badge>}
+                  <Badge variant="info" icon={<Radio className="w-3 h-3" />}>Indicative</Badge>
+                </span>
+              )}
           />
           <DataTable<BoardRow>
             data={rows}
@@ -364,6 +369,7 @@ const FxMarketPage: React.FC = () => {
           <CardHeader
             title={`${selected} forward curve`}
             subtitle={row ? `Spot ${fmtRate(row.sell)} / ${fmtRate(row.buy)} for value ${row.valueDate}; outright rates below` : 'Waiting for the rate board'}
+            action={curve[0]?.source === 'SIMULATED' ? <Badge variant="warning">Simulated</Badge> : undefined}
           />
           {curveError && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{curveError}</p>}
           <DataTable<CurveRow>
@@ -397,7 +403,7 @@ const FxMarketPage: React.FC = () => {
                 </div>
               </dl>
             )}
-            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">Points take your spot price to the outright rate for that date.</p>
+            <p className="text-caption text-neutral-500 dark:text-neutral-400 mt-3">Points take your spot price to the outright rate for that date. They are simulated: worked out from configured demo interest rates, not the money markets.</p>
           </div>
         </Card>
       </div>

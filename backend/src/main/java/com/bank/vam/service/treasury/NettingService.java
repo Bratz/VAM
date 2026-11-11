@@ -63,6 +63,7 @@ public class NettingService {
     private final TransactionRepository ledgerTransactionRepository;
     private final FeePostingService feePostingService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final FxRateService fxRateService;
 
     private static final AtomicInteger cycleSequence = new AtomicInteger(1);
     private static final AtomicInteger entrySequence = new AtomicInteger(1);
@@ -710,12 +711,11 @@ public class NettingService {
 
     /**
      * Apply FX conversion to entry if currency differs from base currency.
+     * No rate means the entry can't be netted: FxRateService refuses rather than use 1:1.
      */
-    private void applyFxConversion(NettingEntry entry, String baseCurrency) {
+    void applyFxConversion(NettingEntry entry, String baseCurrency) {
         if (!entry.getCurrencyCode().equals(baseCurrency)) {
-            // TODO: Get actual FX rate from FxRateService
-            // For now, assume 1:1 rate
-            BigDecimal fxRate = BigDecimal.ONE;
+            BigDecimal fxRate = fxRateService.getRate(entry.getCurrencyCode(), baseCurrency);
             entry.setExchangeRate(fxRate);
             entry.setBaseAmount(entry.getGrossAmount().multiply(fxRate));
             log.debug("Applied FX rate {} for {} -> {}", 

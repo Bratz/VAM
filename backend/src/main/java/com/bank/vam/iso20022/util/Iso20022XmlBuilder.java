@@ -5,6 +5,9 @@ import com.bank.vam.entity.VirtualAccount;
 import com.bank.vam.entity.party.Party;
 import com.bank.vam.entity.receivables.Receivable;
 import com.bank.vam.iso20022.dto.Iso20022PaymentDto.*;
+import com.bank.vam.config.MarketProfileProperties;
+import com.bank.vam.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +27,20 @@ import java.util.List;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class Iso20022XmlBuilder {
+
+    private final MarketProfileProperties marketProfile;
+
+    /** The requested debtor agent, else this bank's own BIC; never a placeholder. */
+    private String debtorAgentBic(String requested) {
+        if (requested != null && !requested.isBlank()) return requested;
+        String home = marketProfile.getActiveHomeBankBic();
+        if (home == null || home.isBlank()) {
+            throw new BusinessException("Not available: no debtor agent BIC and no home bank BIC configured");
+        }
+        return home;
+    }
 
     private static final DateTimeFormatter ISO_DATETIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -79,7 +95,7 @@ public class Iso20022XmlBuilder {
         // Debtor Agent
         xml.append("      <DbtrAgt>\n");
         xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(escape(request.getDebtorBic() != null ? request.getDebtorBic() : "BANKAEXX")).append("</BICFI>\n");
+        xml.append("          <BICFI>").append(escape(debtorAgentBic(request.getDebtorBic()))).append("</BICFI>\n");
         xml.append("        </FinInstnId>\n");
         xml.append("      </DbtrAgt>\n");
 
@@ -198,7 +214,7 @@ public class Iso20022XmlBuilder {
 
         xml.append("      <DbtrAgt>\n");
         xml.append("        <FinInstnId>\n");
-        xml.append("          <BICFI>").append(escape(request.getDebtorBic() != null ? request.getDebtorBic() : "BANKAEXX")).append("</BICFI>\n");
+        xml.append("          <BICFI>").append(escape(debtorAgentBic(request.getDebtorBic()))).append("</BICFI>\n");
         xml.append("        </FinInstnId>\n");
         xml.append("      </DbtrAgt>\n");
 
@@ -257,16 +273,13 @@ public class Iso20022XmlBuilder {
     // ========================================================================
 
     /** {@code paymentLink}: the invoice's public "pay this invoice" page, sent to the payer as a second Ustrd line; null for none. */
-    public String buildPain013(Receivable receivable, Party debtor, String endToEndId, String paymentLink) {
+    /** {@code creditorName}: the corporate's real name, resolved (or refused) by the caller. */
+    public String buildPain013(Receivable receivable, Party debtor, String endToEndId, String paymentLink, String creditorName) {
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:pain.013.001.07\">\n");
         xml.append("  <CdtrPmtActvtnReq>\n");
 
-        // Group Header -- the creditor here is this corporate (the one owed money), a role
-        // Receivable doesn't itself carry a legal name for; owningEntityName is the closest
-        // available field, same fallback style the rest of this class already uses for VAs.
-        String creditorName = receivable.getOwningEntityName() != null ? receivable.getOwningEntityName() : "Creditor";
         xml.append("    <GrpHdr>\n");
         xml.append("      <MsgId>").append(escape(endToEndId)).append("</MsgId>\n");
         xml.append("      <CreDtTm>").append(LocalDateTime.now().format(ISO_DATETIME)).append("</CreDtTm>\n");
@@ -302,7 +315,10 @@ public class Iso20022XmlBuilder {
         xml.append("          <EndToEndId>").append(escape(endToEndId)).append("</EndToEndId>\n");
         xml.append("        </PmtId>\n");
 
-        String currency = receivable.getCurrencyCode() != null ? receivable.getCurrencyCode() : "AED";
+        String currency = receivable.getCurrencyCode();
+        if (currency == null || currency.isBlank()) {
+            throw new BusinessException("Not available: receivable " + receivable.getId() + " has no currency");
+        }
         xml.append("        <Amt>\n");
         xml.append("          <InstdAmt Ccy=\"").append(currency).append("\">").append(receivable.getOutstandingAmount()).append("</InstdAmt>\n");
         xml.append("        </Amt>\n");
@@ -388,6 +404,18 @@ public class Iso20022XmlBuilder {
     // camt.053 - Bank-to-Customer Statement
     // ========================================================================
 
+    private void appendStatementBalance(StringBuilder xml, String type, BigDecimal amount, String currency, LocalDate date) {
+        if (amount == null) {
+            return;
+        }
+        xml.append("      <Bal>\n");
+        xml.append("        <Tp><CdOrPrtry><Cd>").append(type).append("</Cd></CdOrPrtry></Tp>\n");
+        xml.append("        <Amt Ccy=\"").append(currency).append("\">").append(amount.abs()).append("</Amt>\n");
+        xml.append("        <CdtDbtInd>").append(amount.compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT").append("</CdtDbtInd>\n");
+        xml.append("        <Dt><Dt>").append(date.format(ISO_DATE)).append("</Dt></Dt>\n");
+        xml.append("      </Bal>\n");
+    }
+
     public String buildCamt053(VirtualAccount va, List<Transaction> transactions,
                                 LocalDate fromDate, LocalDate toDate,
                                 BigDecimal openingBalance, StatementResponse summary) {
@@ -417,21 +445,9 @@ public class Iso20022XmlBuilder {
         xml.append("        <Nm>").append(escape(va.getVaName())).append("</Nm>\n");
         xml.append("      </Acct>\n");
 
-        // Opening Balance
-        xml.append("      <Bal>\n");
-        xml.append("        <Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp>\n");
-        xml.append("        <Amt Ccy=\"").append(va.getCurrencyCode()).append("\">").append(openingBalance.abs()).append("</Amt>\n");
-        xml.append("        <CdtDbtInd>").append(openingBalance.compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT").append("</CdtDbtInd>\n");
-        xml.append("        <Dt><Dt>").append(fromDate.format(ISO_DATE)).append("</Dt></Dt>\n");
-        xml.append("      </Bal>\n");
-
-        // Closing Balance
-        xml.append("      <Bal>\n");
-        xml.append("        <Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp>\n");
-        xml.append("        <Amt Ccy=\"").append(va.getCurrencyCode()).append("\">").append(va.getCurrentBalance().abs()).append("</Amt>\n");
-        xml.append("        <CdtDbtInd>").append(va.getCurrentBalance().compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT").append("</CdtDbtInd>\n");
-        xml.append("        <Dt><Dt>").append(toDate.format(ISO_DATE)).append("</Dt></Dt>\n");
-        xml.append("      </Bal>\n");
+        // Opening / closing balances from the ledger; omitted when unknown rather than invented
+        appendStatementBalance(xml, "OPBD", openingBalance, va.getCurrencyCode(), fromDate);
+        appendStatementBalance(xml, "CLBD", summary.getClosingBalance(), va.getCurrencyCode(), toDate);
 
         // Transaction Summary
         xml.append("      <TxsSummry>\n");

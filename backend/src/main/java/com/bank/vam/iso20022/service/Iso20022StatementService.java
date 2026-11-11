@@ -47,6 +47,7 @@ public class Iso20022StatementService {
 
     private final TransactionRepository transactionRepository;
     private final VirtualAccountRepository virtualAccountRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     // In-memory storage for demo - replace with database in production
     private final Map<String, StatementDetail> statementStore = new ConcurrentHashMap<>();
@@ -183,7 +184,6 @@ public class Iso20022StatementService {
                 .progressPercent(0)
                 .currentStep("Initializing")
                 .startedAt(LocalDateTime.now())
-                .estimatedCompletion(LocalDateTime.now().plusMinutes(5))
                 .build();
 
         asyncJobStore.put(jobId, jobStatus);
@@ -196,7 +196,6 @@ public class Iso20022StatementService {
                 .status(GenerationStatus.PENDING)
                 .message("Statement generation started")
                 .statusUrl("/api/v1/iso20022/statements/jobs/" + jobId)
-                .estimatedCompletion(jobStatus.getEstimatedCompletion())
                 .build();
     }
 
@@ -206,7 +205,6 @@ public class Iso20022StatementService {
         try {
             jobStatus.setStatus(GenerationStatus.PROCESSING);
             jobStatus.setCurrentStep("Fetching transactions");
-            jobStatus.setProgressPercent(10);
 
             Camt053Response response = generateCamt053(request);
 
@@ -383,11 +381,13 @@ public class Iso20022StatementService {
             currencySummaries.add(currencySummary);
         }
 
-        // Build total summary (in base currency - parent's currency)
+        // A single total only when every account is in one currency; across currencies the
+        // per-currency summaries are the totals (amounts in different currencies are not added).
+        boolean multiCurrency = currencyGroups.size() > 1;
         List<StatementSummary> allSummaries = accountStatements.stream()
                 .map(ChildAccountStatement::getSummary)
                 .collect(Collectors.toList());
-        StatementSummary totalSummary = aggregateSummaries(allSummaries, parentVa.getCurrencyCode());
+        StatementSummary totalSummary = multiCurrency ? null : aggregateSummaries(allSummaries, parentVa.getCurrencyCode());
 
         String statementId = generateStatementId("AGG", parentVa.getVaNumber(), request.getFromDate());
         long processingTime = System.currentTimeMillis() - startTime;
@@ -400,7 +400,7 @@ public class Iso20022StatementService {
                 .toDate(request.getToDate())
                 .generatedAt(LocalDateTime.now())
                 .accountCount(accounts.size())
-                .currencySummaries(request.isGroupByCurrency() ? currencySummaries : null)
+                .currencySummaries(request.isGroupByCurrency() || multiCurrency ? currencySummaries : null)
                 .totalSummary(totalSummary)
                 .accountStatements(accountStatements)
                 .downloadUrl("/api/v1/iso20022/statements/" + statementId + "/download")
@@ -620,18 +620,21 @@ public class Iso20022StatementService {
             }
         }
 
-        BigDecimal openingBalance = transactions.isEmpty() ? va.getCurrentBalance() :
-                (transactions.get(0).getBalanceBefore() != null ?
-                        transactions.get(0).getBalanceBefore() : BigDecimal.ZERO);
+        // Balances come from the ledger at the period's edges, not today's balance.
+        BigDecimal openingBalance = transactionRepository
+                .findLedgerBalanceBefore(va.getId(), fromDate.atStartOfDay()).orElse(null);
+        BigDecimal closingBalance = transactionRepository
+                .findLedgerBalanceBefore(va.getId(), toDate.plusDays(1).atStartOfDay()).orElse(null);
 
         return StatementSummary.builder()
                 .openingBalance(openingBalance)
                 .openingBalanceDate(fromDate)
-                .openingBalanceIndicator(openingBalance.compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT")
-                .closingBalance(va.getCurrentBalance())
+                .openingBalanceIndicator(indicator(openingBalance))
+                .closingBalance(closingBalance)
                 .closingBalanceDate(toDate)
-                .closingBalanceIndicator(va.getCurrentBalance().compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT")
-                .availableBalance(va.getAvailableBalance())
+                .closingBalanceIndicator(indicator(closingBalance))
+                // Available balance only exists now; a past period has none to report.
+                .availableBalance(toDate.isBefore(LocalDate.now()) ? null : va.getAvailableBalance())
                 .currency(va.getCurrencyCode())
                 .entryCount(transactions.size())
                 .creditCount(creditCount)
@@ -640,6 +643,10 @@ public class Iso20022StatementService {
                 .debitTotal(debitTotal)
                 .netMovement(creditTotal.subtract(debitTotal))
                 .build();
+    }
+
+    private static String indicator(BigDecimal balance) {
+        return balance == null ? null : balance.compareTo(BigDecimal.ZERO) >= 0 ? "CRDT" : "DBIT";
     }
 
     private NotificationSummary buildNotificationSummary(List<Transaction> transactions, String currency) {
@@ -755,8 +762,9 @@ public class Iso20022StatementService {
         int totalDebitCount = 0;
 
         for (StatementSummary summary : summaries) {
-            totalOpening = totalOpening.add(summary.getOpeningBalance() != null ? summary.getOpeningBalance() : BigDecimal.ZERO);
-            totalClosing = totalClosing.add(summary.getClosingBalance() != null ? summary.getClosingBalance() : BigDecimal.ZERO);
+            // An account with no known balance makes the total unknown, not smaller.
+            totalOpening = totalOpening == null || summary.getOpeningBalance() == null ? null : totalOpening.add(summary.getOpeningBalance());
+            totalClosing = totalClosing == null || summary.getClosingBalance() == null ? null : totalClosing.add(summary.getClosingBalance());
             totalCredits = totalCredits.add(summary.getCreditTotal() != null ? summary.getCreditTotal() : BigDecimal.ZERO);
             totalDebits = totalDebits.add(summary.getDebitTotal() != null ? summary.getDebitTotal() : BigDecimal.ZERO);
             totalCreditCount += summary.getCreditCount();
@@ -942,6 +950,9 @@ public class Iso20022StatementService {
     }
 
     private void appendBalance(StringBuilder xml, String type, BigDecimal amount, String currency, LocalDate date) {
+        if (amount == null) {
+            return; // no ledger balance for that date: omitted rather than invented
+        }
         xml.append("      <Bal>\n");
         xml.append("        <Tp><CdOrPrtry><Cd>").append(type).append("</Cd></CdOrPrtry></Tp>\n");
         xml.append("        <Amt Ccy=\"").append(currency).append("\">").append(amount.abs()).append("</Amt>\n");
@@ -997,40 +1008,23 @@ public class Iso20022StatementService {
         xml.append("      </Ntry>\n");
     }
 
+    /** The real camt.053 for the stored statement's account and period, rebuilt from the ledger. */
     private String generateXmlContent(StatementDetail statement) {
-        // Regenerate XML from stored data
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- Statement XML for " + statement.getStatementId() + " -->";
+        VirtualAccount va = getVirtualAccount(statement.getVaId(), statement.getVaNumber());
+        List<Transaction> transactions = transactionRepository.findByVaIdAndTransactionDateBetween(
+                va.getId(), statement.getFromDate().atStartOfDay(), statement.getToDate().plusDays(1).atStartOfDay(),
+                PageRequest.of(0, ASYNC_THRESHOLD_ENTRIES, Sort.by(Sort.Direction.ASC, "transactionDate"))).getContent();
+        StatementSummary summary = buildStatementSummary(va, transactions, statement.getFromDate(), statement.getToDate());
+        return buildCamt053Xml(va, transactions, summary, statement.getMessageId(), statement.getStatementId(),
+                statement.getFromDate(), statement.getToDate());
     }
 
     private String generateJsonContent(StatementDetail statement) {
-        // Simple JSON representation
-        return String.format("""
-                {
-                  "statementId": "%s",
-                  "vaNumber": "%s",
-                  "fromDate": "%s",
-                  "toDate": "%s",
-                  "summary": {
-                    "openingBalance": %s,
-                    "closingBalance": %s,
-                    "creditCount": %d,
-                    "creditTotal": %s,
-                    "debitCount": %d,
-                    "debitTotal": %s
-                  }
-                }
-                """,
-                statement.getStatementId(),
-                statement.getVaNumber(),
-                statement.getFromDate(),
-                statement.getToDate(),
-                statement.getSummary().getOpeningBalance(),
-                statement.getSummary().getClosingBalance(),
-                statement.getSummary().getCreditCount(),
-                statement.getSummary().getCreditTotal(),
-                statement.getSummary().getDebitCount(),
-                statement.getSummary().getDebitTotal()
-        );
+        try {
+            return objectMapper.writeValueAsString(statement);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new BusinessException("Could not serialise statement " + statement.getStatementId(), e);
+        }
     }
 
     private String generateCsvContent(StatementDetail statement) {

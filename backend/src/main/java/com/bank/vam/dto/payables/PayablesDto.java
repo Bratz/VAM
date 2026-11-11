@@ -436,6 +436,8 @@ public class PayablesDto {
         private BigDecimal estimatedMonthlyInterest;
         private String tenor;
         private LocalDate expectedSettlementDate;
+        /** DEFAULT: the rate is a built-in figure, not the IHB's priced rate. */
+        private String rateSource;
     }
 
     @Data

@@ -31,7 +31,7 @@ class HierarchyBootstrapTest {
     }
 
     private HierarchyService withInitResult(Program p, String status, boolean success) {
-        HierarchyService service = spy(new HierarchyService(null, null, null, null));
+        HierarchyService service = spy(new HierarchyService(null, null, null, null, null));
         doReturn(InitializationResponse.builder().success(success).status(status).message("boom").build())
             .when(service).initializeHierarchyWithResponse(eq(p.getId()), any());
         return service;

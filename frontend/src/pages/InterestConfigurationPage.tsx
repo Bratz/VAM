@@ -187,6 +187,7 @@ const ConfigCard: React.FC<{
         <div>
           <h4 className="font-semibold text-primary-900 dark:text-neutral-50">{config.configName || 'Unnamed Config'}</h4>
           <p className="caption">{config.currencyCode} • {config.targetType || 'CORPORATE'}</p>
+          {config.systemDefault && <span title="Created by the application with a built-in rate where none was given (credit 2.50, debit 5.00, penalty 7.00): not the bank's agreed terms"><Badge variant="warning" size="sm">Created with default rates</Badge></span>}
         </div>
       </div>
       <Badge variant={getStatusVariant(config.status as ConfigStatus)} size="sm">

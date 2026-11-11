@@ -61,18 +61,6 @@ public class FxRateService {
     private static final int CACHE_TTL_MINUTES = 15;
     private LocalDateTime cacheLastRefreshed = LocalDateTime.MIN;
 
-    // Default rates for common pairs (fallback when no rate in DB)
-    private static final Map<String, BigDecimal> DEFAULT_RATES = Map.of(
-        "USD/AED", new BigDecimal("3.6725"),
-        "EUR/AED", new BigDecimal("4.0125"),
-        "GBP/AED", new BigDecimal("4.6500"),
-        "EUR/USD", new BigDecimal("1.0926"),
-        "GBP/USD", new BigDecimal("1.2665"),
-        "USD/EUR", new BigDecimal("0.9152"),
-        "CHF/USD", new BigDecimal("1.1250"),
-        "JPY/USD", new BigDecimal("0.0067")
-    );
-
     // ========================================================================
     // CORE RATE LOOKUP
     // ========================================================================
@@ -129,21 +117,14 @@ public class FxRateService {
             return multiHopRate;
         }
 
-        // Fall back to default rates
-        BigDecimal defaultRate = getDefaultRate(fromCurrency, toCurrency);
-        if (defaultRate != null) {
-            log.warn("Using default rate for {}/{}: {}", fromCurrency, toCurrency, defaultRate);
-            return defaultRate;
-        }
-
-        // No rate at all: refuse rather than convert at 1.0, which silently mis-states money
-        // (1 GBP counted as 1 AED). Display callers catch this and leave the currency out, named.
+        // No stored rate: refuse rather than convert at 1.0 or at a made-up default, either of which
+        // silently mis-states money. Display callers catch this and leave the currency out, named.
         log.error("No FX rate found for {}/{}", fromCurrency, toCurrency);
         throw new com.bank.vam.exception.BusinessException("FX_RATE_UNAVAILABLE",
             "No FX rate for " + fromCurrency + "/" + toCurrency);
     }
 
-    /** True when {@link #getRate} can convert this pair (a rate, an inverse, a hop or a default). */
+    /** True when {@link #getRate} can convert this pair (a stored rate, its inverse or a hop). */
     @Transactional(readOnly = true)
     public boolean hasRate(String fromCurrency, String toCurrency) {
         try {
@@ -516,21 +497,6 @@ public class FxRateService {
                 log.debug("Multi-hop rate: {} -> {} -> {} = {}", fromCurrency, pivot, toCurrency, rate);
                 return rate;
             }
-        }
-        
-        return null;
-    }
-
-    private BigDecimal getDefaultRate(String fromCurrency, String toCurrency) {
-        String key = fromCurrency + "/" + toCurrency;
-        if (DEFAULT_RATES.containsKey(key)) {
-            return DEFAULT_RATES.get(key);
-        }
-        
-        // Try inverse
-        String inverseKey = toCurrency + "/" + fromCurrency;
-        if (DEFAULT_RATES.containsKey(inverseKey)) {
-            return BigDecimal.ONE.divide(DEFAULT_RATES.get(inverseKey), 8, RoundingMode.HALF_UP);
         }
         
         return null;

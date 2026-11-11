@@ -232,7 +232,7 @@ const KyccPage: React.FC = () => {
       if (statsRes.success) setStats(statsRes.data);
       if (expiringRes.success) setExpiring(expiringRes.data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load KYC data');
+      setError(err?.response?.data?.message || err.message || 'Failed to load KYC data');
     } finally {
       setLoading(false);
     }

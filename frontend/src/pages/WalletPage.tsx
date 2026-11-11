@@ -718,7 +718,7 @@ const ProgramCard: React.FC<{
       <div className="flex items-center justify-between pt-4 border-t border-edge">
         <div className="flex items-center gap-2 body-sm">
           <Building2 className="w-4 h-4" />
-          <span>{program.operatorName}</span>
+          <span>{program.operatorName ?? '-'}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="caption">

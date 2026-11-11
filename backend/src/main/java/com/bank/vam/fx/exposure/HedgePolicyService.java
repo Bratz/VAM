@@ -52,7 +52,7 @@ public class HedgePolicyService {
     }
 
     private static FxPolicyBand band(UUID corporateId, ExposureBucket bucket, String min, String max) {
-        FxPolicyBand b = new FxPolicyBand();
+        FxPolicyBand b = com.bank.vam.entity.BaseEntity.systemDefault(new FxPolicyBand());
         b.setCorporateId(corporateId);
         b.setCurrency(FxPolicyBand.ANY);
         b.setBucket(bucket);

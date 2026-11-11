@@ -167,7 +167,8 @@ public class IntegrationService {
         connection.setEnvironment(request.getEnvironment());
         connection.setSyncFrequency(request.getSyncFrequency());
         connection.setCredentials(encryptCredentials(request.getCredentials()));
-        connection.setStatus(IntegrationConnection.ConnectionStatus.CONNECTED);
+        // Nothing has been contacted yet, so the connection is not connected.
+        connection.setStatus(IntegrationConnection.ConnectionStatus.DISCONNECTED);
         connection.setCreatedBy("system"); // TODO: Get from security context
 
         // Create default data flows based on connector features
@@ -215,33 +216,16 @@ public class IntegrationService {
     public IntegrationDto.ConnectionResponse reconnectConnection(UUID id) {
         IntegrationConnection connection = connectionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Connection not found: " + id));
-        
-        // Reset error state and attempt reconnection
-        connection.setStatus(IntegrationConnection.ConnectionStatus.CONNECTED);
-        connection.setErrorMessage(null);
-        connection.setUpdatedAt(LocalDateTime.now());
-        
-        connection = connectionRepository.save(connection);
-        log.info("Reconnected integration connection: {}", connection.getConnectionName());
-        return toConnectionResponse(connection);
+        throw notConnected(connection.getConnectionName());
     }
 
-    @Transactional
     public IntegrationDto.TestConnectionResponse testConnection(IntegrationDto.TestConnectionRequest request) {
-        // TODO: Implement actual connection testing based on connector type
-        IntegrationDto.TestConnectionResponse response = IntegrationDto.TestConnectionResponse.builder().build();
-        
-        // Simulate connection test
-        boolean success = Math.random() > 0.2; // 80% success rate for demo
-        response.setSuccess(success);
-        response.setMessage(success ? "Connection successful" : "Connection failed: Invalid credentials");
-        
-        Map<String, Object> details = new HashMap<>();
-        details.put("testedAt", LocalDateTime.now().toString());
-        details.put("environment", request.getEnvironment().name());
-        response.setDetails(details);
-        
-        return response;
+        throw new BusinessException("Not available: connection test — no connector client is implemented to contact the provider");
+    }
+
+    private static BusinessException notConnected(String connectionName) {
+        return new BusinessException("Not available: " + connectionName
+                + " — no connector client is implemented to contact the provider");
     }
 
     // ========================================================================
@@ -253,57 +237,8 @@ public class IntegrationService {
      */
     @Transactional(readOnly = true)
     public List<IntegrationDto.AspspResponse> getAvailableAspsps(String country, String name, String bic) {
-        List<IntegrationDto.AspspResponse> aspsps = new ArrayList<>();
-        
-        // Demo data - filter by country if provided
-        if (country == null || "AE".equalsIgnoreCase(country) || "UAE".equalsIgnoreCase(country)) {
-            aspsps.add(IntegrationDto.AspspResponse.builder()
-                    .aspspId("ADCB-UAE")
-                    .name("Abu Dhabi Commercial Bank")
-                    .country("AE")
-                    .bic("ADCBAEAA")
-                    .supportsAis(true)
-                    .supportsPis(true)
-                    .supportsCof(true)
-                    .build());
-            
-            aspsps.add(IntegrationDto.AspspResponse.builder()
-                    .aspspId("ENBD-UAE")
-                    .name("Emirates NBD")
-                    .country("AE")
-                    .bic("EABORUAE")
-                    .supportsAis(true)
-                    .supportsPis(true)
-                    .supportsCof(false)
-                    .build());
-            
-            aspsps.add(IntegrationDto.AspspResponse.builder()
-                    .aspspId("FAB-UAE")
-                    .name("First Abu Dhabi Bank")
-                    .country("AE")
-                    .bic("NBADORUAE")
-                    .supportsAis(true)
-                    .supportsPis(true)
-                    .supportsCof(true)
-                    .build());
-        }
-        
-        // Filter by name if provided
-        if (name != null && !name.isEmpty()) {
-            String searchName = name.toLowerCase();
-            aspsps = aspsps.stream()
-                    .filter(a -> a.getName().toLowerCase().contains(searchName))
-                    .collect(Collectors.toList());
-        }
-        
-        // Filter by BIC if provided
-        if (bic != null && !bic.isEmpty()) {
-            aspsps = aspsps.stream()
-                    .filter(a -> a.getBic().equalsIgnoreCase(bic))
-                    .collect(Collectors.toList());
-        }
-        
-        return aspsps;
+        // ponytail: no ASPSP directory is integrated (connectors carry no BIC), so there is nothing real to list.
+        return List.of();
     }
 
     /**
@@ -313,22 +248,8 @@ public class IntegrationService {
     @Transactional
     public IntegrationDto.InitiateOpenBankingAuthResponse initiateOpenBankingAuthorization(
             IntegrationDto.InitiateOpenBankingAuthRequest request) {
-        log.info("Initiating Open Banking authorization for ASPSP: {}", request.getAspspId());
-        
-        // Generate state for CSRF protection
-        String state = request.getState() != null ? request.getState() : UUID.randomUUID().toString();
-        
-        String consentId = "CONSENT-" + UUID.randomUUID().toString().substring(0, 8);
-        String authUrl = String.format(
-                "https://openbanking.example.com/authorize?client_id=vam&consent_id=%s&state=%s&redirect_uri=%s",
-                consentId, state, request.getRedirectUri());
-        
-        return IntegrationDto.InitiateOpenBankingAuthResponse.builder()
-                .authorizationUrl(authUrl)
-                .consentId(consentId)
-                .state(state)
-                .expiresAt(LocalDateTime.now().plusMinutes(5))
-                .build();
+        throw new BusinessException("Not available: Open Banking authorization for " + request.getAspspId()
+                + " — no ASPSP is integrated to issue a consent");
     }
 
     /**
@@ -358,12 +279,7 @@ public class IntegrationService {
         IntegrationConnection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Connection not found: " + connectionId));
         
-        log.info("Refreshing Open Banking consent for connection: {}", connection.getConnectionName());
-        
-        connection.setUpdatedAt(LocalDateTime.now());
-        connection = connectionRepository.save(connection);
-        
-        return toConnectionResponse(connection);
+        throw notConnected(connection.getConnectionName());
     }
 
     /**
@@ -522,26 +438,8 @@ public class IntegrationService {
         IntegrationConnection connection = connectionRepository.findById(request.getConnectionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Connection not found: " + request.getConnectionId()));
         
-        // Update connection status
-        connection.setStatus(IntegrationConnection.ConnectionStatus.SYNCING);
-        connection.setLastSyncAt(LocalDateTime.now());
-        connectionRepository.save(connection);
-        
-        // Create sync log entry - use RUNNING (entity enum: RUNNING, SUCCESS, PARTIAL, FAILED)
-        IntegrationSyncLog syncLog = new IntegrationSyncLog();
-        syncLog.setConnection(connection);
-        syncLog.setStartTime(LocalDateTime.now());
-        syncLog.setStatus(IntegrationSyncLog.SyncStatus.RUNNING);
-        syncLog = syncLogRepository.save(syncLog);
-        
-        log.info("Triggered sync for connection: {}", connection.getConnectionName());
-        
-        return IntegrationDto.TriggerSyncResponse.builder()
-                .syncId(syncLog.getId())
-                .status("STARTED")
-                .message("Sync started for connection: " + connection.getConnectionName())
-                .estimatedCompletionTime(LocalDateTime.now().plusMinutes(5))
-                .build();
+        // Nothing runs a sync, so do not record a SYNCING status or a RUNNING log that never ends.
+        throw notConnected(connection.getConnectionName());
     }
 
     @Transactional(readOnly = true)

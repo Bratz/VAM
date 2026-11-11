@@ -139,7 +139,7 @@ class FxMcpToolsTest {
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null,
                 HedgeStatus.WITHIN_POLICY, null);
         return new Ladder(CORP, "Acme Ltd", "GBP", LocalDate.of(2026, 11, 5),
-                List.of(new CurrencyRow("EUR", new BigDecimal("0.86"), List.of(breached, fine, empty))), null, false);
+                List.of(new CurrencyRow("EUR", new BigDecimal("0.86"), List.of(breached, fine, empty))), null, false, false);
     }
 
     @Test
@@ -181,7 +181,7 @@ class FxMcpToolsTest {
         when(limits.line(any(UUID.class))).thenAnswer(i -> new FxLimitService.Line(i.getArgument(0), UUID.randomUUID(),
                 UUID.randomUUID(), "FX treasury line", "GBP", null, true, null,
                 new FxLimitService.Usage(new BigDecimal("20000000"), new BigDecimal("1500000"),
-                        new BigDecimal("18500000"))));
+                        new BigDecimal("18500000")), false));
         return new GetFxDealsTool(deals, mock(DealViewAssembler.class), limits, attention, json);
     }
 

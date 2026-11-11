@@ -20,6 +20,7 @@ import { usePageHeaderActions } from '../context/usePageHeader';
 import { useEligibleCampaign } from '../hooks/useEligibleCampaign';
 import { CampaignBanner } from '../components/CampaignBanner';
 import { useTheme } from '../design-system/useTheme';
+import { useDefaultCurrency } from '../context/useMarket';
 import {
   multiBankLiquidityApi,
   MultiBankLiquiditySummary,
@@ -156,7 +157,7 @@ async function fetchForecastWeekly(corporateId: string): Promise<ForecastWeeklyR
     await forecastApi.triggerRun(corporateId);
     summary = (await forecastApi.getLatest({ horizonDays: 91 }, corporateId)).data;
   }
-  if (!summary || summary.weeklyBuckets.length === 0) return { currency: summary?.currency || 'AED', weeks: [] };
+  if (!summary || summary.weeklyBuckets.length === 0) return { currency: summary?.currency ?? '', weeks: [] };
 
   const lines = (await forecastApi.getLines(summary.runId, {}, corporateId)).data;
   const weeks = summary.weeklyBuckets.map((bucket) => {
@@ -196,6 +197,8 @@ const fmtTime = (iso?: string) => {
 };
 const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ onNavigate }) => {
   const chartChrome = useChartChrome();
+  // The market's currency: positions are requested converted into it and labelled with it.
+  const reportingCcy = useDefaultCurrency();
   const [summary, setSummary] = useState<MultiBankLiquiditySummary | null>(null);
   const [attention, setAttention] = useState<AttentionItem[]>([]);
   const [txns, setTxns] = useState<Transaction[]>([]);
@@ -265,17 +268,19 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       // whatever the Position breakdown widget is currently drilled into.
       // See programHierarchyRoot below for the program-scoped tree used by
       // the breakdown's own "By entity" view.
-      balanceStructureApi.getHierarchy(s),
+      // The hierarchy is per corporate; with none selected there is no tree
+      // (the backend used to substitute a default corporate here).
+      s ? balanceStructureApi.getHierarchy(s, undefined, reportingCcy) : Promise.resolve({ data: null }),
       // "By corporate" is always firm-wide — unlike the other breakdowns it
       // doesn't take a scope, since it IS the firm-wide-by-corporate view.
-      balanceStructureApi.getByCorporate('AED'),
+      balanceStructureApi.getByCorporate(reportingCcy),
       // "By program" only makes sense once a specific corporate is picked
       // above — with no corporate selected there's no single owner to
       // attribute a mixed list to, so skip the call entirely rather than
       // silently falling back to a firm-wide mix (confirmed confusing live:
       // a TestMNC program showed up with All Corporates selected, with
       // nothing indicating which corporate it belonged to).
-      s ? balanceStructureApi.getByProgram(s, 'AED') : Promise.resolve({ data: [] as BalanceBreakdownItem[] }),
+      s ? balanceStructureApi.getByProgram(s, reportingCcy) : Promise.resolve({ data: [] as BalanceBreakdownItem[] }),
       // Intercompany positions are per-corporate (there's no firm-wide
       // "netted across everyone" view that would mean anything) — same
       // corporate-only gate as "By program" above.
@@ -292,7 +297,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     if (rl.status === 'fulfilled' && Array.isArray(rl.value?.data)) setRules(rl.value.data);
     if (fx.status === 'fulfilled' && Array.isArray(fx.value?.data)) setFxRates(fx.value.data);
     if (pa.status === 'fulfilled') setPending(pa.value);
-    if (bh.status === 'fulfilled') setHierarchyRoot(bh.value?.data ?? null);
+    setHierarchyRoot(bh.status === 'fulfilled' ? bh.value?.data ?? null : null);
     if (cb.status === 'fulfilled' && Array.isArray(cb.value?.data)) setCorporateBreakdown(cb.value.data);
     if (pb.status === 'fulfilled' && Array.isArray(pb.value?.data)) setProgramBreakdown(pb.value.data);
     if (icp.status === 'fulfilled' && Array.isArray(icp.value?.data)) setIcPositions(icp.value.data);
@@ -332,7 +337,8 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
       }
     })();
     return () => { alive = false; };
-  }, [selectedCorporateId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load() is re-created every render; the scope and the reporting currency are what should refetch.
+  }, [selectedCorporateId, reportingCcy]);
 
   // Program-scoped hierarchy for the Position breakdown's "By entity" view
   // only (see programHierarchyRoot's declaration for why this is separate
@@ -343,12 +349,12 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
     if (!selectedProgramId) { setProgramHierarchyRoot(null); return; }
     let alive = true;
     setProgramHierarchyLoading(true);
-    balanceStructureApi.getHierarchy(selectedCorporateId || undefined, selectedProgramId)
+    balanceStructureApi.getHierarchy(selectedCorporateId || undefined, selectedProgramId, reportingCcy)
       .then((res) => { if (alive) setProgramHierarchyRoot(res?.data ?? null); })
       .catch(() => { if (alive) setProgramHierarchyRoot(null); })
       .finally(() => { if (alive) setProgramHierarchyLoading(false); });
     return () => { alive = false; };
-  }, [selectedCorporateId, selectedProgramId]);
+  }, [selectedCorporateId, selectedProgramId, reportingCcy]);
 
   // Reused by both the top ScopeSelector and the Position breakdown's
   // "By corporate" drill-click — changing corporate invalidates whatever
@@ -623,15 +629,17 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
             cells={[
               {
                 label: 'Consolidated position',
-                value: hierarchyRoot ? sumBalance(hierarchyRoot) : 0,
-                currency: 'AED',
+                // All corporates: the firm-wide per-corporate totals (there is no firm-wide tree).
+                value: hierarchyRoot ? sumBalance(hierarchyRoot)
+                  : selectedCorporateId ? 0 : corporateBreakdown.reduce((t, c) => t + c.balance, 0),
+                currency: reportingCcy,
                 format: 'currency',
                 size: 'lg',
                 sublabel: (
                   <>
-                    AED · FX-converted, live rates
+                    {reportingCcy} · FX-converted, live rates
                     {unassignedCash > 0 && (
-                      <span className="block">Not included: {formatCurrency(unassignedCash, 'AED')} in bank accounts not yet in any program</span>
+                      <span className="block">Not included: {formatCurrency(unassignedCash, reportingCcy)} in bank accounts not yet in any program</span>
                     )}
                   </>
                 ),
@@ -746,7 +754,7 @@ const Treasury2030DashboardPage: React.FC<Treasury2030DashboardPageProps> = ({ o
                 weeklyData={forecast?.weeks ?? []}
                 loading={forecastLoading}
                 hasCorporate={!!selectedCorporateId}
-                currency={forecast?.currency || 'AED'}
+                currency={forecast?.currency ?? ''}
                 receivableFill={chartChrome.receivableFill}
                 payableFill={chartChrome.payableFill}
                 tickFill={chartChrome.tickFill}

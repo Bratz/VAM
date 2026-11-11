@@ -113,10 +113,12 @@ public class BeneficiaryController {
         Beneficiary beneficiary = beneficiaryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Beneficiary not found: " + id));
         
+        // No account-name or bank check exists: this is a user's manual approval, and says so.
         beneficiary.setValidationStatus(ValidationStatus.VERIFIED);
         
         Beneficiary saved = beneficiaryRepository.save(beneficiary);
-        return ResponseEntity.ok(ApiResponse.success(saved));
+        return ResponseEntity.ok(ApiResponse.success(saved,
+                "Marked verified by manual approval; no automated account check was run"));
     }
 
     @GetMapping("/stats")

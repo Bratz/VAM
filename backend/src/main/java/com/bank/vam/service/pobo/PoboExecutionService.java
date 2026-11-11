@@ -113,7 +113,7 @@ public class PoboExecutionService {
         String executionRef = generateExecutionReference();
         UUID executionId = UUID.randomUUID();
         
-        // 4. Execute payment (mock - would integrate with payment gateway)
+        // 4. Execute payment (refused until a payment rail is wired)
         PaymentExecutionResult paymentResult = executePaymentViaTreasury(
             request.getTreasuryEntityId(),
             request.getTreasuryVaId(),
@@ -522,32 +522,18 @@ public class PoboExecutionService {
     }
     
     /**
-     * Execute payment via treasury (mock implementation).
-     * In production, this would integrate with payment gateway/CBS.
+     * Pay the vendor from the treasury VA. No payment rail is wired for this path
+     * (TransactionService.makePoboPayment needs the treasury VA, which the payables
+     * flow does not supply), so it refuses rather than storing an invented reference.
+     * Throwing here, before anything is saved, leaves the payable untouched.
      */
     private PaymentExecutionResult executePaymentViaTreasury(
             UUID treasuryEntityId,
             UUID treasuryVaId,
             Payable payable,
             String executionRef) {
-        
-        // TODO: Integrate with actual payment gateway
-        // For now, simulate successful payment
-        
-        String transactionRef = "TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        
-        log.info("Executed payment via treasury VA: {} for {} {} to vendor {}", 
-            transactionRef, 
-            payable.getCurrencyCode(), 
-            payable.getNetAmount(),
-            payable.getVendorName());
-        
-        return PaymentExecutionResult.builder()
-            .success(true)
-            .transactionRef(transactionRef)
-            .amount(payable.getNetAmount())
-            .currency(payable.getCurrencyCode())
-            .build();
+        throw new BusinessException("Not available: POBO payment of " + payable.getPayableNumber()
+            + " — no payment rail is connected for treasury-executed POBO");
     }
 
     // ========================================================================

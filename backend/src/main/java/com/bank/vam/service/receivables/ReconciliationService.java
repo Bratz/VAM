@@ -1016,18 +1016,10 @@ public class ReconciliationService {
                     .build();
         }
         
-        // Generate return reference
-        String returnReference = "RTN-" + System.currentTimeMillis();
-        
-        unmatched.returnToSender(returnReference, reason, resolvedBy);
-        unmatchedPaymentRepository.save(unmatched);
-        
-        return ReconciliationResult.builder()
-                .success(true)
-                .matchType(MatchType.RETURNED)
-                .unmatchedPaymentId(unmatchedPaymentId)
-                .matchReason("Returned: " + reason)
-                .build();
+        // No return payment (pacs.004) path exists, so nothing can send the funds back — refuse
+        // rather than mark the payment RETURNED under an invented return reference.
+        throw new com.bank.vam.exception.BusinessException("Not available: returning payment "
+                + unmatchedPaymentId + " — no payment return path is connected, so no funds can be sent back");
     }
 
     /**

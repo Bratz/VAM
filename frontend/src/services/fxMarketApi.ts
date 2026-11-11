@@ -33,6 +33,8 @@ export interface BoardRow {
   changeBps: number;
   valueDate: string;
   asOf: string;
+  /** Where the market rate came from: 'SIMULATED' from the mock market. */
+  source: string;
 }
 
 /** One forward tenor: the outright rate each way, and the client points from the client spot. */
@@ -45,6 +47,7 @@ export interface CurveRow {
   buyPoints?: number;
   sell: number;
   sellPoints?: number;
+  source: string;
 }
 
 export const fxMarketApi = {
@@ -115,6 +118,8 @@ export interface ExposureLadder {
   /** When the Cash Forecast run that fed the Forecast column ran; absent when the corporate has none. */
   forecastRunAt?: string;
   forecastStale: boolean;
+  /** The hedge policy is the application's default bands, not one the corporate set. */
+  policyDefault?: boolean;
 }
 
 export interface PolicyBreach {

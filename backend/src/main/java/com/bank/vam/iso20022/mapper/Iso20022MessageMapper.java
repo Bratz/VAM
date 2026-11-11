@@ -63,31 +63,6 @@ public class Iso20022MessageMapper {
                 .status(Transaction.TransactionStatus.PENDING);
     }
 
-    /**
-     * Map Transaction to InwardPaymentResponse after processing.
-     */
-    public InwardPaymentResponse mapTransactionToInwardResponse(Transaction txn, boolean success,
-                                                                  long processingTimeMs, String errorCode, String errorMessage) {
-        return InwardPaymentResponse.builder()
-                .success(success)
-                .statusCode(success ? "ACSC" : "RJCT")
-                .statusReason(success ? "AcceptedSettlementCompleted" : errorMessage)
-                .transactionReference(txn.getReferenceNumber())
-                .transactionId(txn.getId())
-                .virtualAccountId(txn.getVaId())
-                .vibanId(txn.getVibanId())
-                .viban(txn.getViban())
-                .balanceBefore(txn.getBalanceBefore())
-                .balanceAfter(txn.getBalanceAfter())
-                .autoReconciled(Boolean.TRUE.equals(txn.getAutoReconciled()))
-                .reconciledReferenceType(txn.getReconciledReferenceType())
-                .reconciledReferenceId(txn.getReconciledReferenceId())
-                .processingTimeMs(processingTimeMs)
-                .errorCode(errorCode)
-                .errorMessage(errorMessage)
-                .build();
-    }
-
     // ========================================================================
     // OUTWARD PAYMENT -> TRANSACTION (for POBO Debit)
     // ========================================================================
@@ -120,31 +95,6 @@ public class Iso20022MessageMapper {
                 .transactionDate(LocalDateTime.now())
                 .valueDate(request.getRequestedExecutionDate() != null ? request.getRequestedExecutionDate() : LocalDate.now())
                 .status(Transaction.TransactionStatus.PENDING);
-    }
-
-    /**
-     * Map Transaction to OutwardPaymentResponse.
-     */
-    public OutwardPaymentResponse mapTransactionToOutwardResponse(Transaction txn, String pain001Xml,
-                                                                    long processingTimeMs, String errorCode, String errorMessage) {
-        boolean success = errorCode == null;
-        return OutwardPaymentResponse.builder()
-                .success(success)
-                .statusCode(success ? "ACSC" : "RJCT")
-                .statusReason(success ? "AcceptedSettlementCompleted" : errorMessage)
-                .transactionReference(txn.getReferenceNumber())
-                .transactionId(txn.getId())
-                .messageId(txn.getReferenceNumber())
-                .pain001Xml(pain001Xml)
-                .sourceVaId(txn.getVaId())
-                .balanceBefore(txn.getBalanceBefore())
-                .balanceAfter(txn.getBalanceAfter())
-                .feeAmount(txn.getFeeAmount())
-                .netAmount(txn.getNetAmount())
-                .processingTimeMs(processingTimeMs)
-                .errorCode(errorCode)
-                .errorMessage(errorMessage)
-                .build();
     }
 
     // ========================================================================
@@ -217,11 +167,12 @@ public class Iso20022MessageMapper {
         if (txn.getStatus() == Transaction.TransactionStatus.COMPLETED) {
             return null;
         }
-        if (txn.getStatus() == Transaction.TransactionStatus.FAILED) {
-            return "AM04";  // InsufficientFunds or generic failure
-        }
-        if (txn.getStatus() == Transaction.TransactionStatus.CANCELLED) {
-            return "CUST";  // RequestedByCustomer
+        if (txn.getStatus() == Transaction.TransactionStatus.FAILED
+                || txn.getStatus() == Transaction.TransactionStatus.CANCELLED) {
+            // No failure / cancellation code is stored on a transaction (who cancelled is not
+            // known either); report the recorded text as a narrative (NARR) when there is one,
+            // otherwise no reason at all.
+            return hasText(txn.getProcessingNotes()) ? "NARR" : null;
         }
         if (txn.getStatus() == Transaction.TransactionStatus.REVERSED) {
             return "FOCR";  // FollowingCancellationRequest
@@ -229,13 +180,17 @@ public class Iso20022MessageMapper {
         return null;
     }
 
+    private static boolean hasText(String s) {
+        return s != null && !s.isBlank();
+    }
+
     private String getStatusReasonDescription(Transaction txn) {
         return switch (txn.getStatus()) {
             case COMPLETED -> "Payment completed successfully";
             case PROCESSING -> "Payment is being processed";
             case PENDING -> "Payment is pending execution";
-            case FAILED -> "Payment failed";
-            case CANCELLED -> "Payment cancelled by customer";
+            case FAILED -> hasText(txn.getProcessingNotes()) ? txn.getProcessingNotes() : "Payment failed";
+            case CANCELLED -> hasText(txn.getProcessingNotes()) ? txn.getProcessingNotes() : "Payment cancelled";
             case REVERSED -> "Payment has been reversed";
             case ON_HOLD -> "Payment is on hold for review";
             case UNMATCHED -> "Payment could not be matched to a recipient";

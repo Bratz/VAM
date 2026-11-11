@@ -67,10 +67,12 @@ public class InterestConfigurationDto {
         // Sync
         private LocalDateTime lastSyncAt;
         private String sourceSystem;
-        
+
         // Audit
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        /** Created by the application with built-in default rates (IHB onboarding), not rates the bank agreed. */
+        private boolean systemDefault;
     }
 
     // ========================================================================

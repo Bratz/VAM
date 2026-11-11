@@ -21,6 +21,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -53,11 +54,18 @@ public class Iso20022RequestToPayService {
      * The Request to Pay as the email the payer would get. There is no mail server: it is kept in the outbox
      * (SENT, simulated), or marked NO_ADDRESS when neither the invoice nor the customer has an email address.
      */
-    private com.bank.vam.outbox.OutboxEmail email(Receivable r, Party debtor, String link, String endToEndId) {
+    /** The creditor's real name: the corporate's legal name, else the owning entity's; refused rather than invented. */
+    private String creditorName(Receivable r) {
+        return Optional.ofNullable(r.getCorporateId()).flatMap(corporates::findById).map(c -> c.getLegalName())
+                .filter(n -> !n.isBlank())
+                .or(() -> Optional.ofNullable(r.getOwningEntityName()).filter(n -> !n.isBlank()))
+                .orElseThrow(() -> new com.bank.vam.exception.BusinessException("Not available: Request to Pay for "
+                        + r.getReceivableNumber() + " — no creditor name is recorded for the corporate or owning entity"));
+    }
+
+    private com.bank.vam.outbox.OutboxEmail email(Receivable r, Party debtor, String link, String endToEndId, String creditor) {
         String to = r.getCustomerEmail() != null && !r.getCustomerEmail().isBlank() ? r.getCustomerEmail().trim()
                 : debtor.getContactEmail() != null && !debtor.getContactEmail().isBlank() ? debtor.getContactEmail().trim() : null;
-        String creditor = corporates.findById(r.getCorporateId()).map(c -> c.getLegalName())
-                .orElse(r.getOwningEntityName() != null ? r.getOwningEntityName() : "Your supplier");
         String amount = r.getCurrencyCode() + " " + new java.text.DecimalFormat("#,##0.00").format(r.getOutstandingAmount());
         StringBuilder body = new StringBuilder()
                 .append("Dear ").append(debtor.getLegalName()).append(",\n\n")
@@ -97,6 +105,7 @@ public class Iso20022RequestToPayService {
         }
         Party debtor = partyRepository.findById(receivable.getCustomerPartyId())
                 .orElseThrow(() -> new RuntimeException("Receivable " + receivableId + " has no linked customer Party"));
+        String creditor = creditorName(receivable);
 
         String endToEndId = "R2P-" + UUID.randomUUID();
         // What the payer needs to pay it: a "pay this invoice" page, and a virtual IBAN so the payment matches
@@ -106,9 +115,9 @@ public class Iso20022RequestToPayService {
         }
         ensureViban(receivable);
         String link = frontendBaseUrl + "/?page=pay-invoice&token=" + receivable.getPaymentLinkToken();
-        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId, link);
+        String xml = xmlBuilder.buildPain013(receivable, debtor, endToEndId, link, creditor);
         receivable.setRequestToPayXml(xml);
-        outbox.save(email(receivable, debtor, link, endToEndId));
+        outbox.save(email(receivable, debtor, link, endToEndId, creditor));
 
         receivable.setRequestToPayStatus(RequestToPayStatus.SENT);
         receivable.setRequestToPayMessageId(endToEndId);

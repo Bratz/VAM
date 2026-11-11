@@ -273,35 +273,9 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
       });
       setPreview(result);
     } catch (err: any) {
-      console.error('Failed to load POBO preview:', err);
-      setError('Failed to load preview. Using estimated values.');
-      // Fallback calculation
-      const total = payablesList.reduce((sum, p) => sum + (p.netAmount || 0), 0);
-      const fees = total * 0.005;
-      const treasury = entitiesList.find(e => e.id === payingEntityId);
-      setPreview({
-        payingEntityId,
-        payingEntityCode: treasury?.entityCode || 'TREASURY',
-        payingEntityName: treasury?.entityName || 'Treasury',
-        behalfEntityId: payablesList[0]?.owningEntityId || '',
-        behalfEntityCode: payablesList[0]?.owningEntityCode || 'SUB',
-        behalfEntityName: payablesList[0]?.owningEntityName || 'Subsidiary',
-        payableCount: payablesList.length,
-        totalPaymentAmount: total,
-        currencyCode: payablesList[0]?.currencyCode || 'AED',
-        charges: [{ chargeCode: 'POBO-FEE', chargeName: 'POBO Service Fee', chargeType: 'PERCENTAGE', calculatedAmount: fees, waived: false }],
-        totalCharges: fees,
-        netPaymentAmount: total + fees,
-        ihbLoanPreview: {
-          principalAmount: total + fees,
-          interestRate: 5.0,
-          estimatedDailyInterest: (total + fees) * 0.05 / 365,
-          estimatedMonthlyInterest: (total + fees) * 0.05 / 12,
-          tenor: 'ON_DEMAND',
-        },
-        warnings: [],
-        isValid: true,
-      });
+      // No invented preview: show why the real one could not be priced.
+      setPreview(null);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load preview');
     } finally {
       setLoading(false);
     }
@@ -366,7 +340,7 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
             <div className="grid grid-cols-2 gap-4 text-body-sm">
               <div>
                 <p className="text-neutral-500 dark:text-neutral-400">Paying Entity</p>
-                <p className="font-medium">{preview.payingEntityCode} - {preview.payingEntityName}</p>
+                <p className="font-medium">{preview.payingEntityCode ?? '-'} - {preview.payingEntityName ?? '-'}</p>
                 {preview.payingVaNumber && (
                   <p className="caption">VA: {preview.payingVaNumber}</p>
                 )}
@@ -448,19 +422,17 @@ const PoboRequestModal: React.FC<PoboModalProps> = ({
                 <h5 className="text-body-sm font-medium text-info-800 mb-2 dark:text-info-300">IHB Loan Details</h5>
                 <div className="grid grid-cols-2 gap-2 text-caption">
                   <div><span className="text-info-600 dark:text-info-300">Principal:</span> {formatCurrency(preview.ihbLoanPreview.principalAmount, preview.currencyCode)}</div>
-                  <div><span className="text-info-600 dark:text-info-300">Rate:</span> {preview.ihbLoanPreview.interestRate}%</div>
+                  <div><span className="text-info-600 dark:text-info-300">Rate:</span> {preview.ihbLoanPreview.interestRate}%{preview.ihbLoanPreview.rateSource === 'DEFAULT' && <span className="ml-1 text-warning-700 dark:text-warning-300" title="A built-in rate, not the in-house bank's priced rate">(default)</span>}</div>
                   <div><span className="text-info-600 dark:text-info-300">Tenor:</span> {preview.ihbLoanPreview.tenor}</div>
                   <div><span className="text-info-600 dark:text-info-300">Est. Monthly Interest:</span> {formatCurrency(preview.ihbLoanPreview.estimatedMonthlyInterest || 0, preview.currencyCode)}</div>
                 </div>
               </div>
             )}
-
-            {error && (
-              <p className="caption-warning flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" /> {error}
-              </p>
-            )}
           </div>
+        ) : error ? (
+          <p className="caption-warning flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> {error}
+          </p>
         ) : null}
 
         {/* Actions */}

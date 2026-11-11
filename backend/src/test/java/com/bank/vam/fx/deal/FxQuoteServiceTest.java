@@ -72,7 +72,7 @@ class FxQuoteServiceTest {
         when(limitService.allocation(CORP, ENTITY)).thenReturn(new FxLimitService.Allocation(
                 ENTITY, "Test Treasury Ltd", UUID.randomUUID(), "AED", true, null, ROOM));
         when(limitService.line(CORP)).thenReturn(new FxLimitService.Line(
-                CORP, UUID.randomUUID(), UUID.randomUUID(), "FX treasury line", "AED", null, true, null, ROOM));
+                CORP, UUID.randomUUID(), UUID.randomUUID(), "FX treasury line", "AED", null, true, null, ROOM, false));
         when(limitService.charge(any(), anyString(), any(), any(), any(), anyString())).thenReturn(bd("1000.00"));
         // refusal(...) answers null by default: the deal fits.
         when(settlementAccounts.resolve(eq(CORP), eq(ENTITY), anyString())).thenAnswer(inv -> {

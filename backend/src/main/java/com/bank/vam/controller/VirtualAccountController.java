@@ -71,6 +71,7 @@ public class VirtualAccountController {
     private final VirtualAccountRepository virtualAccountRepository;
     private final ProgramRepository programRepository;
     private final HierarchyNodeRepository hierarchyNodeRepository;
+    private final com.bank.vam.repository.hierarchy.LegalEntityRepository legalEntityRepository;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
     private final com.bank.vam.service.treasury.SettlementMarkService settlementMarkService;
 
@@ -1422,9 +1423,9 @@ public class VirtualAccountController {
 
     private String getOwningEntityCode(UUID owningEntityId, VirtualAccount parent) {
         if (owningEntityId != null) {
-            // Would normally look up from LegalEntityRepository
-            // For now, inherit from parent
-            return parent.getOwningEntityCode();
+            return legalEntityRepository.findById(owningEntityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Legal entity not found: " + owningEntityId))
+                .getEntityCode();
         }
         return parent.getOwningEntityCode();
     }

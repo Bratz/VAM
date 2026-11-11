@@ -519,7 +519,7 @@ const PartyFormModal: React.FC<{
       onClose();
     } catch (error: any) {
       console.error('Failed to save party:', error);
-      showToast(error.message || 'Failed to save party', 'error');
+      showToast(error.response?.data?.message || error.message || 'Failed to save party', 'error');
     } finally {
       setSaving(false);
     }
@@ -1207,7 +1207,7 @@ const PartyFormModal: React.FC<{
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-4 bg-surface-page rounded-lg">
                     <label className="block label-cased mb-1">Sanctions</label>
-                    <Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'}>
+                    <Badge variant={!party.sanctionsStatus ? 'neutral' : party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'}>
                       {party.sanctionsStatus || 'Not Checked'}
                     </Badge>
                   </div>
@@ -1563,9 +1563,9 @@ const PartyDetailModal: React.FC<{
         showToast('Screening completed', 'success');
         onPartyUpdated?.();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Screening failed:', err);
-      showToast('Screening failed', 'error');
+      showToast(err.response?.data?.message || 'Screening failed', 'error');
     } finally {
       setRunningScreening(false);
     }
@@ -1651,7 +1651,7 @@ const PartyDetailModal: React.FC<{
                 <Card padding="sm" className="space-y-3">
                   <div className="flex items-center justify-between"><span className="body-sm">KYC Status</span><Badge variant={kycConf.variant as any} size="sm"><KycIcon className="w-3 h-3 mr-1" />{kycConf.label}</Badge></div>
                   <div className="flex items-center justify-between"><span className="body-sm">Risk Rating</span><Badge variant={riskConfig[party.riskRating]?.variant as any} size="sm">{riskConfig[party.riskRating]?.label}</Badge></div>
-                  <div className="flex items-center justify-between"><span className="body-sm">Sanctions</span><Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">{party.sanctionsStatus === 'CLEAR' ? 'Clear' : 'Alert'}</Badge></div>
+                  <div className="flex items-center justify-between"><span className="body-sm">Sanctions</span><Badge variant={!party.sanctionsStatus ? 'neutral' : party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">{!party.sanctionsStatus ? 'Not screened' : party.sanctionsStatus === 'CLEAR' ? 'Clear' : 'Alert'}</Badge></div>
                 </Card>
                 <h3 className="body-strong font-semibold">Payment Factory</h3>
                 <Card padding="sm" className="space-y-3">
@@ -1965,8 +1965,8 @@ const PartyDetailModal: React.FC<{
                 <Card padding="sm" className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="body-sm">Sanctions</span>
-                    <Badge variant={party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">
-                      {party.sanctionsStatus === 'CLEAR' ? 'Clear' : party.sanctionsStatus}
+                    <Badge variant={!party.sanctionsStatus ? 'neutral' : party.sanctionsStatus === 'CLEAR' ? 'success' : 'error'} size="sm">
+                      {!party.sanctionsStatus ? 'Not screened' : party.sanctionsStatus === 'CLEAR' ? 'Clear' : party.sanctionsStatus}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">

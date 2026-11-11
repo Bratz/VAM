@@ -32,255 +32,26 @@ import { PageHeader } from '../components/layout/PageHeader';
 import { Modal } from '../components/ui/enhanced';
 import { formatRelativeTime, cn } from '../utils';
 import { getConnectorIcon } from '../components/connectorIconMap';
+import toast from 'react-hot-toast';
+import {
+  useIntegrations,
+  type IntegrationConnector,
+  type IntegrationConnection,
+  type ConnectorCategory,
+  type ConnectionStatus,
+  type Environment,
+  type SyncFrequency,
+  type DataFlow,
+  type FieldMapping,
+  type SyncLog,
+  type TestConnectionRequest,
+  type TestConnectionResponse,
+} from '../hooks/useIntegrations';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
-type ConnectorCategory = 'ERP' | 'TREASURY' | 'BANKING' | 'OPEN_BANKING' | 'PAYMENTS' | 'GENERIC';
-type AuthType = 'OAUTH' | 'OAUTH2_AUTHCODE' | 'API_KEY' | 'BASIC' | 'CERTIFICATE' | 'PSD2_CONSENT' | 'OPEN_BANKING_UK' | 'BERLIN_GROUP' | 'STET' | 'POLISH_API' | 'MTLS';
-type ConnectorStatus = 'AVAILABLE' | 'BETA' | 'COMING_SOON' | 'DEPRECATED';
-type ConnectionStatus = 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'SYNCING';
-type SyncFrequency = 'REAL_TIME' | 'HOURLY' | 'DAILY' | 'MANUAL';
-type Environment = 'SANDBOX' | 'PRODUCTION';
-type FlowDirection = 'INBOUND' | 'OUTBOUND' | 'BIDIRECTIONAL';
-type FlowStatus = 'ACTIVE' | 'PAUSED' | 'ERROR';
-type SyncStatus = 'SUCCESS' | 'FAILED' | 'PARTIAL' | 'RUNNING';
-
-interface Connector {
-  id: string;
-  connectorCode: string;
-  connectorName: string;
-  shortName: string;
-  description: string;
-  category: ConnectorCategory;
-  authType: AuthType;
-  status: ConnectorStatus;
-  supportedFeatures: string[];
-  documentationUrl?: string;
-  iconType: string;
-  region?: string;
-  complianceStandards?: string[];
-  isBeta: boolean;
-  isConnected: boolean;
-  activeConnectionCount: number;
-}
-
-interface Connection {
-  id: string;
-  connectorId: string;
-  connectorCode: string;
-  connectorName: string;
-  iconType: string;
-  connectionName: string;
-  environment: Environment;
-  syncFrequency: SyncFrequency;
-  lastSyncAt?: string;
-  nextSyncAt?: string;
-  status: ConnectionStatus;
-  errorMessage?: string;
-  dataFlowCount: number;
-  createdAt: string;
-  createdBy: string;
-  dataFlows?: DataFlow[];
-  consentInfo?: ConsentInfo;
-}
-
-interface ConsentInfo {
-  consentId: string;
-  consentStatus: string;
-  consentCreatedAt: string;
-  consentExpiresAt: string;
-  permissions: string[];
-  aspspName: string;
-}
-
-interface DataFlow {
-  id: string;
-  flowName: string;
-  direction: FlowDirection;
-  sourceEntity: string;
-  targetEntity: string;
-  scheduleEnabled: boolean;
-  lastRunAt?: string;
-  recordsProcessed?: number;
-  status: FlowStatus;
-  fieldMappings?: FieldMapping[];
-}
-
-interface FieldMapping {
-  id: string;
-  sourceField: string;
-  targetField: string;
-  transformation?: string;
-  isRequired: boolean;
-}
-
-interface SyncLog {
-  id: string;
-  connectionId: string;
-  connectionName: string;
-  flowId?: string;
-  flowName: string;
-  direction: FlowDirection;
-  startTime: string;
-  endTime?: string;
-  durationMs?: number;
-  recordsProcessed: number;
-  recordsFailed: number;
-  status: SyncStatus;
-  errorMessage?: string;
-}
-
-interface IntegrationStats {
-  totalConnections: number;
-  activeConnections: number;
-  errorConnections: number;
-  syncingConnections: number;
-  totalDataFlows: number;
-  activeDataFlows: number;
-  availableConnectors: number;
-  categoryStats: {
-    erpConnections: number;
-    treasuryConnections: number;
-    bankingConnections: number;
-    openBankingConnections: number;
-    paymentsConnections: number;
-    genericConnections: number;
-  };
-}
-
-// ============================================================================
-// MOCK DATA - Will be replaced with API calls
-// ============================================================================
-
-const mockConnectors: Connector[] = [
-  // ERP
-  { id: '1', connectorCode: 'SAP_S4HANA', connectorName: 'SAP S/4HANA', shortName: 'SAP', description: 'Real-time ERP integration for financial data synchronization with SAP S/4HANA Cloud and On-Premise', category: 'ERP', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['GL Accounts', 'Bank Accounts', 'Cash Positions', 'Journal Entries', 'Intercompany'], iconType: 'sap', region: 'GLOBAL', complianceStandards: ['SOX', 'GDPR'], isBeta: false, isConnected: true, activeConnectionCount: 1 },
-  { id: '2', connectorCode: 'ORACLE_FUSION', connectorName: 'Oracle Fusion Cloud', shortName: 'Oracle', description: 'Enterprise cloud ERP integration for Oracle Fusion Cloud Financials', category: 'ERP', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['GL Accounts', 'Cash Management', 'Bank Statements', 'Payments'], iconType: 'oracle', region: 'GLOBAL', complianceStandards: ['SOX', 'GDPR'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '3', connectorCode: 'MS_DYNAMICS_365', connectorName: 'Microsoft Dynamics 365', shortName: 'Dynamics', description: 'Connect to Dynamics 365 Finance & Operations for comprehensive financial management', category: 'ERP', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['GL Accounts', 'Bank Accounts', 'Cash Flow', 'Vendor Payments'], iconType: 'microsoft', region: 'GLOBAL', complianceStandards: ['SOX', 'GDPR'], isBeta: false, isConnected: true, activeConnectionCount: 1 },
-  { id: '4', connectorCode: 'NETSUITE', connectorName: 'Oracle NetSuite', shortName: 'NetSuite', description: 'Cloud ERP integration for mid-market companies', category: 'ERP', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['GL Accounts', 'Bank Feeds', 'Cash Management', 'Subsidiaries'], iconType: 'netsuite', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '5', connectorCode: 'WORKDAY', connectorName: 'Workday Financial Management', shortName: 'Workday', description: 'Enterprise cloud applications for finance and planning', category: 'ERP', authType: 'OAUTH', status: 'BETA', supportedFeatures: ['GL Accounts', 'Cash Management', 'Banking', 'Settlements'], iconType: 'workday', region: 'GLOBAL', isBeta: true, isConnected: false, activeConnectionCount: 0 },
-  
-  // Treasury
-  { id: '6', connectorCode: 'KYRIBA', connectorName: 'Kyriba Treasury', shortName: 'Kyriba', description: 'Treasury management system integration for cash visibility', category: 'TREASURY', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['Cash Positions', 'Forecasts', 'Bank Connectivity', 'Payments'], iconType: 'kyriba', region: 'GLOBAL', isBeta: false, isConnected: true, activeConnectionCount: 1 },
-  { id: '7', connectorCode: 'FIS_QUANTUM', connectorName: 'FIS Quantum', shortName: 'FIS', description: 'Enterprise treasury and risk management platform', category: 'TREASURY', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['Cash Management', 'Risk Analytics', 'Trade Finance'], iconType: 'fis', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '8', connectorCode: 'ION_TREASURY', connectorName: 'ION Treasury', shortName: 'ION', description: 'Treasury management and trading platform', category: 'TREASURY', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['Cash Management', 'Trade Execution', 'Risk Management'], iconType: 'ion', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-
-  // Open Banking
-  { id: '9', connectorCode: 'PSD2_BERLIN_GROUP', connectorName: 'PSD2 Berlin Group', shortName: 'PSD2 EU', description: 'European Open Banking via Berlin Group NextGenPSD2 standard', category: 'OPEN_BANKING', authType: 'BERLIN_GROUP', status: 'AVAILABLE', supportedFeatures: ['Account Information', 'Balance Inquiry', 'Transaction History', 'Payment Initiation'], iconType: 'eu', region: 'EU', complianceStandards: ['PSD2', 'GDPR', 'SCA'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '10', connectorCode: 'OPEN_BANKING_UK', connectorName: 'Open Banking UK', shortName: 'OB UK', description: 'UK Open Banking Standard for account aggregation and payments', category: 'OPEN_BANKING', authType: 'OPEN_BANKING_UK', status: 'AVAILABLE', supportedFeatures: ['Account Information', 'Balance Inquiry', 'Transaction History', 'Payment Initiation', 'VRP'], iconType: 'uk', region: 'UK', complianceStandards: ['PSD2', 'GDPR', 'FCA'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '11', connectorCode: 'PLAID', connectorName: 'Plaid', shortName: 'Plaid', description: 'Financial data aggregation supporting 12,000+ institutions globally', category: 'OPEN_BANKING', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['Account Aggregation', 'Balance Inquiry', 'Transaction History', 'Identity Verification'], iconType: 'plaid', region: 'GLOBAL', complianceStandards: ['SOC2', 'GDPR'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '12', connectorCode: 'TINK', connectorName: 'Tink', shortName: 'Tink', description: 'European open banking platform across 18 markets', category: 'OPEN_BANKING', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['Account Aggregation', 'Transaction Categorization', 'Payment Initiation'], iconType: 'tink', region: 'EU', complianceStandards: ['PSD2', 'GDPR'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '13', connectorCode: 'TRUELAYER', connectorName: 'TrueLayer', shortName: 'TrueLayer', description: 'Open banking platform for data and payments across UK and Europe', category: 'OPEN_BANKING', authType: 'OAUTH2_AUTHCODE', status: 'AVAILABLE', supportedFeatures: ['Account Information', 'Payment Initiation', 'Payouts'], iconType: 'truelayer', region: 'EU', complianceStandards: ['PSD2', 'GDPR', 'FCA'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '14', connectorCode: 'YAPILY', connectorName: 'Yapily', shortName: 'Yapily', description: 'Open banking infrastructure connecting 2,000+ banks', category: 'OPEN_BANKING', authType: 'OAUTH', status: 'AVAILABLE', supportedFeatures: ['Account Information', 'Transaction History', 'Payment Initiation', 'Bulk Payments'], iconType: 'yapily', region: 'EU', complianceStandards: ['PSD2', 'GDPR'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-
-  // Payments
-  { id: '15', connectorCode: 'SWIFT_GPI', connectorName: 'SWIFT gpi', shortName: 'SWIFT gpi', description: 'SWIFT Global Payments Innovation for fast, transparent cross-border payments', category: 'PAYMENTS', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['Payment Tracking', 'Payment Initiation', 'Pre-Validation', 'Case Management'], iconType: 'SWIFT_GPI', region: 'GLOBAL', complianceStandards: ['ISO20022', 'SWIFT CSP'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '16', connectorCode: 'SEPA', connectorName: 'SEPA Payments', shortName: 'SEPA', description: 'Single Euro Payments Area for EUR transfers and direct debits', category: 'PAYMENTS', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['SCT Instant', 'SCT', 'SDD Core', 'SDD B2B'], iconType: 'sepa', region: 'EU', complianceStandards: ['PSD2', 'ISO20022'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '17', connectorCode: 'FASTER_PAYMENTS_UK', connectorName: 'Faster Payments UK', shortName: 'FPS', description: 'UK real-time payment system for GBP domestic payments', category: 'PAYMENTS', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['Instant Payments', 'Forward Dating', 'Standing Orders'], iconType: 'fps', region: 'UK', complianceStandards: ['ISO20022', 'FCA'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '18', connectorCode: 'ISO20022', connectorName: 'ISO 20022 Messaging', shortName: 'ISO 20022', description: 'Universal financial messaging standard', category: 'PAYMENTS', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['pain.001', 'pain.002', 'camt.052', 'camt.053', 'camt.054'], iconType: 'iso', region: 'GLOBAL', complianceStandards: ['ISO20022'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-
-  // Banking
-  { id: '19', connectorCode: 'HOST_TO_HOST', connectorName: 'Host-to-Host Banking', shortName: 'H2H', description: 'Direct secure connection to bank systems', category: 'BANKING', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['Payment Files', 'Statement Files', 'Balance Reports'], iconType: 'HOST_TO_HOST', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '20', connectorCode: 'EBICS', connectorName: 'EBICS Banking', shortName: 'EBICS', description: 'Electronic Banking Internet Communication Standard', category: 'BANKING', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['Payment Initiation', 'Statement Download', 'Direct Debit'], iconType: 'ebics', region: 'DACH', complianceStandards: ['PSD2', 'ISO20022'], isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '21', connectorCode: 'MT940_MT942', connectorName: 'MT940/MT942 Statements', shortName: 'MT940', description: 'SWIFT statement messages for bank reporting', category: 'BANKING', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['End of Day Statements', 'Intraday Statements', 'Transaction Details'], iconType: 'MT940_MT942', region: 'GLOBAL', isBeta: false, isConnected: true, activeConnectionCount: 1 },
-
-  // Generic
-  { id: '22', connectorCode: 'SFTP', connectorName: 'SFTP File Transfer', shortName: 'SFTP', description: 'Secure file transfer protocol for batch data exchange', category: 'GENERIC', authType: 'CERTIFICATE', status: 'AVAILABLE', supportedFeatures: ['CSV Import', 'XML Import', 'BAI2 Files', 'MT940 Statements', 'Scheduled Jobs'], iconType: 'sftp', region: 'GLOBAL', isBeta: false, isConnected: true, activeConnectionCount: 1 },
-  { id: '23', connectorCode: 'REST_API', connectorName: 'REST API', shortName: 'REST', description: 'Generic REST API for custom integrations', category: 'GENERIC', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['Full API Access', 'Custom Endpoints', 'JSON/XML Support'], iconType: 'api', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '24', connectorCode: 'WEBHOOKS', connectorName: 'Webhooks', shortName: 'Webhooks', description: 'Event-driven integration via webhooks', category: 'GENERIC', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['Real-time Events', 'Custom Payloads', 'Retry Logic', 'Event Filtering'], iconType: 'webhook', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-  { id: '25', connectorCode: 'GRAPHQL', connectorName: 'GraphQL API', shortName: 'GraphQL', description: 'GraphQL API endpoint for flexible queries', category: 'GENERIC', authType: 'API_KEY', status: 'AVAILABLE', supportedFeatures: ['Flexible Queries', 'Real-time Subscriptions', 'Batch Operations'], iconType: 'graphql', region: 'GLOBAL', isBeta: false, isConnected: false, activeConnectionCount: 0 },
-];
-
-const mockConnections: Connection[] = [
-  {
-    id: '1', connectorId: '1', connectorCode: 'SAP_S4HANA', connectorName: 'SAP S/4HANA', iconType: 'sap',
-    connectionName: 'SAP Production', environment: 'PRODUCTION', status: 'CONNECTED',
-    lastSyncAt: '2024-02-12T14:30:00Z', nextSyncAt: '2024-02-12T15:30:00Z', syncFrequency: 'HOURLY',
-    createdAt: '2023-06-15T10:00:00Z', createdBy: 'admin@company.com', dataFlowCount: 3,
-    dataFlows: [
-      { id: '1', flowName: 'GL Accounts Sync', direction: 'INBOUND', sourceEntity: 'SAP GL Accounts', targetEntity: 'VAM Chart of Accounts', lastRunAt: '2024-02-12T14:30:00Z', recordsProcessed: 1250, status: 'ACTIVE', scheduleEnabled: true },
-      { id: '2', flowName: 'Bank Balances Import', direction: 'INBOUND', sourceEntity: 'SAP Bank Accounts', targetEntity: 'VAM Account Balances', lastRunAt: '2024-02-12T14:30:00Z', recordsProcessed: 45, status: 'ACTIVE', scheduleEnabled: true },
-      { id: '3', flowName: 'Sweep Results Export', direction: 'OUTBOUND', sourceEntity: 'VAM Sweep Executions', targetEntity: 'SAP Journal Entries', lastRunAt: '2024-02-12T14:35:00Z', recordsProcessed: 12, status: 'ACTIVE', scheduleEnabled: true },
-    ],
-  },
-  {
-    id: '2', connectorId: '6', connectorCode: 'KYRIBA', connectorName: 'Kyriba Treasury', iconType: 'kyriba',
-    connectionName: 'Kyriba TMS', environment: 'PRODUCTION', status: 'CONNECTED',
-    lastSyncAt: '2024-02-12T14:00:00Z', nextSyncAt: '2024-02-12T18:00:00Z', syncFrequency: 'DAILY',
-    createdAt: '2023-09-01T09:00:00Z', createdBy: 'treasury@company.com', dataFlowCount: 2,
-    dataFlows: [
-      { id: '4', flowName: 'Cash Positions Sync', direction: 'INBOUND', sourceEntity: 'Kyriba Cash Positions', targetEntity: 'VAM Cash Positions', lastRunAt: '2024-02-12T14:00:00Z', recordsProcessed: 89, status: 'ACTIVE', scheduleEnabled: true },
-      { id: '5', flowName: 'Forecast Data Import', direction: 'INBOUND', sourceEntity: 'Kyriba Forecasts', targetEntity: 'VAM Liquidity Forecast', lastRunAt: '2024-02-12T14:00:00Z', recordsProcessed: 365, status: 'ACTIVE', scheduleEnabled: true },
-    ],
-  },
-  {
-    id: '3', connectorId: '22', connectorCode: 'SFTP', connectorName: 'SFTP File Transfer', iconType: 'sftp',
-    connectionName: 'Bank Statement SFTP', environment: 'PRODUCTION', status: 'CONNECTED',
-    lastSyncAt: '2024-02-12T06:00:00Z', nextSyncAt: '2024-02-13T06:00:00Z', syncFrequency: 'DAILY',
-    createdAt: '2023-03-10T11:00:00Z', createdBy: 'ops@company.com', dataFlowCount: 1,
-    dataFlows: [
-      { id: '6', flowName: 'MT940 Statement Import', direction: 'INBOUND', sourceEntity: 'MT940 Files', targetEntity: 'VAM Bank Statements', lastRunAt: '2024-02-12T06:00:00Z', recordsProcessed: 156, status: 'ACTIVE', scheduleEnabled: true },
-    ],
-  },
-  {
-    id: '4', connectorId: '3', connectorCode: 'MS_DYNAMICS_365', connectorName: 'Microsoft Dynamics 365', iconType: 'microsoft',
-    connectionName: 'Dynamics Sandbox', environment: 'SANDBOX', status: 'ERROR',
-    lastSyncAt: '2024-02-10T12:00:00Z', syncFrequency: 'DAILY',
-    createdAt: '2024-01-20T14:00:00Z', createdBy: 'it@company.com', dataFlowCount: 1,
-    errorMessage: 'Authentication token expired. Please re-authenticate.',
-    dataFlows: [
-      { id: '7', flowName: 'Entity Master Sync', direction: 'INBOUND', sourceEntity: 'D365 Legal Entities', targetEntity: 'VAM Entities', lastRunAt: '2024-02-10T12:00:00Z', recordsProcessed: 0, status: 'ERROR', scheduleEnabled: true },
-    ],
-  },
-  {
-    id: '5', connectorId: '21', connectorCode: 'MT940_MT942', connectorName: 'MT940/MT942 Statements', iconType: 'MT940_MT942',
-    connectionName: 'HSBC Statements', environment: 'PRODUCTION', status: 'CONNECTED',
-    lastSyncAt: '2024-02-12T08:00:00Z', nextSyncAt: '2024-02-13T08:00:00Z', syncFrequency: 'DAILY',
-    createdAt: '2023-08-15T09:00:00Z', createdBy: 'ops@company.com', dataFlowCount: 1,
-  },
-];
-
-const mockSyncLogs: SyncLog[] = [
-  { id: '1', connectionId: '1', connectionName: 'SAP Production', flowName: 'GL Accounts Sync', direction: 'INBOUND', startTime: '2024-02-12T14:30:00Z', endTime: '2024-02-12T14:32:15Z', durationMs: 135000, status: 'SUCCESS', recordsProcessed: 1250, recordsFailed: 0 },
-  { id: '2', connectionId: '1', connectionName: 'SAP Production', flowName: 'Bank Balances Import', direction: 'INBOUND', startTime: '2024-02-12T14:30:00Z', endTime: '2024-02-12T14:30:45Z', durationMs: 45000, status: 'SUCCESS', recordsProcessed: 45, recordsFailed: 0 },
-  { id: '3', connectionId: '1', connectionName: 'SAP Production', flowName: 'Sweep Results Export', direction: 'OUTBOUND', startTime: '2024-02-12T14:35:00Z', endTime: '2024-02-12T14:35:30Z', durationMs: 30000, status: 'SUCCESS', recordsProcessed: 12, recordsFailed: 0 },
-  { id: '4', connectionId: '2', connectionName: 'Kyriba TMS', flowName: 'Cash Positions Sync', direction: 'INBOUND', startTime: '2024-02-12T14:00:00Z', endTime: '2024-02-12T14:02:00Z', durationMs: 120000, status: 'SUCCESS', recordsProcessed: 89, recordsFailed: 0 },
-  { id: '5', connectionId: '2', connectionName: 'Kyriba TMS', flowName: 'Forecast Data Import', direction: 'INBOUND', startTime: '2024-02-12T14:00:00Z', endTime: '2024-02-12T14:05:00Z', durationMs: 300000, status: 'PARTIAL', recordsProcessed: 365, recordsFailed: 12, errorMessage: '12 records skipped due to missing currency codes' },
-  { id: '6', connectionId: '3', connectionName: 'Bank Statement SFTP', flowName: 'MT940 Statement Import', direction: 'INBOUND', startTime: '2024-02-12T06:00:00Z', endTime: '2024-02-12T06:03:00Z', durationMs: 180000, status: 'SUCCESS', recordsProcessed: 156, recordsFailed: 0 },
-  { id: '7', connectionId: '4', connectionName: 'Dynamics Sandbox', flowName: 'Entity Master Sync', direction: 'INBOUND', startTime: '2024-02-10T12:00:00Z', endTime: '2024-02-10T12:00:05Z', durationMs: 5000, status: 'FAILED', recordsProcessed: 0, recordsFailed: 0, errorMessage: 'Authentication token expired' },
-  { id: '8', connectionId: '1', connectionName: 'SAP Production', flowName: 'GL Accounts Sync', direction: 'INBOUND', startTime: '2024-02-12T13:30:00Z', endTime: '2024-02-12T13:32:10Z', durationMs: 130000, status: 'SUCCESS', recordsProcessed: 1248, recordsFailed: 0 },
-];
-
-const mockStats: IntegrationStats = {
-  totalConnections: 5,
-  activeConnections: 4,
-  errorConnections: 1,
-  syncingConnections: 0,
-  totalDataFlows: 8,
-  activeDataFlows: 7,
-  availableConnectors: 25,
-  categoryStats: {
-    erpConnections: 2,
-    treasuryConnections: 1,
-    bankingConnections: 1,
-    openBankingConnections: 0,
-    paymentsConnections: 0,
-    genericConnections: 1,
-  },
-};
-
-// Sample field mappings
-const sampleFieldMappings: FieldMapping[] = [
-  { id: '1', sourceField: 'BUKRS', targetField: 'entity_code', transformation: 'direct', isRequired: true },
-  { id: '2', sourceField: 'HKONT', targetField: 'account_number', transformation: 'direct', isRequired: true },
-  { id: '3', sourceField: 'WAERS', targetField: 'currency_code', transformation: 'lookup:currency_map', isRequired: true },
-  { id: '4', sourceField: 'DMBTR', targetField: 'balance', transformation: 'number:2', isRequired: true },
-  { id: '5', sourceField: 'BUDAT', targetField: 'value_date', transformation: 'date:YYYY-MM-DD', isRequired: true },
-  { id: '6', sourceField: 'BELNR', targetField: 'reference', transformation: 'concat:DOC-{value}', isRequired: false },
-  { id: '7', sourceField: 'SGTXT', targetField: 'description', transformation: 'trim', isRequired: false },
-];
+// Types and data come from the integration API (useIntegrations); nothing here is invented.
+type Connector = IntegrationConnector;
+type Connection = IntegrationConnection;
+const errMsg = (e: any): string => e?.response?.data?.message || e?.message || 'Request failed';
 
 // ============================================================================
 // CATEGORY CONFIG
@@ -490,7 +261,8 @@ const SetupWizardModal: React.FC<{
   connector: Connector | null;
   onClose: () => void;
   onComplete: (config: Record<string, unknown>) => void;
-}> = ({ connector, onClose, onComplete }) => {
+  onTest: (req: TestConnectionRequest) => Promise<TestConnectionResponse>;
+}> = ({ connector, onClose, onComplete, onTest }) => {
   const [step, setStep] = useState(1);
   const [config, setConfig] = useState({
     name: '',
@@ -507,21 +279,35 @@ const SetupWizardModal: React.FC<{
   });
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [testMessage, setTestMessage] = useState('');
 
   if (!connector) return null;
 
   const IconComponent = getConnectorIcon(connector.iconType || connector.connectorCode);
 
+  // The connection's credentials: everything entered except the name / environment / frequency.
+  const credentialsOf = (c: Record<string, unknown>) => {
+    const { name: _name, environment: _env, syncFrequency: _freq, ...creds } = c;
+    return Object.fromEntries(Object.entries(creds).filter(([, v]) => v !== ''));
+  };
+
   const testConnection = async () => {
     setTesting(true);
     setTestResult(null);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setTestResult(Math.random() > 0.2 ? 'success' : 'error');
-    setTesting(false);
+    try {
+      const r = await onTest({ connectorId: connector.id, credentials: credentialsOf(config), environment: config.environment as Environment });
+      setTestResult(r.success ? 'success' : 'error');
+      setTestMessage(r.message);
+    } catch (e) {
+      setTestResult('error');
+      setTestMessage(errMsg(e));
+    } finally {
+      setTesting(false);
+    }
   };
 
   const handleComplete = () => {
-    onComplete(config);
+    onComplete({ ...config, credentials: credentialsOf(config) });
     onClose();
     setStep(1);
     setTestResult(null);
@@ -865,14 +651,14 @@ const SetupWizardModal: React.FC<{
                   <div>
                     <StatusIconBadge tone="neutral" solid icon={Check} size="lg" className="mx-auto mb-3" />
                     <p className="body-strong">Connection Successful</p>
-                    <p className="caption mt-1">Ready to sync data</p>
+                    <p className="caption mt-1">{testMessage}</p>
                   </div>
                 )}
                 {testResult === 'error' && (
                   <div>
                     <StatusIconBadge tone="error" icon={X} size="lg" solid className="mx-auto mb-3" />
                     <p className="body-strong">Connection Failed</p>
-                    <p className="caption mt-1">Please check credentials and try again</p>
+                    <p className="caption mt-1">{testMessage}</p>
                     <button onClick={testConnection} className="mt-4 caption hover:text-neutral-900 underline dark:hover:text-neutral-50">
                       Retry
                     </button>
@@ -901,7 +687,7 @@ const SetupWizardModal: React.FC<{
           ) : (
             <button
               onClick={handleComplete}
-              disabled={testResult !== 'success'}
+              disabled={testing}
               className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Complete Setup
@@ -921,13 +707,16 @@ const ConnectionDetailModal: React.FC<{
   connection: Connection | null;
   onClose: () => void;
   onOpenMapping: (flow: DataFlow) => void;
-}> = ({ connection, onClose, onOpenMapping }) => {
+  logs: SyncLog[];
+  onSync: () => void;
+  onToggleFlow: (flowId: string) => void;
+}> = ({ connection, onClose, onOpenMapping, logs, onSync, onToggleFlow }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'flows' | 'logs'>('overview');
 
   if (!connection) return null;
 
   const IconComponent = getConnectorIcon(connection.iconType || connection.connectorCode);
-  const connectionLogs = mockSyncLogs.filter(log => log.connectionId === connection.id);
+  const connectionLogs = logs.filter(log => log.connectionId === connection.id);
 
   return (
     <Modal isOpen={!!connection} onClose={onClose} title="" size="xl">
@@ -1044,7 +833,7 @@ const ConnectionDetailModal: React.FC<{
             )}
 
             <div className="flex gap-2">
-              <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
+              <button onClick={onSync} className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" /> Sync Now
               </button>
               <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors flex items-center gap-2">
@@ -1091,7 +880,7 @@ const ConnectionDetailModal: React.FC<{
                       <button onClick={() => onOpenMapping(flow)} className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50" title="Field Mapping">
                         <FileText className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50" title={flow.status === 'ACTIVE' ? 'Pause' : 'Resume'}>
+                      <button onClick={() => onToggleFlow(flow.id)} className="p-2 text-neutral-400 hover:text-neutral-900 transition-colors dark:text-neutral-400 dark:hover:text-neutral-50" title={flow.status === 'ACTIVE' ? 'Pause' : 'Resume'}>
                         {flow.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                       </button>
                     </div>
@@ -1159,10 +948,22 @@ const ConnectionDetailModal: React.FC<{
 const FieldMappingModal: React.FC<{
   flow: DataFlow | null;
   onClose: () => void;
-}> = ({ flow, onClose }) => {
-  const [mappings, setMappings] = useState(sampleFieldMappings);
+  onSave: (flowId: string, mappings: FieldMapping[]) => Promise<unknown>;
+}> = ({ flow, onClose, onSave }) => {
+  // The flow's own stored mappings (keyed remount per flow), never a sample set.
+  const [mappings, setMappings] = useState<FieldMapping[]>(flow?.fieldMappings ?? []);
 
   if (!flow) return null;
+
+  const save = async () => {
+    try {
+      // New rows carry a client-only id; the backend assigns real ones.
+      await onSave(flow.id, mappings.map(m => (m.id.startsWith('new-') ? { ...m, id: undefined as unknown as string } : m)));
+      onClose();
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
 
   const addMapping = () => {
     setMappings([...mappings, { id: `new-${Date.now()}`, sourceField: '', targetField: '', isRequired: false }]);
@@ -1268,10 +1069,7 @@ const FieldMappingModal: React.FC<{
           Cancel
         </button>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-body-sm font-medium border border-edge-strong hover:border-neutral-900 transition-colors">
-            Test Mapping
-          </button>
-          <button onClick={onClose} className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors">
+          <button onClick={save} className="px-6 py-2 bg-neutral-900 text-white text-body-sm font-medium hover:bg-neutral-800 transition-colors">
             Save
           </button>
         </div>
@@ -1289,11 +1087,24 @@ const IntegrationsPage: React.FC = () => {
   const [selectedConnector, setSelectedConnector] = useState<Connector | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<Connection | null>(null);
   const [selectedFlow, setSelectedFlow] = useState<DataFlow | null>(null);
-  const [connections, setConnections] = useState(mockConnections);
+  const {
+    connectors, connections, stats, syncLogs, error,
+    createConnection, deleteConnection, testConnection, triggerSync, toggleFlowStatus, updateFieldMappings,
+  } = useIntegrations();
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredConnectors = mockConnectors.filter(c => {
+  // Every action goes to the backend; what it refuses ("Not available: ...") is shown as is.
+  const run = async (action: () => Promise<unknown>, done?: string) => {
+    try {
+      await action();
+      if (done) toast.success(done);
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+
+  const filteredConnectors = connectors.filter(c => {
     const matchesCategory = filterCategory === 'all' || c.category === filterCategory;
     const matchesSearch = !searchTerm || 
       c.connectorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1302,33 +1113,18 @@ const IntegrationsPage: React.FC = () => {
   });
 
   const handleSetupComplete = (config: Record<string, unknown>) => {
-    if (selectedConnector) {
-      const newConnection: Connection = {
-        id: `new-${Date.now()}`,
-        connectorId: selectedConnector.id,
-        connectorCode: selectedConnector.connectorCode,
-        connectorName: selectedConnector.connectorName,
-        iconType: selectedConnector.iconType,
-        connectionName: (config.name as string) || `My ${selectedConnector.shortName}`,
+    if (!selectedConnector) return;
+    const connector = selectedConnector;
+    run(async () => {
+      await createConnection({
+        connectorId: connector.id,
+        connectionName: (config.name as string) || `My ${connector.shortName}`,
         environment: (config.environment as Environment) || 'SANDBOX',
-        status: 'CONNECTED',
         syncFrequency: (config.syncFrequency as SyncFrequency) || 'DAILY',
-        createdAt: new Date().toISOString(),
-        createdBy: 'current@user.com',
-        dataFlowCount: Math.min(selectedConnector.supportedFeatures.length, 3),
-        dataFlows: selectedConnector.supportedFeatures.slice(0, 3).map((f, i) => ({
-          id: `flow-${Date.now()}-${i}`,
-          flowName: `${f} Sync`,
-          direction: i % 2 === 0 ? 'INBOUND' : 'OUTBOUND' as FlowDirection,
-          sourceEntity: `${selectedConnector.shortName} ${f}`,
-          targetEntity: `VAM ${f}`,
-          status: 'ACTIVE' as FlowStatus,
-          scheduleEnabled: true,
-        })),
-      };
-      setConnections([newConnection, ...connections]);
+        credentials: config.credentials as Record<string, unknown>,
+      });
       setActiveTab('connections');
-    }
+    }, 'Connection saved');
   };
 
   return (
@@ -1362,11 +1158,11 @@ const IntegrationsPage: React.FC = () => {
           {/* Stats */}
           <div className="grid grid-cols-5 gap-6 mt-8">
             {[
-              { label: 'Total', value: mockStats.totalConnections, sub: 'connections' },
-              { label: 'Active', value: mockStats.activeConnections, sub: 'connected' },
-              { label: 'Errors', value: mockStats.errorConnections, sub: 'need attention', alert: mockStats.errorConnections > 0 },
-              { label: 'Data Flows', value: mockStats.totalDataFlows, sub: 'configured' },
-              { label: 'Connectors', value: mockStats.availableConnectors, sub: 'available' },
+              { label: 'Total', value: stats?.totalConnections ?? '—', sub: 'connections' },
+              { label: 'Active', value: stats?.activeConnections ?? '—', sub: 'connected' },
+              { label: 'Errors', value: stats?.errorConnections ?? '—', sub: 'need attention', alert: (stats?.errorConnections ?? 0) > 0 },
+              { label: 'Data Flows', value: stats?.totalDataFlows ?? '—', sub: 'configured' },
+              { label: 'Connectors', value: stats?.availableConnectors ?? '—', sub: 'available' },
             ].map((stat, idx) => (
               <div key={idx} className="text-center">
                 <p className={cn("text-heading-lg font-light", stat.alert ? 'text-error-600 dark:text-error-300' : 'text-neutral-900 dark:text-neutral-50')}>{stat.value}</p>
@@ -1383,8 +1179,8 @@ const IntegrationsPage: React.FC = () => {
           <div className="flex gap-8">
             {[
               { id: 'connections', label: 'Active Connections', count: connections.length },
-              { id: 'connectors', label: 'Available Connectors', count: mockConnectors.length },
-              { id: 'logs', label: 'Sync History', count: mockSyncLogs.length },
+              { id: 'connectors', label: 'Available Connectors', count: connectors.length },
+              { id: 'logs', label: 'Sync History', count: syncLogs.length },
             ].map(tab => (
               <button
                 key={tab.id}
@@ -1406,6 +1202,11 @@ const IntegrationsPage: React.FC = () => {
 
       {/* Content */}
       <Page maxWidth="default" className="py-8">
+        {error && (
+          <div className="mb-6 p-4 bg-error-50 border border-error-200 dark:bg-error-500/10 dark:border-error-500/30">
+            <p className="text-body-sm text-error-700 dark:text-error-300">Could not load integrations: {error}</p>
+          </div>
+        )}
         {/* Active Connections */}
         {activeTab === 'connections' && (
           <div className="grid gap-4 grid-cols-2">
@@ -1414,8 +1215,12 @@ const IntegrationsPage: React.FC = () => {
                 key={connection.id}
                 connection={connection}
                 onView={() => setSelectedConnection(connection)}
-                onSync={() => {}}
-                onDisconnect={() => setConnections(connections.filter(c => c.id !== connection.id))}
+                onSync={() => run(() => triggerSync(connection.id), 'Sync started')}
+                onDisconnect={() => {
+                  if (confirm(`Delete the connection "${connection.connectionName}"? This cannot be undone.`)) {
+                    run(() => deleteConnection(connection.id), 'Connection deleted');
+                  }
+                }}
               />
             ))}
             {connections.length === 0 && (
@@ -1487,7 +1292,7 @@ const IntegrationsPage: React.FC = () => {
         {/* Sync Logs */}
         {activeTab === 'logs' && (
           <DataTable
-            data={mockSyncLogs}
+            data={syncLogs}
             keyExtractor={(log) => log.id}
             columns={[
               { key: 'connectionName', header: 'Connection', minWidth: 160, mobileLabel: true, render: (_v, log) => <span className="body-strong">{log.connectionName}</span> },
@@ -1531,15 +1336,21 @@ const IntegrationsPage: React.FC = () => {
         connector={selectedConnector}
         onClose={() => setSelectedConnector(null)}
         onComplete={handleSetupComplete}
+        onTest={testConnection}
       />
       <ConnectionDetailModal
         connection={selectedConnection}
         onClose={() => setSelectedConnection(null)}
         onOpenMapping={(flow) => { setSelectedFlow(flow); }}
+        logs={syncLogs}
+        onSync={() => selectedConnection && run(() => triggerSync(selectedConnection.id), 'Sync started')}
+        onToggleFlow={(flowId) => run(() => toggleFlowStatus(flowId))}
       />
       <FieldMappingModal
+        key={selectedFlow?.id ?? 'none'}
         flow={selectedFlow}
         onClose={() => setSelectedFlow(null)}
+        onSave={updateFieldMappings}
       />
     </div>
   );

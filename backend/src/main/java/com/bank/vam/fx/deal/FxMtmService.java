@@ -26,8 +26,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FxMtmService {
 
-    /** {@code mtmHome} is null when there is no stored platform rate from the quote currency to home. */
-    public record Mark(BigDecimal rateUsed, BigDecimal mtmQuote, String quoteCurrency, BigDecimal mtmHome, String homeCurrency) {
+    /**
+     * {@code mtmHome} is null when there is no stored platform rate from the quote currency to home. {@code source}
+     * is the market the rate came from ("SIMULATED").
+     */
+    public record Mark(BigDecimal rateUsed, BigDecimal mtmQuote, String quoteCurrency, BigDecimal mtmHome, String homeCurrency,
+                       String source) {
     }
 
     private final ForwardPricer forwards;
@@ -48,7 +52,8 @@ public class FxMtmService {
         try {
             LocalDate spot = forwards.spotDate();
             LocalDate target = d.getValueDate().isAfter(spot) ? d.getValueDate() : spot;
-            BigDecimal current = forwards.forward(d.getPair(), target).forwardMid();
+            com.bank.vam.fx.ForwardQuote fwd = forwards.forward(d.getPair(), target);
+            BigDecimal current = fwd.forwardMid();
             BigDecimal quoteAmount = mtmQuote(d.getSide(), d.remainingBase(), d.getRate(), current);
             String home = homeCurrency.of(d.getCorporateId());
             BigDecimal inHome = null;
@@ -58,7 +63,7 @@ public class FxMtmService {
             } catch (BusinessException e) {
                 log.debug("No platform rate {}/{} for the home-currency mark", d.quoteCurrency(), home);
             }
-            return Optional.of(new Mark(current, quoteAmount, d.quoteCurrency(), inHome, home));
+            return Optional.of(new Mark(current, quoteAmount, d.quoteCurrency(), inHome, home, fwd.source()));
         } catch (BusinessException e) {
             log.warn("Could not mark {}: {}", d.getDealRef(), e.getMessage());
             return Optional.empty();

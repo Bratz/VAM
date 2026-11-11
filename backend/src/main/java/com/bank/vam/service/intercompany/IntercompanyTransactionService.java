@@ -1025,8 +1025,6 @@ public class IntercompanyTransactionService {
             .isCompliant(isCompliant)
             .findings(findings)
             .chargeRate(chargeRate)
-            .marketRateLow(new BigDecimal("0.001"))
-            .marketRateHigh(new BigDecimal("0.02"))
             .validationNotes(validationNotes)
             .validatedAt(LocalDateTime.now())
             .build();
@@ -1401,8 +1399,6 @@ public class IntercompanyTransactionService {
         private boolean isCompliant;
         private List<String> findings;
         private BigDecimal chargeRate;
-        private BigDecimal marketRateLow;
-        private BigDecimal marketRateHigh;
         private String validationNotes;
         private LocalDateTime validatedAt;
     }

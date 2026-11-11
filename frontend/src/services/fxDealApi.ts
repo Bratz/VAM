@@ -153,6 +153,10 @@ export interface Deal {
   mtmQuoteCurrency?: string;
   mtmHome?: number;
   mtmHomeCurrency?: string;
+  /** Where the mark's market rate came from: 'SIMULATED' from the mock market. */
+  mtmSource?: string;
+  /** The desk that priced the deal: 'SIMULATED' (there is no real desk). */
+  dealer?: string;
 }
 
 export interface Settlement {
@@ -359,6 +363,8 @@ export interface CreditLimit {
   used: number;
   headroom: number;
   entity?: FxAllocation;
+  /** A line the application seeded at its default amount, not one the bank agreed. */
+  systemDefault?: boolean;
 }
 
 /** The FX line with every active entity and its sub-limit, for the Credit Limits page. */

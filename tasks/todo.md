@@ -1,5 +1,18 @@
 # Active Work / Status Tracker
 
+## ✅ No fake data in the backend (2026-11-10)
+Audit: `tasks/fake-data-audit.md`. User decisions: simulators kept but labelled "Simulated", silent
+hardcoded fallbacks removed; startup-seeded settings kept but shown as defaults; already-stored fake
+rows listed only (no cleanup yet).
+- [x] getAllInvoices demo fallback removed (Brato/Mercator showed 4 made-up invoices)
+- [x] W1 receivables + parties demo data, demo-corporate substitution (merged; tests 16+5 pass)
+- [x] W2 endpoints that fake success -> "Not available"; stub syncs/tests/payments (merged)
+- [x] W3 made-up figures (merged; V47 migration; 539 tests pass with W1-W3)
+- [x] W4 simulators labelled + fallbacks removed; seeded settings marked as defaults (merged; seeded accounts kept CORE_BANKING so shadows still follow; 540 tests)
+- [x] Inventory of stored fake rows (in the audit)
+- [x] Final pass on leftovers (16 items) merged; IntegrationConnector.AuthType gained the 5 Open Banking values stored in the DB (connector list 500'd)
+- [x] Merge, full tests (543 pass), tsc/eslint clean, live check: 20 pages, no failed API calls
+
 ## ✅ Create Invoice saves what it shows; AR list fixes (2026-11-10)
 User: "fix all" (the five items found reviewing Create Invoice / the AR list).
 - [x] 1. Create Invoice: send and store what the form collects

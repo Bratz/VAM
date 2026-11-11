@@ -37,6 +37,7 @@ public class BalanceStructureService {
     private final PoolMemberRepository poolMemberRepository;
     private final SweepRuleRepository sweepRuleRepository;
     private final NettingEntryRepository nettingEntryRepository;
+    private final ExceptionTransactionRepository exceptionTransactionRepository;
     // ENHANCED: For entity name lookup
     private final com.bank.vam.repository.hierarchy.LegalEntityRepository legalEntityRepository;
     // MP3: FX conversions go through FxRateService (cached, multi-hop, with fallbacks).
@@ -63,7 +64,7 @@ public class BalanceStructureService {
 
         // Get corporate info
         Corporate corporate = corporateRepository.findById(corporateId)
-            .orElseGet(() -> createDefaultCorporate(corporateId));
+            .orElseThrow(() -> new com.bank.vam.exception.ResourceNotFoundException("Corporate not found: " + corporateId));
 
         // Get virtual accounts - filter by programId if provided
         List<VirtualAccount> accounts;
@@ -278,28 +279,9 @@ public class BalanceStructureService {
      */
     @Transactional
     public NodeDetail updateParticipation(String nodeId, UpdateParticipationRequest request) {
-        log.info("Updating participation for node: {}", nodeId);
-        
-        try {
-            UUID vaId = UUID.fromString(nodeId);
-            VirtualAccount va = virtualAccountRepository.findById(vaId)
-                .orElseThrow(() -> new RuntimeException("Virtual account not found: " + nodeId));
-            
-            // Update pool membership
-            if (request.getParticipatesInPooling() != null) {
-                updatePoolMembership(va, request.getParticipatesInPooling(), request.getPoolReference());
-            }
-            
-            // Update sweep participation
-            if (request.getParticipatesInSweep() != null) {
-                updateSweepParticipation(va, request.getParticipatesInSweep(), 
-                                         request.getSweepRuleReference(), request.getSweepTarget());
-            }
-            
-            return getNodeDetail(nodeId, "AED");
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid node ID: " + nodeId);
-        }
+        // Pool membership and sweep rules are owned by their own screens; nothing here writes them.
+        throw new com.bank.vam.exception.BusinessException("Not available: participation changes for node " + nodeId
+                + " — change pool membership in Notional Pools and sweep sources in Sweep Rules");
     }
 
     // ========================================================================
@@ -776,9 +758,8 @@ public class BalanceStructureService {
             .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ? rateOrNull(va.getCurrencyCode(), reportingCurrency) : null)
             .fxRateAt(specialType == SpecialVaType.CURRENCY_MIRROR ?
                       (va.getFxRateAt() != null ? va.getFxRateAt().toString() : java.time.LocalDateTime.now().toString()) : null)
-            // Placeholder counts - in production, query actual counts
-            .coveredVaCount(specialType == SpecialVaType.SETTLEMENT ? 0 : null)
-            .pendingExceptions(specialType == SpecialVaType.EXCEPTION ? 0 : null)
+            // Covered-VA count has no source yet, so it stays unset rather than 0.
+            .pendingExceptions(specialType == SpecialVaType.EXCEPTION ? (int) exceptionTransactionRepository.countOpenByExceptionVaId(va.getId()) : null)
             // ENHANCED: Owning entity information with full lookup
             .owningEntityId(va.getOwningEntityId() != null ? va.getOwningEntityId().toString() : null)
             .owningEntityCode(getEntityCode(va))
@@ -826,8 +807,7 @@ public class BalanceStructureService {
             .participatesInSweep(corporateId != null && getSweepRuleMap(corporateId).containsKey(va.getId()))
             .externalReference(va.getExternalReference())
             // NEW: Special VA specific fields
-            .coveredVaCount(specialType == SpecialVaType.SETTLEMENT ? 0 : null)
-            .pendingExceptions(specialType == SpecialVaType.EXCEPTION ? 0 : null)
+            .pendingExceptions(specialType == SpecialVaType.EXCEPTION ? (int) exceptionTransactionRepository.countOpenByExceptionVaId(va.getId()) : null)
             .mirrorBalance(specialType == SpecialVaType.CURRENCY_MIRROR ? currentBalance : null)
             .fxRate(specialType == SpecialVaType.CURRENCY_MIRROR ? rateOrNull(va.getCurrencyCode(), reportingCurrency) : null)
             .build();
@@ -870,27 +850,6 @@ public class BalanceStructureService {
             }
         }
         return map;
-    }
-
-    private void updatePoolMembership(VirtualAccount va, boolean participate, String poolReference) {
-        log.info("Updating pool membership for VA {}: participate={}, pool={}", 
-                 va.getVaNumber(), participate, poolReference);
-        // Implementation would update pool_members table
-    }
-
-    private void updateSweepParticipation(VirtualAccount va, boolean participate, 
-                                          String ruleReference, String target) {
-        log.info("Updating sweep participation for VA {}: participate={}, rule={}, target={}",
-                 va.getVaNumber(), participate, ruleReference, target);
-        // Implementation would update sweep_rule_sources table
-    }
-
-    private Corporate createDefaultCorporate(UUID corporateId) {
-        Corporate c = new Corporate();
-        c.setId(corporateId != null ? corporateId : UUID.randomUUID());
-        c.setLegalName("Corporate");
-        c.setCorporateId("CORP-001");
-        return c;
     }
 
     private SummaryStats calculateStats(HierarchyNode node) {

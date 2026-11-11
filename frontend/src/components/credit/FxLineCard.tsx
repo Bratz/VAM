@@ -98,7 +98,12 @@ const FxLineCard: React.FC<{ corporateId: string }> = ({ corporateId }) => {
         title="FX line"
         subtitle={!line ? 'Loading' : !line.facilityName ? line.reason
           : `${line.facilityName}, ${fmt(line.limit)} ${ccy}${line.expiry ? `, until ${line.expiry}` : ''}. Each entity deals within its own sub-limit.`}
-        action={<StatusIconBadge tone="accent" icon={ArrowLeftRight} />}
+        action={
+          <span className="inline-flex items-center gap-2">
+            {line?.systemDefault && <span title="Set up by the application at its default amount; not a line the bank agreed"><Badge variant="warning">Default: not the bank&apos;s agreed terms</Badge></span>}
+            <StatusIconBadge tone="accent" icon={ArrowLeftRight} />
+          </span>
+        }
       />
       {error && <p className="text-body-sm text-error-700 dark:text-error-300 mb-3">{error}</p>}
       {line && line.facilityName && (

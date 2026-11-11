@@ -25,7 +25,7 @@ import java.util.UUID;
  * "authorized for everything".
  *
  * @param corporateId      corporate scope (null = all corporates, prototype only)
- * @param userId           authenticated user id (defaults to "demo-user")
+ * @param userId           authenticated user id (defaults to the signed-in user, else "system")
  * @param defaultCurrency  currency from the active {@link
  *                         com.bank.vam.config.MarketProfileProperties} —
  *                         tools use this when the caller didn't supply one
@@ -62,7 +62,7 @@ public record ToolContext(
     }
 
     public String userIdOrDefault() {
-        return (userId == null || userId.isBlank()) ? "demo-user" : userId;
+        return com.bank.vam.config.CurrentUser.orCurrent(userId);
     }
 
     /**

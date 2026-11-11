@@ -84,7 +84,13 @@ public class IntegrationConnector {
         BASIC,
         CERTIFICATE,
         OAUTH2,         // For Open Banking
-        MTLS            // Mutual TLS
+        MTLS,           // Mutual TLS
+        // Open Banking API standards. Stored on connectors already; without them every connector list failed to load.
+        OAUTH2_AUTHCODE,
+        BERLIN_GROUP,   // NextGenPSD2 (EU)
+        STET,           // France
+        POLISH_API,     // Poland
+        OPEN_BANKING_UK
     }
 
     public enum ConnectorStatus {

@@ -42,8 +42,8 @@ import java.util.UUID;
  *
  * <p>Sprint-1 deferrals (documented inline rather than overstated):
  * <ul>
- *   <li>{@code openingBalance} is anchored at {@code 0} — Sprint 2 wires
- *       {@code BalanceAggregationService}.</li>
+ *   <li>{@code openingBalance} is today's bank balance (shadow accounts) in the
+ *       summary's currency.</li>
  *   <li>{@code groupBy} on {@code /lines} accepts the query param but is
  *       ignored — Sprint 1 always returns raw lines. Aggregation lands in
  *       Sprint 2 alongside the variance heat-map.</li>
@@ -66,6 +66,8 @@ public class ForecastController {
     private final ForecastScheduler scheduler;
     private final ForecastRunRepository runRepository;
     private final ForecastLineRepository lineRepository;
+    private final com.bank.vam.repository.VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     /** Default 13-week horizon when the caller doesn't supply one. */
     private static final int DEFAULT_HORIZON_DAYS = 91;
@@ -84,7 +86,7 @@ public class ForecastController {
     public ResponseEntity<ApiResponse<ForecastSummaryDto>> getLatest(
             @Parameter(description = "Corporate scope — auto-injected by the frontend axios layer.")
             @RequestHeader("X-Corporate-Id") UUID corporateId,
-            @Parameter(description = "Filter lines to a single ISO 4217 currency. If omitted, all currencies are summed (engines emit in source currency so this is meaningful only with one currency in scope).")
+            @Parameter(description = "Filter lines to a single ISO 4217 currency. If omitted, one currency is reported (the market default if present) -- currencies are never summed together.")
             @RequestParam(required = false) String currency,
             @Parameter(description = "Forecast horizon in days from today. Defaults to 91 (≈13 weeks).")
             @RequestParam(required = false, defaultValue = "" + DEFAULT_HORIZON_DAYS) int horizonDays
@@ -101,7 +103,9 @@ public class ForecastController {
         List<Object[]> rows = lineRepository.aggregateWeeklyByCurrencyDirection(
                 run.getId(), from, to);
 
-        ForecastSummaryDto summary = ForecastSummaryAssembler.assemble(run, rows, currency);
+        ForecastSummaryDto summary = ForecastSummaryAssembler.assemble(run, rows, currency,
+                marketProfile.getDefaultCurrency(),
+                ccy -> virtualAccountRepository.sumShadowBankBalancesByCurrency(corporateId, ccy));
         return ResponseEntity.ok(ApiResponse.success(summary));
     }
 

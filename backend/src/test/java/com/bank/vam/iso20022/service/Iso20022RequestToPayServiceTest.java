@@ -27,7 +27,7 @@ class Iso20022RequestToPayServiceTest {
 
     private final ReceivableRepository receivableRepository = mock(ReceivableRepository.class);
     private final PartyRepository partyRepository = mock(PartyRepository.class);
-    private final Iso20022XmlBuilder xmlBuilder = new Iso20022XmlBuilder();
+    private final Iso20022XmlBuilder xmlBuilder = new Iso20022XmlBuilder(mock(com.bank.vam.config.MarketProfileProperties.class));
 
     private final com.bank.vam.repository.VirtualAccountRepository accounts = mock(com.bank.vam.repository.VirtualAccountRepository.class);
     private final com.bank.vam.service.viban.VibanService vibans = mock(com.bank.vam.service.viban.VibanService.class);

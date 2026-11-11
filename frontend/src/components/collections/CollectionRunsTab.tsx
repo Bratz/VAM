@@ -137,6 +137,9 @@ export const CollectionRunsTab: React.FC<{ corporateId: string }> = ({ corporate
       <p className="text-caption text-neutral-500 dark:text-neutral-400">
         Direct debits settle on their collection date (this also runs every evening), are held for the return window, then become available.
       </p>
+      <p className="text-caption text-warning-700 dark:text-warning-300">
+        Settle simulates the bank&apos;s clearing: there is no clearing link, so a debit due by the date is treated as paid. Lines settled this way say so.
+      </p>
       {notice && <p className="text-body-sm text-success-700 dark:text-success-300">{notice}</p>}
       {error && <p className="text-body-sm text-error-700 dark:text-error-300">{error}</p>}
 

@@ -91,7 +91,8 @@ public class IntercompanyRecharge extends BaseEntity {
     // ORIGINAL PAYMENT REFERENCE
     // ========================================================================
 
-    @Column(name = "original_payable_id", nullable = false)
+    /** Null for a direct POBO payment, which pays no payable (see V47). */
+    @Column(name = "original_payable_id")
     private UUID originalPayableId;
 
     @Column(name = "original_payment_execution_id")

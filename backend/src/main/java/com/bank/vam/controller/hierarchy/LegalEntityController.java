@@ -512,6 +512,8 @@ public class LegalEntityController {
             .ihbCurrency(entity.getIhbCurrency())
             .lendingRateSpread(entity.getLendingRateSpread())
             .borrowingRateSpread(entity.getBorrowingRateSpread())
+            .spreadsDefault(entity.getSpreadsDefault())
+            .ownershipDefault(entity.getOwnershipDefault())
             .totalLentOut(entity.getTotalLentOut())
             .totalDeposited(entity.getTotalDeposited())
             .netIhbPosition(entity.getNetIhbPosition())
@@ -718,6 +720,10 @@ public class LegalEntityController {
         private String ihbCurrency;
         private BigDecimal lendingRateSpread;
         private BigDecimal borrowingRateSpread;
+        /** The spreads are built-in defaults nobody set; null when not known (older rows). */
+        private Boolean spreadsDefault;
+        /** The ownership is the built-in 100%, not an entered figure; null when not known (older rows). */
+        private Boolean ownershipDefault;
         private BigDecimal totalLentOut;
         private BigDecimal totalDeposited;
         private BigDecimal netIhbPosition;

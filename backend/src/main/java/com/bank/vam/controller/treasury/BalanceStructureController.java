@@ -3,6 +3,9 @@ package com.bank.vam.controller.treasury;
 import com.bank.vam.dto.ApiResponse;
 import com.bank.vam.dto.treasury.BalanceStructureDto;
 import com.bank.vam.dto.treasury.BalanceStructureDto.*;
+import com.bank.vam.exception.BusinessException;
+import com.bank.vam.exception.ResourceNotFoundException;
+import com.bank.vam.repository.ProgramRepository;
 import com.bank.vam.service.treasury.BalanceStructureService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +37,7 @@ import java.util.UUID;
 public class BalanceStructureController {
 
     private final BalanceStructureService balanceStructureService;
+    private final ProgramRepository programRepository;
 
     // ========================================================================
     // HIERARCHY APIs
@@ -46,7 +50,7 @@ public class BalanceStructureController {
     @Operation(summary = "Get balance structure hierarchy",
                description = "Returns the complete hierarchical tree of entities and virtual accounts with balances, IC positions, and participation flags")
     public ResponseEntity<ApiResponse<HierarchyNode>> getHierarchy(
-            @Parameter(description = "Corporate ID (optional, uses default if not provided)")
+            @Parameter(description = "Corporate ID (required unless programId is given)")
             @RequestParam(required = false) UUID corporateId,
             @Parameter(description = "Program ID to filter by (optional)")
             @RequestParam(required = false) UUID programId,
@@ -56,7 +60,7 @@ public class BalanceStructureController {
         log.info("GET /api/v1/treasury/balance-structure - corporateId: {}, programId: {}, currency: {}",
                  corporateId, programId, reportingCurrency);
 
-        UUID corpId = corporateId != null ? corporateId : getDefaultCorporateId();
+        UUID corpId = resolveCorporateId(corporateId, programId);
         HierarchyNode hierarchy = balanceStructureService.getHierarchy(corpId, programId, reportingCurrency);
 
         return ResponseEntity.ok(ApiResponse.success(hierarchy));
@@ -77,7 +81,7 @@ public class BalanceStructureController {
         log.info("GET /api/v1/treasury/balance-structure/summary - corporateId: {}, programId: {}",
                  corporateId, programId);
 
-        UUID corpId = corporateId != null ? corporateId : getDefaultCorporateId();
+        UUID corpId = resolveCorporateId(corporateId, programId);
         BalanceSummary summary = balanceStructureService.getSummary(corpId, programId, reportingCurrency);
 
         return ResponseEntity.ok(ApiResponse.success(summary));
@@ -168,23 +172,7 @@ public class BalanceStructureController {
     public ResponseEntity<ApiResponse<HierarchyNode>> createNode(
             @RequestBody CreateNodeRequest request) {
         
-        log.info("POST /api/v1/treasury/balance-structure/nodes - name: {}, type: {}", 
-                 request.getName(), request.getType());
-        
-        // For now, return a mock created node
-        HierarchyNode node = HierarchyNode.builder()
-            .id(UUID.randomUUID().toString())
-            .name(request.getName())
-            .type(request.getType())
-            .currencyCode(request.getCurrencyCode())
-            .level(1)
-            .participatesInPooling(false)
-            .participatesInNetting(false)
-            .participatesInSweep(false)
-            .parentId(request.getParentId())
-            .build();
-        
-        return ResponseEntity.ok(ApiResponse.success(node));
+        throw notAvailable("creating hierarchy nodes");
     }
 
     /**
@@ -196,17 +184,7 @@ public class BalanceStructureController {
     public ResponseEntity<ApiResponse<HierarchyNode>> moveNode(
             @PathVariable String nodeId,
             @RequestBody MoveNodeRequest request) {
-        
-        log.info("POST /api/v1/treasury/balance-structure/nodes/{}/move to {}", 
-                 nodeId, request.getNewParentId());
-        
-        // Return updated node
-        HierarchyNode node = HierarchyNode.builder()
-            .id(nodeId)
-            .parentId(request.getNewParentId())
-            .build();
-        
-        return ResponseEntity.ok(ApiResponse.success(node));
+        throw notAvailable("moving hierarchy nodes");
     }
 
     /**
@@ -216,50 +194,33 @@ public class BalanceStructureController {
     @Operation(summary = "Delete hierarchy node",
                description = "Remove a node from the hierarchy")
     public ResponseEntity<ApiResponse<Void>> deleteNode(@PathVariable String nodeId) {
-        
-        log.info("DELETE /api/v1/treasury/balance-structure/nodes/{}", nodeId);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        throw notAvailable("deleting hierarchy nodes");
     }
 
     // ========================================================================
     // EXPORT APIs
     // ========================================================================
 
-    /**
-     * Export balance structure report
-     */
     @PostMapping("/export")
     @Operation(summary = "Export balance structure",
-               description = "Export the balance structure as CSV, XLSX, or PDF")
+               description = "Not available: no export file is generated")
     public ResponseEntity<ApiResponse<String>> exportReport(
             @RequestParam(required = false) UUID corporateId,
             @RequestBody ExportRequest request) {
-        
-        log.info("POST /api/v1/treasury/balance-structure/export - format: {}", request.getFormat());
-        
-        // In real implementation, generate file and return download URL
-        String downloadUrl = "/api/v1/treasury/balance-structure/export/download/" + UUID.randomUUID();
-        
-        return ResponseEntity.ok(ApiResponse.success(downloadUrl));
+        throw new BusinessException("Not available: balance structure export — no export file generator is implemented");
     }
 
     // ========================================================================
     // REFRESH APIs
     // ========================================================================
 
-    /**
-     * Refresh balance structure data
-     */
+    /** The hierarchy is read live on every GET; there is no separate refresh job to start. */
     @PostMapping("/refresh")
     @Operation(summary = "Refresh balance data",
-               description = "Trigger a refresh of all balance and position data from source systems")
+               description = "Not available: the hierarchy is read live on every request")
     public ResponseEntity<ApiResponse<String>> refreshData(
             @RequestParam(required = false) UUID corporateId) {
-        
-        log.info("POST /api/v1/treasury/balance-structure/refresh");
-        
-        // In real implementation, trigger async refresh job
-        return ResponseEntity.ok(ApiResponse.success("Refresh initiated"));
+        throw new BusinessException("Not available: balance refresh job — the hierarchy is read live on every request; reload it instead");
     }
 
     // ========================================================================
@@ -291,9 +252,20 @@ public class BalanceStructureController {
     // HELPER METHODS
     // ========================================================================
 
-    private UUID getDefaultCorporateId() {
-        // In real implementation, get from security context or configuration
-        return UUID.fromString("11111111-1111-1111-1111-111111111111");
+    /** The tree belongs to one corporate: the one asked for, else the program's owner. Never a default. */
+    private UUID resolveCorporateId(UUID corporateId, UUID programId) {
+        if (corporateId != null) return corporateId;
+        if (programId != null) {
+            return programRepository.findById(programId)
+                .orElseThrow(() -> new ResourceNotFoundException("Program not found: " + programId))
+                .getCorporateId();
+        }
+        throw new BusinessException("corporateId is required");
+    }
+
+    private static BusinessException notAvailable(String what) {
+        return new BusinessException("Not available: " + what
+            + " — the hierarchy is built from legal entities and virtual accounts; change those instead");
     }
 
     // ========================================================================

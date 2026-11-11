@@ -34,6 +34,8 @@ interface LegalEntity {
   hierarchyLevel: number;
   // Ownership & Consolidation
   ownershipPercent: number;
+  /** The ownership is the built-in 100%, not an entered figure. */
+  ownershipDefault?: boolean;
   consolidationMethod: ConsolidationMethod;
   // Classification
   entityType: EntityType;
@@ -1065,7 +1067,7 @@ const EntityDetailPanel: React.FC<{
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Building2 className="w-4 h-4 inline mr-1" />Type</span><span className="text-neutral-900 dark:text-neutral-50">{typeConfig.label}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Globe className="w-4 h-4 inline mr-1" />Country</span><span className="text-neutral-900 dark:text-neutral-50">{entity.countryCode || '-'}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Banknote className="w-4 h-4 inline mr-1" />Currency</span><span className="text-neutral-900 dark:text-neutral-50">{entity.functionalCurrency}</span></div>
-            <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Percent className="w-4 h-4 inline mr-1" />Ownership</span><span className="text-neutral-900 dark:text-neutral-50">{entity.ownershipPercent || 100}%</span></div>
+            <div className="flex justify-between"><span className="text-neutral-500 dark:text-neutral-400"><Percent className="w-4 h-4 inline mr-1" />Ownership</span><span className="text-neutral-900 dark:text-neutral-50">{entity.ownershipPercent || 100}%{entity.ownershipDefault && <span className="ml-1 text-caption text-warning-700 dark:text-warning-300" title="Built-in 100%: nobody entered an ownership figure">(default)</span>}</span></div>
           </div>
         </div>
 

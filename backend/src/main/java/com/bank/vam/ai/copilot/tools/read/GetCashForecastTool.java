@@ -42,6 +42,8 @@ public class GetCashForecastTool implements CopilotTool {
     private final ForecastRunRepository forecastRunRepository;
     private final ForecastLineRepository forecastLineRepository;
     private final ObjectMapper objectMapper;
+    private final com.bank.vam.repository.VirtualAccountRepository virtualAccountRepository;
+    private final com.bank.vam.config.MarketProfileProperties marketProfile;
 
     @Override
     public String name() {
@@ -56,7 +58,7 @@ public class GetCashForecastTool implements CopilotTool {
     @Override
     public Map<String, Map<String, Object>> parameterSchema() {
         return Map.of(
-                "currency", Map.of("type", "string", "description", "ISO-4217 filter; omit to sum all currencies"),
+                "currency", Map.of("type", "string", "description", "ISO-4217 filter; omit for the market default currency (currencies are never summed together)"),
                 "horizonDays", Map.of("type", "integer", "description", "Forecast horizon in days from today (default 91)")
         );
     }
@@ -84,7 +86,9 @@ public class GetCashForecastTool implements CopilotTool {
             LocalDate from = LocalDate.now();
             LocalDate to = from.plusDays(horizonDays);
             List<Object[]> rows = forecastLineRepository.aggregateWeeklyByCurrencyDirection(run.get().getId(), from, to);
-            ForecastSummaryDto summary = ForecastSummaryAssembler.assemble(run.get(), rows, currency);
+            ForecastSummaryDto summary = ForecastSummaryAssembler.assemble(run.get(), rows, currency,
+                    marketProfile.getDefaultCurrency(),
+                    ccy -> virtualAccountRepository.sumShadowBankBalancesByCurrency(context.corporateId(), ccy));
 
             @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.convertValue(summary, Map.class);

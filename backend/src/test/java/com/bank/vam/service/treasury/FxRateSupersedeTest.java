@@ -35,6 +35,15 @@ class FxRateSupersedeTest {
                 eq(FxRateRepository.GLOBAL), eq(LocalDate.now()), any(), eq(id));
     }
 
+    /** There is no built-in default table any more: a pair with no stored rate (even EUR/USD) is refused. */
+    @Test
+    void aPairWithNoStoredRateIsRefusedNotDefaulted() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.getRate("EUR", "USD"))
+                .isInstanceOf(com.bank.vam.exception.BusinessException.class)
+                .hasMessageContaining("No FX rate for EUR/USD");
+        org.assertj.core.api.Assertions.assertThat(service.hasRate("USD", "AED")).isFalse();
+    }
+
     @Test
     void aCorporatesInternalRateOnlyEndsThatCorporatesRates() {
         UUID corp = UUID.randomUUID();

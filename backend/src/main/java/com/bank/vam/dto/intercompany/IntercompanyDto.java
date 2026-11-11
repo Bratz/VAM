@@ -186,6 +186,8 @@ public class IntercompanyDto {
         private UUID borrowerId;
         private BigDecimal principalAmount;
         private BigDecimal interestRate;
+        /** DEFAULT when the lender has no spread and the built-in 3.50 was used; ENTITY otherwise. */
+        private String rateSource;
         private BigDecimal estimatedInterest;
     }
 
@@ -485,8 +487,6 @@ public class IntercompanyDto {
         private boolean isCompliant;
         private List<String> findings;
         private BigDecimal appliedChargeRate;
-        private BigDecimal marketRateLow;
-        private BigDecimal marketRateHigh;
         private String validationNotes;
         private LocalDateTime validatedAt;
         private String validatedBy;

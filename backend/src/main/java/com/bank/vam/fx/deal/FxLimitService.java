@@ -3,6 +3,7 @@ package com.bank.vam.fx.deal;
 import com.bank.vam.config.FxDealProperties;
 import com.bank.vam.config.FxDealProperties.PfeBand;
 import com.bank.vam.config.MarketProfileProperties;
+import com.bank.vam.entity.BaseEntity;
 import com.bank.vam.entity.credit.CreditAgreement;
 import com.bank.vam.entity.credit.CreditFacility;
 import com.bank.vam.entity.credit.CreditFacility.FacilityStatus;
@@ -59,10 +60,11 @@ public class FxLimitService {
 
     /**
      * The group line. {@code usable} is false when there is no FX facility, or it or its limit is not active or
-     * not in date; {@code reason} then says which, in words for the corporate.
+     * not in date; {@code reason} then says which, in words for the corporate. {@code systemDefault} is true for a
+     * line the application seeded at the default amount ({@link #ensureLine}), not one the bank agreed.
      */
     public record Line(UUID corporateId, UUID limitId, UUID facilityId, String facilityName, String currency,
-                       LocalDate expiry, boolean usable, String reason, Usage usage) {
+                       LocalDate expiry, boolean usable, String reason, Usage usage, boolean systemDefault) {
     }
 
     /** One entity's FX sub-limit. Not usable when none is allocated, or it is not active or not in date. */
@@ -88,14 +90,15 @@ public class FxLimitService {
         Optional<CreditLimit> found = lines.findLines(corporateId).stream().findFirst();
         if (found.isEmpty()) {
             return new Line(corporateId, null, null, null, homeCurrency.of(corporateId), null, false,
-                    "No FX line: the bank has not set up an FX facility for this corporate", new Usage(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO));
+                    "No FX line: the bank has not set up an FX facility for this corporate", new Usage(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO), false);
         }
         CreditLimit l = found.get();
         CreditFacility f = l.getCreditFacilityId() == null ? null : facilities.findById(l.getCreditFacilityId()).orElse(null);
         BigDecimal used = deals.sumLimitCharge(corporateId, l.getLimitCurrency(), DealStatus.OPEN);
         LocalDate expiry = f != null && f.getExpiryDate() != null ? f.getExpiryDate() : l.getEffectiveTo();
         return new Line(corporateId, l.getId(), f == null ? null : f.getId(), f == null ? l.getLimitName() : f.getFacilityName(),
-                l.getLimitCurrency(), expiry, lineProblem(f, l) == null, lineProblem(f, l), usage(l.getLimitAmount(), used));
+                l.getLimitCurrency(), expiry, lineProblem(f, l) == null, lineProblem(f, l), usage(l.getLimitAmount(), used),
+                l.isSystemDefault());
     }
 
     /** Every active entity of the corporate, with its FX sub-limit or the fact that it has none. */
@@ -343,7 +346,7 @@ public class FxLimitService {
         CreditAgreement agreement = agreements.findByCorporateIdOrderByAgreementName(corporateId).stream()
                 .filter(a -> bic != null && bic.equalsIgnoreCase(a.getBankCode()))
                 .findFirst()
-                .orElseGet(() -> agreements.save(CreditAgreement.builder()
+                .orElseGet(() -> agreements.save(BaseEntity.systemDefault(CreditAgreement.builder()
                         .agreementName(bank + " credit agreement")
                         .corporateId(corporateId)
                         .bankCode(bic)
@@ -353,9 +356,9 @@ public class FxLimitService {
                         .effectiveDate(today)
                         .expiryDate(today.plusYears(1))
                         .sourceSystem(SOURCE)
-                        .build()));
+                        .build())));
         String currency = agreement.getLimitCurrency();
-        CreditFacility facility = facilities.save(CreditFacility.builder()
+        CreditFacility facility = facilities.save(BaseEntity.systemDefault(CreditFacility.builder()
                 .facilityName("FX treasury line")
                 .creditAgreementId(agreement.getId())
                 .corporateId(corporateId)
@@ -367,8 +370,8 @@ public class FxLimitService {
                 .expiryDate(today.plusYears(1))
                 .status(FacilityStatus.ACTIVE)
                 .sourceSystem(SOURCE)
-                .build());
-        CreditLimit line = CreditLimit.createExternalLimit(corporateId, corporateId, TargetType.FX_LINE, facility.getId(), amount, currency);
+                .build()));
+        CreditLimit line = BaseEntity.systemDefault(CreditLimit.createExternalLimit(corporateId, corporateId, TargetType.FX_LINE, facility.getId(), amount, currency));
         line.setLimitName("FX line - " + bank);
         line.setStatus(LimitStatus.ACTIVE);
         line.setIsHardLimit(true);

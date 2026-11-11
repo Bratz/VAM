@@ -29,13 +29,17 @@ public class FxBoardService {
     static final BigDecimal DEFAULT_AMOUNT = new BigDecimal("100000");
     private static final Pattern PAIR = Pattern.compile("[A-Z]{3}/[A-Z]{3}");
 
-    /** One pair: the client buys the base currency at {@code buy}, sells it at {@code sell}. Spot. */
-    public record BoardRow(String pair, BigDecimal buy, BigDecimal sell, BigDecimal changeBps, LocalDate valueDate, Instant asOf) {
+    /**
+     * One pair: the client buys the base currency at {@code buy}, sells it at {@code sell}. Spot. {@code source} is
+     * where the market rate came from ("SIMULATED" from the mock market).
+     */
+    public record BoardRow(String pair, BigDecimal buy, BigDecimal sell, BigDecimal changeBps, LocalDate valueDate, Instant asOf,
+                           String source) {
     }
 
     /** One tenor of the forward curve: the outright rate each way, and the client points from the client spot. */
     public record CurveRow(String pair, String tenor, LocalDate valueDate, int days, BigDecimal buy, BigDecimal buyPoints,
-                           BigDecimal sell, BigDecimal sellPoints) {
+                           BigDecimal sell, BigDecimal sellPoints, String source) {
     }
 
     private final RateProvider rates;
@@ -67,7 +71,7 @@ public class FxBoardService {
     private BoardRow row(SpotTick t, BigDecimal amount) {
         Price buy = dealer.price(t.pair(), Side.BUY, Instrument.SPOT, amount, null, null);
         Price sell = dealer.price(t.pair(), Side.SELL, Instrument.SPOT, amount, null, null);
-        return new BoardRow(t.pair(), buy.clientRate(), sell.clientRate(), t.changeBps(), buy.pricedDate(), t.asOf());
+        return new BoardRow(t.pair(), buy.clientRate(), sell.clientRate(), t.changeBps(), buy.pricedDate(), t.asOf(), t.source());
     }
 
     private CurveRow curveRow(String pair, String tenor, ForwardQuote q, BigDecimal amount) {
@@ -76,7 +80,7 @@ public class FxBoardService {
         Price sell = dealer.price(pair, Side.SELL, Instrument.FORWARD, amount, q.valueDate(), null);
         ClientPrice b = ClientPrice.of(Instrument.FORWARD, Side.BUY, quoteCcy, buy.clientRate(), buy.spotMid(), buy.spreadBps());
         ClientPrice s = ClientPrice.of(Instrument.FORWARD, Side.SELL, quoteCcy, sell.clientRate(), sell.spotMid(), sell.spreadBps());
-        return new CurveRow(pair, tenor, q.valueDate(), q.days(), buy.clientRate(), b.forwardPoints(), sell.clientRate(), s.forwardPoints());
+        return new CurveRow(pair, tenor, q.valueDate(), q.days(), buy.clientRate(), b.forwardPoints(), sell.clientRate(), s.forwardPoints(), q.source());
     }
 
     private static BigDecimal amountOr(BigDecimal amount) {

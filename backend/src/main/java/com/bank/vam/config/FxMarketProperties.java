@@ -41,12 +41,15 @@ public class FxMarketProperties {
     /** Money-market day count: these accrue on 365, everything else on 360. */
     private Set<String> actual365Currencies = Set.of("GBP", "SGD", "INR");
 
-    /** Independent random walks; every one must involve USD so crosses can be triangulated. */
+    /**
+     * Independent random walks; every one must involve USD so crosses can be triangulated. Each starts from the
+     * pair's mid in fx_rates: a pair with no stored rate has no walk, so no rate.
+     */
     private List<Walk> walks = List.of(
-            walk("EUR/USD", "1.0926", 0.6), walk("GBP/USD", "1.2665", 0.6),
-            walk("USD/JPY", "149.50", 0.6), walk("USD/CHF", "0.8800", 0.5),
-            walk("USD/INR", "83.20", 0.15), walk("USD/SGD", "1.3400", 0.3),
-            walk("USD/AED", "3.6725", 0), walk("USD/SAR", "3.7500", 0));
+            walk("EUR/USD", 0.6), walk("GBP/USD", 0.6),
+            walk("USD/JPY", 0.6), walk("USD/CHF", 0.5),
+            walk("USD/INR", 0.15), walk("USD/SGD", 0.3),
+            walk("USD/AED", 0), walk("USD/SAR", 0));
 
     /** Derived through USD from the walks, so the board is always triangular-consistent. */
     private List<String> crosses = List.of("EUR/GBP", "EUR/AED", "GBP/AED", "EUR/JPY");
@@ -55,16 +58,13 @@ public class FxMarketProperties {
     @Setter
     public static class Walk {
         private String pair;
-        /** Used only when fx_rates has no rate for the pair. */
-        private BigDecimal fallbackMid;
         /** One-tick volatility, in basis points of the rate. Zero pins the pair (AED, SAR). */
         private double volBps;
     }
 
-    private static Walk walk(String pair, String fallbackMid, double volBps) {
+    private static Walk walk(String pair, double volBps) {
         Walk w = new Walk();
         w.setPair(pair);
-        w.setFallbackMid(new BigDecimal(fallbackMid));
         w.setVolBps(volBps);
         return w;
     }

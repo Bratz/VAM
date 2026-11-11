@@ -45,11 +45,14 @@ class PayablesServiceTest {
     private final NettingService nettingService = mock(NettingService.class);
     private final LegalEntityRepository legalEntityRepository = mock(LegalEntityRepository.class);
     private final PoboExecutionService poboExecutionService = mock(PoboExecutionService.class);
+    private final com.bank.vam.service.treasury.FxRateService fxRateService = mock(com.bank.vam.service.treasury.FxRateService.class);
 
     private final PayablesService service = new PayablesService(
             payableRepository, partyRepository, virtualAccountRepository, transactionRepository,
             paymentRequestRepository, transactionService, marketProfile, nettingService,
-            legalEntityRepository, poboExecutionService, mock(com.bank.vam.fx.deal.FxPaymentService.class));
+            legalEntityRepository, poboExecutionService, mock(com.bank.vam.fx.deal.FxPaymentService.class),
+            mock(com.bank.vam.repository.tax.ChargeConfigurationRepository.class),
+            mock(com.bank.vam.repository.receivables.ReceivableRepository.class), fxRateService);
 
     private static final UUID PAYABLE_ID = UUID.randomUUID();
 
@@ -127,6 +130,7 @@ class PayablesServiceTest {
         Payable p = payable(PayableStatus.APPROVED);
         UUID sourceVaId = UUID.randomUUID();
         p.setVirtualAccountId(sourceVaId);
+        p.setOwningEntityName("Test Entity Ltd"); // pain.001 debtor name
         when(payableRepository.findById(PAYABLE_ID)).thenReturn(Optional.of(p));
 
         VirtualAccount sourceVa = VirtualAccount.builder()
@@ -142,6 +146,7 @@ class PayablesServiceTest {
         Transaction debit = Transaction.builder().referenceNumber("PMT-TEST-1").build();
         debit.setId(UUID.randomUUID());
         when(transactionService.makePayment(any())).thenReturn(debit);
+        when(marketProfile.getActiveHomeBankBic()).thenReturn("HBUKGB4BXXX"); // pain.001 debtor agent
 
         service.executePayment(PaymentExecutionRequest.builder()
                 .payableId(PAYABLE_ID)
@@ -156,5 +161,34 @@ class PayablesServiceTest {
         // markCompleted also fills the two fields that were null on every live row
         assertEquals("PMT-TEST-1", last.getTransactionRef());
         assertNotNull(last.getCompletedAt());
+    }
+
+    /** No corporate = refused, never every corporate's payables. */
+    @Test
+    void searchWithoutCorporateIsRefused() {
+        var request = com.bank.vam.dto.payables.PayablesDto.PayableSearchRequest.builder().page(0).size(20).build();
+
+        assertThrows(com.bank.vam.exception.BusinessException.class, () -> service.searchPayables(request));
+        verify(payableRepository, never()).findAll(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    /** Stats convert each payable into the stated currency instead of adding USD to AED. */
+    @Test
+    void statsConvertForeignPayablesIntoTheStatedCurrency() {
+        UUID corp = UUID.randomUUID();
+        Payable aed = payable(PayableStatus.APPROVED);
+        aed.setCurrencyCode("AED");
+        Payable usd = payable(PayableStatus.APPROVED);
+        usd.setCurrencyCode("USD");
+        when(payableRepository.findByCorporateIdOrderByCreatedAtDesc(corp)).thenReturn(java.util.List.of(aed, usd));
+        when(marketProfile.getDefaultCurrency()).thenReturn("AED");
+        when(fxRateService.convert(any(), eq("AED"), eq("AED"))).thenAnswer(inv -> inv.getArgument(0));
+        when(fxRateService.convert(any(), eq("USD"), eq("AED")))
+                .thenAnswer(inv -> ((BigDecimal) inv.getArgument(0)).multiply(new BigDecimal("3.6725")));
+
+        var stats = service.getStats(corp);
+
+        assertEquals(0, new BigDecimal("4672.5").compareTo(stats.getTotalAmount()));
+        assertEquals("AED", stats.getCurrencyCode());
     }
 }

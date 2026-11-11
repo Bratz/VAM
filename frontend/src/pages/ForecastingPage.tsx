@@ -444,7 +444,7 @@ const MetricStrip: React.FC<{ summary: ForecastSummary; currency: string; horizo
         tone="accent"
         icon={<Wallet className="w-5 h-5" />}
         label="Opening balance"
-        value={<TileAmount value={Number(summary.openingBalance ?? 0)} currency={currency} />}
+        value={summary.openingBalance == null ? '—' : <TileAmount value={Number(summary.openingBalance)} currency={currency} />}
         sub="Starting point for this projection"
         delay="0.05s"
       />
@@ -454,7 +454,7 @@ const MetricStrip: React.FC<{ summary: ForecastSummary; currency: string; horizo
         valueTone={closingValueTone}
         icon={<TrendingUp className="w-5 h-5" />}
         label={`Closing (${HORIZON_OPTIONS.find(o => o.value === horizon)?.label ?? '13w'})`}
-        value={<TileAmount value={closing} currency={currency} />}
+        value={summary.closingBalance == null ? '—' : <TileAmount value={closing} currency={currency} />}
         sub={closing < 0 ? 'Shortfall projected' : undefined}
         delay="0.10s"
       />

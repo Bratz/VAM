@@ -43,17 +43,7 @@ public class HierarchyService {
     private final ProgramRepository programRepository;
     private final VirtualAccountRepository virtualAccountRepository;
 
-    // Default FX rates (in production, use FxRateService)
-    private static final Map<String, BigDecimal> EXCHANGE_RATES_TO_AED = Map.of(
-        "AED", BigDecimal.ONE,
-        "USD", new BigDecimal("3.6725"),
-        "EUR", new BigDecimal("4.0125"),
-        "GBP", new BigDecimal("4.6500"),
-        "SGD", new BigDecimal("2.7500"),
-        "CHF", new BigDecimal("4.1200"),
-        "JPY", new BigDecimal("0.0245"),
-        "SAR", new BigDecimal("0.9790")
-    );
+    private final com.bank.vam.service.treasury.FxRateService fxRateService;
 
     // ========================================================================
     // Level Configuration
@@ -805,13 +795,10 @@ public class HierarchyService {
             // note on rootVa.hierarchyLevel above.)
             int level = 1;
             
-            // Get FX rate
+            // FX rate to the base currency from the rate service; left unset when there is none.
             BigDecimal fxRate = BigDecimal.ONE;
             if (baseCurrency != null && !currency.equals(baseCurrency)) {
                 fxRate = getDefaultFxRate(currency, baseCurrency);
-                if (fxRate == null) {
-                    fxRate = BigDecimal.ONE;
-                }
             }
             
             // Get physical account ID from program - use try-catch to avoid any query issues
@@ -845,8 +832,8 @@ public class HierarchyService {
                 // Initialize ALL numeric fields to avoid NPE
                 .mirrorBalance(BigDecimal.ZERO)
                 .fxRate(fxRate)
-                .fxRateAt(LocalDateTime.now())
-                .fxRateSource("SYSTEM")
+                .fxRateAt(fxRate == null ? null : LocalDateTime.now())
+                .fxRateSource(fxRate == null ? null : "SYSTEM")
                 .balanceInBase(BigDecimal.ZERO)
                 .currentBalance(BigDecimal.ZERO)
                 .availableBalance(BigDecimal.ZERO)
@@ -1738,20 +1725,13 @@ public class HierarchyService {
         return "CUSTOM";
     }
 
+    /** The rate service's rate, or null when it has none -- never a guessed one. */
     private BigDecimal getDefaultFxRate(String fromCurrency, String toCurrency) {
-        if (fromCurrency.equals(toCurrency)) {
-            return BigDecimal.ONE;
-        }
-
-        BigDecimal fromRate = EXCHANGE_RATES_TO_AED.getOrDefault(fromCurrency, BigDecimal.ONE);
-        BigDecimal toRate = EXCHANGE_RATES_TO_AED.getOrDefault(toCurrency, BigDecimal.ONE);
-
-        if (toCurrency.equals("AED")) {
-            return fromRate;
-        } else if (fromCurrency.equals("AED")) {
-            return BigDecimal.ONE.divide(toRate, 6, RoundingMode.HALF_UP);
-        } else {
-            return fromRate.divide(toRate, 6, RoundingMode.HALF_UP);
+        try {
+            return fxRateService.getRate(fromCurrency, toCurrency);
+        } catch (com.bank.vam.exception.BusinessException noRate) {
+            log.warn("No FX rate {} -> {}; currency mirror left without one", fromCurrency, toCurrency);
+            return null;
         }
     }
 

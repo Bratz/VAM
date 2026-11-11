@@ -43,6 +43,8 @@ interface PhysicalAccount {
   branchName?: string;
   bankRelationship: 'INTERNAL' | 'EXTERNAL';
   dataSource: string;
+  /** Opened by the application with a made-up balance, not from the bank's books. */
+  systemDefault?: boolean;
   isHomeBank: boolean;
   isExternalBank: boolean;
   hasRealTimeData: boolean;
@@ -353,6 +355,8 @@ const getEntityTypeIcon = (type?: string) => {
     default: return <Building2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />;
   }
 };
+
+const DEFAULT_ACCOUNT_HINT = 'Opened by the application with a made-up opening balance; not from the bank\'s books';
 
 const SHADOW_DATA_SOURCE_LABELS: Record<string, string> = {
   CORE_BANKING: 'Core Banking', SWIFT_MT940: 'SWIFT MT940', SWIFT_MT942: 'SWIFT MT942',
@@ -1032,7 +1036,7 @@ const CreateAccountModal: React.FC<{
         accountType: formData.accountType,
         bankName: formData.bankName,
         bankCode: formData.bankCode,
-        bankCountry: formData.bankCountry || 'AE',
+        bankCountry: formData.bankCountry || undefined,
         branchName: formData.branchName || null,
         bankRelationship: formData.bankRelationship,
         dataSource: formData.dataSource,
@@ -1238,21 +1242,19 @@ const PhysicalAccountsPage: React.FC = () => {
   const handleSyncAll = useCallback(async () => {
     setSyncing(true);
     try {
-      // Physical-account sync stamps sync status; shadow sync is what
-      // actually pulls the physical account's balance into its shadow VA —
-      // both need to run for "Sync All" to mean the same thing it did on
-      // the old separate Shadow Accounts page.
-      await Promise.all([
-        physicalAccountsApi.syncAllAccounts(selectedCorporateId || undefined),
-        selectedCorporateId ? sharedShadowAccountApi.syncAllForCorporate(selectedCorporateId) : Promise.resolve(),
-      ]);
+      // Shadow sync is what actually pulls each physical account's balance
+      // into its shadow VA. There is no bank connection for the physical
+      // accounts themselves, so without a corporate the backend refuses.
+      await (selectedCorporateId
+        ? sharedShadowAccountApi.syncAllForCorporate(selectedCorporateId)
+        : physicalAccountsApi.syncAllAccounts());
       toast.success('All accounts synced successfully');
       loadData();
       loadAccounts();
       loadShadows();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Failed to sync accounts');
+      toast.error(e?.response?.data?.message || 'Failed to sync accounts');
     }
     setSyncing(false);
   }, [selectedCorporateId, loadData, loadAccounts, loadShadows]);
@@ -1261,10 +1263,8 @@ const PhysicalAccountsPage: React.FC = () => {
     const shadow = shadowFor(account);
     try {
       if (shadow) {
-        // The physical-account sync endpoint only stamps a status/timestamp
-        // today — it never refreshes a balance. The shadow's own sync is the
-        // one that actually copies the physical account's balance into the
-        // shadow VA, so that's what a "linked" account's Sync should run.
+        // The shadow's own sync is what copies the physical account's balance
+        // into the shadow VA; the physical-account sync has no bank to call.
         const result = await sharedShadowAccountApi.syncBalance(shadow.id);
         const r = result.data;
         toast.success(r ? `${account.accountName} synced: ${formatCurrency(r.previousBalance, shadow.currencyCode)} → ${formatCurrency(r.newBalance, shadow.currencyCode)}` : `${account.accountName} synced`);
@@ -1274,9 +1274,9 @@ const PhysicalAccountsPage: React.FC = () => {
       }
       loadAccounts();
       loadShadows();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error('Failed to sync account');
+      toast.error(e?.response?.data?.message || 'Failed to sync account');
     }
   };
 
@@ -1607,7 +1607,14 @@ const PhysicalAccountsPage: React.FC = () => {
                 </>
               ),
             },
-            { key: 'currentBalance', header: 'Balance', align: 'right', render: (_, account) => <p className="stat-value-xs">{formatCurrency(account.currentBalance, account.currency)}</p> },
+            {
+              key: 'currentBalance', header: 'Balance', align: 'right', render: (_, account) => (
+                <div>
+                  <p className="stat-value-xs">{formatCurrency(account.currentBalance, account.currency)}</p>
+                  {account.systemDefault && <span title={DEFAULT_ACCOUNT_HINT}><Badge variant="warning" size="sm">Default opening balance</Badge></span>}
+                </div>
+              ),
+            },
             {
               key: 'shadowVaId',
               header: 'Shadow',
@@ -1674,6 +1681,7 @@ const PhysicalAccountsPage: React.FC = () => {
                   <Badge variant={selectedAccount.status === 'ACTIVE' ? 'success' : 'neutral'}>{selectedAccount.status}</Badge>
                   <Badge variant={selectedAccount.isHomeBank ? 'primary' : 'info'}>{selectedAccount.isHomeBank ? 'Home Bank' : 'External'}</Badge>
                   {hasShadow(selectedAccount) && <Badge variant="accent">Shadow Linked</Badge>}
+                  {selectedAccount.systemDefault && <span title={DEFAULT_ACCOUNT_HINT}><Badge variant="warning">Default opening balance</Badge></span>}
                 </div>
               </div>
             </div>

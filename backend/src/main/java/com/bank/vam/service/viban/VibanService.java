@@ -59,6 +59,10 @@ public class VibanService {
     private final PartyRepository partyRepository;
     private final FeePostingService feePostingService;
     private final com.bank.vam.config.MarketProfileProperties marketProfile;
+    private final com.bank.vam.repository.receivables.ReceivableRepository receivableRepository;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
 
     // Counter for VIBAN generation
     private final AtomicLong vibanCounter = new AtomicLong(System.currentTimeMillis() % 1000000);
@@ -733,8 +737,7 @@ public class VibanService {
         viban.setCurrencyCode(request.getCurrencyCode());
         vibanRepository.save(viban);
 
-        // Generate payment link (placeholder - integrate with payment gateway)
-        String paymentLink = generatePaymentLink(viban.getViban(), request.getInvoiceAmount(), request.getCurrencyCode());
+        String paymentLink = payInvoiceLink(request.getInvoiceId());
 
         log.info("Assigned VIBAN {} for invoice {} from party {}",
             viban.getViban(), request.getInvoiceNumber(), party.getPartyCode());
@@ -755,14 +758,13 @@ public class VibanService {
             .build();
     }
 
-    /**
-     * Generate a payment link for invoice payment.
-     * Placeholder - integrate with actual payment gateway.
-     */
-    private String generatePaymentLink(String viban, BigDecimal amount, String currency) {
-        // TODO: Integrate with payment gateway
-        return String.format("https://pay.bank.com/v/%s?amount=%s&currency=%s",
-            viban, amount != null ? amount.toPlainString() : "0", currency != null ? currency : marketProfile.getDefaultCurrency());
+    /** The invoice's real public pay page (as ReceivablesService issues it), or null when it has none. */
+    private String payInvoiceLink(UUID invoiceId) {
+        if (invoiceId == null) return null;
+        return receivableRepository.findById(invoiceId)
+            .map(com.bank.vam.entity.receivables.Receivable::getPaymentLinkToken)
+            .map(token -> frontendBaseUrl + "/?page=pay-invoice&token=" + token)
+            .orElse(null);
     }
 
     /**

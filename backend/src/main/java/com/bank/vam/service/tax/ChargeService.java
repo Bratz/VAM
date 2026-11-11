@@ -419,6 +419,7 @@ public class ChargeService {
             .effectiveFrom(c.getEffectiveFrom())
             .effectiveTo(c.getEffectiveTo())
             .createdAt(c.getCreatedAt())
+            .systemDefault(c.isSystemDefault())
             .build();
     }
 }

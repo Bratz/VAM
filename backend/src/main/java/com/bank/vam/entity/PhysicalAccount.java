@@ -359,7 +359,7 @@ public class PhysicalAccount extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "sync_status", length = 20)
     @Builder.Default
-    private SyncStatus syncStatus = SyncStatus.SYNCED;
+    private SyncStatus syncStatus = SyncStatus.PENDING; // never synced until a sync actually happens
 
     @Column(name = "last_sync_at")
     private LocalDateTime lastSyncAt;

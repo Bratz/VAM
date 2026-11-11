@@ -75,39 +75,8 @@ type ChargeStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'SUPERSEDED';
 
 interface TaxJurisdiction { id: string; jurisdictionCode: string; jurisdictionName: string; countryCode: string; regionCode?: string; supportsVat: boolean; supportsGst: boolean; supportsWithholding: boolean; supportsSalesTax: boolean; taxAuthorityName?: string; reportingCurrency: string; status: 'ACTIVE' | 'INACTIVE'; effectiveFrom: string; effectiveTo?: string; }
 interface TaxConfiguration { id: string; taxCode: string; taxName: string; description?: string; taxType: TaxType; jurisdictionCode: string; taxCategory: TaxCategory; ratePercentage: number; minimumAmount?: number; maximumAmount?: number; appliesToPayables: boolean; appliesToReceivables: boolean; isWithholding: boolean; isRecoverable: boolean; recoveryPercentage?: number; status: TaxStatus; effectiveFrom: string; effectiveTo?: string; createdAt: string; }
-interface ChargeConfiguration { id: string; chargeCode: string; chargeName: string; description?: string; chargeType: ChargeType; chargeCategory: ChargeCategory; fixedAmount?: number; percentageRate?: number; currencyCode: string; minimumCharge?: number; maximumCharge?: number; tierConfig?: TierConfig[]; appliesToPaymentMethod?: string; appliesToPriority?: string; isCrossBorder: boolean; isDomestic: boolean; waiverThreshold?: number; waiverForVip: boolean; status: ChargeStatus; effectiveFrom: string; effectiveTo?: string; createdAt: string; }
+interface ChargeConfiguration { id: string; chargeCode: string; chargeName: string; description?: string; chargeType: ChargeType; chargeCategory: ChargeCategory; fixedAmount?: number; percentageRate?: number; currencyCode: string; minimumCharge?: number; maximumCharge?: number; tierConfig?: TierConfig[]; appliesToPaymentMethod?: string; appliesToPriority?: string; isCrossBorder: boolean; isDomestic: boolean; waiverThreshold?: number; waiverForVip: boolean; status: ChargeStatus; effectiveFrom: string; effectiveTo?: string; createdAt: string; systemDefault?: boolean; }
 interface TierConfig { from: number; to?: number; rate: number; }
-
-const MOCK_JURISDICTIONS: TaxJurisdiction[] = [
-  { id: '1', jurisdictionCode: 'UAE', jurisdictionName: 'United Arab Emirates', countryCode: 'AE', supportsVat: true, supportsGst: false, supportsWithholding: false, supportsSalesTax: false, taxAuthorityName: 'Federal Tax Authority', reportingCurrency: 'AED', status: 'ACTIVE', effectiveFrom: '2018-01-01' },
-  { id: '2', jurisdictionCode: 'KSA', jurisdictionName: 'Kingdom of Saudi Arabia', countryCode: 'SA', supportsVat: true, supportsGst: false, supportsWithholding: true, supportsSalesTax: false, taxAuthorityName: 'ZATCA', reportingCurrency: 'SAR', status: 'ACTIVE', effectiveFrom: '2018-01-01' },
-  { id: '3', jurisdictionCode: 'UK', jurisdictionName: 'United Kingdom', countryCode: 'GB', supportsVat: true, supportsGst: false, supportsWithholding: true, supportsSalesTax: false, taxAuthorityName: 'HMRC', reportingCurrency: 'GBP', status: 'ACTIVE', effectiveFrom: '2020-01-01' },
-  { id: '4', jurisdictionCode: 'IND', jurisdictionName: 'India', countryCode: 'IN', supportsVat: false, supportsGst: true, supportsWithholding: true, supportsSalesTax: false, taxAuthorityName: 'GST Council', reportingCurrency: 'INR', status: 'ACTIVE', effectiveFrom: '2017-07-01' },
-];
-
-const MOCK_TAX_CONFIGS: TaxConfiguration[] = [
-  { id: '1', taxCode: 'VAT5_UAE', taxName: 'UAE VAT Standard', description: 'Standard VAT rate for UAE', taxType: 'VAT', jurisdictionCode: 'UAE', taxCategory: 'STANDARD', ratePercentage: 5, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: '2018-01-01', createdAt: '2024-01-01' },
-  { id: '2', taxCode: 'VAT0_UAE', taxName: 'UAE VAT Zero-Rated', description: 'Zero-rated VAT for exports', taxType: 'VAT', jurisdictionCode: 'UAE', taxCategory: 'ZERO', ratePercentage: 0, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: '2018-01-01', createdAt: '2024-01-01' },
-  { id: '3', taxCode: 'VAT15_KSA', taxName: 'KSA VAT Standard', description: 'Standard VAT rate for Saudi Arabia', taxType: 'VAT', jurisdictionCode: 'KSA', taxCategory: 'STANDARD', ratePercentage: 15, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: '2020-07-01', createdAt: '2024-01-01' },
-  { id: '4', taxCode: 'WHT5_KSA', taxName: 'KSA Withholding Tax', description: 'Withholding tax for non-residents', taxType: 'WHT', jurisdictionCode: 'KSA', taxCategory: 'STANDARD', ratePercentage: 5, appliesToPayables: true, appliesToReceivables: false, isWithholding: true, isRecoverable: false, status: 'ACTIVE', effectiveFrom: '2020-01-01', createdAt: '2024-01-01' },
-  { id: '5', taxCode: 'VAT20_UK', taxName: 'UK VAT Standard', description: 'Standard VAT rate for UK', taxType: 'VAT', jurisdictionCode: 'UK', taxCategory: 'STANDARD', ratePercentage: 20, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: '2011-01-04', createdAt: '2024-01-01' },
-  { id: '6', taxCode: 'GST18_IND', taxName: 'India GST Standard', description: 'Standard GST rate for services', taxType: 'GST', jurisdictionCode: 'IND', taxCategory: 'STANDARD', ratePercentage: 18, appliesToPayables: true, appliesToReceivables: true, isWithholding: false, isRecoverable: true, recoveryPercentage: 100, status: 'ACTIVE', effectiveFrom: '2017-07-01', createdAt: '2024-01-01' },
-];
-
-const MOCK_CHARGE_CONFIGS: ChargeConfiguration[] = [
-  // Payment Transfer Fees
-  { id: '1', chargeCode: 'SWIFT_STD', chargeName: 'SWIFT Transfer Fee', description: 'Standard SWIFT transfer fee', chargeType: 'SWIFT_FEE', chargeCategory: 'FIXED', fixedAmount: 150, currencyCode: 'AED', isCrossBorder: true, isDomestic: false, waiverForVip: true, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '2', chargeCode: 'PROC_STD', chargeName: 'Processing Fee', description: 'Standard payment processing fee', chargeType: 'PROCESSING_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.25, currencyCode: 'AED', minimumCharge: 10, maximumCharge: 500, isCrossBorder: false, isDomestic: true, waiverForVip: false, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '3', chargeCode: 'FX_STD', chargeName: 'FX Conversion Fee', description: 'Foreign exchange conversion fee', chargeType: 'FX_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.50, currencyCode: 'AED', minimumCharge: 25, maximumCharge: 2500, isCrossBorder: true, isDomestic: false, waiverForVip: true, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '4', chargeCode: 'URG_SAME', chargeName: 'Same-Day Priority Fee', description: 'Fee for same-day payment processing', chargeType: 'URGENCY_FEE', chargeCategory: 'FIXED', fixedAmount: 250, currencyCode: 'AED', appliesToPriority: 'SAME_DAY', isCrossBorder: true, isDomestic: true, waiverForVip: false, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '5', chargeCode: 'TXN_TIER', chargeName: 'Tiered Transaction Fee', description: 'Volume-based tiered transaction fee', chargeType: 'TRANSACTION_FEE', chargeCategory: 'TIERED', currencyCode: 'AED', tierConfig: [{ from: 0, to: 10000, rate: 0.5 }, { from: 10000, to: 100000, rate: 0.3 }, { from: 100000, rate: 0.15 }], isCrossBorder: false, isDomestic: true, waiverForVip: false, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  // Treasury / IHB Fees
-  { id: '6', chargeCode: 'SVC_POBO', chargeName: 'POBO Service Fee', description: 'Pay On Behalf Of service fee for subsidiary payments', chargeType: 'POBO_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.50, currencyCode: 'AED', minimumCharge: 25, maximumCharge: 1000, isCrossBorder: true, isDomestic: true, waiverForVip: true, waiverThreshold: 1000000, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '7', chargeCode: 'IHB_STD', chargeName: 'IHB Participation Fee', description: 'In-House Bank participation fee for subsidiaries', chargeType: 'IHB_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.10, currencyCode: 'AED', minimumCharge: 50, maximumCharge: 5000, isCrossBorder: true, isDomestic: true, waiverForVip: false, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '8', chargeCode: 'NET_CYCLE', chargeName: 'Netting Cycle Fee', description: 'Fee per netting cycle execution', chargeType: 'NETTING_FEE', chargeCategory: 'FIXED', fixedAmount: 500, currencyCode: 'AED', isCrossBorder: true, isDomestic: true, waiverForVip: true, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '9', chargeCode: 'POOL_MTH', chargeName: 'Notional Pooling Fee', description: 'Monthly notional pooling maintenance fee', chargeType: 'POOLING_FEE', chargeCategory: 'FIXED', fixedAmount: 1000, currencyCode: 'AED', isCrossBorder: true, isDomestic: true, waiverForVip: false, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-  { id: '10', chargeCode: 'SETTLE_IC', chargeName: 'Intercompany Settlement Fee', description: 'Fee for intercompany settlement transactions', chargeType: 'SETTLEMENT_FEE', chargeCategory: 'PERCENTAGE', percentageRate: 0.05, currencyCode: 'AED', minimumCharge: 10, maximumCharge: 200, isCrossBorder: true, isDomestic: true, waiverForVip: true, status: 'ACTIVE', effectiveFrom: '2024-01-01', createdAt: '2024-01-01' },
-];
 
 const TAX_TYPE_CONFIG: Record<TaxType, { label: string; icon: LucideIcon; tone: React.ComponentProps<typeof StatusIconBadge>['tone'] }> = {
   VAT: { label: 'VAT', icon: Receipt, tone: 'info' },
@@ -291,7 +260,11 @@ const ChargeConfigTable: React.FC<{ configs: ChargeConfiguration[]; onEdit: (c: 
           return (
             <div className="flex items-center gap-2">
               <StatusIconBadge tone={typeConfig.tone} icon={TypeIcon} size="sm" subtle />
-              <div><p className="body-strong">{c.chargeName}</p><p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p></div>
+              <div>
+                <p className="body-strong">{c.chargeName}</p>
+                <p className="text-caption text-neutral-500 font-mono dark:text-neutral-400">{c.chargeCode}</p>
+                {c.systemDefault && <span title="Set up by the application at startup; not the bank's agreed tariff"><Badge variant="warning" size="sm">Default: not the bank&apos;s agreed terms</Badge></span>}
+              </div>
             </div>
           );
         },
@@ -393,7 +366,6 @@ const TaxChargesSetupPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [useMockData, setUseMockData] = useState(false);
   const [showTaxModal, setShowTaxModal] = useState(false);
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [editingTax, setEditingTax] = useState<TaxConfiguration | undefined>();
@@ -408,14 +380,12 @@ const TaxChargesSetupPage: React.FC = () => {
       setJurisdictions(Array.isArray(jurisdictionsData) ? jurisdictionsData : []);
       setTaxConfigs(Array.isArray(taxConfigsData) ? taxConfigsData : []);
       setChargeConfigs(Array.isArray(chargeConfigsData) ? chargeConfigsData : []);
-      setUseMockData(false);
-    } catch (error) {
-      console.warn('API unavailable, using mock data:', error);
-      setJurisdictions(MOCK_JURISDICTIONS);
-      setTaxConfigs(MOCK_TAX_CONFIGS);
-      setChargeConfigs(MOCK_CHARGE_CONFIGS);
-      setUseMockData(true);
-      toast.error('Backend unavailable - using demo data');
+    } catch (error: any) {
+      // No demo data: the lists stay empty and the reason is shown.
+      setJurisdictions([]);
+      setTaxConfigs([]);
+      setChargeConfigs([]);
+      toast.error(error?.response?.data?.message || error?.message || 'Could not load tax and charge configuration');
     } finally { setLoading(false); }
   }, []);
 
@@ -427,8 +397,7 @@ const TaxChargesSetupPage: React.FC = () => {
   const handleSaveTax = async (data: Partial<TaxConfiguration>) => {
     setSaving(true);
     try {
-      if (useMockData) { if (editingTax) { setTaxConfigs(prev => prev.map(c => c.id === editingTax.id ? { ...c, ...data } as TaxConfiguration : c)); } else { const newConfig: TaxConfiguration = { ...data, id: Date.now().toString(), createdAt: new Date().toISOString() } as TaxConfiguration; setTaxConfigs(prev => [...prev, newConfig]); } toast.success(editingTax ? 'Tax configuration updated' : 'Tax configuration created'); }
-      else { await taxChargesApi.createTaxConfig(data); toast.success(editingTax ? 'Tax configuration updated' : 'Tax configuration created'); await fetchData(); }
+      await taxChargesApi.createTaxConfig(data); toast.success(editingTax ? 'Tax configuration updated' : 'Tax configuration created'); await fetchData();
       setShowTaxModal(false); setEditingTax(undefined);
     } catch (error) { console.error('Failed to save tax config:', error); toast.error('Failed to save tax configuration'); } finally { setSaving(false); }
   };
@@ -436,14 +405,13 @@ const TaxChargesSetupPage: React.FC = () => {
   const handleSaveCharge = async (data: Partial<ChargeConfiguration>) => {
     setSaving(true);
     try {
-      if (useMockData) { if (editingCharge) { setChargeConfigs(prev => prev.map(c => c.id === editingCharge.id ? { ...c, ...data } as ChargeConfiguration : c)); } else { const newConfig: ChargeConfiguration = { ...data, id: Date.now().toString(), createdAt: new Date().toISOString() } as ChargeConfiguration; setChargeConfigs(prev => [...prev, newConfig]); } toast.success(editingCharge ? 'Charge configuration updated' : 'Charge configuration created'); }
-      else { await taxChargesApi.createChargeConfig(data); toast.success(editingCharge ? 'Charge configuration updated' : 'Charge configuration created'); await fetchData(); }
+      await taxChargesApi.createChargeConfig(data); toast.success(editingCharge ? 'Charge configuration updated' : 'Charge configuration created'); await fetchData();
       setShowChargeModal(false); setEditingCharge(undefined);
     } catch (error) { console.error('Failed to save charge config:', error); toast.error('Failed to save charge configuration'); } finally { setSaving(false); }
   };
 
-  const handleDeleteTax = async (taxCode: string) => { if (!confirm('Are you sure you want to delete this tax configuration?')) return; try { if (useMockData) { setTaxConfigs(prev => prev.filter(c => c.taxCode !== taxCode)); } else { await taxChargesApi.deleteTaxConfig(taxCode); await fetchData(); } toast.success('Tax configuration deleted'); } catch (error) { console.error('Failed to delete tax config:', error); toast.error('Failed to delete tax configuration'); } };
-  const handleDeleteCharge = async (chargeCode: string) => { if (!confirm('Are you sure you want to delete this charge configuration?')) return; try { if (useMockData) { setChargeConfigs(prev => prev.filter(c => c.chargeCode !== chargeCode)); } else { await taxChargesApi.deleteChargeConfig(chargeCode); await fetchData(); } toast.success('Charge configuration deleted'); } catch (error) { console.error('Failed to delete charge config:', error); toast.error('Failed to delete charge configuration'); } };
+  const handleDeleteTax = async (taxCode: string) => { if (!confirm('Are you sure you want to delete this tax configuration?')) return; try { await taxChargesApi.deleteTaxConfig(taxCode); await fetchData(); toast.success('Tax configuration deleted'); } catch (error) { console.error('Failed to delete tax config:', error); toast.error('Failed to delete tax configuration'); } };
+  const handleDeleteCharge = async (chargeCode: string) => { if (!confirm('Are you sure you want to delete this charge configuration?')) return; try { await taxChargesApi.deleteChargeConfig(chargeCode); await fetchData(); toast.success('Charge configuration deleted'); } catch (error) { console.error('Failed to delete charge config:', error); toast.error('Failed to delete charge configuration'); } };
 
   const stats = { activeTaxConfigs: taxConfigs.filter(c => c.status === 'ACTIVE').length, activeChargeConfigs: chargeConfigs.filter(c => c.status === 'ACTIVE').length, jurisdictions: jurisdictions.filter(j => j.status === 'ACTIVE').length, withholdingTaxes: taxConfigs.filter(c => c.isWithholding && c.status === 'ACTIVE').length };
 
@@ -451,7 +419,7 @@ const TaxChargesSetupPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Tax & Charges Setup"
-        description={<>Configure tax rates, jurisdictions, and fee schedules{useMockData && <Badge variant="warning" size="sm" className="ml-2">Demo Mode</Badge>}</>}
+        description="Configure tax rates, jurisdictions, and fee schedules"
         actions={<><Button variant="outline" onClick={
           // eslint-disable-next-line no-console -- placeholder: export of tax/charge configs is not implemented, this control is a stub
           () => console.log('Export configs')

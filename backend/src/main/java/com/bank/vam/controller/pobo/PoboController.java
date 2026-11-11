@@ -272,15 +272,10 @@ public class PoboController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
-        // TODO: Implement history query with filtering
-        // For now, return empty response - would integrate with execution history table
-        return ResponseEntity.ok(PoboHistoryResponse.builder()
-            .totalElements(0L)
-            .totalPages(0)
-            .page(page)
-            .size(size)
-            .executions(List.of())
-            .build());
+        // An empty page would claim there were no executions; POBO recharges exist but no
+        // execution history store does, so refuse. GET /recharges lists the recharges.
+        throw new com.bank.vam.exception.BusinessException(
+            "Not available: POBO execution history — executions are not stored as history; see the recharges instead");
     }
     
     @GetMapping("/history/{executionId}")

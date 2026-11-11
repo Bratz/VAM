@@ -34,9 +34,6 @@ public class PartyController {
 
     private final PartyService partyService;
 
-    // Demo corporate ID
-    private static final UUID DEMO_CORPORATE_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-
     // ========================================================================
     // EXISTING ENDPOINTS (Preserved for backward compatibility)
     // ========================================================================
@@ -79,7 +76,7 @@ public class PartyController {
             .build();
 
         return ResponseEntity.ok(partyService.getAllParties(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, request));
+            corporateId, request));
     }
 
     @GetMapping("/{partyId}")
@@ -105,7 +102,7 @@ public class PartyController {
             @RequestBody CreatePartyRequest request
     ) {
         return ResponseEntity.ok(partyService.createParty(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, request));
+            corporateId, request));
     }
 
     @PutMapping("/{partyId}")
@@ -245,7 +242,7 @@ public class PartyController {
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId
     ) {
         return ResponseEntity.ok(partyService.getExtendedStats(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID));
+            corporateId));
     }
 
     // ========================================================================
@@ -259,7 +256,7 @@ public class PartyController {
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId
     ) {
         return ResponseEntity.ok(partyService.getPoboEligibleVendors(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID));
+            corporateId));
     }
 
     @GetMapping("/pobo-eligible/by-entity/{owningEntityId}")
@@ -270,7 +267,7 @@ public class PartyController {
             @PathVariable UUID owningEntityId
     ) {
         return ResponseEntity.ok(partyService.getPoboEligibleVendorsByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, owningEntityId));
+            corporateId, owningEntityId));
     }
 
     @PutMapping("/{partyId}/pobo-eligibility")
@@ -303,7 +300,7 @@ public class PartyController {
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId
     ) {
         return ResponseEntity.ok(partyService.getIntercompanyParties(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID));
+            corporateId));
     }
 
     @GetMapping("/intercompany/by-entity/{owningEntityId}")
@@ -314,7 +311,7 @@ public class PartyController {
             @PathVariable UUID owningEntityId
     ) {
         return ResponseEntity.ok(partyService.getIntercompanyPartiesByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, owningEntityId));
+            corporateId, owningEntityId));
     }
 
     @PostMapping("/intercompany")
@@ -325,7 +322,7 @@ public class PartyController {
             @RequestBody CreateIntercompanyPartyRequest request
     ) {
         return ResponseEntity.ok(partyService.createIntercompanyParty(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, request));
+            corporateId, request));
     }
 
     @PutMapping("/{partyId}/intercompany-config")
@@ -359,7 +356,7 @@ public class PartyController {
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId
     ) {
         return ResponseEntity.ok(partyService.getNettingEligibleParties(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID));
+            corporateId));
     }
 
     @GetMapping("/netting-eligible/by-entity/{owningEntityId}")
@@ -370,7 +367,7 @@ public class PartyController {
             @PathVariable UUID owningEntityId
     ) {
         return ResponseEntity.ok(partyService.getNettingEligiblePartiesByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, owningEntityId));
+            corporateId, owningEntityId));
     }
 
     // ========================================================================
@@ -385,7 +382,7 @@ public class PartyController {
             @PathVariable UUID owningEntityId
     ) {
         return ResponseEntity.ok(partyService.getPartiesByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, owningEntityId));
+            corporateId, owningEntityId));
     }
 
     @GetMapping("/vendors/by-entity/{owningEntityId}")
@@ -402,7 +399,7 @@ public class PartyController {
         Sort sort = "asc".equalsIgnoreCase(sortOrder) ? 
             Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(partyService.getVendorsByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, 
+            corporateId, 
             owningEntityId, 
             PageRequest.of(page, size, sort)));
     }
@@ -421,8 +418,8 @@ public class PartyController {
         Sort sort = "asc".equalsIgnoreCase(sortOrder) ? 
             Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(partyService.getCustomersByOwningEntity(
-            corporateId != null ? corporateId : DEMO_CORPORATE_ID, 
+            corporateId, 
             owningEntityId, 
             PageRequest.of(page, size, sort)));
     }
-}
+}

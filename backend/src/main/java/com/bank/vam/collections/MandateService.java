@@ -170,8 +170,10 @@ public class MandateService {
     }
 
     private BankAnswer answer(CustomerMandate m, boolean accepted, String reasonCode) {
-        String code = reasonCode == null ? "MS03" : reasonCode.trim().toUpperCase(Locale.ROOT);
-        String why = code + " " + CollectionReturnService.REASONS.getOrDefault(code, "Refused");
+        // A refusal without a code is recorded as such, not as MS03.
+        String code = reasonCode == null || reasonCode.isBlank() ? null : reasonCode.trim().toUpperCase(Locale.ROOT);
+        String why = code == null ? "no reason given"
+                : code + " " + CollectionReturnService.REASONS.getOrDefault(code, "Refused");
         String result;
         if (m.getStatus() == Status.PENDING) {
             m.setStatus(accepted ? Status.ACTIVE : Status.CANCELLED);
@@ -205,7 +207,9 @@ public class MandateService {
     }
 
     private String creditorName(CustomerMandate m) {
-        return corporates.findById(m.getCorporateId()).map(c -> c.getLegalName()).orElse("Creditor");
+        return corporates.findById(m.getCorporateId()).map(c -> c.getLegalName()).filter(n -> !n.isBlank())
+                .orElseThrow(() -> new BusinessException("Not available: mandate message for " + m.getMandateReference()
+                        + " — the corporate has no legal name recorded for the creditor"));
     }
 
     private String accountNumber(CustomerMandate m) {

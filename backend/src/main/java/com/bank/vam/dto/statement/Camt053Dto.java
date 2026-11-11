@@ -179,9 +179,8 @@ public class Camt053Dto {
         /** Owner name (corporate or legal entity) */
         private String ownerName;
 
-        /** Servicer BIC */
-        @Builder.Default
-        private String servicerBic = "BANKAEXX";
+        /** Servicer BIC: the home bank's, set where the statement is built */
+        private String servicerBic;
     }
 
     /**

@@ -14,6 +14,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Rolls up a forecast run's native weekly aggregate into a {@link
@@ -29,15 +30,22 @@ public final class ForecastSummaryAssembler {
     }
 
     /**
-     * Anchored at opening balance = 0 — see {@code ForecastController}'s class
-     * javadoc for the Sprint 2 follow-up (BalanceAggregationService).
+     * Amounts are never summed across currencies. With no {@code currencyFilter}
+     * and lines in several currencies, the summary covers one of them — the
+     * {@code preferredCurrency} (market default) if present, else the first
+     * alphabetically — and says which in {@code currency}.
+     *
+     * @param openingBalanceFor today's cash for the corporate in a currency
      */
-    public static ForecastSummaryDto assemble(ForecastRun run, List<Object[]> rows, String currencyFilter) {
+    public static ForecastSummaryDto assemble(ForecastRun run, List<Object[]> rows, String currencyFilter,
+                                              String preferredCurrency,
+                                              Function<String, BigDecimal> openingBalanceFor) {
+        String resolvedCurrency = resolveCurrency(rows, currencyFilter, preferredCurrency);
+
         // Bucket by week (ISO Monday). The native query returns one row per
         // (week_start, currency, direction) so a single calendar week can
         // contribute up to 2 rows (IN + OUT) per currency.
         java.util.Map<LocalDate, BigDecimal> netByWeek = new java.util.TreeMap<>();
-        String resolvedCurrency = currencyFilter;
 
         for (Object[] row : rows) {
             LocalDate weekStart = toLocalDate(row[0]);
@@ -45,11 +53,8 @@ public final class ForecastSummaryAssembler {
             String directionRaw = (String) row[2];
             BigDecimal sum = (BigDecimal) row[3];
 
-            if (currencyFilter != null && !currencyFilter.equalsIgnoreCase(currency)) {
+            if (resolvedCurrency != null && !resolvedCurrency.equalsIgnoreCase(currency)) {
                 continue;
-            }
-            if (resolvedCurrency == null) {
-                resolvedCurrency = currency; // First seen — used for summary label only.
             }
 
             ForecastDirection direction = ForecastDirection.valueOf(directionRaw);
@@ -57,7 +62,8 @@ public final class ForecastSummaryAssembler {
             netByWeek.merge(weekStart, signed, BigDecimal::add);
         }
 
-        BigDecimal openingBalance = BigDecimal.ZERO; // TODO Sprint 2: BalanceAggregationService.
+        // No currency means nothing to anchor on: no opening, no running balance.
+        BigDecimal openingBalance = resolvedCurrency == null ? null : openingBalanceFor.apply(resolvedCurrency);
         BigDecimal running = openingBalance;
         List<ForecastWeeklyBucketDto> buckets = new ArrayList<>(netByWeek.size());
 
@@ -65,12 +71,13 @@ public final class ForecastSummaryAssembler {
             LocalDate weekStart = entry.getKey().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
             LocalDate weekEnd = weekStart.plusDays(6);
             BigDecimal net = entry.getValue();
-            running = running.add(net);
+            running = running == null ? null : running.add(net);
             buckets.add(new ForecastWeeklyBucketDto(weekStart, weekEnd, net, running));
         }
 
         BigDecimal closingBalance = running;
         ForecastWeeklyBucketDto trough = buckets.stream()
+                .filter(b -> b.closingBalance() != null)
                 .min(Comparator.comparing(ForecastWeeklyBucketDto::closingBalance))
                 .orElse(null);
 
@@ -84,6 +91,20 @@ public final class ForecastSummaryAssembler {
                 trough,
                 buckets
         );
+    }
+
+    static String resolveCurrency(List<Object[]> rows, String currencyFilter, String preferredCurrency) {
+        if (currencyFilter != null && !currencyFilter.isBlank()) {
+            return currencyFilter.toUpperCase();
+        }
+        java.util.TreeSet<String> present = new java.util.TreeSet<>();
+        for (Object[] row : rows) {
+            if (row[1] != null) present.add((String) row[1]);
+        }
+        if (present.isEmpty()) {
+            return preferredCurrency;
+        }
+        return preferredCurrency != null && present.contains(preferredCurrency) ? preferredCurrency : present.first();
     }
 
     /**

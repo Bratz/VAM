@@ -1290,7 +1290,7 @@ const IhbDetailSection: React.FC<IhbDetailSectionProps> = ({ ihb, currency: fall
       {/* Treasury Center: Show lending rates */}
       {ihb.isTreasuryCenter && (
         <div className="p-3 bg-warning-50 dark:bg-warning-500/10 rounded-lg border border-warning-100 dark:border-warning-500/30">
-          <p className="text-caption font-medium text-warning-800 mb-2 dark:text-warning-300">Offered Rates</p>
+          <p className="text-caption font-medium text-warning-800 mb-2 dark:text-warning-300">Offered Rates{treasuryRates?.rateSource === 'DEFAULT' ? ' (default, not agreed terms)' : ''}</p>
           <div className="grid grid-cols-2 gap-2 text-caption">
             <div>
               <p className="text-warning-600 dark:text-warning-300">Lending</p>
@@ -2724,6 +2724,7 @@ const IhbConfigModal: React.FC<IhbConfigModalProps> = ({
                 <p className="caption mt-1">
                   {treasuryRates.lendingBaseRateType} {treasuryRates.lendingBaseRate}% + {treasuryRates.treasuryLendingSpread}% spread
                 </p>
+                {treasuryRates.rateSource === 'DEFAULT' && <p className="caption mt-1 text-warning-700 dark:text-warning-300">Default rates, not the bank&apos;s agreed terms</p>}
                 <p className="caption mt-1">
                   Min: {formatCurrency(treasuryRates.minLoanAmount, treasuryRates.ihbCurrency)}
                 </p>

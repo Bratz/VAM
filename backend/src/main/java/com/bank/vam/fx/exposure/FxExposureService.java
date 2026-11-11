@@ -69,14 +69,16 @@ public class FxExposureService {
         String base = homeCurrency.of(corporateId);
         LocalDate today = LocalDate.now();
         java.util.Optional<ExposureSources.ForecastFlows> forecast = sources.forecast(corporateId, base, today);
+        List<FxPolicyBand> bands = policy.bandsFor(corporateId);
         List<CurrencyRow> rows = ExposureCalculator.build(base, today,
                 sources.payables(corporateId, base), sources.receivables(corporateId, base),
                 forecast.map(ExposureSources.ForecastFlows::flows).orElse(List.of()),
                 sources.balances(corporateId, base), declaredAndDealt(corporateId),
-                policy.bandsFor(corporateId), ccy -> rateToBase(ccy, base), materialityBase);
+                bands, ccy -> rateToBase(ccy, base), materialityBase);
         java.time.OffsetDateTime runAt = forecast.map(ExposureSources.ForecastFlows::runAt).orElse(null);
         boolean stale = runAt != null && runAt.toLocalDate().isBefore(today.minusDays(forecastStaleDays));
-        return new Ladder(corporateId, corporate.getLegalName(), base, today, rows, runAt, stale);
+        return new Ladder(corporateId, corporate.getLegalName(), base, today, rows, runAt, stale,
+                bands.stream().anyMatch(FxPolicyBand::isSystemDefault));
     }
 
     /** Policy breaches for one corporate, or for all of them when {@code corporateId} is null. */

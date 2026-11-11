@@ -310,7 +310,7 @@ export function useISO20022Statement(): UseISO20022StatementResult {
         throw new Error(res.message || 'Failed to generate statement');
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to generate statement');
+      setError(err?.response?.data?.message || err.message || 'Failed to generate statement');
       return null;
     } finally {
       setLoading(false);

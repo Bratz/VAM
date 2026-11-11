@@ -113,7 +113,7 @@ public final class FxDealModels {
 
     /**
      * A deal as the blotter shows it. {@code mtm*} is the live mark against today's market and is absent when
-     * the market cannot price the deal. {@code remainingAmount} is what is still undrawn, in the pair's base currency.
+     * the market cannot price the deal; {@code mtmSource} names that market ("SIMULATED"), {@code dealer} the desk. {@code remainingAmount} is what is still undrawn, in the pair's base currency.
      */
     public record DealView(
             UUID id, String dealRef, UUID corporateId, UUID entityId, String entityName,
@@ -126,7 +126,8 @@ public final class FxDealModels {
             String confirmedBy, String disputeReason, boolean confirmationOverdue,
             BigDecimal baseAmount, BigDecimal drawnAmount, BigDecimal remainingAmount, UUID rolledFromId,
             BigDecimal closeRate, BigDecimal realisedPnl, LocalDateTime settledAt,
-            BigDecimal mtmQuote, String mtmQuoteCurrency, BigDecimal mtmHome, String mtmHomeCurrency) {
+            BigDecimal mtmQuote, String mtmQuoteCurrency, BigDecimal mtmHome, String mtmHomeCurrency, String mtmSource,
+            String dealer) {
 
         static DealView of(FxDeal d, java.util.Optional<FxMtmService.Mark> mark, boolean overdue) {
             ClientPrice price = ClientPrice.of(d.getInstrument(), d.getSide(), d.quoteCurrency(), d.getRate(),
@@ -141,7 +142,9 @@ public final class FxDealModels {
                     d.getDisputeReason(), overdue, d.baseAmount(), d.getDrawnAmount(), d.remainingBase(),
                     d.getRolledFromId(), d.getCloseRate(), d.getRealisedPnl(), d.getSettledAt(),
                     mark.map(FxMtmService.Mark::mtmQuote).orElse(null), mark.map(FxMtmService.Mark::quoteCurrency).orElse(null),
-                    mark.map(FxMtmService.Mark::mtmHome).orElse(null), mark.map(FxMtmService.Mark::homeCurrency).orElse(null));
+                    mark.map(FxMtmService.Mark::mtmHome).orElse(null), mark.map(FxMtmService.Mark::homeCurrency).orElse(null),
+                    mark.map(FxMtmService.Mark::source).orElse(null),
+                    SimulatedDealer.NAME); // ponytail: the simulated desk prices every deal; read it off the deal once a real desk exists
         }
     }
 
@@ -189,11 +192,12 @@ public final class FxDealModels {
      */
     public record LimitView(UUID corporateId, String currency, boolean usable, String reason, String facilityName,
                             LocalDate expiry, BigDecimal limit, BigDecimal used, BigDecimal headroom,
-                            AllocationView entity) {
+                            AllocationView entity, boolean systemDefault) {
 
         static LimitView of(FxLimitService.Line l, FxLimitService.Allocation entity) {
             return new LimitView(l.corporateId(), l.currency(), l.usable(), l.reason(), l.facilityName(), l.expiry(),
-                    l.usage().limit(), l.usage().used(), l.usage().headroom(), entity == null ? null : AllocationView.of(entity));
+                    l.usage().limit(), l.usage().used(), l.usage().headroom(), entity == null ? null : AllocationView.of(entity),
+                    l.systemDefault());
         }
     }
 

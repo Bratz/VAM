@@ -54,6 +54,8 @@ interface IhbEntity {
   ihbAvailableLimit: number;
   lendingRateSpread: number;
   borrowingRateSpread: number;
+  /** The spreads are built-in defaults nobody set. */
+  spreadsDefault?: boolean;
   canLend: boolean;
   canBorrow: boolean;
   settlementVaId?: string;
@@ -142,6 +144,8 @@ interface TreasuryRates {
   minDepositAmount: number;
   // Config info
   hasInterestConfig: boolean;
+  /** DEFAULT: built-in rates (base 5.00), not ones the bank set. */
+  rateSource?: string;
   dayCountConvention?: string;
   compoundingFrequency?: string;
 }
@@ -764,6 +768,7 @@ const InHouseBankPage: React.FC = () => {
                 </div>
                 <div className="text-right caption">
                   <p>Base: {treasuryRates.lendingBaseRateType} {treasuryRates.lendingBaseRate}%</p>
+                  {treasuryRates.rateSource === 'DEFAULT' && <p className="text-warning-700 dark:text-warning-300">Default rates, not the bank&apos;s agreed terms</p>}
                 </div>
               </div>
             </Card>
@@ -1135,7 +1140,10 @@ const InHouseBankPage: React.FC = () => {
 
             {/* Rate Spreads */}
             <div className="p-4 bg-surface-page rounded-lg border border-edge">
-              <p className="body-strong font-semibold mb-3">Rate Spreads</p>
+              <p className="body-strong font-semibold mb-3">
+                Rate Spreads
+                {selectedEntity.spreadsDefault && <span className="ml-2" title="Built-in spreads nobody has set for this entity"><Badge variant="warning" size="sm">Default: not agreed terms</Badge></span>}
+              </p>
               <div className="grid grid-cols-2 gap-4">
                 {selectedEntity.canLend && (
                   <div>

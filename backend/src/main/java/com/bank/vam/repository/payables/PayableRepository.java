@@ -272,6 +272,9 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
      */
     @Query("SELECT COALESCE(SUM(p.outstandingAmount), 0) FROM Payable p WHERE p.owningEntityId = :fromEntityId AND p.counterpartyEntityId = :toEntityId AND p.isIntercompany = true AND p.status NOT IN ('PAID', 'CANCELLED', 'NETTED')")
     BigDecimal sumIntercompanyExposure(@Param("fromEntityId") UUID fromEntityId, @Param("toEntityId") UUID toEntityId);
+
+    @Query("SELECT DISTINCT p.currencyCode FROM Payable p WHERE p.owningEntityId = :fromEntityId AND p.counterpartyEntityId = :toEntityId AND p.isIntercompany = true AND p.status NOT IN ('PAID', 'CANCELLED', 'NETTED')")
+    List<String> findIntercompanyExposureCurrencies(@Param("fromEntityId") UUID fromEntityId, @Param("toEntityId") UUID toEntityId);
     
     // ========================================================================
     // PHASE 2: NETTING INTEGRATION QUERIES
@@ -505,6 +508,8 @@ public interface PayableRepository extends JpaRepository<Payable, UUID> {
      */
     @Query("SELECT p FROM Payable p WHERE p.nettingCycleId = :cycleId")
     List<Payable> findByNettingCycleId(@Param("cycleId") UUID cycleId);
+
+    Page<Payable> findAllByNettingCycleId(UUID nettingCycleId, Pageable pageable);
     
     /**
      * Find payables by owning entity that are netting-eligible.

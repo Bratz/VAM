@@ -86,7 +86,8 @@ public class ForwardPricer {
 
     private ForwardQuote price(String pair, String tenor, LocalDate valueDate) {
         SpotTick spot = rates.spot(pair).orElseThrow(() ->
-                new BusinessException("FX_PAIR_UNSUPPORTED", "No market for " + pair));
+                new BusinessException("FX_PAIR_UNSUPPORTED", "No market for " + pair
+                        + ": the simulated market prices only pairs with a stored FX rate"));
         LocalDate spotDate = spotDate();
         if (isWeekend(valueDate)) {
             throw new BusinessException("FX_VALUE_DATE_INVALID", "Value date " + valueDate + " falls on a weekend");

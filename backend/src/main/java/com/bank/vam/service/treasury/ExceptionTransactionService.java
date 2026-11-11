@@ -224,8 +224,7 @@ public class ExceptionTransactionService {
         transactionRepository.save(creditTxn);
         
         // 3. Update exception status
-        // Get current user from security context in real implementation
-        exception.resolve(targetVaId, notes, "Treasury User");
+        exception.resolve(targetVaId, notes, com.bank.vam.config.CurrentUser.name());
         exception = exceptionRepository.save(exception);
         
         log.info("Allocated exception {} to VA {} - amount {}", 
@@ -242,8 +241,7 @@ public class ExceptionTransactionService {
             throw new BusinessException("Exception cannot be written off in current status");
         }
         
-        // Get current user from security context in real implementation
-        exception.writeOff(reason, "Treasury Manager");
+        exception.writeOff(reason, com.bank.vam.config.CurrentUser.name());
         exception = exceptionRepository.save(exception);
         
         log.info("Wrote off exception {}: {}", exception.getExceptionNumber(), reason);

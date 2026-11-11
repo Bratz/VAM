@@ -95,8 +95,9 @@ public class CollectionReturnService {
     }
 
     private Outcome one(Return r) {
-        String code = r.reasonCode() == null ? "MS03" : r.reasonCode().trim().toUpperCase(Locale.ROOT);
-        String why = code + " " + REASONS.getOrDefault(code, "Returned");
+        // A return without a code is recorded as such, not as MS03.
+        String code = r.reasonCode() == null || r.reasonCode().isBlank() ? null : r.reasonCode().trim().toUpperCase(Locale.ROOT);
+        String why = code == null ? "no reason given" : code + " " + REASONS.getOrDefault(code, "Returned");
         CollectionLine l = lines.findByEndToEndId(r.endToEndId()).orElse(null);
         if (l == null) return new Outcome(r.endToEndId(), "UNKNOWN", "No direct debit has this EndToEndId", null);
 
@@ -124,7 +125,7 @@ public class CollectionReturnService {
         l.setReturnedOn(LocalDate.now());
 
         mandates.findById(l.getMandateId()).ifPresent(m -> {
-            if (MANDATE_UNUSABLE.contains(code) && m.getStatus() != CustomerMandate.Status.CANCELLED) {
+            if (code != null && MANDATE_UNUSABLE.contains(code) && m.getStatus() != CustomerMandate.Status.CANCELLED) {
                 m.setStatus(CustomerMandate.Status.SUSPENDED);
                 m.setStatusReason("Suspended after " + why + " on " + l.getReceivableNumber());
             } else if (m.getStatus() == CustomerMandate.Status.USED) {

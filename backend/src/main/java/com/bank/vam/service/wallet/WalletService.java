@@ -166,6 +166,38 @@ public class WalletService {
         return convertByCurrency(byCurrency, target, excluded);
     }
 
+    /** Today / last 7 days / month-to-date movement on a program's wallets, in the program currency. */
+    record ProgramVolume(BigDecimal daily, BigDecimal weekly, BigDecimal monthly,
+                         long dailyCount, long weeklyCount, long monthlyCount) {}
+
+    ProgramVolume programVolume(Program program, List<VirtualAccount> wallets) {
+        LocalDate today = LocalDate.now();
+        LocalDateTime dayStart = today.atStartOfDay();
+        LocalDateTime weekStart = today.minusDays(6).atStartOfDay();
+        LocalDateTime monthStart = today.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime from = weekStart.isBefore(monthStart) ? weekStart : monthStart;
+
+        List<UUID> walletIds = wallets.stream().map(VirtualAccount::getId).toList();
+        List<Transaction> movements = walletIds.isEmpty()
+            ? List.of()
+            : transactionRepository.findByVaIdInAndTransactionDateGreaterThanEqual(walletIds, from);
+
+        String target = program.getCurrencyCode() != null ? program.getCurrencyCode() : marketProfile.getDefaultCurrency();
+        List<String> excluded = new ArrayList<>();
+        List<Transaction> day = since(movements, dayStart);
+        List<Transaction> week = since(movements, weekStart);
+        List<Transaction> month = since(movements, monthStart);
+        return new ProgramVolume(
+            sumConverted(day, target, excluded), sumConverted(week, target, excluded), sumConverted(month, target, excluded),
+            day.size(), week.size(), month.size());
+    }
+
+    private static List<Transaction> since(List<Transaction> movements, LocalDateTime start) {
+        return movements.stream()
+            .filter(m -> m.getTransactionDate() != null && !m.getTransactionDate().isBefore(start))
+            .toList();
+    }
+
     private BigDecimal sumConverted(List<Transaction> movements, String target, List<String> excluded) {
         Map<String, BigDecimal> byCurrency = new TreeMap<>();
         for (Transaction m : movements) {
@@ -313,6 +345,8 @@ public class WalletService {
                 .filter(w -> Boolean.TRUE.equals(w.getKycVerified()))
                 .count();
         
+        ProgramVolume volume = programVolume(program, wallets);
+
         // Top wallets by balance
         List<WalletAccountResponse> topByBalance = wallets.stream()
                 .sorted((a, b) -> {
@@ -334,12 +368,12 @@ public class WalletService {
                 .totalWallets((long) wallets.size())
                 .totalBalance(totalBalance)
                 .averageBalance(avgBalance)
-                .dailyVolume(BigDecimal.valueOf(50000))
-                .weeklyVolume(BigDecimal.valueOf(350000))
-                .monthlyVolume(BigDecimal.valueOf(1500000))
-                .dailyTransactions(25L)
-                .weeklyTransactions(175L)
-                .monthlyTransactions(750L)
+                .dailyVolume(volume.daily())
+                .weeklyVolume(volume.weekly())
+                .monthlyVolume(volume.monthly())
+                .dailyTransactions(volume.dailyCount())
+                .weeklyTransactions(volume.weeklyCount())
+                .monthlyTransactions(volume.monthlyCount())
                 .kycVerifiedCount(kycVerified)
                 .kycPendingCount(wallets.size() - kycVerified)
                 .topWalletsByBalance(topByBalance)
@@ -1512,7 +1546,8 @@ public class WalletService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         String operatorName = getOperatorName(program.getCorporateId());
-        
+        ProgramVolume volume = programVolume(program, wallets);
+
         List<WalletAccountResponse> recentWallets = wallets.stream()
                 .sorted((a, b) -> {
                     LocalDateTime dtA = a.getCreatedAt() != null ? a.getCreatedAt() : LocalDateTime.MIN;
@@ -1556,8 +1591,8 @@ public class WalletService {
                 .launchDate(program.getEffectiveFrom())
                 .effectiveFrom(program.getEffectiveFrom())
                 .effectiveTo(program.getEffectiveTo())
-                .monthlyVolume(BigDecimal.valueOf(1500000))
-                .monthlyTransactions(750L)
+                .monthlyVolume(volume.monthly())
+                .monthlyTransactions(volume.monthlyCount())
                 .createdAt(program.getCreatedAt())
                 .updatedAt(program.getUpdatedAt())
                 .recentWallets(recentWallets)
@@ -1745,10 +1780,10 @@ public class WalletService {
     // ========================================================================
 
     private String getOperatorName(UUID corporateId) {
-        if (corporateId == null) return "Unknown";
+        if (corporateId == null) return null;
         return corporateRepository.findById(corporateId)
                 .map(Corporate::getLegalName)
-                .orElse("Corporate " + corporateId.toString().substring(0, 8));
+                .orElse(null);
     }
 
     private String generateWalletNumber(Program program) {

@@ -1241,7 +1241,7 @@ public class TransactionService {
         createIntercompanyTransactionRecord(
             ownerVa, payerVa, ownerEntity, payerEntity,
             request.getAmount(), poboFee, correlationId,
-            txn1_ownerOut.getReferenceNumber(), "POBO_4LEG");
+            txn1_ownerOut.getReferenceNumber(), "POBO_4LEG", request.getPayableId());
 
         return txn1_ownerOut;
     }
@@ -1584,7 +1584,7 @@ public class TransactionService {
         createIntercompanyTransactionRecord(
             ownerVa, treasurySettlementVa, ownerEntity, treasuryEntity,
             request.getAmount(), poboFee, correlationId,
-            txn1_ownerDebit.getReferenceNumber(), "POBO_6LEG");
+            txn1_ownerDebit.getReferenceNumber(), "POBO_6LEG", request.getPayableId());
 
         return txn1_ownerDebit;
     }
@@ -2102,7 +2102,8 @@ public class TransactionService {
             BigDecimal charges,
             String correlationId,
             String txnReference,
-            String flowType) {
+            String flowType,
+            UUID payableId) {
 
         try {
             // Extract entity details
@@ -2239,8 +2240,8 @@ public class TransactionService {
                     // Type and direction
                     .rechargeType(IntercompanyRecharge.RechargeType.POBO_PAYMENT)
                     .flowDirection(IntercompanyRecharge.FlowDirection.OUTBOUND)
-                    // Link to original payable (use a placeholder UUID since direct payment doesn't have payable)
-                    .originalPayableId(UUID.randomUUID())
+                    // The payable this paid, when there was one; a direct payment has none.
+                    .originalPayableId(payableId)
                     .originalPaymentReference(txnReference)
                     .build();
 

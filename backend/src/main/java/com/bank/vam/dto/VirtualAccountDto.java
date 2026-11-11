@@ -1504,6 +1504,8 @@ public class VirtualAccountDto {
         private BigDecimal eodBalance;
         private String positionType;
         private BigDecimal rateApplied;
+        /** DEFAULT when the account has no rate and the built-in 2.50 / 5.00 was applied; ACCOUNT otherwise. */
+        private String rateSource;
         private BigDecimal interestAmount;
         private String interestType;  // CREDIT or DEBIT
         private BigDecimal accruedCreditInterest;

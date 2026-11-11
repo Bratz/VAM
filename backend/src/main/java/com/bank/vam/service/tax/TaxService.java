@@ -358,6 +358,11 @@ public class TaxService {
             .orElse(new BigDecimal("5"));
     }
 
+    /** True when there is no active VAT5 tax configuration, so {@link #getUaeVatRate} answers the built-in 5%. */
+    public boolean isUaeVatRateDefault() {
+        return taxConfigRepository.findActiveByCode("VAT5").isEmpty();
+    }
+
     /**
      * Calculate UAE VAT.
      */

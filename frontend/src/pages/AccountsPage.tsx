@@ -928,6 +928,8 @@ const AccountDetailPanel: React.FC<AccountDetailPanelProps> = ({ account, onClos
       const res = await api.statements.generate(account.id, format, fromDate, toDate);
       if (res.success) {
         toast.success(`${format} statement generated`);
+      } else {
+        toast.error(res.message || 'Failed to generate statement');
       }
     } catch {
       toast.error('Failed to generate statement');

@@ -233,7 +233,8 @@ const FxExposurePage: React.FC = () => {
         <StatTile tone="primary" icon={<Coins className="w-5 h-5" />} label="Foreign currencies" value={ladder ? String(ladder.currencies.length) : '-'}
           sub={ladder ? `home currency ${ladder.baseCurrency}` : corporateName} loading={loading && !ladder} />
         <StatTile tone={policyBreaches ? 'danger' : 'success'} icon={<ShieldAlert className="w-5 h-5" />} label="Outside policy"
-          value={ladder ? String(policyBreaches) : '-'} sub={policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'} />
+          value={ladder ? String(policyBreaches) : '-'}
+          sub={`${policyBreaches ? 'time buckets to hedge' : 'within the hedge policy'}${ladder?.policyDefault ? '; default policy, not one you agreed' : ''}`} />
         <StatTile tone="info" icon={<ListChecks className="w-5 h-5" />} label="Declared entries" value={String(entries.length)} sub="exposures and hedges uploaded" />
         <StatTile tone={!ladder?.forecastRunAt ? 'neutral' : ladder.forecastStale ? 'warning' : 'success'} icon={<TrendingUp className="w-5 h-5" />}
           label="Cash Forecast" value={ladder?.forecastRunAt ? new Date(ladder.forecastRunAt).toLocaleDateString() : 'No run'}
@@ -258,9 +259,14 @@ const FxExposurePage: React.FC = () => {
             subtitle={row.rateToBase
               ? `Stored platform rate: 1 ${row.currency} = ${row.rateToBase} ${ladder.baseCurrency}. Amounts are in ${row.currency}.`
               : `No platform rate from ${row.currency} to ${ladder.baseCurrency}, so no ${ladder.baseCurrency} equivalent is shown.`}
-            action={row.buckets.some((b) => b.status === 'UNDER_HEDGED' || b.status === 'OVER_HEDGED')
-              ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Outside policy</Badge>
-              : <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Within policy</Badge>}
+            action={
+              <span className="inline-flex gap-1.5">
+                {ladder.policyDefault && <span title="The application's default hedge bands, not a policy the corporate set"><Badge variant="warning">Default policy</Badge></span>}
+                {row.buckets.some((b) => b.status === 'UNDER_HEDGED' || b.status === 'OVER_HEDGED')
+                  ? <Badge variant="error" icon={<AlertTriangle className="w-3 h-3" />}>Outside policy</Badge>
+                  : <Badge variant="success" icon={<CheckCircle className="w-3 h-3" />}>Within policy</Badge>}
+              </span>
+            }
           />
           <DataTable<ExposureBucket>
             data={row.buckets.filter((b) => b.exposure !== 0 || b.hedged !== 0)}

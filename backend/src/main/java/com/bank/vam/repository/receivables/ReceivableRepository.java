@@ -218,6 +218,13 @@ public interface ReceivableRepository extends JpaRepository<Receivable, UUID>, J
     BigDecimal sumIntercompanyOutstandingBetweenEntities(
             @Param("owningEntityId") UUID owningEntityId,
             @Param("counterpartyEntityId") UUID counterpartyEntityId);
+
+    @Query("SELECT DISTINCT r.currencyCode FROM Receivable r " +
+           "WHERE r.owningEntityId = :owningEntityId AND r.intercompanyEntityId = :counterpartyEntityId " +
+           "AND r.isIntercompany = true AND r.status IN ('OPEN', 'PARTIAL', 'OVERDUE')")
+    List<String> findIntercompanyOutstandingCurrenciesBetweenEntities(
+            @Param("owningEntityId") UUID owningEntityId,
+            @Param("counterpartyEntityId") UUID counterpartyEntityId);
     
     /**
      * Count intercompany receivables by corporate.

@@ -359,6 +359,7 @@ public class PoboPreviewService {
                 .treasurySpread(rateResponse.getTreasurySpread())
                 .entitySpread(rateResponse.getEntitySpread())
                 .effectiveInterestRate(interestRate)
+                .rateSource(rateResponse.getRateSource())
                 .estimatedInterest(estimatedInterest)
                 .totalRepayment(principal.add(estimatedInterest))
                 .available(true)
@@ -379,6 +380,7 @@ public class PoboPreviewService {
                 .tenorDays(tenorDays)
                 .maturityDate(LocalDate.now().plusDays(tenorDays))
                 .effectiveInterestRate(DEFAULT_IHB_INTEREST_RATE)
+                .rateSource("DEFAULT")
                 .estimatedInterest(estimatedInterest)
                 .totalRepayment(principal.add(estimatedInterest))
                 .available(false)
@@ -504,6 +506,8 @@ public class PoboPreviewService {
         private BigDecimal treasurySpread;
         private BigDecimal entitySpread;
         private BigDecimal effectiveInterestRate;
+        /** DEFAULT when the rate rests on a built-in default (the 5.00 base, or 5.50 when the lookup failed). */
+        private String rateSource;
         private BigDecimal estimatedInterest;
         private BigDecimal totalRepayment;
         private boolean available;

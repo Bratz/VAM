@@ -106,9 +106,9 @@ public class CopilotController {
     @GetMapping("/conversations")
     @Operation(summary = "List a user's conversations")
     public ResponseEntity<ApiResponse<List<ConversationSummary>>> listConversations(
-            @RequestParam(defaultValue = "demo-user") String userId) {
+            @RequestParam(required = false) String userId) {
         List<ConversationSummary> summaries = conversationService
-                .listConversationsForUser(userId)
+                .listConversationsForUser(com.bank.vam.config.CurrentUser.orCurrent(userId))
                 .stream()
                 .map(ConversationSummary::from)
                 .toList();
@@ -168,7 +168,7 @@ public class CopilotController {
             @RequestBody(required = false) Map<String, Object> params) {
         return toolRegistry.find(name)
                 .map(tool -> {
-                    ToolContext ctx = toolRegistry.buildContext(null, "demo-user");
+                    ToolContext ctx = toolRegistry.buildContext(null, com.bank.vam.config.CurrentUser.name());
                     ToolResult result = tool.execute(ctx, params == null ? Map.of() : params);
                     return ResponseEntity.ok(ApiResponse.success(result));
                 })

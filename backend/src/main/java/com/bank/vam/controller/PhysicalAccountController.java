@@ -27,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -479,7 +478,7 @@ public class PhysicalAccountController {
                         AccountType.valueOf(request.accountType.toUpperCase()) : AccountType.CURRENT)
                 .bankName(request.bankName)
                 .bankCode(request.bankCode)
-                .bankCountry(request.bankCountry != null ? request.bankCountry : "AE")
+                .bankCountry(request.bankCountry)
                 .branchName(request.branchName)
                 .branchCode(request.branchCode)
                 .bankRelationship(bankRelationship)
@@ -503,10 +502,9 @@ public class PhysicalAccountController {
                 .poolingEnabled(false)
                 .sweepEnabled(false)
                 .status(AccountStatus.ACTIVE)
-                .syncStatus(SyncStatus.SYNCED)
+                // Entered by hand, never fetched from the bank: not synced, no as-of time.
+                .syncStatus(SyncStatus.PENDING)
                 .syncFrequencyMinutes(isInternal ? 0 : 60)
-                .lastSyncAt(LocalDateTime.now())
-                .balanceAsOf(LocalDateTime.now())
                 .openedDate(LocalDate.now())
                 .relationshipManager(request.relationshipManager)
                 .build();
@@ -624,52 +622,20 @@ public class PhysicalAccountController {
         PhysicalAccount account = physicalAccountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Physical account not found: " + id));
         
-        // In production, this would call the bank API (BANCS)
-        account.setSyncStatus(SyncStatus.SYNCED);
-        account.setLastSyncAt(LocalDateTime.now());
-        account.setBalanceAsOf(LocalDateTime.now());
-        account.setSyncErrorMessage(null);
-        
-        PhysicalAccount saved = physicalAccountRepository.save(account);
-        log.info("Synced balance for account: {}", account.getAccountNumber());
-        
-        return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "data", toAccountResponse(saved),
-                "message", "Account synced successfully"
-        ));
+        throw notConnected(account);
     }
 
     @PostMapping("/sync-all")
     @Operation(summary = "Sync all accounts")
     public ResponseEntity<Map<String, Object>> syncAllAccounts(
             @RequestParam(required = false) UUID corporateId) {
-        
-        List<PhysicalAccount> accounts;
-        if (corporateId != null) {
-            accounts = physicalAccountRepository.findByCorporateId(corporateId);
-        } else {
-            accounts = physicalAccountRepository.findAll();
-        }
-        
-        int synced = 0;
-        for (PhysicalAccount account : accounts) {
-            if (account.getStatus() == AccountStatus.ACTIVE) {
-                account.setSyncStatus(SyncStatus.SYNCED);
-                account.setLastSyncAt(LocalDateTime.now());
-                account.setBalanceAsOf(LocalDateTime.now());
-                physicalAccountRepository.save(account);
-                synced++;
-            }
-        }
-        
-        log.info("Synced {} accounts", synced);
-        
-        return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "data", Map.of("syncedCount", synced, "totalCount", accounts.size()),
-                "message", "Synced " + synced + " accounts"
-        ));
+        throw new BusinessException("Not available: balance sync — no bank connection is implemented for physical accounts");
+    }
+
+    /** No bank adapter fetches physical account balances, so a sync would only restamp the old figures. */
+    private static BusinessException notConnected(PhysicalAccount account) {
+        return new BusinessException("Not available: no bank connection for " + account.getAccountNumber()
+                + " (" + account.getBankName() + ")");
     }
 
     // ========================================================================
@@ -987,7 +953,9 @@ public class PhysicalAccountController {
         response.put("syncFrequencyMinutes", account.getSyncFrequencyMinutes());
         
         response.put("createdAt", account.getCreatedAt());
-        
+        // Opened by the application with a made-up balance (demo seeding), not from the bank's books.
+        response.put("systemDefault", account.isSystemDefault());
+
         return response;
     }
 

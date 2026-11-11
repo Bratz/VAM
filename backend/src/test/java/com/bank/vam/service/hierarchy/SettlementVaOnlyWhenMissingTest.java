@@ -23,7 +23,7 @@ class SettlementVaOnlyWhenMissingTest {
     private final HierarchyNodeRepository nodes = mock(HierarchyNodeRepository.class);
     private final ProgramRepository programs = mock(ProgramRepository.class);
     private final VirtualAccountRepository vas = mock(VirtualAccountRepository.class);
-    private final HierarchyService service = new HierarchyService(mock(HierarchyLevelConfigRepository.class), nodes, programs, vas);
+    private final HierarchyService service = new HierarchyService(mock(HierarchyLevelConfigRepository.class), nodes, programs, vas, mock(com.bank.vam.service.treasury.FxRateService.class));
 
     @Test
     void hierarchyNodePathReturnsTheExistingSettlementVa() {

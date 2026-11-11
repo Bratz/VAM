@@ -10,8 +10,8 @@ import java.util.UUID;
  *
  * @param conversationId  existing conversation to append to; {@code null} starts a new one
  * @param message         the user's message text (required, max 4 KB)
- * @param userId          authenticated user identifier; defaults to {@code "demo-user"}
- *                        in the prototype since auth is permitAll in dev
+ * @param userId          authenticated user identifier; defaults to the signed-in user,
+ *                        else {@code "system"}
  * @param corporateId     corporate scope; nullable in the prototype
  */
 public record ChatRequest(
@@ -21,6 +21,6 @@ public record ChatRequest(
         UUID corporateId
 ) {
     public String userIdOrDefault() {
-        return (userId == null || userId.isBlank()) ? "demo-user" : userId;
+        return com.bank.vam.config.CurrentUser.orCurrent(userId);
     }
 }

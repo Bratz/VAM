@@ -33,11 +33,9 @@ export async function copilotHealth(signal?: AbortSignal): Promise<CopilotHealth
   return body.data as CopilotHealth;
 }
 
-export async function listConversations(
-  userId = 'demo-user',
-  signal?: AbortSignal
-): Promise<ConversationSummary[]> {
-  const r = await fetch(`${BASE}/conversations?userId=${encodeURIComponent(userId)}`, { signal });
+/** The signed-in user's conversations; the backend takes the user from the session. */
+export async function listConversations(signal?: AbortSignal): Promise<ConversationSummary[]> {
+  const r = await fetch(`${BASE}/conversations`, { signal });
   if (!r.ok) throw new Error(`listConversations ${r.status}`);
   const body = await r.json();
   return body.data as ConversationSummary[];
@@ -56,7 +54,6 @@ export async function listMessages(
 export interface ChatStreamOptions {
   conversationId?: string | null;
   message: string;
-  userId?: string;
   onChunk: (chunk: ChatChunk) => void;
   signal?: AbortSignal;
 }
@@ -70,7 +67,7 @@ export interface ChatStreamOptions {
  * stream and flush on each blank.
  */
 export async function streamChat(opts: ChatStreamOptions): Promise<void> {
-  const { conversationId, message, userId, onChunk, signal } = opts;
+  const { conversationId, message, onChunk, signal } = opts;
 
   const response = await fetch(`${BASE}/chat`, {
     method: 'POST',
@@ -81,7 +78,6 @@ export async function streamChat(opts: ChatStreamOptions): Promise<void> {
     body: JSON.stringify({
       conversationId: conversationId ?? null,
       message,
-      userId: userId ?? 'demo-user',
     }),
     signal,
   });

@@ -222,7 +222,9 @@ public class TaxChargeController {
     public ResponseEntity<ApiResponse<BigDecimal>> calculateUaeVat(
             @RequestParam BigDecimal amount) {
         BigDecimal vat = taxService.calculateUaeVat(amount);
-        return ResponseEntity.ok(ApiResponse.success(vat));
+        return ResponseEntity.ok(taxService.isUaeVatRateDefault()
+                ? ApiResponse.success(vat, "rateSource=DEFAULT: no VAT5 tax configuration, so the built-in 5% was used")
+                : ApiResponse.success(vat));
     }
 
     @GetMapping("/calculate-pobo-fee")

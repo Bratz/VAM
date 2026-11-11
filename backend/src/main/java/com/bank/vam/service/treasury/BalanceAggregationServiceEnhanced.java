@@ -942,12 +942,14 @@ public class BalanceAggregationServiceEnhanced {
             CurrencyPosition cp = new CurrencyPosition();
             cp.setCurrency(mirror.getCurrencyCode());
             cp.setOriginalBalance(mirror.getMirrorBalance() != null ? mirror.getMirrorBalance() : BigDecimal.ZERO);
-            cp.setFxRate(mirror.getFxRate() != null ? mirror.getFxRate() : BigDecimal.ONE);
+            // No stored rate: rate and converted balance stay null (shown as unknown) and the
+            // amount is left out of the total, never converted at 1:1.
+            cp.setFxRate(mirror.getFxRate());
             cp.setFxRateAt(mirror.getFxRateAt());
-            cp.setConvertedBalance(mirror.getBalanceInBase() != null ? mirror.getBalanceInBase() : BigDecimal.ZERO);
+            cp.setConvertedBalance(mirror.getBalanceInBase());
 
             position.getCurrencyBreakdown().add(cp);
-            totalInBase = totalInBase.add(cp.getConvertedBalance());
+            if (cp.getConvertedBalance() != null) totalInBase = totalInBase.add(cp.getConvertedBalance());
         }
 
         position.setTotalInBase(totalInBase);
@@ -993,12 +995,13 @@ public class BalanceAggregationServiceEnhanced {
             CurrencyPosition cp = new CurrencyPosition();
             cp.setCurrency(mirror.getCurrencyCode());
             cp.setOriginalBalance(mirror.getMirrorBalance() != null ? mirror.getMirrorBalance() : BigDecimal.ZERO);
-            cp.setFxRate(mirror.getFxRate() != null ? mirror.getFxRate() : BigDecimal.ONE);
+            // No stored rate: left null and out of the total, never converted at 1:1 (as above).
+            cp.setFxRate(mirror.getFxRate());
             cp.setFxRateAt(mirror.getFxRateAt());
-            cp.setConvertedBalance(mirror.getBalanceInBase() != null ? mirror.getBalanceInBase() : BigDecimal.ZERO);
+            cp.setConvertedBalance(mirror.getBalanceInBase());
 
             position.getCurrencyBreakdown().add(cp);
-            totalInBase = totalInBase.add(cp.getConvertedBalance());
+            if (cp.getConvertedBalance() != null) totalInBase = totalInBase.add(cp.getConvertedBalance());
         }
 
         // Sort by currency code for consistent display

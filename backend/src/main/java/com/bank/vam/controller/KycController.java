@@ -1,6 +1,7 @@
 package com.bank.vam.controller;
 
 import com.bank.vam.dto.ApiResponse;
+import com.bank.vam.exception.BusinessException;
 import com.bank.vam.service.party.KycService;
 import com.bank.vam.service.party.KycService.KycCaseResponse;
 import com.bank.vam.service.party.KycService.KycDecisionRequest;
@@ -28,23 +29,20 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 public class KycController {
 
-    private static final UUID DEMO_CORPORATE_ID =
-        UUID.fromString("11111111-1111-1111-1111-111111111111");
-
     private final KycService kycService;
 
     @GetMapping("/pending")
     public ResponseEntity<ApiResponse<List<KycCaseResponse>>> getPendingKyc(
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId) {
         return ResponseEntity.ok(ApiResponse.success(
-            kycService.getPendingReview(corporateId != null ? corporateId : DEMO_CORPORATE_ID)));
+            kycService.getPendingReview(requireCorporate(corporateId))));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<KycStatsResponse>> getKycStats(
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId) {
         return ResponseEntity.ok(ApiResponse.success(
-            kycService.getStats(corporateId != null ? corporateId : DEMO_CORPORATE_ID)));
+            kycService.getStats(requireCorporate(corporateId))));
     }
 
     @GetMapping("/expiring")
@@ -52,7 +50,7 @@ public class KycController {
             @RequestHeader(value = "X-Corporate-Id", required = false) UUID corporateId,
             @RequestParam(defaultValue = "30") int daysAhead) {
         return ResponseEntity.ok(ApiResponse.success(
-            kycService.getExpiring(corporateId != null ? corporateId : DEMO_CORPORATE_ID, daysAhead)));
+            kycService.getExpiring(requireCorporate(corporateId), daysAhead)));
     }
 
     /** {@code id} is the party id — a KYC case is a party with open KYC. */
@@ -80,5 +78,11 @@ public class KycController {
             @PathVariable UUID id,
             @RequestBody RequestInfoRequest request) {
         return ResponseEntity.ok(ApiResponse.success(kycService.requestAdditionalInfo(id, request)));
+    }
+
+    /** KYC cases belong to one corporate; never fall back to a default one. */
+    private static UUID requireCorporate(UUID corporateId) {
+        if (corporateId == null) throw new BusinessException("X-Corporate-Id header is required");
+        return corporateId;
     }
 }
