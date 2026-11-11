@@ -1136,7 +1136,7 @@ const IntegrationsPage: React.FC = () => {
           section below uses <Page maxWidth="default"> for max-width and
           space-y-6 rhythm. */}
       <div className="bg-surface-card border-b border-edge">
-        <div className="max-w-7xl mx-auto py-8">
+        <div className="max-w-[1680px] mx-auto py-8">
           <PageHeader
             title="Integrations"
             description="Connect ERP, treasury, and banking systems"
@@ -1175,7 +1175,7 @@ const IntegrationsPage: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="bg-surface-card border-b border-edge">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-[1680px] mx-auto">
           <div className="flex gap-8">
             {[
               { id: 'connections', label: 'Active Connections', count: connections.length },

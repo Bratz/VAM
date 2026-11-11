@@ -1340,7 +1340,7 @@ const CreatePayablePage: React.FC<CreatePayablePageProps> = ({ payableId }) => {
     // match <Page maxWidth="narrow"> below.
     <div>
       <div className="bg-surface-card border border-edge rounded-lg mb-6">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button onClick={goBack} className="p-2 hover:bg-neutral-100 dark:hover:bg-primary-800 rounded-lg transition-colors"><ArrowLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" /></button>

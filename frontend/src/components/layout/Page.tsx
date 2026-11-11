@@ -11,8 +11,8 @@ import { cn } from '../../utils';
  * IntegrationsPage).
  *
  * Width rules (Phase 10):
- *  - `default` (1280px / max-w-7xl) — every dashboard, list, and detail page
- *  - `narrow` (1024px / max-w-5xl) — forms-first pages with a single column
+ *  - `default` (1680px: fills the content area of a 1920px screen beside the sidebar) — every dashboard, list, and detail page
+ *  - `narrow` (1280px / max-w-7xl) — forms-first pages with a single column
  *    of inputs (e.g. CreatePayablePage, CreateReceivablePage)
  *  - `full` — uncapped, only for pages that need full-bleed canvas behaviour
  *    (e.g. EntityBalanceTreePage's force-directed graph)
@@ -36,8 +36,8 @@ export const Page: React.FC<PageProps> = ({
   <div
     className={cn(
       'space-y-4',
-      maxWidth === 'default' && 'max-w-7xl mx-auto w-full',
-      maxWidth === 'narrow' && 'max-w-5xl mx-auto w-full',
+      maxWidth === 'default' && 'max-w-[1680px] mx-auto w-full',
+      maxWidth === 'narrow' && 'max-w-7xl mx-auto w-full',
       // maxWidth === 'full' has no cap
       className
     )}
