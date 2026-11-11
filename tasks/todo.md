@@ -1,5 +1,19 @@
 # Active Work / Status Tracker
 
+## In progress: Create Payable and Create Invoice audit fixes + responsive layout (2026-11-11)
+User: "fix all including the responsive layout" (audit of both create pages on vam-five).
+- [ ] Create Payable data integrity: DRAFT vs PENDING_APPROVAL (no auto-APPROVED), edit works, VAT once
+      (typed amount VAT-inclusive, as invoices), Pay To bank account sent, POBO stored, treasury picker, corporate required
+- [ ] Create Payable dead/invented UI: wire what Payable stores (notes, priority, references, terms, schedule date);
+      remove what nothing stores (charges, tax jurisdiction, reverse charge, attachments, invoice lookup, mock allocation,
+      invented POBO limits, fake vendor card figures, channel gating)
+- [ ] Create Payable pickers: vendor search on the server, Pay From = operational accounts in the payable currency,
+      Pay To shown at once with the API's field names, entity picker, editable due date, local dates
+- [x] Create Invoice: settlement accounts (settlementMark) left out; default prefers non-IHB operating accounts (Main Operating Account);
+      demo-corporate fallback removed (remembered corporate or a picker in the banner; submit needs one); responsive xl layout
+- [ ] Both: responsive with xl: (below 1280 the summary stacks, field rows 2 columns); Create Payable header gap; dark-mode classes
+- [ ] Tests, typecheck, live check, report
+
 ## ✅ No fake data in the backend (2026-11-10)
 Audit: `tasks/fake-data-audit.md`. User decisions: simulators kept but labelled "Simulated", silent
 hardcoded fallbacks removed; startup-seeded settings kept but shown as defaults; already-stored fake

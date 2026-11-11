@@ -47,6 +47,8 @@ interface CollectionAccount {
   bankName: string;
   currency: string;
   accountType: 'PHYSICAL' | 'VIRTUAL';
+  /** An entity's in-house-bank current account: offered, but not the default for a customer invoice. */
+  ihbCurrent?: boolean;
 }
 
 interface LineItem {
@@ -1042,8 +1044,19 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   // Debug: log navigation params
   const legalEntityIdFromParams = navigation.params?.legalEntityId;
 
-  // Use provided values or fall back to demo defaults
-  const effectiveCorporateId = corporateIdFromParams || '550e8400-e29b-41d4-a716-446655440000';
+  // No made-up corporate: without one from the Receivables page (e.g. the page opened from a link), use the one last
+  // chosen there, else the user picks it in the banner. It used to fall back to a demo corporate id.
+  const [chosenCorporateId, setChosenCorporateId] = useState<string>(() => {
+    try { return localStorage.getItem('receivables.corporateId') || ''; } catch { return ''; }
+  });
+  const effectiveCorporateId: string = corporateIdFromParams || chosenCorporateId;
+  const [corporateOptions, setCorporateOptions] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (corporateIdFromParams) return;
+    corporatesApi.getAll(0, 100)
+      .then((r) => setCorporateOptions((r.data || []).map((c) => ({ id: c.id, name: c.legalName || c.tradeName || c.corporateId }))))
+      .catch(() => setCorporateOptions([]));
+  }, [corporateIdFromParams]);
   const effectiveLegalEntityId = legalEntityIdFromParams || null;
 
 
@@ -1108,6 +1121,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
   // Load data from APIs on mount or when corporateId changes
   useEffect(() => {
     const loadData = async () => {
+      if (!effectiveCorporateId) { setDataLoading(false); return; }
       setDataLoading(true);
 
       // Load corporate details
@@ -1153,7 +1167,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
         const RECEIVABLE_CATEGORIES = ['COLLECTION', 'TRANSACTION'];
         const accountsResponse = await virtualAccountsApi.getAll(0, 200, effectiveCorporateId);
         const accountsList = (accountsResponse?.data || []).filter(
-          (va: any) => RECEIVABLE_CATEGORIES.includes(va.accountCategory) && va.status === 'ACTIVE'
+          // settlementMark: the platform's settlement accounts (e.g. "Settlement Account - COLL5", IHB settlement) are not
+          // where a customer pays an invoice, though they share the TRANSACTION category; one of them was the default.
+          (va: any) => RECEIVABLE_CATEGORIES.includes(va.accountCategory) && va.status === 'ACTIVE' && !va.settlementMark
         );
         setAccounts(accountsList.map((va: any) => ({
           id: va.id,
@@ -1162,7 +1178,8 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           iban: va.iban || '',
           bankName: 'Bank',
           currency: va.currencyCode || 'AED',
-          accountType: va.vaType || 'VIRTUAL'
+          accountType: va.vaType || 'VIRTUAL',
+          ihbCurrent: !!va.ihbParticipant
         })));
       } catch (error) {
         console.error('Failed to load accounts:', error);
@@ -1228,7 +1245,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
     // endpoint returns them. There is no per-account default flag to honour: virtual accounts
     // carry no isDefault field on the API or in the database, so the previous
     // `a.isDefault && ...` could never match and no invoice ever got a collection account.
-    const defaultAccount = accounts.find(a => a.currency === formData.currency);
+    // Ordinary operating/collection accounts first; an entity's IHB current account only if there is nothing else.
+    const inCurrency = accounts.filter(a => a.currency === formData.currency);
+    const defaultAccount = inCurrency.find(a => !a.ihbCurrent) ?? inCurrency[0];
     setFormData(prev => ({ ...prev, collectionAccountId: defaultAccount?.id ?? '' }));
     setSelectedAccount(defaultAccount ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on currency/account changes only. formData.collectionAccountId is read to see whether the current pick is still valid and is written here, so depending on it would re-apply the default the moment the user clears the field.
@@ -1409,7 +1428,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
 
   // Collection account is optional in general, but required when generating a VIBAN --
   // VibanService.createInvoiceViban() needs a real target VA to attach the VIBAN to.
-  const canSubmit = Boolean(formData.invoiceNumber) && breakdown.total > 0
+  const canSubmit = Boolean(effectiveCorporateId) && Boolean(formData.invoiceNumber) && breakdown.total > 0
     && (!formData.generateViban || Boolean(formData.collectionAccountId));
 
 
@@ -1497,10 +1516,21 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
             {!corporateIdFromParams && (
               <>
-                <div className="w-px h-10 bg-warning-200 block dark:bg-warning-500/15" />
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-warning-100 border border-warning-300 rounded-lg dark:bg-warning-500/20">
-                  <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-300" />
-                  <span className="text-caption font-medium text-warning-700 dark:text-warning-300">Using default corporate</span>
+                <div className="w-px h-10 bg-info-200 block dark:bg-info-500/15" />
+                <div className="min-w-[14rem]">
+                  <label htmlFor="invoice-corporate" className="text-caption font-medium text-info-600 uppercase tracking-wide dark:text-info-300">Invoice for</label>
+                  <select
+                    id="invoice-corporate"
+                    value={chosenCorporateId}
+                    onChange={(e) => {
+                      setChosenCorporateId(e.target.value);
+                      try { localStorage.setItem('receivables.corporateId', e.target.value); } catch { /* storage unavailable */ }
+                    }}
+                    className="w-full mt-0.5 px-3 py-1.5 border border-edge-strong rounded-lg text-body-sm bg-surface-card"
+                  >
+                    <option value="">Choose a corporate…</option>
+                    {corporateOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
                 </div>
               </>
             )}
@@ -1515,9 +1545,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
           </div>
         )}
 
-        <div className="grid gap-8 grid-cols-3">
+        <div className="grid gap-8 grid-cols-1 xl:grid-cols-3">
           {/* Left Column - Main Form */}
-          <div className="space-y-6 col-span-2">
+          <div className="space-y-6 xl:col-span-2">
             {/* Customer Selection */}
             <div className="bg-surface-card rounded-lg border border-edge p-6">
               <SectionHeader
@@ -1791,9 +1821,9 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
             </div>
           </div>
 
-          {/* Right Column - Summary */}
-          <div className="col-span-1">
-            <div className="sticky top-24 space-y-4">
+          {/* Right Column - Summary (under the form below xl) */}
+          <div className="xl:col-span-1">
+            <div className="xl:sticky xl:top-24 space-y-4">
               <div className="bg-surface-card rounded-lg border border-edge p-6">
                 <h3 className="body-strong font-semibold mb-4">Summary</h3>
                 <div className="space-y-4">
@@ -1849,6 +1879,7 @@ const CreateReceivablePage: React.FC<CreateReceivablePageProps> = ({ receivableI
                     <div>
                       <p className="text-body-sm font-medium text-warning-800 dark:text-warning-300">Complete required fields</p>
                       <ul className="text-caption text-warning-700 mt-1 space-y-1 dark:text-warning-300">
+                        {!effectiveCorporateId && <li>• Choose the corporate the invoice is for</li>}
                         {!formData.customerId && <li>• Select a customer</li>}
                         {breakdown.total <= 0 && !formData.useLineItems && <li>• Enter an amount</li>}
                         {formData.useLineItems && formData.lineItems.length === 0 && <li>• Add at least one line item</li>}
