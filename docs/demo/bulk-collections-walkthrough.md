@@ -39,6 +39,9 @@ Receiving account throughout: **QA-TXN-L7-53197 · Main Operating Account** (AED
 | Collection run | **CR-20261109-854FA7** (C-USD) | |
 | Collection runs (file) | **CR-20261109-2BD853**, **CR-20261109-5D3626** | from the Collections file in step 6 |
 | Customer + invoice (file) | **Oasis Fresh Foods LLC**, AED 250.00 | raised by row 2 of the file |
+| COBO enrolment | **MNC-UK · AED → MNC Treasury Center**, into UAE TREASURY POOL ACC (QA-TXN-L7-64808) | step 9 |
+| COBO invoice | **INV-202611-5497** · Gulf Star Logistics LLC · AED 1,000.00 · VIBAN AE720410000000000000304012 | paid by DEMO-COBO-E2E-1 |
+| COBO cut-over | INV-2026-8901 moved to direct collection | step 9.4 |
 
 To repeat the demo, use new names/references (references must be unique per corporate), or cancel the
 DEMO-* mandates first from their row menus.
@@ -307,47 +310,65 @@ request still went out as pain.013, and the pay link still works.
 
 ## 9. Collected on behalf by the in-house bank (COBO) (≈4 min)
 
-> **Checked on localhost on 11 Nov 2026** (not yet recorded on vam-five). Spec: `docs/specs/cobo-in-house-bank.md`.
-> Treasury collects a subsidiary's invoices into its own account and credits the subsidiary in-house when the
-> money arrives — no per-invoice approval, no manual "collect".
+Recorded on **https://vam-five.vercel.app** on **11 Nov 2026** (build aebfefb). Spec: `docs/specs/cobo-in-house-bank.md`.
+Treasury collects a subsidiary's invoices into its own account and credits the subsidiary in-house when the money
+arrives — no per-invoice approval, no manual "collect".
 
 ### 9.1 Enrol the subsidiary (once)
-**In-House Bank → Collections on behalf (COBO) → Add enrolment**: Subsidiary **MNC UK Ltd (MNC-UK)**, Currency
-**AED** (the only currency it has an IHB current account in), Collected by **MNC Treasury Center**, Account
-**UAE TREASURY POOL ACC** → **Enrol**.
+1. **In-House Bank**, corporate **TestMNC** (the page may open on *TestShop* — it has no treasury centre, so its
+   collector list is empty) → tab **Collections on behalf (COBO)** → **Add enrolment**.
+2. Subsidiary **MNC UK Ltd (MNC-UK)** → Currency **AED** (the only one offered: MNC-UK has an IHB current account only
+   in AED) → Collected by **MNC Treasury Center (MNC-TREASURY)** (the only treasury centre) → Account
+   **QA-TXN-L7-64808 · UAE TREASURY POOL ACC** → **Enrol**.
 
-You see: the row *MNC UK Ltd · AED · MNC Treasury Center · UAE TREASURY POOL ACC · Active*.
+You see the row *MNC UK Ltd · MNC-UK · AED · MNC Treasury Center · QA-TXN-L7-64808 UAE TREASURY POOL ACC ·
+11 Nov 2026 · Active · End*.
 
 ### 9.2 Raise the invoice
-**Receivables → Create Invoice**: Corporate **Test Multinational Corp**, Owning entity **MNC-UK**, customer
-*Gulf Freight Services LLC*, amount **1000** AED.
+1. **Receivables (AR) → Create Invoice**. Corporate **Test Multinational Corp**, Owning entity **MNC-UK - MNC UK Ltd**.
+2. You see *"Collected by MNC Treasury Center into UAE TREASURY POOL ACC"* in place of the account picker, and a
+   **Collect directly instead** checkbox. (Switch the currency to USD: *"Not collected on behalf: MNC UK Ltd is not
+   enrolled for USD (only AED), so it collects this invoice directly."* Switch back to AED.)
+3. Customer **Gulf Star Logistics LLC**, Amount **1000** → **Create Invoice**.
 
-You see *"Collected by MNC Treasury Center into UAE TREASURY POOL ACC"* in place of the account picker (and a
-**Collect directly instead** opt-out). Switch the currency to USD and it says *"Not collected on behalf: MNC UK Ltd
-is not enrolled for USD (only AED)"*. Back to AED → **Create Invoice**.
-
-The invoice's VIBAN sits on treasury's account and is named **"MNC Treasury Center re: MNC UK Ltd"** — the pay
-page shows that name above the IBAN.
+You see *Invoice created · INV-202611-5497* with its pay link. The invoice is COBO, collected by MNC-TREASURY, owned by
+MNC-UK, VIBAN **AE72 0410 0000 0000 0000 3040 12** on treasury's account. The customer's pay page reads
+*"Transfer the amount above to this account … **MNC Treasury Center re: MNC UK Ltd** · AE720410000000000000304012"*.
 
 ### 9.3 The customer pays
-Post an inward credit to the invoice's VIBAN (Swagger `POST /api/v1/iso20022/inward/payment`, or a pacs.008).
+There is no bank link, so the credit is posted as the bank would send it: Swagger **`POST /api/v1/iso20022/inward/payment`**
 
-On localhost, AED 1,000 gave:
+```json
+{ "messageId": "DEMO-COBO-MSG-1", "instructionId": "DEMO-COBO-INS-1", "endToEndId": "DEMO-COBO-E2E-1",
+  "amount": 1000, "currency": "AED", "creditorAccount": "AE720410000000000000304012",
+  "debtorName": "Gulf Star Logistics LLC", "debtorAccount": "AE070331234567890123456",
+  "remittanceInfo": "INV-202611-5497" }
+```
+
+You see *"Inward payment processed successfully"* (reference COL17943820489720853) and:
 
 | Account | Before | After |
 |---|---|---|
-| UAE TREASURY POOL ACC (treasury, cash) | 0.00 | 998.00 (platform collection fee AED 2; no COBO fee) |
-| IC payable MNC-TREASURY → MNC-UK | 706.00 | 1,706.00 |
-| MNC-UK IHB current account | 100.00 | 1,100.00 |
+| UAE TREASURY POOL ACC (treasury's cash) | 0.00 | **998.00** (platform collection fee AED 2; no COBO fee) |
+| IC payable — MNC Treasury Center owes MNC-UK | 0.00 | **1,000.00** |
+| IHB current account — MNC UK Ltd | 100.01 | **1,100.01** |
 
-The invoice is **Paid**, COBO **Collected**, one payment. MNC-UK's IHB current account shows *"COBO INV-… from Gulf
-Freight Services LLC, collected by MNC Treasury Center"*. A second payment to the same VIBAN is refused
-(*VIBAN cannot accept payment: PAID*) and never credits MNC-UK twice.
+INV-202611-5497 is **Paid**, COBO **Collected**. MNC-UK's IHB current account shows *"COBO INV-202611-5497 from Gulf
+Star Logistics LLC, collected by MNC Treasury Center — 1,000"*; treasury's side shows *"IC Payable: MNC Treasury
+Center owes MNC-UK for COBO INV-202611-5497 …"*.
+
+Posting the same AED 1,000 again (`DEMO-COBO-E2E-2`) is refused: *"VIBAN cannot accept payment: PAID"* — MNC-UK is
+not credited twice (it stays 1,100.01).
 
 ### 9.4 Existing COBO invoices (one-off)
-**Move existing COBO invoices (n)** on the same tab previews, then moves, invoices from the old per-invoice flow:
-pending → direct collection; approved and enrolled → new pay details on treasury's account; otherwise direct.
-Running it again finds nothing to move.
+Same tab → **Move existing COBO invoices (1)**. The preview (nothing changes until you confirm):
+- *Collected by treasury from now on, with new pay details*: 0
+- *Collected directly by the subsidiary*: **INV-2026-8901** · AED 20.00 · it has no owning entity, so it is collected
+  directly
+- *Left as they are*: INV-2026-9021 · MNC-UK · AED 0.00 · *Not owed (PAID)*
+
+**Move 1 invoice** → *"COBO invoices moved. Customers of moved invoices need the new pay details: resend the invoice
+or Request to Pay."* The button then disappears; running the preview again finds nothing to move.
 
 ---
 

@@ -234,7 +234,7 @@ const CutoverModal: React.FC<{ corporateId: string; preview: CoboCutoverReport; 
           keyExtractor={(i) => i.invoiceId}
           columns={[
             { key: 'invoiceNumber', header: 'Invoice', render: (_, i) => (
-              <div className="flex flex-col"><span className="font-mono text-body-sm">{i.invoiceNumber}</span><span className="caption">{i.owningEntity}</span></div>
+              <div className="flex flex-col"><span className="font-mono text-body-sm">{i.invoiceNumber}</span><span className="caption">{i.owningEntity ?? 'No owning entity'}</span></div>
             ) },
             { key: 'outstanding', header: 'Outstanding', align: 'right', minWidth: 130, render: (_, i) => formatCurrency(i.outstanding, i.currency) },
             { key: 'detail', header: report.dryRun ? 'What happens' : 'What happened', render: (_, i) => <span className="body-sm">{i.detail}</span> },
@@ -259,7 +259,7 @@ const CutoverModal: React.FC<{ corporateId: string; preview: CoboCutoverReport; 
             <>
               <Button variant="ghost" onClick={onClose}>Cancel</Button>
               <Button onClick={run} loading={running} disabled={report.toDirect.length + report.toNewFlow.length === 0}>
-                Move {report.toDirect.length + report.toNewFlow.length} invoices
+                Move {report.toDirect.length + report.toNewFlow.length} invoice{report.toDirect.length + report.toNewFlow.length === 1 ? '' : 's'}
               </Button>
             </>
           ) : (

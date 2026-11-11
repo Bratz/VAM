@@ -78,8 +78,10 @@ public class CoboCutoverService {
             } else if (req == CoboRequestStatus.APPROVED) {
                 EnrolmentView e = coboEnrolments.active(r.getOwningEntityId(), r.getCurrencyCode(), today).orElse(null);
                 if (e == null) {
-                    toDirect.add(item(r, outstanding, "Approved, but " + entityName(r) + " is not enrolled for "
-                        + r.getCurrencyCode() + "; collected directly" + payDetailsKept(r)));
+                    toDirect.add(item(r, outstanding, (entityName(r) == null
+                        ? "Approved, but it has no owning entity to collect on behalf of"
+                        : "Approved, but " + entityName(r) + " is not enrolled for " + r.getCurrencyCode())
+                        + "; collected directly" + payDetailsKept(r)));
                     if (!dryRun) direct(r);
                 } else {
                     String name = e.collectorName() + " re: " + (r.getOwningEntityName() != null ? r.getOwningEntityName() : e.subsidiaryName());
@@ -180,7 +182,7 @@ public class CoboCutoverService {
 
     private static String entityName(Receivable r) {
         return r.getOwningEntityName() != null ? r.getOwningEntityName()
-            : r.getOwningEntityCode() != null ? r.getOwningEntityCode() : "its owning entity";
+            : r.getOwningEntityCode();
     }
 
     private static Item item(Receivable r, BigDecimal outstanding, String detail) {
